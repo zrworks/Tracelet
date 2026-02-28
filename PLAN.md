@@ -753,11 +753,25 @@
 - [x] `ProviderChangeEvent.mockLocationsDetected` — alert for live detection
 - [x] `help/MOCK-DETECTION.md` comprehensive documentation
 
-### 7.8 macOS / Windows / Linux
+### 7.8 OEM Compatibility (Android)
+- [x] `OemCompat` utility — manufacturer detection (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo)
+- [x] Aggression ratings (0–5 per dontkillmyapp.com)
+- [x] Huawei PowerGenie wakelock tag hack (`LocationManagerService`)
+- [x] Xiaomi autostart detection via `PackageManager.resolveActivity()`
+- [x] OEM settings deep-links — 8 intents for 6 manufacturers
+- [x] `Tracelet.getSettingsHealth()` — device health API
+- [x] `Tracelet.openOemSettings(label)` — open OEM settings by label
+- [x] OEM-safe wakelock lifecycle in `LocationService`
+- [x] Boot receiver 60s wakelock during `BOOT_COMPLETED` processing
+- [x] ProGuard/R8 consumer rules (`consumer-rules.pro`)
+- [x] iOS/Web stubs (return `isAggressiveOem: false`)
+- [x] `help/OEM-COMPATIBILITY.md` comprehensive guide
+
+### 7.9 macOS / Windows / Linux
 - [ ] `packages/tracelet_macos/` — CoreLocation on macOS (shared Darwin source with iOS)
 - [ ] Windows/Linux via GNSS APIs (low priority)
 
-### 7.9 Analytics Dashboard
+### 7.10 Analytics Dashboard
 - [ ] Open-source companion web dashboard (Vue.js / React)
 - [ ] Real-time device tracking on map
 - [ ] Historical route playback
@@ -834,4 +848,4 @@
 ---
 
 *Last updated: 2025-07-15*
-*Status: v0.6.0 — shared Dart algorithms migration complete + mock location detection*
+*Status: v0.8.0 — OEM compatibility layer + Settings Health API*

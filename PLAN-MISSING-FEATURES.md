@@ -144,6 +144,7 @@
 | 12 | Geofence High Accuracy | ✅ Done |
 | 13 | `removeListeners()` | ✅ Done |
 | 14 | Mock Location Detection | ✅ Done |
+| 15 | OEM Compatibility | ✅ Done |
 
 ## 14. Mock Location Detection & Prevention ✅
 
@@ -154,6 +155,18 @@
 **Native**: ✅ Android — `Location.isMock()` (API 31+) / `isFromMockProvider()` (API 18+), satellite count check, `SystemClock.elapsedRealtimeNanos` drift detection. iOS — `CLLocationSourceInformation` (iOS 15+), timestamp drift heuristic. Web — always `mock: false` (browser API has no detection). Dart `LocationProcessor` — timestamp monotonicity check (all platforms).
 
 **Docs**: ✅ Comprehensive [MOCK-DETECTION.md](help/MOCK-DETECTION.md) guide + [CONFIGURATION.md](help/CONFIGURATION.md) updated.
+
+---
+
+## 15. OEM Compatibility (Android) ✅
+
+**What**: Automatic mitigations for aggressive OEM power management (Huawei PowerGenie, Xiaomi MIUI autostart, OnePlus OxygenOS, Samsung One UI, Oppo ColorOS, Vivo FuntouchOS). Settings Health API for device health onboarding.
+
+**Native**: ✅ Android — `OemCompat.kt` with manufacturer detection, aggression ratings, Huawei wakelock tag hack, Xiaomi autostart detection, 8 OEM settings deep-link intents, OEM-safe wakelock lifecycle in `LocationService`, boot receiver wakelock, ProGuard consumer rules. iOS/Web — stubs returning `isAggressiveOem: false`.
+
+**Dart API**: ✅ `Tracelet.getSettingsHealth()` returns manufacturer, model, aggression rating, battery optimization status, autostart availability, OEM settings screens. `Tracelet.openOemSettings(label)` opens OEM settings by label.
+
+**Docs**: ✅ Comprehensive [OEM-COMPATIBILITY.md](help/OEM-COMPATIBILITY.md) guide + all READMEs updated.
 
 ---
 

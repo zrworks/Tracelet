@@ -33,6 +33,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     private var soundManager: SoundManager!
     private var permissionManager: PermissionManager!
     private var preventSuspendManager: PreventSuspendManager!
+    private var backgroundActivitySessionManager: BackgroundActivitySessionManager!
+    private var serviceSessionManager: ServiceSessionManager!
 
     private var heartbeatTimer: Timer?
     private var stopAfterElapsedTimer: Timer?
@@ -90,6 +92,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             instance.locationEngine.stop()
             instance.motionDetector.stop()
             instance.stopHeartbeat()
+            instance.preventSuspendManager.stop()
+            instance.backgroundActivitySessionManager.stop()
+            instance.serviceSessionManager.stop()
             instance.eventDispatcher.sendEnabledChange(false)
             instance.logger.info("stopOnStationary — tracking stopped by motion detector")
         }
@@ -140,6 +145,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
         // Prevent Suspend
         instance.preventSuspendManager = PreventSuspendManager(configManager: instance.configManager)
+
+        // iOS 17+ background session managers
+        instance.backgroundActivitySessionManager = BackgroundActivitySessionManager()
+        instance.serviceSessionManager = ServiceSessionManager()
 
         // Permissions
         instance.permissionManager = PermissionManager()
@@ -376,6 +385,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         startHeartbeat()
         startStopAfterElapsedTimer()
         preventSuspendManager.start()
+        backgroundActivitySessionManager.start()
+        serviceSessionManager.start()
 
         eventDispatcher.sendEnabledChange(true)
         logger.info("start() — tracking started")
@@ -392,6 +403,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         stopHeartbeat()
         cancelStopAfterElapsedTimer()
         preventSuspendManager.stop()
+        backgroundActivitySessionManager.stop()
+        serviceSessionManager.stop()
 
         eventDispatcher.sendEnabledChange(false)
         logger.info("stop() — tracking stopped")
@@ -419,18 +432,31 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             locationEngine.start()
         }
 
+        preventSuspendManager.start()
+        backgroundActivitySessionManager.start()
+        serviceSessionManager.start()
+
         eventDispatcher.sendEnabledChange(true)
         logger.info("startGeofences() — geofence-only mode (highAccuracy=\(configManager.getGeofenceModeHighAccuracy()))")
         result(stateManager.toMap(configManager.getConfig()))
     }
 
     private func handleSetConfig(_ call: FlutterMethodCall, result: FlutterResult) {
+        let wasPreventing = configManager.getPreventSuspend()
         let configMap = call.arguments as? [String: Any] ?? [:]
         let merged = configManager.setConfig(configMap)
 
         if stateManager.enabled {
             locationEngine.stop()
             locationEngine.start()
+
+            // Toggle preventSuspend if it changed mid-session
+            let nowPreventing = configManager.getPreventSuspend()
+            if nowPreventing && !wasPreventing {
+                preventSuspendManager.start()
+            } else if !nowPreventing && wasPreventing {
+                preventSuspendManager.stop()
+            }
         }
 
         result(stateManager.toMap(merged))
@@ -440,7 +466,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         locationEngine.destroy()
         motionDetector.stop()
         stopHeartbeat()
+        cancelStopAfterElapsedTimer()
         geofenceManager.destroy()
+        preventSuspendManager.stop()
+        backgroundActivitySessionManager.stop()
+        serviceSessionManager.stop()
 
         stateManager.reset()
         let newConfig = call.arguments as? [String: Any]
@@ -590,6 +620,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         locationEngine.start()
         motionDetector.start()
         startHeartbeat()
+        backgroundActivitySessionManager.start()
+        serviceSessionManager.start()
         eventDispatcher.sendEnabledChange(true)
     }
 
@@ -598,6 +630,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         locationEngine.stop()
         motionDetector.stop()
         stopHeartbeat()
+        preventSuspendManager.stop()
+        backgroundActivitySessionManager.stop()
+        serviceSessionManager.stop()
         eventDispatcher.sendEnabledChange(false)
     }
 
@@ -652,6 +687,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             self.locationEngine.stop()
             self.motionDetector.stop()
             self.stopHeartbeat()
+            self.preventSuspendManager.stop()
+            self.backgroundActivitySessionManager.stop()
+            self.serviceSessionManager.stop()
             self.eventDispatcher.sendEnabledChange(false)
         }
     }

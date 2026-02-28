@@ -1510,6 +1510,182 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  // ── OEM Health ───────────────────────────────────────────────────────────
+
+  /// Fetch OEM settings health and log key metrics.
+  Future<void> _checkOemHealth() async {
+    try {
+      final health = await tl.Tracelet.getSettingsHealth();
+      final manufacturer = health['manufacturer'] ?? 'unknown';
+      final model = health['model'] ?? '';
+      final aggressive = health['isAggressiveOem'] == true;
+      final rating = health['aggressionRating'] ?? 0;
+      final ignoringBattery = health['isIgnoringBatteryOptimizations'] == true;
+      final autostart = health['autostartAvailable'] == true;
+      final screens =
+          (health['oemSettingsScreens'] as List?)?.cast<String>() ?? [];
+
+      _addLog('OEM', '$manufacturer $model');
+      _addLog(
+        'OEM',
+        'aggressive=$aggressive  rating=$rating/5  '
+            'batteryExempt=$ignoringBattery',
+      );
+      if (autostart) _addLog('OEM', 'autostart available');
+      if (screens.isNotEmpty) {
+        _addLog('OEM', '${screens.length} OEM settings screens available');
+      }
+    } catch (e) {
+      _addLog('ERROR', 'getSettingsHealth() failed: $e');
+    }
+  }
+
+  /// Show a bottom sheet with full OEM health info and action buttons
+  /// for each available OEM settings screen.
+  Future<void> _showOemHealthDialog() async {
+    try {
+      final health = await tl.Tracelet.getSettingsHealth();
+      if (!mounted) return;
+
+      final manufacturer = health['manufacturer'] as String? ?? 'unknown';
+      final model = health['model'] as String? ?? '';
+      final aggressive = health['isAggressiveOem'] == true;
+      final rating = health['aggressionRating'] as int? ?? 0;
+      final ignoringBattery = health['isIgnoringBatteryOptimizations'] == true;
+      final autostart = health['autostartAvailable'] == true;
+      final screens =
+          (health['oemSettingsScreens'] as List?)?.cast<String>() ?? [];
+
+      final cs = Theme.of(context).colorScheme;
+      final ratingColor = switch (rating) {
+        >= 5 => Colors.red,
+        >= 4 => Colors.deepOrange,
+        >= 3 => Colors.orange,
+        >= 2 => Colors.amber,
+        _ => Colors.green,
+      };
+
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) => DraggableScrollableSheet(
+          initialChildSize: 0.55,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (ctx, scrollCtrl) => ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.all(20),
+            children: [
+              // Title
+              Row(
+                children: [
+                  Icon(
+                    aggressive ? Icons.warning_amber : Icons.check_circle,
+                    color: aggressive ? Colors.orange : Colors.green,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Device Health',
+                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Device info
+              _HealthRow('Manufacturer', manufacturer),
+              _HealthRow('Model', model),
+              _HealthRow(
+                'Aggression Rating',
+                '$rating / 5',
+                valueColor: ratingColor,
+              ),
+              _HealthRow(
+                'Battery Exempt',
+                ignoringBattery ? 'Yes' : 'No',
+                valueColor: ignoringBattery ? Colors.green : Colors.red,
+              ),
+              if (autostart) const _HealthRow('Autostart', 'Available'),
+
+              if (aggressive) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cs.errorContainer.withAlpha(80),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: cs.error),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'This device may kill background apps aggressively. '
+                          'Open the settings below to whitelist Tracelet.',
+                          style: TextStyle(color: cs.onErrorContainer),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // OEM settings screens
+              if (screens.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'OEM Settings',
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...screens.map(
+                  (label) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: Text(label),
+                      onPressed: () async {
+                        final ok = await tl.Tracelet.openOemSettings(label);
+                        if (ctx.mounted) {
+                          _addLog('OEM', 'openOemSettings("$label") → $ok');
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+
+              // Battery optimization button
+              if (!ignoringBattery && _isAndroid) ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  icon: const Icon(Icons.battery_saver),
+                  label: const Text('Request Battery Exemption'),
+                  onPressed: () async {
+                    await tl.Tracelet.openBatterySettings();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    _addLog('OEM', 'Requested battery optimization exemption');
+                  },
+                ),
+              ],
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      _addLog('ERROR', 'showOemHealth() failed: $e');
+    }
+  }
+
   // ── Logging ─────────────────────────────────────────────────────────────
 
   Future<void> _getLog() async {
@@ -1823,6 +1999,25 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
 
+                  // ── OEM Health (Android) ──
+                  if (_isAndroid)
+                    _Section(
+                      title: 'OEM Health',
+                      color: Colors.deepOrange,
+                      children: [
+                        _Chip(
+                          'Check Health',
+                          Icons.health_and_safety,
+                          _checkOemHealth,
+                        ),
+                        _Chip(
+                          'Health Dashboard',
+                          Icons.dashboard,
+                          _showOemHealthDialog,
+                        ),
+                      ],
+                    ),
+
                   // ── Logging ──
                   _Section(
                     title: 'Logging',
@@ -2005,6 +2200,38 @@ class _Chip {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OEM Health row
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HealthRow extends StatelessWidget {
+  const _HealthRow(this.label, this.value, {this.valueColor});
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.bold,
+              color: valueColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

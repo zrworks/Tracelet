@@ -5,9 +5,7 @@
 # Tracelet
 
 <p align="center">
-  <img src="assets/tracelet_android_rec.webp" alt="Tracelet Android" width="300"/>
-  &nbsp;&nbsp;
-  <img src="assets/tracelet_ios_rec.webp" alt="Tracelet iOS" width="300"/>
+  <img src="assets/android_ios_rec.webp" alt="Tracelet Android & iOS" width="600"/>
 </p>
 
 <p align="center">

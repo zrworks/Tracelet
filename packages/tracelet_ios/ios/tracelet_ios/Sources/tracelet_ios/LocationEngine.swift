@@ -290,6 +290,12 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
 
+        // Request background execution time for the entire persist + dispatch
+        // chain. Without this, iOS may suspend the app mid-flight when waking
+        // from significant-location-change or background delivery.
+        let bgTaskId = BackgroundTaskHelper.shared.begin("locationUpdate")
+        defer { BackgroundTaskHelper.shared.end(bgTaskId) }
+
         // --- Mock location rejection (defense-in-depth) ---
         if configManager.getRejectMockLocations() && isLocationMock(location) {
             if !mockLocationWarningFired {

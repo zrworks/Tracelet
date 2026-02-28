@@ -69,6 +69,11 @@ final class HttpSyncManager {
         }
 
         isSyncing = true
+
+        // Request background execution time so iOS doesn't suspend us
+        // mid-sync (network I/O + DB markSynced).
+        let bgTaskId = BackgroundTaskHelper.shared.begin("httpSync")
+
         let batchSync = configManager.getBatchSync()
         let maxBatch = configManager.getMaxBatchSize()
         let limit = maxBatch > 0 ? maxBatch : 100
@@ -76,14 +81,20 @@ final class HttpSyncManager {
         let locations = database.getUnsyncedLocations(limit: limit)
         guard !locations.isEmpty else {
             isSyncing = false
+            BackgroundTaskHelper.shared.end(bgTaskId)
             completion?([])
             return
         }
 
+        let wrappedCompletion: ([[String: Any]]) -> Void = { [weak self] synced in
+            BackgroundTaskHelper.shared.end(bgTaskId)
+            completion?(synced)
+        }
+
         if batchSync {
-            syncBatch(locations, completion: completion)
+            syncBatch(locations, completion: wrappedCompletion)
         } else {
-            syncOneByOne(locations, index: 0, synced: [], completion: completion)
+            syncOneByOne(locations, index: 0, synced: [], completion: wrappedCompletion)
         }
     }
 

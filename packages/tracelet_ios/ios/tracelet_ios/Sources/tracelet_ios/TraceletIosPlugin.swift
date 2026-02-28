@@ -86,17 +86,20 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         }
         instance.motionDetector.onStopRequested = { [weak instance] in
             guard let instance = instance else { return }
-            // stopOnStationary: fully stop tracking
-            instance.stateManager.enabled = false
-            instance.stateManager.isMoving = false
-            instance.locationEngine.stop()
-            instance.motionDetector.stop()
-            instance.stopHeartbeat()
-            instance.preventSuspendManager.stop()
-            instance.backgroundActivitySessionManager.stop()
-            instance.serviceSessionManager.stop()
-            instance.eventDispatcher.sendEnabledChange(false)
-            instance.logger.info("stopOnStationary — tracking stopped by motion detector")
+            // Protect teardown — state writes + event dispatch.
+            BackgroundTaskHelper.shared.run("stopOnStationary") {
+                // stopOnStationary: fully stop tracking
+                instance.stateManager.enabled = false
+                instance.stateManager.isMoving = false
+                instance.locationEngine.stop()
+                instance.motionDetector.stop()
+                instance.stopHeartbeat()
+                instance.preventSuspendManager.stop()
+                instance.backgroundActivitySessionManager.stop()
+                instance.serviceSessionManager.stop()
+                instance.eventDispatcher.sendEnabledChange(false)
+                instance.logger.info("stopOnStationary — tracking stopped by motion detector")
+            }
         }
 
         // Geofencing
@@ -394,20 +397,24 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     }
 
     private func handleStop(result: FlutterResult) {
-        stateManager.enabled = false
-        stateManager.isMoving = false
+        // Protect shutdown sequence with a background task so iOS doesn't
+        // suspend us before state is fully persisted.
+        BackgroundTaskHelper.shared.run("stop") {
+            stateManager.enabled = false
+            stateManager.isMoving = false
 
-        locationEngine.stop()
-        locationEngine.onLocationUpdate = nil // clear high-accuracy geofence listener
-        motionDetector.stop()
-        stopHeartbeat()
-        cancelStopAfterElapsedTimer()
-        preventSuspendManager.stop()
-        backgroundActivitySessionManager.stop()
-        serviceSessionManager.stop()
+            locationEngine.stop()
+            locationEngine.onLocationUpdate = nil // clear high-accuracy geofence listener
+            motionDetector.stop()
+            stopHeartbeat()
+            cancelStopAfterElapsedTimer()
+            preventSuspendManager.stop()
+            backgroundActivitySessionManager.stop()
+            serviceSessionManager.stop()
 
-        eventDispatcher.sendEnabledChange(false)
-        logger.info("stop() — tracking stopped")
+            eventDispatcher.sendEnabledChange(false)
+            logger.info("stop() — tracking stopped")
+        }
         result(stateManager.toMap(configManager.getConfig()))
     }
 
@@ -463,21 +470,24 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     }
 
     private func handleReset(_ call: FlutterMethodCall, result: FlutterResult) {
-        locationEngine.destroy()
-        motionDetector.stop()
-        stopHeartbeat()
-        cancelStopAfterElapsedTimer()
-        geofenceManager.destroy()
-        preventSuspendManager.stop()
-        backgroundActivitySessionManager.stop()
-        serviceSessionManager.stop()
+        // Protect teardown with a background task — DB deletes + state writes.
+        BackgroundTaskHelper.shared.run("reset") {
+            locationEngine.destroy()
+            motionDetector.stop()
+            stopHeartbeat()
+            cancelStopAfterElapsedTimer()
+            geofenceManager.destroy()
+            preventSuspendManager.stop()
+            backgroundActivitySessionManager.stop()
+            serviceSessionManager.stop()
 
-        stateManager.reset()
-        let newConfig = call.arguments as? [String: Any]
-        configManager.reset(newConfig)
+            stateManager.reset()
+            let newConfig = call.arguments as? [String: Any]
+            configManager.reset(newConfig)
 
-        isReady = false
-        logger.info("reset() — all subsystems reset")
+            isReady = false
+            logger.info("reset() — all subsystems reset")
+        }
         result(stateManager.toMap(configManager.getConfig()))
     }
 
@@ -626,14 +636,17 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     }
 
     private func handleScheduleStop() {
-        stateManager.enabled = false
-        locationEngine.stop()
-        motionDetector.stop()
-        stopHeartbeat()
-        preventSuspendManager.stop()
-        backgroundActivitySessionManager.stop()
-        serviceSessionManager.stop()
-        eventDispatcher.sendEnabledChange(false)
+        // Protect teardown — state writes + event dispatch.
+        BackgroundTaskHelper.shared.run("scheduleStop") {
+            stateManager.enabled = false
+            locationEngine.stop()
+            motionDetector.stop()
+            stopHeartbeat()
+            preventSuspendManager.stop()
+            backgroundActivitySessionManager.stop()
+            serviceSessionManager.stop()
+            eventDispatcher.sendEnabledChange(false)
+        }
     }
 
     // MARK: - Heartbeat
@@ -681,16 +694,19 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             repeats: false
         ) { [weak self] _ in
             guard let self = self else { return }
-            self.logger.info("stopAfterElapsedMinutes (\(minutes) min) — auto-stopping")
-            self.stateManager.enabled = false
-            self.stateManager.isMoving = false
-            self.locationEngine.stop()
-            self.motionDetector.stop()
-            self.stopHeartbeat()
-            self.preventSuspendManager.stop()
-            self.backgroundActivitySessionManager.stop()
-            self.serviceSessionManager.stop()
-            self.eventDispatcher.sendEnabledChange(false)
+            // Protect teardown — state writes + event dispatch.
+            BackgroundTaskHelper.shared.run("stopAfterElapsed") {
+                self.logger.info("stopAfterElapsedMinutes (\(minutes) min) — auto-stopping")
+                self.stateManager.enabled = false
+                self.stateManager.isMoving = false
+                self.locationEngine.stop()
+                self.motionDetector.stop()
+                self.stopHeartbeat()
+                self.preventSuspendManager.stop()
+                self.backgroundActivitySessionManager.stop()
+                self.serviceSessionManager.stop()
+                self.eventDispatcher.sendEnabledChange(false)
+            }
         }
     }
 

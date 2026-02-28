@@ -15,6 +15,9 @@ final class HeadlessRunner {
     private var isReady = false
     private var pendingEvents: [[String: Any]] = []
 
+    /// Background task protecting engine boot + pending event flush.
+    private var engineBootTaskId: UIBackgroundTaskIdentifier?
+
     func registerCallbacks(_ registrationId: Int64, _ dispatchId: Int64) {
         let defaults = UserDefaults.standard
         defaults.set(registrationId, forKey: HeadlessRunner.registrationKey)
@@ -33,6 +36,10 @@ final class HeadlessRunner {
             channel.invokeMethod("headlessEvent", arguments: enrichedEvent)
         } else {
             pendingEvents.append(enrichedEvent)
+            // Request background time to complete engine boot + event flush.
+            if engineBootTaskId == nil {
+                engineBootTaskId = BackgroundTaskHelper.shared.begin("headlessEngineBoot")
+            }
             startEngineIfNeeded()
         }
     }
@@ -43,6 +50,8 @@ final class HeadlessRunner {
         channel = nil
         isReady = false
         pendingEvents.removeAll()
+        BackgroundTaskHelper.shared.end(engineBootTaskId)
+        engineBootTaskId = nil
     }
 
     // MARK: - Engine management
@@ -99,5 +108,9 @@ final class HeadlessRunner {
             channel?.invokeMethod("headlessEvent", arguments: event)
         }
         pendingEvents.removeAll()
+
+        // Engine is up and events are dispatched — end the boot task.
+        BackgroundTaskHelper.shared.end(engineBootTaskId)
+        engineBootTaskId = nil
     }
 }

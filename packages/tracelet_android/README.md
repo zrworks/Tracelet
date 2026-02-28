@@ -10,6 +10,7 @@ This package uses Kotlin and native Android APIs (FusedLocationProvider, Room, W
 - **Trip Detection** — `TripManager.kt` tracks motion state transitions to detect trip start/stop. Each trip includes distance, duration, waypoints, and start/stop locations. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/TRIP-DETECTION.md)
 - **Polygon Geofences** — Ray-casting point-in-polygon algorithm in `GeofenceManager.kt` for arbitrary polygon containment checks alongside circular geofences. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/POLYGON-GEOFENCES.md)
 - **Mock Location Detection** — Multi-layered spoof detection using `Location.isMock()` (API 31+) / `isFromMockProvider()` (API 18+), satellite count analysis, and `SystemClock.elapsedRealtimeNanos` drift detection. Configurable via `MockDetectionLevel`. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
+- **OEM Compatibility** — Automatic mitigations for aggressive OEM power management: Huawei PowerGenie wakelock tag hack, Xiaomi autostart detection, Samsung/OnePlus/Oppo/Vivo settings deep-links, boot receiver wakelock, and ProGuard consumer rules. Settings Health API exposes device health for user-facing onboarding. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)
 
 ## Usage
 

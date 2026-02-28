@@ -1,3 +1,10 @@
+## 0.8.0
+
+* **FEAT**: `getSettingsHealth()` abstract method — OEM settings health check returning manufacturer, aggression rating, battery optimization status, and available OEM settings screens.
+* **FEAT**: `openOemSettings(String label)` abstract method — open OEM-specific settings screens by label.
+* **FEAT**: `MethodChannelTracelet` implementations for both new OEM methods.
+* **DOCS**: Update README with OEM Compatibility API reference.
+
 ## 0.7.1
 
 * **DOCS**: Update README with shared Dart algorithms description and mock detection reference.

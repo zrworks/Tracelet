@@ -285,6 +285,13 @@ class TraceletAndroidPlugin :
                 result.success(handleShowSettings(action))
             }
 
+            // OEM compatibility
+            "getSettingsHealth" -> result.success(OemCompat.getSettingsHealth(context))
+            "openOemSettings" -> {
+                val label = call.arguments as? String ?: ""
+                result.success(OemCompat.openOemSettingsScreen(context, label))
+            }
+
             // Background Tasks
             "startBackgroundTask" -> result.success(0) // Android doesn't need explicit BG tasks
             "stopBackgroundTask" -> result.success(call.arguments as? Int ?: 0)

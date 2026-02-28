@@ -687,6 +687,67 @@ class Tracelet {
   }
 
   // ---------------------------------------------------------------------------
+  // OEM Compatibility
+  // ---------------------------------------------------------------------------
+
+  /// Get OEM settings health information.
+  ///
+  /// Returns a map describing the device's OEM background-killing behavior,
+  /// battery optimization status, and available OEM-specific settings screens.
+  ///
+  /// Use this to build a "Device Health" UI that guides users through
+  /// OEM-specific power management settings. Aggressive manufacturers
+  /// (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo) often kill background
+  /// apps — this API helps users fix those settings.
+  ///
+  /// **Returned map keys:**
+  /// - `manufacturer` (`String`): Device manufacturer.
+  /// - `model` (`String`): Device model.
+  /// - `isAggressiveOem` (`bool`): Whether this OEM is known to aggressively
+  ///   kill background services.
+  /// - `aggressionRating` (`int`): 0–5 severity rating per dontkillmyapp.com.
+  /// - `isIgnoringBatteryOptimizations` (`bool`): Whether the app is exempt.
+  /// - `autostartAvailable` (`bool`): Whether Xiaomi/MIUI autostart
+  ///   settings are available.
+  /// - `oemSettingsScreens` (`List<Map<String, String>>`): Available
+  ///   OEM-specific settings screens, each with `label` and `description`.
+  ///
+  /// On iOS and Web, returns a minimal map with `isAggressiveOem: false`.
+  ///
+  /// ```dart
+  /// final health = await Tracelet.getSettingsHealth();
+  /// if (health['isAggressiveOem'] == true) {
+  ///   final screens = health['oemSettingsScreens'] as List;
+  ///   for (final screen in screens) {
+  ///     print('${screen['label']}: ${screen['description']}');
+  ///   }
+  /// }
+  /// ```
+  static Future<Map<String, Object?>> getSettingsHealth() {
+    return _platform.getSettingsHealth();
+  }
+
+  /// Open an OEM-specific settings screen by [label].
+  ///
+  /// The [label] must match one of the labels from the `oemSettingsScreens`
+  /// list returned by [getSettingsHealth].
+  ///
+  /// Returns `true` if the settings screen was opened successfully,
+  /// `false` if the label was not found or the intent failed to resolve.
+  ///
+  /// On iOS and Web, always returns `false` (no OEM power management).
+  ///
+  /// ```dart
+  /// final opened = await Tracelet.openOemSettings('Xiaomi Autostart');
+  /// if (!opened) {
+  ///   print('Settings screen not available on this device.');
+  /// }
+  /// ```
+  static Future<bool> openOemSettings(String label) {
+    return _platform.openOemSettings(label);
+  }
+
+  // ---------------------------------------------------------------------------
   // Background Tasks
   // ---------------------------------------------------------------------------
 

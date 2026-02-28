@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.tracelet.tracelet_android.ConfigManager
@@ -13,6 +14,7 @@ import com.tracelet.tracelet_android.EventDispatcher
 import com.tracelet.tracelet_android.StateManager
 import com.tracelet.tracelet_android.db.TraceletDatabase
 import com.tracelet.tracelet_android.location.LocationEngine
+import com.tracelet.tracelet_android.util.OemCompat
 
 /**
  * Foreground service for persistent background location tracking.
@@ -103,6 +105,9 @@ class LocationService : Service() {
     // Populated from ConfigManager at start time
     private lateinit var configManager: ConfigManager
 
+    // OEM-safe wakelock to prevent aggressive power management
+    private var wakelock: PowerManager.WakeLock? = null
+
     // Callback for notification action button taps dispatched to EventDispatcher
     var onNotificationAction: ((String) -> Unit)? = null
 
@@ -117,6 +122,7 @@ class LocationService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 startForegroundWithNotification()
+                acquireOemWakelock()
                 isRunning = true
 
                 // If started after a device reboot, bootstrap native tracking
@@ -127,6 +133,7 @@ class LocationService : Service() {
             }
             ACTION_STOP -> {
                 stopBootTrackingInternal()
+                releaseOemWakelock()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 isRunning = false
@@ -152,6 +159,7 @@ class LocationService : Service() {
             return // Service survives task removal with native tracking
         }
         stopBootTrackingInternal()
+        releaseOemWakelock()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         isRunning = false
@@ -159,8 +167,38 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         stopBootTrackingInternal()
+        releaseOemWakelock()
         isRunning = false
         super.onDestroy()
+    }
+
+    // =========================================================================
+    // OEM wakelock management
+    // =========================================================================
+
+    /**
+     * Acquires an OEM-safe partial wakelock.
+     *
+     * On Huawei EMUI 9+, uses the "LocationManagerService" tag to bypass
+     * PowerGenie process killing. On other devices, uses a standard tag.
+     * The wakelock is held for the lifetime of the service to prevent
+     * aggressive OEM power managers from suspending our process.
+     */
+    private fun acquireOemWakelock() {
+        if (wakelock?.isHeld == true) return
+        wakelock = OemCompat.acquireOemSafeWakelock(applicationContext)
+    }
+
+    private fun releaseOemWakelock() {
+        try {
+            if (wakelock?.isHeld == true) {
+                wakelock?.release()
+                Log.d(TAG, "Released OEM wakelock")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing wakelock: ${e.message}")
+        }
+        wakelock = null
     }
 
     // =========================================================================

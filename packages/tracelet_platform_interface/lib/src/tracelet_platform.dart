@@ -348,6 +348,44 @@ abstract class TraceletPlatform extends PlatformInterface {
   }
 
   // ---------------------------------------------------------------------------
+  // OEM Compatibility
+  // ---------------------------------------------------------------------------
+
+  /// Get OEM settings health information.
+  ///
+  /// Returns a map containing:
+  /// - `manufacturer` (`String`): Device manufacturer (e.g. "Huawei").
+  /// - `model` (`String`): Device model.
+  /// - `isAggressiveOem` (`bool`): Whether this OEM aggressively kills
+  ///   background apps.
+  /// - `aggressionRating` (`int`): Aggression rating 0–5 matching
+  ///   dontkillmyapp.com scores.
+  /// - `isIgnoringBatteryOptimizations` (`bool`): Whether the app is
+  ///   exempt from battery optimizations.
+  /// - `autostartAvailable` (`bool`): Whether the OEM autostart settings
+  ///   screen is available (Xiaomi/MIUI).
+  /// - `oemSettingsScreens` (`List<Map<String, String>>`): Available
+  ///   OEM-specific settings screens with `label` and `description` keys.
+  ///
+  /// On iOS and Web, returns a minimal map with `isAggressiveOem: false`.
+  Future<Map<String, Object?>> getSettingsHealth() {
+    throw UnimplementedError('getSettingsHealth() has not been implemented.');
+  }
+
+  /// Open an OEM-specific settings screen by [label].
+  ///
+  /// The [label] must match one of the labels returned by
+  /// [getSettingsHealth]'s `oemSettingsScreens` list.
+  ///
+  /// Returns `true` if the screen was opened, `false` if the label
+  /// was not found or the intent could not be resolved.
+  ///
+  /// On iOS and Web, always returns `false`.
+  Future<bool> openOemSettings(String label) {
+    throw UnimplementedError('openOemSettings() has not been implemented.');
+  }
+
+  // ---------------------------------------------------------------------------
   // Background Tasks
   // ---------------------------------------------------------------------------
 

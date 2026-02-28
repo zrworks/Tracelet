@@ -1,3 +1,17 @@
+## 0.8.0
+
+* **FEAT**: `OemCompat` utility — comprehensive OEM compatibility layer with manufacturer detection (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo), aggression ratings (0–5), and OEM-specific settings deep-links.
+* **FEAT**: Huawei PowerGenie wakelock hack — uses `LocationManagerService` wakelock tag to bypass PowerGenie background killing.
+* **FEAT**: Xiaomi autostart detection — runtime check for MIUI autostart management activity availability.
+* **FEAT**: OEM settings deep-links — 8 manufacturer-specific settings screens (autostart, battery saver, app launch, protected apps) validated via `PackageManager.resolveActivity()`.
+* **FEAT**: `getSettingsHealth` method channel handler — returns full device OEM health map.
+* **FEAT**: `openOemSettings` method channel handler — launches OEM settings by label.
+* **PERF**: OEM-safe wakelock lifecycle in `LocationService` — acquire on start, release on stop/destroy/taskRemoved.
+* **PERF**: Boot receiver wakelock — temporary 60-second wakelock during `BOOT_COMPLETED` processing to survive aggressive OEM process killing.
+* **CHORE**: ProGuard/R8 consumer rules (`consumer-rules.pro`) — prevents stripping of services, receivers, Room entities, and Kotlin metadata in release builds.
+* **DOCS**: Update README with OEM compatibility feature and documentation link.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.8.0.
+
 ## 0.7.1
 
 * **DOCS**: Add mock location detection feature to README with platform-specific detection details.

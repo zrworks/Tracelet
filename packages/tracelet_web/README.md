@@ -31,6 +31,7 @@ For a full compatibility matrix of what works and what doesn't on web, see the [
 | Permissions | Partial | Via `navigator.permissions.query()` |
 | Connectivity | Full | Via `navigator.onLine` events |
 | Mock Detection | Passthrough | `Location.isMock` always `false` — browser API has no spoof detection |
+| OEM Compatibility | Stub | `isAggressiveOem: false` — no OEM power management on web |
 | Headless / Background | No | Not possible on web |
 | System Settings | No | Cannot open OS settings from browser |
 

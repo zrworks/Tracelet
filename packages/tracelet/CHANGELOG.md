@@ -1,3 +1,12 @@
+## 0.8.0
+
+* **FEAT**: OEM compatibility — automatic mitigations for aggressive OEM power management (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo).
+* **FEAT**: `Tracelet.getSettingsHealth()` — device health API returning manufacturer, aggression rating, battery optimization status, and available OEM settings screens.
+* **FEAT**: `Tracelet.openOemSettings(label)` — open OEM-specific settings screens (autostart, battery saver, app launch) by label.
+* **DOCS**: Comprehensive [OEM-COMPATIBILITY.md](help/OEM-COMPATIBILITY.md) guide with per-manufacturer instructions.
+* **DOCS**: Update README with OEM compatibility feature and documentation link.
+* **CHORE**: Bump all platform dependencies to ^0.8.0.
+
 ## 0.7.1
 
 * **DOCS**: Add mock location detection feature to README with documentation links and feature description.

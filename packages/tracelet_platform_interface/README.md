@@ -6,6 +6,8 @@ This package provides the abstract classes and types that the platform-specific 
 
 It also contains shared Dart algorithms used by all platforms: `LocationProcessor` (distance/accuracy/speed/mock filtering), `KalmanLocationFilter` (GPS smoothing), `GeofenceEvaluator`, `TripManager`, `ScheduleParser`, `PersistDecider`, and `GeoUtils`. See `MockDetectionLevel` enum and `LocationProcessor` mock detection for cross-platform spoof rejection.
 
+The OEM Compatibility API (`getSettingsHealth()`, `openOemSettings()`) is defined here as abstract methods, with platform implementations providing manufacturer-specific behavior.
+
 ## Usage
 
 **You should not depend on this package directly.** Instead, depend on [`tracelet`](https://pub.dev/packages/tracelet) which automatically includes the correct platform implementation.

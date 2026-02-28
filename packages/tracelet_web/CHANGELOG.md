@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+* **FEAT**: OEM compatibility stubs — `getSettingsHealth()` returns `isAggressiveOem: false` (no OEM power management on web), `openOemSettings()` returns `false`.
+* **DOCS**: Update README with OEM compatibility stub in feature table.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.8.0.
+
 ## 0.7.1
 
 * **DOCS**: Add mock detection passthrough note to README feature table.

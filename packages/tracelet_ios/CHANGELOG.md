@@ -1,3 +1,9 @@
+## 0.8.0
+
+* **FEAT**: OEM compatibility stubs — `getSettingsHealth` returns `isAggressiveOem: false` (iOS has no OEM power management issues), `openOemSettings` returns `false`.
+* **DOCS**: Update README with OEM compatibility note and documentation link.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.8.0.
+
 ## 0.7.1
 
 * **DOCS**: Add mock location detection feature to README with platform-specific detection details.

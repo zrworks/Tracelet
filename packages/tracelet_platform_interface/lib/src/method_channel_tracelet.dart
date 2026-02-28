@@ -365,6 +365,24 @@ class MethodChannelTracelet extends TraceletPlatform {
   }
 
   // ---------------------------------------------------------------------------
+  // OEM Compatibility
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Map<String, Object?>> getSettingsHealth() async {
+    return _invokeMap('getSettingsHealth');
+  }
+
+  @override
+  Future<bool> openOemSettings(String label) async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'openOemSettings',
+      label,
+    );
+    return result ?? false;
+  }
+
+  // ---------------------------------------------------------------------------
   // Background Tasks
   // ---------------------------------------------------------------------------
 

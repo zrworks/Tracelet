@@ -279,6 +279,21 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             let action = call.arguments as? String ?? ""
             result(handleShowSettings(action))
 
+        // OEM Compatibility (iOS has no aggressive OEM power management)
+        case "getSettingsHealth":
+            let device = UIDevice.current
+            result([
+                "manufacturer": "Apple",
+                "model": device.model,
+                "isAggressiveOem": false,
+                "aggressionRating": 0,
+                "isIgnoringBatteryOptimizations": true,
+                "autostartAvailable": false,
+                "oemSettingsScreens": [] as [[String: String]],
+            ] as [String: Any])
+        case "openOemSettings":
+            result(false) // No OEM settings on iOS
+
         // Background Tasks
         case "startBackgroundTask":
             let taskId = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)

@@ -475,6 +475,26 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<bool> showSettings(String action) async => false;
 
   // ---------------------------------------------------------------------------
+  // OEM Compatibility (no OEM power management on web)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Map<String, Object?>> getSettingsHealth() async {
+    return <String, Object?>{
+      'manufacturer': 'Web',
+      'model': 'Browser',
+      'isAggressiveOem': false,
+      'aggressionRating': 0,
+      'isIgnoringBatteryOptimizations': true,
+      'autostartAvailable': false,
+      'oemSettingsScreens': <Map<String, String>>[],
+    };
+  }
+
+  @override
+  Future<bool> openOemSettings(String label) async => false;
+
+  // ---------------------------------------------------------------------------
   // Background Tasks (stubs — no background execution on web)
   // ---------------------------------------------------------------------------
 

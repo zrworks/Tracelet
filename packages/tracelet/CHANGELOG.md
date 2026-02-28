@@ -1,3 +1,11 @@
+## 0.8.1
+
+* **PERF**: iOS background hardening — all native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) now wrapped in `beginBackgroundTask` for safe background execution.
+* **FEAT**: iOS 17+ `CLBackgroundActivitySession` support — extends background runtime for location tracking.
+* **FEAT**: iOS 18+ `CLServiceSession` support — maintains authorization state during background execution.
+* **FIX**: iOS `preventSuspend` lifecycle gaps — audio keep-alive now correctly started/stopped in all tracking modes and transitions.
+* **CHORE**: Bump `tracelet_ios` to ^0.8.1.
+
 ## 0.8.0
 
 * **FEAT**: OEM compatibility — automatic mitigations for aggressive OEM power management (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo).

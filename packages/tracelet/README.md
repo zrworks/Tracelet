@@ -46,6 +46,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Shared Dart algorithms** — location filtering, geofence proximity, schedule parsing, and persistence logic run in shared Dart for cross-platform consistency
 - **Mock location detection** — detect and reject spoofed GPS with configurable detection levels (basic platform flags + advanced heuristics). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
 - **OEM compatibility** — automatic mitigations for aggressive OEM power management (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo) with Settings Health API. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)
+- **iOS background hardening** — all critical native operations wrapped in `beginBackgroundTask`, with iOS 17+ `CLBackgroundActivitySession` and iOS 18+ `CLServiceSession` for extended background runtime. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/IOS-BACKGROUND-HARDENING.md)
 
 ## Quick Start
 
@@ -157,6 +158,7 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 | [Web Support](https://github.com/Ikolvi/Tracelet/blob/main/help/WEB-SUPPORT.md) | Web platform capabilities, limitations, and browser APIs |
 | [Mock Detection](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md) | Detect & reject spoofed GPS — detection levels, heuristics, platform details |
 | [OEM Compatibility](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md) | Huawei/Xiaomi/OnePlus/Samsung/Oppo/Vivo mitigations, Settings Health API |
+| [iOS Background Hardening](https://github.com/Ikolvi/Tracelet/blob/main/help/IOS-BACKGROUND-HARDENING.md) | Background task protection, session APIs, prevent suspend |
 
 ## Architecture
 

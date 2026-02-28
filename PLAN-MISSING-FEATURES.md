@@ -145,6 +145,7 @@
 | 13 | `removeListeners()` | ✅ Done |
 | 14 | Mock Location Detection | ✅ Done |
 | 15 | OEM Compatibility | ✅ Done |
+| 16 | iOS Background Hardening | ✅ Done |
 
 ## 14. Mock Location Detection & Prevention ✅
 
@@ -167,6 +168,16 @@
 **Dart API**: ✅ `Tracelet.getSettingsHealth()` returns manufacturer, model, aggression rating, battery optimization status, autostart availability, OEM settings screens. `Tracelet.openOemSettings(label)` opens OEM settings by label.
 
 **Docs**: ✅ Comprehensive [OEM-COMPATIBILITY.md](help/OEM-COMPATIBILITY.md) guide + all READMEs updated.
+
+---
+
+## 16. iOS Background Hardening ✅
+
+**What**: Wrap all critical iOS native operations in `UIApplication.beginBackgroundTask` to prevent iOS from killing the app mid-operation during background execution. Add iOS 17+ `CLBackgroundActivitySession` and iOS 18+ `CLServiceSession` for extended background runtime. Fix preventSuspend lifecycle gaps.
+
+**Native**: ✅ `BackgroundTaskHelper.swift` — central thread-safe singleton with `begin()`, `end()`, `run()`, `beginAsync()` methods. Wraps `LocationEngine.didUpdateLocations` (persist + dispatch), `HttpSyncManager.sync()` (HTTP + DB), `HeadlessRunner.dispatchEvent()` (engine boot), and all `TraceletIosPlugin` lifecycle transitions (handleStop, handleReset, onStopRequested, handleScheduleStop, stopAfterElapsedTimer). `BackgroundActivitySessionManager.swift` (iOS 17+), `ServiceSessionManager.swift` (iOS 18+). preventSuspendManager wired into all start/stop paths.
+
+**Docs**: ✅ Comprehensive [IOS-BACKGROUND-HARDENING.md](help/IOS-BACKGROUND-HARDENING.md) guide + all READMEs + CHANGELOGs updated.
 
 ---
 

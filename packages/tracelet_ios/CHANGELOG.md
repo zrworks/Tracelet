@@ -1,3 +1,18 @@
+## 0.8.1
+
+* **FEAT**: `BackgroundTaskHelper` — central thread-safe utility wrapping `UIApplication.beginBackgroundTask` for safe background execution of native operations.
+* **FEAT**: iOS 17+ `CLBackgroundActivitySession` support via `BackgroundActivitySessionManager` — extends background runtime for location-tracking apps.
+* **FEAT**: iOS 18+ `CLServiceSession` support via `ServiceSessionManager` — maintains authorization state during background execution.
+* **PERF**: Wrap `LocationEngine.didUpdateLocations` in background task — protects persist + dispatch chain from iOS suspension.
+* **PERF**: Wrap `HttpSyncManager.sync()` in background task — protects entire HTTP upload + DB cleanup cycle.
+* **PERF**: Wrap `HeadlessRunner.dispatchEvent()` engine boot in background task — ensures Dart engine starts fully before iOS reclaims resources.
+* **PERF**: Wrap all `TraceletIosPlugin` lifecycle transitions (`handleStop`, `handleReset`, `onStopRequested`, `handleScheduleStop`, `stopAfterElapsedTimer`) in background tasks.
+* **FIX**: `preventSuspendManager.start()` now called in `startGeofences()` — was missing, causing audio keep-alive to not activate in geofence-only mode.
+* **FIX**: `preventSuspendManager.stop()` now called in all stop paths (reset, stopOnStationary, scheduleStop, stopAfterElapsed) — was only called in `handleStop()`.
+* **FIX**: `setConfig()` now toggles `preventSuspendManager` mid-session when `preventSuspend` changes.
+* **FIX**: `reset()` now calls `cancelStopAfterElapsedTimer()` — was leaving stale timer running after reset.
+* **FIX**: iOS 17+/18+ session managers wired into all lifecycle paths (start, stop, startGeofences, reset, scheduleStart/Stop, stopOnStationary, stopAfterElapsed).
+
 ## 0.8.0
 
 * **FEAT**: OEM compatibility stubs — `getSettingsHealth` returns `isAggressiveOem: false` (iOS has no OEM power management issues), `openOemSettings` returns `false`.

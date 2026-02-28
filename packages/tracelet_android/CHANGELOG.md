@@ -1,3 +1,7 @@
+## 0.8.1
+
+* **DOCS**: Document iOS background hardening changes (no Android code changes in this release).
+
 ## 0.8.0
 
 * **FEAT**: `OemCompat` utility — comprehensive OEM compatibility layer with manufacturer detection (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo), aggression ratings (0–5), and OEM-specific settings deep-links.

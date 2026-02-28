@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+* **DOCS**: Document iOS background hardening changes (no web code changes in this release).
+
 ## 0.8.0
 
 * **FEAT**: OEM compatibility stubs — `getSettingsHealth()` returns `isAggressiveOem: false` (no OEM power management on web), `openOemSettings()` returns `false`.

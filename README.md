@@ -43,6 +43,8 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Timestamp metadata** — Optional extra timing fields on each location record via `enableTimestampMeta`.
 - **Geofence high-accuracy mode** — Run the full GPS + motion pipeline in geofence-only mode (Android) via `geofenceModeHighAccuracy`.
 - **Prevent suspend (iOS)** — Silent audio keep-alive to prevent iOS from suspending the app in the background.
+- **iOS background task protection** — All critical native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) wrapped in `beginBackgroundTask` for safe background execution.
+- **iOS 17+ / 18+ session APIs** — `CLBackgroundActivitySession` (iOS 17+) and `CLServiceSession` (iOS 18+) for extended background runtime and authorization state.
 - **Dart-controlled permissions** — No native dialogs. Full Dart-side customization of permission UI, translations, and behavior.
 - **Foreground service toggle** — Run with or without a persistent notification (Android).
 - **Shared Dart algorithms** — Location filtering (elasticity, accuracy, speed), geofence proximity evaluation, schedule parsing, and persistence logic all run in shared Dart code for cross-platform consistency. Write once — works on Android, iOS, web, and future desktop platforms.
@@ -209,6 +211,7 @@ await tl.Tracelet.start();
 | [Trip Detection](help/TRIP-DETECTION.md) | Automatic trip events — setup, API, edge cases |
 | [Polygon Geofences](help/POLYGON-GEOFENCES.md) | Polygon geofences — vertices, ray-casting, examples |
 | [Web Support](help/WEB-SUPPORT.md) | Web platform capabilities, limitations, and browser APIs |
+| [iOS Background Hardening](help/IOS-BACKGROUND-HARDENING.md) | Background task protection, session APIs, prevent suspend |
 
 ## Requirements
 

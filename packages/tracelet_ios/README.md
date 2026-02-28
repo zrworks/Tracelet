@@ -11,6 +11,9 @@ This package uses Swift and native Apple frameworks (CoreLocation, CoreMotion, B
 - **Polygon Geofences** — Ray-casting point-in-polygon algorithm in `GeofenceManager.swift` for arbitrary polygon containment checks alongside circular geofences. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/POLYGON-GEOFENCES.md)
 - **Mock Location Detection** — Spoof detection using `CLLocationSourceInformation` (iOS 15+) and timestamp drift heuristic. Configurable via `MockDetectionLevel`. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
 - **OEM Compatibility** — iOS has no OEM-specific power management issues. The Settings Health API returns `isAggressiveOem: false` and an empty `oemSettingsScreens` list. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)
+- **Background Task Protection** — All critical native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) are wrapped in `UIApplication.beginBackgroundTask` to prevent iOS from killing the app mid-operation.
+- **iOS 17+ Background Activity Session** — `CLBackgroundActivitySession` extends background runtime for continuous location tracking without user interaction.
+- **iOS 18+ Service Session** — `CLServiceSession` maintains location authorization state during background execution.
 
 ## Usage
 

@@ -530,9 +530,9 @@
   - [ ] If headless callback registered:
     - [ ] Create `FlutterEngine`, call `run(withEntrypoint:)`
     - [ ] Dispatch `HeadlessEvent` via MethodChannel to Dart callback
-  - [ ] `UIApplication.beginBackgroundTask()` — wrap short tasks (30s)
-  - [ ] iOS 17+: `CLBackgroundActivitySession` for extended execution
-  - [ ] `CLServiceSession` for maintaining authorization state
+  - [x] `UIApplication.beginBackgroundTask()` — wrap short tasks (30s)
+  - [x] iOS 17+: `CLBackgroundActivitySession` for extended execution
+  - [x] `CLServiceSession` for maintaining authorization state (iOS 18+)
 - [ ] Store callback info in `UserDefaults`
 
 ### 4.10 Scheduling, Sounds, Logging, Permissions
@@ -771,7 +771,19 @@
 - [ ] `packages/tracelet_macos/` — CoreLocation on macOS (shared Darwin source with iOS)
 - [ ] Windows/Linux via GNSS APIs (low priority)
 
-### 7.10 Analytics Dashboard
+### 7.10 iOS Background Hardening
+- [x] `BackgroundTaskHelper` — central thread-safe `beginBackgroundTask` / `endBackgroundTask` utility
+- [x] Wrap `LocationEngine.didUpdateLocations` — persist + dispatch chain protected with `defer`
+- [x] Wrap `HttpSyncManager.sync()` — full HTTP + DB cleanup cycle protected
+- [x] Wrap `HeadlessRunner.dispatchEvent()` — engine boot protected
+- [x] Wrap all `TraceletIosPlugin` lifecycle transitions (`handleStop`, `handleReset`, `onStopRequested`, `handleScheduleStop`, `stopAfterElapsedTimer`)
+- [x] `BackgroundActivitySessionManager` — iOS 17+ `CLBackgroundActivitySession` for extended background runtime
+- [x] `ServiceSessionManager` — iOS 18+ `CLServiceSession` for authorization state continuity
+- [x] `preventSuspendManager` lifecycle fixes — start/stop in all tracking modes and transitions
+- [x] Session managers wired into all lifecycle paths (start, stop, startGeofences, reset, scheduleStart/Stop, stopOnStationary, stopAfterElapsed)
+- [x] `help/IOS-BACKGROUND-HARDENING.md` comprehensive documentation
+
+### 7.11 Analytics Dashboard
 - [ ] Open-source companion web dashboard (Vue.js / React)
 - [ ] Real-time device tracking on map
 - [ ] Historical route playback

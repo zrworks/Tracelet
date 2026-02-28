@@ -1,3 +1,7 @@
+## 0.8.1
+
+* **DOCS**: Document iOS background hardening and session manager support in README.
+
 ## 0.8.0
 
 * **FEAT**: `getSettingsHealth()` abstract method — OEM settings health check returning manufacturer, aggression rating, battery optimization status, and available OEM settings screens.

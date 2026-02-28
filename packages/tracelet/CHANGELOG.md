@@ -1,3 +1,7 @@
+## 0.8.2
+
+* **DOCS**: Improve README visuals with combined Android & iOS demo image.
+
 ## 0.8.1
 
 * **PERF**: iOS background hardening — all native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) now wrapped in `beginBackgroundTask` for safe background execution.

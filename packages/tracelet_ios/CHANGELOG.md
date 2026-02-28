@@ -1,3 +1,7 @@
+## 0.8.2
+
+* **DOCS**: Improve README visuals with combined Android & iOS demo image.
+
 ## 0.8.1
 
 * **FEAT**: `BackgroundTaskHelper` — central thread-safe utility wrapping `UIApplication.beginBackgroundTask` for safe background execution of native operations.

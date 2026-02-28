@@ -1,3 +1,7 @@
+## 0.8.2
+
+* **DOCS**: Improve README visuals with combined Android & iOS demo image.
+
 ## 0.8.1
 
 * **DOCS**: Document iOS background hardening and session manager support in README.

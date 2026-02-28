@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+* **DOCS**: Improve README visuals with combined Android & iOS demo image.
+
 ## 0.8.1
 
 * **FIX**: Fix `_bridgedController` dropping all EventChannel events — `onLocation`, `onMotionChange`, `onHeartbeat`, `onGeofence`, and all other event streams were broken on web (events consumed but never forwarded to Dart). Now properly pipes data via `controller.add()`.

@@ -169,8 +169,9 @@ class WebEventDispatcher {
   /// access to `WebStorageEngine`. Actual log persistence is handled by the
   /// storage engine via `TraceletWebPlugin.log()`.
   void log(String level, String message) {
-    // No-op here — sub-engines use this for convenience logging.
-    // Persistent logging goes through WebStorageEngine.
+    // Output to browser console for diagnostics.
+    // ignore: avoid_print
+    print('[$level] $message');
   }
 
   // ---------------------------------------------------------------------------

@@ -102,25 +102,47 @@ class WebLocationEngine {
     final maximumAge = options['maximumAge'] as int? ?? 5000;
     final highAccuracy = accuracy <= 1;
 
+    _events.log(
+      'debug',
+      '[Tracelet Web] getCurrentPosition: highAccuracy=$highAccuracy '
+          'timeout=${timeout}s maximumAge=${maximumAge}ms',
+    );
+
     return _browserGetPosition(
-      enableHighAccuracy: highAccuracy,
-      timeoutMs: timeout * 1000,
-      maximumAgeMs: maximumAge,
-    ).catchError((Object error) {
-      // Fallback: if high-accuracy request timed out, retry without it.
-      // Desktop browsers often lack GPS hardware, so network-only is the
-      // only viable provider.
-      if (!highAccuracy) throw error;
-      _events.log(
-        'warn',
-        '[Tracelet Web] High-accuracy position timed out, retrying with low accuracy',
-      );
-      return _browserGetPosition(
-        enableHighAccuracy: false,
-        timeoutMs: timeout * 1000,
-        maximumAgeMs: maximumAge,
-      );
-    });
+          enableHighAccuracy: highAccuracy,
+          timeoutMs: timeout * 1000,
+          maximumAgeMs: maximumAge,
+        )
+        .then((location) {
+          _events.log(
+            'debug',
+            '[Tracelet Web] getCurrentPosition success: '
+                '${location['coords'] is Map ? (location['coords'] as Map)['latitude'] : 'unknown'}, '
+                '${location['coords'] is Map ? (location['coords'] as Map)['longitude'] : 'unknown'}',
+          );
+          return location;
+        })
+        .catchError((Object error) {
+          // Fallback: if high-accuracy request timed out, retry without it.
+          // Desktop browsers often lack GPS hardware, so network-only is the
+          // only viable provider.
+          if (!highAccuracy) {
+            _events.log(
+              'error',
+              '[Tracelet Web] getCurrentPosition failed (lowAccuracy): $error',
+            );
+            throw error;
+          }
+          _events.log(
+            'warn',
+            '[Tracelet Web] High-accuracy position timed out, retrying with low accuracy',
+          );
+          return _browserGetPosition(
+            enableHighAccuracy: false,
+            timeoutMs: timeout * 1000,
+            maximumAgeMs: maximumAge,
+          );
+        });
   }
 
   /// Low-level wrapper around the browser Geolocation `getCurrentPosition`.
@@ -137,13 +159,29 @@ class WebLocationEngine {
       maximumAge: maximumAgeMs,
     );
 
+    _events.log(
+      'debug',
+      '[Tracelet Web] _browserGetPosition: calling navigator.geolocation.getCurrentPosition '
+          '(highAccuracy=$enableHighAccuracy, timeout=${timeoutMs}ms, maxAge=${maximumAgeMs}ms)',
+    );
+
     web.window.navigator.geolocation.getCurrentPosition(
       ((web.GeolocationPosition pos) {
-        final locationMap = _positionToMap(pos);
-        _updateLastLocation(locationMap);
-        completer.complete(locationMap);
+        _events.log('debug', '[Tracelet Web] browser success callback fired');
+        try {
+          final locationMap = _positionToMap(pos);
+          _updateLastLocation(locationMap);
+          completer.complete(locationMap);
+        } catch (e) {
+          _events.log('error', '[Tracelet Web] _positionToMap threw: $e');
+          completer.completeError(e);
+        }
       }).toJS,
       ((web.GeolocationPositionError err) {
+        _events.log(
+          'warn',
+          '[Tracelet Web] browser error callback: code=${err.code} message=${err.message}',
+        );
         completer.completeError(
           StateError('Geolocation error ${err.code}: ${err.message}'),
         );

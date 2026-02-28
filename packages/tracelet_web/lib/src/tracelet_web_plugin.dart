@@ -584,14 +584,20 @@ class TraceletWebPlugin extends TraceletPlatform {
 // =============================================================================
 
 StreamController<T> _bridgedController<T>(Stream<T> source) {
+  late StreamController<T> controller;
   StreamSubscription<T>? subscription;
-  return StreamController<T>(
+  controller = StreamController<T>(
     onListen: () {
-      subscription = source.listen(null);
+      subscription = source.listen(
+        (T data) => controller.add(data),
+        onError: (Object error, StackTrace stackTrace) =>
+            controller.addError(error, stackTrace),
+      );
     },
     onCancel: () {
       subscription?.cancel();
       subscription = null;
     },
   );
+  return controller;
 }

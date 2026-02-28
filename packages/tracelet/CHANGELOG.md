@@ -4,7 +4,8 @@
 * **FEAT**: iOS 17+ `CLBackgroundActivitySession` support — extends background runtime for location tracking.
 * **FEAT**: iOS 18+ `CLServiceSession` support — maintains authorization state during background execution.
 * **FIX**: iOS `preventSuspend` lifecycle gaps — audio keep-alive now correctly started/stopped in all tracking modes and transitions.
-* **CHORE**: Bump `tracelet_ios` to ^0.8.1.
+* **FIX**: Web EventChannel bridge — all event streams (`onLocation`, `onMotionChange`, `onHeartbeat`, etc.) were broken on web due to events being consumed but never forwarded. Now works correctly.
+* **CHORE**: Bump `tracelet_ios` to ^0.8.1, `tracelet_web` to ^0.8.1.
 
 ## 0.8.0
 

@@ -2,7 +2,9 @@
 
 ## 0.8.1
 
-* **DOCS**: Document iOS background hardening changes (no web code changes in this release).
+* **FIX**: Fix `_bridgedController` dropping all EventChannel events — `onLocation`, `onMotionChange`, `onHeartbeat`, `onGeofence`, and all other event streams were broken on web (events consumed but never forwarded to Dart). Now properly pipes data via `controller.add()`.
+* **FIX**: `WebEventDispatcher.log()` was a no-op — now prints to browser console for debugging visibility.
+* **FEAT**: Diagnostic logging in `WebLocationEngine.getCurrentPosition()` and `_browserGetPosition()` — logs request parameters, success/error callbacks, and `_positionToMap` errors to the browser console.
 
 ## 0.8.0
 

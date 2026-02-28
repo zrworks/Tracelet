@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3
+
+* **CHORE**: Version bump for proximity-based geofence monitoring release.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.8.3.
+
 ## 0.8.2
 
 * **DOCS**: Improve README visuals with combined Android & iOS demo image.

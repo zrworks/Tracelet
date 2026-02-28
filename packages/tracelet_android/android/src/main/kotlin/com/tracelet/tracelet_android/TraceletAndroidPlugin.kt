@@ -391,6 +391,12 @@ class TraceletAndroidPlugin :
         // Start location engine
         locationEngine.start()
 
+        // Wire proximity-based geofence monitoring so geofences are
+        // automatically loaded/unloaded as the device moves.
+        locationEngine.onLocationUpdate = { lat, lng ->
+            geofenceManager.updateProximity(lat, lng)
+        }
+
         // Request activity recognition permission (API 29+) and start motion detector
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val hasMotion = ContextCompat.checkSelfPermission(
@@ -602,16 +608,23 @@ class TraceletAndroidPlugin :
         stateManager.enabled = true
         stateManager.trackingMode = 1 // Geofences only
 
-        // Re-register all geofences
+        // Re-register geofences with proximity filtering
         geofenceManager.reRegisterAll()
+
+        // Wire proximity-based geofence monitoring so geofences are
+        // automatically loaded/unloaded as the device moves.
+        // Also handles high-accuracy mode (Dart evaluates transitions).
+        locationEngine.onLocationUpdate = { lat, lng ->
+            geofenceManager.updateProximity(lat, lng)
+        }
 
         // geofenceModeHighAccuracy: also start GPS tracking and compute
         // transitions in-app for more precise enter/exit detection.
         if (configManager.getGeofenceModeHighAccuracy()) {
             geofenceManager.clearHighAccuracyState()
-            locationEngine.onLocationUpdate = { lat, lng ->
-                geofenceManager.evaluateHighAccuracyProximity(lat, lng)
-            }
+            locationEngine.start()
+        } else {
+            // Start with low-power mode for proximity updates only
             locationEngine.start()
         }
 

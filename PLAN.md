@@ -311,7 +311,7 @@
 - [ ] `GeofenceStore.kt` — SQLite CRUD for geofence definitions
   - [ ] Persist all registered geofences (survive process kill)
   - [ ] Re-register all active geofences on boot / service restart
-- [ ] Proximity-based monitoring: only register geofences within `geofenceProximityRadius` of current location
+- [x] Proximity-based monitoring: only register geofences within `geofenceProximityRadius` of current location
 - [ ] `geofenceModeKnockOut` support: remove geofences after first trigger
 
 ### 3.8 SQLite Persistence Layer

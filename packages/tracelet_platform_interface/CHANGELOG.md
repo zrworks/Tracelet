@@ -1,3 +1,7 @@
+## 0.8.3
+
+* **CHORE**: Version bump for proximity-based geofence monitoring release.
+
 ## 0.8.2
 
 * **DOCS**: Improve README visuals with combined Android & iOS demo image.

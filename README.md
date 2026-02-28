@@ -23,7 +23,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 
 - **Motion-detection intelligence** — Uses accelerometer, gyroscope & activity recognition to detect when the device is moving or stationary. Automatically toggles location services to conserve battery.
 - **Background location tracking** — Continuous GPS recording with configurable `distanceFilter` and `desiredAccuracy`. Works after app is minimized, killed, or device rebooted.
-- **Geofencing** — Add circular or polygon geofences with enter/exit/dwell detection. 100 on Android, intelligent nearest-20 rotation on iOS.
+- **Geofencing** — Add circular or polygon geofences with enter/exit/dwell detection. **Unlimited geofences** via proximity-based auto-load/unload — only the closest geofences within `geofenceProximityRadius` are registered with the OS (up to 100 on Android, 20 on iOS), enabling monitoring of thousands of geofences despite platform limits.
 - **SQLite persistence** — All locations stored locally in SQLite. Query, count, delete, or sync to your server. Configurable retention (max days/records) and per-type persistence modes.
 - **HTTP auto-sync** — Configurable batch upload with retry, exponential backoff, and offline queuing. Wi-Fi-only sync option via `disableAutoSyncOnCellular`.
 - **Headless execution** — Run Dart code in response to background events even when the Flutter UI is not running.

@@ -384,6 +384,13 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         stateManager.isMoving = false
 
         locationEngine.start()
+
+        // Wire proximity-based geofence monitoring so geofences are
+        // automatically loaded/unloaded as the device moves.
+        locationEngine.onLocationUpdate = { [weak self] lat, lng in
+            self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+        }
+
         motionDetector.start()
         startHeartbeat()
         startStopAfterElapsedTimer()
@@ -429,13 +436,20 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
         geofenceManager.reRegisterAll()
 
+        // Wire proximity-based geofence monitoring so geofences are
+        // automatically loaded/unloaded as the device moves.
+        // Also handles high-accuracy mode (Dart evaluates transitions).
+        locationEngine.onLocationUpdate = { [weak self] lat, lng in
+            self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+        }
+
         // geofenceModeHighAccuracy: also start GPS tracking and compute
         // transitions in-app for more precise enter/exit detection.
         if configManager.getGeofenceModeHighAccuracy() {
             geofenceManager.clearHighAccuracyState()
-            locationEngine.onLocationUpdate = { [weak self] lat, lng in
-                self?.geofenceManager.evaluateHighAccuracyProximity(latitude: lat, longitude: lng)
-            }
+            locationEngine.start()
+        } else {
+            // Start location engine for proximity updates
             locationEngine.start()
         }
 

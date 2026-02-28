@@ -1,3 +1,9 @@
+## 0.8.3
+
+* **FEAT**: Unlimited geofences via proximity-based auto-load/unload — only geofences within `geofenceProximityRadius` are registered with the OS (up to 100 on Android, 20 on iOS), sorted by distance. Enables monitoring thousands of geofences despite platform limits.
+* **FEAT**: `geofencesChange` event fires when geofences are activated/deactivated from proximity monitoring.
+* **CHORE**: Bump all platform dependencies to ^0.8.3.
+
 ## 0.8.2
 
 * **DOCS**: Improve README visuals with combined Android & iOS demo image.

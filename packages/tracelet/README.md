@@ -22,7 +22,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 
 - **Background location tracking** — continuous GPS with configurable `distanceFilter` and `desiredAccuracy`
 - **Motion-detection intelligence** — accelerometer + activity recognition automatically toggle GPS to save battery
-- **Geofencing** — circular and polygon geofences with enter/exit/dwell events
+- **Geofencing** — circular and polygon geofences with enter/exit/dwell events. **Unlimited geofences** via proximity-based auto-load/unload
 - **SQLite persistence** — all locations stored locally, queryable, with configurable retention limits
 - **HTTP auto-sync** — batch upload with retry, exponential backoff, offline queue, Wi-Fi-only option
 - **Headless execution** — run Dart code in response to background events
@@ -41,6 +41,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Timestamp metadata** — optional extra timing fields on each location record
 - **Geofence high-accuracy mode** — full GPS pipeline in geofence-only mode (Android)
 - **Prevent suspend (iOS)** — silent audio keep-alive for continuous background execution
+- **Unlimited geofences** — monitor thousands of geofences despite platform limits (100 Android / 20 iOS). Only the closest geofences within `geofenceProximityRadius` are registered with the OS. As the device moves, geofences are automatically swapped in/out, with `onGeofencesChange` events for each activation/deactivation.
 - **Shared Dart algorithms** — location filtering, geofence proximity, schedule parsing, and persistence logic run in shared Dart for cross-platform consistency
 - **Mock location detection** — detect and reject spoofed GPS with configurable detection levels (basic platform flags + advanced heuristics). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
 - **OEM compatibility** — automatic mitigations for aggressive OEM power management (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo) with Settings Health API. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)

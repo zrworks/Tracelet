@@ -1,3 +1,11 @@
+## 0.8.3
+
+* **FEAT**: Proximity-based geofence auto-load/unload — only geofences within `geofenceProximityRadius` are registered with CLLocationManager, sorted by distance, capped at 20 (iOS limit). Enables monitoring thousands of geofences.
+* **FEAT**: `GeofenceManager.updateProximity()` — re-evaluates which geofences to monitor on every location update, dynamically swapping region registrations as the device moves.
+* **FEAT**: `geofencesChange` event fires with `on`/`off` arrays when geofences are activated/deactivated from proximity monitoring.
+* **FEAT**: `maxMonitoredGeofences` config respected — caps simultaneously monitored regions below the platform limit.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.8.3.
+
 ## 0.8.2
 
 * **DOCS**: Improve README visuals with combined Android & iOS demo image.

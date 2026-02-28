@@ -88,6 +88,7 @@ Location accuracy, sampling, and filtering.
 | `enableTimestampMeta` | `bool` | `false` | Add extra timing fields to each location |
 | `stopAfterElapsedMinutes` | `int` | `-1` | Auto-stop after N minutes (-1 = off) |
 | `geofenceModeHighAccuracy` | `bool` | `false` | Full GPS in geofence-only mode |
+| `maxMonitoredGeofences` | `int` | `-1` | Max simultaneously monitored geofences (-1 = platform default: 100 Android, 20 iOS). Used with proximity-based geofence loading. |
 | `useSignificantChangesOnly` | `bool` | `false` | Use significant location changes only |
 | `showsBackgroundLocationIndicator` | `bool` | `true` | iOS: show blue status bar indicator |
 | `pausesLocationUpdatesAutomatically` | `bool` | `false` | iOS: allow system to pause updates |
@@ -189,12 +190,20 @@ Database retention and persistence behavior.
 
 ## GeofenceConfig
 
-Geofence behavior.
+Geofence behavior and proximity-based monitoring.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `geofenceProximityRadius` | `int` | `1000` | Activation radius in meters |
+| `geofenceProximityRadius` | `int` | `1000` | Proximity radius in meters. Only geofences within this radius of the device are actively registered with the OS. Enables unlimited geofences by loading/unloading based on proximity. |
 | `geofenceInitialTriggerEntry` | `bool` | `true` | Fire enter event if already inside |
+| `geofenceModeKnockOut` | `bool` | `false` | Remove geofence after first EXIT trigger |
+
+> **Unlimited Geofences:** iOS limits apps to 20 monitored regions; Android limits to 100.
+> Tracelet uses a built-in geospatial proximity query to automatically load and unload
+> geofences based on `geofenceProximityRadius`, allowing you to effectively monitor
+> **thousands of geofences**. As the device moves, the closest geofences are registered
+> with the OS and far-away ones are unregistered. A `geofencesChange` event fires
+> whenever geofences are activated or deactivated.
 
 ---
 

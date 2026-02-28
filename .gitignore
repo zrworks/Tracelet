@@ -104,3 +104,4 @@ app.*.map.json
 .fvm/
 MEDIUM_ARTICLE_NOCODE.txt
 MEDIUM_ARTICLE.txt
+.github/copilot-instructions.md

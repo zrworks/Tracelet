@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -48,6 +50,12 @@ class LocationService : Service() {
         @Volatile
         var bootLocationEngine: LocationEngine? = null
             private set
+
+        // Boot-mode heartbeat timer state.
+        @Volatile
+        private var bootHeartbeatHandler: Handler? = null
+        @Volatile
+        private var bootHeartbeatRunnable: Runnable? = null
 
         fun isServiceRunning(): Boolean = isRunning
 
@@ -96,9 +104,16 @@ class LocationService : Service() {
          * tracking with its own engine + EventChannels.
          */
         fun stopBootTracking() {
+            stopBootHeartbeat()
             bootLocationEngine?.destroy()
             bootLocationEngine = null
             Log.d(TAG, "Boot-mode native tracking stopped — plugin taking over")
+        }
+
+        private fun stopBootHeartbeat() {
+            bootHeartbeatRunnable?.let { bootHeartbeatHandler?.removeCallbacks(it) }
+            bootHeartbeatRunnable = null
+            bootHeartbeatHandler = null
         }
     }
 
@@ -237,9 +252,50 @@ class LocationService : Service() {
 
         bootLocationEngine = engine
         Log.d(TAG, "Boot-mode native tracking started")
+
+        // Start heartbeat timer so heartbeat events fire in boot/headless mode
+        startBootHeartbeat(config, engine, eventDispatcher)
+    }
+
+    /**
+     * Starts a self-rescheduling heartbeat timer for boot-mode tracking.
+     *
+     * Mirrors the heartbeat logic in [TraceletAndroidPlugin.startHeartbeat]
+     * but uses the boot-mode [LocationEngine] and [EventDispatcher].
+     */
+    private fun startBootHeartbeat(
+        config: ConfigManager,
+        engine: LocationEngine,
+        dispatcher: EventDispatcher
+    ) {
+        stopBootHeartbeat()
+        val intervalSeconds = config.getHeartbeatInterval()
+        if (intervalSeconds <= 0) return
+
+        val handler = Handler(Looper.getMainLooper())
+        bootHeartbeatHandler = handler
+
+        val runnable = object : Runnable {
+            override fun run() {
+                if (bootLocationEngine == null) return // Tracking stopped
+                engine.getCurrentPosition(emptyMap()) { location ->
+                    val locationData = location
+                        ?: engine.getLastLocation()?.let {
+                            engine.enrichLocation(it, "heartbeat")
+                        }
+                        ?: emptyMap()
+                    dispatcher.sendHeartbeat(mapOf("location" to locationData))
+                }
+                handler.postDelayed(this, intervalSeconds * 1000L)
+            }
+        }
+        bootHeartbeatRunnable = runnable
+        handler.postDelayed(runnable, intervalSeconds * 1000L)
+        Log.d(TAG, "Boot-mode heartbeat started (interval=${intervalSeconds}s)")
     }
 
     private fun stopBootTrackingInternal() {
+        stopBootHeartbeat()
         bootLocationEngine?.destroy()
         bootLocationEngine = null
     }

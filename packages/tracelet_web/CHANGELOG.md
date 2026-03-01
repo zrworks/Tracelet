@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1
+
+- **CHORE**: Version bump for consistency.
+
 ## 0.9.0
 
 * **CHORE**: Version bump for adaptive sampling, health check, and motion sensitivity release.

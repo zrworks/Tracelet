@@ -1,3 +1,7 @@
+## 0.9.1
+
+- **FIX**: iOS `HttpSyncManager` optional `UIBackgroundTaskIdentifier` unwrap safety.
+
 ## 0.9.0
 
 * **FEAT**: Adaptive sampling engine — auto-adjusts `distanceFilter` based on detected activity type, battery level, and speed. Enable with `GeoConfig(enableAdaptiveMode: true)`. See [Adaptive Sampling Guide](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md).

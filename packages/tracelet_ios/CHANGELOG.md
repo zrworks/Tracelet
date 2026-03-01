@@ -1,3 +1,7 @@
+## 0.9.1
+
+- **FIX**: Safe optional unwrap of `UIBackgroundTaskIdentifier` in `HttpSyncManager.syncNextBatch()` — fixes Swift compiler error.
+
 ## 0.9.0
 
 * **FEAT**: HTTP sync retry engine — configurable retry with exponential backoff for transient 5xx, 429, and timeout failures. Defers sync on connectivity loss via `NWPathMonitor`. Batch continuation loop.

@@ -1,3 +1,7 @@
+## 0.9.1
+
+- **CHORE**: Version bump for consistency.
+
 ## 0.9.0
 
 * **FEAT**: `AdaptiveSamplingEngine` — multi-factor distance filter computation (activity type, battery level, charging state, speed). 33 unit tests.

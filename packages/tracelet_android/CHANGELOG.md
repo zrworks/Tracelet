@@ -1,3 +1,7 @@
+## 0.9.1
+
+- **FIX**: Fire heartbeat events in boot-mode headless tracking. `LocationService.startBootTracking()` now starts a self-rescheduling heartbeat timer so heartbeat events dispatch to `HeadlessTaskService` after device reboot.
+
 ## 0.9.0
 
 * **FEAT**: HTTP sync retry engine — configurable retry with exponential backoff for transient 5xx, 429, and timeout failures. Respects `Retry-After` headers. Defers sync on connectivity loss.

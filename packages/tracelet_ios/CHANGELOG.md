@@ -1,3 +1,9 @@
+## 0.9.0
+
+* **FEAT**: HTTP sync retry engine — configurable retry with exponential backoff for transient 5xx, 429, and timeout failures. Defers sync on connectivity loss via `NWPathMonitor`. Batch continuation loop.
+* **FEAT**: Configurable motion sensitivity — `MotionDetector` reads `shakeThreshold`, `stillThreshold`, `stillSampleCount` from `ConfigManager` at runtime (auto-converts m/s² to g-force).
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.9.0.
+
 ## 0.8.3
 
 * **FEAT**: Proximity-based geofence auto-load/unload — only geofences within `geofenceProximityRadius` are registered with CLLocationManager, sorted by distance, capped at 20 (iOS limit). Enables monitoring thousands of geofences.

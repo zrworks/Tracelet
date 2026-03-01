@@ -151,6 +151,72 @@ void main() {
       expect(a, isNot(equals(b)));
     });
 
+    test('HttpConfig retry fields have sensible defaults', () {
+      const c = HttpConfig();
+      expect(c.maxRetries, 10);
+      expect(c.retryBackoffBase, 1000);
+      expect(c.retryBackoffCap, 300000);
+    });
+
+    test('HttpConfig equality includes retry fields', () {
+      const a = HttpConfig(url: 'https://a.com', maxRetries: 5);
+      const b = HttpConfig(url: 'https://a.com', maxRetries: 10);
+      expect(a, isNot(equals(b)));
+
+      const c = HttpConfig(url: 'https://a.com', retryBackoffBase: 500);
+      const d = HttpConfig(url: 'https://a.com', retryBackoffBase: 1000);
+      expect(c, isNot(equals(d)));
+
+      const e = HttpConfig(url: 'https://a.com', retryBackoffCap: 60000);
+      const f = HttpConfig(url: 'https://a.com', retryBackoffCap: 300000);
+      expect(e, isNot(equals(f)));
+    });
+
+    test('HttpConfig fromMap parses retry fields', () {
+      final c = HttpConfig.fromMap(const {
+        'url': 'https://example.com',
+        'maxRetries': 5,
+        'retryBackoffBase': 2000,
+        'retryBackoffCap': 120000,
+      });
+      expect(c.maxRetries, 5);
+      expect(c.retryBackoffBase, 2000);
+      expect(c.retryBackoffCap, 120000);
+    });
+
+    test('HttpConfig toMap includes retry fields', () {
+      const c = HttpConfig(
+        url: 'https://example.com',
+        maxRetries: 3,
+        retryBackoffBase: 500,
+        retryBackoffCap: 60000,
+      );
+      final map = c.toMap();
+      expect(map['maxRetries'], 3);
+      expect(map['retryBackoffBase'], 500);
+      expect(map['retryBackoffCap'], 60000);
+    });
+
+    test('HttpConfig fromMap uses defaults for missing retry fields', () {
+      final c = HttpConfig.fromMap(const {'url': 'https://example.com'});
+      expect(c.maxRetries, 10);
+      expect(c.retryBackoffBase, 1000);
+      expect(c.retryBackoffCap, 300000);
+    });
+
+    test('HttpConfig round-trip preserves retry fields', () {
+      const original = HttpConfig(
+        url: 'https://example.com',
+        maxRetries: 7,
+        retryBackoffBase: 1500,
+        retryBackoffCap: 180000,
+      );
+      final restored = HttpConfig.fromMap(original.toMap());
+      expect(restored.maxRetries, 7);
+      expect(restored.retryBackoffBase, 1500);
+      expect(restored.retryBackoffCap, 180000);
+    });
+
     test('ForegroundServiceConfig equality includes all fields', () {
       const a = ForegroundServiceConfig(
         channelId: 'ch1',
@@ -201,6 +267,56 @@ void main() {
       const b = MotionConfig(stopDetectionDelay: 10);
       expect(a, isNot(equals(b)));
     });
+
+    test('MotionConfig motion sensitivity defaults', () {
+      const config = MotionConfig();
+      expect(config.shakeThreshold, 2.5);
+      expect(config.stillThreshold, 0.4);
+      expect(config.stillSampleCount, 25);
+    });
+
+    test('MotionConfig motion sensitivity round-trip serialization', () {
+      const config = MotionConfig(
+        shakeThreshold: 4.0,
+        stillThreshold: 0.8,
+        stillSampleCount: 50,
+      );
+      final map = config.toMap();
+      expect(map['shakeThreshold'], 4.0);
+      expect(map['stillThreshold'], 0.8);
+      expect(map['stillSampleCount'], 50);
+
+      final restored = MotionConfig.fromMap(map);
+      expect(restored.shakeThreshold, 4.0);
+      expect(restored.stillThreshold, 0.8);
+      expect(restored.stillSampleCount, 50);
+      expect(restored, equals(config));
+    });
+
+    test('MotionConfig motion sensitivity affects equality', () {
+      const a = MotionConfig(shakeThreshold: 2.5);
+      const b = MotionConfig(shakeThreshold: 4.0);
+      expect(a, isNot(equals(b)));
+
+      const c = MotionConfig(stillThreshold: 0.4);
+      const d = MotionConfig(stillThreshold: 0.8);
+      expect(c, isNot(equals(d)));
+
+      const e = MotionConfig(stillSampleCount: 25);
+      const f = MotionConfig(stillSampleCount: 50);
+      expect(e, isNot(equals(f)));
+    });
+
+    test(
+      'MotionConfig fromMap with missing sensitivity fields uses defaults',
+      () {
+        final config = MotionConfig.fromMap(const {'stopTimeout': 10});
+        expect(config.stopTimeout, 10);
+        expect(config.shakeThreshold, 2.5);
+        expect(config.stillThreshold, 0.4);
+        expect(config.stillSampleCount, 25);
+      },
+    );
 
     test('LocationFilter.rejectMockLocations defaults to false', () {
       const filter = LocationFilter();
@@ -785,24 +901,98 @@ void main() {
         'success': true,
         'status': 200,
         'responseText': '{"ok":true}',
+        'isRetry': false,
+        'retryCount': 0,
       });
       expect(event.success, true);
       expect(event.status, 200);
       expect(event.responseText, '{"ok":true}');
+      expect(event.isRetry, false);
+      expect(event.retryCount, 0);
 
       final map = event.toMap();
       expect(map['success'], true);
       expect(map['status'], 200);
+      expect(map['isRetry'], false);
+      expect(map['retryCount'], 0);
     });
 
-    test('equality', () {
+    test('fromMap with retry metadata', () {
+      final event = HttpEvent.fromMap(const {
+        'success': false,
+        'status': 503,
+        'responseText': 'Service Unavailable',
+        'isRetry': true,
+        'retryCount': 3,
+      });
+      expect(event.success, false);
+      expect(event.status, 503);
+      expect(event.isRetry, true);
+      expect(event.retryCount, 3);
+    });
+
+    test('fromMap defaults for missing retry fields', () {
+      final event = HttpEvent.fromMap(const {
+        'success': true,
+        'status': 200,
+        'responseText': 'ok',
+      });
+      expect(event.isRetry, false);
+      expect(event.retryCount, 0);
+    });
+
+    test('equality includes retry fields', () {
       const a = HttpEvent(success: true, status: 200);
+      const b = HttpEvent(success: true, status: 200, isRetry: true);
+      expect(a, isNot(equals(b)));
+
+      const c = HttpEvent(success: true, status: 200, retryCount: 2);
+      expect(a, isNot(equals(c)));
+    });
+
+    test('equality same values', () {
+      const a = HttpEvent(
+        success: true,
+        status: 200,
+        isRetry: true,
+        retryCount: 5,
+      );
       const b = HttpEvent(
         success: true,
         status: 200,
         responseText: 'different',
+        isRetry: true,
+        retryCount: 5,
       );
       expect(a, equals(b));
+    });
+
+    test('toString includes retryCount', () {
+      const event = HttpEvent(success: false, status: 500, retryCount: 3);
+      expect(event.toString(), contains('retryCount: 3'));
+    });
+
+    test('hashCode differs for different retry values', () {
+      const a = HttpEvent(success: true, status: 200, retryCount: 0);
+      const b = HttpEvent(success: true, status: 200, retryCount: 1);
+      // Different retry counts should (very likely) have different hashes
+      expect(a.hashCode, isNot(equals(b.hashCode)));
+    });
+
+    test('toMap round-trip preserves retry metadata', () {
+      const original = HttpEvent(
+        success: false,
+        status: 429,
+        responseText: 'Rate limited',
+        isRetry: true,
+        retryCount: 7,
+      );
+      final restored = HttpEvent.fromMap(original.toMap());
+      expect(restored.success, false);
+      expect(restored.status, 429);
+      expect(restored.responseText, 'Rate limited');
+      expect(restored.isRetry, true);
+      expect(restored.retryCount, 7);
     });
   });
 

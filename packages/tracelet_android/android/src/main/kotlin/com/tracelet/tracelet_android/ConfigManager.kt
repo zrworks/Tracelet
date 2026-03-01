@@ -61,6 +61,9 @@ class ConfigManager(context: Context) {
         const val DEFAULT_STOP_DETECTION_DELAY = 0
         const val DEFAULT_STOP_ON_STATIONARY = false
         const val DEFAULT_TRIGGER_ACTIVITIES = ""
+        const val DEFAULT_SHAKE_THRESHOLD = 2.5
+        const val DEFAULT_STILL_THRESHOLD = 0.4
+        const val DEFAULT_STILL_SAMPLE_COUNT = 25
 
         // GeofenceConfig defaults
         const val DEFAULT_GEOFENCE_PROXIMITY_RADIUS = 1000
@@ -368,6 +371,15 @@ class ConfigManager(context: Context) {
     fun getTriggerActivities(): String =
         getString("triggerActivities", DEFAULT_TRIGGER_ACTIVITIES)
 
+    fun getShakeThreshold(): Double =
+        getDouble("shakeThreshold", DEFAULT_SHAKE_THRESHOLD)
+
+    fun getStillThreshold(): Double =
+        getDouble("stillThreshold", DEFAULT_STILL_THRESHOLD)
+
+    fun getStillSampleCount(): Int =
+        getInt("stillSampleCount", DEFAULT_STILL_SAMPLE_COUNT)
+
     // ---------------------------------------------------------------------------
     // Typed Getters (GeofenceConfig)
     // ---------------------------------------------------------------------------
@@ -387,6 +399,12 @@ class ConfigManager(context: Context) {
 
     fun getDisableAutoSyncOnCellular(): Boolean =
         getBool("disableAutoSyncOnCellular", DEFAULT_DISABLE_AUTO_SYNC_ON_CELLULAR)
+
+    fun getMaxRetries(): Int = getInt("maxRetries", 10)
+
+    fun getRetryBackoffBase(): Int = getInt("retryBackoffBase", 1000)
+
+    fun getRetryBackoffCap(): Int = getInt("retryBackoffCap", 300000)
 
     // ---------------------------------------------------------------------------
     // Typed Getters (PersistenceConfig)

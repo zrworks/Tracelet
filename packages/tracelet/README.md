@@ -46,6 +46,10 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Mock location detection** — detect and reject spoofed GPS with configurable detection levels (basic platform flags + advanced heuristics). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
 - **OEM compatibility** — automatic mitigations for aggressive OEM power management (Huawei, Xiaomi, OnePlus, Samsung, Oppo, Vivo) with Settings Health API. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)
 - **iOS background hardening** — all critical native operations wrapped in `beginBackgroundTask`, with iOS 17+ `CLBackgroundActivitySession` and iOS 18+ `CLServiceSession` for extended background runtime. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/IOS-BACKGROUND-HARDENING.md)
+- **Adaptive sampling** — auto-adjusts `distanceFilter` based on detected activity, battery level, and speed for optimal battery/accuracy trade-off. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md)
+- **Health check API** — `getHealth()` returns a comprehensive diagnostic snapshot covering permissions, battery, sensors, database, and geofence state with actionable warnings. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md)
+- **HTTP sync retry engine** — configurable retry with exponential backoff for transient server failures (5xx, 429, timeout). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
+- **Configurable motion sensitivity** — tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) for Low/Medium/High preset profiles or custom values
 
 ## Quick Start
 
@@ -157,6 +161,9 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 | [Web Support](https://github.com/Ikolvi/Tracelet/blob/main/help/WEB-SUPPORT.md) | Web platform capabilities, limitations, and browser APIs |
 | [Mock Detection](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md) | Detect & reject spoofed GPS — detection levels, heuristics, platform details |
 | [OEM Compatibility](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md) | Huawei/Xiaomi/OnePlus/Samsung/Oppo/Vivo mitigations, Settings Health API |
+| [Adaptive Sampling](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md) | Auto-adjust distanceFilter by activity, battery, and speed |
+| [Health Check](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md) | Diagnostic API — permissions, battery, sensors, database |
+| [HTTP Sync](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md) | Retry engine, exponential backoff, offline queue |
 | [iOS Background Hardening](https://github.com/Ikolvi/Tracelet/blob/main/help/IOS-BACKGROUND-HARDENING.md) | Background task protection, session APIs, prevent suspend |
 
 ## Architecture

@@ -15,6 +15,7 @@ import 'models/geofence.dart';
 import 'models/geofence_event.dart';
 import 'models/geofences_change_event.dart';
 import 'models/headless_event.dart';
+import 'models/health_check.dart';
 import 'models/heartbeat_event.dart';
 import 'models/http_event.dart';
 import 'models/location.dart';
@@ -91,6 +92,24 @@ class Tracelet {
   /// Whether the Kalman filter is enabled (set from config).
   static bool _useKalmanFilter = false;
 
+  /// Whether adaptive sampling mode is enabled (set from config).
+  static bool _enableAdaptiveMode = false;
+
+  /// Last known activity type for adaptive sampling.
+  static ActivityType _lastActivityType = ActivityType.unknown;
+
+  /// Last known activity confidence for adaptive sampling.
+  static ActivityConfidence _lastActivityConfidence = ActivityConfidence.low;
+
+  /// Last known battery level (0.0–1.0) for adaptive sampling.
+  static double _lastBatteryLevel = -1.0;
+
+  /// Last known charging state for adaptive sampling.
+  static bool _lastIsCharging = false;
+
+  /// Subscription that feeds activity changes to adaptive sampling state.
+  static StreamSubscription<ActivityChangeEvent>? _adaptiveActivitySub;
+
   /// Location processor for distance/accuracy/speed filtering
   /// (runs in Dart, not native).
   static LocationProcessor? _locationProcessor;
@@ -143,11 +162,15 @@ class Tracelet {
     _useKalmanFilter = config.geo.filter?.useKalmanFilter ?? false;
     _kalmanFilter.reset();
 
+    // Capture adaptive sampling setting from config.
+    _enableAdaptiveMode = config.geo.enableAdaptiveMode;
+
     // Initialize location processor from config.
     _locationProcessor = LocationProcessor(
       distanceFilter: config.geo.distanceFilter,
       disableElasticity: config.geo.disableElasticity,
       elasticityMultiplier: config.geo.elasticityMultiplier,
+      enableAdaptiveMode: config.geo.enableAdaptiveMode,
       trackingAccuracyThreshold:
           config.geo.filter?.trackingAccuracyThreshold ?? 0,
       filterPolicy: config.geo.filter?.policy.index ?? 0,
@@ -177,6 +200,9 @@ class Tracelet {
     // Start internal trip detection subscriptions.
     _startTripDetection();
 
+    // Start adaptive sampling activity tracking if enabled.
+    _startAdaptiveActivityTracking();
+
     return State.fromMap(result);
   }
 
@@ -192,6 +218,7 @@ class Tracelet {
     _kalmanFilter.reset();
     _locationProcessor?.reset();
     _geofenceEvaluator.clear();
+    _stopAdaptiveActivityTracking();
 
     return State.fromMap(result);
   }
@@ -211,6 +238,56 @@ class Tracelet {
     return State.fromMap(result);
   }
 
+  /// Get a comprehensive diagnostic snapshot of the plugin's operational health.
+  ///
+  /// Aggregates tracking state, permissions, provider availability, battery/OEM
+  /// status, sensor availability, and database metrics into a single typed
+  /// [HealthCheck] object with automatically computed [HealthCheck.warnings].
+  ///
+  /// This replaces the need to call [getState], [getProviderState],
+  /// [getSettingsHealth], [isPowerSaveMode], [getSensors], and other
+  /// diagnostic methods individually.
+  ///
+  /// ```dart
+  /// final health = await Tracelet.getHealth();
+  ///
+  /// if (health.isAggressiveOem) {
+  ///   // Show OEM battery settings guide
+  /// }
+  ///
+  /// for (final warning in health.warnings) {
+  ///   print('Warning: $warning');
+  /// }
+  /// ```
+  static Future<HealthCheck> getHealth() async {
+    // Fire all independent platform calls in parallel.
+    final results = await Future.wait([
+      _platform.getState(), // 0
+      _platform.getProviderState(), // 1
+      _platform.getSettingsHealth(), // 2
+      _platform.getSensors(), // 3
+      _platform.getDeviceInfo(), // 4
+      _platform.isPowerSaveMode(), // 5
+      _platform.isIgnoringBatteryOptimizations(), // 6
+      _platform.getPermissionStatus(), // 7
+      _platform.getMotionPermissionStatus(), // 8
+      _platform.getCount(), // 9
+    ]);
+
+    return HealthCheck.fromMaps(
+      state: results[0] as Map<String, Object?>,
+      provider: results[1] as Map<String, Object?>,
+      settingsHealth: results[2] as Map<String, Object?>,
+      sensors: results[3] as Map<String, Object?>,
+      deviceInfo: results[4] as Map<String, Object?>,
+      isPowerSave: results[5] as bool,
+      ignoringBatteryOpt: results[6] as bool,
+      locationPermissionStatus: results[7] as int,
+      motionPermissionStatus: results[8] as int,
+      dbCount: results[9] as int,
+    );
+  }
+
   /// Update the plugin configuration.
   ///
   /// Returns the updated [State].
@@ -218,12 +295,16 @@ class Tracelet {
     // Update Kalman filter setting.
     _useKalmanFilter = config.geo.filter?.useKalmanFilter ?? false;
 
+    // Update adaptive sampling setting.
+    _enableAdaptiveMode = config.geo.enableAdaptiveMode;
+
     // Update location processor, preserving internal state.
     _locationProcessor =
         _locationProcessor?.copyWith(
           distanceFilter: config.geo.distanceFilter,
           disableElasticity: config.geo.disableElasticity,
           elasticityMultiplier: config.geo.elasticityMultiplier,
+          enableAdaptiveMode: config.geo.enableAdaptiveMode,
           trackingAccuracyThreshold:
               config.geo.filter?.trackingAccuracyThreshold ?? 0,
           filterPolicy: config.geo.filter?.policy.index ?? 0,
@@ -237,6 +318,7 @@ class Tracelet {
           distanceFilter: config.geo.distanceFilter,
           disableElasticity: config.geo.disableElasticity,
           elasticityMultiplier: config.geo.elasticityMultiplier,
+          enableAdaptiveMode: config.geo.enableAdaptiveMode,
           trackingAccuracyThreshold:
               config.geo.filter?.trackingAccuracyThreshold ?? 0,
           filterPolicy: config.geo.filter?.policy.index ?? 0,
@@ -1155,6 +1237,39 @@ class Tracelet {
     final ts = DateTime.tryParse(location.timestamp);
     if (ts == null) return <Location>[location];
 
+    // Build adaptive context from the location's embedded battery/activity
+    // data and the latest tracked activity state.
+    AdaptiveContext? adaptiveCtx;
+    if (_enableAdaptiveMode) {
+      // Prefer the activity from the location model if it has a known type;
+      // otherwise fall back to the last event-driven activity.
+      final locActivity = location.activity.type;
+      final activityType = locActivity != ActivityType.unknown
+          ? locActivity
+          : _lastActivityType;
+      final activityConf = locActivity != ActivityType.unknown
+          ? location.activity.confidence
+          : _lastActivityConfidence;
+
+      // Battery data from the location model (populated per-fix).
+      final batteryLevel = location.battery.level >= 0
+          ? location.battery.level
+          : _lastBatteryLevel;
+      final isCharging = location.battery.isCharging || _lastIsCharging;
+
+      // Update cached state for future fixes.
+      _lastBatteryLevel = batteryLevel;
+      _lastIsCharging = isCharging;
+
+      adaptiveCtx = AdaptiveContext(
+        batteryLevel: batteryLevel,
+        isCharging: isCharging,
+        activityType: activityType,
+        activityConfidence: activityConf,
+        speed: location.coords.speed,
+      );
+    }
+
     final result = processor.process(
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
@@ -1162,6 +1277,7 @@ class Tracelet {
       speed: location.coords.speed,
       timestampMs: ts.millisecondsSinceEpoch,
       isMock: location.isMock,
+      adaptiveContext: adaptiveCtx,
     );
 
     if (!result.accepted) return <Location>[];
@@ -1232,6 +1348,36 @@ class Tracelet {
     _tripLocationSub = null;
     _tripMotionSub?.cancel();
     _tripMotionSub = null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Adaptive Sampling — activity & battery tracking
+  // ---------------------------------------------------------------------------
+
+  /// Start listening to activity change events so the adaptive sampling
+  /// engine always has fresh motion context.
+  static void _startAdaptiveActivityTracking() {
+    if (!_enableAdaptiveMode) return;
+    _stopAdaptiveActivityTracking();
+
+    _adaptiveActivitySub = _getEventStream(TraceletEvents.activityChange)
+        .map(_castToMap)
+        .map(ActivityChangeEvent.fromMap)
+        .listen((event) {
+          _lastActivityType = event.activity;
+          _lastActivityConfidence = event.confidence;
+        });
+  }
+
+  /// Stop the adaptive activity tracking subscription.
+  static void _stopAdaptiveActivityTracking() {
+    _adaptiveActivitySub?.cancel();
+    _adaptiveActivitySub = null;
+    // Reset adaptive state to defaults.
+    _lastActivityType = ActivityType.unknown;
+    _lastActivityConfidence = ActivityConfidence.low;
+    _lastBatteryLevel = -1.0;
+    _lastIsCharging = false;
   }
 }
 

@@ -15,6 +15,8 @@ This package uses Swift and native Apple frameworks (CoreLocation, CoreMotion, B
 - **Background Task Protection** — All critical native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) are wrapped in `UIApplication.beginBackgroundTask` to prevent iOS from killing the app mid-operation.
 - **iOS 17+ Background Activity Session** — `CLBackgroundActivitySession` extends background runtime for continuous location tracking without user interaction.
 - **iOS 18+ Service Session** — `CLServiceSession` maintains location authorization state during background execution.
+- **HTTP Sync Retry Engine** — Configurable retry with exponential backoff in `HttpSyncManager.swift` for transient 5xx, 429, and timeout failures. Defers sync on connectivity loss via `NWPathMonitor`. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
+- **Configurable Motion Sensitivity** — `MotionDetector.swift` reads `shakeThreshold`, `stillThreshold`, and `stillSampleCount` from config at runtime (auto-converts m/s² to g-force).
 
 ## Usage
 

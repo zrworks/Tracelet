@@ -4,7 +4,7 @@ A common platform interface for the [Tracelet](https://pub.dev/packages/tracelet
 
 This package provides the abstract classes and types that the platform-specific implementations (`tracelet_android`, `tracelet_ios`, `tracelet_web`) implement.
 
-It also contains shared Dart algorithms used by all platforms: `LocationProcessor` (distance/accuracy/speed/mock filtering), `KalmanLocationFilter` (GPS smoothing), `GeofenceEvaluator`, `TripManager`, `ScheduleParser`, `PersistDecider`, and `GeoUtils`. See `MockDetectionLevel` enum and `LocationProcessor` mock detection for cross-platform spoof rejection.
+It also contains shared Dart algorithms used by all platforms: `LocationProcessor` (distance/accuracy/speed/mock filtering), `KalmanLocationFilter` (GPS smoothing), `AdaptiveSamplingEngine` (activity/battery/speed-based distance filter), `GeofenceEvaluator`, `TripManager`, `ScheduleParser`, `PersistDecider`, and `GeoUtils`. See `MockDetectionLevel` enum and `LocationProcessor` mock detection for cross-platform spoof rejection.
 
 The OEM Compatibility API (`getSettingsHealth()`, `openOemSettings()`) is defined here as abstract methods, with platform implementations providing manufacturer-specific behavior.
 

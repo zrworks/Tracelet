@@ -1,3 +1,4 @@
+import 'adaptive_sampling_engine.dart';
 import 'geo_utils.dart';
 
 /// Result of processing a location through [LocationProcessor].
@@ -106,6 +107,7 @@ class LocationProcessor {
     this.distanceFilter = 10.0,
     this.disableElasticity = false,
     this.elasticityMultiplier = 1.0,
+    this.enableAdaptiveMode = false,
     this.trackingAccuracyThreshold = 0,
     this.filterPolicy = 0,
     this.maxImpliedSpeed = 0,
@@ -124,6 +126,12 @@ class LocationProcessor {
   /// Multiplier applied to the elasticity-scaled distance.
   /// Values < 1 make the filter more aggressive, > 1 more relaxed.
   final double elasticityMultiplier;
+
+  /// When `true`, the adaptive sampling engine computes the distance filter
+  /// using activity type, battery level, and charging state instead of
+  /// simple speed-based elasticity. Supply [AdaptiveContext] to [process]
+  /// for full benefit. When `false` (default), classic elasticity is used.
+  final bool enableAdaptiveMode;
 
   /// Maximum acceptable GPS accuracy in meters. Locations above this
   /// threshold are handled according to [filterPolicy].
@@ -184,6 +192,8 @@ class LocationProcessor {
   /// - [speed]: Platform-reported speed in m/s. Pass `-1` or `0` if
   ///   unavailable — a fallback speed will be computed from distance/time.
   /// - [timestampMs]: Location timestamp in milliseconds since epoch.
+  /// - [adaptiveContext]: Optional context for adaptive sampling (battery,
+  ///   activity, charging). Only used when [enableAdaptiveMode] is `true`.
   LocationProcessorResult process({
     required double latitude,
     required double longitude,
@@ -191,6 +201,7 @@ class LocationProcessor {
     required double speed,
     required int timestampMs,
     bool isMock = false,
+    AdaptiveContext? adaptiveContext,
   }) {
     // ── Mock location filter ──────────────────────────────────────────────
     if (rejectMockLocations && isMock) {
@@ -240,9 +251,26 @@ class LocationProcessor {
         : 0.0;
     final effectiveSpeed = (speed > 0) ? speed : computedSpeed;
 
-    // ── Elasticity: scale distanceFilter by speed ─────────────────────────
+    // ── Elasticity / Adaptive: scale distanceFilter ──────────────────────
     double effectiveDistance = distanceFilter;
-    if (!disableElasticity && effectiveSpeed > 0) {
+    if (enableAdaptiveMode) {
+      final engine = AdaptiveSamplingEngine(
+        baseDistanceFilter: distanceFilter,
+        elasticityMultiplier: elasticityMultiplier,
+      );
+      final ctx = adaptiveContext ?? AdaptiveContext(speed: effectiveSpeed);
+      // Ensure the engine sees the computed speed even if the caller didn't
+      // set it in the context.
+      final enriched = AdaptiveContext(
+        batteryLevel: ctx.batteryLevel,
+        isCharging: ctx.isCharging,
+        activityType: ctx.activityType,
+        activityConfidence: ctx.activityConfidence,
+        speed: ctx.speed > 0 ? ctx.speed : effectiveSpeed,
+      );
+      final result = engine.compute(enriched);
+      effectiveDistance = result.effectiveDistanceFilter;
+    } else if (!disableElasticity && effectiveSpeed > 0) {
       final multiplier = elasticityMultiplier < 0.1
           ? 0.1
           : elasticityMultiplier;
@@ -324,6 +352,7 @@ class LocationProcessor {
     double? distanceFilter,
     bool? disableElasticity,
     double? elasticityMultiplier,
+    bool? enableAdaptiveMode,
     int? trackingAccuracyThreshold,
     int? filterPolicy,
     int? maxImpliedSpeed,
@@ -335,6 +364,7 @@ class LocationProcessor {
       distanceFilter: distanceFilter ?? this.distanceFilter,
       disableElasticity: disableElasticity ?? this.disableElasticity,
       elasticityMultiplier: elasticityMultiplier ?? this.elasticityMultiplier,
+      enableAdaptiveMode: enableAdaptiveMode ?? this.enableAdaptiveMode,
       trackingAccuracyThreshold:
           trackingAccuracyThreshold ?? this.trackingAccuracyThreshold,
       filterPolicy: filterPolicy ?? this.filterPolicy,

@@ -12,6 +12,8 @@ This package uses Kotlin and native Android APIs (FusedLocationProvider, Room, W
 - **Mock Location Detection** — Multi-layered spoof detection using `Location.isMock()` (API 31+) / `isFromMockProvider()` (API 18+), satellite count analysis, and `SystemClock.elapsedRealtimeNanos` drift detection. Configurable via `MockDetectionLevel`. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/MOCK-DETECTION.md)
 - **Unlimited Geofences** — Proximity-based auto-load/unload in `GeofenceManager.kt`. Only the closest geofences within `geofenceProximityRadius` are registered with the OS (up to 100), enabling monitoring of thousands of geofences. Geofences are dynamically swapped on each location update with `geofencesChange` events.
 - **OEM Compatibility** — Automatic mitigations for aggressive OEM power management: Huawei PowerGenie wakelock tag hack, Xiaomi autostart detection, Samsung/OnePlus/Oppo/Vivo settings deep-links, boot receiver wakelock, and ProGuard consumer rules. Settings Health API exposes device health for user-facing onboarding. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md)
+- **HTTP Sync Retry Engine** — Configurable retry with exponential backoff in `HttpSyncManager.kt` for transient 5xx, 429, and timeout failures. Respects `Retry-After` headers and defers sync on connectivity loss. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
+- **Configurable Motion Sensitivity** — `MotionDetector.kt` reads `shakeThreshold`, `stillThreshold`, and `stillSampleCount` from config at runtime, allowing per-app tuning of accelerometer sensitivity without code changes.
 
 ## Usage
 

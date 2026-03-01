@@ -1,3 +1,12 @@
+## 0.9.0
+
+* **FEAT**: Adaptive sampling engine — auto-adjusts `distanceFilter` based on detected activity type, battery level, and speed. Enable with `GeoConfig(enableAdaptiveMode: true)`. See [Adaptive Sampling Guide](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md).
+* **FEAT**: Health check API — `Tracelet.getHealth()` returns a comprehensive diagnostic snapshot covering tracking state, permissions, battery, sensors, database, and geofence state with actionable `HealthWarning` enum. See [Health Check Guide](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md).
+* **FEAT**: HTTP sync retry metadata — `HttpEvent` now includes `isRetry` and `retryCount` fields.
+* **FEAT**: Configurable motion sensitivity — `MotionConfig` gains `shakeThreshold`, `stillThreshold`, and `stillSampleCount` for tuning accelerometer-based motion detection.
+* **FEAT**: `HealthWarningDescription` extension with `.description` getter for human-readable warning text.
+* **CHORE**: Bump all platform dependencies to ^0.9.0.
+
 ## 0.8.3
 
 * **FEAT**: Unlimited geofences via proximity-based auto-load/unload — only geofences within `geofenceProximityRadius` are registered with the OS (up to 100 on Android, 20 on iOS), sorted by distance. Enables monitoring thousands of geofences despite platform limits.

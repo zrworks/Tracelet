@@ -96,6 +96,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   // Feature status
   bool _kalmanEnabled = false;
   bool _isTracking = false;
+  bool _adaptiveMode = false;
+  String _motionSensitivity = 'Medium';
+  tl.HealthCheck? _lastHealthCheck;
 
   // Geofences
   List<tl.Geofence> _geofences = [];
@@ -320,6 +323,23 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           final fences = await tl.Tracelet.getGeofences();
           setState(() => _geofences = fences);
         } catch (_) {}
+      }),
+    );
+
+    _subs.add(
+      tl.Tracelet.onHttp((evt) {
+        final retryInfo = evt.isRetry ? ' RETRY #${evt.retryCount}' : '';
+        _addMapEvent(
+          _MapEvent(
+            icon: evt.success ? Icons.cloud_done : Icons.cloud_off,
+            color: evt.success
+                ? (evt.isRetry ? Colors.amber : Colors.green)
+                : Colors.red,
+            title: 'HTTP ${evt.status}$retryInfo',
+            subtitle: evt.success ? 'Sync success' : 'Sync failed',
+            time: DateTime.now(),
+          ),
+        );
       }),
     );
 
@@ -1231,6 +1251,57 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 4),
+            // Adaptive sampling
+            GestureDetector(
+              onTap: _toggleAdaptiveFromMap,
+              child: _StatusChip(
+                icon: _adaptiveMode
+                    ? Icons.auto_awesome
+                    : Icons.auto_awesome_outlined,
+                label: 'Adaptive: ${_adaptiveMode ? "ON" : "OFF"}',
+                color: _adaptiveMode ? Colors.amber.shade700 : Colors.grey,
+                showToggle: true,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Motion sensitivity
+            GestureDetector(
+              onTap: _cycleMotionSensitivityFromMap,
+              child: _StatusChip(
+                icon: Icons.sensors,
+                label: 'Sensitivity: $_motionSensitivity',
+                color: _motionSensitivity == 'High'
+                    ? Colors.red
+                    : _motionSensitivity == 'Low'
+                    ? Colors.blue
+                    : Colors.grey,
+                showToggle: true,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Health check
+            GestureDetector(
+              onTap: _runHealthCheckFromMap,
+              child: _StatusChip(
+                icon: _lastHealthCheck == null
+                    ? Icons.health_and_safety_outlined
+                    : (_lastHealthCheck!.isHealthy
+                          ? Icons.check_circle
+                          : Icons.warning_amber),
+                label: _lastHealthCheck == null
+                    ? 'Health: tap to check'
+                    : (_lastHealthCheck!.isHealthy
+                          ? 'Health: OK'
+                          : 'Health: ${_lastHealthCheck!.warningCount} warning${_lastHealthCheck!.warningCount == 1 ? '' : 's'}'),
+                color: _lastHealthCheck == null
+                    ? Colors.grey
+                    : (_lastHealthCheck!.isHealthy
+                          ? Colors.green
+                          : Colors.amber.shade700),
+                showToggle: true,
+              ),
+            ),
+            const SizedBox(height: 4),
             // Geofence count
             _StatusChip(
               icon: Icons.fence,
@@ -1448,6 +1519,121 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     );
   }
 
+  // ── Cycle motion sensitivity from map ─────────────────────────────────
+
+  Future<void> _cycleMotionSensitivityFromMap() async {
+    try {
+      late final String next;
+      late final double shake;
+      late final double still;
+      late final int samples;
+
+      switch (_motionSensitivity) {
+        case 'Low':
+          next = 'Medium';
+          shake = 2.5;
+          still = 0.4;
+          samples = 25;
+        case 'Medium':
+          next = 'High';
+          shake = 1.5;
+          still = 0.6;
+          samples = 15;
+        default:
+          next = 'Low';
+          shake = 4.0;
+          still = 0.2;
+          samples = 40;
+      }
+
+      await tl.Tracelet.setConfig(
+        tl.Config(
+          motion: tl.MotionConfig(
+            shakeThreshold: shake,
+            stillThreshold: still,
+            stillSampleCount: samples,
+          ),
+        ),
+      );
+      setState(() => _motionSensitivity = next);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$next sensitivity — shake=${shake}m/s² still=${still}m/s²',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to change sensitivity: $e')),
+        );
+      }
+    }
+  }
+
+  // ── Toggle Adaptive mode from map ─────────────────────────────────────
+
+  Future<void> _toggleAdaptiveFromMap() async {
+    try {
+      final newValue = !_adaptiveMode;
+      await tl.Tracelet.setConfig(
+        tl.Config(geo: tl.GeoConfig(enableAdaptiveMode: newValue)),
+      );
+      setState(() => _adaptiveMode = newValue);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newValue
+                  ? 'Adaptive sampling enabled — distance filter adjusts automatically'
+                  : 'Adaptive sampling disabled — fixed distance filter',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to toggle adaptive: $e')),
+        );
+      }
+    }
+  }
+
+  // ── Run health check from map ─────────────────────────────────────────
+
+  Future<void> _runHealthCheckFromMap() async {
+    try {
+      final health = await tl.Tracelet.getHealth();
+      setState(() => _lastHealthCheck = health);
+      _addMapEvent(
+        _MapEvent(
+          icon: health.isHealthy ? Icons.check_circle : Icons.warning_amber,
+          color: health.isHealthy ? Colors.green : Colors.amber,
+          title: health.isHealthy
+              ? 'Health: All OK'
+              : 'Health: ${health.warningCount} warning${health.warningCount == 1 ? '' : 's'}',
+          subtitle: health.warnings
+              .take(3)
+              .map((w) => w.description)
+              .join(', '),
+          time: DateTime.now(),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Health check failed: $e')));
+      }
+    }
+  }
+
   // ── Toggle Kalman filter from map ─────────────────────────────────────
 
   Future<void> _toggleKalmanFromMap() async {
@@ -1529,6 +1715,17 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                   ),
                 ),
               ),
+            if (_adaptiveMode) ...[
+              const SizedBox(width: 4),
+              Tooltip(
+                message: 'Adaptive sampling active',
+                child: Icon(
+                  Icons.auto_awesome,
+                  size: 16,
+                  color: Colors.amber.shade600,
+                ),
+              ),
+            ],
             if (_kalmanEnabled) ...[
               const SizedBox(width: 4),
               Tooltip(

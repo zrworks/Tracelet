@@ -171,6 +171,7 @@ class GeoConfig {
     this.locationAuthorizationRequest = 'Always',
     this.disableLocationAuthorizationAlert = false,
     this.enableTimestampMeta = false,
+    this.enableAdaptiveMode = false,
     this.filter,
   });
 
@@ -265,6 +266,31 @@ class GeoConfig {
   /// Defaults to `false`.
   final bool enableTimestampMeta;
 
+  /// Enable adaptive sampling mode.
+  ///
+  /// When `true`, the distance filter is dynamically adjusted based on
+  /// **activity type**, **battery level**, and **charging state** — not just
+  /// speed. This replaces the simple speed-based elasticity formula with a
+  /// multi-factor engine:
+  ///
+  /// - **Activity profiles**: `still` → 500m, `walking` → 50m,
+  ///   `driving` → 10m, etc.
+  /// - **Battery scaling**: Progressively widens the filter as battery
+  ///   drops below 50% / 20% / 10%.
+  /// - **Speed fallback**: When activity is unknown, speed-based elasticity
+  ///   is used as before.
+  ///
+  /// When `false` (default), the original speed-only elasticity is used
+  /// (controlled by [disableElasticity] and [elasticityMultiplier]).
+  ///
+  /// ```dart
+  /// GeoConfig(
+  ///   distanceFilter: 10.0,
+  ///   enableAdaptiveMode: true,
+  /// )
+  /// ```
+  final bool enableAdaptiveMode;
+
   /// Location filtering / denoising settings.
   ///
   /// Controls Kalman filtering, speed-jump rejection, and accuracy
@@ -340,6 +366,10 @@ class GeoConfig {
         map['enableTimestampMeta'],
         fallback: false,
       ),
+      enableAdaptiveMode: ensureBool(
+        map['enableAdaptiveMode'],
+        fallback: false,
+      ),
       filter: filterMap != null ? LocationFilter.fromMap(filterMap) : null,
     );
   }
@@ -367,6 +397,7 @@ class GeoConfig {
       'locationAuthorizationRequest': locationAuthorizationRequest,
       'disableLocationAuthorizationAlert': disableLocationAuthorizationAlert,
       'enableTimestampMeta': enableTimestampMeta,
+      'enableAdaptiveMode': enableAdaptiveMode,
       if (filter != null) 'filter': filter!.toMap(),
     };
   }
@@ -377,6 +408,7 @@ class GeoConfig {
       'distanceFilter: $distanceFilter, '
       'locationUpdateInterval: $locationUpdateInterval, '
       'disableElasticity: $disableElasticity, '
+      'enableAdaptiveMode: $enableAdaptiveMode, '
       'filter: $filter)';
 
   @override
@@ -408,6 +440,7 @@ class GeoConfig {
           disableLocationAuthorizationAlert ==
               other.disableLocationAuthorizationAlert &&
           enableTimestampMeta == other.enableTimestampMeta &&
+          enableAdaptiveMode == other.enableAdaptiveMode &&
           filter == other.filter;
 
   @override
@@ -432,6 +465,7 @@ class GeoConfig {
     locationAuthorizationRequest,
     disableLocationAuthorizationAlert,
     enableTimestampMeta,
+    enableAdaptiveMode,
     filter,
   ]);
 }
@@ -912,6 +946,9 @@ class HttpConfig {
     this.locationsOrderDirection = LocationOrder.asc,
     this.extras = const <String, Object?>{},
     this.disableAutoSyncOnCellular = false,
+    this.maxRetries = 10,
+    this.retryBackoffBase = 1000,
+    this.retryBackoffCap = 300000,
   });
 
   /// The server URL to sync locations to. `null` disables HTTP sync.
@@ -959,6 +996,20 @@ class HttpConfig {
   /// Sync will only occur on Wi-Fi. Defaults to `false`.
   final bool disableAutoSyncOnCellular;
 
+  /// Maximum number of retry attempts for transient HTTP failures (5xx,
+  /// timeout, network error, 429 rate-limit). Set to `0` to disable retries.
+  /// Defaults to `10`.
+  final int maxRetries;
+
+  /// Base delay in milliseconds for exponential backoff between retries.
+  /// The actual delay is `min(retryBackoffCap, retryBackoffBase × 2^(n-1))`
+  /// plus random jitter. Defaults to `1000` (1 second).
+  final int retryBackoffBase;
+
+  /// Maximum backoff delay in milliseconds. Caps exponential growth so retries
+  /// don't wait indefinitely. Defaults to `300000` (5 minutes).
+  final int retryBackoffCap;
+
   /// Creates an [HttpConfig] from a map.
   factory HttpConfig.fromMap(Map<String, Object?> map) {
     return HttpConfig(
@@ -986,6 +1037,9 @@ class HttpConfig {
         map['disableAutoSyncOnCellular'],
         fallback: false,
       ),
+      maxRetries: ensureInt(map['maxRetries'], fallback: 10),
+      retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1000),
+      retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 300000),
     );
   }
 
@@ -1005,6 +1059,9 @@ class HttpConfig {
       'locationsOrderDirection': locationsOrderDirection.index,
       'extras': extras,
       'disableAutoSyncOnCellular': disableAutoSyncOnCellular,
+      'maxRetries': maxRetries,
+      'retryBackoffBase': retryBackoffBase,
+      'retryBackoffCap': retryBackoffCap,
     };
   }
 
@@ -1026,7 +1083,10 @@ class HttpConfig {
           autoSyncThreshold == other.autoSyncThreshold &&
           httpTimeout == other.httpTimeout &&
           locationsOrderDirection == other.locationsOrderDirection &&
-          disableAutoSyncOnCellular == other.disableAutoSyncOnCellular;
+          disableAutoSyncOnCellular == other.disableAutoSyncOnCellular &&
+          maxRetries == other.maxRetries &&
+          retryBackoffBase == other.retryBackoffBase &&
+          retryBackoffCap == other.retryBackoffCap;
 
   @override
   int get hashCode => Object.hash(
@@ -1040,6 +1100,9 @@ class HttpConfig {
     httpTimeout,
     locationsOrderDirection,
     disableAutoSyncOnCellular,
+    maxRetries,
+    retryBackoffBase,
+    retryBackoffCap,
   );
 }
 
@@ -1128,6 +1191,9 @@ class MotionConfig {
     this.stopDetectionDelay = 0,
     this.stopOnStationary = false,
     this.triggerActivities = '',
+    this.shakeThreshold = 2.5,
+    this.stillThreshold = 0.4,
+    this.stillSampleCount = 25,
   });
 
   /// Minutes of non-movement before transitioning to stationary state.
@@ -1192,6 +1258,44 @@ class MotionConfig {
   /// activities trigger motion.
   final String triggerActivities;
 
+  /// Accelerometer magnitude (m/s², gravity-subtracted) required to trigger
+  /// a transition from stationary to moving.
+  ///
+  /// Higher values make motion detection **less sensitive** (requires a stronger
+  /// jolt to start tracking). Lower values make it more sensitive.
+  ///
+  /// Defaults to `2.5` m/s² (~0.25 g). A deliberate pick-up or vehicle
+  /// acceleration exceeds this easily. Reduce to `1.5` for higher sensitivity;
+  /// increase to `4.0+` if false starts are a problem (e.g. phone sliding on
+  /// a car seat).
+  ///
+  /// Only affects **accelerometer-based** detection (stationary → moving).
+  final double shakeThreshold;
+
+  /// Accelerometer magnitude (m/s², gravity-subtracted) below which a sample
+  /// counts as "still".
+  ///
+  /// Lower values require **more perfect** stillness before a stop is detected.
+  /// Higher values make stop-detection more lenient.
+  ///
+  /// Defaults to `0.4` m/s². At this threshold, a phone resting on a desk
+  /// (~0.0–0.2) is clearly still, while a phone held in a hand (~0.3–0.8) may
+  /// or may not register as still.
+  final double stillThreshold;
+
+  /// Number of consecutive accelerometer samples below [stillThreshold]
+  /// required to begin the stop-timeout countdown.
+  ///
+  /// At the platform's default sampling rate, this translates to approximately:
+  ///  - Android: ~200 ms/sample → `25` samples ≈ 5 seconds
+  ///  - iOS: ~20 ms/sample (50 Hz) → `150` samples ≈ 3 seconds
+  ///
+  /// Increase for more certainty before declaring stillness; decrease for
+  /// faster stop detection.
+  ///
+  /// Defaults to `25`.
+  final int stillSampleCount;
+
   /// Creates a [MotionConfig] from a map.
   factory MotionConfig.fromMap(Map<String, Object?> map) {
     return MotionConfig(
@@ -1217,6 +1321,9 @@ class MotionConfig {
       stopDetectionDelay: ensureInt(map['stopDetectionDelay'], fallback: 0),
       stopOnStationary: ensureBool(map['stopOnStationary'], fallback: false),
       triggerActivities: map['triggerActivities'] as String? ?? '',
+      shakeThreshold: ensureDouble(map['shakeThreshold'], fallback: 2.5),
+      stillThreshold: ensureDouble(map['stillThreshold'], fallback: 0.4),
+      stillSampleCount: ensureInt(map['stillSampleCount'], fallback: 25),
     );
   }
 
@@ -1234,6 +1341,9 @@ class MotionConfig {
       'stopDetectionDelay': stopDetectionDelay,
       'stopOnStationary': stopOnStationary,
       'triggerActivities': triggerActivities,
+      'shakeThreshold': shakeThreshold,
+      'stillThreshold': stillThreshold,
+      'stillSampleCount': stillSampleCount,
     };
   }
 
@@ -1258,7 +1368,10 @@ class MotionConfig {
           disableStopDetection == other.disableStopDetection &&
           stopDetectionDelay == other.stopDetectionDelay &&
           stopOnStationary == other.stopOnStationary &&
-          triggerActivities == other.triggerActivities;
+          triggerActivities == other.triggerActivities &&
+          shakeThreshold == other.shakeThreshold &&
+          stillThreshold == other.stillThreshold &&
+          stillSampleCount == other.stillSampleCount;
 
   @override
   int get hashCode => Object.hash(
@@ -1271,7 +1384,12 @@ class MotionConfig {
     disableStopDetection,
     stopDetectionDelay,
     stopOnStationary,
-    triggerActivities,
+    Object.hash(
+      triggerActivities,
+      shakeThreshold,
+      stillThreshold,
+      stillSampleCount,
+    ),
   );
 }
 

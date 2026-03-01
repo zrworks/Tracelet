@@ -155,9 +155,9 @@ final class MotionDetector {
             // Currently moving — detect sustained stillness
             if configManager.getDisableStopDetection() { return }
 
-            if abs(magnitude) < Self.stillThreshold {
+            if abs(magnitude) < configManager.getStillThreshold() {
                 consecutiveStillSamples += 1
-                if consecutiveStillSamples >= Self.stillSampleCount {
+                if consecutiveStillSamples >= configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
                     motionManager.stopAccelerometerUpdates()
                     startStopTimeoutCountdown()
@@ -167,7 +167,7 @@ final class MotionDetector {
             }
         } else {
             // Currently stationary — detect shake/movement
-            if abs(magnitude) > Self.shakeThreshold {
+            if abs(magnitude) > configManager.getShakeThreshold() {
                 motionManager.stopAccelerometerUpdates()
                 triggerMotionChange(isMoving: true)
 

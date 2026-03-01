@@ -392,7 +392,7 @@ class MotionDetector(
                 val z = event.values[2]
                 val magnitude = sqrt((x * x + y * y + z * z).toDouble()) - 9.81
 
-                if (magnitude > SHAKE_THRESHOLD) {
+                if (magnitude > config.getShakeThreshold()) {
                     stopAccelerometerMonitoring()
                     declareMoving()
                 }
@@ -439,9 +439,9 @@ class MotionDetector(
                 val z = event.values[2]
                 val magnitude = sqrt((x * x + y * y + z * z).toDouble()) - 9.81
 
-                if (Math.abs(magnitude) < STILL_THRESHOLD) {
+                if (Math.abs(magnitude) < config.getStillThreshold()) {
                     consecutiveStillSamples++
-                    if (consecutiveStillSamples >= STILL_SAMPLE_COUNT) {
+                    if (consecutiveStillSamples >= config.getStillSampleCount()) {
                         // Sustained stillness detected — start stop-timeout
                         stopAccelerometerMonitoring()
                         startStopTimeoutCountdown()

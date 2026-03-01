@@ -15,6 +15,7 @@ Config(
     stationaryRadius: 25.0,
     disableElasticity: false,        // Fixed vs speed-adaptive distance filter
     elasticityMultiplier: 1.0,       // Scale factor for adaptive filter
+    enableAdaptiveMode: true,        // Auto-adjust distanceFilter (activity + battery + speed)
     enableTimestampMeta: true,       // Extra timing fields on each location
     stopAfterElapsedMinutes: -1,     // Auto-stop after N minutes (-1 = off)
     geofenceModeHighAccuracy: false, // Full GPS in geofence-only mode (Android)
@@ -46,6 +47,9 @@ Config(
     autoSync: true,
     batchSync: true,
     disableAutoSyncOnCellular: false, // Wi-Fi-only sync
+    maxRetries: 10,                  // Retry transient failures
+    retryBackoffBase: 1000,          // 1s base delay
+    retryBackoffCap: 300000,         // 5 min max backoff
   ),
   motion: MotionConfig(              // Motion detection
     stopTimeout: 5,
@@ -53,6 +57,9 @@ Config(
     disableStopDetection: false,
     stopDetectionDelay: 0,
     stopOnStationary: false,
+    shakeThreshold: 2.5,             // m/s² — jolt to trigger moving
+    stillThreshold: 0.4,             // m/s² — below this counts as still
+    stillSampleCount: 25,            // consecutive still samples
   ),
   persistence: PersistenceConfig(    // Database retention
     persistMode: PersistMode.all,    // all | location | geofence | none
@@ -92,6 +99,7 @@ Location accuracy, sampling, and filtering.
 | `useSignificantChangesOnly` | `bool` | `false` | Use significant location changes only |
 | `showsBackgroundLocationIndicator` | `bool` | `true` | iOS: show blue status bar indicator |
 | `pausesLocationUpdatesAutomatically` | `bool` | `false` | iOS: allow system to pause updates |
+| `enableAdaptiveMode` | `bool` | `false` | Enable adaptive sampling — automatically adjusts `distanceFilter` based on activity, battery, and speed ([details](ADAPTIVE-SAMPLING.md)) |
 | `filter` | `LocationFilter?` | `null` | GPS denoising configuration |
 
 ### LocationFilter
@@ -153,6 +161,9 @@ Server sync configuration.
 | `autoSyncThreshold` | `int` | `0` | Min locations before auto-sync |
 | `disableAutoSyncOnCellular` | `bool` | `false` | Wi-Fi-only auto-sync |
 | `httpTimeout` | `int` | `60000` | Request timeout in milliseconds |
+| `maxRetries` | `int` | `10` | Max retry attempts for transient failures (5xx, 429, timeout). Set to `0` to disable retries ([details](HTTP-SYNC.md)) |
+| `retryBackoffBase` | `int` | `1000` | Base delay in ms for exponential backoff between retries |
+| `retryBackoffCap` | `int` | `300000` | Max backoff delay in ms (5 min). Caps exponential growth |
 | `authorization` | `Authorization?` | `null` | Token refresh config |
 
 ---
@@ -169,8 +180,35 @@ Motion detection tuning.
 | `disableStopDetection` | `bool` | `false` | Never declare stationary |
 | `stopDetectionDelay` | `int` | `0` | Extra delay (seconds) before stationary |
 | `stopOnStationary` | `bool` | `false` | Fully stop tracking when stationary |
-| `motionTriggerDelay` | `int` | `0` | Delay (seconds) before declaring moving |
+| `motionTriggerDelay` | `int` | `0` | Delay (ms) before declaring moving |
 | `disableMotionActivityUpdates` | `bool` | `false` | Disable platform activity recognition; falls back to permission-free accelerometer-only motion detection |
+| `shakeThreshold` | `double` | `2.5` | Accelerometer magnitude (m/s²) to trigger stationary → moving. Higher = less sensitive |
+| `stillThreshold` | `double` | `0.4` | Accelerometer magnitude (m/s²) below which a sample counts as "still". Lower = stricter |
+| `stillSampleCount` | `int` | `25` | Consecutive still samples before starting stop-timeout. Higher = needs longer sustained stillness |
+
+### Motion Sensitivity Presets
+
+The 3 accelerometer fields work together. Here are recommended presets:
+
+| Preset | `shakeThreshold` | `stillThreshold` | `stillSampleCount` | Behavior |
+|---|---|---|---|---|
+| **High** | `1.5` | `0.6` | `15` | Very responsive. Best for walking/exercise apps that need quick transitions. May cause false starts from phone vibration. |
+| **Medium** (default) | `2.5` | `0.4` | `25` | Balanced. Good for general-purpose tracking. |
+| **Low** | `4.0` | `0.2` | `40` | Conservative. Requires deliberate movement. Best for vehicle-only tracking or when false starts are a problem. |
+
+```dart
+// Example: Low sensitivity for vehicle tracking
+await Tracelet.setConfig(Config(
+  motion: MotionConfig(
+    shakeThreshold: 4.0,   // strong jolt required
+    stillThreshold: 0.2,   // very still before stop
+    stillSampleCount: 40,  // ~8 seconds of stillness
+  ),
+));
+```
+
+> **Note:** Values are in m/s² on both Android and iOS. The iOS implementation
+> automatically converts to g-force internally.
 
 ---
 

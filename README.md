@@ -25,7 +25,9 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Background location tracking** — Continuous GPS recording with configurable `distanceFilter` and `desiredAccuracy`. Works after app is minimized, killed, or device rebooted.
 - **Geofencing** — Add circular or polygon geofences with enter/exit/dwell detection. **Unlimited geofences** via proximity-based auto-load/unload — only the closest geofences within `geofenceProximityRadius` are registered with the OS (up to 100 on Android, 20 on iOS), enabling monitoring of thousands of geofences despite platform limits.
 - **SQLite persistence** — All locations stored locally in SQLite. Query, count, delete, or sync to your server. Configurable retention (max days/records) and per-type persistence modes.
-- **HTTP auto-sync** — Configurable batch upload with retry, exponential backoff, and offline queuing. Wi-Fi-only sync option via `disableAutoSyncOnCellular`.
+- **HTTP auto-sync** — Configurable batch upload with retry, exponential backoff, and offline queuing. Wi-Fi-only sync option via `disableAutoSyncOnCellular`. Configurable `maxRetries`, `retryBackoffBase`, and `retryBackoffCap` for fine-tuned retry strategy. Connectivity-aware deferred sync on both platforms.
+- **Adaptive sampling** — Automatically adjusts `distanceFilter` based on detected activity (walking, driving, still), battery level, and speed. Reduces GPS polling when stationary or battery-low, increases resolution when driving. Enable with `enableAdaptiveMode: true`.
+- **Health check API** — Single-call `getHealth()` returns a comprehensive diagnostic snapshot: tracking state, permissions, battery, OEM health, sensors, database stats, and auto-detected warnings. Build monitoring dashboards or pre-flight checks with zero boilerplate.
 - **Headless execution** — Run Dart code in response to background events even when the Flutter UI is not running.
 - **Start on boot** — Resume tracking automatically after device reboot.
 - **Scheduling** — Define time-based schedules (e.g., "Mon–Fri 9AM–5PM"). Use `scheduleUseAlarmManager` on Android for exact-time execution.
@@ -37,6 +39,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Trip detection** — Automatic trip start/stop events based on motion state transitions. Each trip includes distance, duration, start/stop location, and all waypoints. Subscribe via `onTrip()`.
 - **Polygon geofences** — Define geofences with arbitrary polygon vertices using ray-casting point-in-polygon containment checks. Set `vertices` on a `Geofence` instead of using a circular radius.
 - **Auto-stop** — Automatically stop tracking after a configurable number of minutes via `stopAfterElapsedMinutes`.
+- **Configurable motion sensitivity** — Tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) from Dart. Use built-in presets (Low / Medium / High) or set custom values. iOS auto-converts m/s² to g-force.
 - **Activity recognition tuning** — Adjust confidence thresholds, stop-detection delays, and stationary behavior.
 - **Timestamp metadata** — Optional extra timing fields on each location record via `enableTimestampMeta`.
 - **Geofence high-accuracy mode** — Run the full GPS + motion pipeline in geofence-only mode (Android) via `geofenceModeHighAccuracy`.
@@ -210,6 +213,11 @@ await tl.Tracelet.start();
 | [Polygon Geofences](help/POLYGON-GEOFENCES.md) | Polygon geofences — vertices, ray-casting, examples |
 | [Web Support](help/WEB-SUPPORT.md) | Web platform capabilities, limitations, and browser APIs |
 | [iOS Background Hardening](help/IOS-BACKGROUND-HARDENING.md) | Background task protection, session APIs, prevent suspend |
+| [Adaptive Sampling](help/ADAPTIVE-SAMPLING.md) | Multi-factor distance filter — activity, battery, speed |
+| [Health Check](help/HEALTH-CHECK.md) | Single-call diagnostics — warnings, permissions, sensors |
+| [HTTP Sync](help/HTTP-SYNC.md) | Retry strategy, exponential backoff, connectivity handling |
+| [Mock Detection](help/MOCK-DETECTION.md) | Detect spoofed locations, mock provider flags, trust scoring |
+| [OEM Compatibility](help/OEM-COMPATIBILITY.md) | OEM-specific battery kill issues, manufacturer workarounds |
 
 ## Requirements
 

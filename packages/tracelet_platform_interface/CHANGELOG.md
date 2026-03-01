@@ -1,3 +1,9 @@
+## 0.9.0
+
+* **FEAT**: `AdaptiveSamplingEngine` — multi-factor distance filter computation (activity type, battery level, charging state, speed). 33 unit tests.
+* **FEAT**: `HealthCheck` model with `HealthWarning` enum (12 warning types) and `HealthWarningDescription` extension.
+* **FEAT**: `LocationProcessor` integration with adaptive sampling via `AdaptiveContext`.
+
 ## 0.8.3
 
 * **CHORE**: Version bump for proximity-based geofence monitoring release.

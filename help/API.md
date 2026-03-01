@@ -81,6 +81,7 @@
 |---|---|---|
 | `Tracelet.getSensors()` | `Sensors` | Device sensor availability |
 | `Tracelet.getDeviceInfo()` | `DeviceInfo` | Device model, manufacturer, OS |
+| `Tracelet.getHealth()` | `HealthCheck` | Single-call diagnostic snapshot ([details](HEALTH-CHECK.md)) |
 | `Tracelet.playSound(name)` | `bool` | Play debug sound |
 | `Tracelet.getLog()` | `String` | Get log content |
 | `Tracelet.destroyLog()` | `bool` | Clear log |
@@ -101,10 +102,42 @@
 | `Tracelet.onGeofence(cb)` | `GeofenceEvent` | Geofence transitions |
 | `Tracelet.onGeofencesChange(cb)` | `GeofencesChangeEvent` | Monitored set changes |
 | `Tracelet.onHeartbeat(cb)` | `HeartbeatEvent` | Heartbeat interval |
-| `Tracelet.onHttp(cb)` | `HttpEvent` | HTTP sync result |
+| `Tracelet.onHttp(cb)` | `HttpEvent` | HTTP sync result (includes retry metadata) |
 | `Tracelet.onSchedule(cb)` | `State` | Schedule start/stop |
 | `Tracelet.onConnectivityChange(cb)` | `ConnectivityChangeEvent` | Online/offline |
 | `Tracelet.onPowerSaveChange(cb)` | `bool` | Battery saver toggle |
 | `Tracelet.onEnabledChange(cb)` | `bool` | Tracking on/off |
 | `Tracelet.onNotificationAction(cb)` | `String` | Notification tap (Android) |
 | `Tracelet.onAuthorization(cb)` | `AuthorizationEvent` | Auth token refresh |
+
+---
+
+## Key Event Types
+
+### HttpEvent
+
+| Property | Type | Description |
+|---|---|---|
+| `success` | `bool` | Whether the request succeeded (2xx) |
+| `status` | `int` | HTTP status code |
+| `responseText` | `String` | Raw response body |
+| `isRetry` | `bool` | `true` if this was a retry attempt |
+| `retryCount` | `int` | Current retry attempt number (0 = first try) |
+
+> See [HTTP Sync Guide](HTTP-SYNC.md) for retry strategy details.
+
+### HealthCheck
+
+| Property | Type | Description |
+|---|---|---|
+| `isTracking` | `bool` | Whether tracking is currently active |
+| `trackingMode` | `TrackingMode` | Current tracking mode |
+| `locationPermission` | `int` | Location permission status |
+| `locationServicesEnabled` | `bool` | Location services on/off |
+| `isPowerSaveMode` | `bool` | Battery saver active |
+| `warnings` | `List<HealthWarning>` | Auto-detected issues |
+| `isHealthy` | `bool` | `true` when no warnings |
+| `warningCount` | `int` | Number of warnings |
+| `hasBackgroundPermission` | `bool` | Has "Always" + services enabled |
+
+> See [Health Check Guide](HEALTH-CHECK.md) for full field list and warning types.

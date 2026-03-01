@@ -4,6 +4,7 @@
 /// and Swift (iOS) code. They are now shared across all platforms.
 library;
 
+export 'adaptive_sampling_engine.dart';
 export 'geo_utils.dart';
 export 'geofence_evaluator.dart';
 export 'kalman_filter.dart';

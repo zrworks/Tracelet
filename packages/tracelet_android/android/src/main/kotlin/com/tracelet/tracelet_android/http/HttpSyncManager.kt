@@ -42,9 +42,6 @@ class HttpSyncManager(
 ) {
     companion object {
         private const val TAG = "HttpSyncManager"
-        private const val MAX_RETRIES = 10
-        private const val BASE_RETRY_MS = 1000L
-        private const val MAX_RETRY_MS = 300000L // 5 minutes
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
     }
 
@@ -155,6 +152,11 @@ class HttpSyncManager(
         val headers = config.getHttpHeaders()
         val method = if (config.getHttpMethod() == 0) "POST" else "PUT"
 
+        // Retry parameters from config
+        val maxRetries = config.getMaxRetries()
+        val baseRetryMs = config.getRetryBackoffBase().toLong()
+        val maxRetryMs = config.getRetryBackoffCap().toLong()
+
         // Build JSON body
         val body: String
         if (config.getBatchSync() && locations.size > 1) {
@@ -176,7 +178,7 @@ class HttpSyncManager(
         }
 
         var retryCount = 0
-        while (retryCount <= MAX_RETRIES) {
+        while (retryCount <= maxRetries) {
             try {
                 val requestBody = body.toRequestBody(JSON_MEDIA)
                 val requestBuilder = Request.Builder().url(url)
@@ -199,6 +201,8 @@ class HttpSyncManager(
                     "success" to response.isSuccessful,
                     "status" to statusCode,
                     "responseText" to responseBody,
+                    "isRetry" to (retryCount > 0),
+                    "retryCount" to retryCount,
                 )
                 events.sendHttp(httpEvent)
 
@@ -208,14 +212,14 @@ class HttpSyncManager(
                     return true
                 }
 
-                // Permanent failure (4xx) — don't retry
-                if (statusCode in 400..499) {
+                // Transient errors: 429 (rate-limit), 408 (timeout), 5xx
+                if (isTransientError(statusCode)) {
+                    Log.w(TAG, "HTTP sync transient failure: $statusCode, retry ${retryCount + 1}")
+                } else {
+                    // Permanent failure (other 4xx) — don't retry
                     Log.w(TAG, "HTTP sync permanent failure: $statusCode")
                     return false
                 }
-
-                // Transient failure (5xx / timeout) — retry
-                Log.w(TAG, "HTTP sync transient failure: $statusCode, retry ${retryCount + 1}")
 
             } catch (e: IOException) {
                 Log.w(TAG, "HTTP sync IO error: ${e.message}, retry ${retryCount + 1}")
@@ -223,23 +227,31 @@ class HttpSyncManager(
                     "success" to false,
                     "status" to 0,
                     "responseText" to (e.message ?: "IO Error"),
+                    "isRetry" to (retryCount > 0),
+                    "retryCount" to retryCount,
                 )
                 events.sendHttp(httpEvent)
             }
 
             retryCount++
-            if (retryCount <= MAX_RETRIES) {
+            if (retryCount <= maxRetries) {
                 val backoff = min(
-                    MAX_RETRY_MS,
-                    BASE_RETRY_MS * 2.0.pow(retryCount - 1).toLong()
+                    maxRetryMs,
+                    baseRetryMs * 2.0.pow(retryCount - 1).toLong()
                 )
                 val jitter = (backoff * 0.25 * (Random.nextDouble() * 2 - 1)).toLong()
                 Thread.sleep(backoff + jitter)
             }
         }
 
-        Log.e(TAG, "HTTP sync failed after $MAX_RETRIES retries")
+        Log.e(TAG, "HTTP sync failed after $maxRetries retries")
         return false
+    }
+
+    /** Returns true for transient HTTP errors that should be retried. */
+    private fun isTransientError(statusCode: Int): Boolean {
+        return statusCode == 0 || statusCode == 408 || statusCode == 429 ||
+               (statusCode in 500..599)
     }
 
     // =========================================================================

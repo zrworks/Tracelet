@@ -110,6 +110,22 @@ final class ConfigManager {
     func getStopOnStationary() -> Bool { cache["stopOnStationary"] as? Bool ?? false }
     func getTriggerActivities() -> String { cache["triggerActivities"] as? String ?? "" }
 
+    /// Shake threshold in g-force (converted from m/s² config value).
+    /// Default: 2.5 m/s² ÷ 9.81 ≈ 0.255 g
+    func getShakeThreshold() -> Double {
+        let msSquared = cache["shakeThreshold"] as? Double ?? 2.5
+        return msSquared / 9.81
+    }
+    /// Still threshold in g-force (converted from m/s² config value).
+    /// Default: 0.4 m/s² ÷ 9.81 ≈ 0.041 g
+    func getStillThreshold() -> Double {
+        let msSquared = cache["stillThreshold"] as? Double ?? 0.4
+        return msSquared / 9.81
+    }
+    /// Consecutive still samples needed. iOS samples at 50 Hz so
+    /// adjust accordingly. Default: 25 (matches Dart default).
+    func getStillSampleCount() -> Int { cache["stillSampleCount"] as? Int ?? 25 }
+
     // GeofenceConfig
     func getGeofenceInitialTriggerEntry() -> Bool { cache["geofenceInitialTriggerEntry"] as? Bool ?? true }
     func getGeofenceModeKnockOut() -> Bool { cache["geofenceModeKnockOut"] as? Bool ?? false }
@@ -127,6 +143,9 @@ final class ConfigManager {
     func getHttpTimeout() -> Int { cache["httpTimeout"] as? Int ?? 60000 }
     func getLocationsOrderDirection() -> String { cache["locationsOrderDirection"] as? String ?? "ASC" }
     func getDisableAutoSyncOnCellular() -> Bool { cache["disableAutoSyncOnCellular"] as? Bool ?? false }
+    func getMaxRetries() -> Int { cache["maxRetries"] as? Int ?? 10 }
+    func getRetryBackoffBase() -> Int { cache["retryBackoffBase"] as? Int ?? 1000 }
+    func getRetryBackoffCap() -> Int { cache["retryBackoffCap"] as? Int ?? 300000 }
 
     // PersistenceConfig
     func getPersistMode() -> Int { cache["persistMode"] as? Int ?? 0 }

@@ -1,3 +1,11 @@
+## 0.9.0
+
+* **FEAT**: HTTP sync retry engine — configurable retry with exponential backoff for transient 5xx, 429, and timeout failures. Respects `Retry-After` headers. Defers sync on connectivity loss.
+* **FEAT**: Configurable motion sensitivity — `MotionDetector` reads `shakeThreshold`, `stillThreshold`, `stillSampleCount` from `ConfigManager` at runtime instead of hardcoded constants.
+* **FIX**: HTTP 429 (Too Many Requests) now correctly treated as transient (was previously treated as permanent failure).
+* **FIX**: Added `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission to AndroidManifest.xml for battery exemption settings.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.9.0.
+
 ## 0.8.3
 
 * **FEAT**: Proximity-based geofence auto-load/unload — only geofences within `geofenceProximityRadius` are registered with the OS, sorted by distance, capped at 100 (Android limit). Enables monitoring thousands of geofences.

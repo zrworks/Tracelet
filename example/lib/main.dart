@@ -71,9 +71,12 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isTracking = false;
   bool _isMoving = false;
   bool _kalmanEnabled = true;
+  bool _adaptiveMode = false;
+  String _motionSensitivity = 'Medium'; // Low / Medium / High
   tl.Location? _lastLocation;
   tl.State? _pluginState;
   tl.TripEvent? _lastTrip;
+  tl.HealthCheck? _lastHealthCheck;
   final List<_LogEntry> _log = [];
 
   // Subscriptions
@@ -201,7 +204,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
     _subs.add(
       tl.Tracelet.onHttp((evt) {
-        _addLog('HTTP', 'status=${evt.status}  success=${evt.success}');
+        final retryInfo = evt.isRetry ? '  RETRY #${evt.retryCount}' : '';
+        _addLog(
+          'HTTP',
+          'status=${evt.status}  success=${evt.success}$retryInfo',
+        );
       }),
     );
 
@@ -1351,6 +1358,29 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  /// Request battery optimization exemption (Android only).
+  ///
+  /// Shows the system dialog asking the user to whitelist this app
+  /// from battery optimizations. Always opens the settings screen
+  /// and shows current exemption status.
+  Future<void> _requestBatteryExemption() async {
+    try {
+      final alreadyExempt = await tl.Tracelet.isIgnoringBatteryOptimizations();
+      if (alreadyExempt) {
+        _addLog('BATTERY', 'App is already exempt from battery optimizations');
+      }
+      final ok = await tl.Tracelet.openBatterySettings();
+      _addLog(
+        'BATTERY',
+        ok
+            ? 'Opened battery optimization settings'
+            : 'Failed to open battery settings',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'requestBatteryExemption() failed: $e');
+    }
+  }
+
   // ── New Feature Demos ───────────────────────────────────────────────────
 
   /// Toggle Kalman filter GPS smoothing at runtime.
@@ -1486,6 +1516,329 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       _addLog('ERROR', 'setStrictFilter() failed: $e');
     }
+  }
+
+  /// Toggle adaptive sampling mode at runtime.
+  Future<void> _toggleAdaptiveMode() async {
+    try {
+      final newValue = !_adaptiveMode;
+      final state = await tl.Tracelet.setConfig(
+        tl.Config(geo: tl.GeoConfig(enableAdaptiveMode: newValue)),
+      );
+      setState(() {
+        _adaptiveMode = newValue;
+        _pluginState = state;
+      });
+      _addLog(
+        'ADAPTIVE',
+        newValue
+            ? 'ENABLED — distance filter adapts to activity/battery/speed'
+            : 'DISABLED — fixed distance filter',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'toggleAdaptiveMode() failed: $e');
+    }
+  }
+
+  /// Cycle motion sensitivity between Low / Medium / High presets.
+  Future<void> _cycleMotionSensitivity() async {
+    try {
+      late final String next;
+      late final double shake;
+      late final double still;
+      late final int samples;
+
+      switch (_motionSensitivity) {
+        case 'Low':
+          next = 'Medium';
+          shake = 2.5; // default
+          still = 0.4;
+          samples = 25;
+        case 'Medium':
+          next = 'High';
+          shake = 1.5; // very sensitive
+          still = 0.6;
+          samples = 15;
+        default: // High → Low
+          next = 'Low';
+          shake = 4.0; // requires strong jolt
+          still = 0.2;
+          samples = 40;
+      }
+
+      await tl.Tracelet.setConfig(
+        tl.Config(
+          motion: tl.MotionConfig(
+            shakeThreshold: shake,
+            stillThreshold: still,
+            stillSampleCount: samples,
+          ),
+        ),
+      );
+      setState(() => _motionSensitivity = next);
+      _addLog(
+        'MOTION',
+        '$next sensitivity — shake=${shake}m/s² still=${still}m/s² '
+            'samples=$samples',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'cycleMotionSensitivity() failed: $e');
+    }
+  }
+
+  /// Run a full health check and show warnings.
+  Future<void> _runHealthCheck() async {
+    try {
+      _addLog('HEALTH', 'Running diagnostics...');
+      final health = await tl.Tracelet.getHealth();
+      setState(() => _lastHealthCheck = health);
+      _addLog(
+        'HEALTH',
+        health.isHealthy
+            ? 'ALL CLEAR — no issues detected'
+            : '${health.warningCount} warning(s) detected',
+      );
+      _addLog(
+        'HEALTH',
+        'tracking=${health.trackingEnabled}  moving=${health.isMoving}  '
+            'bg=${health.hasBackgroundPermission}',
+      );
+      if (health.isPowerSaveMode) {
+        _addLog('HEALTH', '\u26a0 Power Save Mode is ON');
+      }
+      if (health.isAggressiveOem) {
+        _addLog(
+          'HEALTH',
+          '\u26a0 Aggressive OEM: ${health.manufacturer} ${health.model}',
+        );
+      }
+      for (final w in health.warnings) {
+        _addLog('HEALTH', '  \u26a0 ${w.description}');
+      }
+      _addLog(
+        'HEALTH',
+        'locations=${health.locationCount}  odometer=${health.odometer.toStringAsFixed(0)}m',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'getHealth() failed: $e');
+    }
+  }
+
+  /// Show full health check bottom sheet.
+  Future<void> _showHealthDashboard() async {
+    try {
+      final health = await tl.Tracelet.getHealth();
+      setState(() => _lastHealthCheck = health);
+      if (!mounted) return;
+      _showHealthBottomSheet(health);
+    } catch (e) {
+      _addLog('ERROR', 'Health dashboard failed: $e');
+    }
+  }
+
+  void _showHealthBottomSheet(tl.HealthCheck health) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (ctx, scrollCtrl) => ListView(
+          controller: scrollCtrl,
+          padding: const EdgeInsets.all(20),
+          children: [
+            // Title
+            Row(
+              children: [
+                Icon(
+                  health.isHealthy ? Icons.check_circle : Icons.warning_amber,
+                  color: health.isHealthy ? Colors.green : Colors.orange,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Health Check',
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Chip(
+                  label: Text(
+                    health.isHealthy
+                        ? 'Healthy'
+                        : '${health.warningCount} Warning(s)',
+                  ),
+                  backgroundColor: health.isHealthy
+                      ? Colors.green.shade50
+                      : Colors.orange.shade50,
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+
+            // Tracking State
+            _HealthRow(
+              'Tracking',
+              health.trackingEnabled ? 'Active' : 'Stopped',
+              valueColor: health.trackingEnabled ? Colors.green : Colors.red,
+            ),
+            _HealthRow('Motion', health.isMoving ? 'Moving' : 'Stationary'),
+            _HealthRow('Tracking Mode', health.trackingMode.name),
+            _HealthRow('Odometer', '${health.odometer.toStringAsFixed(0)}m'),
+            const Divider(height: 16),
+
+            // Permissions
+            Text(
+              'Permissions',
+              style: Theme.of(
+                ctx,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            _HealthRow(
+              'Location',
+              health.locationPermission.name,
+              valueColor: health.hasBackgroundPermission
+                  ? Colors.green
+                  : Colors.orange,
+            ),
+            _HealthRow(
+              'Location Services',
+              health.locationServicesEnabled ? 'ON' : 'OFF',
+              valueColor: health.locationServicesEnabled
+                  ? Colors.green
+                  : Colors.red,
+            ),
+            _HealthRow(
+              'Accuracy Authorization',
+              health.accuracyAuthorization.name,
+            ),
+            const Divider(height: 16),
+
+            // Battery / Power
+            Text(
+              'Battery & Power',
+              style: Theme.of(
+                ctx,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            _HealthRow(
+              'Power Save',
+              health.isPowerSaveMode ? 'ON' : 'OFF',
+              valueColor: health.isPowerSaveMode ? Colors.orange : Colors.green,
+            ),
+            _HealthRow(
+              'Battery Optimized',
+              health.isIgnoringBatteryOptimizations ? 'Exempt' : 'Restricted',
+              valueColor: health.isIgnoringBatteryOptimizations
+                  ? Colors.green
+                  : Colors.orange,
+            ),
+            const Divider(height: 16),
+
+            // Device
+            Text(
+              'Device',
+              style: Theme.of(
+                ctx,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            _HealthRow('Manufacturer', health.manufacturer),
+            _HealthRow('Model', health.model),
+            if (health.isAggressiveOem)
+              _HealthRow(
+                'Aggressive OEM',
+                'Rating ${health.aggressionRating}/5',
+                valueColor: Colors.red,
+              ),
+            const Divider(height: 16),
+
+            // Sensors
+            Text(
+              'Sensors',
+              style: Theme.of(
+                ctx,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            _HealthRow(
+              'Accelerometer',
+              health.hasAccelerometer ? 'Available' : 'Missing',
+              valueColor: health.hasAccelerometer
+                  ? Colors.green
+                  : Colors.orange,
+            ),
+            _HealthRow(
+              'Significant Motion',
+              health.hasSignificantMotion ? 'Available' : 'Missing',
+              valueColor: health.hasSignificantMotion
+                  ? Colors.green
+                  : Colors.orange,
+            ),
+            _HealthRow(
+              'Magnetometer',
+              health.hasMagnetometer ? 'Available' : 'Missing',
+            ),
+            _HealthRow(
+              'Gyroscope',
+              health.hasGyroscope ? 'Available' : 'Missing',
+            ),
+            const Divider(height: 16),
+
+            // Database
+            Text(
+              'Database',
+              style: Theme.of(
+                ctx,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            _HealthRow('Location Count', '${health.locationCount}'),
+            const Divider(height: 16),
+
+            // Warnings
+            if (health.hasWarnings) ...[
+              Text(
+                'Warnings',
+                style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...health.warnings.map(
+                (w) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          w.description,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Set persistence to geofence-only mode (location events NOT persisted).
@@ -1769,6 +2122,7 @@ class _DashboardPageState extends State<DashboardPage> {
             isMoving: _isMoving,
             location: _lastLocation,
             state: _pluginState,
+            healthCheck: _lastHealthCheck,
           ),
 
           // ─── Action Sections ───────────────────────────────────────────
@@ -1917,6 +2271,18 @@ class _DashboardPageState extends State<DashboardPage> {
                         _kalmanEnabled ? Icons.blur_on : Icons.blur_off,
                         _toggleKalmanFilter,
                       ),
+                      _Chip(
+                        _adaptiveMode ? 'Adaptive: ON' : 'Adaptive: OFF',
+                        _adaptiveMode
+                            ? Icons.auto_awesome
+                            : Icons.auto_awesome_outlined,
+                        _toggleAdaptiveMode,
+                      ),
+                      _Chip(
+                        'Sensitivity: $_motionSensitivity',
+                        Icons.sensors,
+                        _cycleMotionSensitivity,
+                      ),
                       _Chip('Last Trip', Icons.route, _showLastTrip),
                       _Chip(
                         'Disable Elasticity',
@@ -1933,6 +2299,24 @@ class _DashboardPageState extends State<DashboardPage> {
                         'Persist: GeoOnly',
                         Icons.sd_storage,
                         _setPersistGeofenceOnly,
+                      ),
+                    ],
+                  ),
+
+                  // ── Health Check ──
+                  _Section(
+                    title: 'Health Check',
+                    color: Colors.green.shade700,
+                    children: [
+                      _Chip(
+                        'Run Health Check',
+                        Icons.health_and_safety,
+                        _runHealthCheck,
+                      ),
+                      _Chip(
+                        'Health Dashboard',
+                        Icons.dashboard_customize,
+                        _showHealthDashboard,
                       ),
                     ],
                   ),
@@ -1995,6 +2379,12 @@ class _DashboardPageState extends State<DashboardPage> {
                           'Battery Opt?',
                           Icons.battery_full,
                           _isIgnoringBatteryOptimizations,
+                        ),
+                      if (_isAndroid)
+                        _Chip(
+                          'Request Battery Exemption',
+                          Icons.battery_charging_full,
+                          _requestBatteryExemption,
                         ),
                     ],
                   ),
@@ -2062,6 +2452,7 @@ class _StatusCard extends StatelessWidget {
     required this.isMoving,
     this.location,
     this.state,
+    this.healthCheck,
   });
 
   final bool isReady;
@@ -2069,6 +2460,7 @@ class _StatusCard extends StatelessWidget {
   final bool isMoving;
   final tl.Location? location;
   final tl.State? state;
+  final tl.HealthCheck? healthCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -2141,6 +2533,26 @@ class _StatusCard extends StatelessWidget {
                   ),
                 ),
             ],
+            if (healthCheck != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Chip(
+                  avatar: Icon(
+                    healthCheck!.isHealthy
+                        ? Icons.check_circle
+                        : Icons.warning_amber,
+                    size: 18,
+                    color: healthCheck!.isHealthy
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                  label: Text(
+                    healthCheck!.isHealthy
+                        ? 'Healthy'
+                        : '${healthCheck!.warningCount} Warning(s)',
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -2258,6 +2670,8 @@ class _LogTile extends StatelessWidget {
       'GEOFENCE' || 'GEOFENCES_CHANGE' || 'GEOFENCE+' => Colors.orange,
       'HTTP' || 'SYNC' => Colors.cyan,
       'HEARTBEAT' => Colors.pink,
+      'HEALTH' => Colors.green.shade700,
+      'ADAPTIVE' => Colors.amber.shade800,
       'ERROR' || 'WARN' => Colors.red,
       'READY' || 'START' || 'STOP' => Colors.green,
       'CONFIG' => Colors.amber,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.0
+
+* **CHORE**: Version bump for adaptive sampling, health check, and motion sensitivity release.
+* **CHORE**: Bump `tracelet_platform_interface` to ^0.9.0.
+
 ## 0.8.3
 
 * **CHORE**: Version bump for proximity-based geofence monitoring release.

@@ -57,6 +57,7 @@ export 'src/models/heartbeat_event.dart';
 export 'src/models/headless_event.dart';
 export 'src/models/sensors.dart';
 export 'src/models/device_info.dart';
+export 'src/models/health_check.dart';
 export 'src/models/connectivity_change_event.dart';
 export 'src/models/authorization_event.dart';
 export 'src/models/sql_query.dart';

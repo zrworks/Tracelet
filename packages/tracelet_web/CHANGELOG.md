@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- **FEAT**: `startPeriodic()` — falls back to `watchPosition()` on web (periodic scheduling not available in browsers).
+- **CHORE**: Bump `tracelet_platform_interface` to ^0.10.0.
+
 ## 0.9.1
 
 - **CHORE**: Version bump for consistency.

@@ -10,6 +10,7 @@
 | `Tracelet.start()` | `State` | Start tracking |
 | `Tracelet.stop()` | `State` | Stop tracking |
 | `Tracelet.startGeofences()` | `State` | Geofence-only mode |
+| `Tracelet.startPeriodic()` | `State` | Periodic interval mode (GPS-friendly) |
 | `Tracelet.getState()` | `State` | Current state |
 | `Tracelet.setConfig(config)` | `State` | Update configuration |
 | `Tracelet.reset()` | `State` | Reset to defaults |
@@ -131,7 +132,7 @@
 | Property | Type | Description |
 |---|---|---|
 | `isTracking` | `bool` | Whether tracking is currently active |
-| `trackingMode` | `TrackingMode` | Current tracking mode |
+| `trackingMode` | `TrackingMode` | Current tracking mode (`location`, `geofences`, or `periodic`) |
 | `locationPermission` | `int` | Location permission status |
 | `locationServicesEnabled` | `bool` | Location services on/off |
 | `isPowerSaveMode` | `bool` | Battery saver active |
@@ -141,3 +142,42 @@
 | `hasBackgroundPermission` | `bool` | Has "Always" + services enabled |
 
 > See [Health Check Guide](HEALTH-CHECK.md) for full field list and warning types.
+
+### startPeriodic()
+
+Starts **periodic interval tracking**. Instead of continuously streaming GPS coordinates, the plugin wakes at a configurable interval, takes a single location fix, persists it, dispatches it to your Dart callback, then immediately turns off the GPS radio.
+
+**Result:** The GPS icon (Android) / blue location arrow (iOS) only appears for ~5–10 seconds per fix instead of permanently.
+
+**Android scheduling strategies** (mutually exclusive):
+
+| Strategy | Config | Notification? | Min Interval | Timing Precision |
+|---|---|---|---|---|
+| WorkManager (default) | Both `false` | No | 15 min | Approximate (system-batched) |
+| Exact Alarms | `periodicUseExactAlarms: true` | No | Any | Exact (AlarmManager) |
+| Foreground Service | `periodicUseForegroundService: true` | Yes | Any | Exact (Handler timer) |
+
+```dart
+// 1. Configure (optional — defaults to 15-min interval, medium accuracy)
+await Tracelet.ready(Config(
+  geo: GeoConfig(
+    periodicLocationInterval: 1800,        // 30 minutes
+    periodicDesiredAccuracy: DesiredAccuracy.medium,
+    periodicUseForegroundService: false,    // Android: WorkManager (no notification)
+    periodicUseExactAlarms: false,          // Android: inexact alarms (battery-friendly)
+  ),
+));
+
+// 2. Start periodic tracking
+final state = await Tracelet.startPeriodic();
+
+// 3. State reflects the new mode
+print(state.trackingMode); // TrackingMode.periodic
+
+// 4. Stop with the regular stop()
+await Tracelet.stop();
+```
+
+> **Exact Alarms:** `periodicUseExactAlarms: true` uses `AlarmManager.setExactAndAllowWhileIdle()` on Android. Requires `SCHEDULE_EXACT_ALARM` permission (granted by default on Android 12–12L, must be manually enabled in Settings on Android 13+). Falls back silently to inexact alarms if not granted.
+
+> See [Background Tracking Guide](BACKGROUND-TRACKING.md#periodic-mode) and [Configuration Guide](CONFIGURATION.md) for full details.

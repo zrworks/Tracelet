@@ -46,6 +46,8 @@ Tracelet's plugin AndroidManifest automatically merges the following permissions
 | `ACCESS_NETWORK_STATE` | Connectivity monitoring |
 | `INTERNET` | HTTP sync |
 | `POST_NOTIFICATIONS` | Notification (Android 13+) |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Battery optimization exemption dialog |
+| `SCHEDULE_EXACT_ALARM` | Exact alarms for `periodicUseExactAlarms` / `scheduleUseAlarmManager` (Android 12+). Not granted by default on Android 13+; plugin falls back to inexact alarms if not granted. |
 
 **You do not need to add these to your app's `AndroidManifest.xml`** — they are merged automatically from the plugin.
 

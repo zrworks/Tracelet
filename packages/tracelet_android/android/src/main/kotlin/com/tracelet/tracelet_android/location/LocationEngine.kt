@@ -104,7 +104,74 @@ class LocationEngine(
             fusedClient.removeLocationUpdates(it)
             trackingCallback = null
         }
+        stopPeriodic()
         state.enabled = false
+    }
+
+    // =========================================================================
+    // Periodic one-shot tracking (foreground service + timer strategy)
+    // =========================================================================
+
+    private var periodicRunnable: Runnable? = null
+    private val periodicHandler = android.os.Handler(Looper.getMainLooper())
+
+    /** Whether periodic one-shot tracking is active. */
+    val isPeriodicTracking: Boolean get() = periodicRunnable != null
+
+    /**
+     * Starts periodic one-shot location tracking using a Handler timer.
+     *
+     * This is the foreground-service strategy: the service stays alive with a
+     * notification, but GPS is only activated for ~5 seconds per fix. Between
+     * fixes the GPS radio is off and no GPS icon is shown.
+     *
+     * For the WorkManager strategy (no foreground service), see
+     * [PeriodicLocationWorker].
+     */
+    fun startPeriodic() {
+        if (!hasPermission()) return
+        stopPeriodic()
+
+        val intervalMs = config.getPeriodicLocationInterval() * 1000L
+
+        periodicRunnable = object : Runnable {
+            override fun run() {
+                if (!state.enabled) return
+
+                // Perform a one-shot fix using the periodic accuracy setting
+                val options = mapOf<String, Any?>(
+                    "desiredAccuracy" to config.getPeriodicDesiredAccuracy(),
+                    "persist" to true,
+                    "samples" to 1,
+                )
+                getCurrentPosition(options) { location ->
+                    if (location != null) {
+                        // Enrich with periodic event tag
+                        val enriched = location.toMutableMap()
+                        enriched["event"] = "periodic"
+                        events.sendLocation(enriched)
+
+                        // Notify proximity-based geofence monitoring
+                        val lat = enriched["latitude"] as? Double
+                        val lng = enriched["longitude"] as? Double
+                        if (lat != null && lng != null) {
+                            onLocationUpdate?.invoke(lat, lng)
+                        }
+                    }
+                }
+
+                periodicHandler.postDelayed(this, intervalMs)
+            }
+        }
+
+        // Fire immediately, then repeat at interval
+        periodicHandler.post(periodicRunnable!!)
+    }
+
+    /** Stops periodic one-shot tracking. */
+    fun stopPeriodic() {
+        periodicRunnable?.let { periodicHandler.removeCallbacks(it) }
+        periodicRunnable = null
     }
 
     /**

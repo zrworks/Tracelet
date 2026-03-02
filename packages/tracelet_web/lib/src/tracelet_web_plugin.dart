@@ -250,6 +250,19 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
+  Future<Map<String, Object?>> startPeriodic() async {
+    _assertReady();
+    _enabled = true;
+    _trackingMode = 2; // periodic
+    // On web, periodic mode uses the same watchPosition mechanism but with
+    // reduced accuracy. True periodic wake-ups are not possible in a browser.
+    _locationEngine.startTracking();
+    _events.emitEnabledChange(true);
+    _events.log('info', '[Tracelet Web] startPeriodic()');
+    return _buildState();
+  }
+
+  @override
   Future<Map<String, Object?>> getState() async {
     return _buildState();
   }

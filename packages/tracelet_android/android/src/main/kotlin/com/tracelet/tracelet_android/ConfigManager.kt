@@ -31,6 +31,12 @@ class ConfigManager(context: Context) {
         const val DEFAULT_MAX_MONITORED_GEOFENCES = -1
         const val DEFAULT_ENABLE_TIMESTAMP_META = false
 
+        // Periodic mode defaults
+        const val DEFAULT_PERIODIC_LOCATION_INTERVAL = 900 // 15 min in seconds
+        const val DEFAULT_PERIODIC_DESIRED_ACCURACY = 1 // DesiredAccuracy.medium
+        const val DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE = false
+        const val DEFAULT_PERIODIC_USE_EXACT_ALARMS = false
+
         // AppConfig defaults
         const val DEFAULT_STOP_ON_TERMINATE = true
         const val DEFAULT_START_ON_BOOT = false
@@ -207,6 +213,19 @@ class ConfigManager(context: Context) {
 
     fun getEnableTimestampMeta(): Boolean =
         getBool("enableTimestampMeta", DEFAULT_ENABLE_TIMESTAMP_META)
+
+    // Periodic mode config
+    fun getPeriodicLocationInterval(): Int =
+        getInt("periodicLocationInterval", DEFAULT_PERIODIC_LOCATION_INTERVAL)
+
+    fun getPeriodicDesiredAccuracy(): Int =
+        getInt("periodicDesiredAccuracy", DEFAULT_PERIODIC_DESIRED_ACCURACY)
+
+    fun getPeriodicUseForegroundService(): Boolean =
+        getBool("periodicUseForegroundService", DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE)
+
+    fun getPeriodicUseExactAlarms(): Boolean =
+        getBool("periodicUseExactAlarms", DEFAULT_PERIODIC_USE_EXACT_ALARMS)
 
     // LocationFilter sub-config
     fun getOdometerAccuracyThreshold(): Int =

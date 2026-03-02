@@ -1,3 +1,12 @@
+## 0.10.0
+
+- **FEAT**: Periodic mode — `Tracelet.startPeriodic()` for GPS-friendly interval tracking. GPS icon visible only ~5–10 seconds per fix instead of permanently.
+- **FEAT**: `GeoConfig` periodic options: `periodicLocationInterval`, `periodicDesiredAccuracy`, `periodicUseForegroundService`, `periodicUseExactAlarms`.
+- **FEAT**: Three Android scheduling strategies: WorkManager (default, battery-optimal), foreground service (reliable timing), and AlarmManager exact alarms (precise, no notification).
+- **FEAT**: Example app: periodic mode UI section with start/stop toggle, custom settings dialog, and map integration with distinct cyan markers.
+- **DOCS**: Updated API.md, CONFIGURATION.md, BACKGROUND-TRACKING.md, and INSTALL-ANDROID.md with periodic mode and exact alarms documentation.
+- **CHORE**: Bump all platform packages to ^0.10.0.
+
 ## 0.9.1
 
 - **FIX**: iOS `HttpSyncManager` optional `UIBackgroundTaskIdentifier` unwrap safety.

@@ -56,6 +56,15 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('startGeofences() has not been implemented.');
   }
 
+  /// Start periodic one-shot location tracking mode. Returns [State] map.
+  ///
+  /// Instead of continuous GPS updates, the engine wakes every
+  /// `periodicLocationInterval` seconds, performs a single location fix,
+  /// dispatches the result, and immediately turns the provider off.
+  Future<Map<String, Object?>> startPeriodic() {
+    throw UnimplementedError('startPeriodic() has not been implemented.');
+  }
+
   /// Get the current plugin state. Returns [State] map.
   Future<Map<String, Object?>> getState() {
     throw UnimplementedError('getState() has not been implemented.');

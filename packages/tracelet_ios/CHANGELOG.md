@@ -1,3 +1,10 @@
+## 0.10.0
+
+- **FEAT**: Periodic mode — GPS-friendly interval tracking via `startPeriodic()`. Timer-based scheduling with background location toggling per fix.
+- **FEAT**: `ConfigManager` periodic config getters for interval, accuracy, foreground service, and exact alarms.
+- **FIX**: `ConfigManager.swift` escaped string literals causing Swift compilation failure.
+- **CHORE**: Bump `tracelet_platform_interface` to ^0.10.0.
+
 ## 0.9.1
 
 - **FIX**: Safe optional unwrap of `UIBackgroundTaskIdentifier` in `HttpSyncManager.syncNextBatch()` — fixes Swift compiler error.

@@ -172,6 +172,10 @@ class GeoConfig {
     this.disableLocationAuthorizationAlert = false,
     this.enableTimestampMeta = false,
     this.enableAdaptiveMode = false,
+    this.periodicLocationInterval = 900,
+    this.periodicDesiredAccuracy = DesiredAccuracy.medium,
+    this.periodicUseForegroundService = false,
+    this.periodicUseExactAlarms = false,
     this.filter,
   });
 
@@ -291,6 +295,45 @@ class GeoConfig {
   /// ```
   final bool enableAdaptiveMode;
 
+  /// Interval (in seconds) between one-shot location fixes in
+  /// [TrackingMode.periodic] mode.
+  ///
+  /// Defaults to `900` (15 minutes). Range: 60–43200 (1 min–12 hrs).
+  ///
+  /// On Android with WorkManager (default), the minimum effective interval
+  /// is 15 minutes due to platform constraints. Use
+  /// [periodicUseForegroundService] for shorter intervals.
+  final int periodicLocationInterval;
+
+  /// Desired accuracy for periodic one-shot fixes.
+  ///
+  /// Defaults to [DesiredAccuracy.medium] (~200m, WiFi/cell, no GPS radio).
+  /// Set to [DesiredAccuracy.high] if GPS-level precision is required per
+  /// fix, at the cost of higher per-fix battery usage.
+  final DesiredAccuracy periodicDesiredAccuracy;
+
+  /// `[Android only]` Whether to use a foreground service for periodic mode.
+  ///
+  /// When `false` (default), periodic mode uses WorkManager — no persistent
+  /// notification, no GPS icon between fixes, maximum battery savings.
+  /// Minimum interval: 15 minutes.
+  ///
+  /// When `true`, keeps a foreground service with a persistent notification
+  /// and uses a `Handler.postDelayed` timer for precise, sub-15-minute
+  /// intervals. The notification is visible but the GPS icon only appears
+  /// during each ~5-second fix.
+  final bool periodicUseForegroundService;
+
+  /// `[Android only]` Use exact alarms instead of WorkManager for periodic
+  /// scheduling.
+  ///
+  /// When `true` and [periodicUseForegroundService] is `false`, uses
+  /// `AlarmManager.setExactAndAllowWhileIdle()` for more precise timing.
+  /// Requires `SCHEDULE_EXACT_ALARM` permission on API 31+.
+  ///
+  /// Defaults to `false`.
+  final bool periodicUseExactAlarms;
+
   /// Location filtering / denoising settings.
   ///
   /// Controls Kalman filtering, speed-jump rejection, and accuracy
@@ -370,6 +413,23 @@ class GeoConfig {
         map['enableAdaptiveMode'],
         fallback: false,
       ),
+      periodicLocationInterval: ensureInt(
+        map['periodicLocationInterval'],
+        fallback: 900,
+      ),
+      periodicDesiredAccuracy:
+          DesiredAccuracy.values[ensureInt(
+            map['periodicDesiredAccuracy'],
+            fallback: 1,
+          ).clamp(0, DesiredAccuracy.values.length - 1)],
+      periodicUseForegroundService: ensureBool(
+        map['periodicUseForegroundService'],
+        fallback: false,
+      ),
+      periodicUseExactAlarms: ensureBool(
+        map['periodicUseExactAlarms'],
+        fallback: false,
+      ),
       filter: filterMap != null ? LocationFilter.fromMap(filterMap) : null,
     );
   }
@@ -398,6 +458,10 @@ class GeoConfig {
       'disableLocationAuthorizationAlert': disableLocationAuthorizationAlert,
       'enableTimestampMeta': enableTimestampMeta,
       'enableAdaptiveMode': enableAdaptiveMode,
+      'periodicLocationInterval': periodicLocationInterval,
+      'periodicDesiredAccuracy': periodicDesiredAccuracy.index,
+      'periodicUseForegroundService': periodicUseForegroundService,
+      'periodicUseExactAlarms': periodicUseExactAlarms,
       if (filter != null) 'filter': filter!.toMap(),
     };
   }
@@ -441,6 +505,10 @@ class GeoConfig {
               other.disableLocationAuthorizationAlert &&
           enableTimestampMeta == other.enableTimestampMeta &&
           enableAdaptiveMode == other.enableAdaptiveMode &&
+          periodicLocationInterval == other.periodicLocationInterval &&
+          periodicDesiredAccuracy == other.periodicDesiredAccuracy &&
+          periodicUseForegroundService == other.periodicUseForegroundService &&
+          periodicUseExactAlarms == other.periodicUseExactAlarms &&
           filter == other.filter;
 
   @override
@@ -466,6 +534,10 @@ class GeoConfig {
     disableLocationAuthorizationAlert,
     enableTimestampMeta,
     enableAdaptiveMode,
+    periodicLocationInterval,
+    periodicDesiredAccuracy,
+    periodicUseForegroundService,
+    periodicUseExactAlarms,
     filter,
   ]);
 }

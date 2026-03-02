@@ -83,7 +83,11 @@ final class ConfigManager {
     func getStopAfterElapsedMinutes() -> Int { cache["stopAfterElapsedMinutes"] as? Int ?? -1 }
     func getMaxMonitoredGeofences() -> Int { cache["maxMonitoredGeofences"] as? Int ?? -1 }
     func getEnableTimestampMeta() -> Bool { cache["enableTimestampMeta"] as? Bool ?? false }
-
+    // Periodic mode config
+    func getPeriodicLocationInterval() -> Int { cache["periodicLocationInterval"] as? Int ?? 900 }
+    func getPeriodicDesiredAccuracy() -> Int { cache["periodicDesiredAccuracy"] as? Int ?? 1 }
+    func getPeriodicUseForegroundService() -> Bool { cache["periodicUseForegroundService"] as? Bool ?? false }
+    func getPeriodicUseExactAlarms() -> Bool { cache["periodicUseExactAlarms"] as? Bool ?? false }
     // LocationFilter
     func getOdometerAccuracyThreshold() -> Int { cache["odometerAccuracyThreshold"] as? Int ?? 0 }
     func getRejectMockLocations() -> Bool { cache["rejectMockLocations"] as? Bool ?? false }

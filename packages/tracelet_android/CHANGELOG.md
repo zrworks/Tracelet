@@ -1,3 +1,12 @@
+## 0.10.0
+
+- **FEAT**: Periodic mode — GPS-friendly interval tracking via `startPeriodic()`. Three scheduling strategies: WorkManager (default), foreground service, and exact alarms.
+- **FEAT**: `PeriodicLocationWorker` — WorkManager `CoroutineWorker` for one-shot GPS fixes with automatic SQLite persistence and EventChannel/headless dispatch.
+- **FEAT**: `PeriodicAlarmReceiver` — `BroadcastReceiver` for AlarmManager exact alarm chaining when `periodicUseExactAlarms: true`.
+- **FEAT**: `SCHEDULE_EXACT_ALARM` permission with graceful fallback to inexact alarms on Android 13+.
+- **FIX**: `TraceletAndroidPluginTest` — make `mainHandler` lazy to avoid `RuntimeException` in plain JUnit tests.
+- **CHORE**: Bump `tracelet_platform_interface` to ^0.10.0.
+
 ## 0.9.1
 
 - **FIX**: Fire heartbeat events in boot-mode headless tracking. `LocationService.startBootTracking()` now starts a self-rescheduling heartbeat timer so heartbeat events dispatch to `HeadlessTaskService` after device reboot.

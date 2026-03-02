@@ -170,6 +170,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             handleStart(result: result)
         case "stop":
             handleStop(result: result)
+        case "startPeriodic":
+            handleStartPeriodic(result: result)
         case "startGeofences":
             handleStartGeofences(result: result)
         case "getState":
@@ -422,6 +424,38 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             eventDispatcher.sendEnabledChange(false)
             logger.info("stop() — tracking stopped")
         }
+        result(stateManager.toMap(configManager.getConfig()))
+    }
+
+    private func handleStartPeriodic(result: FlutterResult) {
+        guard isReady else {
+            result(FlutterError(code: "NOT_READY", message: "Call ready() before startPeriodic()", details: nil))
+            return
+        }
+
+        stateManager.enabled = true
+        stateManager.trackingMode = 2 // Periodic
+        stateManager.isMoving = false
+
+        locationEngine.startPeriodic()
+
+        // Wire proximity-based geofence monitoring
+        locationEngine.onLocationUpdate = { [weak self] lat, lng in
+            self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+        }
+
+        startHeartbeat()
+        startStopAfterElapsedTimer()
+
+        // Do NOT start preventSuspendManager by default for periodic mode.
+        // Users can explicitly enable it via AppConfig.preventSuspend for
+        // guaranteed timer execution while backgrounded.
+        if configManager.getPreventSuspend() {
+            preventSuspendManager.start()
+        }
+
+        eventDispatcher.sendEnabledChange(true)
+        logger.info("startPeriodic() — periodic tracking started (interval=\(configManager.getPeriodicLocationInterval())s)")
         result(stateManager.toMap(configManager.getConfig()))
     }
 

@@ -15,6 +15,13 @@ void main() {
     expect(DesiredAccuracy.high.index, 0);
   });
 
+  test('TrackingMode enum includes periodic', () {
+    expect(TrackingMode.values.length, 3);
+    expect(TrackingMode.location.index, 0);
+    expect(TrackingMode.geofences.index, 1);
+    expect(TrackingMode.periodic.index, 2);
+  });
+
   group('TraceletPlatform abstract methods', () {
     test('getCurrentPosition throws UnimplementedError by default', () {
       final platform = _TestPlatform();
@@ -36,6 +43,14 @@ void main() {
       final platform = _TestPlatform();
       expect(
         () => platform.getLastKnownLocation({'persist': true}),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
+    test('startPeriodic throws UnimplementedError by default', () {
+      final platform = _TestPlatform();
+      expect(
+        () => platform.startPeriodic(),
         throwsA(isA<UnimplementedError>()),
       );
     });

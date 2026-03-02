@@ -19,6 +19,11 @@ Config(
     enableTimestampMeta: true,       // Extra timing fields on each location
     stopAfterElapsedMinutes: -1,     // Auto-stop after N minutes (-1 = off)
     geofenceModeHighAccuracy: false, // Full GPS in geofence-only mode (Android)
+    // Periodic mode options (used with Tracelet.startPeriodic()):
+    periodicLocationInterval: 900,           // 15 min between fixes
+    periodicDesiredAccuracy: DesiredAccuracy.medium,
+    periodicUseForegroundService: false,     // Android: WorkManager (no notification)
+    periodicUseExactAlarms: false,           // Android: inexact alarms
     filter: LocationFilter(          // GPS denoising
       trackingAccuracyThreshold: 100,
       maxImpliedSpeed: 80,
@@ -101,6 +106,13 @@ Location accuracy, sampling, and filtering.
 | `pausesLocationUpdatesAutomatically` | `bool` | `false` | iOS: allow system to pause updates |
 | `enableAdaptiveMode` | `bool` | `false` | Enable adaptive sampling — automatically adjusts `distanceFilter` based on activity, battery, and speed ([details](ADAPTIVE-SAMPLING.md)) |
 | `filter` | `LocationFilter?` | `null` | GPS denoising configuration |
+| **Periodic Mode** | | | |
+| `periodicLocationInterval` | `int` | `900` | Seconds between periodic fixes (min 60). WorkManager enforces ≥ 15 min on Android. |
+| `periodicDesiredAccuracy` | `DesiredAccuracy` | `medium` | Accuracy level per individual fix |
+| `periodicUseForegroundService` | `bool` | `false` | **Android only.** `true` = foreground service + Handler timer (reliable, shows notification). `false` = WorkManager (no notification, ~15-min minimum). |
+| `periodicUseExactAlarms` | `bool` | `false` | **Android only.** Use `AlarmManager` exact alarms for precise timing. Falls back to inexact alarms if `SCHEDULE_EXACT_ALARM` is not granted (Android 13+). See [Exact Alarms](BACKGROUND-TRACKING.md#exact-alarms-periodicuseexactalarms-true). |
+
+> **Periodic mode** is activated via `Tracelet.startPeriodic()`. The GPS icon only appears for ~5–10 seconds per fix. See [Background Tracking](BACKGROUND-TRACKING.md#periodic-mode) for usage details.
 
 ### LocationFilter
 

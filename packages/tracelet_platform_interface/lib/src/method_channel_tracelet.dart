@@ -56,6 +56,11 @@ class MethodChannelTracelet extends TraceletPlatform {
   }
 
   @override
+  Future<Map<String, Object?>> startPeriodic() async {
+    return _invokeMap('startPeriodic');
+  }
+
+  @override
   Future<Map<String, Object?>> getState() async {
     return _invokeMap('getState');
   }

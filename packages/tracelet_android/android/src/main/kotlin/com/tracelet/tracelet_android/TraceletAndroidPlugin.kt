@@ -14,6 +14,7 @@ import com.tracelet.tracelet_android.db.TraceletDatabase
 import com.tracelet.tracelet_android.geofence.GeofenceManager
 import com.tracelet.tracelet_android.http.HttpSyncManager
 import com.tracelet.tracelet_android.location.LocationEngine
+import com.tracelet.tracelet_android.location.PeriodicLocationWorker
 import com.tracelet.tracelet_android.motion.MotionDetector
 import com.tracelet.tracelet_android.receiver.BootReceiver
 import com.tracelet.tracelet_android.receiver.GeofenceBroadcastReceiver
@@ -72,7 +73,7 @@ class TraceletAndroidPlugin :
 
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private var heartbeatRunnable: Runnable? = null
     private var stopAfterElapsedRunnable: Runnable? = null
     private var isReady = false
@@ -201,6 +202,7 @@ class TraceletAndroidPlugin :
             "ready" -> handleReady(call, result)
             "start" -> handleStart(result)
             "stop" -> handleStop(result)
+            "startPeriodic" -> handleStartPeriodic(result)
             "startGeofences" -> handleStartGeofences(result)
             "getState" -> handleGetState(result)
             "setConfig" -> handleSetConfig(call, result)
@@ -426,6 +428,79 @@ class TraceletAndroidPlugin :
         result.success(stateManager.toMap(configManager.getConfig()))
     }
 
+    private fun handleStartPeriodic(result: Result) {
+        if (!isReady) {
+            result.error("NOT_READY", "Call ready() before startPeriodic()", null)
+            return
+        }
+
+        val authStatus = permissionManager.getAuthorizationStatus(activity)
+        if (authStatus != PermissionManager.STATUS_WHEN_IN_USE &&
+            authStatus != PermissionManager.STATUS_ALWAYS) {
+            result.error(
+                "PERMISSION_DENIED",
+                "Location permission is required before starting tracking. " +
+                    "Call requestPermission() first.",
+                null
+            )
+            return
+        }
+
+        LocationService.stopBootTracking()
+
+        stateManager.enabled = true
+        stateManager.trackingMode = 2 // Periodic tracking
+        stateManager.isMoving = false
+
+        // Wire the shared EventDispatcher so WorkManager workers can dispatch
+        PeriodicLocationWorker.eventDispatcher = eventDispatcher
+
+        if (configManager.getPeriodicUseForegroundService()) {
+            // Strategy 2: Foreground service + timer (sub-15-min intervals)
+            if (configManager.isForegroundServiceEnabled()) {
+                LocationService.start(context)
+            }
+            locationEngine.startPeriodic()
+        } else if (configManager.getPeriodicUseExactAlarms()) {
+            // Strategy 3: AlarmManager exact alarms + OneTimeWorkRequest
+            // Enables precise intervals (any duration) without foreground service.
+            // Requires SCHEDULE_EXACT_ALARM permission on Android 12+.
+            if (!PeriodicLocationWorker.canScheduleExactAlarms(context)) {
+                logger.warning("SCHEDULE_EXACT_ALARM not granted — falling back to WorkManager")
+            }
+            // Perform initial fix immediately
+            PeriodicLocationWorker.scheduleOneTime(context)
+            // Schedule the first exact alarm for the next interval
+            PeriodicLocationWorker.scheduleExactAlarm(
+                context,
+                configManager.getPeriodicLocationInterval(),
+            )
+        } else {
+            // Strategy 1: WorkManager (default, battery-optimal)
+            // No foreground service needed — GPS icon only during fix
+            PeriodicLocationWorker.schedule(
+                context,
+                configManager.getPeriodicLocationInterval(),
+            )
+        }
+
+        // Start heartbeat if configured (runs independently of periodic mode)
+        startHeartbeat()
+        startStopAfterElapsedTimer()
+
+        eventDispatcher.sendEnabledChange(true)
+
+        val strategy = when {
+            configManager.getPeriodicUseForegroundService() -> "foreground-service"
+            configManager.getPeriodicUseExactAlarms() -> "exact-alarms"
+            else -> "workmanager"
+        }
+        logger.info("startPeriodic() — periodic tracking started " +
+            "(interval=${configManager.getPeriodicLocationInterval()}s, " +
+            "strategy=$strategy)")
+        result.success(stateManager.toMap(configManager.getConfig()))
+    }
+
     private fun handleStop(result: Result) {
         stateManager.enabled = false
         stateManager.isMoving = false
@@ -436,6 +511,10 @@ class TraceletAndroidPlugin :
         motionDetector.stop()
         stopHeartbeat()
         cancelStopAfterElapsedTimer()
+
+        // Cancel WorkManager periodic work if it was scheduled
+        PeriodicLocationWorker.cancel(context)
+        PeriodicLocationWorker.eventDispatcher = null
 
         // Stop foreground service if it was running
         if (configManager.isForegroundServiceEnabled()) {
@@ -1021,6 +1100,8 @@ class TraceletAndroidPlugin :
         scheduleManager.stop()
         soundManager.stop()
         stopHeartbeat()
+        PeriodicLocationWorker.cancel(context)
+        PeriodicLocationWorker.eventDispatcher = null
         GeofenceBroadcastReceiver.geofenceManager = null
     }
 }

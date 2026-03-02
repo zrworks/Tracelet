@@ -72,6 +72,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isMoving = false;
   bool _kalmanEnabled = true;
   bool _adaptiveMode = false;
+  bool _isPeriodicMode = false;
   String _motionSensitivity = 'Medium'; // Low / Medium / High
   tl.Location? _lastLocation;
   tl.State? _pluginState;
@@ -424,6 +425,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final state = await tl.Tracelet.stop();
       setState(() {
         _isTracking = state.enabled;
+        _isPeriodicMode = false;
         _pluginState = state;
       });
       _addLog('STOP', 'enabled=${state.enabled}');
@@ -650,6 +652,198 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     } catch (e) {
       _addLog('ERROR', 'startWithoutActivityPermission() failed: $e');
+    }
+  }
+
+  // ── Periodic Mode ───────────────────────────────────────────────────────
+
+  /// Start periodic location tracking with default settings (15-min interval,
+  /// medium accuracy, WorkManager strategy = no foreground service).
+  ///
+  /// The GPS icon only appears for ~5–10 seconds per fix instead of
+  /// permanently, drastically reducing user anxiety about battery drain.
+  Future<void> _startPeriodic() async {
+    try {
+      if (!_isReady) {
+        _addLog('WARN', 'Call Initialize first');
+        return;
+      }
+      final state = await tl.Tracelet.startPeriodic();
+      setState(() {
+        _isTracking = state.enabled;
+        _isPeriodicMode = true;
+        _pluginState = state;
+      });
+      _addLog(
+        'PERIODIC',
+        'Started  mode=${state.trackingMode.name}  '
+            'enabled=${state.enabled}',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'startPeriodic() failed: $e');
+    }
+  }
+
+  /// Show a dialog that lets the user configure periodic mode settings,
+  /// then start periodic tracking with those settings.
+  Future<void> _showPeriodicSettingsDialog() async {
+    if (!_isReady) {
+      _addLog('WARN', 'Call Initialize first');
+      return;
+    }
+    if (!mounted) return;
+
+    // Defaults
+    var intervalMinutes = 15;
+    var accuracy = tl.DesiredAccuracy.medium;
+    var useForegroundService = false;
+    var useExactAlarms = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: const Text('Periodic Mode Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Interval
+                    Text(
+                      'Interval: $intervalMinutes min',
+                      style: Theme.of(ctx).textTheme.bodyMedium,
+                    ),
+                    Slider(
+                      value: intervalMinutes.toDouble(),
+                      min: 1,
+                      max: 60,
+                      divisions: 59,
+                      label: '$intervalMinutes min',
+                      onChanged: (v) =>
+                          setDialogState(() => intervalMinutes = v.round()),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Accuracy
+                    Text('Accuracy', style: Theme.of(ctx).textTheme.bodyMedium),
+                    const SizedBox(height: 4),
+                    SegmentedButton<tl.DesiredAccuracy>(
+                      segments: const [
+                        ButtonSegment(
+                          value: tl.DesiredAccuracy.low,
+                          label: Text('Low'),
+                          icon: Icon(Icons.gps_off, size: 16),
+                        ),
+                        ButtonSegment(
+                          value: tl.DesiredAccuracy.medium,
+                          label: Text('Med'),
+                          icon: Icon(Icons.gps_not_fixed, size: 16),
+                        ),
+                        ButtonSegment(
+                          value: tl.DesiredAccuracy.high,
+                          label: Text('High'),
+                          icon: Icon(Icons.gps_fixed, size: 16),
+                        ),
+                      ],
+                      selected: {accuracy},
+                      onSelectionChanged: (v) =>
+                          setDialogState(() => accuracy = v.first),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Android-only options
+                    if (_isAndroid) ...[
+                      SwitchListTile(
+                        title: const Text('Foreground Service'),
+                        subtitle: const Text(
+                          'More reliable but shows notification',
+                        ),
+                        value: useForegroundService,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (v) =>
+                            setDialogState(() => useForegroundService = v),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Exact Alarms'),
+                        subtitle: const Text(
+                          'Precise scheduling (needs SCHEDULE_EXACT_ALARM)',
+                        ),
+                        value: useExactAlarms,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (v) =>
+                            setDialogState(() => useExactAlarms = v),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Start'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await tl.Tracelet.setConfig(
+        tl.Config(
+          geo: tl.GeoConfig(
+            periodicLocationInterval: intervalMinutes * 60,
+            periodicDesiredAccuracy: accuracy,
+            periodicUseForegroundService: useForegroundService,
+            periodicUseExactAlarms: useExactAlarms,
+          ),
+        ),
+      );
+
+      final state = await tl.Tracelet.startPeriodic();
+      setState(() {
+        _isTracking = state.enabled;
+        _isPeriodicMode = true;
+        _pluginState = state;
+      });
+      _addLog(
+        'PERIODIC',
+        'Started  interval=${intervalMinutes}min  '
+            'accuracy=${accuracy.name}  '
+            'fgService=$useForegroundService  '
+            'exactAlarms=$useExactAlarms',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'startPeriodic(custom) failed: $e');
+    }
+  }
+
+  /// Stop periodic tracking — delegates to the regular stop method.
+  Future<void> _stopPeriodic() async {
+    try {
+      final state = await tl.Tracelet.stop();
+      setState(() {
+        _isTracking = state.enabled;
+        _isPeriodicMode = false;
+        _pluginState = state;
+      });
+      _addLog('PERIODIC', 'Stopped  enabled=${state.enabled}');
+    } catch (e) {
+      _addLog('ERROR', 'stopPeriodic() failed: $e');
     }
   }
 
@@ -2247,6 +2441,24 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
 
+                  // ── Periodic Mode ──
+                  _Section(
+                    title: 'Periodic Mode (GPS-friendly)',
+                    color: Colors.cyan.shade700,
+                    children: [
+                      _Chip(
+                        _isPeriodicMode ? 'Periodic: ON' : 'Start Periodic',
+                        _isPeriodicMode ? Icons.timer : Icons.timer_outlined,
+                        _isPeriodicMode ? _stopPeriodic : _startPeriodic,
+                      ),
+                      _Chip(
+                        'Custom Settings',
+                        Icons.tune,
+                        _showPeriodicSettingsDialog,
+                      ),
+                    ],
+                  ),
+
                   // ── One-Shot Location ──
                   _Section(
                     title: 'One-Shot Location',
@@ -2674,6 +2886,7 @@ class _LogTile extends StatelessWidget {
       'ADAPTIVE' => Colors.amber.shade800,
       'ERROR' || 'WARN' => Colors.red,
       'READY' || 'START' || 'STOP' => Colors.green,
+      'PERIODIC' => Colors.cyan.shade700,
       'CONFIG' => Colors.amber,
       _ => Colors.grey,
     };

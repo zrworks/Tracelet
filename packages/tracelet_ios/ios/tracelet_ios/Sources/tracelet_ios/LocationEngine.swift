@@ -62,8 +62,130 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     func stop() {
         guard isTracking else { return }
         isTracking = false
+        isPeriodicTracking = false
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
+        stopPeriodicTimer()
+    }
+
+    // MARK: - Periodic one-shot tracking
+
+    /// Whether periodic one-shot mode is active.
+    private(set) var isPeriodicTracking = false
+    private var periodicTimer: Timer?
+
+    /// Starts periodic one-shot location tracking.
+    ///
+    /// Instead of continuous GPS, this mode:
+    /// 1. Registers for significant location changes (no blue arrow) as a
+    ///    wake-up mechanism.
+    /// 2. Schedules a repeating timer at `periodicLocationInterval`.
+    /// 3. On each tick, calls `requestLocation()` for a single GPS fix
+    ///    (~5 sec blue arrow), dispatches the result, and stops GPS.
+    ///
+    /// **Important:** If `preventSuspend` is `false`, iOS may suspend the app
+    /// and the timer will not fire. Use `preventSuspend: true` in `AppConfig`
+    /// or rely on `BGAppRefreshTask` as a supplementary wakeup mechanism.
+    func startPeriodic() {
+        guard !isPeriodicTracking else { return }
+        isPeriodicTracking = true
+        isTracking = true // so delegate callbacks are processed
+
+        configureLocationManagerForPeriodic()
+
+        // Significant location changes as a fallback wake-up mechanism
+        // (no blue arrow, wakes on cell tower changes)
+        locationManager.startMonitoringSignificantLocationChanges()
+
+        // Do NOT call startUpdatingLocation() — that's the whole point.
+        // Instead, schedule periodic one-shot fixes.
+        startPeriodicTimer()
+    }
+
+    /// Stops periodic one-shot tracking.
+    func stopPeriodic() {
+        guard isPeriodicTracking else { return }
+        isPeriodicTracking = false
+        isTracking = false
+        locationManager.stopUpdatingLocation()
+        locationManager.stopMonitoringSignificantLocationChanges()
+        stopPeriodicTimer()
+    }
+
+    /// Configures CLLocationManager for periodic mode.
+    ///
+    /// Key difference from `configureLocationManager()`:
+    /// - `allowsBackgroundLocationUpdates = false` — no persistent blue arrow
+    /// - Uses `periodicDesiredAccuracy` instead of `desiredAccuracy`
+    private func configureLocationManagerForPeriodic() {
+        // DO NOT set allowsBackgroundLocationUpdates = true
+        // This prevents the persistent blue arrow in the status bar
+        locationManager.allowsBackgroundLocationUpdates = false
+        locationManager.showsBackgroundLocationIndicator = false
+        locationManager.pausesLocationUpdatesAutomatically = false
+
+        let accuracy = configManager.getPeriodicDesiredAccuracy()
+        switch accuracy {
+        case 0: locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        case 1: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        case 2: locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        case 3: locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+        case 4: locationManager.desiredAccuracy = kCLLocationAccuracyReduced
+        default: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        }
+
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.activityType = .otherNavigation
+    }
+
+    /// Starts the periodic timer that triggers one-shot location fixes.
+    private func startPeriodicTimer() {
+        stopPeriodicTimer()
+        let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+
+        // Fire immediately for the first fix
+        performPeriodicFix()
+
+        periodicTimer = Timer.scheduledTimer(
+            withTimeInterval: interval,
+            repeats: true
+        ) { [weak self] _ in
+            self?.performPeriodicFix()
+        }
+    }
+
+    /// Stops the periodic timer.
+    private func stopPeriodicTimer() {
+        periodicTimer?.invalidate()
+        periodicTimer = nil
+    }
+
+    /// Performs a single one-shot location fix for periodic mode.
+    ///
+    /// Temporarily enables `allowsBackgroundLocationUpdates` and calls
+    /// `requestLocation()`. The delegate callback (`didUpdateLocations`)
+    /// handles dispatching and then turns GPS back off.
+    private func performPeriodicFix() {
+        guard isPeriodicTracking else { return }
+
+        let bgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
+
+        // Temporarily enable background location for this single fix
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.requestLocation()
+
+        // Timeout: restore state after locationTimeout seconds if no callback
+        let timeout = configManager.getLocationTimeout()
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(timeout)) { [weak self] in
+            guard let self = self, self.isPeriodicTracking else {
+                BackgroundTaskHelper.shared.end(bgTaskId)
+                return
+            }
+            // Restore non-background state
+            self.locationManager.allowsBackgroundLocationUpdates = false
+            self.locationManager.stopUpdatingLocation()
+            BackgroundTaskHelper.shared.end(bgTaskId)
+        }
     }
 
     func destroy() {
@@ -357,6 +479,13 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         // Notify geofenceModeHighAccuracy listener (if active)
         onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+
+        // In periodic mode, immediately stop GPS after receiving the fix
+        // to minimise blue-arrow visibility.
+        if isPeriodicTracking {
+            locationManager.stopUpdatingLocation()
+            locationManager.allowsBackgroundLocationUpdates = false
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

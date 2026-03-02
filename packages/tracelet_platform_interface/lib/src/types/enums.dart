@@ -80,6 +80,17 @@ enum TrackingMode {
 
   /// Geofences-only mode (no continuous location tracking).
   geofences,
+
+  /// Periodic one-shot location mode.
+  ///
+  /// Instead of continuous GPS updates, the engine wakes up every
+  /// [GeoConfig.periodicLocationInterval] seconds, performs a single
+  /// `getCurrentPosition()` fix, dispatches the result, and immediately
+  /// turns the location provider off again.
+  ///
+  /// This dramatically reduces battery usage and minimises GPS-icon /
+  /// blue-arrow visibility to ~5–10 seconds per fix.
+  periodic,
 }
 
 /// Geofence transition actions.

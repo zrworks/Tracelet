@@ -1,3 +1,8 @@
+## 0.10.0
+
+- **FEAT**: Add `TrackingMode.periodic` enum value for periodic interval tracking.
+- **FEAT**: Add `startPeriodic()` method to `TraceletPlatform` and `MethodChannelTracelet`.
+
 ## 0.9.1
 
 - **CHORE**: Version bump for consistency.

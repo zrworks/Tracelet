@@ -21,6 +21,11 @@ void main() {
       expect(config.logger.logLevel, LogLevel.info);
       expect(config.motion.stopTimeout, 5);
       expect(config.geofence.geofenceInitialTriggerEntry, true);
+      // Periodic mode defaults
+      expect(config.geo.periodicLocationInterval, 900);
+      expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.medium);
+      expect(config.geo.periodicUseForegroundService, false);
+      expect(config.geo.periodicUseExactAlarms, false);
     });
 
     test('round-trip serialization preserves all fields', () {
@@ -115,6 +120,33 @@ void main() {
       final restored = Config.fromMap(config.toMap());
       expect(restored.http.extras, {'httpKey': 'httpVal'});
       expect(restored.persistence.extras, {'dbKey': 'dbVal'});
+    });
+
+    test('round-trip preserves periodic config options', () {
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 1800,
+          periodicDesiredAccuracy: DesiredAccuracy.high,
+          periodicUseForegroundService: true,
+          periodicUseExactAlarms: true,
+        ),
+      );
+
+      final map = config.toMap();
+      final restored = Config.fromMap(map);
+
+      expect(restored.geo.periodicLocationInterval, 1800);
+      expect(restored.geo.periodicDesiredAccuracy, DesiredAccuracy.high);
+      expect(restored.geo.periodicUseForegroundService, true);
+      expect(restored.geo.periodicUseExactAlarms, true);
+    });
+
+    test('periodic config defaults are correct in fromMap with empty map', () {
+      final config = Config.fromMap(const {});
+      expect(config.geo.periodicLocationInterval, 900);
+      expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.medium);
+      expect(config.geo.periodicUseForegroundService, false);
+      expect(config.geo.periodicUseExactAlarms, false);
     });
 
     test('fromMap supports both nested and flat formats', () {

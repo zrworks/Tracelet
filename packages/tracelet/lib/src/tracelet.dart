@@ -232,6 +232,36 @@ class Tracelet {
     return State.fromMap(result);
   }
 
+  /// Start periodic one-shot location tracking mode.
+  ///
+  /// Instead of continuous GPS updates (which keep the GPS icon permanently
+  /// visible), this mode wakes every [GeoConfig.periodicLocationInterval]
+  /// seconds, performs a single location fix, dispatches the result, and
+  /// immediately turns the location provider off.
+  ///
+  /// The GPS icon (Android) / blue arrow (iOS) is only visible for ~5–10
+  /// seconds per fix instead of permanently.
+  ///
+  /// Configure via [GeoConfig]:
+  /// - `periodicLocationInterval` — seconds between fixes (default: 900 = 15 min)
+  /// - `periodicDesiredAccuracy` — accuracy per fix (default: `DesiredAccuracy.medium`)
+  /// - `periodicUseForegroundService` — use foreground service on Android (default: `false`)
+  /// - `periodicUseExactAlarms` — use exact alarms on Android (default: `false`)
+  ///
+  /// ```dart
+  /// await Tracelet.ready(Config(
+  ///   geo: GeoConfig(
+  ///     periodicLocationInterval: 1800,
+  ///     periodicDesiredAccuracy: DesiredAccuracy.medium,
+  ///   ),
+  /// ));
+  /// await Tracelet.startPeriodic();
+  /// ```
+  static Future<State> startPeriodic() async {
+    final result = await _platform.startPeriodic();
+    return State.fromMap(result);
+  }
+
   /// Get the current plugin [State].
   static Future<State> getState() async {
     final result = await _platform.getState();

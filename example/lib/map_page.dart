@@ -18,6 +18,7 @@ class _TrackPoint {
     required this.isMoving,
     required this.timestamp,
     this.activityType = tl.ActivityType.unknown,
+    this.event,
   });
 
   final LatLng position;
@@ -27,6 +28,9 @@ class _TrackPoint {
   final bool isMoving;
   final String timestamp;
   final tl.ActivityType activityType;
+  final String? event;
+
+  bool get isPeriodic => event == 'periodic';
 
   double get speedKmh => speed * 3.6;
 
@@ -97,6 +101,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   bool _kalmanEnabled = false;
   bool _isTracking = false;
   bool _adaptiveMode = false;
+  tl.TrackingMode _trackingMode = tl.TrackingMode.location;
   String _motionSensitivity = 'Medium';
   tl.HealthCheck? _lastHealthCheck;
 
@@ -185,6 +190,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         _geofences = fences;
         _isMoving = state.isMoving;
         _isTracking = state.enabled;
+        _trackingMode = state.trackingMode;
         _totalDistance = state.odometer;
         _kalmanEnabled = tl.Tracelet.isKalmanFilterEnabled;
       });
@@ -211,6 +217,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               isMoving: loc.isMoving,
               timestamp: loc.timestamp,
               activityType: loc.activity.type,
+              event: loc.event,
             ),
           );
           _pointCount = _trail.length;
@@ -774,18 +781,25 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final markers = <Marker>[];
     for (int i = 0; i < _trail.length; i += step) {
       final pt = _trail[i];
+      final isPeriodic = pt.isPeriodic;
+      final size = isPeriodic ? 14.0 : 8.0;
       markers.add(
         Marker(
           point: pt.position,
-          width: 8,
-          height: 8,
+          width: size,
+          height: size,
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _showSpeedColors
-                  ? pt.speedColor.withAlpha(180)
-                  : Colors.blue.withAlpha(120),
-              border: Border.all(color: Colors.white, width: 1),
+              color: isPeriodic
+                  ? Colors.cyan.withAlpha(200)
+                  : (_showSpeedColors
+                        ? pt.speedColor.withAlpha(180)
+                        : Colors.blue.withAlpha(120)),
+              border: Border.all(
+                color: isPeriodic ? Colors.cyan.shade900 : Colors.white,
+                width: isPeriodic ? 2 : 1,
+              ),
             ),
           ),
         ),
@@ -1228,9 +1242,21 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           children: [
             // Tracking status
             _StatusChip(
-              icon: _isTracking ? Icons.gps_fixed : Icons.gps_off,
-              label: _isTracking ? 'Tracking' : 'Stopped',
-              color: _isTracking ? Colors.green : Colors.grey,
+              icon: _isTracking
+                  ? (_trackingMode == tl.TrackingMode.periodic
+                        ? Icons.timer
+                        : Icons.gps_fixed)
+                  : Icons.gps_off,
+              label: _isTracking
+                  ? (_trackingMode == tl.TrackingMode.periodic
+                        ? 'Periodic'
+                        : 'Tracking')
+                  : 'Stopped',
+              color: _isTracking
+                  ? (_trackingMode == tl.TrackingMode.periodic
+                        ? Colors.cyan
+                        : Colors.green)
+                  : Colors.grey,
             ),
             const SizedBox(height: 4),
             // Motion state

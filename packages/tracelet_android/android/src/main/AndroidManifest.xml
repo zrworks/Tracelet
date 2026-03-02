@@ -31,6 +31,11 @@
     <!-- Battery optimization exemption dialog -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- Exact alarms for periodicUseExactAlarms / scheduleUseAlarmManager (Android 12+).
+         Not granted by default on Android 14+; user must enable in Settings.
+         The plugin falls back to inexact alarms if not granted. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <application>
         <!-- Foreground service for background location tracking -->
         <service
@@ -51,6 +56,11 @@
         <!-- Geofence transition receiver -->
         <receiver
             android:name=".receiver.GeofenceBroadcastReceiver"
+            android:exported="false" />
+
+        <!-- Periodic exact-alarm receiver -->
+        <receiver
+            android:name=".receiver.PeriodicAlarmReceiver"
             android:exported="false" />
 
         <!-- Headless Dart execution service -->

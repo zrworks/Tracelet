@@ -16,8 +16,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Audit Trail — Verification API', () {
-    testWidgets('verifyAuditTrail returns valid result when no data exists',
-        (tester) async {
+    testWidgets('verifyAuditTrail returns valid result when no data exists', (
+      tester,
+    ) async {
       final result = await Tracelet.verifyAuditTrail();
 
       // With no audit data, verification should return a valid result
@@ -30,29 +31,32 @@ void main() {
     });
 
     testWidgets(
-        'verifyAuditTrail isValid is true when chain is empty or intact',
-        (tester) async {
-      final result = await Tracelet.verifyAuditTrail();
+      'verifyAuditTrail isValid is true when chain is empty or intact',
+      (tester) async {
+        final result = await Tracelet.verifyAuditTrail();
 
-      // An empty chain or intact chain should be valid
-      if (result.totalRecords == 0) {
-        expect(result.isValid, isTrue);
-        expect(result.brokenAtIndex, isNull);
-        expect(result.brokenAtUuid, isNull);
-        expect(result.error, isNull);
-      }
-    });
+        // An empty chain or intact chain should be valid
+        if (result.totalRecords == 0) {
+          expect(result.isValid, isTrue);
+          expect(result.brokenAtIndex, isNull);
+          expect(result.brokenAtUuid, isNull);
+          expect(result.error, isNull);
+        }
+      },
+    );
 
-    testWidgets('getAuditProof returns null for non-existent UUID',
-        (tester) async {
+    testWidgets('getAuditProof returns null for non-existent UUID', (
+      tester,
+    ) async {
       final proof = await Tracelet.getAuditProof('non-existent-uuid-12345');
 
       // No record with this UUID should exist
       expect(proof, isNull);
     });
 
-    testWidgets('verifyAuditTrail result has consistent record counts',
-        (tester) async {
+    testWidgets('verifyAuditTrail result has consistent record counts', (
+      tester,
+    ) async {
       final result = await Tracelet.verifyAuditTrail();
 
       // verifiedRecords should never exceed totalRecords
@@ -66,8 +70,9 @@ void main() {
   });
 
   group('Audit Trail — Model Serialization', () {
-    testWidgets('AuditVerification.fromMap handles native response',
-        (tester) async {
+    testWidgets('AuditVerification.fromMap handles native response', (
+      tester,
+    ) async {
       // Test that the model can be constructed from a typical native response
       final verification = AuditVerification.fromMap({
         'is_valid': true,
@@ -84,8 +89,9 @@ void main() {
       expect(verification.brokenAtIndex, isNull);
     });
 
-    testWidgets('AuditVerification.fromMap handles broken chain response',
-        (tester) async {
+    testWidgets('AuditVerification.fromMap handles broken chain response', (
+      tester,
+    ) async {
       final verification = AuditVerification.fromMap({
         'is_valid': false,
         'total_records': 10,
@@ -145,15 +151,19 @@ void main() {
       final map = proof.toMap();
       expect(map['uuid'], 'uuid-1');
       expect(map['hash'], 'hash-value');
-      expect(map.containsKey('previous_hash') || map.containsKey('previousHash'),
-          isTrue);
       expect(
-          map.containsKey('chain_index') || map.containsKey('chainIndex'),
-          isTrue);
+        map.containsKey('previous_hash') || map.containsKey('previousHash'),
+        isTrue,
+      );
+      expect(
+        map.containsKey('chain_index') || map.containsKey('chainIndex'),
+        isTrue,
+      );
     });
 
-    testWidgets('AuditVerification.toMap round-trips correctly',
-        (tester) async {
+    testWidgets('AuditVerification.toMap round-trips correctly', (
+      tester,
+    ) async {
       const original = AuditVerification(
         isValid: true,
         totalRecords: 100,

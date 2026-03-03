@@ -146,30 +146,36 @@ void main() {
       expect(after, isEmpty);
     });
 
-    testWidgets('getPrivacyZones returns empty when none added',
-        (tester) async {
+    testWidgets('getPrivacyZones returns empty when none added', (
+      tester,
+    ) async {
       final zones = await Tracelet.getPrivacyZones();
       expect(zones, isEmpty);
     });
 
-    testWidgets('addPrivacyZone with same identifier replaces existing',
-        (tester) async {
-      await Tracelet.addPrivacyZone(const PrivacyZone(
-        identifier: 'replace-test',
-        latitude: 37.7749,
-        longitude: -122.4194,
-        radius: 100,
-        action: PrivacyZoneAction.exclude,
-      ));
+    testWidgets('addPrivacyZone with same identifier replaces existing', (
+      tester,
+    ) async {
+      await Tracelet.addPrivacyZone(
+        const PrivacyZone(
+          identifier: 'replace-test',
+          latitude: 37.7749,
+          longitude: -122.4194,
+          radius: 100,
+          action: PrivacyZoneAction.exclude,
+        ),
+      );
 
       // Add again with same identifier but different data
-      await Tracelet.addPrivacyZone(const PrivacyZone(
-        identifier: 'replace-test',
-        latitude: 40.7128,
-        longitude: -74.0060,
-        radius: 500,
-        action: PrivacyZoneAction.degrade,
-      ));
+      await Tracelet.addPrivacyZone(
+        const PrivacyZone(
+          identifier: 'replace-test',
+          latitude: 40.7128,
+          longitude: -74.0060,
+          radius: 500,
+          action: PrivacyZoneAction.degrade,
+        ),
+      );
 
       final zones = await Tracelet.getPrivacyZones();
       expect(zones.length, 1);
@@ -178,8 +184,9 @@ void main() {
       expect(zones.first.radius, closeTo(500, 0.1));
     });
 
-    testWidgets('zone with all action types round-trips correctly',
-        (tester) async {
+    testWidgets('zone with all action types round-trips correctly', (
+      tester,
+    ) async {
       await Tracelet.addPrivacyZones([
         const PrivacyZone(
           identifier: 'action-exclude',
@@ -221,8 +228,9 @@ void main() {
       expect(zones[2].latitude, closeTo(0, 0.001));
     });
 
-    testWidgets('removePrivacyZone with non-existent id returns gracefully',
-        (tester) async {
+    testWidgets('removePrivacyZone with non-existent id returns gracefully', (
+      tester,
+    ) async {
       // Should not throw, may return true or false depending on platform
       final result = await Tracelet.removePrivacyZone('does-not-exist');
       // Just verify no exception was thrown

@@ -2274,6 +2274,138 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  // ── Enterprise: Privacy Zones ─────────────────────────────────────────
+
+  Future<void> _addSamplePrivacyZone() async {
+    if (_lastLocation == null) {
+      _addLog('WARN', 'No location yet — get a position first');
+      return;
+    }
+    try {
+      final loc = _lastLocation!;
+      final id = 'pz_${DateTime.now().millisecondsSinceEpoch}';
+      await tl.Tracelet.addPrivacyZone(
+        tl.PrivacyZone(
+          identifier: id,
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          radius: 200,
+          action: tl.PrivacyZoneAction.exclude,
+        ),
+      );
+      _addLog(
+        'PZ+',
+        '$id  r=200m  exclude  at '
+            '${loc.coords.latitude.toStringAsFixed(4)}, '
+            '${loc.coords.longitude.toStringAsFixed(4)}',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'addPrivacyZone() failed: $e');
+    }
+  }
+
+  Future<void> _addDegradePrivacyZone() async {
+    if (_lastLocation == null) {
+      _addLog('WARN', 'No location yet — get a position first');
+      return;
+    }
+    try {
+      final loc = _lastLocation!;
+      final id = 'pz_deg_${DateTime.now().millisecondsSinceEpoch}';
+      await tl.Tracelet.addPrivacyZone(
+        tl.PrivacyZone(
+          identifier: id,
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          radius: 500,
+          action: tl.PrivacyZoneAction.degrade,
+          degradedAccuracyMeters: 1000,
+        ),
+      );
+      _addLog(
+        'PZ+',
+        '$id  r=500m  degrade(1000m)  at '
+            '${loc.coords.latitude.toStringAsFixed(4)}, '
+            '${loc.coords.longitude.toStringAsFixed(4)}',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'addPrivacyZone(degrade) failed: $e');
+    }
+  }
+
+  Future<void> _listPrivacyZones() async {
+    try {
+      final zones = await tl.Tracelet.getPrivacyZones();
+      _addLog('PZ', '${zones.length} privacy zone(s)');
+      for (final z in zones) {
+        _addLog(
+          '  PZ',
+          '${z.identifier}  ${z.action.name}  r=${z.radius.toStringAsFixed(0)}m  '
+              'at ${z.latitude.toStringAsFixed(4)}, ${z.longitude.toStringAsFixed(4)}',
+        );
+      }
+    } catch (e) {
+      _addLog('ERROR', 'getPrivacyZones() failed: $e');
+    }
+  }
+
+  Future<void> _removeAllPrivacyZones() async {
+    try {
+      await tl.Tracelet.removePrivacyZones();
+      _addLog('PZ', 'all privacy zones removed');
+    } catch (e) {
+      _addLog('ERROR', 'removePrivacyZones() failed: $e');
+    }
+  }
+
+  // ── Enterprise: Audit Trail ─────────────────────────────────────────────
+
+  Future<void> _verifyAuditTrail() async {
+    try {
+      final result = await tl.Tracelet.verifyAuditTrail();
+      if (result.isValid) {
+        _addLog(
+          'AUDIT',
+          'Chain VALID — ${result.verifiedRecords}/${result.totalRecords} records verified',
+        );
+      } else {
+        _addLog(
+          'AUDIT',
+          'Chain BROKEN at index ${result.brokenAtIndex} '
+              '(uuid: ${result.brokenAtUuid}) — ${result.error}',
+        );
+      }
+    } catch (e) {
+      _addLog('ERROR', 'verifyAuditTrail() failed: $e');
+    }
+  }
+
+  Future<void> _getAuditProof() async {
+    try {
+      // Get the latest recorded locations to find a UUID for the proof.
+      final locs = await tl.Tracelet.getLocations();
+      if (locs.isEmpty) {
+        _addLog('AUDIT', 'No locations recorded — nothing to prove');
+        return;
+      }
+      final uuid = locs.first.uuid;
+      final proof = await tl.Tracelet.getAuditProof(uuid);
+      if (proof != null) {
+        _addLog(
+          'AUDIT',
+          'Proof for $uuid:\n'
+              '  hash=${proof.hash.substring(0, 16)}…\n'
+              '  prev=${proof.previousHash.substring(0, 16)}…\n'
+              '  index=${proof.chainIndex}  ts=${proof.timestamp}',
+        );
+      } else {
+        _addLog('AUDIT', 'No audit proof found — is audit trail enabled?');
+      }
+    } catch (e) {
+      _addLog('ERROR', 'getAuditProof() failed: $e');
+    }
+  }
+
   // ── Build ───────────────────────────────────────────────────────────────
 
   @override
@@ -2628,6 +2760,32 @@ class _DashboardPageState extends State<DashboardPage> {
                       _Chip('Get Log', Icons.article, _getLog),
                       _Chip('Destroy Log', Icons.delete_outline, _destroyLog),
                       _Chip('Email Log', Icons.email, _emailLog),
+                    ],
+                  ),
+
+                  // ── Enterprise ──
+                  _Section(
+                    title: 'Enterprise',
+                    color: Colors.blueGrey,
+                    children: [
+                      _Chip(
+                        '+ Exclude Zone',
+                        Icons.shield,
+                        _addSamplePrivacyZone,
+                      ),
+                      _Chip(
+                        '+ Degrade Zone',
+                        Icons.blur_on,
+                        _addDegradePrivacyZone,
+                      ),
+                      _Chip('List Zones', Icons.list_alt, _listPrivacyZones),
+                      _Chip(
+                        'Remove Zones',
+                        Icons.delete_forever,
+                        _removeAllPrivacyZones,
+                      ),
+                      _Chip('Verify Trail', Icons.verified, _verifyAuditTrail),
+                      _Chip('Audit Proof', Icons.receipt_long, _getAuditProof),
                     ],
                   ),
 

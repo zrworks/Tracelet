@@ -100,6 +100,14 @@ class ConfigManager(context: Context) {
         // LocationFilter defaults
         const val DEFAULT_ODOMETER_ACCURACY_THRESHOLD = 0
         const val DEFAULT_REJECT_MOCK_LOCATIONS = false
+
+        // AuditConfig defaults
+        const val DEFAULT_AUDIT_ENABLED = false
+        const val DEFAULT_AUDIT_HASH_ALGORITHM = "SHA-256"
+        const val DEFAULT_AUDIT_INCLUDE_EXTRAS_IN_HASH = false
+
+        // PrivacyZoneConfig defaults
+        const val DEFAULT_PRIVACY_ZONE_ENABLED = false
     }
 
     private val prefs: SharedPreferences =
@@ -120,7 +128,7 @@ class ConfigManager(context: Context) {
 
         // Dart sends a nested structure: {geo: {...}, app: {...}, http: {...}, ...}
         // Flatten known section sub-maps into the top level first.
-        val sectionKeys = setOf("geo", "app", "http", "logger", "motion", "geofence", "persistence")
+        val sectionKeys = setOf("geo", "app", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone")
         val flat = mutableMapOf<String, Any?>()
         for ((key, value) in newConfig) {
             if (key in sectionKeys && value is Map<*, *>) {
@@ -236,6 +244,26 @@ class ConfigManager(context: Context) {
 
     fun getMockDetectionLevel(): Int =
         getInt("mockDetectionLevel", 1)
+
+    // ---------------------------------------------------------------------------
+    // Typed Getters (AuditConfig — Enterprise)
+    // ---------------------------------------------------------------------------
+
+    fun getAuditEnabled(): Boolean =
+        getBool("enabled", DEFAULT_AUDIT_ENABLED)
+
+    fun getAuditHashAlgorithm(): String =
+        getString("hashAlgorithm", DEFAULT_AUDIT_HASH_ALGORITHM)
+
+    fun getAuditIncludeExtrasInHash(): Boolean =
+        getBool("includeExtrasInHash", DEFAULT_AUDIT_INCLUDE_EXTRAS_IN_HASH)
+
+    // ---------------------------------------------------------------------------
+    // Typed Getters (PrivacyZoneConfig — Enterprise)
+    // ---------------------------------------------------------------------------
+
+    fun getPrivacyZoneEnabled(): Boolean =
+        getBool("privacyZoneEnabled", DEFAULT_PRIVACY_ZONE_ENABLED)
 
     // ---------------------------------------------------------------------------
     // Typed Getters (AppConfig)

@@ -2,6 +2,8 @@ import 'package:meta/meta.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 import '_helpers.dart';
+import 'audit_config.dart';
+import 'privacy_zone_config.dart';
 
 /// Top-level compound configuration for Tracelet.
 ///
@@ -13,12 +15,16 @@ import '_helpers.dart';
 /// - [motion] — Motion detection sensitivity
 /// - [geofence] — Geofence proximity and trigger rules
 /// - [persistence] — Database retention, templates, extras
+/// - [audit] — Tamper-proof location audit trail (Enterprise)
+/// - [privacyZone] — Geographic privacy zone controls (Enterprise)
 ///
 /// ```dart
 /// final config = Config(
 ///   geo: GeoConfig(desiredAccuracy: DesiredAccuracy.high, distanceFilter: 10),
 ///   http: HttpConfig(url: 'https://example.com/locations'),
 ///   persistence: PersistenceConfig(maxDaysToPersist: 14),
+///   audit: AuditConfig(enabled: true), // Enterprise: tamper-proof chain
+///   privacyZone: PrivacyZoneConfig(enabled: true), // Enterprise: privacy zones
 /// );
 /// ```
 @immutable
@@ -34,6 +40,8 @@ class Config {
     this.motion = const MotionConfig(),
     this.geofence = const GeofenceConfig(),
     this.persistence = const PersistenceConfig(),
+    this.audit = const AuditConfig(),
+    this.privacyZone = const PrivacyZoneConfig(),
   });
 
   /// Location accuracy and sampling settings.
@@ -57,6 +65,20 @@ class Config {
   /// Data persistence and database settings.
   final PersistenceConfig persistence;
 
+  /// **[Enterprise]** Tamper-proof location audit trail settings.
+  ///
+  /// When [AuditConfig.enabled] is `true`, every persisted location is
+  /// SHA-256 hashed and chained to the previous record, creating a
+  /// cryptographic proof of data integrity.
+  final AuditConfig audit;
+
+  /// **[Enterprise]** Privacy zone controls.
+  ///
+  /// When [PrivacyZoneConfig.enabled] is `true`, registered privacy
+  /// zones are evaluated against each incoming location, and the
+  /// configured action (exclude, degrade, or event-only) is applied.
+  final PrivacyZoneConfig privacyZone;
+
   /// Creates a [Config] from a flat or nested map.
   ///
   /// Supports both formats:
@@ -71,6 +93,8 @@ class Config {
     final motionMap = safeMap(map['motion']);
     final geofenceMap = safeMap(map['geofence']);
     final persistenceMap = safeMap(map['persistence']);
+    final auditMap = safeMap(map['audit']);
+    final privacyZoneMap = safeMap(map['privacyZone'] ?? map['privacy_zone']);
 
     return Config(
       geo: geoMap != null ? GeoConfig.fromMap(geoMap) : GeoConfig.fromMap(map),
@@ -90,6 +114,12 @@ class Config {
       persistence: persistenceMap != null
           ? PersistenceConfig.fromMap(persistenceMap)
           : PersistenceConfig.fromMap(map),
+      audit: auditMap != null
+          ? AuditConfig.fromMap(auditMap)
+          : AuditConfig.fromMap(map),
+      privacyZone: privacyZoneMap != null
+          ? PrivacyZoneConfig.fromMap(privacyZoneMap)
+          : PrivacyZoneConfig.fromMap(map),
     );
   }
 
@@ -103,13 +133,16 @@ class Config {
       'motion': motion.toMap(),
       'geofence': geofence.toMap(),
       'persistence': persistence.toMap(),
+      'audit': audit.toMap(),
+      'privacyZone': privacyZone.toMap(),
     };
   }
 
   @override
   String toString() =>
       'Config(geo: $geo, app: $app, http: $http, logger: $logger, '
-      'motion: $motion, geofence: $geofence, persistence: $persistence)';
+      'motion: $motion, geofence: $geofence, persistence: $persistence, '
+      'audit: $audit, privacyZone: $privacyZone)';
 
   @override
   bool operator ==(Object other) =>
@@ -122,11 +155,22 @@ class Config {
           logger == other.logger &&
           motion == other.motion &&
           geofence == other.geofence &&
-          persistence == other.persistence;
+          persistence == other.persistence &&
+          audit == other.audit &&
+          privacyZone == other.privacyZone;
 
   @override
-  int get hashCode =>
-      Object.hash(geo, app, http, logger, motion, geofence, persistence);
+  int get hashCode => Object.hash(
+    geo,
+    app,
+    http,
+    logger,
+    motion,
+    geofence,
+    persistence,
+    audit,
+    privacyZone,
+  );
 }
 
 // ---------------------------------------------------------------------------

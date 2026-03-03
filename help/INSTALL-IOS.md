@@ -61,6 +61,27 @@ Add these entries to `ios/Runner/Info.plist`:
 | `fetch` | Background fetch for headless Dart execution |
 | `processing` | `BGTaskScheduler` for scheduled tracking |
 
+### BGTaskScheduler Permitted Identifiers (Required for Periodic Mode)
+
+If you use `TrackingMode.periodic`, Tracelet registers background tasks with `BGTaskScheduler`. You **must** declare the task identifiers:
+
+```xml
+<key>BGTaskSchedulerPermittedIdentifiers</key>
+<array>
+    <string>com.tracelet.schedule.start</string>
+    <string>com.tracelet.schedule.stop</string>
+    <string>com.tracelet.periodic.refresh</string>
+</array>
+```
+
+| Identifier | Purpose |
+|---|---|
+| `com.tracelet.schedule.start` | Scheduled tracking start (time-based schedules) |
+| `com.tracelet.schedule.stop` | Scheduled tracking stop |
+| `com.tracelet.periodic.refresh` | Supplementary wake-up for periodic location fixes |
+
+> **Note:** These identifiers are safe to include even if you don't use periodic mode — they won't cause any side effects.
+
 ### Temporary Full Accuracy (iOS 14+, Optional)
 
 To use `Tracelet.requestTemporaryFullAccuracy()`:
@@ -126,6 +147,14 @@ If you prefer to use Xcode instead of editing `Info.plist` directly:
         <string>processing</string>
     </array>
 
+    <!-- BGTaskScheduler Identifiers (required for periodic mode) -->
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.tracelet.schedule.start</string>
+        <string>com.tracelet.schedule.stop</string>
+        <string>com.tracelet.periodic.refresh</string>
+    </array>
+
     <!-- Temporary Full Accuracy (optional) -->
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
     <dict>
@@ -171,10 +200,13 @@ When the device is stationary and Tracelet enters its low-power mode, it uses `s
 
 ## 8. Start on Boot / After Termination
 
-iOS does not have a "boot completed" event like Android. However, Tracelet uses two mechanisms to resume tracking:
+iOS does not have a "boot completed" event like Android. However, Tracelet uses multiple mechanisms to resume tracking after the app is terminated:
 
-1. **Significant location changes** — iOS will relaunch the app in the background when a significant location change occurs
-2. **BGTaskScheduler** — Scheduled background tasks can relaunch the app
+1. **Significant location changes** — iOS relaunches the app in the background when a significant location change occurs (~500m cell tower transition). Tracelet detects the `LaunchOptionsKey.location` flag and automatically restores the previous tracking mode (continuous, geofences, or periodic) from persisted state.
+2. **BGTaskScheduler** — Scheduled background tasks can relaunch the app. In periodic mode, `BGAppRefreshTask` acts as a supplementary wake-up to trigger location fixes.
+3. **CLServiceSession** (iOS 18+) — Preserves location authorization across app suspension and termination, preventing authorization downgrades.
+
+> **Important:** Killed-state auto-resume requires **"Always" location permission**. With "While In Use" permission, tracking works while the app is in the foreground or briefly after backgrounding, but cannot survive termination.
 
 ```dart
 await Tracelet.ready(Config(

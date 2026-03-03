@@ -44,7 +44,11 @@ export 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
         GeoUtils;
 
 // Models
+export 'src/models/audit_config.dart';
+export 'src/models/audit_proof.dart';
 export 'src/models/config.dart';
+export 'src/models/privacy_zone.dart';
+export 'src/models/privacy_zone_config.dart';
 export 'src/models/location.dart';
 export 'src/models/state.dart';
 export 'src/models/geofence.dart';

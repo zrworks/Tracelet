@@ -7,6 +7,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import com.tracelet.tracelet_android.ConfigManager
+import com.tracelet.tracelet_android.StateManager
+import com.tracelet.tracelet_android.location.PeriodicLocationWorker
 import com.tracelet.tracelet_android.service.LocationService
 import com.tracelet.tracelet_android.util.OemCompat
 
@@ -14,8 +16,11 @@ import com.tracelet.tracelet_android.util.OemCompat
  * Receives BOOT_COMPLETED broadcast to restart tracking after device reboot.
  *
  * Enabled/disabled via PackageManager based on the startOnBoot config setting.
- * When enabled, reads persisted config and starts the foreground location service
- * with native location tracking running headlessly (no Dart UI).
+ * When enabled, reads persisted config and restarts the correct tracking mode:
+ * - Continuous (mode 0): starts foreground LocationService with native tracking
+ * - Geofences (mode 1): starts foreground LocationService (geofences re-registered by Play Services)
+ * - Periodic (mode 2): re-schedules WorkManager/AlarmManager work, only starts
+ *   foreground service if periodicUseForegroundService is true
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -39,7 +44,10 @@ class BootReceiver : BroadcastReceiver() {
             return
         }
 
-        Log.d(TAG, "startOnBoot=true, starting LocationService with native tracking")
+        val stateManager = StateManager(context)
+        val trackingMode = stateManager.trackingMode
+
+        Log.d(TAG, "startOnBoot=true, trackingMode=$trackingMode — restoring tracking")
 
         // Acquire a temporary OEM-safe wakelock to prevent aggressive power
         // managers (Huawei PowerGenie, Xiaomi MIUI) from killing our process
@@ -55,8 +63,29 @@ class BootReceiver : BroadcastReceiver() {
             .putBoolean("enabled", true)
             .commit() // synchronous write — must complete before service starts
 
-        // Start the foreground service with boot flag so it bootstraps native tracking
-        LocationService.startFromBoot(context)
+        if (trackingMode == 2 && !configManager.getPeriodicUseForegroundService()) {
+            // Periodic mode without foreground service —
+            // re-schedule WorkManager/AlarmManager work directly.
+            // No foreground service needed (no persistent notification).
+            if (configManager.getPeriodicUseExactAlarms()) {
+                PeriodicLocationWorker.scheduleOneTime(context)
+                PeriodicLocationWorker.scheduleExactAlarm(
+                    context,
+                    configManager.getPeriodicLocationInterval(),
+                )
+                Log.d(TAG, "Periodic mode restored with exact alarms")
+            } else {
+                PeriodicLocationWorker.schedule(
+                    context,
+                    configManager.getPeriodicLocationInterval(),
+                )
+                Log.d(TAG, "Periodic mode restored with WorkManager")
+            }
+        } else {
+            // Continuous (0), geofences (1), or periodic with foreground service —
+            // start the foreground service with boot flag for native tracking
+            LocationService.startFromBoot(context)
+        }
 
         // Release boot wakelock after a short delay — the service now holds its own
         try {

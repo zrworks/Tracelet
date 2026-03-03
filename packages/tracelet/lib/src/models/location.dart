@@ -29,6 +29,9 @@ class Location {
     this.battery = const LocationBattery(),
     this.extras = const <String, Object?>{},
     this.event,
+    this.auditHash,
+    this.auditPreviousHash,
+    this.auditChainIndex,
   });
 
   /// Geographic coordinates and accuracy metrics.
@@ -82,6 +85,24 @@ class Location {
   /// `'providerchange'`, `'heartbeat'`).
   final String? event;
 
+  /// **[Enterprise]** SHA-256 audit hash for this location record.
+  ///
+  /// Only populated when [AuditConfig.enabled] is `true`. Part of the
+  /// tamper-proof audit chain — computed from the previous hash and
+  /// the canonical fields of this record.
+  final String? auditHash;
+
+  /// **[Enterprise]** The hash of the previous record in the audit chain.
+  ///
+  /// For the first record, this is the genesis hash. `null` when audit
+  /// trail is disabled.
+  final String? auditPreviousHash;
+
+  /// **[Enterprise]** Sequential index in the audit chain (0-based).
+  ///
+  /// `null` when audit trail is disabled.
+  final int? auditChainIndex;
+
   /// Creates a [Location] from a platform map.
   factory Location.fromMap(Map<String, Object?> map) {
     final coordsMap = safeMap(map['coords']) ?? const <String, Object?>{};
@@ -117,6 +138,14 @@ class Location {
       event: map['event'] is String
           ? map['event'] as String
           : map['event']?.toString(),
+      auditHash: (map['audit_hash'] ?? map['auditHash']) as String?,
+      auditPreviousHash:
+          (map['audit_previous_hash'] ?? map['auditPreviousHash']) as String?,
+      auditChainIndex:
+          (map['audit_chain_index'] ?? map['auditChainIndex']) is num
+          ? ((map['audit_chain_index'] ?? map['auditChainIndex']) as num)
+                .toInt()
+          : null,
     );
   }
 
@@ -134,6 +163,9 @@ class Location {
       'battery': battery.toMap(),
       'extras': extras,
       'event': event,
+      if (auditHash != null) 'audit_hash': auditHash,
+      if (auditPreviousHash != null) 'audit_previous_hash': auditPreviousHash,
+      if (auditChainIndex != null) 'audit_chain_index': auditChainIndex,
     };
   }
 

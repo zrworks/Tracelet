@@ -99,6 +99,32 @@ final class TraceletDatabase {
                 source TEXT DEFAULT 'plugin'
             )
         """)
+
+        // Audit trail table (Enterprise)
+        exec("""
+            CREATE TABLE IF NOT EXISTS audit_trail (
+                uuid TEXT PRIMARY KEY,
+                hash TEXT NOT NULL,
+                previous_hash TEXT NOT NULL,
+                chain_index INTEGER NOT NULL UNIQUE,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        exec("""
+            CREATE INDEX IF NOT EXISTS idx_audit_chain_index ON audit_trail(chain_index)
+        """)
+
+        // Privacy zones table (Enterprise)
+        exec("""
+            CREATE TABLE IF NOT EXISTS privacy_zones (
+                identifier TEXT PRIMARY KEY,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                radius REAL NOT NULL,
+                action INTEGER NOT NULL DEFAULT 0,
+                degraded_accuracy REAL DEFAULT 1000.0
+            )
+        """)
     }
 
     // MARK: - Location CRUD
@@ -164,7 +190,11 @@ final class TraceletDatabase {
         var results: [[String: Any]] = []
         queue.sync {
             let order = orderAsc ? "ASC" : "DESC"
-            var sql = "SELECT * FROM locations ORDER BY timestamp \(order)"
+            var sql = """
+                SELECT l.*, a.hash AS audit_hash, a.previous_hash AS audit_previous_hash, a.chain_index AS audit_chain_index
+                FROM locations l LEFT JOIN audit_trail a ON l.uuid = a.uuid
+                ORDER BY l.timestamp \(order)
+            """
             if limit > 0 {
                 sql += " LIMIT \(limit) OFFSET \(offset)"
             }
@@ -183,7 +213,11 @@ final class TraceletDatabase {
     func getUnsyncedLocations(limit: Int = 100) -> [[String: Any]] {
         var results: [[String: Any]] = []
         queue.sync {
-            let sql = "SELECT * FROM locations WHERE synced = 0 ORDER BY timestamp ASC LIMIT ?"
+            let sql = """
+                SELECT l.*, a.hash AS audit_hash, a.previous_hash AS audit_previous_hash, a.chain_index AS audit_chain_index
+                FROM locations l LEFT JOIN audit_trail a ON l.uuid = a.uuid
+                WHERE l.synced = 0 ORDER BY l.timestamp ASC LIMIT ?
+            """
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
             defer { sqlite3_finalize(stmt) }
@@ -403,6 +437,199 @@ final class TraceletDatabase {
         }
     }
 
+    // MARK: - Audit Trail CRUD
+
+    /// Insert an audit trail record.
+    func insertAuditRecord(uuid: String, hash: String, previousHash: String, chainIndex: Int) {
+        queue.sync {
+            let sql = """
+                INSERT OR REPLACE INTO audit_trail (uuid, hash, previous_hash, chain_index)
+                VALUES (?, ?, ?, ?)
+            """
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+                NSLog("[Tracelet] insertAuditRecord prepare failed: \(lastError())")
+                return
+            }
+            defer { sqlite3_finalize(stmt) }
+
+            sqlite3_bind_text(stmt, 1, nsString(uuid), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            sqlite3_bind_text(stmt, 2, nsString(hash), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            sqlite3_bind_text(stmt, 3, nsString(previousHash), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            sqlite3_bind_int(stmt, 4, Int32(chainIndex))
+
+            if sqlite3_step(stmt) != SQLITE_DONE {
+                NSLog("[Tracelet] insertAuditRecord step failed: \(lastError())")
+            }
+        }
+    }
+
+    /// Get all audit trail records ordered by chain_index ASC.
+    func getAuditTrail() -> [[String: Any]] {
+        var results: [[String: Any]] = []
+        queue.sync {
+            let sql = "SELECT uuid, hash, previous_hash, chain_index, created_at FROM audit_trail ORDER BY chain_index ASC"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                results.append([
+                    "uuid": columnText(stmt, 0),
+                    "hash": columnText(stmt, 1),
+                    "previous_hash": columnText(stmt, 2),
+                    "chain_index": Int(sqlite3_column_int(stmt, 3)),
+                    "created_at": columnText(stmt, 4),
+                ])
+            }
+        }
+        return results
+    }
+
+    /// Get a single audit record by UUID, including the location's timestamp.
+    func getAuditRecord(uuid: String) -> [String: Any]? {
+        var result: [String: Any]?
+        queue.sync {
+            let sql = """
+                SELECT a.uuid, a.hash, a.previous_hash, a.chain_index, a.created_at, l.timestamp
+                FROM audit_trail a LEFT JOIN locations l ON a.uuid = l.uuid
+                WHERE a.uuid = ?
+            """
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+
+            sqlite3_bind_text(stmt, 1, nsString(uuid), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            if sqlite3_step(stmt) == SQLITE_ROW {
+                result = [
+                    "uuid": columnText(stmt, 0),
+                    "hash": columnText(stmt, 1),
+                    "previous_hash": columnText(stmt, 2),
+                    "chain_index": Int(sqlite3_column_int(stmt, 3)),
+                    "timestamp": columnText(stmt, 5),
+                ]
+            }
+        }
+        return result
+    }
+
+    /// Get a flat location map suitable for hash re-computation during verification.
+    ///
+    /// Returns a dict with top-level keys: uuid, timestamp, latitude, longitude,
+    /// altitude, speed, heading, accuracy, odometer, is_moving. This matches
+    /// the canonical format expected by `AuditTrailManager.buildCanonicalString`.
+    func getLocationForAudit(uuid: String) -> [String: Any]? {
+        var result: [String: Any]?
+        queue.sync {
+            let sql = """
+                SELECT uuid, timestamp, latitude, longitude, altitude, speed, heading,
+                       accuracy, odometer, is_moving
+                FROM locations WHERE uuid = ?
+            """
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+
+            sqlite3_bind_text(stmt, 1, nsString(uuid), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            if sqlite3_step(stmt) == SQLITE_ROW {
+                result = [
+                    "uuid": columnText(stmt, 0),
+                    "timestamp": columnText(stmt, 1),
+                    "latitude": sqlite3_column_double(stmt, 2),
+                    "longitude": sqlite3_column_double(stmt, 3),
+                    "altitude": sqlite3_column_double(stmt, 4),
+                    "speed": sqlite3_column_double(stmt, 5),
+                    "heading": sqlite3_column_double(stmt, 6),
+                    "accuracy": sqlite3_column_double(stmt, 7),
+                    "odometer": sqlite3_column_double(stmt, 8),
+                    "is_moving": sqlite3_column_int(stmt, 9) == 1,
+                ]
+            }
+        }
+        return result
+    }
+
+    /// Delete all audit trail records.
+    @discardableResult
+    func deleteAllAuditRecords() -> Bool {
+        queue.sync {
+            return exec("DELETE FROM audit_trail")
+        }
+    }
+
+    // MARK: - Privacy Zone CRUD
+
+    /// Inserts or replaces a privacy zone.
+    @discardableResult
+    func insertPrivacyZone(_ data: [String: Any]) -> Bool {
+        var success = false
+        queue.sync {
+            let sql = """
+                INSERT OR REPLACE INTO privacy_zones
+                (identifier, latitude, longitude, radius, action, degraded_accuracy)
+                VALUES (?,?,?,?,?,?)
+            """
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+
+            let identifier = data["identifier"] as? String ?? ""
+            let lat = (data["latitude"] as? NSNumber)?.doubleValue ?? 0.0
+            let lng = (data["longitude"] as? NSNumber)?.doubleValue ?? 0.0
+            let radius = (data["radius"] as? NSNumber)?.doubleValue ?? 200.0
+            let action = (data["action"] as? NSNumber)?.intValue ?? 0
+            let degradedAccuracy = (data["degradedAccuracyMeters"] as? NSNumber)?.doubleValue ?? 1000.0
+
+            sqlite3_bind_text(stmt, 1, nsString(identifier), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            sqlite3_bind_double(stmt, 2, lat)
+            sqlite3_bind_double(stmt, 3, lng)
+            sqlite3_bind_double(stmt, 4, radius)
+            sqlite3_bind_int(stmt, 5, Int32(action))
+            sqlite3_bind_double(stmt, 6, degradedAccuracy)
+
+            success = sqlite3_step(stmt) == SQLITE_DONE
+        }
+        return success
+    }
+
+    /// Retrieves all privacy zones.
+    func getPrivacyZones() -> [[String: Any]] {
+        var results: [[String: Any]] = []
+        queue.sync {
+            let sql = "SELECT * FROM privacy_zones"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                results.append(privacyZoneRowToMap(stmt!))
+            }
+        }
+        return results
+    }
+
+    /// Deletes a privacy zone by identifier.
+    @discardableResult
+    func deletePrivacyZone(_ identifier: String) -> Bool {
+        var success = false
+        queue.sync {
+            let sql = "DELETE FROM privacy_zones WHERE identifier = ?"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, nsString(identifier), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            success = sqlite3_step(stmt) == SQLITE_DONE
+        }
+        return success
+    }
+
+    /// Deletes all privacy zones.
+    @discardableResult
+    func deleteAllPrivacyZones() -> Bool {
+        queue.sync {
+            return exec("DELETE FROM privacy_zones")
+        }
+    }
+
     // MARK: - Helpers
 
     @discardableResult
@@ -444,7 +671,7 @@ final class TraceletDatabase {
         let extras: [String: Any]? = extrasStr.isEmpty ? nil :
             (try? JSONSerialization.jsonObject(with: Data(extrasStr.utf8)) as? [String: Any])
 
-        return [
+        var map: [String: Any] = [
             "uuid": columnText(stmt, 0),
             "timestamp": columnText(stmt, 1),
             "coords": [
@@ -472,6 +699,23 @@ final class TraceletDatabase {
             "extras": extras as Any,
             "event": columnText(stmt, 19),
         ]
+
+        // Append audit fields from LEFT JOIN (columns 22, 23, 24)
+        // locations has 22 columns (0-21), audit columns start at 22
+        let colCount = sqlite3_column_count(stmt)
+        if colCount > 22 {
+            if sqlite3_column_type(stmt, 22) != SQLITE_NULL {
+                map["audit_hash"] = columnText(stmt, 22)
+            }
+            if sqlite3_column_type(stmt, 23) != SQLITE_NULL {
+                map["audit_previous_hash"] = columnText(stmt, 23)
+            }
+            if sqlite3_column_type(stmt, 24) != SQLITE_NULL {
+                map["audit_chain_index"] = Int(sqlite3_column_int(stmt, 24))
+            }
+        }
+
+        return map
     }
 
     private func geofenceRowToMap(_ stmt: OpaquePointer) -> [String: Any] {
@@ -489,6 +733,17 @@ final class TraceletDatabase {
             "notifyOnDwell": sqlite3_column_int(stmt, 6) == 1,
             "loiteringDelay": Int(sqlite3_column_int(stmt, 7)),
             "extras": extras as Any,
+        ]
+    }
+
+    private func privacyZoneRowToMap(_ stmt: OpaquePointer) -> [String: Any] {
+        return [
+            "identifier": columnText(stmt, 0),
+            "latitude": sqlite3_column_double(stmt, 1),
+            "longitude": sqlite3_column_double(stmt, 2),
+            "radius": sqlite3_column_double(stmt, 3),
+            "action": Int(sqlite3_column_int(stmt, 4)),
+            "degradedAccuracyMeters": sqlite3_column_double(stmt, 5),
         ]
     }
 }

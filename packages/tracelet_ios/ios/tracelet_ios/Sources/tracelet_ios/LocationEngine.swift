@@ -28,6 +28,12 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Whether a mock location warning has already been fired for this session.
     private var mockLocationWarningFired = false
 
+    /// [Enterprise] Audit trail manager — set by the plugin after initialization.
+    var auditTrailManager: AuditTrailManager?
+
+    /// [Enterprise] Privacy zone manager — set by the plugin after initialization.
+    var privacyZoneManager: PrivacyZoneManager?
+
     init(configManager: ConfigManager,
          stateManager: StateManager,
          eventDispatcher: EventDispatcher,
@@ -165,7 +171,10 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Temporarily enables `allowsBackgroundLocationUpdates` and calls
     /// `requestLocation()`. The delegate callback (`didUpdateLocations`)
     /// handles dispatching and then turns GPS back off.
-    private func performPeriodicFix() {
+    ///
+    /// This method is `internal` so that `PeriodicRefreshScheduler` and
+    /// the plugin can trigger a fix from a `BGAppRefreshTask` wake-up.
+    func performPeriodicFix() {
         guard isPeriodicTracking else { return }
 
         let bgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
@@ -396,6 +405,18 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         return state
     }
 
+    /// Returns the current authorization status as an integer:
+    /// 0 = notDetermined, 1 = restricted/denied, 2 = whenInUse, 3 = always.
+    func getAuthorizationStatus() -> Int {
+        let status: CLAuthorizationStatus
+        if #available(iOS 14.0, *) {
+            status = locationManager.authorizationStatus
+        } else {
+            status = CLLocationManager.authorizationStatus()
+        }
+        return authorizationStatusToInt(status)
+    }
+
     private func authorizationStatusToInt(_ status: CLAuthorizationStatus) -> Int {
         switch status {
         case .notDetermined: return 0
@@ -474,8 +495,54 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         // Persist and dispatch (respecting persistMode)
-        persistLocationIfAllowed(locationMap, event: "location")
-        eventDispatcher.sendLocation(locationMap)
+
+        // [Enterprise] Privacy zone check — BEFORE audit + persist + send.
+        if let pzm = privacyZoneManager {
+            let privacyResult = pzm.processLocation(locationMap)
+            switch privacyResult.action {
+            case .drop:
+                // Exclusion zone — drop this location entirely.
+                return
+            case .eventOnly:
+                // Dispatch to Flutter but do NOT persist or audit.
+                let data = privacyResult.location ?? locationMap
+                eventDispatcher.sendLocation(data)
+                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                if isPeriodicTracking {
+                    locationManager.stopUpdatingLocation()
+                    locationManager.allowsBackgroundLocationUpdates = false
+                }
+                return
+            case .degraded:
+                // Use degraded coordinates for audit + persist + dispatch.
+                var degraded = privacyResult.location ?? locationMap
+                if let auditFields = auditTrailManager?.appendToChain(degraded) {
+                    for (key, value) in auditFields {
+                        degraded[key] = value
+                    }
+                }
+                persistLocationIfAllowed(degraded, event: "location")
+                eventDispatcher.sendLocation(degraded)
+                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                if isPeriodicTracking {
+                    locationManager.stopUpdatingLocation()
+                    locationManager.allowsBackgroundLocationUpdates = false
+                }
+                return
+            case .passThrough:
+                break // Fall through to normal flow
+            }
+        }
+
+        // [Enterprise] Compute audit hash and merge into location map
+        var dispatchMap = locationMap
+        if let auditFields = auditTrailManager?.appendToChain(locationMap) {
+            for (key, value) in auditFields {
+                dispatchMap[key] = value
+            }
+        }
+        persistLocationIfAllowed(dispatchMap, event: "location")
+        eventDispatcher.sendLocation(dispatchMap)
 
         // Notify geofenceModeHighAccuracy listener (if active)
         onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)

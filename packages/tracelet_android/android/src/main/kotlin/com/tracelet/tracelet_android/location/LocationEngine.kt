@@ -12,6 +12,8 @@ import com.google.android.gms.location.*
 import com.tracelet.tracelet_android.ConfigManager
 import com.tracelet.tracelet_android.EventDispatcher
 import com.tracelet.tracelet_android.StateManager
+import com.tracelet.tracelet_android.audit.AuditTrailManager
+import com.tracelet.tracelet_android.privacy.PrivacyZoneManager
 import com.tracelet.tracelet_android.db.TraceletDatabase
 import com.tracelet.tracelet_android.util.BatteryUtils
 import android.os.SystemClock
@@ -56,6 +58,12 @@ class LocationEngine(
 
     /** Optional callback invoked on every accepted location (for geofenceModeHighAccuracy). */
     var onLocationUpdate: ((Double, Double) -> Unit)? = null
+
+    /** Optional audit trail manager (Enterprise). Set by the plugin after construction. */
+    var auditTrailManager: AuditTrailManager? = null
+
+    /** Optional privacy zone manager (Enterprise). Set by the plugin after construction. */
+    var privacyZoneManager: PrivacyZoneManager? = null
 
     // watchPosition watchers: watchId -> LocationCallback
     private val watchers = ConcurrentHashMap<Int, LocationCallback>()
@@ -513,11 +521,55 @@ class LocationEngine(
 
         val enriched = enrichLocation(location, event, effectiveSpeed)
 
+        // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
+        // Evaluates whether the location falls inside a registered privacy zone
+        // and applies the configured action (exclude / degrade / event-only).
+        val privacyResult = privacyZoneManager?.processLocation(enriched)
+        if (privacyResult != null) {
+            when (privacyResult.action) {
+                PrivacyZoneManager.ProcessedLocation.Action.DROP -> {
+                    // Exclusion zone — drop this location entirely.
+                    return
+                }
+                PrivacyZoneManager.ProcessedLocation.Action.EVENT_ONLY -> {
+                    // Dispatch to Dart but do NOT persist or audit.
+                    val locationData = privacyResult.location ?: enriched
+                    events.sendLocation(locationData)
+                    onLocationUpdate?.invoke(location.latitude, location.longitude)
+                    return
+                }
+                PrivacyZoneManager.ProcessedLocation.Action.DEGRADED -> {
+                    // Use the degraded location for audit + persist + dispatch.
+                    val degraded = privacyResult.location ?: enriched
+                    val auditFields = auditTrailManager?.appendToChain(degraded)
+                    val withAudit = if (auditFields != null) {
+                        degraded.toMutableMap().apply { putAll(auditFields) }
+                    } else {
+                        degraded
+                    }
+                    persistLocationIfAllowed(withAudit, event)
+                    events.sendLocation(withAudit)
+                    onLocationUpdate?.invoke(location.latitude, location.longitude)
+                    return
+                }
+                else -> { /* PASS_THROUGH — fall through to normal flow */ }
+            }
+        }
+
+        // Compute audit trail hash (Enterprise) — must happen BEFORE persist
+        // so the chain is sequential with DB inserts.
+        val auditFields = auditTrailManager?.appendToChain(enriched)
+        val enrichedWithAudit = if (auditFields != null) {
+            enriched.toMutableMap().apply { putAll(auditFields) }
+        } else {
+            enriched
+        }
+
         // Persist to database (respecting persistMode)
-        persistLocationIfAllowed(enriched, event)
+        persistLocationIfAllowed(enrichedWithAudit, event)
 
         // Dispatch to Dart
-        events.sendLocation(enriched)
+        events.sendLocation(enrichedWithAudit)
 
         // Notify geofenceModeHighAccuracy listener (if active)
         onLocationUpdate?.invoke(location.latitude, location.longitude)

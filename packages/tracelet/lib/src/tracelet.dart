@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 import 'models/activity_change_event.dart';
+import 'models/audit_config.dart';
+import 'models/audit_proof.dart';
 import 'models/authorization_event.dart';
 import 'models/config.dart';
 import 'models/connectivity_change_event.dart';
@@ -19,6 +21,8 @@ import 'models/health_check.dart';
 import 'models/heartbeat_event.dart';
 import 'models/http_event.dart';
 import 'models/location.dart';
+import 'models/privacy_zone.dart';
+import 'models/privacy_zone_config.dart';
 import 'models/provider_change_event.dart';
 import 'models/sensors.dart';
 import 'models/sql_query.dart';
@@ -963,6 +967,114 @@ class Tracelet {
       registrationHandle.toRawHandle(),
       dispatchHandle.toRawHandle(),
     ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audit Trail (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  /// **[Enterprise]** Verify the integrity of the tamper-proof audit trail.
+  ///
+  /// Walks all location records in chain order, re-computes each SHA-256
+  /// hash, and compares it to the stored hash. Returns an
+  /// [AuditVerification] describing the result.
+  ///
+  /// If any record has been inserted, deleted, or modified, [isValid] will
+  /// be `false` and [brokenAtIndex] / [brokenAtUuid] will indicate where
+  /// the chain was broken.
+  ///
+  /// ```dart
+  /// final result = await Tracelet.verifyAuditTrail();
+  /// if (result.isValid) {
+  ///   print('Chain intact: ${result.verifiedRecords} records');
+  /// } else {
+  ///   print('Tampered at index ${result.brokenAtIndex}');
+  /// }
+  /// ```
+  ///
+  /// Requires [AuditConfig.enabled] to be `true` in the configuration.
+  static Future<AuditVerification> verifyAuditTrail() async {
+    final map = await _platform.verifyAuditTrail();
+    return AuditVerification.fromMap(map);
+  }
+
+  /// **[Enterprise]** Get the audit proof for a specific location record.
+  ///
+  /// Returns the [AuditProof] containing the SHA-256 hash, previous hash,
+  /// and chain index for the location identified by [uuid]. Returns `null`
+  /// if audit trail is disabled or the record does not exist.
+  ///
+  /// ```dart
+  /// final proof = await Tracelet.getAuditProof(location.uuid);
+  /// if (proof != null) {
+  ///   print('Hash: ${proof.hash}');
+  ///   print('Chain index: ${proof.chainIndex}');
+  /// }
+  /// ```
+  static Future<AuditProof?> getAuditProof(String uuid) async {
+    final map = await _platform.getAuditProof(uuid);
+    if (map == null) return null;
+    return AuditProof.fromMap(map);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Privacy Zones (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  /// **[Enterprise]** Add a single [PrivacyZone].
+  ///
+  /// Privacy zones define geographic areas where location tracking behaviour
+  /// changes according to the zone's [PrivacyZoneAction]:
+  ///
+  /// - [PrivacyZoneAction.exclude] — locations inside the zone are dropped
+  ///   entirely (not persisted, not dispatched).
+  /// - [PrivacyZoneAction.degrade] — coordinates are degraded to
+  ///   [PrivacyZone.degradedAccuracyMeters] precision before persisting
+  ///   and dispatching.
+  /// - [PrivacyZoneAction.eventOnly] — locations are dispatched to Dart
+  ///   listeners but NOT persisted to the database.
+  ///
+  /// Requires [PrivacyZoneConfig.enabled] to be `true` in the configuration.
+  ///
+  /// ```dart
+  /// await Tracelet.addPrivacyZone(PrivacyZone(
+  ///   identifier: 'home',
+  ///   latitude: 37.7749,
+  ///   longitude: -122.4194,
+  ///   radius: 200,
+  ///   action: PrivacyZoneAction.exclude,
+  /// ));
+  /// ```
+  static Future<bool> addPrivacyZone(PrivacyZone zone) {
+    return _platform.addPrivacyZone(zone.toMap());
+  }
+
+  /// **[Enterprise]** Add multiple [PrivacyZone]s at once.
+  static Future<bool> addPrivacyZones(List<PrivacyZone> zones) {
+    return _platform.addPrivacyZones(zones.map((z) => z.toMap()).toList());
+  }
+
+  /// **[Enterprise]** Remove a privacy zone by its [identifier].
+  static Future<bool> removePrivacyZone(String identifier) {
+    return _platform.removePrivacyZone(identifier);
+  }
+
+  /// **[Enterprise]** Remove all privacy zones.
+  static Future<bool> removePrivacyZones() {
+    return _platform.removePrivacyZones();
+  }
+
+  /// **[Enterprise]** Get all registered privacy zones.
+  ///
+  /// ```dart
+  /// final zones = await Tracelet.getPrivacyZones();
+  /// for (final zone in zones) {
+  ///   print('${zone.identifier}: ${zone.action}');
+  /// }
+  /// ```
+  static Future<List<PrivacyZone>> getPrivacyZones() async {
+    final result = await _platform.getPrivacyZones();
+    return result.map(PrivacyZone.fromMap).toList();
   }
 
   // ---------------------------------------------------------------------------

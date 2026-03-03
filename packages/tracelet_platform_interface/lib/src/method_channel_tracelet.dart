@@ -465,4 +465,72 @@ class MethodChannelTracelet extends TraceletPlatform {
     );
     return result ?? false;
   }
+
+  // ---------------------------------------------------------------------------
+  // Audit Trail (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Map<String, Object?>> verifyAuditTrail() async {
+    return _invokeMap('verifyAuditTrail');
+  }
+
+  @override
+  Future<Map<String, Object?>?> getAuditProof(String uuid) async {
+    final result = await _methodChannel.invokeMapMethod<String, Object?>(
+      'getAuditProof',
+      uuid,
+    );
+    return result;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Privacy Zones (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<bool> addPrivacyZone(Map<String, Object?> zone) async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'addPrivacyZone',
+      zone,
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'addPrivacyZones',
+      zones,
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> removePrivacyZone(String identifier) async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'removePrivacyZone',
+      identifier,
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> removePrivacyZones() async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'removePrivacyZones',
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> getPrivacyZones() async {
+    final result = await _methodChannel.invokeListMethod<Map>(
+      'getPrivacyZones',
+    );
+    return result
+            ?.map((e) => Map<String, Object?>.from(e))
+            .toList(growable: false) ??
+        [];
+  }
 }

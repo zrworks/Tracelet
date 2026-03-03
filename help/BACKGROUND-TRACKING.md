@@ -210,15 +210,59 @@ final state = await Tracelet.startPeriodic();
 
 > **Note:** The `SCHEDULE_EXACT_ALARM` permission is declared in the plugin's `AndroidManifest.xml`. No runtime permission dialog is triggered — on Android 13+, users must manually grant it via Settings if they want exact timing. Without it, the plugin silently degrades to inexact alarms.
 
+#### Killed-State & Reboot Recovery (Android)
+
+Tracelet's `BootReceiver` and `LocationService` are **tracking-mode-aware**. After a device reboot or app kill, they restore the correct tracking mode from persisted state:
+
+| Scenario | WorkManager (default) | Exact Alarms | Foreground Service |
+|---|---|---|---|
+| **App swiped away** | WorkManager re-scheduled, FG service stopped (no notification) | AlarmManager + OneTimeWork re-scheduled, FG service stopped | FG service stays, periodic timer via boot tracking |
+| **OS kills (OOM)** | WorkManager survives natively | Alarms survive, work re-enqueued | `START_STICKY` restarts service |
+| **Device reboot** | `BootReceiver` re-schedules WorkManager (no FG service) | `BootReceiver` re-schedules exact alarms (no FG service) | `BootReceiver` starts FG service with periodic timer |
+| **Force-stop** | All dead (WorkManager paused until next app launch) | All dead | All dead |
+
+> **Key detail:** For WorkManager and exact-alarm strategies, the `BootReceiver` does **not** start a foreground service on reboot. It directly re-schedules the background work. This means no persistent notification appears — the GPS icon only shows briefly during each fix.
+
+To enable reboot recovery, configure:
+
+```dart
+await Tracelet.ready(Config(
+  app: AppConfig(
+    stopOnTerminate: false,  // Resume after app kill
+    startOnBoot: true,       // Resume after device reboot
+  ),
+));
+```
+
 ### iOS Behavior
 
-On iOS, periodic mode uses a `Timer` within the existing background execution context:
+On iOS, periodic mode uses a layered approach for background survival:
 
+#### During active tracking:
 - `allowsBackgroundLocationUpdates` is set to `false` between fixes
 - Each fix temporarily enables background location, calls `requestLocation()`, then disables it again
-- The GPS arrow appears briefly during each fix
-- If `preventSuspend` is enabled in `AppConfig`, the app stays alive using silent audio
-- Without `preventSuspend`, iOS may suspend the app between fixes — significant location changes can wake it
+- The GPS arrow appears briefly (~5 sec) during each fix
+- `startMonitoringSignificantLocationChanges()` runs continuously (no blue arrow) for cell-tower-based wake-ups
+
+#### Background survival layers:
+| Layer | Description |
+|---|---|
+| **Significant location changes** | Always active. Wakes the app on cell tower transitions (~500m). No blue arrow. |
+| **BGAppRefreshTask** | Schedules supplementary wake-ups at `periodicLocationInterval`. Ensures fixes even without cell tower changes. |
+| **CLServiceSession** (iOS 18+) | Preserves location authorization across app suspension and termination. |
+| **PreventSuspendManager** | Optional (`preventSuspend: true`). Silent audio keeps app alive — guarantees timer fires. |
+
+#### Killed-state auto-resume (requires "Always" permission):
+When the app is terminated and a significant location change occurs, iOS relaunches the app. Tracelet automatically:
+1. Detects the `LaunchOptionsKey.location` flag
+2. Reads persisted tracking state from `StateManager`
+3. Restarts the correct tracking mode (continuous, geofences, or periodic)
+4. Re-establishes the `CLServiceSession`
+
+> **"While In Use" limitation:** With only "When In Use" permission, periodic tracking works while the app is in the foreground or briefly after backgrounding. It **cannot** survive app termination. For reliable periodic tracking, request "Always" permission.
+
+#### Required Info.plist keys for periodic mode:
+See the [iOS Setup Guide](INSTALL-IOS.md#bgtaskscheduler-permitted-identifiers-required-for-periodic-mode) for the `BGTaskSchedulerPermittedIdentifiers` that must be declared.
 
 ### Stopping
 

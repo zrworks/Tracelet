@@ -21,7 +21,7 @@ class TraceletDatabase private constructor(context: Context) :
 
     companion object {
         private const val DB_NAME = "tracelet.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 3
 
         // Location table
         const val TABLE_LOCATIONS = "locations"
@@ -65,6 +65,18 @@ class TraceletDatabase private constructor(context: Context) :
         const val COL_LOG_LEVEL = "level"
         const val COL_LOG_MESSAGE = "message"
         const val COL_LOG_TAG = "tag"
+
+        // Audit trail table
+        const val TABLE_AUDIT_TRAIL = "audit_trail"
+        const val COL_AUDIT_HASH = "hash"
+        const val COL_AUDIT_PREVIOUS_HASH = "previous_hash"
+        const val COL_AUDIT_CHAIN_INDEX = "chain_index"
+        const val COL_AUDIT_CREATED_AT = "created_at"
+
+        // Privacy zones table
+        const val TABLE_PRIVACY_ZONES = "privacy_zones"
+        const val COL_PZ_ACTION = "action"
+        const val COL_PZ_DEGRADED_ACCURACY = "degraded_accuracy"
 
         @Volatile
         private var instance: TraceletDatabase? = null
@@ -140,11 +152,64 @@ class TraceletDatabase private constructor(context: Context) :
         db.execSQL("""
             CREATE INDEX idx_logs_timestamp ON $TABLE_LOGS ($COL_LOG_TIMESTAMP)
         """.trimIndent())
+
+        // Audit trail table — stores hash chain for tamper-proof verification
+        db.execSQL("""
+            CREATE TABLE $TABLE_AUDIT_TRAIL (
+                $COL_UUID TEXT PRIMARY KEY,
+                $COL_AUDIT_HASH TEXT NOT NULL,
+                $COL_AUDIT_PREVIOUS_HASH TEXT NOT NULL,
+                $COL_AUDIT_CHAIN_INDEX INTEGER NOT NULL UNIQUE,
+                $COL_AUDIT_CREATED_AT INTEGER DEFAULT (strftime('%s','now') * 1000)
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            CREATE INDEX idx_audit_chain_index ON $TABLE_AUDIT_TRAIL ($COL_AUDIT_CHAIN_INDEX)
+        """.trimIndent())
+
+        // Privacy zones table — geographic areas with tracking behaviour changes
+        db.execSQL("""
+            CREATE TABLE $TABLE_PRIVACY_ZONES (
+                $COL_IDENTIFIER TEXT PRIMARY KEY,
+                $COL_LATITUDE REAL NOT NULL,
+                $COL_LONGITUDE REAL NOT NULL,
+                $COL_RADIUS REAL NOT NULL,
+                $COL_PZ_ACTION INTEGER NOT NULL DEFAULT 0,
+                $COL_PZ_DEGRADED_ACCURACY REAL DEFAULT 1000.0
+            )
+        """.trimIndent())
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Migration strategy: add new columns without dropping data
-        // For v1→v2 migrations, add ALTER TABLE statements here
+        // v1 → v2: Add audit_trail table for tamper-proof hash chain
+        if (oldVersion < 2) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_AUDIT_TRAIL (
+                    $COL_UUID TEXT PRIMARY KEY,
+                    $COL_AUDIT_HASH TEXT NOT NULL,
+                    $COL_AUDIT_PREVIOUS_HASH TEXT NOT NULL,
+                    $COL_AUDIT_CHAIN_INDEX INTEGER NOT NULL UNIQUE,
+                    $COL_AUDIT_CREATED_AT INTEGER DEFAULT (strftime('%s','now') * 1000)
+                )
+            """.trimIndent())
+            db.execSQL("""
+                CREATE INDEX IF NOT EXISTS idx_audit_chain_index ON $TABLE_AUDIT_TRAIL ($COL_AUDIT_CHAIN_INDEX)
+            """.trimIndent())
+        }
+        // v2 → v3: Add privacy_zones table
+        if (oldVersion < 3) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_PRIVACY_ZONES (
+                    $COL_IDENTIFIER TEXT PRIMARY KEY,
+                    $COL_LATITUDE REAL NOT NULL,
+                    $COL_LONGITUDE REAL NOT NULL,
+                    $COL_RADIUS REAL NOT NULL,
+                    $COL_PZ_ACTION INTEGER NOT NULL DEFAULT 0,
+                    $COL_PZ_DEGRADED_ACCURACY REAL DEFAULT 1000.0
+                )
+            """.trimIndent())
+        }
     }
 
     // =========================================================================
@@ -189,22 +254,28 @@ class TraceletDatabase private constructor(context: Context) :
         }
     }
 
-    /** Retrieves locations with optional pagination and ordering. */
+    /** Retrieves locations with optional pagination and ordering. Includes audit fields. */
     fun getLocations(limit: Int = -1, offset: Int = 0, orderAsc: Boolean = true): List<Map<String, Any?>> {
         val order = if (orderAsc) "ASC" else "DESC"
         val limitClause = if (limit > 0) "LIMIT $limit OFFSET $offset" else ""
         val cursor = readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_LOCATIONS ORDER BY $COL_TIMESTAMP $order $limitClause",
+            "SELECT l.*, a.$COL_AUDIT_HASH, a.$COL_AUDIT_PREVIOUS_HASH, a.$COL_AUDIT_CHAIN_INDEX " +
+            "FROM $TABLE_LOCATIONS l " +
+            "LEFT JOIN $TABLE_AUDIT_TRAIL a ON l.$COL_UUID = a.$COL_UUID " +
+            "ORDER BY l.$COL_TIMESTAMP $order $limitClause",
             null
         )
         return cursorToLocationList(cursor)
     }
 
-    /** Gets unsent locations for HTTP sync. */
+    /** Gets unsent locations for HTTP sync. Includes audit fields. */
     fun getUnsyncedLocations(batchSize: Int, orderAsc: Boolean = true): List<Map<String, Any?>> {
         val order = if (orderAsc) "ASC" else "DESC"
         val cursor = readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_LOCATIONS WHERE $COL_SYNCED = 0 ORDER BY $COL_TIMESTAMP $order LIMIT ?",
+            "SELECT l.*, a.$COL_AUDIT_HASH, a.$COL_AUDIT_PREVIOUS_HASH, a.$COL_AUDIT_CHAIN_INDEX " +
+            "FROM $TABLE_LOCATIONS l " +
+            "LEFT JOIN $TABLE_AUDIT_TRAIL a ON l.$COL_UUID = a.$COL_UUID " +
+            "WHERE l.$COL_SYNCED = 0 ORDER BY l.$COL_TIMESTAMP $order LIMIT ?",
             arrayOf(batchSize.toString())
         )
         return cursorToLocationList(cursor)
@@ -413,7 +484,7 @@ class TraceletDatabase private constructor(context: Context) :
     }
 
     private fun cursorToLocation(c: Cursor): Map<String, Any?> {
-        return mapOf(
+        val map = mutableMapOf<String, Any?>(
             "uuid" to c.getString(c.getColumnIndexOrThrow(COL_UUID)),
             "timestamp" to c.getLong(c.getColumnIndexOrThrow(COL_TIMESTAMP)),
             "isMoving" to (c.getInt(c.getColumnIndexOrThrow(COL_IS_MOVING)) == 1),
@@ -439,6 +510,16 @@ class TraceletDatabase private constructor(context: Context) :
                 "isCharging" to (c.getInt(c.getColumnIndexOrThrow(COL_BATTERY_CHARGING)) == 1),
             ),
         )
+        // Include audit fields when available (LEFT JOIN with audit_trail)
+        val hashIdx = c.getColumnIndex(COL_AUDIT_HASH)
+        if (hashIdx >= 0 && !c.isNull(hashIdx)) {
+            map["audit_hash"] = c.getString(hashIdx)
+            val prevIdx = c.getColumnIndex(COL_AUDIT_PREVIOUS_HASH)
+            if (prevIdx >= 0) map["audit_previous_hash"] = c.getString(prevIdx)
+            val chainIdx = c.getColumnIndex(COL_AUDIT_CHAIN_INDEX)
+            if (chainIdx >= 0) map["audit_chain_index"] = c.getInt(chainIdx)
+        }
+        return map
     }
 
     private fun cursorToGeofenceList(cursor: Cursor): List<Map<String, Any?>> {
@@ -462,6 +543,150 @@ class TraceletDatabase private constructor(context: Context) :
             "notifyOnDwell" to (c.getInt(c.getColumnIndexOrThrow(COL_NOTIFY_ON_DWELL)) == 1),
             "loiteringDelay" to c.getInt(c.getColumnIndexOrThrow(COL_LOITERING_DELAY)),
             "extras" to c.getString(c.getColumnIndexOrThrow(COL_GF_EXTRAS)),
+        )
+    }
+
+    // =========================================================================
+    // Audit Trail CRUD
+    // =========================================================================
+
+    /** Inserts an audit trail record linking a location UUID to its hash chain entry. */
+    fun insertAuditRecord(uuid: String, hash: String, previousHash: String, chainIndex: Int) {
+        val values = ContentValues().apply {
+            put(COL_UUID, uuid)
+            put(COL_AUDIT_HASH, hash)
+            put(COL_AUDIT_PREVIOUS_HASH, previousHash)
+            put(COL_AUDIT_CHAIN_INDEX, chainIndex)
+            put(COL_AUDIT_CREATED_AT, System.currentTimeMillis())
+        }
+        writableDatabase.insertWithOnConflict(TABLE_AUDIT_TRAIL, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    /** Retrieves all audit records ordered by chain index. */
+    fun getAuditTrail(): List<Map<String, Any?>> {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_AUDIT_TRAIL ORDER BY $COL_AUDIT_CHAIN_INDEX ASC",
+            null
+        )
+        val list = mutableListOf<Map<String, Any?>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(cursorToAuditRecord(it))
+            }
+        }
+        return list
+    }
+
+    /** Gets a single audit record by location UUID. */
+    fun getAuditRecord(uuid: String): Map<String, Any?>? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT a.*, l.$COL_TIMESTAMP FROM $TABLE_AUDIT_TRAIL a " +
+            "LEFT JOIN $TABLE_LOCATIONS l ON a.$COL_UUID = l.$COL_UUID " +
+            "WHERE a.$COL_UUID = ?",
+            arrayOf(uuid)
+        )
+        cursor.use {
+            if (!it.moveToFirst()) return null
+            val record = cursorToAuditRecord(it).toMutableMap()
+            // Include the location timestamp for the AuditProof model
+            val tsIdx = it.getColumnIndex(COL_TIMESTAMP)
+            if (tsIdx >= 0) {
+                record["timestamp"] = it.getLong(tsIdx)
+            }
+            return record
+        }
+    }
+
+    /**
+     * Gets a location's flat fields for audit hash re-computation.
+     * Returns a map with flat keys (latitude, longitude, etc.) or null.
+     */
+    fun getLocationForAudit(uuid: String): Map<String, Any?>? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_LOCATIONS WHERE $COL_UUID = ?",
+            arrayOf(uuid)
+        )
+        cursor.use {
+            if (!it.moveToFirst()) return null
+            return mapOf(
+                "uuid" to it.getString(it.getColumnIndexOrThrow(COL_UUID)),
+                "latitude" to it.getDouble(it.getColumnIndexOrThrow(COL_LATITUDE)),
+                "longitude" to it.getDouble(it.getColumnIndexOrThrow(COL_LONGITUDE)),
+                "altitude" to it.getDouble(it.getColumnIndexOrThrow(COL_ALTITUDE)),
+                "speed" to it.getDouble(it.getColumnIndexOrThrow(COL_SPEED)),
+                "heading" to it.getDouble(it.getColumnIndexOrThrow(COL_HEADING)),
+                "accuracy" to it.getDouble(it.getColumnIndexOrThrow(COL_ACCURACY)),
+                "timestamp" to it.getLong(it.getColumnIndexOrThrow(COL_TIMESTAMP)),
+                "isMoving" to (it.getInt(it.getColumnIndexOrThrow(COL_IS_MOVING)) == 1),
+                "odometer" to it.getDouble(it.getColumnIndexOrThrow(COL_ODOMETER)),
+            )
+        }
+    }
+
+    /** Deletes all audit trail records. */
+    fun deleteAllAuditRecords(): Boolean {
+        writableDatabase.delete(TABLE_AUDIT_TRAIL, null, null)
+        return true
+    }
+
+    private fun cursorToAuditRecord(c: Cursor): Map<String, Any?> {
+        return mapOf(
+            "uuid" to c.getString(c.getColumnIndexOrThrow(COL_UUID)),
+            "hash" to c.getString(c.getColumnIndexOrThrow(COL_AUDIT_HASH)),
+            "previous_hash" to c.getString(c.getColumnIndexOrThrow(COL_AUDIT_PREVIOUS_HASH)),
+            "chain_index" to c.getInt(c.getColumnIndexOrThrow(COL_AUDIT_CHAIN_INDEX)),
+        )
+    }
+
+    // =========================================================================
+    // Privacy Zone CRUD
+    // =========================================================================
+
+    /** Inserts or replaces a privacy zone. */
+    fun insertPrivacyZone(zone: Map<String, Any?>): Boolean {
+        val values = ContentValues().apply {
+            put(COL_IDENTIFIER, zone["identifier"] as? String ?: return false)
+            put(COL_LATITUDE, (zone["latitude"] as? Number)?.toDouble() ?: return false)
+            put(COL_LONGITUDE, (zone["longitude"] as? Number)?.toDouble() ?: return false)
+            put(COL_RADIUS, (zone["radius"] as? Number)?.toDouble() ?: 200.0)
+            put(COL_PZ_ACTION, (zone["action"] as? Number)?.toInt() ?: 0)
+            put(COL_PZ_DEGRADED_ACCURACY, (zone["degradedAccuracyMeters"] as? Number)?.toDouble() ?: 1000.0)
+        }
+        writableDatabase.insertWithOnConflict(TABLE_PRIVACY_ZONES, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        return true
+    }
+
+    /** Retrieves all privacy zones. */
+    fun getPrivacyZones(): List<Map<String, Any?>> {
+        val cursor = readableDatabase.rawQuery("SELECT * FROM $TABLE_PRIVACY_ZONES", null)
+        val list = mutableListOf<Map<String, Any?>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(cursorToPrivacyZone(it))
+            }
+        }
+        return list
+    }
+
+    /** Deletes a privacy zone by identifier. */
+    fun deletePrivacyZone(identifier: String): Boolean {
+        return writableDatabase.delete(TABLE_PRIVACY_ZONES, "$COL_IDENTIFIER = ?", arrayOf(identifier)) > 0
+    }
+
+    /** Deletes all privacy zones. */
+    fun deleteAllPrivacyZones(): Boolean {
+        writableDatabase.delete(TABLE_PRIVACY_ZONES, null, null)
+        return true
+    }
+
+    private fun cursorToPrivacyZone(c: Cursor): Map<String, Any?> {
+        return mapOf(
+            "identifier" to c.getString(c.getColumnIndexOrThrow(COL_IDENTIFIER)),
+            "latitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LATITUDE)),
+            "longitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LONGITUDE)),
+            "radius" to c.getDouble(c.getColumnIndexOrThrow(COL_RADIUS)),
+            "action" to c.getInt(c.getColumnIndexOrThrow(COL_PZ_ACTION)),
+            "degradedAccuracyMeters" to c.getDouble(c.getColumnIndexOrThrow(COL_PZ_DEGRADED_ACCURACY)),
         )
     }
 }

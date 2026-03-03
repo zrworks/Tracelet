@@ -113,6 +113,8 @@ Location accuracy, sampling, and filtering.
 | `periodicUseExactAlarms` | `bool` | `false` | **Android only.** Use `AlarmManager` exact alarms for precise timing. Falls back to inexact alarms if `SCHEDULE_EXACT_ALARM` is not granted (Android 13+). See [Exact Alarms](BACKGROUND-TRACKING.md#exact-alarms-periodicuseexactalarms-true). |
 
 > **Periodic mode** is activated via `Tracelet.startPeriodic()`. The GPS icon only appears for ~5–10 seconds per fix. See [Background Tracking](BACKGROUND-TRACKING.md#periodic-mode) for usage details.
+>
+> **iOS:** Periodic mode uses `BGAppRefreshTask` for supplementary wake-ups and `CLServiceSession` (iOS 18+) for authorization preservation. Killed-state auto-resume requires "Always" permission. See [iOS Setup](INSTALL-IOS.md#bgtaskscheduler-permitted-identifiers-required-for-periodic-mode) for required Info.plist keys.
 
 ### LocationFilter
 

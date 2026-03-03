@@ -20,7 +20,7 @@ final class ConfigManager {
     func setConfig(_ config: [String: Any]) -> [String: Any] {
         // Dart sends a nested structure: {geo: {...}, app: {...}, http: {...}, ...}
         // Flatten known section sub-maps into the top level first.
-        let sectionKeys: Set<String> = ["geo", "app", "http", "logger", "motion", "geofence", "persistence"]
+        let sectionKeys: Set<String> = ["geo", "app", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone"]
         var flat: [String: Any] = [:]
         for (key, value) in config {
             if sectionKeys.contains(key), let sub = value as? [String: Any] {
@@ -160,6 +160,14 @@ final class ConfigManager {
 
     // LoggerConfig
     func getLogMaxDays() -> Int { cache["logMaxDays"] as? Int ?? 3 }
+
+    // AuditConfig (Enterprise)
+    func getAuditEnabled() -> Bool { cache["enabled"] as? Bool ?? false }
+    func getAuditHashAlgorithm() -> String { cache["hashAlgorithm"] as? String ?? "SHA-256" }
+    func getAuditIncludeExtrasInHash() -> Bool { cache["includeExtrasInHash"] as? Bool ?? false }
+
+    // PrivacyZoneConfig (Enterprise)
+    func getPrivacyZoneEnabled() -> Bool { cache["privacyZoneEnabled"] as? Bool ?? false }
 
     // MARK: - Defaults
     private func defaultConfig() -> [String: Any] {

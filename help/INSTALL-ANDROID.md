@@ -179,7 +179,17 @@ await Tracelet.ready(Config(
 ));
 ```
 
-The plugin automatically registers a `BOOT_COMPLETED` broadcast receiver.
+The plugin automatically registers a `BOOT_COMPLETED` broadcast receiver. On boot, it reads the persisted `trackingMode` and restores the correct mode:
+
+| Tracking Mode | Boot Recovery Behavior |
+|---|---|
+| **Continuous** (0) | Starts foreground service with native `LocationEngine` |
+| **Geofences** (1) | Starts foreground service; geofences re-registered via Google Play Services |
+| **Periodic/WorkManager** (2) | Re-schedules `WorkManager` periodic work — **no foreground service, no notification** |
+| **Periodic/Exact Alarms** (2) | Re-schedules `AlarmManager` exact alarms + `OneTimeWorkRequest` — **no foreground service** |
+| **Periodic/FG Service** (2) | Starts foreground service with periodic timer |
+
+> **Note:** For periodic mode without foreground service, boot recovery is entirely notification-free. The GPS icon only appears briefly (~5 sec) during each scheduled fix.
 
 ---
 

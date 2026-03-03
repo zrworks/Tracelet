@@ -456,4 +456,52 @@ abstract class TraceletPlatform extends PlatformInterface {
       'registerHeadlessTask() has not been implemented.',
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Audit Trail (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  /// Verify the integrity of the tamper-proof location audit trail.
+  ///
+  /// Walks all records in chain-index order, re-computes each hash, and
+  /// compares it to the stored hash. Returns a verification result map.
+  Future<Map<String, Object?>> verifyAuditTrail() {
+    throw UnimplementedError('verifyAuditTrail() has not been implemented.');
+  }
+
+  /// Get the audit proof for a specific location record by [uuid].
+  ///
+  /// Returns `null` if audit trail is disabled or the record does not exist.
+  Future<Map<String, Object?>?> getAuditProof(String uuid) {
+    throw UnimplementedError('getAuditProof() has not been implemented.');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Privacy Zones (Enterprise)
+  // ---------------------------------------------------------------------------
+
+  /// Add a single privacy zone. Returns `true` on success.
+  Future<bool> addPrivacyZone(Map<String, Object?> zone) {
+    throw UnimplementedError('addPrivacyZone() has not been implemented.');
+  }
+
+  /// Add multiple privacy zones. Returns `true` on success.
+  Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) {
+    throw UnimplementedError('addPrivacyZones() has not been implemented.');
+  }
+
+  /// Remove a privacy zone by [identifier]. Returns `true` on success.
+  Future<bool> removePrivacyZone(String identifier) {
+    throw UnimplementedError('removePrivacyZone() has not been implemented.');
+  }
+
+  /// Remove all privacy zones. Returns `true` on success.
+  Future<bool> removePrivacyZones() {
+    throw UnimplementedError('removePrivacyZones() has not been implemented.');
+  }
+
+  /// Get all registered privacy zones.
+  Future<List<Map<String, Object?>>> getPrivacyZones() {
+    throw UnimplementedError('getPrivacyZones() has not been implemented.');
+  }
 }

@@ -14,7 +14,7 @@ class StateManager(context: Context) {
     companion object {
         private const val PREFS_NAME = "com.tracelet.state"
         private const val KEY_ENABLED = "enabled"
-        private const val KEY_TRACKING_MODE = "trackingMode" // 0=location, 1=geofences
+        private const val KEY_TRACKING_MODE = "trackingMode" // 0=location, 1=geofences, 2=periodic
         private const val KEY_SCHEDULER_ENABLED = "schedulerEnabled"
         private const val KEY_ODOMETER = "odometer"
         private const val KEY_IS_MOVING = "isMoving"
@@ -30,7 +30,7 @@ class StateManager(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
-    /** 0 = location tracking, 1 = geofences only */
+    /** 0 = location tracking, 1 = geofences only, 2 = periodic */
     var trackingMode: Int
         get() = prefs.getInt(KEY_TRACKING_MODE, 0)
         set(value) = prefs.edit().putInt(KEY_TRACKING_MODE, value).apply()

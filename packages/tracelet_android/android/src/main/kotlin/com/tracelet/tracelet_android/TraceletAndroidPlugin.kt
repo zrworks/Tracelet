@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import com.tracelet.tracelet_android.audit.AuditTrailManager
+import com.tracelet.tracelet_android.privacy.PrivacyZoneManager
 import com.tracelet.tracelet_android.db.TraceletDatabase
 import com.tracelet.tracelet_android.geofence.GeofenceManager
 import com.tracelet.tracelet_android.http.HttpSyncManager
@@ -70,6 +72,8 @@ class TraceletAndroidPlugin :
     private lateinit var logger: TraceletLogger
     private lateinit var soundManager: SoundManager
     private lateinit var permissionManager: PermissionManager
+    private lateinit var auditTrailManager: AuditTrailManager
+    private lateinit var privacyZoneManager: PrivacyZoneManager
 
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
@@ -102,8 +106,16 @@ class TraceletAndroidPlugin :
         // Logger
         logger = TraceletLogger(context, configManager, database)
 
+        // Audit Trail (Enterprise)
+        auditTrailManager = AuditTrailManager(context, database, configManager)
+
+        // Privacy Zones (Enterprise)
+        privacyZoneManager = PrivacyZoneManager(context, database, configManager)
+
         // Location
         locationEngine = LocationEngine(context, configManager, stateManager, eventDispatcher, database)
+        locationEngine.auditTrailManager = auditTrailManager
+        locationEngine.privacyZoneManager = privacyZoneManager
 
         // Trip detection is now handled in shared Dart code (tracelet_platform_interface).
 
@@ -319,6 +331,33 @@ class TraceletAndroidPlugin :
 
             // Headless
             "registerHeadlessTask" -> handleRegisterHeadlessTask(call, result)
+
+            // Audit Trail (Enterprise)
+            "verifyAuditTrail" -> result.success(auditTrailManager.verifyChain())
+            "getAuditProof" -> {
+                val uuid = call.arguments as? String ?: ""
+                result.success(auditTrailManager.getProof(uuid))
+            }
+
+            // Privacy Zones (Enterprise)
+            "addPrivacyZone" -> {
+                @Suppress("UNCHECKED_CAST")
+                val zone = call.arguments as? Map<String, Any?> ?: emptyMap()
+                result.success(privacyZoneManager.addZone(zone))
+            }
+            "addPrivacyZones" -> {
+                @Suppress("UNCHECKED_CAST")
+                val zones = (call.arguments as? List<*>)
+                    ?.filterIsInstance<Map<String, Any?>>()
+                    ?: emptyList()
+                result.success(privacyZoneManager.addZones(zones))
+            }
+            "removePrivacyZone" -> {
+                val id = call.arguments as? String ?: ""
+                result.success(privacyZoneManager.removeZone(id))
+            }
+            "removePrivacyZones" -> result.success(privacyZoneManager.removeAllZones())
+            "getPrivacyZones" -> result.success(privacyZoneManager.getZones())
 
             // Legacy
             "getPlatformVersion" -> result.success("Android ${Build.VERSION.RELEASE}")

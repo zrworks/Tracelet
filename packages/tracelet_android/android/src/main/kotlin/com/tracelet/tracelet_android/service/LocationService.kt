@@ -16,6 +16,7 @@ import com.tracelet.tracelet_android.EventDispatcher
 import com.tracelet.tracelet_android.StateManager
 import com.tracelet.tracelet_android.db.TraceletDatabase
 import com.tracelet.tracelet_android.location.LocationEngine
+import com.tracelet.tracelet_android.location.PeriodicLocationWorker
 import com.tracelet.tracelet_android.util.OemCompat
 
 /**
@@ -166,10 +167,38 @@ class LocationService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // If stopOnTerminate is false, keep service running and bootstrap
-        // native tracking — the plugin's LocationEngine is about to be
-        // destroyed when the FlutterEngine is torn down.
+        // If stopOnTerminate is false, keep tracking alive.
+        // The plugin's LocationEngine is about to be destroyed when the
+        // FlutterEngine is torn down, so we bootstrap native tracking.
         if (!configManager.getStopOnTerminate()) {
+            val state = StateManager(applicationContext)
+
+            // For periodic mode without foreground service, we don't need
+            // the foreground service at all — WorkManager/AlarmManager handles
+            // the scheduling independently. Stop the service to avoid showing
+            // an unnecessary persistent notification.
+            if (state.trackingMode == 2 && !configManager.getPeriodicUseForegroundService()) {
+                // Ensure WorkManager/AlarmManager is scheduled (may already be)
+                PeriodicLocationWorker.eventDispatcher = null // No Flutter UI
+                if (configManager.getPeriodicUseExactAlarms()) {
+                    PeriodicLocationWorker.scheduleOneTime(applicationContext)
+                    PeriodicLocationWorker.scheduleExactAlarm(
+                        applicationContext,
+                        configManager.getPeriodicLocationInterval(),
+                    )
+                } else {
+                    PeriodicLocationWorker.schedule(
+                        applicationContext,
+                        configManager.getPeriodicLocationInterval(),
+                    )
+                }
+                Log.d(TAG, "Task removed — periodic mode continues via WorkManager/AlarmManager")
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                isRunning = false
+                return
+            }
+
             startBootTracking()
             return // Service survives task removal with native tracking
         }
@@ -221,17 +250,22 @@ class LocationService : Service() {
     // =========================================================================
 
     /**
-     * Bootstraps a native [LocationEngine] for post-boot tracking.
+     * Bootstraps a native [LocationEngine] for post-boot / task-removal tracking.
      *
-     * Creates minimal versions of the required managers and starts
-     * location tracking. Locations are persisted to SQLite. Events are
-     * routed to [HeadlessTaskService] via [EventDispatcher.headlessFallback]
-     * if a headless Dart callback was previously registered.
+     * Creates minimal versions of the required managers and restarts
+     * the correct tracking mode based on persisted [StateManager.trackingMode]:
+     * - Mode 0 (continuous): starts LocationEngine.start()
+     * - Mode 1 (geofences): starts LocationEngine.start() for proximity monitoring
+     *   (geofences are re-registered by Google Play Services automatically)
+     * - Mode 2 (periodic): restarts the configured periodic strategy
+     *   (foreground-service timer, exact alarms, or WorkManager)
+     *
+     * Locations are persisted to SQLite. Events are routed to [HeadlessTaskService]
+     * via [EventDispatcher.headlessFallback] if a headless Dart callback was
+     * previously registered.
      */
     private fun startBootTracking() {
         if (bootLocationEngine != null) return // Already tracking
-
-        Log.d(TAG, "Bootstrapping native location tracking after boot")
 
         val ctx = applicationContext
         val config = ConfigManager(ctx)
@@ -247,14 +281,53 @@ class LocationService : Service() {
             }
         }
 
-        val engine = LocationEngine(ctx, config, state, eventDispatcher, database)
-        engine.start()
+        val trackingMode = state.trackingMode
+        Log.d(TAG, "Bootstrapping native tracking after boot/task-removal (trackingMode=$trackingMode)")
 
-        bootLocationEngine = engine
-        Log.d(TAG, "Boot-mode native tracking started")
+        when (trackingMode) {
+            2 -> {
+                // Periodic mode — restart the correct scheduling strategy.
+                // Wire the shared EventDispatcher so WorkManager workers can dispatch.
+                PeriodicLocationWorker.eventDispatcher = eventDispatcher
 
-        // Start heartbeat timer so heartbeat events fire in boot/headless mode
-        startBootHeartbeat(config, engine, eventDispatcher)
+                if (config.getPeriodicUseForegroundService()) {
+                    // Foreground service + timer strategy — needs a LocationEngine
+                    val engine = LocationEngine(ctx, config, state, eventDispatcher, database)
+                    engine.startPeriodic()
+                    bootLocationEngine = engine
+                    Log.d(TAG, "Periodic mode restored with foreground-service timer")
+                } else if (config.getPeriodicUseExactAlarms()) {
+                    // Exact alarms + OneTimeWorkRequest — no LocationEngine needed
+                    PeriodicLocationWorker.scheduleOneTime(ctx)
+                    PeriodicLocationWorker.scheduleExactAlarm(
+                        ctx,
+                        config.getPeriodicLocationInterval(),
+                    )
+                    Log.d(TAG, "Periodic mode restored with exact alarms")
+                } else {
+                    // WorkManager — already survives app kill natively,
+                    // but explicitly re-schedule to ensure consistency after boot
+                    PeriodicLocationWorker.schedule(
+                        ctx,
+                        config.getPeriodicLocationInterval(),
+                    )
+                    Log.d(TAG, "Periodic mode restored with WorkManager")
+                }
+
+                // Start heartbeat for periodic mode if configured
+                if (bootLocationEngine != null) {
+                    startBootHeartbeat(config, bootLocationEngine!!, eventDispatcher)
+                }
+            }
+            else -> {
+                // Continuous (0) or geofences (1) — start full LocationEngine
+                val engine = LocationEngine(ctx, config, state, eventDispatcher, database)
+                engine.start()
+                bootLocationEngine = engine
+                Log.d(TAG, "Boot-mode native tracking started (trackingMode=$trackingMode)")
+                startBootHeartbeat(config, engine, eventDispatcher)
+            }
+        }
     }
 
     /**

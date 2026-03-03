@@ -579,6 +579,43 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   // ---------------------------------------------------------------------------
+  // [Enterprise] Audit Trail (not supported on web)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Map<String, Object?>> verifyAuditTrail() async {
+    return <String, Object?>{
+      'is_valid': true,
+      'total_records': 0,
+      'verified_records': 0,
+    };
+  }
+
+  @override
+  Future<Map<String, Object?>?> getAuditProof(String uuid) async {
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // [Enterprise] Privacy Zones (not supported on web)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<bool> addPrivacyZone(Map<String, Object?> zone) async => false;
+
+  @override
+  Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) async => false;
+
+  @override
+  Future<bool> removePrivacyZone(String identifier) async => false;
+
+  @override
+  Future<bool> removePrivacyZones() async => false;
+
+  @override
+  Future<List<Map<String, Object?>>> getPrivacyZones() async => [];
+
+  // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
 

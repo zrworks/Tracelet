@@ -35,10 +35,17 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     private var preventSuspendManager: PreventSuspendManager!
     private var backgroundActivitySessionManager: BackgroundActivitySessionManager!
     private var serviceSessionManager: ServiceSessionManager!
+    private var periodicRefreshScheduler: PeriodicRefreshScheduler!
 
     private var heartbeatTimer: Timer?
     private var stopAfterElapsedTimer: Timer?
     private var isReady = false
+
+    /// [Enterprise] Tamper-proof audit trail manager.
+    private var auditTrailManager: AuditTrailManager!
+
+    /// [Enterprise] Privacy zone manager.
+    private var privacyZoneManager: PrivacyZoneManager!
 
     // MARK: - FlutterPlugin registration
 
@@ -73,6 +80,20 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             database: instance.database
         )
 
+        // [Enterprise] Audit Trail
+        instance.auditTrailManager = AuditTrailManager(
+            database: instance.database,
+            configManager: instance.configManager
+        )
+        instance.locationEngine.auditTrailManager = instance.auditTrailManager
+
+        // [Enterprise] Privacy Zones
+        instance.privacyZoneManager = PrivacyZoneManager(
+            database: instance.database,
+            configManager: instance.configManager
+        )
+        instance.locationEngine.privacyZoneManager = instance.privacyZoneManager
+
         // Trip detection is now handled in Dart
 
         // Motion
@@ -94,6 +115,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
                 instance.locationEngine.stop()
                 instance.motionDetector.stop()
                 instance.stopHeartbeat()
+                instance.periodicRefreshScheduler.stop()
                 instance.preventSuspendManager.stop()
                 instance.backgroundActivitySessionManager.stop()
                 instance.serviceSessionManager.stop()
@@ -153,10 +175,48 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         instance.backgroundActivitySessionManager = BackgroundActivitySessionManager()
         instance.serviceSessionManager = ServiceSessionManager()
 
+        // Periodic refresh (BGAppRefreshTask)
+        instance.periodicRefreshScheduler = PeriodicRefreshScheduler()
+        instance.periodicRefreshScheduler.registerTask()
+        instance.periodicRefreshScheduler.onWakeUp = { [weak instance] in
+            guard let instance = instance,
+                  instance.stateManager.enabled,
+                  instance.stateManager.trackingMode == 2 else { return }
+            instance.locationEngine.performPeriodicFix()
+        }
+
         // Permissions
         instance.permissionManager = PermissionManager()
 
         registrar.addMethodCallDelegate(instance, channel: channel)
+
+        // Register as application delegate so we receive
+        // application(_:didFinishLaunchingWithOptions:) for
+        // significant-location-change relaunches from killed state.
+        registrar.addApplicationDelegate(instance)
+    }
+
+    // MARK: - UIApplicationDelegate (killed-state relaunch)
+
+    /// Called when the app is launched — including when iOS relaunches
+    /// it in the background due to a significant location change.
+    ///
+    /// If `LaunchOptionsKey.location` is present, it means iOS killed
+    /// the app and then relaunched it because a significant location
+    /// change was detected. We check persisted state and auto-resume
+    /// the previous tracking mode.
+    public func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any]? = nil
+    ) -> Bool {
+        let launchedForLocation = (launchOptions?[UIApplication.LaunchOptionsKey.location] as? Bool) == true
+
+        if launchedForLocation {
+            stateManager.didLaunchInBackground = true
+            NSLog("[Tracelet] App relaunched by significant location change — checking auto-resume")
+            autoResumeTracking()
+        }
+        return true
     }
 
     // MARK: - MethodCallHandler
@@ -351,6 +411,28 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         case "registerHeadlessTask":
             handleRegisterHeadlessTask(call, result: result)
 
+        // [Enterprise] Audit Trail
+        case "verifyAuditTrail":
+            result(auditTrailManager.verifyChain())
+        case "getAuditProof":
+            let uuid = call.arguments as? String ?? ""
+            result(auditTrailManager.getProof(uuid: uuid))
+
+        // [Enterprise] Privacy Zones
+        case "addPrivacyZone":
+            let zone = call.arguments as? [String: Any] ?? [:]
+            result(privacyZoneManager.addZone(zone))
+        case "addPrivacyZones":
+            let zones = call.arguments as? [[String: Any]] ?? []
+            result(privacyZoneManager.addZones(zones))
+        case "removePrivacyZone":
+            let identifier = call.arguments as? String ?? ""
+            result(privacyZoneManager.removeZone(identifier))
+        case "removePrivacyZones":
+            result(privacyZoneManager.removeAllZones())
+        case "getPrivacyZones":
+            result(privacyZoneManager.getZones())
+
         // Legacy
         case "getPlatformVersion":
             result("iOS " + UIDevice.current.systemVersion)
@@ -417,6 +499,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             motionDetector.stop()
             stopHeartbeat()
             cancelStopAfterElapsedTimer()
+            periodicRefreshScheduler.stop()
             preventSuspendManager.stop()
             backgroundActivitySessionManager.stop()
             serviceSessionManager.stop()
@@ -447,6 +530,12 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         startHeartbeat()
         startStopAfterElapsedTimer()
 
+        // Schedule BGAppRefreshTask as a supplementary wake-up mechanism.
+        // When iOS suspends the app, the in-memory Timer dies. This ensures
+        // the app gets woken up periodically (best-effort) to capture a fix.
+        let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+        periodicRefreshScheduler.start(interval: interval)
+
         // Do NOT start preventSuspendManager by default for periodic mode.
         // Users can explicitly enable it via AppConfig.preventSuspend for
         // guaranteed timer execution while backgrounded.
@@ -454,9 +543,101 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             preventSuspendManager.start()
         }
 
+        // iOS 18+: Start CLServiceSession to preserve authorization across
+        // suspension/termination. Choose the correct authorization level
+        // based on what the user granted.
+        startServiceSessionForCurrentAuth()
+
         eventDispatcher.sendEnabledChange(true)
         logger.info("startPeriodic() — periodic tracking started (interval=\(configManager.getPeriodicLocationInterval())s)")
         result(stateManager.toMap(configManager.getConfig()))
+    }
+
+    // MARK: - Auto-resume from killed state
+
+    /// Automatically resumes tracking after the app is relaunched from a
+    /// killed state by a significant location change.
+    ///
+    /// Checks persisted state (`enabled`, `trackingMode`) and restarts the
+    /// appropriate tracking mode. Events are dispatched via the headless
+    /// runner since the Flutter UI isn't active yet.
+    private func autoResumeTracking() {
+        guard stateManager.enabled else {
+            NSLog("[Tracelet] Auto-resume skipped — tracking was not enabled")
+            return
+        }
+
+        // The plugin was registered by Flutter, so subsystems are initialized.
+        // However, ready() hasn't been called from Dart yet (no UI).
+        // We can directly start native engines since config is persisted.
+
+        let trackingMode = stateManager.trackingMode
+        NSLog("[Tracelet] Auto-resume — restoring trackingMode=\(trackingMode)")
+
+        switch trackingMode {
+        case 0:
+            // Continuous location tracking
+            locationEngine.start()
+            locationEngine.onLocationUpdate = { [weak self] lat, lng in
+                self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+            }
+            motionDetector.start()
+            startHeartbeat()
+            preventSuspendManager.start()
+            backgroundActivitySessionManager.start()
+            serviceSessionManager.start()
+            logger.info("Auto-resumed continuous tracking from killed state")
+
+        case 1:
+            // Geofence-only
+            geofenceManager.reRegisterAll()
+            locationEngine.onLocationUpdate = { [weak self] lat, lng in
+                self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+            }
+            locationEngine.start()
+            preventSuspendManager.start()
+            backgroundActivitySessionManager.start()
+            serviceSessionManager.start()
+            logger.info("Auto-resumed geofence tracking from killed state")
+
+        case 2:
+            // Periodic one-shot
+            locationEngine.startPeriodic()
+            locationEngine.onLocationUpdate = { [weak self] lat, lng in
+                self?.geofenceManager.updateProximity(latitude: lat, longitude: lng)
+            }
+            startHeartbeat()
+            let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+            periodicRefreshScheduler.start(interval: interval)
+            if configManager.getPreventSuspend() {
+                preventSuspendManager.start()
+            }
+            startServiceSessionForCurrentAuth()
+            logger.info("Auto-resumed periodic tracking from killed state (interval=\(configManager.getPeriodicLocationInterval())s)")
+
+        default:
+            NSLog("[Tracelet] Auto-resume — unknown trackingMode \(trackingMode), skipping")
+        }
+    }
+
+    /// Starts a `CLServiceSession` (iOS 18+) with the authorization level
+    /// matching the user's current permission grant.
+    ///
+    /// - **Always** → `serviceSessionManager.start()` (preserves full auth
+    ///   across termination, enabling killed-state relaunches).
+    /// - **When In Use** → `serviceSessionManager.startWhenInUse()` (preserves
+    ///   foreground authorization context while backgrounded).
+    private func startServiceSessionForCurrentAuth() {
+        let status = locationEngine.getAuthorizationStatus()
+        switch status {
+        case 3: // authorizedAlways
+            serviceSessionManager.start()
+        case 2: // authorizedWhenInUse
+            serviceSessionManager.startWhenInUse()
+        default:
+            // Not authorized — no session needed
+            break
+        }
     }
 
     private func handleStartGeofences(result: FlutterResult) {
@@ -524,6 +705,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             motionDetector.stop()
             stopHeartbeat()
             cancelStopAfterElapsedTimer()
+            periodicRefreshScheduler.stop()
             geofenceManager.destroy()
             preventSuspendManager.stop()
             backgroundActivitySessionManager.stop()
@@ -690,6 +872,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             locationEngine.stop()
             motionDetector.stop()
             stopHeartbeat()
+            periodicRefreshScheduler.stop()
             preventSuspendManager.stop()
             backgroundActivitySessionManager.stop()
             serviceSessionManager.stop()
@@ -750,6 +933,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
                 self.locationEngine.stop()
                 self.motionDetector.stop()
                 self.stopHeartbeat()
+                self.periodicRefreshScheduler.stop()
                 self.preventSuspendManager.stop()
                 self.backgroundActivitySessionManager.stop()
                 self.serviceSessionManager.stop()

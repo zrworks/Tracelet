@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+
+- **FEAT**: Stub implementations for privacy zone and audit trail methods (no-op on web).
+- **CHORE**: Bump `tracelet_platform_interface` to ^0.11.0.
+
 ## 0.10.0
 
 - **FEAT**: `startPeriodic()` — falls back to `watchPosition()` on web (periodic scheduling not available in browsers).

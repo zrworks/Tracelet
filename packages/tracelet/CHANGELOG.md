@@ -1,3 +1,16 @@
+## 0.11.0
+
+- **FEAT**: Tamper-proof audit trail — SHA-256 hash chain for location integrity verification.
+- **FEAT**: Privacy zones — exclude, degrade, or event-only actions for geographic privacy control.
+- **FEAT**: `AuditConfig` sub-config with `enabled`, `hashAlgorithm`, `includeExtrasInHash` options.
+- **FEAT**: `PrivacyZoneConfig` sub-config with `enabled` toggle.
+- **FEAT**: `PrivacyZone` model with `identifier`, `latitude`, `longitude`, `radius`, `action`, `degradedAccuracyMeters`.
+- **FEAT**: `AuditProof` model for hash chain verification results.
+- **FEAT**: CRUD API: `addPrivacyZone()`, `addPrivacyZones()`, `removePrivacyZone()`, `removePrivacyZones()`, `getPrivacyZones()`.
+- **FEAT**: Audit API: `getAuditTrail()`, `verifyAuditTrail()`, `getAuditProof()`.
+- **DOCS**: Added AUDIT-TRAIL.md and PRIVACY-ZONES.md guides.
+- **CHORE**: Bump all platform packages to ^0.11.0.
+
 ## 0.10.0
 
 - **FEAT**: Periodic mode — `Tracelet.startPeriodic()` for GPS-friendly interval tracking. GPS icon visible only ~5–10 seconds per fix instead of permanently.

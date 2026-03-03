@@ -1,3 +1,8 @@
+## 0.11.0
+
+- **FEAT**: Add privacy zone abstract methods to `TraceletPlatform` and MethodChannel implementations.
+- **FEAT**: Add audit trail abstract methods to `TraceletPlatform` and MethodChannel implementations.
+
 ## 0.10.0
 
 - **FEAT**: Add `TrackingMode.periodic` enum value for periodic interval tracking.

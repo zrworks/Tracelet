@@ -1,3 +1,12 @@
+## 0.11.0
+
+- **FEAT**: `AuditTrailManager` — SHA-256 hash chain with SQLite persistence and UserDefaults chain state.
+- **FEAT**: `PrivacyZoneManager` — Haversine distance-based zone evaluation with exclude, degrade, and event-only actions.
+- **FEAT**: Privacy zones database table with CRUD operations.
+- **FEAT**: Audit trail database table with hash chain linkage.
+- **FEAT**: `ConfigManager` getters for audit and privacy zone configuration.
+- **CHORE**: Bump `tracelet_platform_interface` to ^0.11.0.
+
 ## 0.10.0
 
 - **FEAT**: Periodic mode — GPS-friendly interval tracking via `startPeriodic()`. Timer-based scheduling with background location toggling per fix.

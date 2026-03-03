@@ -472,6 +472,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         stateManager.trackingMode = 0
         stateManager.isMoving = false
 
+        // Stop any active periodic tracking before switching to continuous mode.
+        locationEngine.stopPeriodic()
+        periodicRefreshScheduler.stop()
+
         locationEngine.start()
 
         // Wire proximity-based geofence monitoring so geofences are
@@ -520,6 +524,12 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             result(FlutterError(code: "NOT_READY", message: "Call ready() before startPeriodic()", details: nil))
             return
         }
+
+        // Stop any active continuous tracking before switching to periodic mode.
+        // Without this, startUpdatingLocation() remains active and the blue
+        // arrow stays permanently visible in the status bar.
+        locationEngine.stop()
+        motionDetector.stop()
 
         stateManager.enabled = true
         stateManager.trackingMode = 2 // Periodic

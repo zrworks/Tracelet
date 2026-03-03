@@ -417,6 +417,11 @@ class TraceletAndroidPlugin :
         // shut it down before starting our own engine with full EventChannels.
         LocationService.stopBootTracking()
 
+        // Stop any active periodic tracking before switching to continuous mode.
+        locationEngine.stopPeriodic()
+        PeriodicLocationWorker.cancel(context)
+        PeriodicLocationWorker.eventDispatcher = null
+
         stateManager.enabled = true
         stateManager.trackingMode = 0 // Location tracking
         stateManager.isMoving = configManager.getIsMoving()
@@ -486,6 +491,15 @@ class TraceletAndroidPlugin :
         }
 
         LocationService.stopBootTracking()
+
+        // Stop any active continuous tracking before switching to periodic mode.
+        // Without this, requestLocationUpdates remains active and the GPS icon
+        // stays permanently visible in the status bar.
+        locationEngine.stop()
+        motionDetector.stop()
+        if (configManager.isForegroundServiceEnabled()) {
+            LocationService.stop(context)
+        }
 
         stateManager.enabled = true
         stateManager.trackingMode = 2 // Periodic tracking

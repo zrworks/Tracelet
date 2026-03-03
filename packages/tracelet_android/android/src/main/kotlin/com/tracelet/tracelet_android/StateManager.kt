@@ -21,6 +21,8 @@ class StateManager(context: Context) {
         private const val KEY_DID_LAUNCH_IN_BACKGROUND = "didLaunchInBackground"
         private const val KEY_DID_DEVICE_REBOOT = "didDeviceReboot"
         private const val KEY_LAST_LOCATION_TIME = "lastLocationTime"
+        private const val KEY_LAST_PERIODIC_LAT = "lastPeriodicLat"
+        private const val KEY_LAST_PERIODIC_LNG = "lastPeriodicLng"
     }
 
     private val prefs: SharedPreferences =
@@ -62,6 +64,24 @@ class StateManager(context: Context) {
     var lastLocationTime: Long
         get() = prefs.getLong(KEY_LAST_LOCATION_TIME, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_LOCATION_TIME, value).apply()
+
+    /** Last periodic fix latitude (for odometer computation across worker runs). */
+    var lastPeriodicLatitude: Double
+        get() = java.lang.Double.longBitsToDouble(
+            prefs.getLong(KEY_LAST_PERIODIC_LAT, java.lang.Double.doubleToLongBits(Double.NaN))
+        )
+        set(value) = prefs.edit().putLong(
+            KEY_LAST_PERIODIC_LAT, java.lang.Double.doubleToLongBits(value)
+        ).apply()
+
+    /** Last periodic fix longitude (for odometer computation across worker runs). */
+    var lastPeriodicLongitude: Double
+        get() = java.lang.Double.longBitsToDouble(
+            prefs.getLong(KEY_LAST_PERIODIC_LNG, java.lang.Double.doubleToLongBits(Double.NaN))
+        )
+        set(value) = prefs.edit().putLong(
+            KEY_LAST_PERIODIC_LNG, java.lang.Double.doubleToLongBits(value)
+        ).apply()
 
     /** Adds [distance] meters to the cumulative odometer. */
     fun addOdometer(distance: Double) {

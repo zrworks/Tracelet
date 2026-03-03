@@ -154,14 +154,38 @@ class LocationEngine(
                 )
                 getCurrentPosition(options) { location ->
                     if (location != null) {
-                        // Enrich with periodic event tag
+                        val lat = location["latitude"] as? Double
+                        val lng = location["longitude"] as? Double
+                        val accuracy = location["accuracy"] as? Double
+                            ?: (location["coords"] as? Map<*, *>)?.get("accuracy") as? Double
+                            ?: 0.0
+
+                        // Update odometer from distance since last periodic fix
+                        if (lat != null && lng != null) {
+                            val lastLat = state.lastPeriodicLatitude
+                            val lastLng = state.lastPeriodicLongitude
+                            if (!lastLat.isNaN() && !lastLng.isNaN()) {
+                                val results = FloatArray(1)
+                                android.location.Location.distanceBetween(
+                                    lastLat, lastLng, lat, lng, results,
+                                )
+                                val distance = results[0].toDouble()
+                                val threshold = config.getOdometerAccuracyThreshold()
+                                if (threshold <= 0 || accuracy <= threshold) {
+                                    state.addOdometer(distance)
+                                }
+                            }
+                            state.lastPeriodicLatitude = lat
+                            state.lastPeriodicLongitude = lng
+                        }
+
+                        // Enrich with periodic event tag and updated odometer
                         val enriched = location.toMutableMap()
                         enriched["event"] = "periodic"
+                        enriched["odometer"] = state.odometer
                         events.sendLocation(enriched)
 
                         // Notify proximity-based geofence monitoring
-                        val lat = enriched["latitude"] as? Double
-                        val lng = enriched["longitude"] as? Double
                         if (lat != null && lng != null) {
                             onLocationUpdate?.invoke(lat, lng)
                         }
@@ -180,6 +204,10 @@ class LocationEngine(
     fun stopPeriodic() {
         periodicRunnable?.let { periodicHandler.removeCallbacks(it) }
         periodicRunnable = null
+        // Reset last periodic coordinates so the next start doesn't
+        // compute distance from a stale position.
+        state.lastPeriodicLatitude = Double.NaN
+        state.lastPeriodicLongitude = Double.NaN
     }
 
     /**

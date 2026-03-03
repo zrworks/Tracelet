@@ -199,7 +199,27 @@ class PeriodicLocationWorker(
             if (location != null) {
                 val db = TraceletDatabase.getInstance(applicationContext)
 
-                // Build enriched location map
+                // Compute distance from last periodic fix for odometer
+                val lastLat = state.lastPeriodicLatitude
+                val lastLng = state.lastPeriodicLongitude
+                if (!lastLat.isNaN() && !lastLng.isNaN()) {
+                    val results = FloatArray(1)
+                    android.location.Location.distanceBetween(
+                        lastLat, lastLng,
+                        location.latitude, location.longitude,
+                        results,
+                    )
+                    val distance = results[0].toDouble()
+                    val threshold = config.getOdometerAccuracyThreshold()
+                    if (threshold <= 0 || location.accuracy <= threshold) {
+                        state.addOdometer(distance)
+                    }
+                }
+                state.lastPeriodicLatitude = location.latitude
+                state.lastPeriodicLongitude = location.longitude
+                state.lastLocationTime = location.time
+
+                // Build enriched location map (reads updated odometer)
                 val locationMap = buildLocationMap(location, config, state)
 
                 // Persist to database
@@ -208,7 +228,7 @@ class PeriodicLocationWorker(
                 // Dispatch to Dart
                 dispatchLocation(locationMap)
 
-                Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}")
+                Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, odo=${state.odometer}")
             } else {
                 Log.w(TAG, "Periodic fix failed: no location obtained")
             }

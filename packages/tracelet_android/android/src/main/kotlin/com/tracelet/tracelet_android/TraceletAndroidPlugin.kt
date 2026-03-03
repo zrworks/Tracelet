@@ -521,6 +521,8 @@ class TraceletAndroidPlugin :
                 context,
                 configManager.getPeriodicLocationInterval(),
             )
+            // Perform immediate first fix so the user doesn't wait 15 min.
+            PeriodicLocationWorker.scheduleOneTime(context)
         }
 
         // Start heartbeat if configured (runs independently of periodic mode)

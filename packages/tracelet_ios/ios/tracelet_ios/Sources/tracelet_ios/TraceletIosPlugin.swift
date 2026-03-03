@@ -183,6 +183,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
                   instance.stateManager.enabled,
                   instance.stateManager.trackingMode == 2 else { return }
             instance.locationEngine.performPeriodicFix()
+            // Restart the in-memory periodic timer. After iOS suspends the
+            // app, the Timer dies. When BGAppRefreshTask wakes the app,
+            // restarting the timer ensures fixes continue if the app stays
+            // alive (e.g., user came back to foreground).
+            instance.locationEngine.restartPeriodicTimerIfNeeded()
         }
 
         // Permissions
@@ -683,8 +688,19 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         let merged = configManager.setConfig(configMap)
 
         if stateManager.enabled {
-            locationEngine.stop()
-            locationEngine.start()
+            if stateManager.trackingMode == 2 {
+                // Periodic mode — restart periodic tracking, not continuous.
+                locationEngine.stopPeriodic()
+                locationEngine.startPeriodic()
+                // Re-schedule the BGAppRefreshTask with possibly updated interval
+                periodicRefreshScheduler.stop()
+                periodicRefreshScheduler.start(
+                    interval: TimeInterval(configManager.getPeriodicLocationInterval())
+                )
+            } else {
+                locationEngine.stop()
+                locationEngine.start()
+            }
 
             // Toggle preventSuspend if it changed mid-session
             let nowPreventing = configManager.getPreventSuspend()

@@ -152,18 +152,44 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Fire immediately for the first fix
         performPeriodicFix()
 
-        periodicTimer = Timer.scheduledTimer(
+        let timer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: true
         ) { [weak self] _ in
             self?.performPeriodicFix()
         }
+        // Request maximum timer precision — prevent iOS from coalescing
+        // firings for energy savings. Critical for periodic tracking where
+        // the user expects fixes at the configured interval.
+        timer.tolerance = 0
+        periodicTimer = timer
     }
 
     /// Stops the periodic timer.
     private func stopPeriodicTimer() {
         periodicTimer?.invalidate()
         periodicTimer = nil
+    }
+
+    /// Restarts the periodic timer if it has been invalidated.
+    ///
+    /// When iOS suspends the app, the in-memory `Timer` is killed. If the
+    /// app is woken (e.g., by `BGAppRefreshTask` or significant-location
+    /// change), the timer needs to be re-created so periodic fixes resume
+    /// at the configured interval.
+    func restartPeriodicTimerIfNeeded() {
+        guard isPeriodicTracking else { return }
+        guard periodicTimer == nil || !(periodicTimer?.isValid ?? false) else { return }
+        NSLog("[Tracelet] Restarting periodic timer (was invalidated/nil)")
+        let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+        let timer = Timer.scheduledTimer(
+            withTimeInterval: interval,
+            repeats: true
+        ) { [weak self] _ in
+            self?.performPeriodicFix()
+        }
+        timer.tolerance = 0
+        periodicTimer = timer
     }
 
     /// Performs a single one-shot location fix for periodic mode.

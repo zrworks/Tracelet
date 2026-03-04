@@ -6,7 +6,7 @@ import '_helpers.dart';
 // AuditConfig
 // ---------------------------------------------------------------------------
 
-/// **[Enterprise]** Tamper-proof location audit trail configuration.
+/// **Enterprise** — Tamper-proof location audit trail configuration.
 ///
 /// When enabled, every persisted location record is hashed with SHA-256
 /// and chained to the previous record's hash — creating a blockchain-like

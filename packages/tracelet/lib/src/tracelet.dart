@@ -735,7 +735,7 @@ class Tracelet {
   /// **When to use:** Call before [start] to check if the device can detect
   /// motion transitions (walking, driving, stationary).
   ///
-  /// **Note:** When [Config.motion.disableMotionActivityUpdates] is `true`,
+  /// **Note:** When `Config.motion.disableMotionActivityUpdates` is `true`,
   /// this always returns `3` (granted) because the accelerometer-only
   /// fallback mode does not require any permission.
   static Future<int> getMotionPermissionStatus() {
@@ -751,11 +751,11 @@ class Tracelet {
   /// Returns the actual status after the user responds.
   ///
   /// **Important:** Without this permission **and** without the
-  /// accelerometer-only fallback ([Config.motion.disableMotionActivityUpdates]),
+  /// accelerometer-only fallback (`Config.motion.disableMotionActivityUpdates`),
   /// the plugin cannot detect motion transitions. The device will not fire
   /// `onMotionChange` events unless [changePace] is called manually.
   ///
-  /// When [Config.motion.disableMotionActivityUpdates] is `true`, returns `3`
+  /// When `Config.motion.disableMotionActivityUpdates` is `true`, returns `3`
   /// immediately without showing any dialog.
   static Future<int> requestMotionPermission() {
     return _platform.requestMotionPermission();
@@ -998,15 +998,16 @@ class Tracelet {
   // Audit Trail (Enterprise)
   // ---------------------------------------------------------------------------
 
-  /// **[Enterprise]** Verify the integrity of the tamper-proof audit trail.
+  /// **Enterprise** — Verify the integrity of the tamper-proof audit trail.
   ///
   /// Walks all location records in chain order, re-computes each SHA-256
   /// hash, and compares it to the stored hash. Returns an
   /// [AuditVerification] describing the result.
   ///
-  /// If any record has been inserted, deleted, or modified, [isValid] will
-  /// be `false` and [brokenAtIndex] / [brokenAtUuid] will indicate where
-  /// the chain was broken.
+  /// If any record has been inserted, deleted, or modified,
+  /// [AuditVerification.isValid] will be `false` and
+  /// [AuditVerification.brokenAtIndex] / [AuditVerification.brokenAtUuid]
+  /// will indicate where the chain was broken.
   ///
   /// ```dart
   /// final result = await Tracelet.verifyAuditTrail();
@@ -1023,7 +1024,7 @@ class Tracelet {
     return AuditVerification.fromMap(map);
   }
 
-  /// **[Enterprise]** Get the audit proof for a specific location record.
+  /// **Enterprise** — Get the audit proof for a specific location record.
   ///
   /// Returns the [AuditProof] containing the SHA-256 hash, previous hash,
   /// and chain index for the location identified by [uuid]. Returns `null`
@@ -1046,7 +1047,7 @@ class Tracelet {
   // Privacy Zones (Enterprise)
   // ---------------------------------------------------------------------------
 
-  /// **[Enterprise]** Add a single [PrivacyZone].
+  /// **Enterprise** — Add a single [PrivacyZone].
   ///
   /// Privacy zones define geographic areas where location tracking behaviour
   /// changes according to the zone's [PrivacyZoneAction]:
@@ -1074,22 +1075,22 @@ class Tracelet {
     return _platform.addPrivacyZone(zone.toMap());
   }
 
-  /// **[Enterprise]** Add multiple [PrivacyZone]s at once.
+  /// **Enterprise** — Add multiple [PrivacyZone]s at once.
   static Future<bool> addPrivacyZones(List<PrivacyZone> zones) {
     return _platform.addPrivacyZones(zones.map((z) => z.toMap()).toList());
   }
 
-  /// **[Enterprise]** Remove a privacy zone by its [identifier].
+  /// **Enterprise** — Remove a privacy zone by its `identifier`.
   static Future<bool> removePrivacyZone(String identifier) {
     return _platform.removePrivacyZone(identifier);
   }
 
-  /// **[Enterprise]** Remove all privacy zones.
+  /// **Enterprise** — Remove all privacy zones.
   static Future<bool> removePrivacyZones() {
     return _platform.removePrivacyZones();
   }
 
-  /// **[Enterprise]** Get all registered privacy zones.
+  /// **Enterprise** — Get all registered privacy zones.
   ///
   /// ```dart
   /// final zones = await Tracelet.getPrivacyZones();

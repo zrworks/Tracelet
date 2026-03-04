@@ -1,3 +1,7 @@
+## 0.11.2
+
+- **CHORE**: Tighten `tracelet_platform_interface` constraint to `^0.11.2`.
+
 ## 0.11.1
 
 - **FIX**: Auto-select exact alarms for periodic intervals < 15 min without foreground service.

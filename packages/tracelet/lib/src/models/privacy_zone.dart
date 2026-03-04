@@ -33,7 +33,7 @@ enum PrivacyZoneAction {
 // PrivacyZone
 // ---------------------------------------------------------------------------
 
-/// **[Enterprise]** A geographic zone where location tracking behavior changes.
+/// **Enterprise** — A geographic zone where location tracking behavior changes.
 ///
 /// Privacy Zones enable GDPR/CCPA-compliant geofenced privacy controls.
 /// When the device is inside a privacy zone, location data can be excluded,

@@ -1,3 +1,8 @@
+## 0.11.2
+
+- **DOCS**: Fix 22 unresolved dartdoc references (`[Enterprise]`, `[Config.*]`, `[isValid]`, `[brokenAtIndex]`, `[brokenAtUuid]`).
+- **CHORE**: Tighten all platform package constraints to `^0.11.2` (fixes `pub downgrade` score penalty).
+
 ## 0.11.1
 
 - **FEAT**: Add `canScheduleExactAlarms()` and `openExactAlarmSettings()` static methods for Android exact alarm permission management.

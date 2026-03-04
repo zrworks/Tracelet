@@ -65,14 +65,14 @@ class Config {
   /// Data persistence and database settings.
   final PersistenceConfig persistence;
 
-  /// **[Enterprise]** Tamper-proof location audit trail settings.
+  /// **Enterprise** — Tamper-proof location audit trail settings.
   ///
   /// When [AuditConfig.enabled] is `true`, every persisted location is
   /// SHA-256 hashed and chained to the previous record, creating a
   /// cryptographic proof of data integrity.
   final AuditConfig audit;
 
-  /// **[Enterprise]** Privacy zone controls.
+  /// **Enterprise** — Privacy zone controls.
   ///
   /// When [PrivacyZoneConfig.enabled] is `true`, registered privacy
   /// zones are evaluated against each incoming location, and the

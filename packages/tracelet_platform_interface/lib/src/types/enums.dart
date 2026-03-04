@@ -84,7 +84,7 @@ enum TrackingMode {
   /// Periodic one-shot location mode.
   ///
   /// Instead of continuous GPS updates, the engine wakes up every
-  /// [GeoConfig.periodicLocationInterval] seconds, performs a single
+  /// `GeoConfig.periodicLocationInterval` seconds, performs a single
   /// `getCurrentPosition()` fix, dispatches the result, and immediately
   /// turns the location provider off again.
   ///

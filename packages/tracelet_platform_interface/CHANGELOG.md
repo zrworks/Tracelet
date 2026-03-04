@@ -1,3 +1,8 @@
+## 0.11.2
+
+- **DOCS**: Fix unresolved dartdoc references (`[GeoConfig]`, `[GeoConfig.periodicLocationInterval]`).
+- **DOCS**: Add `example/example.dart` for pub.dev documentation score.
+
 ## 0.11.1
 
 - **FEAT**: Add `canScheduleExactAlarms()` and `openExactAlarmSettings()` abstract methods to `TraceletPlatform` and MethodChannel implementations.

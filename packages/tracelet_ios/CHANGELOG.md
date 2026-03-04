@@ -1,3 +1,7 @@
+## 0.11.2
+
+- **CHORE**: Tighten `tracelet_platform_interface` constraint to `^0.11.2`.
+
 ## 0.11.1
 
 - **FIX**: Set `event: "periodic"` in all `didUpdateLocations` code paths for periodic tracking (was empty string).

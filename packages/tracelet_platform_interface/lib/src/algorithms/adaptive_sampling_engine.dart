@@ -146,7 +146,7 @@ enum AdaptiveSource {
 class AdaptiveSamplingEngine {
   /// Creates an [AdaptiveSamplingEngine].
   ///
-  /// - [baseDistanceFilter]: The configured `distanceFilter` from [GeoConfig].
+  /// - [baseDistanceFilter]: The configured `distanceFilter` from `GeoConfig`.
   /// - [elasticityMultiplier]: The configured multiplier for speed-based
   ///   scaling. Only used when falling back to speed-based elasticity.
   const AdaptiveSamplingEngine({

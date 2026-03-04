@@ -2,7 +2,7 @@ import 'package:meta/meta.dart';
 
 import '_helpers.dart';
 
-/// **[Enterprise]** Configuration for Privacy Zones.
+/// **Enterprise** — Configuration for Privacy Zones.
 ///
 /// Controls whether privacy zone evaluation is active. Individual zones
 /// are managed via `Tracelet.addPrivacyZone()` / `removePrivacyZone()`.

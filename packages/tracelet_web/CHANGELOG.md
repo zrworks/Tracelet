@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2
+
+- **FIX**: Fix LICENSE file formatting so pana correctly detects Apache-2.0.
+- **DOCS**: Add `example/example.dart` for pub.dev documentation score.
+- **CHORE**: Tighten `tracelet_platform_interface` constraint to `^0.11.2`.
+
 ## 0.11.1
 
 - **FEAT**: Add `canScheduleExactAlarms()` (returns `true`) and `openExactAlarmSettings()` (returns `false`) stub implementations.

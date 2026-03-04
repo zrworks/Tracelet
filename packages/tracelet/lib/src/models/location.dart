@@ -56,13 +56,13 @@ class Location {
   /// - **iOS 15+**: Uses `CLLocation.sourceInformation?.isSimulatedBySoftware`.
   /// - **iOS < 15 / Web**: Always `false` (API not available).
   ///
-  /// When [Config.geo.filter.rejectMockLocations] is `true`, locations with
+  /// When `Config.geo.filter.rejectMockLocations` is `true`, locations with
   /// `isMock == true` are automatically rejected and never delivered.
   final bool isMock;
 
   /// Detailed heuristic analysis data from the native mock detection engine.
   ///
-  /// Only populated when [Config.geo.filter.mockDetectionLevel] is set to
+  /// Only populated when `Config.geo.filter.mockDetectionLevel` is set to
   /// [MockDetectionLevel.heuristic]. When detection is `disabled` or `basic`,
   /// this is always `null`.
   ///
@@ -85,20 +85,20 @@ class Location {
   /// `'providerchange'`, `'heartbeat'`).
   final String? event;
 
-  /// **[Enterprise]** SHA-256 audit hash for this location record.
+  /// **Enterprise** — SHA-256 audit hash for this location record.
   ///
   /// Only populated when [AuditConfig.enabled] is `true`. Part of the
   /// tamper-proof audit chain — computed from the previous hash and
   /// the canonical fields of this record.
   final String? auditHash;
 
-  /// **[Enterprise]** The hash of the previous record in the audit chain.
+  /// **Enterprise** — The hash of the previous record in the audit chain.
   ///
   /// For the first record, this is the genesis hash. `null` when audit
   /// trail is disabled.
   final String? auditPreviousHash;
 
-  /// **[Enterprise]** Sequential index in the audit chain (0-based).
+  /// **Enterprise** — Sequential index in the audit chain (0-based).
   ///
   /// `null` when audit trail is disabled.
   final int? auditChainIndex;

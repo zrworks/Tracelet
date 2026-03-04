@@ -23,9 +23,10 @@ final class MotionDetector {
     private let stateManager: StateManager
     private let eventDispatcher: EventDispatcher
 
-    // Full mode (permission-required)
-    private let activityManager = CMMotionActivityManager()
-    private let pedometer = CMPedometer()
+    // Full mode (permission-required) — lazily initialized so they are
+    // never allocated in accelerometer-only mode (I-L1).
+    private lazy var activityManager = CMMotionActivityManager()
+    private lazy var pedometer = CMPedometer()
 
     // Accelerometer-only mode (permission-free)
     private let motionManager = CMMotionManager()
@@ -136,11 +137,17 @@ final class MotionDetector {
             return
         }
 
-        // 50Hz is a good balance between responsiveness and power consumption
-        motionManager.accelerometerUpdateInterval = 1.0 / 50.0
+        // 10Hz is sufficient for motion detection and far more battery-
+        // efficient than 50Hz. At 50Hz the CPU wakes 50×/sec for negligible
+        // detection improvement (I-H1).
+        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
         consecutiveStillSamples = 0
 
-        motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, error in
+        // Deliver to a background queue to avoid blocking the main thread.
+        let accelQueue = OperationQueue()
+        accelQueue.name = "com.tracelet.accelerometer"
+        accelQueue.qualityOfService = .utility
+        motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
             guard let self = self, let data = data, error == nil else { return }
             self.handleAccelerometerData(data)
         }

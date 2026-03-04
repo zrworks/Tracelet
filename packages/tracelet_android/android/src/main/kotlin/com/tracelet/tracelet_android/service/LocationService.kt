@@ -48,6 +48,7 @@ class LocationService : Service() {
         const val EXTRA_BUTTON_ACTION = "button_action"
         const val EXTRA_BOOT_START = "boot_start"
 
+        @Volatile
         private var isRunning = false
 
         // Boot-mode native tracking state — accessible by the plugin.
@@ -134,7 +135,7 @@ class LocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        configManager = ConfigManager(applicationContext)
+        configManager = ConfigManager.getInstance(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -303,7 +304,7 @@ class LocationService : Service() {
             Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 bootstrapping native tracking")
         }
 
-        val config = ConfigManager(ctx)
+        val config = ConfigManager.getInstance(ctx)
         val state = StateManager(ctx)
         val database = TraceletDatabase.getInstance(ctx)
         val eventDispatcher = EventDispatcher()

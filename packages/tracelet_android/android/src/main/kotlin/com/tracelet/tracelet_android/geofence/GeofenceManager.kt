@@ -15,6 +15,7 @@ import com.tracelet.tracelet_android.ConfigManager
 import com.tracelet.tracelet_android.EventDispatcher
 import com.tracelet.tracelet_android.receiver.GeofenceBroadcastReceiver
 import com.tracelet.tracelet_android.db.TraceletDatabase
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Geofencing engine using Google Play Services GeofencingClient.
@@ -45,8 +46,21 @@ class GeofenceManager(
 
     private var geofencePendingIntent: PendingIntent? = null
 
-    /** Registered (active on the platform) geofence identifiers. */
-    private val activeGeofenceIds = mutableSetOf<String>()
+    /** Cached geofences — invalidated on add/remove to avoid DB query per location. */
+    private var cachedGeofences: List<Map<String, Any?>>? = null
+
+    /** Returns geofences from cache, refreshing from DB only when invalidated. */
+    private fun getCachedGeofences(): List<Map<String, Any?>> {
+        return cachedGeofences ?: db.getGeofences().also { cachedGeofences = it }
+    }
+
+    /** Invalidate the geofence cache — forces DB re-query on next access. */
+    private fun invalidateGeofenceCache() {
+        cachedGeofences = null
+    }
+
+    /** Registered (active on the platform) geofence identifiers (thread-safe, A-M6). */
+    private val activeGeofenceIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     /** High-accuracy mode: track which geofences the device is currently inside. */
     private val insideGeofenceIds = mutableSetOf<String>()
@@ -65,6 +79,7 @@ class GeofenceManager(
 
         // Persist to database
         if (!db.insertGeofence(geofenceMap)) return false
+        invalidateGeofenceCache()
 
         // Polygon geofences are evaluated in Dart — no system registration needed
         val vertices = geofenceMap["vertices"]
@@ -96,6 +111,7 @@ class GeofenceManager(
     /** Remove a single geofence by identifier. */
     fun removeGeofence(identifier: String): Boolean {
         db.deleteGeofence(identifier)
+        invalidateGeofenceCache()
         return unregisterGeofence(identifier)
     }
 
@@ -236,8 +252,8 @@ class GeofenceManager(
         val proximityRadius = config.getGeofenceProximityRadius()
         val maxMonitored = resolveMaxMonitored()
 
-        // Get all stored geofences, filter to circular ones with valid radius
-        val candidates = db.getGeofences()
+        // Get all stored geofences from cache, filter to circular ones with valid radius
+        val candidates = getCachedGeofences()
             .filter { gf ->
                 val vertices = gf["vertices"]
                 !(vertices is List<*> && vertices.size >= 3)
@@ -297,6 +313,7 @@ class GeofenceManager(
     fun destroy() {
         unregisterAllGeofences()
         insideGeofenceIds.clear()
+        invalidateGeofenceCache()
     }
 
     // =========================================================================

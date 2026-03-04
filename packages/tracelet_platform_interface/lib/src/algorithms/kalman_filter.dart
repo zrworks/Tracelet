@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 /// 2D Extended Kalman Filter for GPS coordinate smoothing.
 ///
@@ -37,7 +38,10 @@ class KalmanLocationFilter {
   //  P10, P11, P12, P13,
   //  P20, P21, P22, P23,
   //  P30, P31, P32, P33]
-  List<double> _p = List<double>.filled(16, 0);
+  final Float64List _p = Float64List(16);
+
+  /// Scratch buffer for covariance snapshots — avoids per-fix allocation.
+  final Float64List _pTemp = Float64List(16);
 
   /// Process noise in m/s² — models acceleration uncertainty.
   static const double _processNoise = 3.0;
@@ -106,7 +110,7 @@ class KalmanLocationFilter {
     _y = 0;
     _vx = 0;
     _vy = 0;
-    _p = List<double>.filled(16, 0);
+    _p.fillRange(0, 16, 0.0); // reuse buffer in-place (D-M7)
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -127,7 +131,7 @@ class KalmanLocationFilter {
     _initialized = true;
 
     // Initialize covariance: high uncertainty in position, very high in velocity.
-    _p = List<double>.filled(16, 0);
+    _p.fillRange(0, 16, 0.0); // reuse buffer in-place (D-M7)
     _p[0] = accuracy * accuracy; // P[0,0] = position x variance
     _p[5] = accuracy * accuracy; // P[1,1] = position y variance
     _p[10] = 100.0; // P[2,2] = velocity x variance
@@ -154,7 +158,8 @@ class KalmanLocationFilter {
     final q = _processNoise * _processNoise;
 
     // Compute F × P × Fᵀ + Q directly using the constant-velocity structure.
-    final p = List<double>.of(_p);
+    _pTemp.setAll(0, _p); // snapshot into scratch buffer (zero allocation)
+    final p = _pTemp;
     _p[0] = p[0] + dt * (p[2] + p[8]) + dt2 * p[10] + q * dt4;
     _p[1] = p[1] + dt * (p[3] + p[9]) + dt2 * p[11];
     _p[2] = p[2] + dt * p[10] + q * dt3;
@@ -215,7 +220,8 @@ class KalmanLocationFilter {
     _vy += k30 * dx + k31 * dy;
 
     // Covariance correction: P = (I − K × H) × P.
-    final p = List<double>.of(_p);
+    _pTemp.setAll(0, _p); // snapshot into scratch buffer (zero allocation)
+    final p = _pTemp;
     _p[0] = p[0] - k00 * p[0] - k01 * p[4];
     _p[1] = p[1] - k00 * p[1] - k01 * p[5];
     _p[2] = p[2] - k00 * p[2] - k01 * p[6];

@@ -63,12 +63,13 @@ class TraceletLogger(
 
     /** Log with explicit level (from Dart). */
     fun log(level: String, message: String): Boolean {
-        val levelInt = when (level.uppercase()) {
-            "ERROR" -> LEVEL_ERROR
-            "WARNING", "WARN" -> LEVEL_WARNING
-            "INFO" -> LEVEL_INFO
-            "DEBUG" -> LEVEL_DEBUG
-            "VERBOSE" -> LEVEL_VERBOSE
+        // Compare without allocating a new uppercase string (A-L2).
+        val levelInt = when {
+            level.equals("ERROR", ignoreCase = true) -> LEVEL_ERROR
+            level.equals("WARNING", ignoreCase = true) || level.equals("WARN", ignoreCase = true) -> LEVEL_WARNING
+            level.equals("INFO", ignoreCase = true) -> LEVEL_INFO
+            level.equals("DEBUG", ignoreCase = true) -> LEVEL_DEBUG
+            level.equals("VERBOSE", ignoreCase = true) -> LEVEL_VERBOSE
             else -> LEVEL_INFO
         }
         logInternal(levelInt, message, TAG)

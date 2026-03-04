@@ -46,7 +46,8 @@ class WebStorageEngine {
       return List<Map<String, Object?>>.from(_locations);
     }
 
-    var results = List<Map<String, Object?>>.from(_locations);
+    // Use lazy Iterable chaining to avoid intermediate list copies (D-M3).
+    Iterable<Map<String, Object?>> results = _locations;
 
     // Filter by time range.
     final start = query['start'] as String?;
@@ -57,7 +58,7 @@ class WebStorageEngine {
         results = results.where((loc) {
           final ts = DateTime.tryParse(loc['timestamp'] as String? ?? '');
           return ts != null && !ts.isBefore(startDt);
-        }).toList();
+        });
       }
     }
     if (end != null) {
@@ -66,15 +67,18 @@ class WebStorageEngine {
         results = results.where((loc) {
           final ts = DateTime.tryParse(loc['timestamp'] as String? ?? '');
           return ts != null && !ts.isAfter(endDt);
-        }).toList();
+        });
       }
     }
+
+    // Materialize once for sort/limit operations.
+    var materialized = results.toList();
 
     // Order.
     final order = query['order'] as int?;
     if (order == 1) {
       // desc — newest first
-      results.sort((a, b) {
+      materialized.sort((a, b) {
         final aTs = a['timestamp'] as String? ?? '';
         final bTs = b['timestamp'] as String? ?? '';
         return bTs.compareTo(aTs);
@@ -83,11 +87,11 @@ class WebStorageEngine {
 
     // Limit.
     final limit = query['limit'] as int?;
-    if (limit != null && limit > 0 && results.length > limit) {
-      results = results.sublist(0, limit);
+    if (limit != null && limit > 0 && materialized.length > limit) {
+      materialized = materialized.sublist(0, limit);
     }
 
-    return results;
+    return materialized;
   }
 
   Future<int> getCount() async => _locations.length;

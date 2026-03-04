@@ -1,3 +1,16 @@
+## 0.12.0
+
+### Performance Audit — Dart algorithm optimizations
+
+- **PERF**: Use `Float64List` for Kalman filter state matrices, add `_pTemp` scratch buffer (D-C3).
+- **PERF**: In-place `_p.fillRange()` in `Kalman.reset()` instead of re-allocating (D-M7).
+- **PERF**: Bound `TripManager` waypoints list to 5000 entries (D-H3).
+- **PERF**: Use `Queue<Map>` with O(1) `removeFirst()` instead of `List.removeAt(0)` O(n) for waypoint cap trimming (D-L2).
+- **PERF**: Merge isPointInPolygon precondition check into main loop — validates each vertex inline (D-M2).
+- **PERF**: Cache `_cachedInsideView` in `GeofenceEvaluator` with invalidation at all 6 mutation points (D-M4).
+- **PERF**: Remove dead `num` branch in `_toDouble()` — `int`/`double` already cover all `num` subtypes (D-L1).
+- **REFACTOR**: `matchesSchedule()` now delegates to `parse()` to eliminate duplicated parsing logic (D-L3).
+
 ## 0.11.4
 
 - **CHORE**: Version bump for platform consistency.

@@ -61,9 +61,12 @@ class GeofenceEvaluator {
   /// Set of geofence identifiers the device is currently inside.
   final Set<String> _insideGeofenceIds = <String>{};
 
+  /// Cached unmodifiable view — invalidated when [_insideGeofenceIds] changes (D-M4).
+  Set<String>? _cachedInsideView;
+
   /// Read-only view of the geofence identifiers currently marked as "inside".
   Set<String> get insideGeofenceIds =>
-      Set<String>.unmodifiable(_insideGeofenceIds);
+      _cachedInsideView ??= Set<String>.unmodifiable(_insideGeofenceIds);
 
   /// Evaluate all geofences against the current position.
   ///
@@ -119,6 +122,7 @@ class GeofenceEvaluator {
 
           if (isInside && !wasInside) {
             _insideGeofenceIds.add(identifier);
+            _cachedInsideView = null;
             transitions.add(
               GeofenceTransition(
                 identifier: identifier,
@@ -128,6 +132,7 @@ class GeofenceEvaluator {
             );
           } else if (!isInside && wasInside) {
             _insideGeofenceIds.remove(identifier);
+            _cachedInsideView = null;
             transitions.add(
               GeofenceTransition(
                 identifier: identifier,
@@ -152,6 +157,7 @@ class GeofenceEvaluator {
 
       if (isInside && !wasInside) {
         _insideGeofenceIds.add(identifier);
+        _cachedInsideView = null;
         transitions.add(
           GeofenceTransition(
             identifier: identifier,
@@ -162,6 +168,7 @@ class GeofenceEvaluator {
         );
       } else if (!isInside && wasInside) {
         _insideGeofenceIds.remove(identifier);
+        _cachedInsideView = null;
         transitions.add(
           GeofenceTransition(
             identifier: identifier,
@@ -177,13 +184,18 @@ class GeofenceEvaluator {
   }
 
   /// Clear all tracking state. Call when tracking restarts.
-  void clear() => _insideGeofenceIds.clear();
+  void clear() {
+    _insideGeofenceIds.clear();
+    _cachedInsideView = null;
+  }
 
   /// Remove a specific geofence from the "inside" set.
   ///
   /// Useful for knockout mode — after EXIT, the geofence is removed.
-  void removeGeofence(String identifier) =>
-      _insideGeofenceIds.remove(identifier);
+  void removeGeofence(String identifier) {
+    _insideGeofenceIds.remove(identifier);
+    _cachedInsideView = null;
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Private
@@ -192,7 +204,7 @@ class GeofenceEvaluator {
   static double? _toDouble(Object? value) {
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    if (value is num) return value.toDouble();
+    // `num` has exactly two subtypes (double, int) — both handled above (D-L1).
     return null;
   }
 }

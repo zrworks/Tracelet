@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0
+
+### Performance Audit — Web optimizations
+
+- **PERF**: Hoist `math.Random()` to top-level constant in `generateUuid()` (D-M1).
+- **PERF**: Use lazy `Iterable` chaining in `getLocations()`, materialize only once (D-M3).
+- **PERF**: Promote browser version `RegExp` patterns to `static final` (D-M5).
+- **PERF**: Cache `.toJS` references for web event listeners (D-H6).
+- **PERF**: Cache polygon vertices at `addGeofence` time (D-H5).
+
 ## 0.11.4
 
 - **CHORE**: Version bump for platform consistency.

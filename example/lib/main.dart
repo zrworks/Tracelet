@@ -89,6 +89,7 @@ class _DashboardPageState extends State<DashboardPage>
   bool _kalmanEnabled = true;
   bool _adaptiveMode = false;
   bool _isPeriodicMode = false;
+  bool _logExpanded = false;
   String _motionSensitivity = 'Medium'; // Low / Medium / High
   tl.Location? _lastLocation;
   tl.State? _pluginState;
@@ -263,7 +264,9 @@ class _DashboardPageState extends State<DashboardPage>
 
     _subs.add(
       tl.Tracelet.onGeofence((evt) {
-        _addLog('GEOFENCE', '${evt.action.name} → ${evt.identifier}');
+        final isPolygon = evt.identifier.startsWith('poly_');
+        final tag = isPolygon ? 'POLYGON' : 'GEOFENCE';
+        _addLog(tag, '${evt.action.name} → ${evt.identifier}');
       }),
     );
 
@@ -1059,11 +1062,20 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _listGeofences() async {
     try {
       final fences = await tl.Tracelet.getGeofences();
-      _addLog('GEOFENCES', '${fences.length} registered');
+      final polygonCount = fences.where((f) => f.vertices.isNotEmpty).length;
+      final circularCount = fences.length - polygonCount;
+      _addLog(
+        'GEOFENCES',
+        '${fences.length} registered ($circularCount circular, $polygonCount polygon)',
+      );
       for (final f in fences) {
+        final isPolygon = f.vertices.isNotEmpty;
+        final shape = isPolygon
+            ? 'polygon(${f.vertices.length}v)'
+            : 'r=${f.radius}m';
         _addLog(
-          '  FENCE',
-          '${f.identifier}  (${f.latitude.toStringAsFixed(4)}, ${f.longitude.toStringAsFixed(4)})  r=${f.radius}m',
+          isPolygon ? '  POLYGON' : '  FENCE',
+          '${f.identifier}  (${f.latitude.toStringAsFixed(4)}, ${f.longitude.toStringAsFixed(4)})  $shape',
         );
       }
     } catch (e) {
@@ -2988,7 +3000,7 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ),
 
-          // ─── Always-visible Event Log panel ────────────────────────────
+          // ─── Collapsible Event Log panel ──────────────────────────────
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -3000,23 +3012,55 @@ class _DashboardPageState extends State<DashboardPage>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    'Event Log (${_log.length})',
-                    style: Theme.of(context).textTheme.titleSmall,
+                // Tappable header
+                InkWell(
+                  onTap: () => setState(() => _logExpanded = !_logExpanded),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _logExpanded
+                              ? Icons.expand_more
+                              : Icons.chevron_right,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Event Log (${_log.length})',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const Spacer(),
+                        if (_log.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.delete_sweep, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: 'Clear log',
+                            onPressed: () => setState(() => _log.clear()),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: 180,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: _log.length,
-                    itemBuilder: (_, i) => _LogTile(entry: _log[i]),
+                // Animated log body
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 200),
+                  crossFadeState: _logExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _log.length,
+                      itemBuilder: (_, i) => _LogTile(entry: _log[i]),
+                    ),
                   ),
                 ),
               ],
@@ -3254,7 +3298,11 @@ class _LogTile extends StatelessWidget {
       'MOTION' => Colors.deepOrange,
       'ACTIVITY' => Colors.purple,
       'PROVIDER' => Colors.teal,
-      'GEOFENCE' || 'GEOFENCES_CHANGE' || 'GEOFENCE+' => Colors.orange,
+      'GEOFENCE' ||
+      'GEOFENCES_CHANGE' ||
+      'GEOFENCE+' ||
+      'POLYGON' ||
+      'POLYGON+' => Colors.orange,
       'HTTP' || 'SYNC' => Colors.cyan,
       'HEARTBEAT' => Colors.pink,
       'HEALTH' => Colors.green.shade700,

@@ -1,3 +1,22 @@
+## 0.12.0
+
+### Performance Audit — 74 of 77 issues resolved
+
+- **PERF**: Cache `AdaptiveSamplingEngine` instance instead of re-creating per GPS fix (D-C1).
+- **PERF**: Add `Location.copyWithCoords()` to eliminate `toMap()/fromMap()` round-trip in Kalman filter hot path (D-C2).
+- **PERF**: Wire trip detection to processed location stream, eliminating duplicate `Location.fromMap()` (D-H1).
+- **PERF**: Fast-path `_castToMap` with type check — avoids map copy when already correct type (D-H2).
+- **PERF**: Replace `.expand()` with `.where()` in `_filterLocation` to avoid single-element list allocations (D-H4).
+- **PERF**: Cancel adaptive activity subscription in `removeListeners()` (D-H7).
+- **PERF**: Use `.toList(growable: false)` for `addGeofences`/`addPrivacyZones` result lists (D-M6).
+- **PERF**: Invalidate cached stream pipeline on `setConfig()` so it rebuilds with new settings (D-M8).
+- **PERF**: Use `Map.from()` instead of `.map()` with `MapEntry` for extras in `Location.fromMap()` (D-L4).
+- **REFACTOR**: Deduplicate `LocationProcessor` parameter list in `setConfig()` (D-L5).
+
+## 0.11.5
+
+- **FIX**: [Android/iOS] Polygon geofence `vertices` are now correctly persisted to the native SQLite databases. Previously, vertex data was silently dropped during `addGeofence()`, causing polygon geofences to revert to circular after app restart.
+
 ## 0.11.4
 
 - **FIX**: [iOS] Revert over-aggressive permission guards — When In Use permission now works correctly for all tracking modes. Only the killed-state auto-resume (`autoResumeTracking`) requires Always authorization. iOS enforces permission at the OS level.

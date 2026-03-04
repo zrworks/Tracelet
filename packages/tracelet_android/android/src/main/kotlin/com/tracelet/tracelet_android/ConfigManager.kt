@@ -10,11 +10,28 @@ import org.json.JSONObject
  * All config values are stored as a single JSON blob in SharedPreferences.
  * This manager provides typed getters with defaults matching the Dart Config model.
  */
-class ConfigManager(context: Context) {
+class ConfigManager internal constructor(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "com.tracelet.config"
         private const val KEY_CONFIG = "config_json"
+
+        /** Singleton instance — avoids repeated JSON parsing from SharedPreferences (A-M1). */
+        @Volatile
+        private var instance: ConfigManager? = null
+
+        /** Returns the shared [ConfigManager], creating it on first call. */
+        fun getInstance(context: Context): ConfigManager {
+            return instance ?: synchronized(this) {
+                instance ?: ConfigManager(context.applicationContext).also { instance = it }
+            }
+        }
+
+        /** Resets the singleton for test isolation. */
+        @JvmStatic
+        internal fun resetInstance() {
+            instance = null
+        }
 
         // GeoConfig defaults
         const val DEFAULT_DESIRED_ACCURACY = 0 // DesiredAccuracy.high

@@ -1,3 +1,45 @@
+## 0.12.0
+
+### Performance Audit — 29 Android issues resolved
+
+- **PERF**: Add 10-minute wakelock timeout to prevent indefinite CPU wake (A-C1).
+- **PERF**: Cache battery info with 30s TTL — eliminates sticky broadcast IPC per location (A-C2).
+- **PERF**: Replace N+1 audit trail verification with JOIN query (A-C3).
+- **PERF**: Add in-memory privacy zone cache with CRUD invalidation (A-C4).
+- **PERF**: Add in-memory geofence cache with CRUD invalidation (A-C5).
+- **PERF**: Cache `SimpleDateFormat` as static `isoFormatter` (A-H1).
+- **PERF**: Throttle DB pruning to every 100 inserts instead of every insert (A-H2, A-H3).
+- **PERF**: Add `@Volatile` to `isRunning` in `LocationService` (A-H4).
+- **PERF**: Add `@Volatile` to sync flags in `HttpSyncManager` (A-H5).
+- **PERF**: Use `ThreadLocal<MessageDigest>` for thread-safe SHA-256 (A-H6).
+- **PERF**: Use cached location for heartbeat events instead of activating GPS (A-H7).
+- **PERF**: Remove duplicate flat keys from platform channel location maps (A-H8).
+- **PERF**: Add LIMIT 5000 to `getLog()` query (A-H9).
+- **PERF**: Singleton `ConfigManager` with double-checked locking (A-M1).
+- **PERF**: Add `Locale.US` to all `String.format()` in `buildCanonicalString()` (A-M2).
+- **PERF**: Pre-compiled hex lookup table for SHA-256 byte-to-hex conversion (A-M3).
+- **PERF**: Smart config restart — only restart location engine when location-relevant keys change (A-M4).
+- **PERF**: Rely on wakelock auto-release timeout in `BootReceiver` (A-M5).
+- **PERF**: Use `ConcurrentHashMap.newKeySet()` for `activeGeofenceIds` (A-M6).
+- **PERF**: Track insert count to avoid `SELECT COUNT(*)` for auto-sync threshold (A-M7).
+- **PERF**: Add `created_at` index on locations table (DB v5) (A-M8).
+- **PERF**: Apply `deferTime` to `LocationRequest.setMaxUpdateDelayMillis()` (A-M9).
+- **PERF**: Add `@Volatile` to `consecutiveStillSamples` in `MotionDetector` (A-M10).
+- **PERF**: Resolve cursor column indices once before loop in `cursorToLocationList()` (A-L1).
+- **PERF**: Use `equals(ignoreCase = true)` instead of `uppercase()` allocation in logger (A-L2).
+- **PERF**: Remove unnecessary `toMutableMap()` in `watchPosition()` (A-L3).
+- **PERF**: Extract `ParsedSchedule` data class to deduplicate schedule parsing (A-L4).
+- **PERF**: Use `setOf()` instead of `listOf()` for OEM manufacturer detection (A-L6).
+- **REFACTOR**: Remove trivial `isMoreRestrictive()` wrapper, inline `isActionMoreRestrictive()` call.
+- **CHORE**: Bump DB version from 4 to 5 (v4→v5 migration adds `created_at` index).
+
+## 0.11.5
+
+- **FIX**: Persist polygon geofence `vertices` to SQLite — add `vertices TEXT` column, DB migration v3→v4, and JSON serialization/deserialization in `insertGeofence()`/`cursorToGeofence()`.
+- **FIX**: Skip malformed vertex entries instead of coercing invalid coordinates to `0.0`; require ≥ 3 valid vertices for polygon storage.
+- **TEST**: Add Robolectric tests for geofence vertices CRUD (11 tests covering round-trip, validation, edge cases).
+- **TEST**: Add DB migration integration tests — v3→v4 and v1→v4 upgrade paths, existing data preservation, fresh install.
+
 ## 0.11.4
 
 - **CHORE**: Version bump for platform consistency.

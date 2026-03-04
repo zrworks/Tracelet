@@ -1,0 +1,161 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history to commit back to main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap
+        run: melos bootstrap
+
+      - name: Install benchmark dependencies
+        working-directory: benchmark
+        run: flutter pub get
+
+      - name: Run benchmarks
+        id: bench
+        working-directory: benchmark
+        run: |
+          # Run benchmark and capture output
+          flutter test test/tracelet_benchmark_test.dart --reporter expanded 2>&1 | tee benchmark_output.txt
+
+          # Extract the JSON block between "--- JSON ---" and the closing "}"
+          STARTED=false
+          JSON=""
+          while IFS= read -r line; do
+            if [[ "$line" == *"--- JSON ---"* ]]; then
+              STARTED=true
+              continue
+            fi
+            if $STARTED; then
+              JSON+="$line"$'\n'
+              if [[ "$line" == "}" ]]; then
+                break
+              fi
+            fi
+          done < benchmark_output.txt
+
+          echo "$JSON" > benchmark_results.json
+
+          # Extract the markdown table
+          TABLE=$(sed -n '/| Benchmark | ops\/sec/,/^$/p' benchmark_output.txt)
+          echo "table<<EOF" >> $GITHUB_OUTPUT
+          echo "$TABLE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update BENCHMARK.md
+        working-directory: benchmark
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          DART_VERSION=$(dart --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1)
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+
+          # Build the new entry
+          ENTRY="### $DATE — Commit $COMMIT_SHA
+
+          **Environment:** Dart $DART_VERSION, ubuntu-latest (CI)
+
+          ${{ steps.bench.outputs.table }}
+          "
+
+          # Append the entry to BENCHMARK.md before the last entry
+          # Find the line "## Results History" and append after it
+          if grep -q "## Results History" ../BENCHMARK.md; then
+            # Insert new entry after "## Results History" line
+            sed -i "/^## Results History$/a\\
+          \\
+          $ENTRY" ../BENCHMARK.md
+          else
+            echo "" >> ../BENCHMARK.md
+            echo "## Results History" >> ../BENCHMARK.md
+            echo "" >> ../BENCHMARK.md
+            echo "$ENTRY" >> ../BENCHMARK.md
+          fi
+
+      - name: Commit benchmark results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Only commit if BENCHMARK.md changed
+          if git diff --quiet BENCHMARK.md; then
+            echo "No benchmark changes to commit"
+          else
+            git add BENCHMARK.md
+            git commit -m "chore(ci): update benchmark results [skip ci]"
+            git push
+          fi
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-results
+          path: |
+            benchmark/benchmark_output.txt
+            benchmark/benchmark_results.json
+          retention-days: 90
+
+      - name: Performance regression check
+        working-directory: benchmark
+        run: |
+          # Parse JSON and check for regressions against thresholds
+          # Critical operations must be < 10 µs/op
+          echo "Checking performance thresholds..."
+          
+          python3 -c "
+          import json, sys
+
+          with open('benchmark_results.json') as f:
+              results = json.load(f)
+
+          # Critical thresholds (µs/op)
+          thresholds = {
+              'kalman_process_single': 5.0,
+              'haversine_single': 5.0,
+              'pip_4v': 5.0,
+              'location_fromMap': 10.0,
+              'location_copyWithCoords': 5.0,
+              'adaptive_compute': 5.0,
+          }
+
+          failed = False
+          for name, max_us in thresholds.items():
+              actual = results.get(name, 0)
+              status = '✅' if actual <= max_us else '❌ REGRESSION'
+              print(f'{status} {name}: {actual:.2f} µs/op (threshold: {max_us} µs)')
+              if actual > max_us:
+                  failed = True
+
+          if failed:
+              print()
+              print('⚠️ Performance regression detected!')
+              sys.exit(1)
+          else:
+              print()
+              print('All benchmarks within thresholds.')
+          "

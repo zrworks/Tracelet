@@ -66,6 +66,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         instance.stateManager = StateManager()
         instance.database = TraceletDatabase.shared
 
+        // Battery monitoring — enable once at setup
+        BatteryUtils.initialize()
+
         // Logger
         instance.logger = TraceletLogger(
             configManager: instance.configManager,
@@ -379,11 +382,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
         // Background Tasks
         case "startBackgroundTask":
-            let taskId = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
-            result(taskId.rawValue)
+            let taskId = BackgroundTaskHelper.shared.begin("dartBackground")
+            result(taskId?.rawValue ?? UIBackgroundTaskIdentifier.invalid.rawValue)
         case "stopBackgroundTask":
             let rawId = (call.arguments as? NSNumber)?.intValue ?? 0
-            UIApplication.shared.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: rawId))
+            BackgroundTaskHelper.shared.end(UIBackgroundTaskIdentifier(rawValue: rawId))
             result(rawId)
 
         // Logging

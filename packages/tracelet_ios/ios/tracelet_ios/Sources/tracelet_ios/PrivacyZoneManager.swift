@@ -27,6 +27,9 @@ final class PrivacyZoneManager {
     private let database: TraceletDatabase
     private let configManager: ConfigManager
 
+    /// In-memory cache of privacy zones — avoids DB query on every location (I-M7).
+    private var cachedZones: [[String: Any]]?
+
     init(database: TraceletDatabase, configManager: ConfigManager) {
         self.database = database
         self.configManager = configManager
@@ -40,6 +43,7 @@ final class PrivacyZoneManager {
     // MARK: - Zone CRUD
 
     func addZone(_ zone: [String: Any]) -> Bool {
+        cachedZones = nil
         return database.insertPrivacyZone(zone)
     }
 
@@ -47,14 +51,17 @@ final class PrivacyZoneManager {
         for zone in zones {
             _ = database.insertPrivacyZone(zone)
         }
+        cachedZones = nil
         return true
     }
 
     func removeZone(_ identifier: String) -> Bool {
+        cachedZones = nil
         return database.deletePrivacyZone(identifier)
     }
 
     func removeAllZones() -> Bool {
+        cachedZones = nil
         return database.deleteAllPrivacyZones()
     }
 
@@ -78,7 +85,11 @@ final class PrivacyZoneManager {
         guard isEnabled() else {
             return EvaluationResult(action: nil, zone: nil)
         }
-        let zones = database.getPrivacyZones()
+        let zones = cachedZones ?? {
+            let loaded = database.getPrivacyZones()
+            cachedZones = loaded
+            return loaded
+        }()
         guard !zones.isEmpty else {
             return EvaluationResult(action: nil, zone: nil)
         }
@@ -98,7 +109,7 @@ final class PrivacyZoneManager {
 
             if distance <= zRadius {
                 let action = zone["action"] as? Int ?? PrivacyZoneManager.actionExclude
-                if matchedAction == nil || isMoreRestrictive(action, than: matchedAction!) {
+                if matchedAction == nil || isActionMoreRestrictive(action, than: matchedAction!) {
                     matchedAction = action
                     matchedZone = zone
                 }
@@ -180,11 +191,6 @@ final class PrivacyZoneManager {
         modified["longitude"] = snappedLng
         modified["accuracy"] = accuracyMeters
         return modified
-    }
-
-    /// Returns `true` if `a` is more restrictive than `b`.
-    private func isMoreRestrictive(_ a: Int, than b: Int) -> Bool {
-        return isActionMoreRestrictive(a, than: b)
     }
 
     /// Haversine great-circle distance between two points in metres.

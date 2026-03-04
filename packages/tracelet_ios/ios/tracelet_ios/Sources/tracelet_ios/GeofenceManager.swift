@@ -25,6 +25,9 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private var lastLatitude: Double?
     private var lastLongitude: Double?
 
+    /// In-memory cache of geofences — avoids DB query on every proximity update (I-M8).
+    private var cachedGeofences: [[String: Any]]?
+
     init(configManager: ConfigManager,
          eventDispatcher: EventDispatcher,
          database: TraceletDatabase) {
@@ -40,6 +43,7 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     func addGeofence(_ data: [String: Any]) -> Bool {
         let _ = database.insertGeofence(data)
+        cachedGeofences = nil
         // Polygon geofences are evaluated in Dart — no system registration needed
         let vertices = data["vertices"] as? [[Double]]
         if vertices != nil && (vertices?.count ?? 0) >= 3 { return true }
@@ -55,9 +59,9 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     }
 
     func addGeofences(_ geofences: [[String: Any]]) -> Bool {
-        for g in geofences {
-            let _ = database.insertGeofence(g)
-        }
+        // Use batch insert with a single transaction (I-H3).
+        let _ = database.insertGeofencesBatch(geofences)
+        cachedGeofences = nil
         // Re-evaluate proximity for all geofences at once
         if let lat = lastLatitude, let lng = lastLongitude {
             updateProximity(latitude: lat, longitude: lng)
@@ -75,17 +79,18 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     func removeGeofence(_ identifier: String) -> Bool {
         let _ = database.deleteGeofence(identifier)
-        let region = CLCircularRegion(
-            center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-            radius: 1,
-            identifier: identifier
-        )
-        locationManager.stopMonitoring(for: region)
+        cachedGeofences = nil
+        // Find the actual monitored region by identifier instead of creating
+        // a dummy region with fake coordinates (I-M5).
+        if let region = locationManager.monitoredRegions.first(where: { $0.identifier == identifier }) {
+            locationManager.stopMonitoring(for: region)
+        }
         return true
     }
 
     func removeGeofences() -> Bool {
         let _ = database.deleteAllGeofences()
+        cachedGeofences = nil
         for region in locationManager.monitoredRegions {
             locationManager.stopMonitoring(for: region)
         }
@@ -156,8 +161,14 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         let proximityRadius = Double(configManager.getGeofenceProximityRadius())
         let maxMonitored = resolveMaxMonitored()
 
-        // Get all stored geofences, filter to circular ones with valid radius
-        let allGeofences = database.getGeofences()
+        // Use cached geofences to avoid DB query on every proximity update (I-M8).
+        let allGeofences: [[String: Any]]
+        if let cached = cachedGeofences {
+            allGeofences = cached
+        } else {
+            allGeofences = database.getGeofences()
+            cachedGeofences = allGeofences
+        }
         let candidates: [(geofence: [String: Any], distance: Double)] = allGeofences
             .filter { gf in
                 let vertices = gf["vertices"] as? [[Double]]
@@ -170,7 +181,7 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
             .map { gf in
                 let lat = gf["latitude"] as? Double ?? 0
                 let lng = gf["longitude"] as? Double ?? 0
-                let distance = haversine(lat1: latitude, lon1: longitude, lat2: lat, lon2: lng)
+                let distance = haversineDistanceMetres(lat1: latitude, lng1: longitude, lat2: lat, lng2: lng)
                 return (geofence: gf, distance: distance)
             }
             .filter { $0.distance <= proximityRadius }
@@ -345,17 +356,5 @@ final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private func resolveMaxMonitored() -> Int {
         let configured = configManager.getMaxMonitoredGeofences()
         return configured > 0 ? min(configured, GeofenceManager.maxRegions) : GeofenceManager.maxRegions
-    }
-
-    /// Haversine formula — distance in meters between two lat/lng points.
-    private func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
-        let r = 6_371_000.0 // Earth radius in meters
-        let dLat = (lat2 - lat1) * .pi / 180.0
-        let dLon = (lon2 - lon1) * .pi / 180.0
-        let a = sin(dLat / 2) * sin(dLat / 2) +
-                cos(lat1 * .pi / 180.0) * cos(lat2 * .pi / 180.0) *
-                sin(dLon / 2) * sin(dLon / 2)
-        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return r * c
     }
 }

@@ -130,10 +130,9 @@ class Location {
       battery: batteryMap != null
           ? LocationBattery.fromMap(batteryMap)
           : const LocationBattery(),
+      // Use Map.from() to avoid per-entry MapEntry allocation (D-L4).
       extras: extrasRaw is Map
-          ? extrasRaw.map<String, Object?>(
-              (Object? k, Object? v) => MapEntry(k.toString(), v),
-            )
+          ? Map<String, Object?>.from(extrasRaw)
           : const <String, Object?>{},
       event: map['event'] is String
           ? map['event'] as String
@@ -174,6 +173,40 @@ class Location {
       'Location(lat: ${coords.latitude}, lng: ${coords.longitude}, '
       'isMoving: $isMoving, isMock: $isMock, '
       'mockHeuristics: $mockHeuristics, uuid: $uuid)';
+
+  /// Returns a copy of this [Location] with updated coordinates.
+  ///
+  /// Used by the Kalman filter to produce a smoothed location without
+  /// the overhead of full `toMap()/fromMap()` round-trip serialization.
+  Location copyWithCoords({double? latitude, double? longitude}) {
+    return Location(
+      coords: Coords(
+        latitude: latitude ?? coords.latitude,
+        longitude: longitude ?? coords.longitude,
+        altitude: coords.altitude,
+        speed: coords.speed,
+        heading: coords.heading,
+        accuracy: coords.accuracy,
+        speedAccuracy: coords.speedAccuracy,
+        headingAccuracy: coords.headingAccuracy,
+        altitudeAccuracy: coords.altitudeAccuracy,
+        floor: coords.floor,
+      ),
+      timestamp: timestamp,
+      isMoving: isMoving,
+      uuid: uuid,
+      odometer: odometer,
+      isMock: isMock,
+      mockHeuristics: mockHeuristics,
+      activity: activity,
+      battery: battery,
+      extras: extras,
+      event: event,
+      auditHash: auditHash,
+      auditPreviousHash: auditPreviousHash,
+      auditChainIndex: auditChainIndex,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>

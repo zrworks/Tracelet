@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -21,7 +22,7 @@ class TraceletDatabase private constructor(context: Context) :
 
     companion object {
         private const val DB_NAME = "tracelet.db"
-        private const val DB_VERSION = 3
+        private const val DB_VERSION = 5
 
         // Location table
         const val TABLE_LOCATIONS = "locations"
@@ -57,6 +58,7 @@ class TraceletDatabase private constructor(context: Context) :
         const val COL_NOTIFY_ON_DWELL = "notify_on_dwell"
         const val COL_LOITERING_DELAY = "loitering_delay"
         const val COL_GF_EXTRAS = "gf_extras"
+        const val COL_VERTICES = "vertices"
 
         // Log table
         const val TABLE_LOGS = "logs"
@@ -125,6 +127,11 @@ class TraceletDatabase private constructor(context: Context) :
             CREATE INDEX idx_locations_timestamp ON $TABLE_LOCATIONS ($COL_TIMESTAMP)
         """.trimIndent())
 
+        // Index on created_at for retention pruning queries (A-M8).
+        db.execSQL("""
+            CREATE INDEX idx_locations_created_at ON $TABLE_LOCATIONS ($COL_CREATED_AT)
+        """.trimIndent())
+
         db.execSQL("""
             CREATE TABLE $TABLE_GEOFENCES (
                 $COL_IDENTIFIER TEXT PRIMARY KEY,
@@ -135,7 +142,8 @@ class TraceletDatabase private constructor(context: Context) :
                 $COL_NOTIFY_ON_EXIT INTEGER DEFAULT 1,
                 $COL_NOTIFY_ON_DWELL INTEGER DEFAULT 0,
                 $COL_LOITERING_DELAY INTEGER DEFAULT 0,
-                $COL_GF_EXTRAS TEXT
+                $COL_GF_EXTRAS TEXT,
+                $COL_VERTICES TEXT
             )
         """.trimIndent())
 
@@ -210,6 +218,18 @@ class TraceletDatabase private constructor(context: Context) :
                 )
             """.trimIndent())
         }
+        // v3 → v4: Add vertices column to geofences table for polygon support
+        if (oldVersion < 4) {
+            db.execSQL("""
+                ALTER TABLE $TABLE_GEOFENCES ADD COLUMN $COL_VERTICES TEXT
+            """.trimIndent())
+        }
+        // v4 → v5: Add index on created_at for faster retention pruning (A-M8)
+        if (oldVersion < 5) {
+            db.execSQL("""
+                CREATE INDEX IF NOT EXISTS idx_locations_created_at ON $TABLE_LOCATIONS ($COL_CREATED_AT)
+            """.trimIndent())
+        }
     }
 
     // =========================================================================
@@ -219,24 +239,41 @@ class TraceletDatabase private constructor(context: Context) :
     /** Inserts a location and returns its UUID. Respects persistMode and retention limits. */
     fun insertLocation(location: Map<String, Any?>): String {
         val uuid = location["uuid"] as? String ?: UUID.randomUUID().toString()
+        // Read from nested maps (coords, battery, activity) to avoid requiring
+        // duplicate flat keys in the location map (A-H8).
+        val coords = location["coords"] as? Map<*, *>
+        val battery = location["battery"] as? Map<*, *>
+        val activity = location["activity"] as? Map<*, *>
         val values = ContentValues().apply {
             put(COL_UUID, uuid)
-            put(COL_LATITUDE, (location["latitude"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_LONGITUDE, (location["longitude"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_ALTITUDE, (location["altitude"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_SPEED, (location["speed"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_HEADING, (location["heading"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_ACCURACY, (location["accuracy"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_SPEED_ACCURACY, (location["speedAccuracy"] as? Number)?.toDouble() ?: -1.0)
-            put(COL_HEADING_ACCURACY, (location["headingAccuracy"] as? Number)?.toDouble() ?: -1.0)
-            put(COL_ALTITUDE_ACCURACY, (location["altitudeAccuracy"] as? Number)?.toDouble() ?: -1.0)
+            put(COL_LATITUDE, (coords?.get("latitude") as? Number)?.toDouble()
+                ?: (location["latitude"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_LONGITUDE, (coords?.get("longitude") as? Number)?.toDouble()
+                ?: (location["longitude"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_ALTITUDE, (coords?.get("altitude") as? Number)?.toDouble()
+                ?: (location["altitude"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_SPEED, (coords?.get("speed") as? Number)?.toDouble()
+                ?: (location["speed"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_HEADING, (coords?.get("heading") as? Number)?.toDouble()
+                ?: (location["heading"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_ACCURACY, (coords?.get("accuracy") as? Number)?.toDouble()
+                ?: (location["accuracy"] as? Number)?.toDouble() ?: 0.0)
+            put(COL_SPEED_ACCURACY, (coords?.get("speedAccuracy") as? Number)?.toDouble()
+                ?: (location["speedAccuracy"] as? Number)?.toDouble() ?: -1.0)
+            put(COL_HEADING_ACCURACY, (coords?.get("headingAccuracy") as? Number)?.toDouble()
+                ?: (location["headingAccuracy"] as? Number)?.toDouble() ?: -1.0)
+            put(COL_ALTITUDE_ACCURACY, (coords?.get("altitudeAccuracy") as? Number)?.toDouble()
+                ?: (location["altitudeAccuracy"] as? Number)?.toDouble() ?: -1.0)
             put(COL_TIMESTAMP, (location["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis())
             put(COL_IS_MOVING, if (location["isMoving"] == true) 1 else 0)
             put(COL_ODOMETER, (location["odometer"] as? Number)?.toDouble() ?: 0.0)
-            put(COL_ACTIVITY_TYPE, location["activityType"] as? String)
-            put(COL_ACTIVITY_CONFIDENCE, (location["activityConfidence"] as? Number)?.toInt() ?: -1)
-            put(COL_BATTERY_LEVEL, (location["batteryLevel"] as? Number)?.toDouble() ?: -1.0)
-            put(COL_BATTERY_CHARGING, if (location["batteryCharging"] == true) 1 else 0)
+            put(COL_ACTIVITY_TYPE, (activity?.get("type") as? String)
+                ?: (location["activityType"] as? String))
+            put(COL_ACTIVITY_CONFIDENCE, (activity?.get("confidence") as? Number)?.toInt()
+                ?: (location["activityConfidence"] as? Number)?.toInt() ?: -1)
+            put(COL_BATTERY_LEVEL, (battery?.get("level") as? Number)?.toDouble()
+                ?: (location["batteryLevel"] as? Number)?.toDouble() ?: -1.0)
+            put(COL_BATTERY_CHARGING, if (battery?.get("is_charging") == true || battery?.get("isCharging") == true || location["batteryCharging"] == true) 1 else 0)
             put(COL_EVENT, location["event"] as? String)
             put(COL_EXTRAS, location["extras"]?.toString())
             put(COL_SYNCED, 0)
@@ -359,6 +396,31 @@ class TraceletDatabase private constructor(context: Context) :
             put(COL_NOTIFY_ON_DWELL, if (geofence["notifyOnDwell"] == true) 1 else 0)
             put(COL_LOITERING_DELAY, (geofence["loiteringDelay"] as? Number)?.toInt() ?: 0)
             put(COL_GF_EXTRAS, geofence["extras"]?.toString())
+
+            // Serialize vertices as JSON: [[lat,lng],[lat,lng],...]
+            val vertices = geofence["vertices"] as? List<*>
+            if (vertices != null && vertices.isNotEmpty()) {
+                val verticesJson = org.json.JSONArray()
+                for (vertex in vertices) {
+                    if (vertex is List<*> && vertex.size >= 2) {
+                        val lat = (vertex[0] as? Number)?.toDouble()
+                        val lng = (vertex[1] as? Number)?.toDouble()
+                        if (lat != null && lng != null) {
+                            val vertexArray = org.json.JSONArray()
+                            vertexArray.put(lat)
+                            vertexArray.put(lng)
+                            verticesJson.put(vertexArray)
+                        }
+                    }
+                }
+                if (verticesJson.length() >= 3) {
+                    put(COL_VERTICES, verticesJson.toString())
+                } else {
+                    put(COL_VERTICES, null as String?)
+                }
+            } else {
+                put(COL_VERTICES, null as String?)
+            }
         }
         writableDatabase.insertWithOnConflict(TABLE_GEOFENCES, null, values, SQLiteDatabase.CONFLICT_REPLACE)
         return true
@@ -438,7 +500,7 @@ class TraceletDatabase private constructor(context: Context) :
 
         val where = if (conditions.isNotEmpty()) "WHERE ${conditions.joinToString(" AND ")}" else ""
         val cursor = readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_LOGS $where ORDER BY $COL_LOG_TIMESTAMP ASC",
+            "SELECT * FROM $TABLE_LOGS $where ORDER BY $COL_LOG_TIMESTAMP ASC LIMIT 5000",
             args.toTypedArray()
         )
 
@@ -476,48 +538,79 @@ class TraceletDatabase private constructor(context: Context) :
     private fun cursorToLocationList(cursor: Cursor): List<Map<String, Any?>> {
         val list = mutableListOf<Map<String, Any?>>()
         cursor.use {
-            while (it.moveToNext()) {
-                list.add(cursorToLocation(it))
-            }
+            if (!it.moveToFirst()) return list
+            // Resolve column indices once for the entire result set (A-L1).
+            val iUuid = it.getColumnIndexOrThrow(COL_UUID)
+            val iTimestamp = it.getColumnIndexOrThrow(COL_TIMESTAMP)
+            val iIsMoving = it.getColumnIndexOrThrow(COL_IS_MOVING)
+            val iOdometer = it.getColumnIndexOrThrow(COL_ODOMETER)
+            val iEvent = it.getColumnIndexOrThrow(COL_EVENT)
+            val iLatitude = it.getColumnIndexOrThrow(COL_LATITUDE)
+            val iLongitude = it.getColumnIndexOrThrow(COL_LONGITUDE)
+            val iAltitude = it.getColumnIndexOrThrow(COL_ALTITUDE)
+            val iSpeed = it.getColumnIndexOrThrow(COL_SPEED)
+            val iHeading = it.getColumnIndexOrThrow(COL_HEADING)
+            val iAccuracy = it.getColumnIndexOrThrow(COL_ACCURACY)
+            val iSpeedAccuracy = it.getColumnIndexOrThrow(COL_SPEED_ACCURACY)
+            val iHeadingAccuracy = it.getColumnIndexOrThrow(COL_HEADING_ACCURACY)
+            val iAltitudeAccuracy = it.getColumnIndexOrThrow(COL_ALTITUDE_ACCURACY)
+            val iActivityType = it.getColumnIndexOrThrow(COL_ACTIVITY_TYPE)
+            val iActivityConfidence = it.getColumnIndexOrThrow(COL_ACTIVITY_CONFIDENCE)
+            val iBatteryLevel = it.getColumnIndexOrThrow(COL_BATTERY_LEVEL)
+            val iBatteryCharging = it.getColumnIndexOrThrow(COL_BATTERY_CHARGING)
+            val iHash = it.getColumnIndex(COL_AUDIT_HASH)
+            val iPrevHash = it.getColumnIndex(COL_AUDIT_PREVIOUS_HASH)
+            val iChainIdx = it.getColumnIndex(COL_AUDIT_CHAIN_INDEX)
+            do {
+                list.add(cursorToLocation(it, iUuid, iTimestamp, iIsMoving, iOdometer, iEvent,
+                    iLatitude, iLongitude, iAltitude, iSpeed, iHeading, iAccuracy,
+                    iSpeedAccuracy, iHeadingAccuracy, iAltitudeAccuracy,
+                    iActivityType, iActivityConfidence, iBatteryLevel, iBatteryCharging,
+                    iHash, iPrevHash, iChainIdx))
+            } while (it.moveToNext())
         }
         return list
     }
 
-    private fun cursorToLocation(c: Cursor): Map<String, Any?> {
+    private fun cursorToLocation(
+        c: Cursor,
+        iUuid: Int, iTimestamp: Int, iIsMoving: Int, iOdometer: Int, iEvent: Int,
+        iLatitude: Int, iLongitude: Int, iAltitude: Int, iSpeed: Int, iHeading: Int, iAccuracy: Int,
+        iSpeedAccuracy: Int, iHeadingAccuracy: Int, iAltitudeAccuracy: Int,
+        iActivityType: Int, iActivityConfidence: Int, iBatteryLevel: Int, iBatteryCharging: Int,
+        iHash: Int, iPrevHash: Int, iChainIdx: Int
+    ): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>(
-            "uuid" to c.getString(c.getColumnIndexOrThrow(COL_UUID)),
-            "timestamp" to c.getLong(c.getColumnIndexOrThrow(COL_TIMESTAMP)),
-            "isMoving" to (c.getInt(c.getColumnIndexOrThrow(COL_IS_MOVING)) == 1),
-            "odometer" to c.getDouble(c.getColumnIndexOrThrow(COL_ODOMETER)),
-            "event" to c.getString(c.getColumnIndexOrThrow(COL_EVENT)),
+            "uuid" to c.getString(iUuid),
+            "timestamp" to c.getLong(iTimestamp),
+            "isMoving" to (c.getInt(iIsMoving) == 1),
+            "odometer" to c.getDouble(iOdometer),
+            "event" to c.getString(iEvent),
             "coords" to mapOf(
-                "latitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LATITUDE)),
-                "longitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LONGITUDE)),
-                "altitude" to c.getDouble(c.getColumnIndexOrThrow(COL_ALTITUDE)),
-                "speed" to c.getDouble(c.getColumnIndexOrThrow(COL_SPEED)),
-                "heading" to c.getDouble(c.getColumnIndexOrThrow(COL_HEADING)),
-                "accuracy" to c.getDouble(c.getColumnIndexOrThrow(COL_ACCURACY)),
-                "speedAccuracy" to c.getDouble(c.getColumnIndexOrThrow(COL_SPEED_ACCURACY)),
-                "headingAccuracy" to c.getDouble(c.getColumnIndexOrThrow(COL_HEADING_ACCURACY)),
-                "altitudeAccuracy" to c.getDouble(c.getColumnIndexOrThrow(COL_ALTITUDE_ACCURACY)),
+                "latitude" to c.getDouble(iLatitude),
+                "longitude" to c.getDouble(iLongitude),
+                "altitude" to c.getDouble(iAltitude),
+                "speed" to c.getDouble(iSpeed),
+                "heading" to c.getDouble(iHeading),
+                "accuracy" to c.getDouble(iAccuracy),
+                "speedAccuracy" to c.getDouble(iSpeedAccuracy),
+                "headingAccuracy" to c.getDouble(iHeadingAccuracy),
+                "altitudeAccuracy" to c.getDouble(iAltitudeAccuracy),
             ),
             "activity" to mapOf(
-                "type" to (c.getString(c.getColumnIndexOrThrow(COL_ACTIVITY_TYPE)) ?: "unknown"),
-                "confidence" to c.getInt(c.getColumnIndexOrThrow(COL_ACTIVITY_CONFIDENCE)),
+                "type" to (c.getString(iActivityType) ?: "unknown"),
+                "confidence" to c.getInt(iActivityConfidence),
             ),
             "battery" to mapOf(
-                "level" to c.getDouble(c.getColumnIndexOrThrow(COL_BATTERY_LEVEL)),
-                "isCharging" to (c.getInt(c.getColumnIndexOrThrow(COL_BATTERY_CHARGING)) == 1),
+                "level" to c.getDouble(iBatteryLevel),
+                "isCharging" to (c.getInt(iBatteryCharging) == 1),
             ),
         )
         // Include audit fields when available (LEFT JOIN with audit_trail)
-        val hashIdx = c.getColumnIndex(COL_AUDIT_HASH)
-        if (hashIdx >= 0 && !c.isNull(hashIdx)) {
-            map["audit_hash"] = c.getString(hashIdx)
-            val prevIdx = c.getColumnIndex(COL_AUDIT_PREVIOUS_HASH)
-            if (prevIdx >= 0) map["audit_previous_hash"] = c.getString(prevIdx)
-            val chainIdx = c.getColumnIndex(COL_AUDIT_CHAIN_INDEX)
-            if (chainIdx >= 0) map["audit_chain_index"] = c.getInt(chainIdx)
+        if (iHash >= 0 && !c.isNull(iHash)) {
+            map["audit_hash"] = c.getString(iHash)
+            if (iPrevHash >= 0) map["audit_previous_hash"] = c.getString(iPrevHash)
+            if (iChainIdx >= 0) map["audit_chain_index"] = c.getInt(iChainIdx)
         }
         return map
     }
@@ -533,7 +626,29 @@ class TraceletDatabase private constructor(context: Context) :
     }
 
     private fun cursorToGeofence(c: Cursor): Map<String, Any?> {
-        return mapOf(
+        // Parse vertices from JSON
+        val verticesJson = c.getString(c.getColumnIndexOrThrow(COL_VERTICES))
+        var vertices: List<List<Double>>? = null
+        if (!verticesJson.isNullOrEmpty()) {
+            try {
+                val jsonArray = org.json.JSONArray(verticesJson)
+                val parsed = mutableListOf<List<Double>>()
+                for (i in 0 until jsonArray.length()) {
+                    val vertexArray = jsonArray.getJSONArray(i)
+                    if (vertexArray.length() >= 2) {
+                        parsed.add(listOf(
+                            vertexArray.getDouble(0),
+                            vertexArray.getDouble(1)
+                        ))
+                    }
+                }
+                if (parsed.size >= 3) vertices = parsed
+            } catch (e: Exception) {
+                Log.w("Tracelet", "Failed to parse geofence vertices JSON: ${e.message}")
+            }
+        }
+
+        val map = mutableMapOf<String, Any?>(
             "identifier" to c.getString(c.getColumnIndexOrThrow(COL_IDENTIFIER)),
             "latitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LATITUDE)),
             "longitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LONGITUDE)),
@@ -544,6 +659,10 @@ class TraceletDatabase private constructor(context: Context) :
             "loiteringDelay" to c.getInt(c.getColumnIndexOrThrow(COL_LOITERING_DELAY)),
             "extras" to c.getString(c.getColumnIndexOrThrow(COL_GF_EXTRAS)),
         )
+        if (vertices != null) {
+            map["vertices"] = vertices
+        }
+        return map
     }
 
     // =========================================================================
@@ -621,6 +740,61 @@ class TraceletDatabase private constructor(context: Context) :
                 "odometer" to it.getDouble(it.getColumnIndexOrThrow(COL_ODOMETER)),
             )
         }
+    }
+
+    /**
+     * Gets all audit records joined with their locations in a single query.
+     * Each map includes audit fields (uuid, hash, previous_hash, chain_index)
+     * plus location fields (latitude, longitude, altitude, speed, heading,
+     * accuracy, timestamp, isMoving, odometer). Missing locations yield nulls.
+     */
+    fun getAuditTrailWithLocations(): List<Map<String, Any?>> {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT a.$COL_UUID, a.$COL_AUDIT_HASH, a.$COL_AUDIT_PREVIOUS_HASH, " +
+            "a.$COL_AUDIT_CHAIN_INDEX, " +
+            "l.$COL_LATITUDE, l.$COL_LONGITUDE, l.$COL_ALTITUDE, " +
+            "l.$COL_SPEED, l.$COL_HEADING, l.$COL_ACCURACY, " +
+            "l.$COL_TIMESTAMP, l.$COL_IS_MOVING, l.$COL_ODOMETER " +
+            "FROM $TABLE_AUDIT_TRAIL a " +
+            "LEFT JOIN $TABLE_LOCATIONS l ON a.$COL_UUID = l.$COL_UUID " +
+            "ORDER BY a.$COL_AUDIT_CHAIN_INDEX ASC",
+            null
+        )
+        val list = mutableListOf<Map<String, Any?>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val uuidIdx = it.getColumnIndex(COL_UUID)
+                val latIdx = it.getColumnIndex(COL_LATITUDE)
+                val lngIdx = it.getColumnIndex(COL_LONGITUDE)
+                val altIdx = it.getColumnIndex(COL_ALTITUDE)
+                val spdIdx = it.getColumnIndex(COL_SPEED)
+                val hdgIdx = it.getColumnIndex(COL_HEADING)
+                val accIdx = it.getColumnIndex(COL_ACCURACY)
+                val tsIdx = it.getColumnIndex(COL_TIMESTAMP)
+                val movIdx = it.getColumnIndex(COL_IS_MOVING)
+                val odoIdx = it.getColumnIndex(COL_ODOMETER)
+
+                val hasLocation = latIdx >= 0 && !it.isNull(latIdx)
+
+                list.add(mapOf(
+                    "uuid" to it.getString(it.getColumnIndexOrThrow(COL_UUID)),
+                    "hash" to it.getString(it.getColumnIndexOrThrow(COL_AUDIT_HASH)),
+                    "previous_hash" to it.getString(it.getColumnIndexOrThrow(COL_AUDIT_PREVIOUS_HASH)),
+                    "chain_index" to it.getInt(it.getColumnIndexOrThrow(COL_AUDIT_CHAIN_INDEX)),
+                    "has_location" to hasLocation,
+                    "latitude" to if (hasLocation && latIdx >= 0) it.getDouble(latIdx) else null,
+                    "longitude" to if (hasLocation && lngIdx >= 0) it.getDouble(lngIdx) else null,
+                    "altitude" to if (hasLocation && altIdx >= 0) it.getDouble(altIdx) else null,
+                    "speed" to if (hasLocation && spdIdx >= 0) it.getDouble(spdIdx) else null,
+                    "heading" to if (hasLocation && hdgIdx >= 0) it.getDouble(hdgIdx) else null,
+                    "accuracy" to if (hasLocation && accIdx >= 0) it.getDouble(accIdx) else null,
+                    "timestamp" to if (hasLocation && tsIdx >= 0) it.getLong(tsIdx) else null,
+                    "isMoving" to if (hasLocation && movIdx >= 0) (it.getInt(movIdx) == 1) else null,
+                    "odometer" to if (hasLocation && odoIdx >= 0) it.getDouble(odoIdx) else null,
+                ))
+            }
+        }
+        return list
     }
 
     /** Deletes all audit trail records. */

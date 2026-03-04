@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 /// Persists plugin configuration via UserDefaults.
 ///
@@ -77,12 +78,26 @@ final class ConfigManager {
     func getAllowIdenticalLocations() -> Bool { cache["allowIdenticalLocations"] as? Bool ?? false }
     func getUseSignificantChangesOnly() -> Bool { cache["useSignificantChangesOnly"] as? Bool ?? false }
     func getShowsBackgroundLocationIndicator() -> Bool { cache["showsBackgroundLocationIndicator"] as? Bool ?? false }
-    func getPausesLocationUpdatesAutomatically() -> Bool { cache["pausesLocationUpdatesAutomatically"] as? Bool ?? false }
+    func getPausesLocationUpdatesAutomatically() -> Bool { cache["pausesLocationUpdatesAutomatically"] as? Bool ?? true }
     func getDisableLocationAuthorizationAlert() -> Bool { cache["disableLocationAuthorizationAlert"] as? Bool ?? false }
     func getLocationAuthorizationRequest() -> String { cache["locationAuthorizationRequest"] as? String ?? "Always" }
     func getStopAfterElapsedMinutes() -> Int { cache["stopAfterElapsedMinutes"] as? Int ?? -1 }
     func getMaxMonitoredGeofences() -> Int { cache["maxMonitoredGeofences"] as? Int ?? -1 }
     func getEnableTimestampMeta() -> Bool { cache["enableTimestampMeta"] as? Bool ?? false }
+
+    /// Maps the `activityType` config string to a `CLActivityType` (I-M2).
+    func getActivityType() -> CLActivityType {
+        let value = cache["activityType"] as? String ?? "other"
+        switch value {
+        case "automotiveNavigation": return .automotiveNavigation
+        case "fitness": return .fitness
+        case "otherNavigation": return .otherNavigation
+        case "airborne":
+            if #available(iOS 12.0, *) { return .airborne }
+            return .otherNavigation
+        default: return .otherNavigation
+        }
+    }
     // Periodic mode config
     func getPeriodicLocationInterval() -> Int { cache["periodicLocationInterval"] as? Int ?? 900 }
     func getPeriodicDesiredAccuracy() -> Int { cache["periodicDesiredAccuracy"] as? Int ?? 1 }
@@ -184,7 +199,7 @@ final class ConfigManager {
             "allowIdenticalLocations": false,
             "useSignificantChangesOnly": false,
             "showsBackgroundLocationIndicator": false,
-            "pausesLocationUpdatesAutomatically": false,
+            "pausesLocationUpdatesAutomatically": true,
             "disableLocationAuthorizationAlert": false,
             "locationAuthorizationRequest": "Always",
             "debug": false,

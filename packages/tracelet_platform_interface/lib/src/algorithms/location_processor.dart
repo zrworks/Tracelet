@@ -116,6 +116,12 @@ class LocationProcessor {
     this.mockDetectionLevel = 1,
   });
 
+  /// Cached adaptive sampling engine — avoids re-creation per GPS fix.
+  late final AdaptiveSamplingEngine _adaptiveEngine = AdaptiveSamplingEngine(
+    baseDistanceFilter: distanceFilter,
+    elasticityMultiplier: elasticityMultiplier,
+  );
+
   /// Base distance filter in meters.
   final double distanceFilter;
 
@@ -254,10 +260,6 @@ class LocationProcessor {
     // ── Elasticity / Adaptive: scale distanceFilter ──────────────────────
     double effectiveDistance = distanceFilter;
     if (enableAdaptiveMode) {
-      final engine = AdaptiveSamplingEngine(
-        baseDistanceFilter: distanceFilter,
-        elasticityMultiplier: elasticityMultiplier,
-      );
       final ctx = adaptiveContext ?? AdaptiveContext(speed: effectiveSpeed);
       // Ensure the engine sees the computed speed even if the caller didn't
       // set it in the context.
@@ -268,7 +270,7 @@ class LocationProcessor {
         activityConfidence: ctx.activityConfidence,
         speed: ctx.speed > 0 ? ctx.speed : effectiveSpeed,
       );
-      final result = engine.compute(enriched);
+      final result = _adaptiveEngine.compute(enriched);
       effectiveDistance = result.effectiveDistanceFilter;
     } else if (!disableElasticity && effectiveSpeed > 0) {
       final multiplier = elasticityMultiplier < 0.1

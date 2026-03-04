@@ -1,3 +1,37 @@
+## 0.12.0
+
+### Performance Audit — 22 iOS issues resolved
+
+- **PERF**: Cache `ISO8601DateFormatter` as static instance (I-C1, I-C2).
+- **PERF**: Call `UIDevice.isBatteryMonitoringEnabled` once at plugin initialization (I-C3).
+- **PERF**: Add serial `stateQueue` for thread-safe sync flag access (I-C4).
+- **PERF**: Use `BackgroundTaskHelper.shared.begin()` with proper expiration handler (I-C5).
+- **PERF**: Reduce accelerometer to 10 Hz and deliver on background queue (I-H1).
+- **PERF**: Set timer tolerance to 10% for iOS energy coalescing (I-H2).
+- **PERF**: Use SQLite transactions for batch geofence inserts (I-H3).
+- **PERF**: Throttle DB pruning to every 100 inserts (I-H4, I-H6).
+- **PERF**: Move JSON serialization outside DB queue lock (I-H5).
+- **PERF**: Default `pausesLocationUpdatesAutomatically` to `true` (I-M1).
+- **PERF**: Make `activityType` configurable via `getActivityType()` mapping (I-M2).
+- **PERF**: Reuse `URLSession` — `getAllTasks` cancel instead of `invalidateAndCancel` (I-M3).
+- **PERF**: Defer `BGAppRefreshTask.setTaskCompleted` until async location fix returns (I-M4).
+- **PERF**: Find monitored region by identifier instead of creating dummy `CLCircularRegion` (I-M5).
+- **PERF**: Add in-memory privacy zone cache with CRUD invalidation (I-M7).
+- **PERF**: Add in-memory geofence cache with CRUD invalidation (I-M8).
+- **PERF**: Lazy-init `CMMotionActivityManager` and `CMPedometer` for accelerometer-only mode (I-L1).
+- **PERF**: Remove duplicate `haversine()` from `GeofenceManager`, call module-level function (I-L3).
+- **PERF**: Remove dead `@available(iOS 14)` self-assign no-op (I-L4).
+- **REFACTOR**: Remove trivial `isMoreRestrictive()` wrapper, inline `isActionMoreRestrictive()` call (I-L5).
+- **CHORE**: Add CoreLocation import to `ConfigManager.swift` for `CLActivityType`.
+
+## 0.11.5
+
+- **FIX**: Persist polygon geofence `vertices` to SQLite — add `vertices TEXT` column with `PRAGMA table_info` migration for existing installs, and JSON serialization/deserialization in `insertGeofence()`/`geofenceRowToMap()`.
+- **FIX**: Use `NSNumber` bridging for `JSONSerialization` vertex deserialization (fixes silent cast failure with `[[Double]]`).
+- **FIX**: Handle heterogeneous vertex arrays — skip non-array entries instead of failing the entire cast.
+- **TEST**: Add XCTest tests for geofence vertices CRUD (11 tests covering round-trip, validation, edge cases).
+- **TEST**: Add DB migration integration tests — column addition, data preservation, idempotency, multi-geofence migration, fresh install.
+
 ## 0.11.4
 
 - **FIX**: Revert over-aggressive `allowsBackgroundLocationUpdates` and significant-location guards — When In Use permission now works correctly for foreground and background tracking. iOS enforces permission at the OS level; only the killed-state entry point (`autoResumeTracking`) requires Always authorization.

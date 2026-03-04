@@ -100,3 +100,7 @@ scripts:
       dirExists: test
     exec:
       concurrency: 1
+
+  benchmark:
+    description: Run performance benchmarks
+    run: cd benchmark && flutter pub get && flutter test test/tracelet_benchmark_test.dart --reporter expanded

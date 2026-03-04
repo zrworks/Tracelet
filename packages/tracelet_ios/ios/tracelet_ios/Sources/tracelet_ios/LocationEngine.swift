@@ -28,6 +28,10 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Whether a mock location warning has already been fired for this session.
     private var mockLocationWarningFired = false
 
+    /// Counter for throttling DB retention pruning (I-H6).
+    private var insertCountSincePrune = 0
+    private static let pruneEveryNInserts = 100
+
     /// [Enterprise] Audit trail manager — set by the plugin after initialization.
     var auditTrailManager: AuditTrailManager?
 
@@ -146,7 +150,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         locationManager.distanceFilter = kCLDistanceFilterNone
-        locationManager.activityType = .otherNavigation
+        locationManager.activityType = configManager.getActivityType()
     }
 
     /// Starts the periodic timer that triggers one-shot location fixes.
@@ -163,10 +167,9 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         ) { [weak self] _ in
             self?.performPeriodicFix()
         }
-        // Request maximum timer precision — prevent iOS from coalescing
-        // firings for energy savings. Critical for periodic tracking where
-        // the user expects fixes at the configured interval.
-        timer.tolerance = 0
+        // Allow iOS to coalesce timer fires with other system work for
+        // energy efficiency. 10% tolerance is Apple’s recommendation (I-H2).
+        timer.tolerance = interval * 0.1
         periodicTimer = timer
     }
 
@@ -257,11 +260,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         let distanceFilter = configManager.getDistanceFilter()
         locationManager.distanceFilter = distanceFilter > 0 ? distanceFilter : kCLDistanceFilterNone
 
-        if #available(iOS 14.0, *) {
-            locationManager.desiredAccuracy = locationManager.desiredAccuracy
-        }
-
-        locationManager.activityType = .otherNavigation
+        locationManager.activityType = configManager.getActivityType()
     }
 
     // MARK: - One-shot position
@@ -659,7 +658,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.showsBackgroundLocationIndicator = configManager.getShowsBackgroundLocationIndicator()
         locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.activityType = .otherNavigation
+        locationManager.activityType = configManager.getActivityType()
 
         // Temporarily disable distance filter so we receive updates even when
         // the device is stationary — essential for multi-sample collection.
@@ -808,10 +807,15 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         return result
     }
 
+    /// Cached ISO 8601 formatter — creating one per call is expensive.
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     private func iso8601String(from date: Date) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: date)
+        return LocationEngine.isoFormatter.string(from: date)
     }
 
     /// Persists a location to the database only if allowed by persistMode.
@@ -827,11 +831,17 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         let _ = database.insertLocation(location)
 
-        // Enforce retention limits
-        let maxDays = configManager.getMaxDaysToPersist()
-        if maxDays > 0 { database.pruneOldLocations(maxDays: maxDays) }
-        let maxRecords = configManager.getMaxRecordsToPersist()
-        if maxRecords > 0 { database.enforceMaxRecords(maxRecords: maxRecords) }
+        // Throttle retention pruning — only run every N inserts instead of on
+        // each insert. This avoids a COUNT query + potential DELETE on every
+        // single location fix (I-H6, I-H4).
+        insertCountSincePrune += 1
+        if insertCountSincePrune >= LocationEngine.pruneEveryNInserts {
+            insertCountSincePrune = 0
+            let maxDays = configManager.getMaxDaysToPersist()
+            if maxDays > 0 { database.pruneOldLocations(maxDays: maxDays) }
+            let maxRecords = configManager.getMaxRecordsToPersist()
+            if maxRecords > 0 { database.enforceMaxRecords(maxRecords: maxRecords) }
+        }
     }
 
     /// Detects whether a CLLocation was produced by a simulated/mock provider.

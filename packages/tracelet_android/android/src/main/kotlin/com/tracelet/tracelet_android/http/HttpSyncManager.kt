@@ -48,11 +48,15 @@ class HttpSyncManager(
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    /** In-memory counter of inserts since last sync — avoids SELECT COUNT(*) per insert (A-M7). */
+    @Volatile
+    private var insertsSinceLastSync = 0
+
     private var httpClient: OkHttpClient? = null
-    private var isSyncing = false
-    private var isConnected = true
+    @Volatile private var isSyncing = false
+    @Volatile private var isConnected = true
     private var connectivityCallback: ConnectivityManager.NetworkCallback? = null
-    private var pendingSyncOnConnect = false
+    @Volatile private var pendingSyncOnConnect = false
 
     /** Initialize the HTTP client. */
     fun start() {
@@ -82,10 +86,12 @@ class HttpSyncManager(
 
         val threshold = config.getAutoSyncThreshold()
         if (threshold > 0) {
-            val count = db.getLocationCount()
-            if (count < threshold) return
+            // Use in-memory counter instead of SELECT COUNT(*) on every insert (A-M7).
+            insertsSinceLastSync++
+            if (insertsSinceLastSync < threshold) return
         }
 
+        insertsSinceLastSync = 0
         syncAsync()
     }
 

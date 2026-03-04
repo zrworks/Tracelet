@@ -16,6 +16,29 @@ final class TraceletDatabase {
         createTables()
     }
 
+    /// Internal initializer for testing — opens an in-memory SQLite database.
+    /// Only accessible via `@testable import`.
+    init(inMemory: Bool) {
+        if inMemory {
+            if sqlite3_open(":memory:", &db) != SQLITE_OK {
+                NSLog("[Tracelet] Failed to open in-memory database")
+            }
+        } else {
+            openDatabase()
+        }
+        createTables()
+    }
+
+    /// Internal initializer for testing — opens a database at a specific file path.
+    /// Useful for migration tests where a pre-populated database exists on disk.
+    /// Only accessible via `@testable import`.
+    init(path: String) {
+        if sqlite3_open(path, &db) != SQLITE_OK {
+            NSLog("[Tracelet] Failed to open database at \(path)")
+        }
+        createTables()
+    }
+
     deinit {
         if let db = db {
             sqlite3_close(db)
@@ -86,7 +109,8 @@ final class TraceletDatabase {
                 notify_on_exit INTEGER DEFAULT 1,
                 notify_on_dwell INTEGER DEFAULT 0,
                 loitering_delay INTEGER DEFAULT 0,
-                extras TEXT
+                extras TEXT,
+                vertices TEXT
             )
         """)
 
@@ -125,12 +149,45 @@ final class TraceletDatabase {
                 degraded_accuracy REAL DEFAULT 1000.0
             )
         """)
+
+        // Migrate existing geofences table — add vertices column if missing
+        migrateGeofencesTable()
+    }
+
+    /// Adds the `vertices` column to the geofences table for existing installs.
+    /// Uses PRAGMA table_info to check if the column already exists before altering.
+    private func migrateGeofencesTable() {
+        var hasVertices = false
+        var stmt: OpaquePointer?
+        if sqlite3_prepare_v2(db, "PRAGMA table_info(geofences)", -1, &stmt, nil) == SQLITE_OK {
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                let name = String(cString: sqlite3_column_text(stmt, 1))
+                if name == "vertices" {
+                    hasVertices = true
+                    break
+                }
+            }
+        }
+        sqlite3_finalize(stmt)
+        if !hasVertices {
+            exec("ALTER TABLE geofences ADD COLUMN vertices TEXT")
+        }
     }
 
     // MARK: - Location CRUD
 
     func insertLocation(_ data: [String: Any]) -> String {
         let uuid = data["uuid"] as? String ?? UUID().uuidString
+
+        // Pre-compute JSON serialization outside the DB queue to avoid blocking
+        // the serial queue during potentially slow encoding (I-H5).
+        let coords = data["coords"] as? [String: Any] ?? data
+        let activity = data["activity"] as? [String: Any]
+        let battery = data["battery"] as? [String: Any]
+        let extras = data["extras"] as? [String: Any]
+        let extrasJson = extras.flatMap { try? JSONSerialization.data(withJSONObject: $0) }
+            .flatMap { String(data: $0, encoding: .utf8) }
+
         queue.sync {
             let sql = """
                 INSERT OR REPLACE INTO locations
@@ -146,13 +203,6 @@ final class TraceletDatabase {
                 return
             }
             defer { sqlite3_finalize(stmt) }
-
-            let coords = data["coords"] as? [String: Any] ?? data
-            let activity = data["activity"] as? [String: Any]
-            let battery = data["battery"] as? [String: Any]
-            let extras = data["extras"] as? [String: Any]
-            let extrasJson = extras.flatMap { try? JSONSerialization.data(withJSONObject: $0) }
-                .flatMap { String(data: $0, encoding: .utf8) }
 
             sqlite3_bind_text(stmt, 1, nsString(uuid), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
             sqlite3_bind_text(stmt, 2, nsString(data["timestamp"] as? String ?? iso8601Now()), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
@@ -303,14 +353,22 @@ final class TraceletDatabase {
     func insertGeofence(_ data: [String: Any]) -> Bool {
         var success = false
         queue.sync {
+            success = _insertGeofenceUnsync(data)
+        }
+        return success
+    }
+
+    /// Internal geofence insert without queue synchronization.
+    /// Caller must already be on `queue`.
+    private func _insertGeofenceUnsync(_ data: [String: Any]) -> Bool {
             let sql = """
                 INSERT OR REPLACE INTO geofences
                 (identifier, latitude, longitude, radius, notify_on_entry, notify_on_exit,
-                 notify_on_dwell, loitering_delay, extras)
-                VALUES (?,?,?,?,?,?,?,?,?)
+                 notify_on_dwell, loitering_delay, extras, vertices)
+                VALUES (?,?,?,?,?,?,?,?,?,?)
             """
             var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return false }
             defer { sqlite3_finalize(stmt) }
 
             sqlite3_bind_text(stmt, 1, nsString(data["identifier"] as? String ?? ""), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
@@ -325,7 +383,43 @@ final class TraceletDatabase {
             let extrasJson = extras.flatMap { try? JSONSerialization.data(withJSONObject: $0) }
                 .flatMap { String(data: $0, encoding: .utf8) }
             sqlite3_bind_text(stmt, 9, nsString(extrasJson ?? ""), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-            success = sqlite3_step(stmt) == SQLITE_DONE
+
+            // Serialize vertices as JSON: [[lat,lng],[lat,lng],...]
+            if let verticesRaw = data["vertices"] as? [Any], !verticesRaw.isEmpty {
+                var verticesArray: [[Double]] = []
+                for item in verticesRaw {
+                    guard let vertex = item as? [Any], vertex.count >= 2,
+                          let lat = (vertex[0] as? NSNumber)?.doubleValue,
+                          let lng = (vertex[1] as? NSNumber)?.doubleValue else {
+                        continue
+                    }
+                    verticesArray.append([lat, lng])
+                }
+                if verticesArray.count >= 3,
+                   let verticesData = try? JSONSerialization.data(withJSONObject: verticesArray),
+                   let verticesJson = String(data: verticesData, encoding: .utf8) {
+                    sqlite3_bind_text(stmt, 10, nsString(verticesJson), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                } else {
+                    sqlite3_bind_null(stmt, 10)
+                }
+            } else {
+                sqlite3_bind_null(stmt, 10)
+            }
+
+            return sqlite3_step(stmt) == SQLITE_DONE
+    }
+
+    /// Batch-inserts geofences within a single transaction (I-H3).
+    /// Avoids N separate fsyncs for N geofences.
+    func insertGeofencesBatch(_ geofences: [[String: Any]]) -> Bool {
+        guard !geofences.isEmpty else { return true }
+        var success = true
+        queue.sync {
+            exec("BEGIN TRANSACTION")
+            for g in geofences {
+                if !_insertGeofenceUnsync(g) { success = false }
+            }
+            exec("COMMIT")
         }
         return success
     }
@@ -660,10 +754,15 @@ final class TraceletDatabase {
         return String(cString: cStr)
     }
 
+    /// Cached ISO 8601 formatter — creating one per call is expensive.
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     private func iso8601Now() -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: Date())
+        return TraceletDatabase.isoFormatter.string(from: Date())
     }
 
     private func locationRowToMap(_ stmt: OpaquePointer) -> [String: Any] {
@@ -723,7 +822,20 @@ final class TraceletDatabase {
         let extras: [String: Any]? = extrasStr.isEmpty ? nil :
             (try? JSONSerialization.jsonObject(with: Data(extrasStr.utf8)) as? [String: Any])
 
-        return [
+        // Parse vertices from JSON, casting through NSNumber for correct bridging
+        let verticesStr = columnText(stmt, 9)
+        var vertices: [[Double]]? = nil
+        if !verticesStr.isEmpty {
+            if let verticesData = verticesStr.data(using: .utf8),
+               let rawVertices = try? JSONSerialization.jsonObject(with: verticesData) as? [[NSNumber]] {
+                let parsed = rawVertices.map { $0.map { $0.doubleValue } }
+                if parsed.count >= 3 {
+                    vertices = parsed
+                }
+            }
+        }
+
+        var map: [String: Any] = [
             "identifier": columnText(stmt, 0),
             "latitude": sqlite3_column_double(stmt, 1),
             "longitude": sqlite3_column_double(stmt, 2),
@@ -734,6 +846,10 @@ final class TraceletDatabase {
             "loiteringDelay": Int(sqlite3_column_int(stmt, 7)),
             "extras": extras as Any,
         ]
+        if let vertices = vertices {
+            map["vertices"] = vertices
+        }
+        return map
     }
 
     private func privacyZoneRowToMap(_ stmt: OpaquePointer) -> [String: Any] {

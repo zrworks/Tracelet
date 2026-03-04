@@ -11,12 +11,29 @@ final class HttpSyncManager {
     private let eventDispatcher: EventDispatcher
     private let database: TraceletDatabase
 
-    private let session: URLSession
+    private var session: URLSession
     private var retryCount = 0
-    private var isSyncing = false
+
+    /// Serial queue protecting `_isSyncing`, `_isConnected`, `_pendingSyncOnConnect`.
+    private let stateQueue = DispatchQueue(label: "com.tracelet.httpSync.state")
+    private var _isSyncing = false
     private let pathMonitor = NWPathMonitor()
-    private var isConnected = true
-    private var pendingSyncOnConnect = false
+    private var _isConnected = true
+    private var _pendingSyncOnConnect = false
+
+    /// Thread-safe accessors for state flags.
+    private var isSyncing: Bool {
+        get { stateQueue.sync { _isSyncing } }
+        set { stateQueue.sync { _isSyncing = newValue } }
+    }
+    private var isConnected: Bool {
+        get { stateQueue.sync { _isConnected } }
+        set { stateQueue.sync { _isConnected = newValue } }
+    }
+    private var pendingSyncOnConnect: Bool {
+        get { stateQueue.sync { _pendingSyncOnConnect } }
+        set { stateQueue.sync { _pendingSyncOnConnect = newValue } }
+    }
 
     init(configManager: ConfigManager,
          eventDispatcher: EventDispatcher,
@@ -51,7 +68,12 @@ final class HttpSyncManager {
     }
 
     func stop() {
-        session.invalidateAndCancel()
+        // Cancel all in-flight tasks without invalidating the session (I-M3).
+        // invalidateAndCancel() renders the session permanently unusable;
+        // if start() is called again later, sync requests would silently fail.
+        session.getAllTasks { tasks in
+            tasks.forEach { $0.cancel() }
+        }
         pathMonitor.cancel()
     }
 

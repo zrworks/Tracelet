@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
+/// Reused random instance for UUID generation (D-M1).
+final math.Random _rng = math.Random();
+
 /// Simple UUID v4 generator (no crypto dependency).
 ///
 /// Shared between web engine files that need unique identifiers.
 String generateUuid() {
-  final rng = math.Random();
+  final rng = _rng;
   return '${_hex(rng, 8)}-${_hex(rng, 4)}-4${_hex(rng, 3)}-'
       '${_hexVariant(rng)}${_hex(rng, 3)}-${_hex(rng, 12)}';
 }

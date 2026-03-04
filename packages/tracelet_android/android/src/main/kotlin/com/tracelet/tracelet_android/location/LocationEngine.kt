@@ -45,6 +45,14 @@ class LocationEngine(
 ) {
     companion object {
         private const val TAG = "LocationEngine"
+
+        /** Cached ISO 8601 formatter — thread-confined to the main/location thread. */
+        private val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        /** Retention pruning runs every N inserts instead of on every insert. */
+        private const val PRUNE_EVERY_N_INSERTS = 100
     }
 
     private val fusedClient: FusedLocationProviderClient =
@@ -54,6 +62,9 @@ class LocationEngine(
     private var lastLocation: Location? = null
     private var currentActivityType: String = "unknown"
     private var currentActivityConfidence: Int = -1
+
+    /** Counter for throttling DB retention pruning — runs every N inserts. */
+    private var insertCountSincePrune = 0
 
     /** Last computed effective speed (m/s) from tracking location updates.
      *  Used by the plugin for motionchange events since the cached Location.speed
@@ -419,11 +430,11 @@ class LocationEngine(
         val watchCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 for (location in result.locations) {
-                    val data = enrichLocation(location, "watchPosition")
-                    data.toMutableMap().apply {
-                        this["watchId"] = watchId
-                        events.sendWatchPosition(this)
-                    }
+                    // enrichLocation() already returns a MutableMap; avoid
+                    // unnecessary shallow copy from toMutableMap() (A-L3).
+                    val data = enrichLocation(location, "watchPosition") as MutableMap<String, Any?>
+                    data["watchId"] = watchId
+                    events.sendWatchPosition(data)
                 }
             }
         }
@@ -638,9 +649,6 @@ class LocationEngine(
      */
     fun enrichLocation(location: Location, event: String, speed: Double? = null): Map<String, Any?> {
         val battery = BatteryUtils.getBatteryInfo(context)
-        val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
         val timestamp = isoFormatter.format(Date(location.time))
 
         // Use provided effective speed, or fall back to platform speed.
@@ -685,17 +693,6 @@ class LocationEngine(
                 "confidence" to currentActivityConfidence,
             ),
             "battery" to battery,
-            // Flatten for DB insert (db expects flat keys)
-            "latitude" to location.latitude,
-            "longitude" to location.longitude,
-            "altitude" to location.altitude,
-            "speed" to effectiveSpeed,
-            "heading" to location.bearing.toDouble(),
-            "accuracy" to location.accuracy.toDouble(),
-            "batteryLevel" to (battery["level"] as? Double ?: -1.0),
-            "batteryCharging" to (battery["isCharging"] as? Boolean ?: false),
-            "activityType" to currentActivityType,
-            "activityConfidence" to currentActivityConfidence,
         )
 
         // enableTimestampMeta: attach additional timing metadata
@@ -798,10 +795,19 @@ class LocationEngine(
 
     private fun buildLocationRequest(): LocationRequest {
         val priority = accuracyToPriority(config.getDesiredAccuracy())
-        return LocationRequest.Builder(priority, config.getLocationUpdateInterval())
+        val builder = LocationRequest.Builder(priority, config.getLocationUpdateInterval())
             .setMinUpdateDistanceMeters(config.getDistanceFilter().toFloat())
             .setMinUpdateIntervalMillis(config.getFastestLocationUpdateInterval())
-            .build()
+
+        // Apply batched delivery delay if configured (A-M9).
+        // This allows the platform to batch location fixes and deliver them
+        // together, significantly reducing wakeup frequency and saving battery.
+        val deferTime = config.getDeferTime().toLong()
+        if (deferTime > 0) {
+            builder.setMaxUpdateDelayMillis(deferTime)
+        }
+
+        return builder.build()
     }
 
     private fun accuracyToPriority(accuracy: Int): Int {
@@ -854,11 +860,17 @@ class LocationEngine(
 
         db.insertLocationAsync(location)
 
-        // Enforce retention limits
-        val maxDays = config.getMaxDaysToPersist()
-        if (maxDays > 0) db.pruneOldLocations(maxDays)
-        val maxRecords = config.getMaxRecordsToPersist()
-        if (maxRecords > 0) db.enforceMaxRecords(maxRecords)
+        // Throttle retention pruning — only run every N inserts instead of on
+        // each insert. This avoids a COUNT query + potential DELETE on every
+        // single location fix (A-H2, A-H3).
+        insertCountSincePrune++
+        if (insertCountSincePrune >= PRUNE_EVERY_N_INSERTS) {
+            insertCountSincePrune = 0
+            val maxDays = config.getMaxDaysToPersist()
+            if (maxDays > 0) db.pruneOldLocations(maxDays)
+            val maxRecords = config.getMaxRecordsToPersist()
+            if (maxRecords > 0) db.enforceMaxRecords(maxRecords)
+        }
     }
 
     /**

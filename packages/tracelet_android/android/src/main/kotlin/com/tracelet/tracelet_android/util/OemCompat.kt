@@ -33,11 +33,15 @@ object OemCompat {
     /** Normalized lowercase manufacturer string. */
     val manufacturer: String = Build.MANUFACTURER.lowercase()
 
-    val isHuawei: Boolean = manufacturer in listOf("huawei", "honor")
-    val isXiaomi: Boolean = manufacturer in listOf("xiaomi", "redmi", "poco")
+    private val huaweiNames = setOf("huawei", "honor")
+    private val xiaomiNames = setOf("xiaomi", "redmi", "poco")
+    private val oppoNames = setOf("oppo", "realme")
+
+    val isHuawei: Boolean = manufacturer in huaweiNames
+    val isXiaomi: Boolean = manufacturer in xiaomiNames
     val isSamsung: Boolean = manufacturer == "samsung"
     val isOnePlus: Boolean = manufacturer == "oneplus"
-    val isOppo: Boolean = manufacturer in listOf("oppo", "realme")
+    val isOppo: Boolean = manufacturer in oppoNames
     val isVivo: Boolean = manufacturer == "vivo"
 
     /** True if the device is from an OEM known for aggressive background killing. */
@@ -74,7 +78,7 @@ object OemCompat {
      *
      * @return The acquired wakelock (caller must release when done)
      */
-    fun acquireOemSafeWakelock(context: Context, timeout: Long = 0): PowerManager.WakeLock? {
+    fun acquireOemSafeWakelock(context: Context, timeout: Long = 10 * 60 * 1000L): PowerManager.WakeLock? {
         return try {
             val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
                 ?: return null
@@ -88,11 +92,9 @@ object OemCompat {
             }
 
             val wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag)
-            if (timeout > 0) {
-                wakelock.acquire(timeout)
-            } else {
-                wakelock.acquire()
-            }
+            // Always use a timeout to prevent indefinite CPU wakefulness.
+            // Default 10 minutes; the service should re-acquire when needed.
+            wakelock.acquire(timeout)
             Log.d(TAG, "Acquired OEM-safe wakelock with tag: $tag")
             wakelock
         } catch (e: Exception) {

@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'geo_utils.dart';
 
 /// Tracks trips based on motion state transitions.
@@ -23,6 +25,10 @@ import 'geo_utils.dart';
 /// };
 /// ```
 class TripManager {
+  /// Maximum number of waypoints to retain during a trip.
+  /// Older waypoints are discarded when this limit is reached.
+  static const int _maxWaypoints = 5000;
+
   /// Callback invoked when a trip ends with the full trip data map.
   ///
   /// The map contains:
@@ -41,7 +47,7 @@ class TripManager {
   double _totalDistance = 0;
   double? _lastWaypointLat;
   double? _lastWaypointLng;
-  final List<Map<String, Object?>> _waypoints = <Map<String, Object?>>[];
+  final Queue<Map<String, Object?>> _waypoints = Queue<Map<String, Object?>>();
 
   /// Whether a trip is currently active.
   bool get isTripActive => _tripActive;
@@ -90,6 +96,14 @@ class TripManager {
     _lastWaypointLng = longitude;
 
     // Record waypoint (lightweight: coords + timestamp only).
+    // Bound the list to prevent unbounded memory growth on long trips
+    // (e.g. 14,400 waypoints in a 4-hour trip at 1fix/sec). Keep latest
+    // waypoints, discarding oldest when the cap is exceeded.
+    // Use Queue.removeFirst() for O(1) eviction instead of List.removeAt(0)
+    // which is O(n) due to element shifting (D-L2).
+    if (_waypoints.length >= _maxWaypoints) {
+      _waypoints.removeFirst();
+    }
     _waypoints.add(<String, Object?>{
       'latitude': latitude,
       'longitude': longitude,

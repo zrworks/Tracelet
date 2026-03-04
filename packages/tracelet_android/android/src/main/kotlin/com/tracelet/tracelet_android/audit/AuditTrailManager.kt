@@ -4,6 +4,7 @@ import android.content.Context
 import com.tracelet.tracelet_android.ConfigManager
 import com.tracelet.tracelet_android.db.TraceletDatabase
 import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * **[Enterprise]** Tamper-proof location audit trail manager.
@@ -37,10 +38,15 @@ class AuditTrailManager(
         private const val KEY_CHAIN_INDEX = "chain_index"
         private const val KEY_LATEST_HASH = "latest_hash"
         private const val SEPARATOR = "|TRACELET_AUDIT|"
+        private val HEX_CHARS = "0123456789abcdef".toCharArray()
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val digest = MessageDigest.getInstance("SHA-256")
+
+    /** Thread-local MessageDigest — not thread-safe, so each thread gets its own. */
+    private val digestLocal = ThreadLocal.withInitial {
+        MessageDigest.getInstance("SHA-256")
+    }
 
     /** Current chain index (next record will get this index). */
     private var chainIndex: Int
@@ -98,21 +104,21 @@ class AuditTrailManager(
             append('|')
             append(uuid)
             append('|')
-            append(String.format("%.6f", latitude))
+            append(String.format(Locale.US, "%.6f", latitude))
             append('|')
-            append(String.format("%.6f", longitude))
+            append(String.format(Locale.US, "%.6f", longitude))
             append('|')
             append(timestamp)
             append('|')
-            append(String.format("%.2f", accuracy))
+            append(String.format(Locale.US, "%.2f", accuracy))
             append('|')
-            append(String.format("%.2f", speed))
+            append(String.format(Locale.US, "%.2f", speed))
             append('|')
-            append(String.format("%.2f", heading))
+            append(String.format(Locale.US, "%.2f", heading))
             append('|')
-            append(String.format("%.2f", altitude))
+            append(String.format(Locale.US, "%.2f", altitude))
             append('|')
-            append(String.format("%.2f", odometer))
+            append(String.format(Locale.US, "%.2f", odometer))
             append('|')
             append(if (isMoving) "1" else "0")
         }
@@ -122,8 +128,15 @@ class AuditTrailManager(
      * Computes SHA-256 hex digest.
      */
     fun sha256(input: String): String {
-        val bytes = digest.digest(input.toByteArray(Charsets.UTF_8))
-        return bytes.joinToString("") { "%02x".format(it) }
+        val bytes = digestLocal.get()!!.digest(input.toByteArray(Charsets.UTF_8))
+        // Pre-built hex lookup avoids 32 per-byte String.format calls (A-M3).
+        val sb = StringBuilder(bytes.size * 2)
+        for (b in bytes) {
+            val i = b.toInt() and 0xFF
+            sb.append(HEX_CHARS[i ushr 4])
+            sb.append(HEX_CHARS[i and 0x0F])
+        }
+        return sb.toString()
     }
 
     // =========================================================================
@@ -187,7 +200,7 @@ class AuditTrailManager(
      * compares to the stored hash. Returns a verification result map.
      */
     fun verifyChain(): Map<String, Any?> {
-        val records = database.getAuditTrail()
+        val records = database.getAuditTrailWithLocations()
         if (records.isEmpty()) {
             return mapOf(
                 "isValid" to true,
@@ -216,9 +229,9 @@ class AuditTrailManager(
                 )
             }
 
-            // Re-compute hash from location data
-            val location = database.getLocationForAudit(record["uuid"] as? String ?: "")
-            if (location == null) {
+            // Check location data exists (fetched via JOIN)
+            val hasLocation = record["has_location"] == true
+            if (!hasLocation) {
                 return mapOf(
                     "isValid" to false,
                     "totalRecords" to records.size,
@@ -232,16 +245,16 @@ class AuditTrailManager(
             val canonical = buildCanonicalString(
                 storedPreviousHash,
                 recordChainIndex,
-                location["uuid"] as? String ?: "",
-                (location["latitude"] as? Number)?.toDouble() ?: 0.0,
-                (location["longitude"] as? Number)?.toDouble() ?: 0.0,
-                location["timestamp"]?.toString() ?: "",
-                (location["accuracy"] as? Number)?.toDouble() ?: 0.0,
-                (location["speed"] as? Number)?.toDouble() ?: 0.0,
-                (location["heading"] as? Number)?.toDouble() ?: 0.0,
-                (location["altitude"] as? Number)?.toDouble() ?: 0.0,
-                (location["odometer"] as? Number)?.toDouble() ?: 0.0,
-                location["isMoving"] == true,
+                record["uuid"] as? String ?: "",
+                (record["latitude"] as? Number)?.toDouble() ?: 0.0,
+                (record["longitude"] as? Number)?.toDouble() ?: 0.0,
+                record["timestamp"]?.toString() ?: "",
+                (record["accuracy"] as? Number)?.toDouble() ?: 0.0,
+                (record["speed"] as? Number)?.toDouble() ?: 0.0,
+                (record["heading"] as? Number)?.toDouble() ?: 0.0,
+                (record["altitude"] as? Number)?.toDouble() ?: 0.0,
+                (record["odometer"] as? Number)?.toDouble() ?: 0.0,
+                record["isMoving"] == true,
             )
             val computedHash = sha256(canonical)
 

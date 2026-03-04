@@ -333,35 +333,39 @@ class Tracelet {
     _enableAdaptiveMode = config.geo.enableAdaptiveMode;
 
     // Update location processor, preserving internal state.
+    // Construct a fresh processor and transfer state from the old one if it
+    // exists, avoiding duplicated parameter lists (D-L5).
+    final newProcessor = LocationProcessor(
+      distanceFilter: config.geo.distanceFilter,
+      disableElasticity: config.geo.disableElasticity,
+      elasticityMultiplier: config.geo.elasticityMultiplier,
+      enableAdaptiveMode: config.geo.enableAdaptiveMode,
+      trackingAccuracyThreshold:
+          config.geo.filter?.trackingAccuracyThreshold ?? 0,
+      filterPolicy: config.geo.filter?.policy.index ?? 0,
+      maxImpliedSpeed: config.geo.filter?.maxImpliedSpeed ?? 0,
+      odometerAccuracyThreshold:
+          config.geo.filter?.odometerAccuracyThreshold ?? 0,
+      rejectMockLocations: config.geo.filter?.rejectMockLocations ?? false,
+      mockDetectionLevel: config.geo.filter?.mockDetectionLevel.index ?? 1,
+    );
     _locationProcessor =
         _locationProcessor?.copyWith(
-          distanceFilter: config.geo.distanceFilter,
-          disableElasticity: config.geo.disableElasticity,
-          elasticityMultiplier: config.geo.elasticityMultiplier,
-          enableAdaptiveMode: config.geo.enableAdaptiveMode,
-          trackingAccuracyThreshold:
-              config.geo.filter?.trackingAccuracyThreshold ?? 0,
-          filterPolicy: config.geo.filter?.policy.index ?? 0,
-          maxImpliedSpeed: config.geo.filter?.maxImpliedSpeed ?? 0,
-          odometerAccuracyThreshold:
-              config.geo.filter?.odometerAccuracyThreshold ?? 0,
-          rejectMockLocations: config.geo.filter?.rejectMockLocations ?? false,
-          mockDetectionLevel: config.geo.filter?.mockDetectionLevel.index ?? 1,
+          distanceFilter: newProcessor.distanceFilter,
+          disableElasticity: newProcessor.disableElasticity,
+          elasticityMultiplier: newProcessor.elasticityMultiplier,
+          enableAdaptiveMode: newProcessor.enableAdaptiveMode,
+          trackingAccuracyThreshold: newProcessor.trackingAccuracyThreshold,
+          filterPolicy: newProcessor.filterPolicy,
+          maxImpliedSpeed: newProcessor.maxImpliedSpeed,
+          odometerAccuracyThreshold: newProcessor.odometerAccuracyThreshold,
+          rejectMockLocations: newProcessor.rejectMockLocations,
+          mockDetectionLevel: newProcessor.mockDetectionLevel,
         ) ??
-        LocationProcessor(
-          distanceFilter: config.geo.distanceFilter,
-          disableElasticity: config.geo.disableElasticity,
-          elasticityMultiplier: config.geo.elasticityMultiplier,
-          enableAdaptiveMode: config.geo.enableAdaptiveMode,
-          trackingAccuracyThreshold:
-              config.geo.filter?.trackingAccuracyThreshold ?? 0,
-          filterPolicy: config.geo.filter?.policy.index ?? 0,
-          maxImpliedSpeed: config.geo.filter?.maxImpliedSpeed ?? 0,
-          odometerAccuracyThreshold:
-              config.geo.filter?.odometerAccuracyThreshold ?? 0,
-          rejectMockLocations: config.geo.filter?.rejectMockLocations ?? false,
-          mockDetectionLevel: config.geo.filter?.mockDetectionLevel.index ?? 1,
-        );
+        newProcessor;
+
+    // Invalidate cached stream pipeline so it rebuilds with new settings (D-M8).
+    _processedLocationStream = null;
 
     final result = await _platform.setConfig(config.toMap());
     return State.fromMap(result);
@@ -549,7 +553,9 @@ class Tracelet {
 
   /// Add multiple [Geofence]s at once.
   static Future<bool> addGeofences(List<Geofence> geofences) {
-    return _platform.addGeofences(geofences.map((g) => g.toMap()).toList());
+    return _platform.addGeofences(
+      geofences.map((g) => g.toMap()).toList(growable: false),
+    );
   }
 
   /// Remove a geofence by its [identifier].
@@ -1099,7 +1105,9 @@ class Tracelet {
 
   /// **Enterprise** — Add multiple [PrivacyZone]s at once.
   static Future<bool> addPrivacyZones(List<PrivacyZone> zones) {
-    return _platform.addPrivacyZones(zones.map((z) => z.toMap()).toList());
+    return _platform.addPrivacyZones(
+      zones.map((z) => z.toMap()).toList(growable: false),
+    );
   }
 
   /// **Enterprise** — Remove a privacy zone by its `identifier`.
@@ -1148,7 +1156,7 @@ class Tracelet {
     return _processedLocationStream ??= _getEventStream(TraceletEvents.location)
         .map(_castToMap)
         .map(Location.fromMap)
-        .expand(_filterLocation)
+        .where(_shouldAcceptLocation)
         .map(_applyKalmanFilter)
         .asBroadcastStream();
   }
@@ -1395,6 +1403,9 @@ class Tracelet {
 
     // Stop trip detection subscriptions.
     _stopTripDetection();
+
+    // Stop adaptive activity tracking subscription (D-H7).
+    _stopAdaptiveActivityTracking();
   }
 
   // ---------------------------------------------------------------------------
@@ -1408,6 +1419,10 @@ class Tracelet {
   }
 
   static Map<String, Object?> _castToMap(Object? event) {
+    // Fast path: if the platform already sent a correctly-typed map, reuse it
+    // directly instead of allocating a new Map with .map(). This avoids
+    // 14+ redundant map copies per event across all stream listeners.
+    if (event is Map<String, Object?>) return event;
     if (event is Map) {
       return event.map<String, Object?>(
         (Object? k, Object? v) => MapEntry(k.toString(), v),
@@ -1416,28 +1431,23 @@ class Tracelet {
     return const <String, Object?>{};
   }
 
-  /// Apply the [LocationProcessor] to filter a location.
+  /// Returns `true` if the location passes all filters (distance, accuracy,
+  /// speed, adaptive sampling). Side-effect: updates adaptive state.
   ///
-  /// Returns a single-element list if the location passes all filters,
-  /// or an empty list if it was filtered out. Used with [Stream.expand].
-  static List<Location> _filterLocation(Location location) {
-    // Periodic locations bypass all filters — the user explicitly requested
-    // time-based tracking, so every fix should be delivered regardless of
-    // distance, accuracy, or speed thresholds.
-    if (location.event == 'periodic') return <Location>[location];
+  /// Used with `Stream.where()` to avoid the list allocation overhead of
+  /// `Stream.expand()`.
+  static bool _shouldAcceptLocation(Location location) {
+    // Periodic locations bypass all filters.
+    if (location.event == 'periodic') return true;
 
     final processor = _locationProcessor;
-    if (processor == null) return <Location>[location];
+    if (processor == null) return true;
 
     final ts = DateTime.tryParse(location.timestamp);
-    if (ts == null) return <Location>[location];
+    if (ts == null) return true;
 
-    // Build adaptive context from the location's embedded battery/activity
-    // data and the latest tracked activity state.
     AdaptiveContext? adaptiveCtx;
     if (_enableAdaptiveMode) {
-      // Prefer the activity from the location model if it has a known type;
-      // otherwise fall back to the last event-driven activity.
       final locActivity = location.activity.type;
       final activityType = locActivity != ActivityType.unknown
           ? locActivity
@@ -1446,13 +1456,11 @@ class Tracelet {
           ? location.activity.confidence
           : _lastActivityConfidence;
 
-      // Battery data from the location model (populated per-fix).
       final batteryLevel = location.battery.level >= 0
           ? location.battery.level
           : _lastBatteryLevel;
       final isCharging = location.battery.isCharging || _lastIsCharging;
 
-      // Update cached state for future fixes.
       _lastBatteryLevel = batteryLevel;
       _lastIsCharging = isCharging;
 
@@ -1465,18 +1473,17 @@ class Tracelet {
       );
     }
 
-    final result = processor.process(
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      accuracy: location.coords.accuracy,
-      speed: location.coords.speed,
-      timestampMs: ts.millisecondsSinceEpoch,
-      isMock: location.isMock,
-      adaptiveContext: adaptiveCtx,
-    );
-
-    if (!result.accepted) return <Location>[];
-    return <Location>[location];
+    return processor
+        .process(
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          accuracy: location.coords.accuracy,
+          speed: location.coords.speed,
+          timestampMs: ts.millisecondsSinceEpoch,
+          isMock: location.isMock,
+          adaptiveContext: adaptiveCtx,
+        )
+        .accepted;
   }
 
   /// Apply Kalman filter to a [Location] if enabled.
@@ -1495,15 +1502,10 @@ class Tracelet {
     );
 
     // Return a new Location with smoothed coordinates but original metadata.
-    return Location.fromMap(<String, Object?>{
-      ...location.toMap(),
-      'coords': <String, Object?>{
-        ...(location.toMap()['coords'] as Map<String, Object?>? ??
-            const <String, Object?>{}),
-        'latitude': result.latitude,
-        'longitude': result.longitude,
-      },
-    });
+    return location.copyWithCoords(
+      latitude: result.latitude,
+      longitude: result.longitude,
+    );
   }
 
   /// Start internal subscriptions that feed the TripManager.
@@ -1525,16 +1527,15 @@ class Tracelet {
         });
 
     // Listen to location updates to record waypoints.
-    _tripLocationSub = _getEventStream(TraceletEvents.location)
-        .map(_castToMap)
-        .map(Location.fromMap)
-        .listen((location) {
-          _tripManager.onLocationReceived(
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            timestamp: location.timestamp,
-          );
-        });
+    // Reuse the processed location stream to avoid duplicate
+    // Location.fromMap() deserialization (D-H1).
+    _tripLocationSub = _getProcessedLocationStream().listen((location) {
+      _tripManager.onLocationReceived(
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        timestamp: location.timestamp,
+      );
+    });
   }
 
   /// Stop internal subscriptions that feed the TripManager.

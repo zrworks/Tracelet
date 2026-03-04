@@ -222,7 +222,7 @@ class PeriodicLocationWorker(
         }
 
         return try {
-            val config = ConfigManager(applicationContext)
+            val config = ConfigManager.getInstance(applicationContext)
             val state = StateManager(applicationContext)
             val location = fetchLocation(config)
 

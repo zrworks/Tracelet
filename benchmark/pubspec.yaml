@@ -1,0 +1,19 @@
+name: tracelet_benchmark
+description: Performance benchmark suite for Tracelet algorithms
+publish_to: none
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  tracelet_platform_interface:
+    path: ../packages/tracelet_platform_interface
+  tracelet:
+    path: ../packages/tracelet
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

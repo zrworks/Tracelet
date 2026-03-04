@@ -35,7 +35,7 @@ class BootReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Boot completed — checking startOnBoot config")
 
-        val configManager = ConfigManager(context)
+        val configManager = ConfigManager.getInstance(context)
         if (!configManager.hasConfig()) {
             Log.d(TAG, "No persisted config found, skipping")
             return
@@ -107,11 +107,8 @@ class BootReceiver : BroadcastReceiver() {
             LocationService.startFromBoot(context)
         }
 
-        // Release boot wakelock after a short delay — the service now holds its own
-        try {
-            if (wakelock?.isHeld == true) {
-                wakelock.release()
-            }
-        } catch (_: Exception) { }
+        // Wakelock auto-releases after 60s timeout (A-M5). Do NOT release it
+        // manually here — the foreground service start is asynchronous and the
+        // device could sleep before the service's onCreate acquires its own lock.
     }
 }

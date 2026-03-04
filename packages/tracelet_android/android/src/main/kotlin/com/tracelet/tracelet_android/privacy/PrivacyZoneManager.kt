@@ -47,21 +47,51 @@ class PrivacyZoneManager(
     fun isEnabled(): Boolean = configManager.getPrivacyZoneEnabled()
 
     // =========================================================================
+    // In-memory zone cache
+    // =========================================================================
+
+    /** Cached zones — invalidated on add/remove, avoids DB query per location. */
+    private var cachedZones: List<Map<String, Any?>>? = null
+
+    /** Returns zones from cache, refreshing from DB only when invalidated. */
+    private fun getCachedZones(): List<Map<String, Any?>> {
+        return cachedZones ?: database.getPrivacyZones().also { cachedZones = it }
+    }
+
+    /** Invalidate the zone cache — forces a DB re-query on next evaluate(). */
+    private fun invalidateCache() {
+        cachedZones = null
+    }
+
+    // =========================================================================
     // Zone CRUD (delegates to database)
     // =========================================================================
 
-    fun addZone(zone: Map<String, Any?>): Boolean = database.insertPrivacyZone(zone)
+    fun addZone(zone: Map<String, Any?>): Boolean {
+        val result = database.insertPrivacyZone(zone)
+        if (result) invalidateCache()
+        return result
+    }
 
     fun addZones(zones: List<Map<String, Any?>>): Boolean {
         zones.forEach { database.insertPrivacyZone(it) }
+        invalidateCache()
         return true
     }
 
-    fun removeZone(identifier: String): Boolean = database.deletePrivacyZone(identifier)
+    fun removeZone(identifier: String): Boolean {
+        val result = database.deletePrivacyZone(identifier)
+        if (result) invalidateCache()
+        return result
+    }
 
-    fun removeAllZones(): Boolean = database.deleteAllPrivacyZones()
+    fun removeAllZones(): Boolean {
+        val result = database.deleteAllPrivacyZones()
+        invalidateCache()
+        return result
+    }
 
-    fun getZones(): List<Map<String, Any?>> = database.getPrivacyZones()
+    fun getZones(): List<Map<String, Any?>> = getCachedZones()
 
     // =========================================================================
     // Location evaluation
@@ -89,7 +119,7 @@ class PrivacyZoneManager(
     fun evaluate(latitude: Double, longitude: Double): EvaluationResult {
         if (!isEnabled()) return EvaluationResult(null, null)
 
-        val zones = database.getPrivacyZones()
+        val zones = getCachedZones()
         if (zones.isEmpty()) return EvaluationResult(null, null)
 
         var matchedAction: Int? = null
@@ -104,7 +134,7 @@ class PrivacyZoneManager(
             if (distance <= zoneRadius) {
                 val action = (zone["action"] as? Number)?.toInt() ?: ACTION_EXCLUDE
                 // Most restrictive wins: exclude(0) > eventOnly(2) > degrade(1)
-                if (matchedAction == null || isMoreRestrictive(action, matchedAction)) {
+                if (matchedAction == null || isActionMoreRestrictive(action, matchedAction)) {
                     matchedAction = action
                     matchedZone = zone
                 }
@@ -204,10 +234,6 @@ class PrivacyZoneManager(
             }
         }
     }
-
-    /** Returns `true` if [a] is more restrictive than [b]. */
-    private fun isMoreRestrictive(a: Int, b: Int): Boolean =
-        isActionMoreRestrictive(a, b)
 
     /**
      * Haversine great-circle distance between two points in metres.

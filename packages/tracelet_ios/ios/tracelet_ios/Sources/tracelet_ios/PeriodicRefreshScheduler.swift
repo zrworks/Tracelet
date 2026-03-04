@@ -125,19 +125,26 @@ final class PeriodicRefreshScheduler {
         // Request background execution time for the location fix
         let bgTaskId = BackgroundTaskHelper.shared.begin("periodicRefreshFix")
 
+        // Set expiration handler so iOS can reclaim the task gracefully.
+        if #available(iOS 13.0, *) {
+            (task as? BGTask)?.expirationHandler = {
+                BackgroundTaskHelper.shared.end(bgTaskId)
+            }
+        }
+
         // Invoke the callback (performs one-shot location fix)
         onWakeUp?()
 
         // Re-schedule the next wake-up
         scheduleNext()
 
-        // Complete the BGTask
-        if #available(iOS 13.0, *) {
-            (task as? BGTask)?.setTaskCompleted(success: true)
-        }
-
-        // End background task after a delay to allow the location fix to complete
+        // Defer BGTask completion to give the async location fix time to
+        // return results (I-M4). Previously setTaskCompleted was called
+        // synchronously, allowing iOS to suspend the app before the fix.
         DispatchQueue.main.asyncAfter(deadline: .now() + 15) {
+            if #available(iOS 13.0, *) {
+                (task as? BGTask)?.setTaskCompleted(success: true)
+            }
             BackgroundTaskHelper.shared.end(bgTaskId)
         }
     }

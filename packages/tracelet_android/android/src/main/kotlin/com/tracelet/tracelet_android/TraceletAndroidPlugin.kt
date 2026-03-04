@@ -99,7 +99,7 @@ class TraceletAndroidPlugin :
         eventDispatcher.register(binding.binaryMessenger)
 
         // Persistence
-        configManager = ConfigManager(context)
+        configManager = ConfigManager.getInstance(context)
         stateManager = StateManager(context)
         database = TraceletDatabase.getInstance(context)
 
@@ -833,12 +833,23 @@ class TraceletAndroidPlugin :
     private fun handleSetConfig(call: MethodCall, result: Result) {
         @Suppress("UNCHECKED_CAST")
         val configMap = call.arguments as? Map<String, Any?> ?: emptyMap()
+
+        // Capture location-relevant config before merge to avoid unnecessary restart (A-M4).
+        val oldConfig = configManager.getConfig()
         val merged = configManager.setConfig(configMap)
 
-        // Restart affected subsystems if currently tracking
+        // Only restart location engine when location-affecting keys actually changed.
         if (stateManager.enabled) {
-            locationEngine.stop()
-            locationEngine.start()
+            val locationKeys = listOf(
+                "desiredAccuracy", "distanceFilter", "locationUpdateInterval",
+                "fastestLocationUpdateInterval", "stationaryRadius", "deferTime",
+                "disableElasticity", "elasticityMultiplier",
+            )
+            val needsRestart = locationKeys.any { key -> oldConfig[key] != merged[key] }
+            if (needsRestart) {
+                locationEngine.stop()
+                locationEngine.start()
+            }
         }
 
         updateBootReceiverState()
@@ -1121,15 +1132,20 @@ class TraceletAndroidPlugin :
         heartbeatRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
-                locationEngine.getCurrentPosition(emptyMap()) { location ->
-                    // Use fresh fix, fall back to last known location, or empty map
-                    val locationData = location
-                        ?: locationEngine.getLastLocation()?.let {
-                            locationEngine.enrichLocation(it, "heartbeat")
-                        }
-                        ?: emptyMap()
-                    // Wrap in {"location": ...} to match HeartbeatEvent.fromMap
+
+                // Prefer the last known location when tracking is active to
+                // avoid activating GPS for a fresh fix on every heartbeat
+                // interval (A-H7). Fall back to getCurrentPosition only if
+                // no recent location is available.
+                val cached = locationEngine.getLastLocation()
+                if (cached != null) {
+                    val locationData = locationEngine.enrichLocation(cached, "heartbeat")
                     eventDispatcher.sendHeartbeat(mapOf("location" to locationData))
+                } else {
+                    locationEngine.getCurrentPosition(emptyMap()) { location ->
+                        val locationData = location ?: emptyMap()
+                        eventDispatcher.sendHeartbeat(mapOf("location" to locationData))
+                    }
                 }
                 mainHandler.postDelayed(this, intervalSeconds * 1000L)
             }

@@ -20,13 +20,18 @@ class WebPermissionsEngine {
   /// Subscription to online/offline events.
   bool _connectivityListening = false;
 
+  /// Cached JS wrappers for event listeners — `.toJS` must return the same
+  /// object for both `addEventListener` and `removeEventListener` (D-H6).
+  late final _onOnlineJS = _onOnline.toJS;
+  late final _onOfflineJS = _onOffline.toJS;
+
   /// Start listening for connectivity changes.
   void startConnectivityMonitoring() {
     if (_connectivityListening) return;
     _connectivityListening = true;
 
-    web.window.addEventListener('online', _onOnline.toJS);
-    web.window.addEventListener('offline', _onOffline.toJS);
+    web.window.addEventListener('online', _onOnlineJS);
+    web.window.addEventListener('offline', _onOfflineJS);
   }
 
   void _onOnline(web.Event event) {
@@ -42,8 +47,8 @@ class WebPermissionsEngine {
     if (!_connectivityListening) return;
     _connectivityListening = false;
 
-    web.window.removeEventListener('online', _onOnline.toJS);
-    web.window.removeEventListener('offline', _onOffline.toJS);
+    web.window.removeEventListener('online', _onOnlineJS);
+    web.window.removeEventListener('offline', _onOfflineJS);
   }
 
   // ---------------------------------------------------------------------------
@@ -220,15 +225,17 @@ class WebPermissionsEngine {
     return 'Unknown Browser';
   }
 
+  /// Pre-compiled browser version patterns — avoids recompiling on every call (D-M5).
+  static final List<RegExp> _browserVersionPatterns = [
+    RegExp(r'Chrome/(\d+[\.\d]*)'),
+    RegExp(r'Firefox/(\d+[\.\d]*)'),
+    RegExp(r'Safari/(\d+[\.\d]*)'),
+    RegExp(r'Edg/(\d+[\.\d]*)'),
+    RegExp(r'OPR/(\d+[\.\d]*)'),
+  ];
+
   static String _parseBrowserVersion(String ua) {
-    // Try to extract version from common patterns.
-    final patterns = [
-      RegExp(r'Chrome/(\d+[\.\d]*)'),
-      RegExp(r'Firefox/(\d+[\.\d]*)'),
-      RegExp(r'Safari/(\d+[\.\d]*)'),
-      RegExp(r'Edg/(\d+[\.\d]*)'),
-      RegExp(r'OPR/(\d+[\.\d]*)'),
-    ];
+    final patterns = _browserVersionPatterns;
     for (final p in patterns) {
       final match = p.firstMatch(ua);
       if (match != null) return match.group(1) ?? '';

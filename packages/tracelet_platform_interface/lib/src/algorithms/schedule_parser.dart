@@ -40,31 +40,14 @@ class ScheduleParser {
   /// - The time range is inclusive of start, exclusive of end.
   ///
   /// Returns `false` for malformed strings.
+  // Delegates to [parse()] to avoid duplicating the parsing logic (D-L3).
   static bool matchesSchedule(String schedule, DateTime now) {
-    final parts = schedule.trim().split(' ');
-    if (parts.length != 2) return false;
-
-    final dayRange = parts[0].split('-');
-    final timeRange = parts[1].split('-');
-    if (dayRange.length != 2 || timeRange.length != 2) return false;
-
-    try {
-      final dayStart = int.parse(dayRange[0]);
-      final dayEnd = int.parse(dayRange[1]);
-
-      // Dart DateTime.weekday is already ISO 8601 (1=Monday, 7=Sunday).
-      final isoDay = now.weekday;
-      if (isoDay < dayStart || isoDay > dayEnd) return false;
-
-      final startMinutes = _parseTime(timeRange[0]);
-      final endMinutes = _parseTime(timeRange[1]);
-      if (startMinutes == null || endMinutes == null) return false;
-
-      final currentMinutes = now.hour * 60 + now.minute;
-      return currentMinutes >= startMinutes && currentMinutes < endMinutes;
-    } catch (_) {
-      return false;
-    }
+    final w = parse(schedule);
+    if (w == null) return false;
+    final day = now.weekday;
+    if (day < w.dayStart || day > w.dayEnd) return false;
+    final mins = now.hour * 60 + now.minute;
+    return mins >= w.startMinutes && mins < w.endMinutes;
   }
 
   /// Parse a schedule string into a [ScheduleWindow], or `null` if

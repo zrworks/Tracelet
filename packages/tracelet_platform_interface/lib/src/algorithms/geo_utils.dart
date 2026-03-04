@@ -36,17 +36,19 @@ class GeoUtils {
     required double lng,
     required List<List<double>> vertices,
   }) {
-    if (vertices.any((v) => v.length < 2)) return false;
-
     var inside = false;
     final n = vertices.length;
     var j = n - 1;
 
     for (var i = 0; i < n; i++) {
-      final yi = vertices[i][0]; // lat
-      final xi = vertices[i][1]; // lng
-      final yj = vertices[j][0];
-      final xj = vertices[j][1];
+      final vi = vertices[i];
+      if (vi.length < 2) return false; // validate inline (D-M2)
+      final yi = vi[0]; // lat
+      final xi = vi[1]; // lng
+      final vj = vertices[j];
+      if (vj.length < 2) return false;
+      final yj = vj[0];
+      final xj = vj[1];
 
       if ((yi > lat) != (yj > lat) &&
           lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) {

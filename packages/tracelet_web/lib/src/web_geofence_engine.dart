@@ -19,6 +19,11 @@ class WebGeofenceEngine {
   final Map<String, Map<String, Object?>> _geofences =
       <String, Map<String, Object?>>{};
 
+  /// Pre-converted polygon vertices cache: identifier → vertices.
+  /// Avoids re-converting `List<Object?>` → `List<List<double>>` on every fix.
+  final Map<String, List<List<double>>> _cachedVertices =
+      <String, List<List<double>>>{};
+
   /// Geofences the device is currently inside: identifier → entry time.
   final Map<String, DateTime> _insideGeofences = <String, DateTime>{};
 
@@ -33,6 +38,28 @@ class WebGeofenceEngine {
     final id = geofence['identifier'] as String?;
     if (id == null || id.isEmpty) return false;
     _geofences[id] = Map<String, Object?>.from(geofence);
+
+    // Pre-convert polygon vertices once at add-time (D-H5).
+    final verticesRaw = geofence['vertices'] as List<Object?>?;
+    if (verticesRaw != null && verticesRaw.length >= 3) {
+      final converted = <List<double>>[];
+      for (final v in verticesRaw) {
+        if (v is List) {
+          final latV = (v[0] as num?)?.toDouble();
+          final lngV = (v[1] as num?)?.toDouble();
+          if (latV != null && lngV != null) {
+            converted.add(<double>[latV, lngV]);
+          }
+        }
+      }
+      if (converted.length >= 3) {
+        _cachedVertices[id] = converted;
+      } else {
+        _cachedVertices.remove(id);
+      }
+    } else {
+      _cachedVertices.remove(id);
+    }
     return true;
   }
 
@@ -45,6 +72,7 @@ class WebGeofenceEngine {
 
   bool removeGeofence(String identifier) {
     _geofences.remove(identifier);
+    _cachedVertices.remove(identifier);
     _insideGeofences.remove(identifier);
     _dwellTimers[identifier]?.cancel();
     _dwellTimers.remove(identifier);
@@ -53,6 +81,7 @@ class WebGeofenceEngine {
 
   bool removeGeofences() {
     _geofences.clear();
+    _cachedVertices.clear();
     _insideGeofences.clear();
     for (final t in _dwellTimers.values) {
       t.cancel();
@@ -96,25 +125,17 @@ class WebGeofenceEngine {
 
       if (fenceLat == null || fenceLon == null) continue;
 
-      // Check if this is a polygon geofence (has vertices)
-      final verticesRaw = fence['vertices'] as List<Object?>?;
+      // Check if this is a polygon geofence (has cached vertices)
+      final cachedVerts = _cachedVertices[id];
       final bool isInside;
 
-      if (verticesRaw != null && verticesRaw.length >= 3) {
-        // Polygon geofence: convert vertices to List<List<double>> for ray-casting
-        final vertices = <List<double>>[];
-        for (final v in verticesRaw) {
-          if (v is List) {
-            final latV = (v[0] as num?)?.toDouble();
-            final lngV = (v[1] as num?)?.toDouble();
-            if (latV != null && lngV != null) {
-              vertices.add(<double>[latV, lngV]);
-            }
-          }
-        }
-        isInside = vertices.length >= 3
-            ? GeoUtils.isPointInPolygon(lat: lat, lng: lon, vertices: vertices)
-            : false;
+      if (cachedVerts != null) {
+        // Polygon geofence: use cached pre-converted vertices.
+        isInside = GeoUtils.isPointInPolygon(
+          lat: lat,
+          lng: lon,
+          vertices: cachedVerts,
+        );
       } else {
         // Circular geofence: use Haversine distance check
         final distance = GeoUtils.haversine(lat, lon, fenceLat, fenceLon);

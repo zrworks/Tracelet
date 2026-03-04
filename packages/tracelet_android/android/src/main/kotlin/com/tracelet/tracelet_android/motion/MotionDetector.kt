@@ -94,7 +94,8 @@ class MotionDetector(
     private val isAccelerometerOnlyMode: Boolean
         get() = config.isMotionActivityUpdatesDisabled()
 
-    /** Counter for consecutive still samples in accelerometer-only mode. */
+    /** Counter for consecutive still samples in accelerometer-only mode (A-M10). */
+    @Volatile
     private var consecutiveStillSamples = 0
 
     // =========================================================================

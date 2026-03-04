@@ -45,57 +45,58 @@ jobs:
           flutter test test/tracelet_benchmark_test.dart --reporter expanded 2>&1 | tee benchmark_output.txt
 
           # Extract the JSON block between "--- JSON ---" and the closing "}"
-          STARTED=false
-          JSON=""
-          while IFS= read -r line; do
-            if [[ "$line" == *"--- JSON ---"* ]]; then
-              STARTED=true
-              continue
-            fi
-            if $STARTED; then
-              JSON+="$line"$'\n'
-              if [[ "$line" == "}" ]]; then
-                break
-              fi
-            fi
-          done < benchmark_output.txt
-
-          echo "$JSON" > benchmark_results.json
-
-          # Extract the markdown table
-          TABLE=$(sed -n '/| Benchmark | ops\/sec/,/^$/p' benchmark_output.txt)
-          echo "table<<EOF" >> $GITHUB_OUTPUT
-          echo "$TABLE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          python3 -c "
+          import pathlib, re
+          text = pathlib.Path('benchmark_output.txt').read_text()
+          # Find JSON block after '--- JSON ---' marker
+          match = re.search(r'--- JSON ---\s*\n(\{.*?\n\})', text, re.DOTALL)
+          if match:
+              pathlib.Path('benchmark_results.json').write_text(match.group(1))
+              print('Extracted benchmark_results.json')
+          else:
+              print('WARNING: No JSON block found in benchmark output')
+              pathlib.Path('benchmark_results.json').write_text('{}')
+          "
 
       - name: Update BENCHMARK.md
         working-directory: benchmark
         run: |
-          DATE=$(date -u +%Y-%m-%d)
-          DART_VERSION=$(dart --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1)
-          COMMIT_SHA=$(git rev-parse --short HEAD)
+          python3 -c "
+          import subprocess, re, pathlib
 
-          # Build the new entry
-          ENTRY="### $DATE — Commit $COMMIT_SHA
+          date = subprocess.check_output(['date', '-u', '+%Y-%m-%d'], text=True).strip()
+          dart_ver = subprocess.check_output(['dart', '--version'], text=True, stderr=subprocess.STDOUT)
+          dart_ver = re.search(r'\d+\.\d+\.\d+', dart_ver).group()
+          commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], text=True).strip()
 
-          **Environment:** Dart $DART_VERSION, ubuntu-latest (CI)
+          # Read the markdown table from benchmark output
+          output = pathlib.Path('benchmark_output.txt').read_text()
+          table_match = re.search(r'(\| Benchmark \|.*?)(?=\n\n|\n---|\Z)', output, re.DOTALL)
+          table = table_match.group(1).strip() if table_match else '(no table captured)'
 
-          ${{ steps.bench.outputs.table }}
+          entry = f'''### {date} — Commit {commit}
+
+          **Environment:** Dart {dart_ver}, ubuntu-latest (CI)
+
+          {table}
+          '''
+          # Dedent the entry (remove leading 10-space indent from heredoc)
+          import textwrap
+          entry = textwrap.dedent(entry)
+
+          bm = pathlib.Path('../BENCHMARK.md')
+          content = bm.read_text()
+
+          marker = '## Results History'
+          if marker in content:
+              idx = content.index(marker) + len(marker)
+              content = content[:idx] + '\n\n' + entry + content[idx:]
+          else:
+              content += f'\n{marker}\n\n{entry}\n'
+
+          bm.write_text(content)
+          print(f'Updated BENCHMARK.md with entry for {date} ({commit})')
           "
-
-          # Append the entry to BENCHMARK.md before the last entry
-          # Find the line "## Results History" and append after it
-          if grep -q "## Results History" ../BENCHMARK.md; then
-            # Insert new entry after "## Results History" line
-            sed -i "/^## Results History$/a\\
-          \\
-          $ENTRY" ../BENCHMARK.md
-          else
-            echo "" >> ../BENCHMARK.md
-            echo "## Results History" >> ../BENCHMARK.md
-            echo "" >> ../BENCHMARK.md
-            echo "$ENTRY" >> ../BENCHMARK.md
-          fi
 
       - name: Commit benchmark results
         run: |
@@ -112,7 +113,7 @@ jobs:
           fi
 
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: |

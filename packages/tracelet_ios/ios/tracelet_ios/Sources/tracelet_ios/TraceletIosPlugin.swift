@@ -586,6 +586,17 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             return
         }
 
+        // Guard: killed-state relaunch requires "Always" authorization.
+        // If the user only granted "When In Use" or revoked permission,
+        // do NOT resume tracking — it would run without valid authorization
+        // and violate platform policy.
+        let authStatus = locationEngine.getAuthorizationStatus()
+        guard authStatus == 3 else { // 3 = authorizedAlways
+            NSLog("[Tracelet] Auto-resume skipped — authorization is \(authStatus) (not Always), disabling tracking state")
+            stateManager.enabled = false
+            return
+        }
+
         // The plugin was registered by Flutter, so subsystems are initialized.
         // However, ready() hasn't been called from Dart yet (no UI).
         // We can directly start native engines since config is persisted.

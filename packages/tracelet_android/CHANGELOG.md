@@ -1,3 +1,8 @@
+## 0.11.3
+
+- **FIX**: Add `ACCESS_BACKGROUND_LOCATION` permission checks to all killed-state restart paths — `BootReceiver`, `LocationService.onTaskRemoved()`, `LocationService.startBootTracking()`, `PeriodicAlarmReceiver`, and `PeriodicLocationWorker`. Prevents "While In Use" permission from triggering tracking in killed/boot state.
+- **FEAT**: New `hasBackgroundPermission()` utility on `LocationEngine` for proactive background permission verification.
+
 ## 0.11.2
 
 - **CHORE**: Tighten `tracelet_platform_interface` constraint to `^0.11.2`.

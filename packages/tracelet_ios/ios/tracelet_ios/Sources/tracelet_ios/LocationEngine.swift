@@ -209,8 +209,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         NSLog("[Tracelet] performPeriodicFix: requesting one-shot GPS fix")
         let bgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
 
-        // Temporarily enable background location for this single fix
-        locationManager.allowsBackgroundLocationUpdates = true
+        // Only enable background location for this fix if "Always" is granted.
+        locationManager.allowsBackgroundLocationUpdates = hasAlwaysAuthorization
         locationManager.requestLocation()
 
         // Timeout: restore state after locationTimeout seconds if no callback
@@ -236,8 +236,18 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Configuration
 
+    /// Whether the user has granted "Always" location authorization.
+    /// Only "Always" permits background location updates when the app
+    /// is suspended or terminated.
+    private var hasAlwaysAuthorization: Bool {
+        return getAuthorizationStatus() == 3
+    }
+
     private func configureLocationManager() {
-        locationManager.allowsBackgroundLocationUpdates = true
+        // Only enable background location updates if "Always" is granted.
+        // With "When In Use" only, setting this flag would wrongly extend
+        // the foreground authorization into a killed-state context.
+        locationManager.allowsBackgroundLocationUpdates = hasAlwaysAuthorization
         locationManager.showsBackgroundLocationIndicator = configManager.getShowsBackgroundLocationIndicator()
         locationManager.pausesLocationUpdatesAutomatically = configManager.getPausesLocationUpdatesAutomatically()
 

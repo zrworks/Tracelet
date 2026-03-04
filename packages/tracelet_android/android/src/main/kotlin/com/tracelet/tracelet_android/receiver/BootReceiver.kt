@@ -3,9 +3,11 @@ package com.tracelet.tracelet_android.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.tracelet.tracelet_android.ConfigManager
 import com.tracelet.tracelet_android.StateManager
 import com.tracelet.tracelet_android.location.PeriodicLocationWorker
@@ -42,6 +44,22 @@ class BootReceiver : BroadcastReceiver() {
         if (!configManager.getStartOnBoot()) {
             Log.d(TAG, "startOnBoot is false, skipping")
             return
+        }
+
+        // Guard: background location permission is required for boot restart.
+        // If the user only granted "While In Use" or revoked permission,
+        // do not attempt tracking — it would silently fail or violate policy.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val hasBackground = ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasBackground) {
+                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted — cannot restart tracking on boot")
+                // Persist disabled state so the plugin doesn't retry on next boot
+                val statePrefs = context.getSharedPreferences("com.tracelet.state", Context.MODE_PRIVATE)
+                statePrefs.edit().putBoolean("enabled", false).apply()
+                return
+            }
         }
 
         val stateManager = StateManager(context)

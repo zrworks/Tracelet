@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.3
+
+- **CHORE**: Version bump for platform consistency.
+
 ## 0.11.2
 
 - **FIX**: Fix LICENSE file formatting so pana correctly detects Apache-2.0.

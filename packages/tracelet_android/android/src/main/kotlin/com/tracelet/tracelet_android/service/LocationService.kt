@@ -1,8 +1,10 @@
 package com.tracelet.tracelet_android.service
 
+import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Handler
@@ -11,6 +13,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.tracelet.tracelet_android.ConfigManager
 import com.tracelet.tracelet_android.EventDispatcher
 import com.tracelet.tracelet_android.StateManager
@@ -171,6 +174,24 @@ class LocationService : Service() {
         // The plugin's LocationEngine is about to be destroyed when the
         // FlutterEngine is torn down, so we bootstrap native tracking.
         if (!configManager.getStopOnTerminate()) {
+
+            // Guard: verify background location permission before attempting
+            // to continue tracking in a killed/background context.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val hasBackground = ContextCompat.checkSelfPermission(
+                    applicationContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!hasBackground) {
+                    Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted — stopping tracking on task removal")
+                    stopBootTrackingInternal()
+                    releaseOemWakelock()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    isRunning = false
+                    return
+                }
+            }
+
             val state = StateManager(applicationContext)
 
             // For periodic mode without foreground service, we don't need
@@ -268,6 +289,18 @@ class LocationService : Service() {
         if (bootLocationEngine != null) return // Already tracking
 
         val ctx = applicationContext
+
+        // Guard: require background location permission for boot/task-removal tracking.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val hasBackground = ContextCompat.checkSelfPermission(
+                ctx, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasBackground) {
+                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted \u2014 cannot bootstrap boot tracking")
+                return
+            }
+        }
+
         val config = ConfigManager(ctx)
         val state = StateManager(ctx)
         val database = TraceletDatabase.getInstance(ctx)

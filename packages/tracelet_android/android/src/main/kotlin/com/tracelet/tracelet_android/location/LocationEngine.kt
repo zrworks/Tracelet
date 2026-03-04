@@ -824,6 +824,21 @@ class LocationEngine(
     }
 
     /**
+     * Returns `true` if the app holds ACCESS_BACKGROUND_LOCATION (API 29+).
+     * On API < 29, foreground permission implies background access.
+     */
+    fun hasBackgroundPermission(): Boolean {
+        if (!hasPermission()) return false
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Pre-Q: foreground grant implies background
+        }
+    }
+
+    /**
      * Persists a location to the database only if allowed by persistMode.
      * Also runs retention pruning (maxDaysToPersist / maxRecordsToPersist).
      *

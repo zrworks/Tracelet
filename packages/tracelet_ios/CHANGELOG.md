@@ -1,3 +1,8 @@
+## 0.11.3
+
+- **FIX**: Add `.authorizedAlways` guard to `autoResumeTracking()` — prevents "When In Use" permission from triggering tracking after app is relaunched from killed state via significant-location-change.
+- **FIX**: Guard `allowsBackgroundLocationUpdates` in `configureLocationManager()` and `performPeriodicFix()` — only set to `true` when Always authorization is granted.
+
 ## 0.11.2
 
 - **CHORE**: Tighten `tracelet_platform_interface` constraint to `^0.11.2`.

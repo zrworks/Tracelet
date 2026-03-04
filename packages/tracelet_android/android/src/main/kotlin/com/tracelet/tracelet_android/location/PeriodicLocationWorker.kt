@@ -4,11 +4,13 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.work.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -201,6 +203,23 @@ class PeriodicLocationWorker(
     }
 
     override suspend fun doWork(): Result {
+        // Proactive background permission check — if the user revoked
+        // "Allow all the time" permission, stop periodic scheduling early
+        // instead of relying on the SecurityException from FusedLocation.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val hasBackground = ContextCompat.checkSelfPermission(
+                applicationContext, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasBackground) {
+                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION revoked \u2014 stopping periodic work")
+                // Mark tracking disabled so alarms / re-schedules also stop.
+                StateManager(applicationContext).apply {
+                    enabled = false
+                }
+                return Result.failure()
+            }
+        }
+
         return try {
             val config = ConfigManager(applicationContext)
             val state = StateManager(applicationContext)

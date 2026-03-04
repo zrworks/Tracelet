@@ -1,3 +1,8 @@
+## 0.11.3
+
+- **FIX**: [Android] Enforce `ACCESS_BACKGROUND_LOCATION` check on all killed-state restart paths (boot receiver, task removal, periodic alarms/workers). "While In Use" permission no longer triggers background tracking.
+- **FIX**: [iOS] Enforce `.authorizedAlways` check on killed-state auto-resume and guard `allowsBackgroundLocationUpdates`. "When In Use" permission no longer triggers tracking from killed state.
+
 ## 0.11.2
 
 - **DOCS**: Fix 22 unresolved dartdoc references (`[Enterprise]`, `[Config.*]`, `[isValid]`, `[brokenAtIndex]`, `[brokenAtUuid]`).

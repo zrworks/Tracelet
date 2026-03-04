@@ -97,6 +97,9 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         isPeriodicTracking = true
         isTracking = true // so delegate callbacks are processed
 
+        let interval = configManager.getPeriodicLocationInterval()
+        NSLog("[Tracelet] startPeriodic: interval=%ds, accuracy=%d", interval, configManager.getPeriodicDesiredAccuracy())
+
         configureLocationManagerForPeriodic()
 
         // Significant location changes as a fallback wake-up mechanism
@@ -203,6 +206,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     func performPeriodicFix() {
         guard isPeriodicTracking else { return }
 
+        NSLog("[Tracelet] performPeriodicFix: requesting one-shot GPS fix")
         let bgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
 
         // Temporarily enable background location for this single fix
@@ -531,7 +535,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 return
             case .eventOnly:
                 // Dispatch to Flutter but do NOT persist or audit.
-                let data = privacyResult.location ?? locationMap
+                var data = privacyResult.location ?? locationMap
+                if isPeriodicTracking { data["event"] = "periodic" }
                 eventDispatcher.sendLocation(data)
                 onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
                 if isPeriodicTracking {
@@ -542,12 +547,14 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
             case .degraded:
                 // Use degraded coordinates for audit + persist + dispatch.
                 var degraded = privacyResult.location ?? locationMap
+                let pzEventTag = isPeriodicTracking ? "periodic" : "location"
+                degraded["event"] = pzEventTag
                 if let auditFields = auditTrailManager?.appendToChain(degraded) {
                     for (key, value) in auditFields {
                         degraded[key] = value
                     }
                 }
-                persistLocationIfAllowed(degraded, event: "location")
+                persistLocationIfAllowed(degraded, event: pzEventTag)
                 eventDispatcher.sendLocation(degraded)
                 onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
                 if isPeriodicTracking {
@@ -567,7 +574,10 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 dispatchMap[key] = value
             }
         }
-        persistLocationIfAllowed(dispatchMap, event: "location")
+        // Tag periodic fixes so Dart can distinguish them from continuous-mode events
+        let eventTag = isPeriodicTracking ? "periodic" : "location"
+        dispatchMap["event"] = eventTag
+        persistLocationIfAllowed(dispatchMap, event: eventTag)
         eventDispatcher.sendLocation(dispatchMap)
 
         // Notify geofenceModeHighAccuracy listener (if active)
@@ -576,6 +586,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // In periodic mode, immediately stop GPS after receiving the fix
         // to minimise blue-arrow visibility.
         if isPeriodicTracking {
+            NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
+                  location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
             locationManager.stopUpdatingLocation()
             locationManager.allowsBackgroundLocationUpdates = false
         }

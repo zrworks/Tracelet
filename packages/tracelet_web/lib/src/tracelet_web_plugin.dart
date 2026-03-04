@@ -446,6 +446,12 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
+  Future<bool> canScheduleExactAlarms() async => true; // no restriction on web
+
+  @override
+  Future<bool> openExactAlarmSettings() async => false; // no-op on web
+
+  @override
   Future<int> getMotionPermissionStatus() async => 3; // always granted
 
   @override

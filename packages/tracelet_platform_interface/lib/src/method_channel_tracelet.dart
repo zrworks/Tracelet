@@ -298,6 +298,22 @@ class MethodChannelTracelet extends TraceletPlatform {
   }
 
   @override
+  Future<bool> canScheduleExactAlarms() async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'canScheduleExactAlarms',
+    );
+    return result ?? true; // Default: no restriction (pre-12 / iOS / web)
+  }
+
+  @override
+  Future<bool> openExactAlarmSettings() async {
+    final result = await _methodChannel.invokeMethod<bool>(
+      'openExactAlarmSettings',
+    );
+    return result ?? false;
+  }
+
+  @override
   Future<int> getMotionPermissionStatus() async {
     final result = await _methodChannel.invokeMethod<int>(
       'getMotionPermissionStatus',

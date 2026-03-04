@@ -119,10 +119,12 @@ class PeriodicLocationWorker(
         // =================================================================
 
         /**
-         * Schedules an exact alarm to fire after [intervalSeconds].
+         * Schedules an alarm to fire after [intervalSeconds].
          *
          * On Android 12+ (API 31), checks [AlarmManager.canScheduleExactAlarms]
-         * and falls back to inexact alarm if the permission is not granted.
+         * and falls back to a Doze-safe inexact alarm if the permission is
+         * not granted. The inexact fallback uses [setAndAllowWhileIdle] which
+         * can fire even in Doze mode, though timing is approximate.
          *
          * The alarm triggers [PeriodicAlarmReceiver], which enqueues a
          * [OneTimeWorkRequest] to perform the location fix.
@@ -136,9 +138,13 @@ class PeriodicLocationWorker(
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (!alarmManager.canScheduleExactAlarms()) {
-                    // Permission not granted — fall back to inexact alarm
-                    Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted — using inexact alarm")
-                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                    // Permission not granted — fall back to Doze-safe inexact alarm
+                    Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted — using setAndAllowWhileIdle (inexact but Doze-safe)")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                    } else {
+                        alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                    }
                     return
                 }
             }
@@ -153,9 +159,13 @@ class PeriodicLocationWorker(
                 }
                 Log.d(TAG, "Scheduled exact alarm in ${intervalSeconds}s")
             } catch (e: SecurityException) {
-                // Fallback on SecurityException (shouldn't happen after canScheduleExactAlarms check)
-                Log.w(TAG, "Exact alarm SecurityException — using inexact alarm", e)
-                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                // Fallback on SecurityException
+                Log.w(TAG, "Exact alarm SecurityException — using setAndAllowWhileIdle", e)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
+                }
             }
         }
 
@@ -233,13 +243,16 @@ class PeriodicLocationWorker(
                 Log.w(TAG, "Periodic fix failed: no location obtained")
             }
 
-            // Re-schedule next exact alarm if exact-alarm mode is active
-            if (state.enabled && state.trackingMode == 2 &&
-                config.getPeriodicUseExactAlarms()) {
-                scheduleExactAlarm(
-                    applicationContext,
-                    config.getPeriodicLocationInterval(),
-                )
+            // Re-schedule next alarm if periodic tracking is still active.
+            // Use exact alarms when explicitly configured OR when the interval
+            // is under 15 min (matching the auto-select logic in
+            // TraceletAndroidPlugin.handleStartPeriodic).
+            val interval = config.getPeriodicLocationInterval()
+            val useExact = config.getPeriodicUseExactAlarms() || interval < 900
+
+            if (state.enabled && state.trackingMode == 2 && useExact) {
+                scheduleExactAlarm(applicationContext, interval)
+                Log.d(TAG, "Re-scheduled next alarm in ${interval}s")
             }
 
             Result.success()
@@ -328,16 +341,21 @@ class PeriodicLocationWorker(
     private fun dispatchLocation(locationMap: Map<String, Any?>) {
         val dispatcher = eventDispatcher
         if (dispatcher != null) {
+            val hasListener = dispatcher.hasListener("location")
+            Log.d(TAG, "Dispatching to EventChannel (hasListener=$hasListener)")
             // Flutter engine is alive — dispatch via EventChannel on the main thread
             Handler(Looper.getMainLooper()).post {
                 dispatcher.sendLocation(locationMap)
             }
         } else {
+            Log.d(TAG, "EventDispatcher is null — trying headless dispatch")
             // App is in headless mode — dispatch via HeadlessTaskService
             try {
                 val headless = HeadlessTaskService(applicationContext)
                 if (headless.isRegistered()) {
                     headless.dispatchEvent("location", locationMap)
+                } else {
+                    Log.w(TAG, "Headless not registered — location event dropped!")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Headless dispatch failed: ${e.message}")

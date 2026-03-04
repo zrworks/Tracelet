@@ -7,6 +7,7 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.tracelet.tracelet_android.ConfigManager
@@ -42,6 +43,10 @@ class LocationEngine(
     private val events: EventDispatcher,
     private val db: TraceletDatabase,
 ) {
+    companion object {
+        private const val TAG = "LocationEngine"
+    }
+
     private val fusedClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
@@ -137,14 +142,23 @@ class LocationEngine(
      * [PeriodicLocationWorker].
      */
     fun startPeriodic() {
-        if (!hasPermission()) return
+        if (!hasPermission()) {
+            Log.w(TAG, "startPeriodic() — no location permission, aborting")
+            return
+        }
         stopPeriodic()
 
         val intervalMs = config.getPeriodicLocationInterval() * 1000L
+        Log.d(TAG, "startPeriodic() — interval=${intervalMs}ms")
 
         periodicRunnable = object : Runnable {
             override fun run() {
-                if (!state.enabled) return
+                if (!state.enabled) {
+                    Log.d(TAG, "periodic tick — state.enabled=false, skipping")
+                    return
+                }
+
+                Log.d(TAG, "periodic tick — requesting one-shot fix")
 
                 // Perform a one-shot fix using the periodic accuracy setting
                 val options = mapOf<String, Any?>(
@@ -153,11 +167,18 @@ class LocationEngine(
                     "samples" to 1,
                 )
                 getCurrentPosition(options) { location ->
-                    if (location != null) {
-                        val lat = location["latitude"] as? Double
-                        val lng = location["longitude"] as? Double
-                        val accuracy = location["accuracy"] as? Double
-                            ?: (location["coords"] as? Map<*, *>)?.get("accuracy") as? Double
+                    val resolved = location ?: run {
+                        // Fallback: use last known location if fresh fix failed
+                        Log.w(TAG, "periodic fix returned null — trying lastKnownLocation fallback")
+                        val last = getLastLocation()
+                        if (last != null) enrichLocation(last, "periodic") else null
+                    }
+
+                    if (resolved != null) {
+                        val lat = resolved["latitude"] as? Double
+                        val lng = resolved["longitude"] as? Double
+                        val accuracy = resolved["accuracy"] as? Double
+                            ?: (resolved["coords"] as? Map<*, *>)?.get("accuracy") as? Double
                             ?: 0.0
 
                         // Update odometer from distance since last periodic fix
@@ -180,15 +201,18 @@ class LocationEngine(
                         }
 
                         // Enrich with periodic event tag and updated odometer
-                        val enriched = location.toMutableMap()
+                        val enriched = resolved.toMutableMap()
                         enriched["event"] = "periodic"
                         enriched["odometer"] = state.odometer
                         events.sendLocation(enriched)
+                        Log.d(TAG, "periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy")
 
                         // Notify proximity-based geofence monitoring
                         if (lat != null && lng != null) {
                             onLocationUpdate?.invoke(lat, lng)
                         }
+                    } else {
+                        Log.w(TAG, "periodic fix — no location available (fresh + fallback both null)")
                     }
                 }
 

@@ -1,3 +1,13 @@
+## 0.11.1
+
+- **FIX**: Auto-select exact alarms for periodic intervals < 15 min without foreground service.
+- **FIX**: Re-scheduling chain in `PeriodicLocationWorker.doWork()` now uses `interval < 900` auto-detect to match initial scheduling strategy.
+- **FIX**: Doze-safe alarm fallback — changed `set()` to `setAndAllowWhileIdle()` in `scheduleExactAlarm()`.
+- **FIX**: Re-wire `EventDispatcher` in `onAttachedToEngine()` when periodic mode is already active (fixes null dispatcher after process restart).
+- **FIX**: Preserve periodic alarms in `destroyAll()` when `stopOnTerminate=false` and periodic tracking is active.
+- **FEAT**: Add `canScheduleExactAlarms` and `openExactAlarmSettings` method channel handlers.
+- **CHORE**: Bump platform interface to 0.11.1.
+
 ## 0.11.0
 
 - **FEAT**: `AuditTrailManager` — SHA-256 hash chain with SQLite persistence and SharedPreferences chain state.

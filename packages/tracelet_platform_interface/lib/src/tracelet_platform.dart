@@ -284,6 +284,35 @@ abstract class TraceletPlatform extends PlatformInterface {
     );
   }
 
+  /// Check whether the app can schedule exact alarms (Android 12+ / API 31+).
+  ///
+  /// Returns `true` if the app has the SCHEDULE_EXACT_ALARM permission
+  /// (auto-granted on Android 12, must be enabled in Settings on Android 13+).
+  ///
+  /// On Android < 12, iOS, and web, always returns `true` (no restriction).
+  ///
+  /// **When to use:** Before starting periodic mode with intervals under
+  /// 15 minutes. If `false`, timing will be approximate.
+  Future<bool> canScheduleExactAlarms() {
+    throw UnimplementedError(
+      'canScheduleExactAlarms() has not been implemented.',
+    );
+  }
+
+  /// Open the device Settings screen for granting exact alarm permission.
+  ///
+  /// On Android 12+ (API 31+), opens the "Alarms & reminders" settings
+  /// page for this app. The user must manually toggle the permission.
+  ///
+  /// On Android < 12, iOS, and web, this is a no-op.
+  ///
+  /// Returns `true` if the settings intent was launched, `false` otherwise.
+  Future<bool> openExactAlarmSettings() {
+    throw UnimplementedError(
+      'openExactAlarmSettings() has not been implemented.',
+    );
+  }
+
   /// Get the motion / activity recognition permission status.
   ///
   /// Returns:

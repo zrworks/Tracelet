@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1
+
+- **FEAT**: Add `canScheduleExactAlarms()` (returns `true`) and `openExactAlarmSettings()` (returns `false`) stub implementations.
+- **CHORE**: Bump platform interface to 0.11.1.
+
 ## 0.11.0
 
 - **FEAT**: Stub implementations for privacy zone and audit trail methods (no-op on web).

@@ -695,6 +695,31 @@ class Tracelet {
     return _platform.requestNotificationPermission();
   }
 
+  /// Check whether the app can schedule exact alarms.
+  ///
+  /// On Android 12+ (API 31+), returns whether SCHEDULE_EXACT_ALARM is
+  /// granted. On Android 12 it is auto-granted; on Android 13+ the user
+  /// must enable it in Settings.
+  ///
+  /// On Android < 12, iOS, and web, always returns `true`.
+  ///
+  /// **When to use:** Before calling [startPeriodic] with short intervals
+  /// (< 15 min). If `false`, periodic timing will be approximate.
+  static Future<bool> canScheduleExactAlarms() {
+    return _platform.canScheduleExactAlarms();
+  }
+
+  /// Open the device Settings screen for exact alarm permission.
+  ///
+  /// On Android 12+, opens the "Alarms & reminders" settings page for
+  /// this app. The user must manually toggle the switch.
+  ///
+  /// Returns `true` if the settings screen was opened, `false` otherwise.
+  /// On iOS and web, this is a no-op that returns `false`.
+  static Future<bool> openExactAlarmSettings() {
+    return _platform.openExactAlarmSettings();
+  }
+
   /// Get the motion / activity recognition permission status.
   ///
   /// Returns an `AuthorizationStatus` code:
@@ -1373,6 +1398,11 @@ class Tracelet {
   /// Returns a single-element list if the location passes all filters,
   /// or an empty list if it was filtered out. Used with [Stream.expand].
   static List<Location> _filterLocation(Location location) {
+    // Periodic locations bypass all filters — the user explicitly requested
+    // time-based tracking, so every fix should be delivered regardless of
+    // distance, accuracy, or speed thresholds.
+    if (location.event == 'periodic') return <Location>[location];
+
     final processor = _locationProcessor;
     if (processor == null) return <Location>[location];
 

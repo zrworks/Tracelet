@@ -67,19 +67,20 @@ class BootReceiver : BroadcastReceiver() {
             // Periodic mode without foreground service —
             // re-schedule WorkManager/AlarmManager work directly.
             // No foreground service needed (no persistent notification).
-            if (configManager.getPeriodicUseExactAlarms()) {
+            //
+            // Auto-select exact alarms when interval < 15 min, matching
+            // the same logic in TraceletAndroidPlugin.handleStartPeriodic().
+            val interval = configManager.getPeriodicLocationInterval()
+            val useExactAlarms = configManager.getPeriodicUseExactAlarms() ||
+                interval < 900
+
+            if (useExactAlarms) {
                 PeriodicLocationWorker.scheduleOneTime(context)
-                PeriodicLocationWorker.scheduleExactAlarm(
-                    context,
-                    configManager.getPeriodicLocationInterval(),
-                )
-                Log.d(TAG, "Periodic mode restored with exact alarms")
+                PeriodicLocationWorker.scheduleExactAlarm(context, interval)
+                Log.d(TAG, "Periodic mode restored with exact alarms (interval=${interval}s)")
             } else {
-                PeriodicLocationWorker.schedule(
-                    context,
-                    configManager.getPeriodicLocationInterval(),
-                )
-                Log.d(TAG, "Periodic mode restored with WorkManager")
+                PeriodicLocationWorker.schedule(context, interval)
+                Log.d(TAG, "Periodic mode restored with WorkManager (interval=${interval}s)")
             }
         } else {
             // Continuous (0), geofences (1), or periodic with foreground service —

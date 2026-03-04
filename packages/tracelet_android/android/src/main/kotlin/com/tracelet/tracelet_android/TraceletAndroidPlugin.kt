@@ -168,6 +168,12 @@ class TraceletAndroidPlugin :
 
         // Permissions
         permissionManager = PermissionManager(context)
+
+        // Re-wire EventDispatcher for periodic mode if it was already active
+        // (e.g., app returns to foreground after process restart by AlarmManager).
+        if (stateManager.enabled && stateManager.trackingMode == 2) {
+            PeriodicLocationWorker.eventDispatcher = eventDispatcher
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -273,6 +279,10 @@ class TraceletAndroidPlugin :
                 permissionManager.getNotificationPermissionStatus(activity)
             )
             "requestNotificationPermission" -> handleRequestNotificationPermission(result)
+            "canScheduleExactAlarms" -> result.success(
+                PeriodicLocationWorker.canScheduleExactAlarms(context)
+            )
+            "openExactAlarmSettings" -> handleOpenExactAlarmSettings(result)
             "getMotionPermissionStatus" -> result.success(
                 permissionManager.getMotionPermissionStatus(activity)
             )
@@ -508,32 +518,48 @@ class TraceletAndroidPlugin :
         // Wire the shared EventDispatcher so WorkManager workers can dispatch
         PeriodicLocationWorker.eventDispatcher = eventDispatcher
 
-        if (configManager.getPeriodicUseForegroundService()) {
+        // Determine scheduling strategy:
+        // - Foreground service: use in-process timer (any interval, shows notification)
+        // - Exact alarms: use AlarmManager (any interval, no notification)
+        // - WorkManager: battery-optimal (minimum 15 min, no notification)
+        //
+        // Auto-select exact alarms when interval < 15 min and foreground service
+        // is off, so short intervals work without a persistent notification.
+        val interval = configManager.getPeriodicLocationInterval()
+        val useForeground = configManager.getPeriodicUseForegroundService()
+        val useExactAlarms = configManager.getPeriodicUseExactAlarms() ||
+            (!useForeground && interval < 900)
+
+        if (useForeground) {
             // Strategy 2: Foreground service + timer (sub-15-min intervals)
             if (configManager.isForegroundServiceEnabled()) {
                 LocationService.start(context)
             }
             locationEngine.startPeriodic()
-        } else if (configManager.getPeriodicUseExactAlarms()) {
+        } else if (useExactAlarms) {
             // Strategy 3: AlarmManager exact alarms + OneTimeWorkRequest
             // Enables precise intervals (any duration) without foreground service.
-            // Requires SCHEDULE_EXACT_ALARM permission on Android 12+.
+            // Requires SCHEDULE_EXACT_ALARM permission on Android 12+ for exact timing.
+            // Falls back to Doze-safe inexact alarms if not granted.
             if (!PeriodicLocationWorker.canScheduleExactAlarms(context)) {
-                logger.warning("SCHEDULE_EXACT_ALARM not granted — falling back to WorkManager")
+                logger.warning(
+                    "SCHEDULE_EXACT_ALARM not granted — timing will be approximate. " +
+                    "Grant 'Alarms & reminders' permission in Settings for precise intervals."
+                )
             }
             // Perform initial fix immediately
             PeriodicLocationWorker.scheduleOneTime(context)
             // Schedule the first exact alarm for the next interval
             PeriodicLocationWorker.scheduleExactAlarm(
                 context,
-                configManager.getPeriodicLocationInterval(),
+                interval,
             )
         } else {
             // Strategy 1: WorkManager (default, battery-optimal)
             // No foreground service needed — GPS icon only during fix
             PeriodicLocationWorker.schedule(
                 context,
-                configManager.getPeriodicLocationInterval(),
+                interval,
             )
             // Perform immediate first fix so the user doesn't wait 15 min.
             PeriodicLocationWorker.scheduleOneTime(context)
@@ -546,12 +572,12 @@ class TraceletAndroidPlugin :
         eventDispatcher.sendEnabledChange(true)
 
         val strategy = when {
-            configManager.getPeriodicUseForegroundService() -> "foreground-service"
-            configManager.getPeriodicUseExactAlarms() -> "exact-alarms"
+            useForeground -> "foreground-service"
+            useExactAlarms -> "exact-alarms"
             else -> "workmanager"
         }
         logger.info("startPeriodic() — periodic tracking started " +
-            "(interval=${configManager.getPeriodicLocationInterval()}s, " +
+            "(interval=${interval}s, " +
             "strategy=$strategy)")
         result.success(stateManager.toMap(configManager.getConfig()))
     }
@@ -656,6 +682,33 @@ class TraceletAndroidPlugin :
 
         pendingPermissionResult = result
         permissionManager.requestNotificationPermission(act)
+    }
+
+    /**
+     * Opens the system Settings page for granting SCHEDULE_EXACT_ALARM.
+     *
+     * On Android 12+ (API 31+), launches ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+     * which shows the "Alarms & reminders" toggle for this app.
+     * On Android < 12, returns false (no restriction exists).
+     */
+    private fun handleOpenExactAlarmSettings(result: Result) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            result.success(false) // No restriction on pre-12
+            return
+        }
+
+        try {
+            val intent = Intent(
+                android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                android.net.Uri.parse("package:" + context.packageName)
+            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            result.success(true)
+        } catch (e: Exception) {
+            logger.warning("Failed to open exact alarm settings: " + e.message)
+            result.success(false)
+        }
     }
 
     /**
@@ -1155,7 +1208,17 @@ class TraceletAndroidPlugin :
         scheduleManager.stop()
         soundManager.stop()
         stopHeartbeat()
-        PeriodicLocationWorker.cancel(context)
+
+        // Only cancel periodic work if stopOnTerminate is true.
+        // When stopOnTerminate is false and periodic mode is active,
+        // the AlarmManager alarm must survive process death so that
+        // PeriodicAlarmReceiver can wake the app for background fixes.
+        val keepPeriodicAlive = !configManager.getStopOnTerminate()
+            && stateManager.enabled
+            && stateManager.trackingMode == 2
+        if (!keepPeriodicAlive) {
+            PeriodicLocationWorker.cancel(context)
+        }
         PeriodicLocationWorker.eventDispatcher = null
         GeofenceBroadcastReceiver.geofenceManager = null
     }

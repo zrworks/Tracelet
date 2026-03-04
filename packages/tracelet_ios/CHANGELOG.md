@@ -1,3 +1,10 @@
+## 0.11.1
+
+- **FIX**: Set `event: "periodic"` in all `didUpdateLocations` code paths for periodic tracking (was empty string).
+- **FEAT**: Add `canScheduleExactAlarms` (returns `true`) and `openExactAlarmSettings` (returns `false`) method channel stubs.
+- **CHORE**: Add NSLog diagnostic logging to `startPeriodic()` and `performPeriodicFix()`.
+- **CHORE**: Bump platform interface to 0.11.1.
+
 ## 0.11.0
 
 - **FEAT**: `AuditTrailManager` — SHA-256 hash chain with SQLite persistence and UserDefaults chain state.

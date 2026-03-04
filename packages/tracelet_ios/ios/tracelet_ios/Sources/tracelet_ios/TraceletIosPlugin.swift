@@ -331,6 +331,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             result(3) // iOS: not needed for foreground location — always "granted"
         case "requestNotificationPermission":
             result(3) // iOS: not needed for foreground location — always "granted"
+        case "canScheduleExactAlarms":
+            result(true) // iOS has no exact alarm permission — BGAppRefreshTask is used instead
+        case "openExactAlarmSettings":
+            result(false) // No-op on iOS — no exact alarm settings page
         case "getMotionPermissionStatus":
             result(motionDetector.getMotionAuthorizationStatus())
         case "requestMotionPermission":

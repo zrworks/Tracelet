@@ -1,3 +1,9 @@
+## 0.11.1
+
+- **FEAT**: Add `canScheduleExactAlarms()` and `openExactAlarmSettings()` static methods for Android exact alarm permission management.
+- **FIX**: Bypass `LocationProcessor` distance/accuracy/speed filters for periodic location events — every timed fix is now delivered regardless of movement.
+- **CHORE**: Bump platform interface to 0.11.1.
+
 ## 0.11.0
 
 - **FEAT**: Tamper-proof audit trail — SHA-256 hash chain for location integrity verification.

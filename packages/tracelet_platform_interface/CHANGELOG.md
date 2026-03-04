@@ -1,3 +1,7 @@
+## 0.11.1
+
+- **FEAT**: Add `canScheduleExactAlarms()` and `openExactAlarmSettings()` abstract methods to `TraceletPlatform` and MethodChannel implementations.
+
 ## 0.11.0
 
 - **FEAT**: Add privacy zone abstract methods to `TraceletPlatform` and MethodChannel implementations.

@@ -11,10 +11,25 @@ import 'map_page.dart';
 // When the app UI is killed (swiped away) or the device reboots, the native
 // side spins up a minimal Dart isolate and dispatches events here.
 // This runs WITHOUT any Flutter UI, so you cannot use setState/context/etc.
+//
+// Typical use cases:
+//  - Log the location to a file or external analytics
+//  - Upload the location to your server via HTTP
+//  - Show a local notification with the latest position
 // ─────────────────────────────────────────────────────────────────────────────
 @pragma('vm:entry-point')
 void headlessTask(tl.HeadlessEvent event) {
-  debugPrint('[Headless] ${event.name}: ${event.event}');
+  switch (event.name) {
+    case 'location':
+      final coords = event.event['coords'];
+      final coordsMap = coords is Map ? coords : null;
+      final lat = event.event['latitude'] ?? coordsMap?['latitude'];
+      final lng = event.event['longitude'] ?? coordsMap?['longitude'];
+      final eventType = event.event['event'] ?? 'unknown';
+      debugPrint('[Headless] $eventType location: lat=$lat, lng=$lng');
+    default:
+      debugPrint('[Headless] ${event.name}: ${event.event}');
+  }
 }
 
 void main() {
@@ -65,7 +80,8 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with WidgetsBindingObserver {
   // State
   bool _isReady = false;
   bool _isTracking = false;
@@ -80,6 +96,9 @@ class _DashboardPageState extends State<DashboardPage> {
   tl.HealthCheck? _lastHealthCheck;
   final List<_LogEntry> _log = [];
 
+  // Scroll controller for the main ListView
+  final ScrollController _scrollController = ScrollController();
+
   // Subscriptions
   final List<StreamSubscription<Object?>> _subs = [];
 
@@ -88,11 +107,63 @@ class _DashboardPageState extends State<DashboardPage> {
   bool get _isWeb => kIsWeb;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.dispose();
     for (final s in _subs) {
       s.cancel();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isReady && _isPeriodicMode) {
+      _syncMissedPeriodicLocations();
+    }
+  }
+
+  /// Loads any periodic locations captured while the app was in the background
+  /// (via headless dispatch) and displays them in the log.
+  Future<void> _syncMissedPeriodicLocations() async {
+    try {
+      final locs = await tl.Tracelet.getLocations();
+      if (locs.isEmpty) return;
+
+      // Find locations captured since the last one we displayed.
+      final lastTs = _lastLocation?.timestamp;
+      final missed = lastTs != null
+          ? locs.where((l) => l.timestamp.compareTo(lastTs) > 0).toList()
+          : locs;
+
+      if (missed.isEmpty) return;
+
+      _addLog(
+        'SYNC',
+        'Loaded ${missed.length} location(s) captured in background',
+      );
+      for (final loc in missed) {
+        final tag = loc.event == 'periodic' ? 'PERIODIC' : 'LOCATION';
+        _addLog(
+          tag,
+          '${loc.coords.latitude.toStringAsFixed(6)}, '
+          '${loc.coords.longitude.toStringAsFixed(6)}  '
+          'acc=${loc.coords.accuracy.toStringAsFixed(1)}m  '
+          'odo=${loc.odometer.toStringAsFixed(0)}m  '
+          '[bg-sync]',
+        );
+      }
+      // Update the map marker with the most recent location
+      setState(() => _lastLocation = missed.last);
+    } catch (e) {
+      _addLog('ERROR', 'Sync missed locations failed: $e');
+    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -104,6 +175,16 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _log.insert(0, _LogEntry(ts, tag, message));
       if (_log.length > 200) _log.removeLast();
+    });
+    // Auto-scroll the log panel to show the newest entry (at the top).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
@@ -132,11 +213,12 @@ class _DashboardPageState extends State<DashboardPage> {
           }
           if (parts.isNotEmpty) heuristicsInfo = '  heur=[${parts.join(', ')}]';
         }
+        final tag = loc.event == 'periodic' ? 'PERIODIC' : 'LOCATION';
         _addLog(
-          'LOCATION',
+          tag,
           '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}  '
-              'acc=${loc.coords.accuracy.toStringAsFixed(1)}m  spd=${loc.coords.speed.toStringAsFixed(1)}m/s  '
-              'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo',
+          'acc=${loc.coords.accuracy.toStringAsFixed(1)}m  spd=${loc.coords.speed.toStringAsFixed(1)}m/s  '
+          'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo',
         );
       }),
     );
@@ -397,11 +479,19 @@ class _DashboardPageState extends State<DashboardPage> {
         _isReady = true;
         _isTracking = state.enabled;
         _pluginState = state;
+        // Restore periodic mode flag from persisted native state
+        _isPeriodicMode = state.trackingMode == tl.TrackingMode.periodic;
       });
       _addLog(
         'READY',
         'enabled=${state.enabled}  mode=${state.trackingMode.name}  odometer=${state.odometer.toStringAsFixed(0)}m',
       );
+
+      // If periodic mode was active (e.g. after app kill + reopen), load
+      // any locations captured in the background via headless dispatch.
+      if (_isPeriodicMode && state.enabled) {
+        await _syncMissedPeriodicLocations();
+      }
     } catch (e) {
       _addLog('ERROR', 'ready() failed: $e');
     }
@@ -668,6 +758,10 @@ class _DashboardPageState extends State<DashboardPage> {
         _addLog('WARN', 'Call Initialize first');
         return;
       }
+      // Disable heartbeat — periodic mode already does one-shot fixes
+      await tl.Tracelet.setConfig(
+        const tl.Config(app: tl.AppConfig(heartbeatInterval: -1)),
+      );
       final state = await tl.Tracelet.startPeriodic();
       setState(() {
         _isTracking = state.enabled;
@@ -803,6 +897,13 @@ class _DashboardPageState extends State<DashboardPage> {
     if (confirmed != true) return;
 
     try {
+      // Check exact alarm permission for short intervals (< 15 min)
+      // without foreground service. Auto-selected by the plugin, but
+      // works best when the permission is granted.
+      if (_isAndroid && !useForegroundService && intervalMinutes < 15) {
+        await _ensureExactAlarmPermission();
+      }
+
       await tl.Tracelet.setConfig(
         tl.Config(
           geo: tl.GeoConfig(
@@ -811,6 +912,8 @@ class _DashboardPageState extends State<DashboardPage> {
             periodicUseForegroundService: useForegroundService,
             periodicUseExactAlarms: useExactAlarms,
           ),
+          // Disable heartbeat — periodic mode already does one-shot fixes
+          app: const tl.AppConfig(heartbeatInterval: -1),
         ),
       );
 
@@ -1488,6 +1591,52 @@ class _DashboardPageState extends State<DashboardPage> {
       return false;
     }
     return result == 3;
+  }
+
+  /// Ensure exact alarm permission for periodic mode with short intervals.
+  ///
+  /// On Android 13+, SCHEDULE_EXACT_ALARM is not auto-granted.
+  /// If not granted, shows a dialog and opens Settings. The plugin will
+  /// still work with approximate timing (Doze-safe inexact alarms).
+  Future<void> _ensureExactAlarmPermission() async {
+    final canSchedule = await tl.Tracelet.canScheduleExactAlarms();
+    if (canSchedule) return;
+
+    _addLog(
+      'WARN',
+      'Exact alarm permission not granted — timing may be approximate',
+    );
+
+    if (!mounted) return;
+    final shouldOpen = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Exact Alarm Permission'),
+        content: const Text(
+          'For precise periodic location timing, enable '
+          '"Alarms & reminders" for this app in Settings.\n\n'
+          'Without it, the interval timing will be approximate '
+          '(±1–5 minutes).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldOpen == true) {
+      final opened = await tl.Tracelet.openExactAlarmSettings();
+      if (opened) {
+        _addLog('CONFIG', 'Opened exact alarm settings');
+      }
+    }
   }
 
   /// Check and log motion permission status.
@@ -2790,18 +2939,42 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
 
                   const Divider(),
-
-                  // ── Event Log ──
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      'Event Log (${_log.length})',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                  ..._log.map((entry) => _LogTile(entry: entry)),
-                  const SizedBox(height: 80),
                 ],
+              ],
+            ),
+          ),
+
+          // ─── Always-visible Event Log panel ────────────────────────────
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              border: Border(
+                top: BorderSide(color: Theme.of(context).dividerColor),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    'Event Log (${_log.length})',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                SizedBox(
+                  height: 180,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: _log.length,
+                    itemBuilder: (_, i) => _LogTile(entry: _log[i]),
+                  ),
+                ),
               ],
             ),
           ),

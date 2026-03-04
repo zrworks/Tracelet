@@ -633,6 +633,28 @@ class Tracelet {
   /// Whether the device is currently in power-save (battery saver) mode.
   static Future<bool> get isPowerSaveMode => _platform.isPowerSaveMode();
 
+  /// Whether the app has background ("Always") location permission.
+  ///
+  /// Returns `true` when the current [AuthorizationStatus] is
+  /// [AuthorizationStatus.always] (status code `3`). Only "Always" permission
+  /// allows tracking to continue when the app is terminated, rebooted, or
+  /// otherwise in a killed state.
+  ///
+  /// Use this before calling [start], [startGeofences], or [startPeriodic]
+  /// to verify that killed-state tracking will work. If this returns `false`,
+  /// prompt the user to upgrade their permission via [requestPermission] or
+  /// [openAppSettings].
+  ///
+  /// ```dart
+  /// if (!await Tracelet.hasBackgroundPermission) {
+  ///   await Tracelet.requestPermission();
+  /// }
+  /// ```
+  static Future<bool> get hasBackgroundPermission async {
+    final status = await _platform.getPermissionStatus();
+    return status == AuthorizationStatus.always.index;
+  }
+
   /// Get the current permission status without triggering any dialog.
   ///
   /// Returns the [AuthorizationStatus] index:

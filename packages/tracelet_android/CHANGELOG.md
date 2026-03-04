@@ -1,3 +1,7 @@
+## 0.11.4
+
+- **CHORE**: Version bump for platform consistency.
+
 ## 0.11.3
 
 - **FIX**: Add `ACCESS_BACKGROUND_LOCATION` permission checks to all killed-state restart paths — `BootReceiver`, `LocationService.onTaskRemoved()`, `LocationService.startBootTracking()`, `PeriodicAlarmReceiver`, and `PeriodicLocationWorker`. Prevents "While In Use" permission from triggering tracking in killed/boot state.

@@ -1,3 +1,7 @@
+## 0.11.4
+
+- **FIX**: Revert over-aggressive `allowsBackgroundLocationUpdates` and significant-location guards — When In Use permission now works correctly for foreground and background tracking. iOS enforces permission at the OS level; only the killed-state entry point (`autoResumeTracking`) requires Always authorization.
+
 ## 0.11.3
 
 - **FIX**: Add `.authorizedAlways` guard to `autoResumeTracking()` — prevents "When In Use" permission from triggering tracking after app is relaunched from killed state via significant-location-change.

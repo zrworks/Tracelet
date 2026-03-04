@@ -1,3 +1,7 @@
+## 0.11.4
+
+- **FIX**: [iOS] Revert over-aggressive permission guards — When In Use permission now works correctly for all tracking modes. Only the killed-state auto-resume (`autoResumeTracking`) requires Always authorization. iOS enforces permission at the OS level.
+
 ## 0.11.3
 
 - **FIX**: [Android] Enforce `ACCESS_BACKGROUND_LOCATION` check on all killed-state restart paths (boot receiver, task removal, periodic alarms/workers). "While In Use" permission no longer triggers background tracking.

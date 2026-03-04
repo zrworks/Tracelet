@@ -1,3 +1,7 @@
+## 0.11.4
+
+- **CHORE**: Version bump for platform consistency.
+
 ## 0.11.3
 
 - **CHORE**: Version bump for platform consistency.

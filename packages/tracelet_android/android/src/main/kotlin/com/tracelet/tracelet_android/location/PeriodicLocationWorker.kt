@@ -218,6 +218,7 @@ class PeriodicLocationWorker(
                 }
                 return Result.failure()
             }
+            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 proceeding with periodic fix")
         }
 
         return try {

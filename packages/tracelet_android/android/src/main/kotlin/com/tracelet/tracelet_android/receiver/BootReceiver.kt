@@ -60,6 +60,7 @@ class BootReceiver : BroadcastReceiver() {
                 statePrefs.edit().putBoolean("enabled", false).apply()
                 return
             }
+            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted — proceeding with boot restart")
         }
 
         val stateManager = StateManager(context)

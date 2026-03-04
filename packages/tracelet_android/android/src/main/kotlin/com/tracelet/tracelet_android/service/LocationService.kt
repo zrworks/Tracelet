@@ -190,6 +190,7 @@ class LocationService : Service() {
                     isRunning = false
                     return
                 }
+                Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted — continuing tracking after task removal")
             }
 
             val state = StateManager(applicationContext)
@@ -299,6 +300,7 @@ class LocationService : Service() {
                 Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted \u2014 cannot bootstrap boot tracking")
                 return
             }
+            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 bootstrapping native tracking")
         }
 
         val config = ConfigManager(ctx)

@@ -596,6 +596,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
             stateManager.enabled = false
             return
         }
+        NSLog("[Tracelet] Auto-resume — authorization is Always, proceeding with killed-state resume")
 
         // The plugin was registered by Flutter, so subsystems are initialized.
         // However, ready() hasn't been called from Dart yet (no UI).

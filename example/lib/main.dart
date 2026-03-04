@@ -1569,7 +1569,13 @@ class _DashboardPageState extends State<DashboardPage>
   /// attempts to upgrade. Always returns `true` so tracking proceeds
   /// regardless — but logs a warning about killed-state limitations.
   Future<bool> _ensureBackgroundPermission() async {
-    if (await tl.Tracelet.hasBackgroundPermission) return true;
+    if (await tl.Tracelet.hasBackgroundPermission) {
+      _addLog(
+        'PERMISSION',
+        'Background (Always) location granted — killed-state tracking enabled',
+      );
+      return true;
+    }
 
     _addLog(
       'PERMISSION',
@@ -1583,7 +1589,12 @@ class _DashboardPageState extends State<DashboardPage>
     }
 
     final upgraded = await tl.Tracelet.hasBackgroundPermission;
-    if (!upgraded) {
+    if (upgraded) {
+      _addLog(
+        'PERMISSION',
+        'Background (Always) location granted — killed-state tracking enabled',
+      );
+    } else {
       _addLog(
         'WARN',
         'Background permission not granted — '

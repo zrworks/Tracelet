@@ -56,6 +56,7 @@ class PeriodicAlarmReceiver : BroadcastReceiver() {
                 Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted \u2014 ignoring periodic alarm")
                 return
             }
+            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 processing periodic alarm")
         }
         Log.d(TAG, "Exact alarm fired — enqueuing one-time location work")
         PeriodicLocationWorker.scheduleOneTime(context)

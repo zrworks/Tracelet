@@ -499,6 +499,7 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _start() async {
     try {
+      if (!await _ensureBackgroundPermission()) return;
       final state = await tl.Tracelet.start();
       setState(() {
         _isTracking = state.enabled;
@@ -526,6 +527,7 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _startGeofences() async {
     try {
+      if (!await _ensureBackgroundPermission()) return;
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
@@ -758,6 +760,7 @@ class _DashboardPageState extends State<DashboardPage>
         _addLog('WARN', 'Call Initialize first');
         return;
       }
+      if (!await _ensureBackgroundPermission()) return;
       // Disable heartbeat — periodic mode already does one-shot fixes
       await tl.Tracelet.setConfig(
         const tl.Config(app: tl.AppConfig(heartbeatInterval: -1)),
@@ -1558,6 +1561,35 @@ class _DashboardPageState extends State<DashboardPage>
         ],
       ),
     );
+  }
+
+  /// Checks that "Always" / background location permission is granted.
+  ///
+  /// If only "When In Use" is granted, shows a rationale dialog and
+  /// attempts to upgrade. Returns `true` if background permission is
+  /// confirmed, `false` otherwise.
+  Future<bool> _ensureBackgroundPermission() async {
+    if (await tl.Tracelet.hasBackgroundPermission) return true;
+
+    _addLog(
+      'PERMISSION',
+      'Background (Always) location not granted — tracking will not survive app kill',
+    );
+
+    if (!mounted) return false;
+    final shouldUpgrade = await _showBackgroundRationaleDialog();
+    if (!shouldUpgrade) return false;
+
+    await _upgradeToAlways();
+    final upgraded = await tl.Tracelet.hasBackgroundPermission;
+    if (!upgraded && mounted) {
+      _addLog(
+        'WARN',
+        'Background permission still not granted — '
+            'killed-state tracking will be disabled',
+      );
+    }
+    return upgraded;
   }
 
   /// Ensures motion / activity recognition permission is granted.

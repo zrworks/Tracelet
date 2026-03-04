@@ -1566,8 +1566,8 @@ class _DashboardPageState extends State<DashboardPage>
   /// Checks that "Always" / background location permission is granted.
   ///
   /// If only "When In Use" is granted, shows a rationale dialog and
-  /// attempts to upgrade. Returns `true` if background permission is
-  /// confirmed, `false` otherwise.
+  /// attempts to upgrade. Always returns `true` so tracking proceeds
+  /// regardless — but logs a warning about killed-state limitations.
   Future<bool> _ensureBackgroundPermission() async {
     if (await tl.Tracelet.hasBackgroundPermission) return true;
 
@@ -1576,20 +1576,21 @@ class _DashboardPageState extends State<DashboardPage>
       'Background (Always) location not granted — tracking will not survive app kill',
     );
 
-    if (!mounted) return false;
+    if (!mounted) return true;
     final shouldUpgrade = await _showBackgroundRationaleDialog();
-    if (!shouldUpgrade) return false;
+    if (shouldUpgrade) {
+      await _upgradeToAlways();
+    }
 
-    await _upgradeToAlways();
     final upgraded = await tl.Tracelet.hasBackgroundPermission;
-    if (!upgraded && mounted) {
+    if (!upgraded) {
       _addLog(
         'WARN',
-        'Background permission still not granted — '
-            'killed-state tracking will be disabled',
+        'Background permission not granted — '
+            'foreground tracking will work, but killed-state tracking is disabled',
       );
     }
-    return upgraded;
+    return true; // Always proceed — When In Use still allows foreground tracking
   }
 
   /// Ensures motion / activity recognition permission is granted.

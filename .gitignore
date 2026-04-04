@@ -126,6 +126,7 @@ MEDIUM_ARTICLE.txt
 .github/copilot-instructions.md
 packages/*/.github/copilot-instructions.md
 .github/instructions/*
+.github/workflows/.instructions.md
 
 # GPG key backups
 gpg-signing-key-*.asc

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9
+
+- **FEAT**: Add `getSyncInterval()` to `ConfigManager` and timer-based sync to `HttpSyncManager` (#50).
+
 ## 1.0.8
 
 - **FIX**: Fix `SubsystemTests` — use `HttpSyncManager.onRequestFreshHeaders` (static type) instead of instance access.

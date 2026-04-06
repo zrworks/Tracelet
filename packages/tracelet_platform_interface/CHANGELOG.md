@@ -1,3 +1,7 @@
+## 1.8.9
+
+- **FEAT**: Add `syncInterval` field to `HttpConfig` for fixed-cadence HTTP sync (#50).
+
 ## 1.8.8
 
 - **CHORE**: Version bump for HTTP sync payload consistency fix (#48).

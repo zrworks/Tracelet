@@ -1,3 +1,8 @@
+## 1.8.9
+
+- **FEAT**: Add `syncInterval` support — timer-based HTTP sync via `DispatchSourceTimer` (#50).
+- **FEAT**: Bump native SDK dependency to exact version `1.0.9`.
+
 ## 1.8.8
 
 - **FIX**: Fix `SubsystemTests` static property access for `HttpSyncManager` callbacks.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9
+
+- **FEAT**: Add `getSyncInterval()` to `ConfigManager` and timer-based sync to `HttpSyncManager` (#50).
+
 ## 1.0.8
 
 - **FIX**: `cursorToLocation()` now uses canonical `is_moving` (snake_case) instead of `isMoving` (camelCase) — HTTP sync payload now matches iOS format (#48).

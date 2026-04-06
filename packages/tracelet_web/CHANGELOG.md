@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.9
+
+- **CHORE**: Version bump for `syncInterval` feature (#50).
+
 ## 1.8.8
 
 - **CHORE**: Version bump for HTTP sync payload consistency fix (#48).

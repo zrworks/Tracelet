@@ -1,3 +1,8 @@
+## 1.8.9
+
+- **FEAT**: Add `syncInterval` support — timer-based HTTP sync via `ScheduledExecutorService` (#50).
+- **FEAT**: Bump native SDK dependency to exact version `1.0.9`.
+
 ## 1.8.8
 
 - **FIX**: HTTP sync payload now uses canonical `is_moving` (snake_case) and ISO 8601 timestamps, matching iOS format (#48).

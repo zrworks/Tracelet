@@ -58,6 +58,50 @@ The root property name is configurable via `httpRootProperty` (default:
 
 ---
 
+## Interval-Based Sync
+
+By default, `autoSync` flushes locations to the server each time one is
+recorded. For fleet/logistics apps that need a **fixed business-defined
+cadence**, set `syncInterval`:
+
+```dart
+HttpConfig(
+  url: 'https://api.example.com/locations',
+  autoSync: true,
+  syncInterval: 45,   // Flush every 45 seconds
+  batchSync: true,     // Recommended with interval sync
+)
+```
+
+### How It Works
+
+| syncInterval | Behavior |
+|---|---|
+| `0` (default) | Sync on every location insert (original behavior) |
+| `> 0` | A repeating timer fires every N seconds and flushes all pending locations |
+
+When `syncInterval > 0`:
+- `onLocationInserted()` **does not** trigger a sync — the timer handles it.
+- The timer calls the same sync engine used by manual `Tracelet.sync()`.
+- If a sync is already in progress when the timer fires, it's skipped (no overlap).
+- The timer respects `disableAutoSyncOnCellular` — if active, the timer-triggered sync checks connectivity before proceeding.
+- `autoSync` must be `true` for the timer to start.
+- Maximum value: `3600` (1 hour). Values above are clamped.
+
+### Recommended Pairings
+
+| Config | Why |
+|---|---|
+| `batchSync: true` | Multiple locations accumulate between timer ticks — send them in one request |
+| `maxBatchSize: 50` | Prevent very large batches if interval is long |
+
+### Manual Sync Still Works
+
+`Tracelet.sync()` works normally regardless of `syncInterval`. Use it for
+force-flush scenarios (e.g., trip end, app foregrounding).
+
+---
+
 ## Retry Strategy
 
 When an HTTP request fails with a **transient error**, Tracelet retries

@@ -1270,6 +1270,7 @@ class HttpConfig {
     this.maxBatchSize = 250,
     this.autoSync = true,
     this.autoSyncThreshold = 0,
+    this.syncInterval = 0,
     this.httpTimeout = 60000,
     this.params = const <String, Object?>{},
     this.locationsOrderDirection = LocationOrder.asc,
@@ -1311,6 +1312,21 @@ class HttpConfig {
   /// Minimum number of unsent locations before triggering auto-sync.
   /// Defaults to `0` (sync immediately).
   final int autoSyncThreshold;
+
+  /// Fixed interval in seconds between automatic HTTP sync flushes.
+  ///
+  /// When greater than `0` and [autoSync] is `true`, locations are **not**
+  /// synced on every insert. Instead, a repeating timer fires every
+  /// [syncInterval] seconds and flushes all pending locations in one batch.
+  ///
+  /// Useful for fleet/logistics apps that need business-aligned sync cadence
+  /// (e.g., send driver position every 30–60 seconds).
+  ///
+  /// Set to `0` (default) to sync immediately on each insert (original
+  /// behavior).
+  ///
+  /// Range: `0`–`3600`. Values above `3600` are clamped to `3600`.
+  final int syncInterval;
 
   /// HTTP request timeout in milliseconds. Defaults to `60000` (60s).
   final int httpTimeout;
@@ -1402,6 +1418,7 @@ class HttpConfig {
       maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
       autoSync: ensureBool(map['autoSync'], fallback: true),
       autoSyncThreshold: ensureInt(map['autoSyncThreshold'], fallback: 0),
+      syncInterval: ensureInt(map['syncInterval'], fallback: 0),
       httpTimeout: ensureInt(map['httpTimeout'], fallback: 60000),
       params: castObjectMap(map['params']),
       locationsOrderDirection:
@@ -1446,6 +1463,7 @@ class HttpConfig {
       'maxBatchSize': maxBatchSize,
       'autoSync': autoSync,
       'autoSyncThreshold': autoSyncThreshold,
+      'syncInterval': syncInterval,
       'httpTimeout': httpTimeout,
       'params': params,
       'locationsOrderDirection': locationsOrderDirection.index,
@@ -1477,6 +1495,7 @@ class HttpConfig {
           maxBatchSize == other.maxBatchSize &&
           autoSync == other.autoSync &&
           autoSyncThreshold == other.autoSyncThreshold &&
+          syncInterval == other.syncInterval &&
           httpTimeout == other.httpTimeout &&
           locationsOrderDirection == other.locationsOrderDirection &&
           disableAutoSyncOnCellular == other.disableAutoSyncOnCellular &&
@@ -1497,6 +1516,7 @@ class HttpConfig {
     maxBatchSize,
     autoSync,
     autoSyncThreshold,
+    syncInterval,
     httpTimeout,
     locationsOrderDirection,
     disableAutoSyncOnCellular,

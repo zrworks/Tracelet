@@ -94,6 +94,13 @@ class HttpSyncManager(
     private var connectivityCallback: ConnectivityManager.NetworkCallback? = null
     @Volatile private var pendingSyncOnConnect = false
 
+    /** Scheduled future for interval-based sync. Null when syncInterval is 0. */
+    @Volatile
+    private var syncIntervalFuture: java.util.concurrent.ScheduledFuture<*>? = null
+
+    /** Separate scheduler for interval-based sync timer. */
+    private val scheduler = Executors.newSingleThreadScheduledExecutor()
+
     // Callbacks are now static — see companion object above.
     // This ensures boot-mode and periodic-worker instances
     // share the same plugin-wired callbacks.
@@ -148,13 +155,38 @@ class HttpSyncManager(
 
         httpClient = builder.build()
         registerConnectivityCallback()
+        // Start interval-based sync timer if configured
+        startSyncIntervalTimer()
     }
 
     /** Stop and clean up. */
     fun stop() {
+        stopSyncIntervalTimer()
         unregisterConnectivityCallback()
         httpClient?.dispatcher?.cancelAll()
         httpClient = null
+    }
+
+    /** Start or restart the sync interval timer based on current config. */
+    private fun startSyncIntervalTimer() {
+        stopSyncIntervalTimer()
+        val interval = config.getSyncInterval().toLong()
+        if (interval <= 0 || !config.getAutoSync()) return
+
+        val clampedInterval = interval.coerceAtMost(3600)
+        Log.d(TAG, "Starting sync interval timer: every ${clampedInterval}s")
+        syncIntervalFuture = scheduler.scheduleAtFixedRate(
+            { syncAsync() },
+            clampedInterval,   // initial delay — don't fire immediately on start
+            clampedInterval,   // period
+            TimeUnit.SECONDS
+        )
+    }
+
+    /** Cancel the running sync interval timer if active. */
+    private fun stopSyncIntervalTimer() {
+        syncIntervalFuture?.cancel(false)
+        syncIntervalFuture = null
     }
 
     /** Trigger auto-sync if conditions are met. Called after each location insert. */
@@ -166,6 +198,12 @@ class HttpSyncManager(
         val url = config.getHttpUrl()
         if (url == null) {
             Log.d(TAG, "onLocationInserted: no URL configured — skipping")
+            return
+        }
+
+        // When syncInterval is active, the timer handles sync — skip per-insert sync.
+        if (config.getSyncInterval() > 0) {
+            Log.d(TAG, "onLocationInserted: syncInterval active — deferring to timer")
             return
         }
 

@@ -249,6 +249,46 @@ void main() {
       expect(restored.retryBackoffCap, 180000);
     });
 
+    test('HttpConfig syncInterval defaults to 0', () {
+      const c = HttpConfig();
+      expect(c.syncInterval, 0);
+    });
+
+    test('HttpConfig equality includes syncInterval', () {
+      const a = HttpConfig(url: 'https://a.com', syncInterval: 30);
+      const b = HttpConfig(url: 'https://a.com', syncInterval: 60);
+      expect(a, isNot(equals(b)));
+
+      const c = HttpConfig(url: 'https://a.com', syncInterval: 30);
+      const d = HttpConfig(url: 'https://a.com', syncInterval: 30);
+      expect(c, equals(d));
+    });
+
+    test('HttpConfig fromMap parses syncInterval', () {
+      final c = HttpConfig.fromMap(const {
+        'url': 'https://example.com',
+        'syncInterval': 45,
+      });
+      expect(c.syncInterval, 45);
+    });
+
+    test('HttpConfig fromMap defaults syncInterval to 0', () {
+      final c = HttpConfig.fromMap(const {'url': 'https://example.com'});
+      expect(c.syncInterval, 0);
+    });
+
+    test('HttpConfig toMap includes syncInterval', () {
+      const c = HttpConfig(url: 'https://example.com', syncInterval: 45);
+      final map = c.toMap();
+      expect(map['syncInterval'], 45);
+    });
+
+    test('HttpConfig round-trip preserves syncInterval', () {
+      const original = HttpConfig(url: 'https://example.com', syncInterval: 90);
+      final restored = HttpConfig.fromMap(original.toMap());
+      expect(restored.syncInterval, 90);
+    });
+
     test('HttpConfig.toMap serializes method as int index', () {
       const postConfig = HttpConfig(method: HttpMethod.post);
       const putConfig = HttpConfig(method: HttpMethod.put);

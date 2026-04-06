@@ -213,6 +213,7 @@ Server sync configuration.
 | `params` | `Map<String, String>` | `{}` | Query parameters |
 | `extras` | `Map<String, Object?>` | `{}` | Extra data added to each location |
 | `autoSyncThreshold` | `int` | `0` | Min locations before auto-sync |
+| `syncInterval` | `int` | `0` | Flush every N seconds (0 = per-insert). Range: 0–3600 ([details](HTTP-SYNC.md#interval-based-sync)) |
 | `disableAutoSyncOnCellular` | `bool` | `false` | Wi-Fi-only auto-sync |
 | `httpTimeout` | `int` | `60000` | Request timeout in milliseconds |
 | `maxRetries` | `int` | `10` | Max retry attempts for transient failures (5xx, 429, timeout). Set to `0` to disable retries ([details](HTTP-SYNC.md)) |

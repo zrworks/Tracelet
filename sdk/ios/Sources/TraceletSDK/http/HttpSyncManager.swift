@@ -28,6 +28,9 @@ public final class HttpSyncManager: NSObject, URLSessionDelegate {
     private var _isConnected = true
     private var _pendingSyncOnConnect = false
 
+    /// Dispatch source timer for interval-based sync. `nil` when syncInterval is 0.
+    private var syncIntervalTimer: DispatchSourceTimer?
+
     /// Thread-safe accessors for state flags.
     private var isSyncing: Bool {
         get { stateQueue.sync { _isSyncing } }
@@ -101,9 +104,12 @@ public final class HttpSyncManager: NSObject, URLSessionDelegate {
             }
         }
         pathMonitor.start(queue: DispatchQueue.global(qos: .utility))
+        // Start interval-based sync timer if configured
+        startSyncIntervalTimer()
     }
 
     public func stop() {
+        stopSyncIntervalTimer()
         // Cancel all in-flight tasks without invalidating the session (I-M3).
         // invalidateAndCancel() renders the session permanently unusable;
         // if start() is called again later, sync requests would silently fail.
@@ -116,6 +122,34 @@ public final class HttpSyncManager: NSObject, URLSessionDelegate {
         pathMonitor = NWPathMonitor()
     }
 
+    // MARK: - Sync interval timer
+
+    /// Start or restart the sync interval timer based on current config.
+    private func startSyncIntervalTimer() {
+        stopSyncIntervalTimer()
+        let interval = configManager.getSyncInterval()
+        guard interval > 0, configManager.getAutoSync() else { return }
+
+        let clampedInterval = min(interval, 3600)
+        NSLog("[Tracelet] Starting sync interval timer: every \(clampedInterval)s")
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+        timer.schedule(
+            deadline: .now() + .seconds(clampedInterval),
+            repeating: .seconds(clampedInterval)
+        )
+        timer.setEventHandler { [weak self] in
+            self?.sync(completion: nil)
+        }
+        timer.resume()
+        syncIntervalTimer = timer
+    }
+
+    /// Cancel the running sync interval timer if active.
+    private func stopSyncIntervalTimer() {
+        syncIntervalTimer?.cancel()
+        syncIntervalTimer = nil
+    }
+
     // MARK: - Trigger sync
 
     public func onLocationInserted() {
@@ -125,6 +159,12 @@ public final class HttpSyncManager: NSObject, URLSessionDelegate {
         }
         guard !configManager.getUrl().isEmpty else {
             NSLog("[Tracelet] onLocationInserted: no URL configured — skipping")
+            return
+        }
+
+        // When syncInterval is active, the timer handles sync — skip per-insert sync.
+        if configManager.getSyncInterval() > 0 {
+            NSLog("[Tracelet] onLocationInserted: syncInterval active — deferring to timer")
             return
         }
 

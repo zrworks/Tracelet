@@ -169,6 +169,7 @@ public final class ConfigManager {
     public func getUrl() -> String { cache["url"] as? String ?? "" }
     public func getAutoSync() -> Bool { cache["autoSync"] as? Bool ?? true }
     public func getAutoSyncThreshold() -> Int { cache["autoSyncThreshold"] as? Int ?? 0 }
+    public func getSyncInterval() -> Int { cache["syncInterval"] as? Int ?? 0 }
     public func getBatchSync() -> Bool { cache["batchSync"] as? Bool ?? false }
     public func getMaxBatchSize() -> Int {
         let value = cache["maxBatchSize"] as? Int ?? 250

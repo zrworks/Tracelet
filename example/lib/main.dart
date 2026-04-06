@@ -559,8 +559,9 @@ class _DashboardPageState extends State<DashboardPage>
             url: 'http://192.168.20.101:8099/locations',
             method: tl.HttpMethod.post,
             locationsOrderDirection: tl.LocationOrder.asc,
-            // ── New feature ──
+            // ── New features ──
             disableAutoSyncOnCellular: true,
+            syncInterval: 30, // Flush locations every 30 seconds
             // ── SSL Pinning (uncomment to enable) ──
             // sslPinningFingerprints: [
             //   'sha256/YOUR_CERT_SHA256_FINGERPRINT_HERE',

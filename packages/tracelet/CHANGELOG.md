@@ -1,3 +1,8 @@
+## 1.8.10
+
+- **FIX**: Killed-state tracking now works reliably — `stopBootTracking()` deferred from `initialize()` to `ready()` so boot-mode native tracking survives until the Dart side explicitly takes over (#50).
+- **FIX**: Bump native SDKs to 1.0.10.
+
 ## 1.8.9
 
 - **FEAT**: Add `syncInterval` to `HttpConfig` — flush locations on a fixed timer instead of per-insert, for fleet/logistics use cases (#50).

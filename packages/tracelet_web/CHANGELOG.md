@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.10
+
+- **FIX**: Version bump for killed-state tracking fix in `tracelet_android` (#50).
+
 ## 1.8.9
 
 - **CHORE**: Version bump for `syncInterval` feature (#50).

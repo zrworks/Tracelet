@@ -1,3 +1,8 @@
+## 1.8.10
+
+- **FIX**: Killed-state tracking now works reliably — `stopBootTracking()` deferred from `sdk.initialize()` to `sdk.ready()` so boot-mode native tracking (LocationEngine + HttpSyncManager) survives until the Dart side explicitly takes over (#50).
+- **FIX**: Bump Android SDK to 1.0.10.
+
 ## 1.8.9
 
 - **FEAT**: Add `syncInterval` support — timer-based HTTP sync via `ScheduledExecutorService` (#50).

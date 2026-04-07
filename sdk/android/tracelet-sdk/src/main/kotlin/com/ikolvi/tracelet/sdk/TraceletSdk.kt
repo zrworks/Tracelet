@@ -159,11 +159,6 @@ class TraceletSdk private constructor(private val context: Context) {
             "setEventSender() must be called before initialize()"
         }
 
-        // Stop any boot-mode native tracking before creating new subsystems.
-        // This prevents an orphaned boot LocationEngine from running in
-        // parallel with the plugin's engine during the ready()→start() gap.
-        LocationService.stopBootTracking()
-
         // Bootstrap factory for headless/boot restart
         TraceletBootstrap.eventSenderFactory = { ctx ->
             getInstance(ctx).getEventSender()
@@ -351,6 +346,12 @@ class TraceletSdk private constructor(private val context: Context) {
         config: Map<String, Any?>,
         callback: (Map<String, Any?>) -> Unit,
     ) {
+        // Stop boot-mode native tracking now that the Dart side has
+        // explicitly called ready().  Deferring this from initialize()
+        // ensures killed-state / headless-restart boot tracking keeps
+        // running until the foreground app is fully ready to take over.
+        LocationService.stopBootTracking()
+
         if (configManager.isDebug()) soundManager.start()
         httpSyncManager.start()
         logger.pruneOldLogs()

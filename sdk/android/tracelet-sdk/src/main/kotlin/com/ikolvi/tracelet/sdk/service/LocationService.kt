@@ -124,7 +124,7 @@ class LocationService : Service() {
             stopBootHttpSync()
             bootLocationEngine?.destroy()
             bootLocationEngine = null
-            Log.d(TAG, "Boot-mode native tracking stopped — plugin taking over")
+            Log.d(TAG, "Boot-mode native tracking stopped — ready() taking over")
         }
 
         private fun stopBootHttpSync() {

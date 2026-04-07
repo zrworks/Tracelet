@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.10
+
+- **FIX**: Version bump for parity with Android SDK 1.0.10 (killed-state tracking fix #50).
+
 ## 1.0.9
 
 - **FEAT**: Add `getSyncInterval()` to `ConfigManager` and timer-based sync to `HttpSyncManager` (#50).

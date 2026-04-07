@@ -1,3 +1,7 @@
+## 1.8.10
+
+- **FIX**: Version bump for killed-state tracking fix in `tracelet_android` (#50).
+
 ## 1.8.9
 
 - **FEAT**: Add `syncInterval` field to `HttpConfig` for fixed-cadence HTTP sync (#50).

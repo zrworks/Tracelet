@@ -1,3 +1,8 @@
+## 1.8.10
+
+- **FIX**: Version bump for killed-state tracking fix in `tracelet_android` (#50).
+- **FIX**: Bump iOS SDK to 1.0.10.
+
 ## 1.8.9
 
 - **FEAT**: Add `syncInterval` support — timer-based HTTP sync via `DispatchSourceTimer` (#50).

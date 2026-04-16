@@ -71,33 +71,40 @@ class TraceletAndroidPlugin :
         context = binding.applicationContext
         isEngineAttached = true
 
-        // Event dispatcher (Pigeon FlutterApi → Dart)
-        eventDispatcher = EventDispatcher()
-        eventDispatcher.register(binding.binaryMessenger)
-
-        // Inject event sender and initialize SDK
-        sdk.setEventSender(eventDispatcher)
-        sdk.initialize()
-
-        // Flutter-specific: headless task service
-        headlessService = HeadlessTaskService(context, sdk.configManager)
-
-        // ── Foreground-only callback wiring ──────────────────────────────
-        // When HeadlessTaskService creates a headless FlutterEngine,
-        // GeneratedPluginRegistrant registers ALL plugins on that engine,
-        // which triggers onAttachedToEngine on a NEW plugin instance.
-        // That instance's MethodChannel is connected to the HEADLESS Dart
-        // isolate, not the main one where the user's callback handler
-        // lives. If the headless instance overwrites httpSyncManager
-        // callbacks, MethodChannel messages go to the wrong isolate and
-        // time out (10s) before falling back to the headless service.
+        // ── Primary instance guard ───────────────────────────────────────
+        // When a background FlutterEngine is created (by HeadlessTaskService,
+        // FirebaseMessaging.onBackgroundMessage, or any other plugin that
+        // spawns a background isolate), GeneratedPluginRegistrant registers
+        // ALL plugins on that engine, triggering onAttachedToEngine on a
+        // NEW TraceletAndroidPlugin instance.
         //
-        // Guard: Only the first (primary/foreground) instance wires
-        // callbacks. A second call with the SAME instance (hot restart /
-        // double registration) is allowed.
+        // That secondary instance's BinaryMessenger is connected to the
+        // BACKGROUND Dart isolate, not the main one where the user's
+        // event listeners live. If we let it overwrite the SDK event
+        // sender or re-initialize subsystems, all events get routed to
+        // the wrong (short-lived) isolate and Dart callbacks stop firing.
+        // When that background engine detaches, destroying the SDK would
+        // kill the foreground tracking pipeline entirely.
+        //
+        // Guard: Only the first (primary/foreground) instance — or the
+        // same instance on hot restart — initializes the SDK and wires
+        // callbacks. Secondary instances only register the Pigeon HostApi
+        // on their own BinaryMessenger (so host API calls from background
+        // isolates still work) but do NOT touch the SDK singleton.
         val isPrimary = primaryInstance == null || primaryInstance === this
         if (isPrimary) {
             primaryInstance = this
+
+            // Event dispatcher (Pigeon FlutterApi → Dart)
+            eventDispatcher = EventDispatcher()
+            eventDispatcher.register(binding.binaryMessenger)
+
+            // Inject event sender and initialize SDK
+            sdk.setEventSender(eventDispatcher)
+            sdk.initialize()
+
+            // Flutter-specific: headless task service
+            headlessService = HeadlessTaskService(context, sdk.configManager)
 
             val mainHandler = Handler(Looper.getMainLooper())
             syncBodyChannel = MethodChannel(binding.binaryMessenger, "com.tracelet/sync_body")
@@ -142,58 +149,65 @@ class TraceletAndroidPlugin :
                 headlessService.requestCustomSyncBody(locations, DART_CALLBACK_TIMEOUT_MS)
             }
 
-            Log.d(TAG, "onAttachedToEngine: primary instance — callbacks wired")
-        } else {
-            Log.d(TAG, "onAttachedToEngine: secondary (headless) instance — skipping callback wiring")
-        }
-
-        // Wire headless fallback for background events
-        eventDispatcher.headlessFallback = { eventName, eventData ->
-            if (headlessService.isRegistered()) {
-                headlessService.dispatchEvent(eventName, eventData)
-            }
-        }
-
-        // Bootstrap factory for headless dispatcher
-        TraceletBootstrap.headlessDispatcherFactory = { ctx ->
-            HeadlessTaskService(ctx)
-        }
-
-        // Override event sender factory so boot/task-removal restarts
-        // produce an EventDispatcher with headlessFallback properly wired.
-        // Without this, geofence events fired after task removal are
-        // silently dropped because the EventDispatcher has no fallback.
-        TraceletBootstrap.eventSenderFactory = { ctx ->
-            val dispatcher = EventDispatcher()
-            val hs = HeadlessTaskService(ctx)
-            dispatcher.headlessFallback = { eventName, eventData ->
-                if (hs.isRegistered()) {
-                    hs.dispatchEvent(eventName, eventData)
+            // Wire headless fallback for background events
+            eventDispatcher.headlessFallback = { eventName, eventData ->
+                if (headlessService.isRegistered()) {
+                    headlessService.dispatchEvent(eventName, eventData)
                 }
             }
-            dispatcher
+
+            // Bootstrap factory for headless dispatcher
+            TraceletBootstrap.headlessDispatcherFactory = { ctx ->
+                HeadlessTaskService(ctx)
+            }
+
+            // Override event sender factory so boot/task-removal restarts
+            // produce an EventDispatcher with headlessFallback properly wired.
+            // Without this, geofence events fired after task removal are
+            // silently dropped because the EventDispatcher has no fallback.
+            TraceletBootstrap.eventSenderFactory = { ctx ->
+                val dispatcher = EventDispatcher()
+                val hs = HeadlessTaskService(ctx)
+                dispatcher.headlessFallback = { eventName, eventData ->
+                    if (hs.isRegistered()) {
+                        hs.dispatchEvent(eventName, eventData)
+                    }
+                }
+                dispatcher
+            }
+
+            Log.d(TAG, "onAttachedToEngine: primary instance — SDK initialized, callbacks wired")
+        } else {
+            Log.d(TAG, "onAttachedToEngine: secondary instance — skipping SDK init & callback wiring")
         }
 
-        // Pigeon API: register type-safe host API
+        // Pigeon API: register on EVERY engine so host API calls from
+        // background isolates (e.g. setDynamicHeaders) still work.
+        // HeadlessTaskService is safe to construct without configManager
+        // for secondary instances — it only needs context for SharedPrefs.
+        val hostApiHeadless = if (isPrimary) headlessService else HeadlessTaskService(context)
         TraceletHostApi.setUp(
             binding.binaryMessenger,
-            TraceletHostApiImpl(context, headlessService),
+            TraceletHostApiImpl(context, hostApiHeadless),
         )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         isEngineAttached = false
-        syncBodyChannel = null
+        TraceletHostApi.setUp(binding.binaryMessenger, null)
+
         if (primaryInstance === this) {
             primaryInstance = null
+            syncBodyChannel = null
             HttpSyncManager.onAuthorizationRequired = null
             HttpSyncManager.onRequestFreshHeaders = null
             HttpSyncManager.onBuildCustomSyncBody = null
+            eventDispatcher.unregister()
+            sdk.destroyAll()
+            headlessService.destroy()
+        } else {
+            Log.d(TAG, "onDetachedFromEngine: secondary instance — skipping SDK destroy")
         }
-        TraceletHostApi.setUp(binding.binaryMessenger, null)
-        eventDispatcher.unregister()
-        sdk.destroyAll()
-        headlessService.destroy()
     }
 
     // =========================================================================

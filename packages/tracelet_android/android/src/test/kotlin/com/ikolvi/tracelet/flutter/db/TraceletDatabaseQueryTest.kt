@@ -8,6 +8,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -21,6 +24,15 @@ import kotlin.test.assertTrue
 internal class TraceletDatabaseQueryTest {
 
     private lateinit var db: TraceletDatabase
+
+    /** Parse the ISO 8601 timestamp string returned by getLocations() back to epoch millis. */
+    private fun parseTimestamp(loc: Map<String, Any?>): Long {
+        val iso = loc["timestamp"] as String
+        val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        return fmt.parse(iso)!!.time
+    }
 
     @Before
     fun setUp() {
@@ -69,7 +81,7 @@ internal class TraceletDatabaseQueryTest {
         assertEquals(2, results.size)
         // All returned timestamps should be >= 2000
         results.forEach { loc ->
-            val ts = (loc["timestamp"] as Number).toLong()
+            val ts = parseTimestamp(loc)
             assertTrue(ts >= 2000L, "Expected timestamp >= 2000, got $ts")
         }
     }
@@ -82,7 +94,7 @@ internal class TraceletDatabaseQueryTest {
         val results = db.getLocations(endTime = 2000L)
         assertEquals(2, results.size)
         results.forEach { loc ->
-            val ts = (loc["timestamp"] as Number).toLong()
+            val ts = parseTimestamp(loc)
             assertTrue(ts <= 2000L, "Expected timestamp <= 2000, got $ts")
         }
     }
@@ -96,7 +108,7 @@ internal class TraceletDatabaseQueryTest {
         val results = db.getLocations(startTime = 2000L, endTime = 3000L)
         assertEquals(2, results.size)
         results.forEach { loc ->
-            val ts = (loc["timestamp"] as Number).toLong()
+            val ts = parseTimestamp(loc)
             assertTrue(ts in 2000L..3000L, "Expected timestamp in [2000,3000], got $ts")
         }
     }
@@ -140,12 +152,12 @@ internal class TraceletDatabaseQueryTest {
         assertEquals(3, resultsAsc.size)
         assertEquals(3, resultsDesc.size)
         // ASC: first timestamp should be smallest
-        val firstAsc = (resultsAsc.first()["timestamp"] as Number).toLong()
-        val lastAsc = (resultsAsc.last()["timestamp"] as Number).toLong()
+        val firstAsc = parseTimestamp(resultsAsc.first())
+        val lastAsc = parseTimestamp(resultsAsc.last())
         assertTrue(firstAsc <= lastAsc, "ASC order: first ($firstAsc) should be <= last ($lastAsc)")
         // DESC: first timestamp should be largest
-        val firstDesc = (resultsDesc.first()["timestamp"] as Number).toLong()
-        val lastDesc = (resultsDesc.last()["timestamp"] as Number).toLong()
+        val firstDesc = parseTimestamp(resultsDesc.first())
+        val lastDesc = parseTimestamp(resultsDesc.last())
         assertTrue(firstDesc >= lastDesc, "DESC order: first ($firstDesc) should be >= last ($lastDesc)")
     }
 

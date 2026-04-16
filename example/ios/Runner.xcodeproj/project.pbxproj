@@ -27,6 +27,7 @@
 		E1F2A3B4C5D60001EEFFAA01 /* ConfigManagerHttpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D60002EEFFAA01 /* ConfigManagerHttpTests.swift */; };
 		E3F4A5B6C7D80001EEFF0003 /* LocationEngineGpsFixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F4A5B6C7D80002EEFF0003 /* LocationEngineGpsFixTests.swift */; };
 		F1A2B3C4D5E60001FFAABB01 /* GeofencePreservationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60002FFAABB01 /* GeofencePreservationTests.swift */; };
+		F4A5B6C7D8E90001FF110001 /* PluginSecondaryEngineGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A5B6C7D8E90002FF110001 /* PluginSecondaryEngineGuardTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +87,7 @@
 		E1F2A3B4C5D60002EEFFAA01 /* ConfigManagerHttpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManagerHttpTests.swift; sourceTree = "<group>"; };
 		E3F4A5B6C7D80002EEFF0003 /* LocationEngineGpsFixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationEngineGpsFixTests.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E60002FFAABB01 /* GeofencePreservationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeofencePreservationTests.swift; sourceTree = "<group>"; };
+		F4A5B6C7D8E90002FF110001 /* PluginSecondaryEngineGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSecondaryEngineGuardTests.swift; sourceTree = "<group>"; };
 		FE689427AE9A7A70CAE4F003 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -124,6 +126,7 @@
 				A2B3C4D5E6F70002AABB0001 /* ParityGapTests.swift */,
 				D2E3F4A5B6C70002DDEEFF02 /* DeadReckoningEngineTests.swift */,
 				E3F4A5B6C7D80002EEFF0003 /* LocationEngineGpsFixTests.swift */,
+				F4A5B6C7D8E90002FF110001 /* PluginSecondaryEngineGuardTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -414,6 +417,7 @@
 				A2B3C4D5E6F70001AABB0001 /* ParityGapTests.swift in Sources */,
 				D2E3F4A5B6C70001DDEEFF02 /* DeadReckoningEngineTests.swift in Sources */,
 				E3F4A5B6C7D80001EEFF0003 /* LocationEngineGpsFixTests.swift in Sources */,
+				F4A5B6C7D8E90001FF110001 /* PluginSecondaryEngineGuardTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

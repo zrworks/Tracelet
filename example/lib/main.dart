@@ -2673,6 +2673,116 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  /// Repro for GitHub issue #51: continuous tracking + geofences.
+  ///
+  /// Configures exactly like the reporter:
+  /// - `Tracelet.start()` for continuous location tracking
+  /// - `addGeofences(...)` to register geofences (20m radius for easy testing)
+  /// - `geofenceModeHighAccuracy: true`
+  /// - `rejectMockLocations: false` (for mock location testing)
+  /// - `distanceFilter: 0` (all locations)
+  /// - `disableElasticity: true`
+  ///
+  /// Expected: both onLocation AND onGeofence fire.
+  Future<void> _startContinuousWithGeofences() async {
+    if (!_isReady) {
+      _addLog('WARN', 'Call Initialize first');
+      return;
+    }
+    if (_lastLocation == null) {
+      _addLog('WARN', 'No location yet — get a position first');
+      return;
+    }
+    try {
+      final loc = _lastLocation!;
+
+      // 1. Configure like the issue #51 reporter
+      await tl.Tracelet.setConfig(
+        tl.Config(
+          geofence: const tl.GeofenceConfig(
+            geofenceProximityRadius: 1000,
+            geofenceInitialTriggerEntry: true,
+          ),
+          geo: tl.GeoConfig(
+            desiredAccuracy: tl.DesiredAccuracy.high,
+            locationAuthorizationRequest:
+                tl.LocationAuthorizationRequest.always,
+            distanceFilter: 0.0,
+            enableAdaptiveMode: false,
+            disableElasticity: true,
+            locationTimeout: 30,
+            geofenceModeHighAccuracy: true,
+            filter: const tl.LocationFilter(
+              trackingAccuracyThreshold: 100,
+              maxImpliedSpeed: 100,
+              useKalmanFilter: true,
+              rejectMockLocations: false,
+            ),
+          ),
+        ),
+      );
+      _addLog(
+        'ISSUE_51',
+        'Config applied: highAccuracy=true, rejectMock=false, distanceFilter=0',
+      );
+
+      // 2. Register geofences around current location (like reporter)
+      final gf1Id = 'issue51_enter_${DateTime.now().millisecondsSinceEpoch}';
+      final gf2Id = 'issue51_nearby_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Geofence at current location (should trigger ENTER immediately)
+      await tl.Tracelet.addGeofence(
+        tl.Geofence(
+          identifier: gf1Id,
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          radius: 20,
+          notifyOnEntry: true,
+          notifyOnExit: true,
+          notifyOnDwell: true,
+          loiteringDelay: 30000,
+        ),
+      );
+      _addLog(
+        'ISSUE_51',
+        'Geofence added: $gf1Id  r=20m (at current position — expect ENTER)',
+      );
+
+      // Geofence ~40m north (should trigger when walking toward it)
+      await tl.Tracelet.addGeofence(
+        tl.Geofence(
+          identifier: gf2Id,
+          latitude: loc.coords.latitude + 0.00036, // ~40m north
+          longitude: loc.coords.longitude,
+          radius: 20,
+          notifyOnEntry: true,
+          notifyOnExit: true,
+        ),
+      );
+      _addLog('ISSUE_51', 'Geofence added: $gf2Id  r=20m (~40m north)');
+
+      // 3. Start continuous tracking (NOT startGeofences)
+      final state = await tl.Tracelet.start();
+      await tl.Tracelet.changePace(true);
+      setState(() {
+        _isTracking = state.enabled;
+        _pluginState = state;
+      });
+      _addLog(
+        'ISSUE_51',
+        'start() called — continuous tracking active  '
+            'mode=${state.trackingMode.name}  enabled=${state.enabled}',
+      );
+      _addLog(
+        'ISSUE_51',
+        'Watching for onGeofence events... '
+            'Walk ~20m away to trigger EXIT, then return for ENTER.',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'startContinuousWithGeofences() failed: $e');
+    }
+  }
+
   /// Update location filter settings live.
   Future<void> _setStrictFilter() async {
     try {
@@ -3676,6 +3786,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'High-Accuracy GF',
                         Icons.gps_fixed,
                         _startGeofencesHighAccuracy,
+                      ),
+                      _Chip(
+                        'Track + Geofences (#51)',
+                        Icons.track_changes,
+                        _startContinuousWithGeofences,
                       ),
                     ],
                   ),

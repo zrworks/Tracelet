@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import tracelet_ios
+@testable import TraceletSDK
 
 /// Unit tests for the auto-resume and CLServiceSession integration
 /// in `TraceletIosPlugin`.

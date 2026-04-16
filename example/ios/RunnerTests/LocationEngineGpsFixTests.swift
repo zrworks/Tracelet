@@ -1,5 +1,6 @@
 import XCTest
 @testable import tracelet_ios
+@testable import TraceletSDK
 import CoreLocation
 
 /// Unit tests for `LocationEngine.isGpsFix(_:)` — the GPS-quality heuristic

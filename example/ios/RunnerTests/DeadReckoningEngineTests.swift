@@ -1,5 +1,6 @@
 import XCTest
 @testable import tracelet_ios
+@testable import TraceletSDK
 import Foundation
 
 /// Unit tests for `DeadReckoningEngine`.

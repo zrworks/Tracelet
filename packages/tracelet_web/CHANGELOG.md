@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.11
+
+- **FIX**: Version bump for secondary FlutterEngine guard fix in `tracelet_android` and `tracelet_ios` (#51).
+
 ## 1.8.10
 
 - **FIX**: Version bump for killed-state tracking fix in `tracelet_android` (#50).

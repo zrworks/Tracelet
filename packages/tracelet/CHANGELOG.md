@@ -1,3 +1,7 @@
+## 1.8.11
+
+- **FIX**: Geofence callbacks no longer silently stop during continuous tracking when a secondary FlutterEngine (e.g. Firebase background messaging) registers the plugin (#51).
+
 ## 1.8.10
 
 - **FIX**: Killed-state tracking now works reliably — `stopBootTracking()` deferred from `initialize()` to `ready()` so boot-mode native tracking survives until the Dart side explicitly takes over (#50).

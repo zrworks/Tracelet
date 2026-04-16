@@ -1,3 +1,7 @@
+## 1.8.11
+
+- **FIX**: Guard against secondary FlutterEngine (e.g. Firebase background messaging) overwriting SDK singleton's event sender and callbacks (#51).
+
 ## 1.8.10
 
 - **FIX**: Killed-state tracking now works reliably — `stopBootTracking()` deferred from `sdk.initialize()` to `sdk.ready()` so boot-mode native tracking (LocationEngine + HttpSyncManager) survives until the Dart side explicitly takes over (#50).

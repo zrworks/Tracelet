@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tracelet/tracelet.dart';
@@ -54,7 +55,7 @@ void main() {
         final lat = currentPos.coords.latitude;
         final lng = currentPos.coords.longitude;
 
-        print('[TEST] Device position: $lat, $lng');
+        debugPrint('[TEST] Device position: $lat, $lng');
 
         // 3) Register a geofence centered on the current device position
         //    with a generous radius so the device is definitely inside
@@ -80,7 +81,9 @@ void main() {
         // 5) Listen for geofence events with a timeout
         final geofenceCompleter = Completer<GeofenceEvent>();
         geofenceSub = Tracelet.onGeofence((event) {
-          print('[TEST] Geofence event: ${event.identifier} → ${event.action}');
+          debugPrint(
+            '[TEST] Geofence event: ${event.identifier} → ${event.action}',
+          );
           if (event.identifier == 'test-issue-51' &&
               !geofenceCompleter.isCompleted) {
             geofenceCompleter.complete(event);
@@ -90,7 +93,7 @@ void main() {
         // 6) Also listen for at least 1 location to confirm tracking works
         final locationCompleter = Completer<Location>();
         locationSub = Tracelet.onLocation((loc) {
-          print(
+          debugPrint(
             '[TEST] Location: ${loc.coords.latitude}, ${loc.coords.longitude} '
             'acc=${loc.coords.accuracy}m',
           );
@@ -110,7 +113,7 @@ void main() {
           ),
         );
         expect(location.coords.latitude, isNonZero);
-        print('[TEST] Location confirmed — tracking is active');
+        debugPrint('[TEST] Location confirmed — tracking is active');
 
         // 8) Wait for geofence ENTER event
         //    The software evaluator should fire ENTER on the next location fix
@@ -128,7 +131,9 @@ void main() {
 
           expect(geoEvent.identifier, equals('test-issue-51'));
           expect(geoEvent.action, equals(GeofenceAction.enter));
-          print('[TEST] ✅ Geofence ENTER received for ${geoEvent.identifier}');
+          debugPrint(
+            '[TEST] ✅ Geofence ENTER received for ${geoEvent.identifier}',
+          );
         } finally {
           locationSub.cancel();
           geofenceSub.cancel();

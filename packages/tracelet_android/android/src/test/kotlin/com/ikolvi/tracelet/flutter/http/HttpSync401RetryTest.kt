@@ -1,12 +1,12 @@
 package com.ikolvi.tracelet.flutter.http
 
 import com.ikolvi.tracelet.sdk.http.HttpSyncManager
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.mockito.Mockito
 
 /**
  * Tests for 401-aware retry in [HttpSyncManager].
@@ -16,69 +16,63 @@ import org.mockito.Mockito
  * - Callback can be set, cleared, and invoked
  * - Callback lifecycle is independent of other HttpSyncManager state
  *
- * Uses Mockito.mock() for HttpSyncManager (same pattern as
- * HttpSyncAutoTriggerTest) to avoid needing Robolectric.
+ * Uses the companion object static property directly since
+ * `onAuthorizationRequired` is a static callback on [HttpSyncManager].
  */
 internal class HttpSync401RetryTest {
 
+    @AfterTest
+    fun tearDown() {
+        // Reset static callback after each test
+        HttpSyncManager.onAuthorizationRequired = null
+    }
+
     @Test
     fun onAuthorizationRequired_defaultsToNull() {
-        val manager = Mockito.mock(HttpSyncManager::class.java)
-        // Real property access on mock returns null by default
-        Mockito.`when`(manager.onAuthorizationRequired).thenCallRealMethod()
-        Mockito.doCallRealMethod().`when`(manager).onAuthorizationRequired = Mockito.any()
-        assertNull(manager.onAuthorizationRequired)
+        HttpSyncManager.onAuthorizationRequired = null
+        assertNull(HttpSyncManager.onAuthorizationRequired)
     }
 
     @Test
     fun onAuthorizationRequired_canBeSet() {
-        val manager = Mockito.mock(HttpSyncManager::class.java)
         var callbackInvoked = false
-        val callback: () -> Boolean = {
+        HttpSyncManager.onAuthorizationRequired = {
             callbackInvoked = true
             true
         }
 
-        // Use real field access since this is a public var
-        Mockito.`when`(manager.onAuthorizationRequired).thenReturn(callback)
-
-        val result = manager.onAuthorizationRequired?.invoke()
+        val result = HttpSyncManager.onAuthorizationRequired?.invoke()
         assertTrue(callbackInvoked)
         assertEquals(true, result)
     }
 
     @Test
     fun onAuthorizationRequired_canReturnFalse() {
-        val manager = Mockito.mock(HttpSyncManager::class.java)
-        val callback: () -> Boolean = { false }
-        Mockito.`when`(manager.onAuthorizationRequired).thenReturn(callback)
+        HttpSyncManager.onAuthorizationRequired = { false }
 
-        val result = manager.onAuthorizationRequired?.invoke()
+        val result = HttpSyncManager.onAuthorizationRequired?.invoke()
         assertFalse(result!!)
     }
 
     @Test
     fun onAuthorizationRequired_nullSafeInvocation() {
-        val manager = Mockito.mock(HttpSyncManager::class.java)
-        Mockito.`when`(manager.onAuthorizationRequired).thenReturn(null)
+        HttpSyncManager.onAuthorizationRequired = null
 
         // Null-safe invocation should return null
-        val result = manager.onAuthorizationRequired?.invoke()
+        val result = HttpSyncManager.onAuthorizationRequired?.invoke()
         assertNull(result)
     }
 
     @Test
     fun onAuthorizationRequired_multipleInvocations() {
         var callCount = 0
-        val callback: () -> Boolean = {
+        HttpSyncManager.onAuthorizationRequired = {
             callCount++
             callCount <= 1
         }
-        val manager = Mockito.mock(HttpSyncManager::class.java)
-        Mockito.`when`(manager.onAuthorizationRequired).thenReturn(callback)
 
-        assertTrue(manager.onAuthorizationRequired!!.invoke())
-        assertFalse(manager.onAuthorizationRequired!!.invoke())
+        assertTrue(HttpSyncManager.onAuthorizationRequired!!.invoke())
+        assertFalse(HttpSyncManager.onAuthorizationRequired!!.invoke())
         assertEquals(2, callCount)
     }
 }

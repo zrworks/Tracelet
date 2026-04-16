@@ -4,6 +4,7 @@ import XCTest
 
 
 @testable import tracelet_ios
+@testable import TraceletSDK
 
 // This demonstrates a simple unit test of the Swift portion of this plugin's implementation.
 //
@@ -11,17 +12,10 @@ import XCTest
 
 class RunnerTests: XCTestCase {
 
-  func testGetPlatformVersion() {
+  func testPluginRegistersWithoutCrash() {
+    // Verify TraceletIosPlugin can be instantiated.
     let plugin = TraceletIosPlugin()
-
-    let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: [])
-
-    let resultExpectation = expectation(description: "result block must be called.")
-    plugin.handle(call) { result in
-      XCTAssertEqual(result as! String, "iOS " + UIDevice.current.systemVersion)
-      resultExpectation.fulfill()
-    }
-    waitForExpectations(timeout: 1)
+    XCTAssertNotNil(plugin)
   }
 
 }

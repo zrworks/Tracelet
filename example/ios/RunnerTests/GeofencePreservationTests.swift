@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import tracelet_ios
+@testable import TraceletSDK
 
 /// Unit tests for conditional geofence preservation during reset (#23).
 ///

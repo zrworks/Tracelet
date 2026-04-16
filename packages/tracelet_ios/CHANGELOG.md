@@ -1,3 +1,7 @@
+## 1.8.11
+
+- **FIX**: Guard against secondary FlutterEngine (e.g. Firebase background messaging) overwriting SDK singleton's event sender and callbacks (#51).
+
 ## 1.8.10
 
 - **FIX**: Version bump for killed-state tracking fix in `tracelet_android` (#50).

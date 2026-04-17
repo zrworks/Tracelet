@@ -1,3 +1,9 @@
+## 1.8.12
+
+- **FIX**: Geofence `extras` are now delivered correctly to `onGeofence` callbacks. Previously, extras were persisted via `Map.toString()` and could not be parsed back into a Map, causing `GeofenceEvent.extras` to always arrive empty (#51 follow-up).
+- **FIX**: Location `extras` are now included in read-back location maps (previously silently dropped in `cursorToLocation`).
+- **FIX**: Bump Android native SDK to 1.0.11.
+
 ## 1.8.11
 
 - **FIX**: Guard against secondary FlutterEngine (e.g. Firebase background messaging) overwriting SDK singleton's event sender and callbacks (#51).

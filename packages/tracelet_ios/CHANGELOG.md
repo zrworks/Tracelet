@@ -1,3 +1,7 @@
+## 1.8.12
+
+- **CHORE**: Version bump for geofence/location `extras` round-trip fix in `tracelet_android` (#51 follow-up). iOS already handled extras correctly; regression tests added to lock in parity.
+
 ## 1.8.11
 
 - **FIX**: Guard against secondary FlutterEngine (e.g. Firebase background messaging) overwriting SDK singleton's event sender and callbacks (#51).

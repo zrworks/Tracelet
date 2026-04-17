@@ -302,7 +302,22 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
                 ?: (location["batteryLevel"] as? Number)?.toDouble() ?: -1.0)
             put(COL_BATTERY_CHARGING, if (battery?.get("is_charging") == true || battery?.get("isCharging") == true || location["batteryCharging"] == true) 1 else 0)
             put(COL_EVENT, location["event"] as? String)
-            put(COL_EXTRAS, location["extras"]?.toString())
+
+            // Serialize extras as JSON so it can be faithfully restored as a Map on read.
+            // Using .toString() produced a Java Map.toString() representation that could
+            // not be parsed back into a Map.
+            val extrasMap = location["extras"] as? Map<*, *>
+            val extrasJson: String? = if (extrasMap != null) {
+                try {
+                    org.json.JSONObject(extrasMap.mapKeys { it.key.toString() }).toString()
+                } catch (e: Exception) {
+                    Log.w("Tracelet", "Failed to serialize location extras as JSON: ${e.message}")
+                    null
+                }
+            } else {
+                null
+            }
+            put(COL_EXTRAS, extrasJson)
             put(COL_SYNCED, 0)
             put(COL_CREATED_AT, System.currentTimeMillis())
         }
@@ -453,7 +468,23 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
             put(COL_NOTIFY_ON_EXIT, if (geofence["notifyOnExit"] != false) 1 else 0)
             put(COL_NOTIFY_ON_DWELL, if (geofence["notifyOnDwell"] == true) 1 else 0)
             put(COL_LOITERING_DELAY, (geofence["loiteringDelay"] as? Number)?.toInt() ?: 0)
-            put(COL_GF_EXTRAS, geofence["extras"]?.toString())
+
+            // Serialize extras as JSON so it can be faithfully restored as a Map on read.
+            // Previously this used .toString() which produced a Java Map.toString()
+            // representation (e.g. "{key=value}") that could not be parsed back into a
+            // Map, causing GeofenceEvent.extras to arrive empty in Dart.
+            val extrasMap = geofence["extras"] as? Map<*, *>
+            val extrasJson: String? = if (extrasMap != null) {
+                try {
+                    org.json.JSONObject(extrasMap.mapKeys { it.key.toString() }).toString()
+                } catch (e: Exception) {
+                    Log.w("Tracelet", "Failed to serialize geofence extras as JSON: ${e.message}")
+                    null
+                }
+            } else {
+                null
+            }
+            put(COL_GF_EXTRAS, extrasJson)
 
             // Serialize vertices as JSON: [[lat,lng],[lat,lng],...]
             val vertices = geofence["vertices"] as? List<*>
@@ -664,6 +695,27 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
                 "is_charging" to (c.getInt(iBatteryCharging) == 1),
             ),
         )
+        // Decode JSON-serialized extras (parity with iOS; older rows may be
+        // non-JSON strings from the pre-1.0.11 code path — those are dropped).
+        val iExtras = c.getColumnIndex(COL_EXTRAS)
+        if (iExtras >= 0 && !c.isNull(iExtras)) {
+            val extrasJson = c.getString(iExtras)
+            if (!extrasJson.isNullOrEmpty()) {
+                try {
+                    val obj = org.json.JSONObject(extrasJson)
+                    val m = mutableMapOf<String, Any?>()
+                    val keys = obj.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        val v = obj.get(k)
+                        m[k] = if (v === org.json.JSONObject.NULL) null else v
+                    }
+                    if (m.isNotEmpty()) map["extras"] = m
+                } catch (_: Exception) {
+                    // Legacy rows stored via toString(); silently omit.
+                }
+            }
+        }
         // Include audit fields when available (LEFT JOIN with audit_trail)
         if (iHash >= 0 && !c.isNull(iHash)) {
             map["audit_hash"] = c.getString(iHash)
@@ -706,6 +758,29 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
             }
         }
 
+        // Parse extras from JSON. Older rows (or rows written by previous versions)
+        // may contain a non-JSON string; in that case we fall back to null so callers
+        // see no extras rather than a malformed string.
+        val extrasJson = c.getString(c.getColumnIndexOrThrow(COL_GF_EXTRAS))
+        val extras: Map<String, Any?>? = if (extrasJson.isNullOrEmpty()) {
+            null
+        } else {
+            try {
+                val obj = org.json.JSONObject(extrasJson)
+                val m = mutableMapOf<String, Any?>()
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    val v = obj.get(k)
+                    m[k] = if (v === org.json.JSONObject.NULL) null else v
+                }
+                m
+            } catch (e: Exception) {
+                Log.w("Tracelet", "Failed to parse geofence extras JSON: ${e.message}")
+                null
+            }
+        }
+
         val map = mutableMapOf<String, Any?>(
             "identifier" to c.getString(c.getColumnIndexOrThrow(COL_IDENTIFIER)),
             "latitude" to c.getDouble(c.getColumnIndexOrThrow(COL_LATITUDE)),
@@ -715,7 +790,7 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
             "notifyOnExit" to (c.getInt(c.getColumnIndexOrThrow(COL_NOTIFY_ON_EXIT)) == 1),
             "notifyOnDwell" to (c.getInt(c.getColumnIndexOrThrow(COL_NOTIFY_ON_DWELL)) == 1),
             "loiteringDelay" to c.getInt(c.getColumnIndexOrThrow(COL_LOITERING_DELAY)),
-            "extras" to c.getString(c.getColumnIndexOrThrow(COL_GF_EXTRAS)),
+            "extras" to extras,
         )
         if (vertices != null) {
             map["vertices"] = vertices

@@ -6,7 +6,10 @@ import UIKit
 /// one-shot position, watch position, significant location changes,
 /// and odometer computation.
 public final class LocationEngine: NSObject, CLLocationManagerDelegate {
-    private let locationManager: CLLocationManager
+    /// Internally settable so tests can inject a CLLocationManager subclass
+    /// that records calls (e.g. `requestLocation`). Production code never
+    /// reassigns this after init.
+    internal var locationManager: CLLocationManager
     private let configManager: ConfigManager
     private let stateManager: StateManager
     private let eventDispatcher: TraceletEventSending
@@ -457,9 +460,21 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     // MARK: - Pace control
 
     public func changePace(_ isMoving: Bool) -> Bool {
+        let wasTracking = isTracking
         stateManager.isMoving = isMoving
         if isMoving {
             start()
+            // On an actual stationary → moving transition, fire an additional
+            // one-shot request so a fresh fix arrives as soon as the GPS
+            // hardware is warm, without waiting for the continuous stream's
+            // first delivery. iOS prioritizes requestLocation() over the
+            // rate-limited updates from startUpdatingLocation(), and routes
+            // the result through didUpdateLocations so the full processing
+            // pipeline (filters, Kalman, persistence) still applies.
+            // Skip for periodic mode (already driven by requestLocation).
+            if !wasTracking && !isPeriodicTracking {
+                locationManager.requestLocation()
+            }
         } else {
             stop()
         }

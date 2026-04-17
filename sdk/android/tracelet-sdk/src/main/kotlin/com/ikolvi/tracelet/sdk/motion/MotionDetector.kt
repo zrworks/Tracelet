@@ -154,6 +154,41 @@ class MotionDetector(
         cancelSignificantMotionListener()
     }
 
+    /**
+     * Re-sync internal sensor state after an external (caller-driven) pace
+     * change via `Tracelet.changePace(isMoving)`.
+     *
+     * Without this, manually forcing the SDK into the stationary state leaves
+     * MotionDetector with no listeners registered (because `declareMoving()`
+     * had stopped the stationary-side sensors and `declareStationary()` is
+     * never invoked from outside). The result is a permanent dead-state: no
+     * accelerometer or significant-motion sensor is listening, so no future
+     * real movement can wake tracking back up.
+     *
+     * iOS does not need this hook because CMMotionActivityManager runs
+     * continuously at the kernel level regardless of isMoving state.
+     */
+    fun onManualPaceChange(isMoving: Boolean) {
+        if (isMoving) {
+            // Caller forced us into moving state — make sure stationary-side
+            // sensors are released. (Stillness monitoring will be re-armed
+            // by declareStationary() once real stillness is detected.)
+            stopAccelerometerMonitoring()
+            cancelSignificantMotionListener()
+            cancelStopTimeout()
+            if (isAccelerometerOnlyMode) {
+                startAccelerometerStillnessMonitoring()
+            }
+        } else {
+            // Caller forced us into stationary state — re-engage the wake-up
+            // sensors so the next real motion can re-trigger tracking.
+            startAccelerometerMonitoring()
+            if (isAccelerometerOnlyMode) {
+                startSignificantMotionListener()
+            }
+        }
+    }
+
     /** Returns sensors availability info. */
     fun getSensors(): Map<String, Any?> {
         val sm = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager

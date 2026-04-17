@@ -685,6 +685,14 @@ class TraceletSdk private constructor(private val context: Context) {
             "trackingMode" to 0, "schedulerEnabled" to false, "odometer" to 0.0,
         )
         locationEngine.changePace(isMoving)
+        // Re-sync MotionDetector's sensor state so it can wake the SDK back up
+        // on real motion after a manual changePace(false). Without this, the
+        // accelerometer + significant-motion listeners stay torn down and we
+        // can never recover from the forced-stationary state. (See iOS where
+        // CMMotionActivityManager runs continuously and needs no analog.)
+        if (::motionDetector.isInitialized) {
+            motionDetector.onManualPaceChange(isMoving)
+        }
         return stateManager.toMap(configManager.getConfig())
     }
 

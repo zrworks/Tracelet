@@ -1,3 +1,9 @@
+## 1.8.13
+
+- **PERF**: Reduce first-fix latency on stationary → moving transitions. `LocationEngine.changePace(true)` now fires an additional one-shot `getCurrentLocation()` so a fresh GPS fix arrives as soon as the hardware is warm, instead of waiting for `locationUpdateInterval` on the continuous stream. The one-shot is guarded by a `CancellationTokenSource` that is cancelled on `stop()` (#54).
+- **FIX**: After a manual `Tracelet.changePace(false)`, MotionDetector’s accelerometer + significant-motion listeners are now re-engaged so real motion can resume tracking. Previously the SDK could get stuck in a permanent stationary state with no sensors listening.
+- **FIX**: Bump Android native SDK to 1.0.12.
+
 ## 1.8.12
 
 - **FIX**: Geofence `extras` are now delivered correctly to `onGeofence` callbacks. Previously, extras were persisted via `Map.toString()` and could not be parsed back into a Map, causing `GeofenceEvent.extras` to always arrive empty (#51 follow-up).

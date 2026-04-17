@@ -1,3 +1,9 @@
+## 1.8.13
+
+- **PERF**: Reduce first-fix latency on stationary → moving transitions on both iOS and Android. The native engines now fire an additional one-shot location request when motion starts, delivering a fresh GPS fix in ~1–5s instead of waiting for `distanceFilter` (iOS) or `locationUpdateInterval` (Android) on the continuous stream (#54).
+- **FIX**: Android — after a manual `Tracelet.changePace(false)` (force stationary), the SDK can now detect real motion and resume tracking automatically. Previously the wake-up sensors stayed torn down, leaving the SDK in a dead-state. iOS was unaffected.
+- **FIX**: Bump iOS native SDK to 1.0.11 and Android native SDK to 1.0.12.
+
 ## 1.8.12
 
 - **FIX**: Geofence `extras` now arrive in `GeofenceEvent.extras` on Android (previously always empty). Location `extras` are also correctly included when reading back persisted locations (#51 follow-up).

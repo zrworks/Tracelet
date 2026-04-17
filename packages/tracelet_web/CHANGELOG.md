@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.13
+
+- **CHORE**: Version bump for first-fix latency improvement in `tracelet_android` and `tracelet_ios` (#54).
+
 ## 1.8.12
 
 - **CHORE**: Version bump for geofence/location `extras` round-trip fix in `tracelet_android` (#51 follow-up).

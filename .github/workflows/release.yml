@@ -230,7 +230,8 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           # Check CocoaPods trunk API for existing version
-          if pod trunk info TraceletSDK 2>/dev/null | grep -q "- ${VERSION}"; then
+          # Use `-- "- ${VERSION}"` to prevent grep from treating leading `-` as an option flag.
+          if pod trunk info TraceletSDK 2>/dev/null | grep -qF -- "- ${VERSION} "; then
             echo "already_published=true" >> "$GITHUB_OUTPUT"
             echo "ℹ️ TraceletSDK $VERSION already exists on CocoaPods — skipping publish"
           else

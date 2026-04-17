@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.12
+
+- **CHORE**: Version bump for geofence/location `extras` round-trip fix in `tracelet_android` (#51 follow-up).
+
 ## 1.8.11
 
 - **FIX**: Version bump for secondary FlutterEngine guard fix in `tracelet_android` and `tracelet_ios` (#51).

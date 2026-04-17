@@ -10,6 +10,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -158,4 +159,33 @@ class LocationMapRoundTripTest {
         assertTrue(battery.containsKey("is_charging"), "Battery must have 'is_charging'")
         assertFalse(battery.containsKey("isCharging"), "Battery must NOT have 'isCharging'")
     }
+
+    // =========================================================================
+    // extras round-trip (issue #51 follow-up)
+    // =========================================================================
+
+    @Test
+    fun `location extras survive insert and read as a Map`() {
+        val base = makeCanonicalLocation()
+        val withExtras = base.toMutableMap().apply {
+            put("extras", mapOf("task" to "delivery", "count" to 3, "flag" to true))
+        }
+        db.insertLocation(withExtras)
+        val row = db.getLocations(limit = 1).first()
+
+        @Suppress("UNCHECKED_CAST")
+        val extras = row["extras"] as? Map<String, Any?>
+        assertNotNull(extras, "extras must deserialize as a Map, not a String")
+        assertEquals("delivery", extras["task"])
+        assertEquals(3, extras["count"])
+        assertEquals(true, extras["flag"])
+    }
+
+    @Test
+    fun `missing location extras does not leak to output map`() {
+        db.insertLocation(makeCanonicalLocation())
+        val row = db.getLocations(limit = 1).first()
+        assertFalse(row.containsKey("extras"), "Locations without extras must omit the key")
+    }
 }
+

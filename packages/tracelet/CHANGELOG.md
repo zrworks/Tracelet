@@ -1,3 +1,8 @@
+## 1.8.12
+
+- **FIX**: Geofence `extras` now arrive in `GeofenceEvent.extras` on Android (previously always empty). Location `extras` are also correctly included when reading back persisted locations (#51 follow-up).
+- **FIX**: Bump Android native SDK to 1.0.11.
+
 ## 1.8.11
 
 - **FIX**: Geofence callbacks no longer silently stop during continuous tracking when a secondary FlutterEngine (e.g. Firebase background messaging) registers the plugin (#51).

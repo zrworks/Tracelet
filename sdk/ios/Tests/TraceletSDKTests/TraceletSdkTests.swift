@@ -333,6 +333,56 @@ final class TraceletSdkTests: XCTestCase {
         XCTAssertFalse(db.geofenceExists("office"))
     }
 
+    /// Regression test for GitHub issue #51 follow-up — verifies iOS parity with
+    /// the Android fix: geofence `extras` must round-trip through the DB as a
+    /// Map, not be serialized via a toString()-like fallback.
+    func testDatabaseGeofenceExtrasRoundTrip() {
+        let db = TraceletDatabase(inMemory: true)
+
+        let _ = db.insertGeofence([
+            "identifier": "extras_zone",
+            "latitude": 37.7749,
+            "longitude": -122.4194,
+            "radius": 200.0,
+            "notifyOnEntry": true,
+            "notifyOnExit": true,
+            "extras": [
+                "demo_test": "Hello from the geofence extras!",
+                "count": 42,
+                "enabled": true,
+            ] as [String: Any],
+        ])
+
+        let stored = db.getGeofence("extras_zone")
+        XCTAssertNotNil(stored)
+        let extras = stored?["extras"] as? [String: Any]
+        XCTAssertNotNil(extras, "extras must deserialize as a dictionary, not a String")
+        XCTAssertEqual(extras?["demo_test"] as? String, "Hello from the geofence extras!")
+        XCTAssertEqual(extras?["count"] as? Int, 42)
+        XCTAssertEqual(extras?["enabled"] as? Bool, true)
+    }
+
+    /// Regression test for iOS parity: location `extras` must also round-trip
+    /// faithfully as a Map through the DB.
+    func testDatabaseLocationExtrasRoundTrip() {
+        let db = TraceletDatabase(inMemory: true)
+
+        let _ = db.insertLocation([
+            "uuid": "extras-loc-1",
+            "latitude": 1.0, "longitude": 2.0,
+            "accuracy": 5.0, "speed": 0.0, "heading": 0.0, "altitude": 0.0,
+            "timestamp": "2024-01-01T00:00:00Z",
+            "extras": ["task": "delivery", "count": 3] as [String: Any],
+        ])
+
+        let rows = db.getLocations()
+        XCTAssertEqual(rows.count, 1)
+        let extras = rows.first?["extras"] as? [String: Any]
+        XCTAssertNotNil(extras)
+        XCTAssertEqual(extras?["task"] as? String, "delivery")
+        XCTAssertEqual(extras?["count"] as? Int, 3)
+    }
+
     func testDatabaseLogCRUD() {
         let db = TraceletDatabase(inMemory: true)
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.11
+
+- **PERF**: `LocationEngine.changePace(true)` now fires an additional one-shot `requestLocation()` on stationary → moving transitions, delivering a fresh GPS fix as soon as the hardware is warm without waiting for `distanceFilter` to be satisfied on the continuous stream. Reduces first-fix latency on motion start from 11–50s to ~1–5s (#54).
+
 ## 1.0.10
 
 - **FIX**: Version bump for parity with Android SDK 1.0.10 (killed-state tracking fix #50).

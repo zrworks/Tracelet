@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.location.*
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
@@ -83,6 +84,11 @@ class LocationEngine(
         LocationServices.getFusedLocationProviderClient(context)
 
     private var trackingCallback: LocationCallback? = null
+
+    /** Cancellation source for the in-flight stationary→moving one-shot fix.
+     *  Cancelled on `stop()` and superseded on each new transition so that
+     *  late callbacks from a prior request can’t leak past a stop. */
+    private var immediateFixCts: CancellationTokenSource? = null
     private var lastLocation: Location? = null
     /** Last GPS-quality location (accuracy ≤ 100m).
      *  Used by heartbeat to avoid returning low-accuracy significant-change fixes. */
@@ -200,6 +206,10 @@ class LocationEngine(
             fusedClient.removeLocationUpdates(it)
             trackingCallback = null
         }
+        // Cancel any in-flight stationary→moving one-shot so its success
+        // callback won’t fire after stop().
+        immediateFixCts?.cancel()
+        immediateFixCts = null
         stopPeriodic()
         deactivateDeadReckoning()
         cancelGpsLossTimer()
@@ -540,17 +550,57 @@ class LocationEngine(
      * if false, stop location updates (simulate stationary).
      */
     fun changePace(isMoving: Boolean): Boolean {
+        val wasTracking = isTracking
         state.isMoving = isMoving
         if (isMoving && !isTracking) {
             start()
         } else if (!isMoving && isTracking) {
             stop()
         }
+        // On an actual stationary → moving transition, fire an additional
+        // one-shot getCurrentLocation() so a fresh GPS fix arrives as soon
+        // as the hardware is warm, bypassing the `locationUpdateInterval`
+        // wait on the continuous stream. Routed through onLocationReceived()
+        // so the full processing pipeline (filters, Kalman, persistence)
+        // still applies.
+        if (isMoving && !wasTracking) {
+            requestImmediateFix()
+        }
         // Dispatch motionChange event
         val locationMap = lastLocation?.let { enrichLocation(it, "motionchange", lastEffectiveSpeed) }
             ?: mapOf("is_moving" to isMoving)
         events.sendMotionChange(locationMap)
         return true
+    }
+
+    /**
+     * Fires a single [getCurrentLocation] request to deliver a fresh fix
+     * immediately after a stationary → moving transition.
+     *
+     * The result is fed into the same [onLocationReceived] pipeline used
+     * by the continuous stream, so all filters, Kalman, persistence, and
+     * event dispatch remain consistent.
+     */
+    private fun requestImmediateFix() {
+        if (!hasPermission()) return
+        // Supersede any prior in-flight one-shot so we never have two racing.
+        immediateFixCts?.cancel()
+        val cts = CancellationTokenSource()
+        immediateFixCts = cts
+        val priority = accuracyToPriority(config.getDesiredAccuracy())
+        try {
+            fusedClient.getCurrentLocation(priority, cts.token)
+                .addOnSuccessListener { location ->
+                    // Drop the result if we’ve been superseded or stopped.
+                    if (location != null && immediateFixCts === cts) {
+                        onLocationReceived(location, "location")
+                    }
+                }
+                // Failures are expected (e.g. GPS warming up); the continuous
+                // stream will deliver the next fix, so we silently ignore.
+        } catch (_: SecurityException) {
+            // Permission revoked mid-call — ignore.
+        }
     }
 
     /** Returns the current odometer value. */

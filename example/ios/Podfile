@@ -47,10 +47,47 @@ post_install do |installer|
   end
 
   # Fix code signing for embedded frameworks (objective_c.framework, etc.)
-  # Required for physical device deployment with Xcode 26+
+  # Required for physical device deployment with Xcode 26+ on iOS 26.
+  #
+  # Background: Xcode 26's CoreDevice install path verifies that every
+  # embedded framework has a valid signature *matching the app's signing
+  # identity*. Prebuilt frameworks shipped via Dart packages (notably
+  # `package:objective_c`'s `objective_c.framework`) ship pre-signed by
+  # their author; that signature is invalidated at embed time, and unless
+  # we explicitly re-sign during the "Embed Frameworks" build phase, the
+  # device rejects the install with MIInstallerErrorDomain code 13
+  # (0xe8008014 — "The executable contains an invalid signature").
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+      config.build_settings['CODE_SIGN_INJECT_BASE_ENTITLEMENTS'] = 'NO'
     end
+    # Resource bundles (e.g. *_privacy) do not need signing and requiring a
+    # development team for them breaks release builds. Disable signing for
+    # any target that produces a .bundle product.
+    if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
+      target.build_configurations.each do |config|
+        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+        config.build_settings['CODE_SIGN_IDENTITY'] = ''
+        config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''
+      end
+    end
+  end
+
+  # Strip pre-existing signatures from embedded frameworks so Xcode's
+  # "Embed Frameworks" phase signs them fresh with the app identity.
+  # Targets the host app project, not the Pods project.
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_project.native_targets.each do |native_target|
+      native_target.build_configurations.each do |config|
+        # Tells codesign --force to overwrite any pre-existing signature.
+        existing = config.build_settings['OTHER_CODE_SIGN_FLAGS'] || '$(inherited)'
+        unless existing.to_s.include?('--generate-entitlement-der')
+          config.build_settings['OTHER_CODE_SIGN_FLAGS'] = "#{existing} --generate-entitlement-der"
+        end
+      end
+    end
+    aggregate_target.user_project.save
   end
 end

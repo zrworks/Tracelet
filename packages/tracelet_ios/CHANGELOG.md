@@ -1,3 +1,8 @@
+## 1.8.13
+
+- **PERF**: Reduce first-fix latency on stationary → moving transitions. `LocationEngine.changePace(true)` now fires an additional one-shot `requestLocation()` so a fresh GPS fix arrives as soon as the hardware is warm, instead of waiting for `distanceFilter` on the continuous stream (#54).
+- **FIX**: Bump iOS native SDK to 1.0.11.
+
 ## 1.8.12
 
 - **CHORE**: Version bump for geofence/location `extras` round-trip fix in `tracelet_android` (#51 follow-up). iOS already handled extras correctly; regression tests added to lock in parity.

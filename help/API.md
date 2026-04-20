@@ -125,16 +125,16 @@
 
 | Method | Returns | Description |
 |---|---|---|
-| `Tracelet.getPermissionStatus()` | `int` | Current location status (no dialog) |
-| `Tracelet.requestPermission()` | `int` | Request location + wait for result |
-| `Tracelet.getNotificationPermissionStatus()` | `int` | Notification status (Android 13+) |
-| `Tracelet.requestNotificationPermission()` | `int` | Request notification (Android 13+) |
-| `Tracelet.getMotionPermissionStatus()` | `int` | Motion/activity recognition status |
-| `Tracelet.requestMotionPermission()` | `int` | Request motion permission |
+| `Tracelet.getLocationAuthorization()` | `AuthorizationStatus` | Current location status (no dialog) |
+| `Tracelet.requestLocationAuthorization()` | `AuthorizationStatus` | Request location + wait for result |
+| `Tracelet.getNotificationAuthorization()` | `AuthorizationStatus` | Notification status (Android 13+) |
+| `Tracelet.requestNotificationAuthorization()` | `AuthorizationStatus` | Request notification (Android 13+) |
+| `Tracelet.getMotionAuthorization()` | `AuthorizationStatus` | Motion/activity recognition status |
+| `Tracelet.requestMotionAuthorization()` | `AuthorizationStatus` | Request motion permission |
 | `Tracelet.openAppSettings()` | `bool` | Open app settings |
 | `Tracelet.openLocationSettings()` | `bool` | Open location settings |
 | `Tracelet.openBatterySettings()` | `bool` | Open battery optimization (Android) |
-| `Tracelet.requestTemporaryFullAccuracy(purpose)` | `int` | Temp full accuracy (iOS 14+) |
+| `Tracelet.requestTemporaryFullAccuracyAuthorization(purpose)` | `AuthorizationStatus` | Temp full accuracy (iOS 14+) |
 | `Tracelet.isPowerSaveMode` | `bool` | Battery saver active? |
 | `Tracelet.hasBackgroundPermission` | `bool` | Has "Always" location authorization? |
 | `Tracelet.isIgnoringBatteryOptimizations()` | `bool` | Battery exempt? (Android) |

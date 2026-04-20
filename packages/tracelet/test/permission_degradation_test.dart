@@ -1,3 +1,7 @@
+// Many tests in this file deliberately exercise deprecated int-returning
+// permission APIs (kept until 2.0.0 for backward compatibility, see #57).
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:async';
 
 import 'package:flutter/services.dart';
@@ -671,6 +675,198 @@ void main() {
         () => platform.canScheduleExactAlarms(),
         throwsA(isA<UnimplementedError>()),
       );
+    });
+  });
+
+  // ==========================================================================
+  // Issue #57 — typed AuthorizationStatus permission APIs
+  // ==========================================================================
+  group('AuthorizationStatus enum APIs (#57)', () {
+    test('getLocationAuthorization maps each int to the right enum', () async {
+      const expected = {
+        0: AuthorizationStatus.notDetermined,
+        1: AuthorizationStatus.denied,
+        2: AuthorizationStatus.whenInUse,
+        3: AuthorizationStatus.always,
+        4: AuthorizationStatus.deniedForever,
+      };
+      for (final entry in expected.entries) {
+        mock.locationStatus = entry.key;
+        expect(await Tracelet.getLocationAuthorization(), entry.value);
+      }
+    });
+
+    test(
+      'getLocationAuthorization clamps out-of-range to notDetermined',
+      () async {
+        mock.locationStatus = 99;
+        expect(
+          await Tracelet.getLocationAuthorization(),
+          AuthorizationStatus.notDetermined,
+        );
+        mock.locationStatus = -1;
+        expect(
+          await Tracelet.getLocationAuthorization(),
+          AuthorizationStatus.notDetermined,
+        );
+      },
+    );
+
+    test('requestLocationAuthorization escalates and returns enum', () async {
+      mock.locationStatus = 0;
+      mock.simulateUserGrant = true;
+      expect(
+        await Tracelet.requestLocationAuthorization(),
+        AuthorizationStatus.whenInUse,
+      );
+      expect(
+        await Tracelet.requestLocationAuthorization(),
+        AuthorizationStatus.always,
+      );
+    });
+
+    test('getNotificationAuthorization returns AuthorizationStatus', () async {
+      mock.notificationStatus = 3;
+      expect(
+        await Tracelet.getNotificationAuthorization(),
+        AuthorizationStatus.always,
+      );
+      mock.notificationStatus = 4;
+      expect(
+        await Tracelet.getNotificationAuthorization(),
+        AuthorizationStatus.deniedForever,
+      );
+    });
+
+    test(
+      'requestNotificationAuthorization returns AuthorizationStatus',
+      () async {
+        mock.notificationStatus = 0;
+        mock.simulateUserGrant = true;
+        expect(
+          await Tracelet.requestNotificationAuthorization(),
+          AuthorizationStatus.always,
+        );
+      },
+    );
+
+    test('getMotionAuthorization returns AuthorizationStatus', () async {
+      mock.motionStatus = 3;
+      expect(
+        await Tracelet.getMotionAuthorization(),
+        AuthorizationStatus.always,
+      );
+      mock.motionStatus = 1;
+      expect(
+        await Tracelet.getMotionAuthorization(),
+        AuthorizationStatus.denied,
+      );
+    });
+
+    test('requestMotionAuthorization returns AuthorizationStatus', () async {
+      mock.motionStatus = 0;
+      mock.simulateUserGrant = true;
+      expect(
+        await Tracelet.requestMotionAuthorization(),
+        AuthorizationStatus.always,
+      );
+    });
+
+    test(
+      'requestTemporaryFullAccuracyAuthorization returns AuthorizationStatus',
+      () async {
+        // Mock returns 0 (notDetermined) for temporary accuracy.
+        expect(
+          await Tracelet.requestTemporaryFullAccuracyAuthorization('purpose'),
+          AuthorizationStatus.notDetermined,
+        );
+        expect(mock.calls.last.method, 'requestTemporaryFullAccuracy');
+        expect(mock.calls.last.args, 'purpose');
+      },
+    );
+
+    test(
+      'hasBackgroundPermission is true only for AuthorizationStatus.always',
+      () async {
+        const cases = {
+          0: false, // notDetermined
+          1: false, // denied
+          2: false, // whenInUse
+          3: true, //  always
+          4: false, // deniedForever
+        };
+        for (final entry in cases.entries) {
+          mock.locationStatus = entry.key;
+          expect(
+            await Tracelet.hasBackgroundPermission,
+            entry.value,
+            reason: 'locationStatus=${entry.key}',
+          );
+        }
+      },
+    );
+
+    test(
+      'getNotificationAuthorization maps each int to the right enum',
+      () async {
+        const expected = {
+          0: AuthorizationStatus.notDetermined,
+          1: AuthorizationStatus.denied,
+          2: AuthorizationStatus.whenInUse,
+          3: AuthorizationStatus.always,
+          4: AuthorizationStatus.deniedForever,
+        };
+        for (final entry in expected.entries) {
+          mock.notificationStatus = entry.key;
+          expect(
+            await Tracelet.getNotificationAuthorization(),
+            entry.value,
+            reason: 'notificationStatus=${entry.key}',
+          );
+        }
+      },
+    );
+
+    test('getMotionAuthorization maps each int to the right enum', () async {
+      const expected = {
+        0: AuthorizationStatus.notDetermined,
+        1: AuthorizationStatus.denied,
+        2: AuthorizationStatus.whenInUse,
+        3: AuthorizationStatus.always,
+        4: AuthorizationStatus.deniedForever,
+      };
+      for (final entry in expected.entries) {
+        mock.motionStatus = entry.key;
+        expect(
+          await Tracelet.getMotionAuthorization(),
+          entry.value,
+          reason: 'motionStatus=${entry.key}',
+        );
+      }
+    });
+
+    test('new typed methods delegate to the deprecated int methods', () async {
+      mock.calls.clear();
+      mock.locationStatus = 3;
+      mock.notificationStatus = 3;
+      mock.motionStatus = 3;
+
+      await Tracelet.getLocationAuthorization();
+      await Tracelet.requestLocationAuthorization();
+      await Tracelet.getNotificationAuthorization();
+      await Tracelet.requestNotificationAuthorization();
+      await Tracelet.getMotionAuthorization();
+      await Tracelet.requestMotionAuthorization();
+
+      final methods = mock.calls.map((c) => c.method).toList();
+      expect(methods, [
+        'getPermissionStatus',
+        'requestPermission',
+        'getNotificationPermissionStatus',
+        'requestNotificationPermission',
+        'getMotionPermissionStatus',
+        'requestMotionPermission',
+      ]);
     });
   });
 }

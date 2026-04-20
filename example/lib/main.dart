@@ -451,31 +451,32 @@ class _DashboardPageState extends State<DashboardPage>
       _subscribeEvents();
 
       // ── Permission flow (Dart-side control, no native dialogs) ──
-      final permStatus = await tl.Tracelet.getPermissionStatus();
-      _addLog('PERMISSION', 'current status=$permStatus');
+      final permStatus = await tl.Tracelet.getLocationAuthorization();
+      _addLog('PERMISSION', 'current status=${permStatus.name}');
 
-      if (permStatus == 0 || permStatus == 1) {
+      if (permStatus == tl.AuthorizationStatus.notDetermined ||
+          permStatus == tl.AuthorizationStatus.denied) {
         // notDetermined or denied (can ask again) → request foreground
-        final result = await tl.Tracelet.requestPermission();
-        _addLog('PERMISSION', 'after request=$result');
-        if (result == 4) {
+        final result = await tl.Tracelet.requestLocationAuthorization();
+        _addLog('PERMISSION', 'after request=${result.name}');
+        if (result == tl.AuthorizationStatus.deniedForever) {
           if (mounted) _showPermissionDeniedDialog();
           return;
         }
-        if (result == 2 && mounted) {
+        if (result == tl.AuthorizationStatus.whenInUse && mounted) {
           // Foreground granted → offer background upgrade via Dart dialog
           final shouldUpgrade = await _showBackgroundRationaleDialog();
           if (shouldUpgrade) {
             await _upgradeToAlways();
           }
         }
-      } else if (permStatus == 2 && mounted) {
+      } else if (permStatus == tl.AuthorizationStatus.whenInUse && mounted) {
         // whenInUse → offer background upgrade
         final shouldUpgrade = await _showBackgroundRationaleDialog();
         if (shouldUpgrade) {
           await _upgradeToAlways();
         }
-      } else if (permStatus == 4) {
+      } else if (permStatus == tl.AuthorizationStatus.deniedForever) {
         if (mounted) _showPermissionDeniedDialog();
         return;
       }
@@ -1346,67 +1347,63 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _requestPermission() async {
     try {
-      final status = await tl.Tracelet.getPermissionStatus();
-      _addLog('PERMISSION', 'current=$status');
+      final status = await tl.Tracelet.getLocationAuthorization();
+      _addLog('PERMISSION', 'current=${status.name}');
 
-      if (status == 4) {
+      if (status == tl.AuthorizationStatus.deniedForever) {
         if (mounted) _showPermissionDeniedDialog();
         return;
       }
 
-      if (status == 3) {
+      if (status == tl.AuthorizationStatus.always) {
         _addLog('PERMISSION', 'already "Always" — nothing to do');
         return;
       }
 
-      if (status == 2) {
+      if (status == tl.AuthorizationStatus.whenInUse) {
         // Foreground granted → offer background upgrade
         if (mounted) {
           final shouldUpgrade = await _showBackgroundRationaleDialog();
           if (shouldUpgrade) {
-            final result = await tl.Tracelet.requestPermission();
-            _addLog('PERMISSION', 'background upgrade=$result');
-            if (result == 4 && mounted) _showPermissionDeniedDialog();
+            final result = await tl.Tracelet.requestLocationAuthorization();
+            _addLog('PERMISSION', 'background upgrade=${result.name}');
+            if (result == tl.AuthorizationStatus.deniedForever && mounted) {
+              _showPermissionDeniedDialog();
+            }
           }
         }
         return;
       }
 
       // notDetermined or denied → request foreground
-      final result = await tl.Tracelet.requestPermission();
-      _addLog('PERMISSION', 'result=$result');
+      final result = await tl.Tracelet.requestLocationAuthorization();
+      _addLog('PERMISSION', 'result=${result.name}');
 
-      if (result == 4 && mounted) {
+      if (result == tl.AuthorizationStatus.deniedForever && mounted) {
         _showPermissionDeniedDialog();
-      } else if (result == 2 && mounted) {
+      } else if (result == tl.AuthorizationStatus.whenInUse && mounted) {
         // Foreground granted → offer background upgrade
         final shouldUpgrade = await _showBackgroundRationaleDialog();
         if (shouldUpgrade) {
-          final bgResult = await tl.Tracelet.requestPermission();
-          _addLog('PERMISSION', 'background upgrade=$bgResult');
-          if (bgResult == 4 && mounted) _showPermissionDeniedDialog();
+          final bgResult = await tl.Tracelet.requestLocationAuthorization();
+          _addLog('PERMISSION', 'background upgrade=${bgResult.name}');
+          if (bgResult == tl.AuthorizationStatus.deniedForever && mounted) {
+            _showPermissionDeniedDialog();
+          }
         }
       }
     } catch (e) {
-      _addLog('ERROR', 'requestPermission() failed: $e');
+      _addLog('ERROR', 'requestLocationAuthorization() failed: $e');
     }
   }
 
   /// Check and log permission status without triggering any dialog.
   Future<void> _checkPermissionStatus() async {
     try {
-      final status = await tl.Tracelet.getPermissionStatus();
-      final label = switch (status) {
-        0 => 'notDetermined',
-        1 => 'denied',
-        2 => 'whenInUse',
-        3 => 'always',
-        4 => 'deniedForever',
-        _ => 'unknown($status)',
-      };
-      _addLog('PERMISSION', '$label ($status)');
+      final status = await tl.Tracelet.getLocationAuthorization();
+      _addLog('PERMISSION', '${status.name} (${status.index})');
     } catch (e) {
-      _addLog('ERROR', 'getPermissionStatus() failed: $e');
+      _addLog('ERROR', 'getLocationAuthorization() failed: $e');
     }
   }
 
@@ -1437,12 +1434,14 @@ class _DashboardPageState extends State<DashboardPage>
   /// this method falls back to opening App Settings so the user can
   /// toggle "Always" manually.
   Future<void> _upgradeToAlways() async {
-    final bgResult = await tl.Tracelet.requestPermission();
-    _addLog('PERMISSION', 'background upgrade=$bgResult');
+    final bgResult = await tl.Tracelet.requestLocationAuthorization();
+    _addLog('PERMISSION', 'background upgrade=${bgResult.name}');
 
     // On iOS, if the result is still whenInUse the OS didn't show a dialog.
     // Open Settings so the user can toggle to "Always" manually.
-    if (!_isAndroid && bgResult == 2 && mounted) {
+    if (!_isAndroid &&
+        bgResult == tl.AuthorizationStatus.whenInUse &&
+        mounted) {
       _addLog(
         'PERMISSION',
         'iOS did not show Always prompt — opening Settings',
@@ -1531,12 +1530,16 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _requestTempFullAccuracy() async {
     try {
-      final result = await tl.Tracelet.requestTemporaryFullAccuracy(
-        'TemporaryFullAccuracy',
-      );
-      _addLog('ACCURACY', 'temporary full accuracy result=$result');
+      final result =
+          await tl.Tracelet.requestTemporaryFullAccuracyAuthorization(
+            'TemporaryFullAccuracy',
+          );
+      _addLog('ACCURACY', 'temporary full accuracy result=${result.name}');
     } catch (e) {
-      _addLog('ERROR', 'requestTemporaryFullAccuracy() failed: $e');
+      _addLog(
+        'ERROR',
+        'requestTemporaryFullAccuracyAuthorization() failed: $e',
+      );
     }
   }
 
@@ -1628,12 +1631,14 @@ class _DashboardPageState extends State<DashboardPage>
   Future<bool> _ensureNotificationPermission() async {
     if (!_isAndroid) return true; // iOS doesn't need this
 
-    final status = await tl.Tracelet.getNotificationPermissionStatus();
-    _addLog('NOTIFICATION', 'current notification status=$status');
+    final status = await tl.Tracelet.getNotificationAuthorization();
+    _addLog('NOTIFICATION', 'current notification status=${status.name}');
 
-    if (status == 3) return true; // Already granted (or pre-13)
+    if (status == tl.AuthorizationStatus.always) {
+      return true; // Already granted (or pre-13)
+    }
 
-    if (status == 4) {
+    if (status == tl.AuthorizationStatus.deniedForever) {
       // Permanently denied — show denied dialog
       if (mounted) _showNotificationDeniedDialog();
       return false;
@@ -1647,30 +1652,23 @@ class _DashboardPageState extends State<DashboardPage>
       return false;
     }
 
-    final result = await tl.Tracelet.requestNotificationPermission();
-    _addLog('NOTIFICATION', 'notification permission result=$result');
+    final result = await tl.Tracelet.requestNotificationAuthorization();
+    _addLog('NOTIFICATION', 'notification permission result=${result.name}');
 
-    if (result == 4 && mounted) {
+    if (result == tl.AuthorizationStatus.deniedForever && mounted) {
       _showNotificationDeniedDialog();
       return false;
     }
-    return result == 3;
+    return result == tl.AuthorizationStatus.always;
   }
 
   /// Check and log notification permission status.
   Future<void> _checkNotificationStatus() async {
     try {
-      final status = await tl.Tracelet.getNotificationPermissionStatus();
-      final label = switch (status) {
-        0 => 'notDetermined',
-        1 => 'denied',
-        3 => 'granted',
-        4 => 'deniedForever',
-        _ => 'unknown($status)',
-      };
-      _addLog('NOTIFICATION', '$label ($status)');
+      final status = await tl.Tracelet.getNotificationAuthorization();
+      _addLog('NOTIFICATION', '${status.name} (${status.index})');
     } catch (e) {
-      _addLog('ERROR', 'getNotificationPermissionStatus() failed: $e');
+      _addLog('ERROR', 'getNotificationAuthorization() failed: $e');
     }
   }
 
@@ -1799,12 +1797,12 @@ class _DashboardPageState extends State<DashboardPage>
   ///
   /// Returns `true` if granted, `false` if denied.
   Future<bool> _ensureMotionPermission() async {
-    final status = await tl.Tracelet.getMotionPermissionStatus();
-    _addLog('MOTION', 'current motion permission status=$status');
+    final status = await tl.Tracelet.getMotionAuthorization();
+    _addLog('MOTION', 'current motion permission status=${status.name}');
 
-    if (status == 3) return true; // Already granted
+    if (status == tl.AuthorizationStatus.always) return true; // Already granted
 
-    if (status == 4) {
+    if (status == tl.AuthorizationStatus.deniedForever) {
       // Permanently denied — show denied dialog
       if (mounted) _showMotionDeniedDialog();
       return false;
@@ -1818,14 +1816,14 @@ class _DashboardPageState extends State<DashboardPage>
       return false;
     }
 
-    final result = await tl.Tracelet.requestMotionPermission();
-    _addLog('MOTION', 'motion permission result=$result');
+    final result = await tl.Tracelet.requestMotionAuthorization();
+    _addLog('MOTION', 'motion permission result=${result.name}');
 
-    if (result == 4 && mounted) {
+    if (result == tl.AuthorizationStatus.deniedForever && mounted) {
       _showMotionDeniedDialog();
       return false;
     }
-    return result == 3;
+    return result == tl.AuthorizationStatus.always;
   }
 
   /// Ensure exact alarm permission for periodic mode with short intervals.
@@ -1877,17 +1875,10 @@ class _DashboardPageState extends State<DashboardPage>
   /// Check and log motion permission status.
   Future<void> _checkMotionStatus() async {
     try {
-      final status = await tl.Tracelet.getMotionPermissionStatus();
-      final label = switch (status) {
-        0 => 'notDetermined',
-        1 => 'denied',
-        3 => 'granted',
-        4 => 'deniedForever',
-        _ => 'unknown($status)',
-      };
-      _addLog('MOTION', '$label ($status)');
+      final status = await tl.Tracelet.getMotionAuthorization();
+      _addLog('MOTION', '${status.name} (${status.index})');
     } catch (e) {
-      _addLog('ERROR', 'getMotionPermissionStatus() failed: $e');
+      _addLog('ERROR', 'getMotionAuthorization() failed: $e');
     }
   }
 

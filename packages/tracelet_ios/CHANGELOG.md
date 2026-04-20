@@ -1,6 +1,6 @@
-## 1.8.14
+## 1.9.0
 
-- **FIX**: Picks up the `tracelet_platform_interface` 1.8.14 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.
+- **FIX**: Picks up the `tracelet_platform_interface` 1.9.0 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.
 
 ## 1.8.13
 

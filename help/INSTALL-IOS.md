@@ -86,7 +86,7 @@ If you use `TrackingMode.periodic`, Tracelet registers background tasks with `BG
 
 ### Temporary Full Accuracy (iOS 14+, Optional)
 
-To use `Tracelet.requestTemporaryFullAccuracy()`, or enable the **auto-request on start** feature:
+To use `Tracelet.requestTemporaryFullAccuracyAuthorization()`, or enable the **auto-request on start** feature:
 
 ```xml
 <key>NSLocationTemporaryUsageDescriptionDictionary</key>
@@ -101,7 +101,7 @@ To use `Tracelet.requestTemporaryFullAccuracy()`, or enable the **auto-request o
 You can also request full accuracy manually with a custom purpose key:
 
 ```dart
-await Tracelet.requestTemporaryFullAccuracy('TraceletFullAccuracy');
+await Tracelet.requestTemporaryFullAccuracyAuthorization('TraceletFullAccuracy');
 ```
 
 ---
@@ -174,14 +174,15 @@ If you prefer to use Xcode instead of editing `Info.plist` directly:
 
 ## 5. Permission Flow
 
-Tracelet handles the permission request flow when you call `Tracelet.requestPermission()`:
+Tracelet handles the permission request flow when you call `Tracelet.requestLocationAuthorization()`:
 
 1. **When In Use** → Prompts the standard iOS location dialog
 2. **Always** → If `Config` requires background tracking, prompts the "Allow Always" dialog
 
 ```dart
-final status = await Tracelet.requestPermission();
-// Returns AuthorizationStatus index: 0=notDetermined, 1=denied, 2=whenInUse, 3=always, 4=deniedForever
+final status = await Tracelet.requestLocationAuthorization();
+// Returns AuthorizationStatus enum:
+// notDetermined, denied, whenInUse, always, deniedForever
 ```
 
 ### iOS 13 vs 14+ Behavior

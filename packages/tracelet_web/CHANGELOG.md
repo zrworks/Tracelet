@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.8.14
+## 1.9.0
 
-- **CHORE**: Constraint bump to `tracelet_platform_interface` 1.8.14 (#58 fix). No web-side changes.
+- **CHORE**: Constraint bump to `tracelet_platform_interface` 1.9.0 (#58 fix). No web-side changes.
 
 ## 1.8.13
 

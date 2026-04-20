@@ -11,33 +11,46 @@ and behavior.
 
 | Method | Returns | Description |
 |---|---|---|
-| `Tracelet.getPermissionStatus()` | `Future<int>` | Read-only check — no dialog triggered |
-| `Tracelet.requestPermission()` | `Future<int>` | Triggers OS dialog, returns **actual** result |
-| `Tracelet.getNotificationPermissionStatus()` | `Future<int>` | Notification permission status (Android 13+) |
-| `Tracelet.requestNotificationPermission()` | `Future<int>` | Request POST_NOTIFICATIONS (Android 13+) |
-| `Tracelet.getMotionPermissionStatus()` | `Future<int>` | Motion/activity recognition status |
-| `Tracelet.requestMotionPermission()` | `Future<int>` | Request motion permission |
+| `Tracelet.getLocationAuthorization()` | `Future<AuthorizationStatus>` | Read-only check — no dialog triggered |
+| `Tracelet.requestLocationAuthorization()` | `Future<AuthorizationStatus>` | Triggers OS dialog, returns **actual** result |
+| `Tracelet.getNotificationAuthorization()` | `Future<AuthorizationStatus>` | Notification permission status (Android 13+) |
+| `Tracelet.requestNotificationAuthorization()` | `Future<AuthorizationStatus>` | Request POST_NOTIFICATIONS (Android 13+) |
+| `Tracelet.getMotionAuthorization()` | `Future<AuthorizationStatus>` | Motion/activity recognition status |
+| `Tracelet.requestMotionAuthorization()` | `Future<AuthorizationStatus>` | Request motion permission |
+| `Tracelet.requestTemporaryFullAccuracyAuthorization(purpose)` | `Future<AuthorizationStatus>` | iOS 14+ temporary full accuracy |
 | `Tracelet.openAppSettings()` | `Future<bool>` | Opens the app's system settings page |
 | `Tracelet.openLocationSettings()` | `Future<bool>` | Opens device location settings |
 | `Tracelet.openBatterySettings()` | `Future<bool>` | Opens battery optimization settings (Android) |
 
+> **Deprecated (since 1.9.0, removed in 2.0.0):** the previous `int`-returning
+> methods — `getPermissionStatus()`, `requestPermission()`,
+> `getNotificationPermissionStatus()`, `requestNotificationPermission()`,
+> `getMotionPermissionStatus()`, `requestMotionPermission()`,
+> `requestTemporaryFullAccuracy(purpose)` — are replaced by the typed
+> `Authorization` methods above. They are kept for source compatibility
+> and emit a `@Deprecated` analyzer warning.
+
 ---
 
-## Authorization Status Codes
+## AuthorizationStatus Enum
 
-| Code | Enum Value | Meaning |
-|------|------------|---------|
-| `0` | `notDetermined` | Permission has never been requested |
-| `1` | `denied` | User denied, but can ask again (Android only) |
-| `2` | `whenInUse` | Foreground location granted |
-| `3` | `always` | Background location granted |
-| `4` | `deniedForever` | Permanently denied — must open Settings |
+| Enum Value | Index | Meaning |
+|------------|-------|---------|
+| `AuthorizationStatus.notDetermined` | `0` | Permission has never been requested |
+| `AuthorizationStatus.denied` | `1` | User denied, but can ask again (Android only) |
+| `AuthorizationStatus.whenInUse` | `2` | Foreground location granted |
+| `AuthorizationStatus.always` | `3` | Background location granted |
+| `AuthorizationStatus.deniedForever` | `4` | Permanently denied — must open Settings |
+
+> The `index` matches the legacy `int` return values, so any existing
+> code that compared against integer literals will continue to behave the
+> same when migrated to the enum API.
 
 ---
 
 ## Escalation Logic
 
-`requestPermission()` automatically escalates to the next level:
+`requestLocationAuthorization()` automatically escalates to the next level:
 
 | Current Status | Action Taken |
 |----------------|-------------|
@@ -55,33 +68,37 @@ import 'package:flutter/material.dart';
 
 Future<void> initializeWithPermissions(BuildContext context) async {
   // 1. Check current status (no dialog)
-  final status = await tl.Tracelet.getPermissionStatus();
+  final status = await tl.Tracelet.getLocationAuthorization();
 
   // 2. Handle each case
   switch (status) {
-    case 0: // notDetermined
-    case 1: // denied (can ask again)
-      final result = await tl.Tracelet.requestPermission();
-      if (result == 4) {
+    case tl.AuthorizationStatus.notDetermined:
+    case tl.AuthorizationStatus.denied:
+      final result = await tl.Tracelet.requestLocationAuthorization();
+      if (result == tl.AuthorizationStatus.deniedForever) {
         // Permanently denied — show YOUR dialog
         _showDeniedDialog(context);
         return;
       }
-      if (result == 2) {
+      if (result == tl.AuthorizationStatus.whenInUse) {
         // Foreground granted — show rationale then request background
         final upgrade = await _showBackgroundRationale(context);
-        if (upgrade) await tl.Tracelet.requestPermission();
+        if (upgrade) await tl.Tracelet.requestLocationAuthorization();
       }
       break;
 
-    case 2: // whenInUse — offer background upgrade
+    case tl.AuthorizationStatus.whenInUse:
+      // Offer background upgrade
       final upgrade = await _showBackgroundRationale(context);
-      if (upgrade) await tl.Tracelet.requestPermission();
+      if (upgrade) await tl.Tracelet.requestLocationAuthorization();
       break;
 
-    case 4: // deniedForever
+    case tl.AuthorizationStatus.deniedForever:
       _showDeniedDialog(context);
       return;
+
+    case tl.AuthorizationStatus.always:
+      break; // already good
   }
 
   // 3. Now safe to initialize and start
@@ -96,7 +113,8 @@ Future<void> initializeWithPermissions(BuildContext context) async {
 
 ### Permanently Denied Dialog
 
-Show when `getPermissionStatus()` or `requestPermission()` returns `4` (deniedForever):
+Show when `getLocationAuthorization()` or `requestLocationAuthorization()`
+returns `AuthorizationStatus.deniedForever`:
 
 ```dart
 void _showDeniedDialog(BuildContext context) {
@@ -177,28 +195,29 @@ is required for the foreground service notification to be visible. Without it,
 the service still runs but the notification is hidden — and some OEMs may then
 kill the background process.
 
-`getNotificationPermissionStatus()` and `requestNotificationPermission()` return
-the same status codes as the location permission API:
+`getNotificationAuthorization()` and `requestNotificationAuthorization()` return
+the same `AuthorizationStatus` enum as the location permission API:
 
-| Code | Meaning |
+| Enum Value | Meaning |
 |------|------|
-| `0` | Never asked |
-| `1` | Denied, can ask again |
-| `3` | Granted |
-| `4` | Permanently denied |
+| `notDetermined` | Never asked |
+| `denied` | Denied, can ask again |
+| `always` | Granted |
+| `deniedForever` | Permanently denied |
 
-On Android < 13 and on iOS, both methods always return `3` (granted).
+On Android < 13 and on iOS, both methods always return
+`AuthorizationStatus.always` (granted).
 
 ### Recommended Flow
 
 ```dart
 // Before starting a foreground service with notification:
 if (Platform.isAndroid) {
-  final status = await tl.Tracelet.getNotificationPermissionStatus();
-  if (status != 3) {
+  final status = await tl.Tracelet.getNotificationAuthorization();
+  if (status != tl.AuthorizationStatus.always) {
     // Show YOUR rationale dialog first, then:
-    final result = await tl.Tracelet.requestNotificationPermission();
-    if (result == 4) {
+    final result = await tl.Tracelet.requestNotificationAuthorization();
+    if (result == tl.AuthorizationStatus.deniedForever) {
       // Permanently denied — show dialog with "Open Settings" button
       await tl.Tracelet.openAppSettings();
     }
@@ -253,7 +272,8 @@ recognition mode** (the default).
 | Android | `ACTIVITY_RECOGNITION` | API 29 (Android 10) |
 | iOS | Motion & Fitness | Always (auto-prompted by OS) |
 
-On Android < 10, both methods return `3` (granted — no runtime permission needed).
+On Android < 10, both methods return `AuthorizationStatus.always`
+(no runtime permission needed).
 
 ### Opting Out of Motion Permission
 
@@ -283,9 +303,9 @@ iOS) to detect stationary↔moving transitions.
 | Move detection | Via Activity Transition API | Via shake / significant-motion sensor |
 | Battery impact | Best (hardware co-processor) | Good (slightly higher than full mode) |
 
-When `disableMotionActivityUpdates` is `true`, both `getMotionPermissionStatus()`
-and `requestMotionPermission()` return `3` (granted) immediately without
-triggering any OS dialog.
+When `disableMotionActivityUpdates` is `true`, both `getMotionAuthorization()`
+and `requestMotionAuthorization()` return `AuthorizationStatus.always` immediately
+without triggering any OS dialog.
 
 > **Removing the permission entirely:** On Android, you can also remove
 > `ACTIVITY_RECOGNITION` from the merged manifest using `tools:node="remove"`.
@@ -297,11 +317,11 @@ triggering any OS dialog.
 ### Recommended Flow (Full Mode)
 
 ```dart
-final motionStatus = await tl.Tracelet.getMotionPermissionStatus();
-if (motionStatus != 3) {
+final motionStatus = await tl.Tracelet.getMotionAuthorization();
+if (motionStatus != tl.AuthorizationStatus.always) {
   // Show rationale dialog, then:
-  final result = await tl.Tracelet.requestMotionPermission();
-  if (result == 4) {
+  final result = await tl.Tracelet.requestMotionAuthorization();
+  if (result == tl.AuthorizationStatus.deniedForever) {
     // Permanently denied — motion detection won't work automatically
     // Device will still track location, but won't auto-detect movement
     await tl.Tracelet.openAppSettings();

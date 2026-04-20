@@ -14,6 +14,8 @@ class FakeHostApi extends TraceletHostApi {
 
   bool wasCalled(String method) => _calls.containsKey(method);
 
+  List<Object?>? lastCallArgs(String method) => _calls[method];
+
   static final _defaultState = TlState(
     enabled: true,
     isMoving: false,
@@ -652,6 +654,35 @@ void main() {
       );
       expect(fakeApi.wasCalled('addGeofence'), true);
     });
+
+    test(
+      'addGeofence() forwards extras and vertices to TlGeofence (#58)',
+      () async {
+        await pigeon.addGeofence({
+          'identifier': 'with-extras',
+          'latitude': 12.9716,
+          'longitude': 77.5946,
+          'radius': 250.0,
+          'extras': <String, Object?>{
+            'demo_test': 'Hello from the geofence extras!',
+            'Hello': 'World',
+          },
+          'vertices': <List<double>>[
+            [12.97, 77.59],
+            [12.98, 77.60],
+          ],
+        });
+        final args = fakeApi.lastCallArgs('addGeofence');
+        final TlGeofence forwarded = args!.first as TlGeofence;
+        expect(forwarded.extras, <String?, Object?>{
+          'demo_test': 'Hello from the geofence extras!',
+          'Hello': 'World',
+        });
+        expect(forwarded.vertices, isNotNull);
+        expect(forwarded.vertices!.length, 2);
+        expect(forwarded.vertices![0], <double?>[12.97, 77.59]);
+      },
+    );
 
     test('addGeofences() delegates with list', () async {
       expect(

@@ -1,3 +1,8 @@
+## 1.8.14
+
+- **FIX**: `Geofence(extras: {...})` now correctly persists and is returned by `getGeofences()` and delivered in `onGeofence` events (#58). Bug was in `tracelet_platform_interface`'s `_mapToGeofence`, which silently dropped `extras` and `vertices` when constructing the Pigeon payload; the 1.8.12 native fix had no effect because the data never crossed the platform channel. Affected both Android and iOS.
+- **TEST**: Added on-device integration test (`example/integration_test/geofence_extras_test.dart`) that round-trips `addGeofence` → `getGeofences()` to prevent regression.
+
 ## 1.8.13
 
 - **PERF**: Reduce first-fix latency on stationary → moving transitions on both iOS and Android. The native engines now fire an additional one-shot location request when motion starts, delivering a fresh GPS fix in ~1–5s instead of waiting for `distanceFilter` (iOS) or `locationUpdateInterval` (Android) on the continuous stream (#54).

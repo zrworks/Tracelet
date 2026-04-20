@@ -1,3 +1,7 @@
+## 1.8.14
+
+- **FIX**: Picks up the `tracelet_platform_interface` 1.8.14 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.
+
 ## 1.8.13
 
 - **PERF**: Reduce first-fix latency on stationary → moving transitions. `LocationEngine.changePace(true)` now fires an additional one-shot `requestLocation()` so a fresh GPS fix arrives as soon as the hardware is warm, instead of waiting for `distanceFilter` on the continuous stream (#54).

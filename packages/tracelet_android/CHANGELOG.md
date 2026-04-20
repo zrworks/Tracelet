@@ -1,3 +1,8 @@
+## 1.8.14
+
+- **FIX**: Picks up the `tracelet_platform_interface` 1.8.14 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.
+- **TEST**: Added Robolectric regression test for `EventDispatcher` headless-fallback geofence extras forwarding.
+
 ## 1.8.13
 
 - **PERF**: Reduce first-fix latency on stationary → moving transitions. `LocationEngine.changePace(true)` now fires an additional one-shot `getCurrentLocation()` so a fresh GPS fix arrives as soon as the hardware is warm, instead of waiting for `locationUpdateInterval` on the continuous stream. The one-shot is guarded by a `CancellationTokenSource` that is cancelled on `stop()` (#54).

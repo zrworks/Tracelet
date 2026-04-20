@@ -812,6 +812,34 @@
 | **v0.9.0-rc** | + Phase 5 | Full test suite, CI/CD, battery benchmarks passed |
 | **v1.0.0** | + Phase 6 | Example app, complete documentation, pub.dev published |
 | **v1.x** | Phase 7 | Advanced features (trips, polygons, web, dashboard) |
+| **v2.0.0** | Breaking-change cleanup | See "v2.0.0 Candidates" below |
+
+---
+
+## v2.0.0 Candidates (Breaking Changes)
+
+Track breaking-change requests here so they can be batched into a single
+major release. Nothing in this list is committed to land; items are
+collected for triage when 2.0.0 planning starts.
+
+- **Remove deprecated int-returning permission methods** (deprecated in
+  1.9.0): `getPermissionStatus`, `requestPermission`,
+  `getNotificationPermissionStatus`, `requestNotificationPermission`,
+  `getMotionPermissionStatus`, `requestMotionPermission`,
+  `requestTemporaryFullAccuracy`. Replaced by typed
+  `*Authorization()` methods that return `AuthorizationStatus`.
+- **Split platform-specific config fields** ([#60](https://github.com/Ikolvi/Tracelet/issues/60)):
+  Move Android-only fields (`locationUpdateInterval`,
+  `fastestLocationUpdateInterval`, `deferTime`, `allowIdenticalLocations`,
+  `geofenceModeHighAccuracy`, `periodicUseForegroundService`,
+  `periodicUseExactAlarms`, `scheduleUseAlarmManager`, `foregroundService`)
+  and iOS-only fields (`activityType`, `useSignificantChangesOnly`,
+  `showsBackgroundLocationIndicator`, `pausesLocationUpdatesAutomatically`,
+  `disableLocationAuthorizationAlert`, `preventSuspend`) out of the shared
+  `GeoConfig` / `AppConfig` into geolocator-style `AndroidGeoConfig` /
+  `AppleGeoConfig` (or `IOSGeoConfig`). Optional 1.x transitional step:
+  introduce `AndroidGeoOverrides` / `AppleGeoOverrides` sub-objects on
+  the existing configs as a non-breaking on-ramp.
 
 ---
 

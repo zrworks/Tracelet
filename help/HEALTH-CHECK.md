@@ -38,9 +38,9 @@ print('Pending sync: ${health.locationCount} locations');
 
 1. `getState()` — Tracking status, moving state, odometer
 2. `getProviderState()` — Location services, GPS/network availability
-3. `getPermissionStatus()` — Location authorization level
-4. `getMotionPermissionStatus()` — Activity recognition permission
-5. `requestTemporaryFullAccuracy()` — Accuracy authorization (iOS 14+)
+3. `getLocationAuthorization()` — Location authorization level
+4. `getMotionAuthorization()` — Activity recognition permission
+5. `requestTemporaryFullAccuracyAuthorization()` — Accuracy authorization (iOS 14+)
 6. `isPowerSaveMode` — Device battery saver state
 7. `isIgnoringBatteryOptimizations()` — Battery exemption (Android)
 8. `getSensors()` — Hardware sensor availability

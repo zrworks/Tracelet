@@ -65,7 +65,7 @@ Tracelet's plugin AndroidManifest automatically merges the following permissions
 
 ### Runtime Permissions
 
-The plugin requests permissions at runtime when you call `Tracelet.requestPermission()`. The flow is:
+The plugin requests permissions at runtime when you call `Tracelet.requestLocationAuthorization()`. The flow is:
 
 1. `ACCESS_FINE_LOCATION` (or `ACCESS_COARSE_LOCATION`)
 2. `ACCESS_BACKGROUND_LOCATION` (separate dialog on Android 11+)
@@ -120,7 +120,7 @@ Starting with Android 11 (API 30), **background location must be granted separat
 1. Grant "While using the app" first
 2. Then go to Settings → grant "Allow all the time"
 
-Tracelet handles this flow automatically when you call `Tracelet.requestPermission()`.
+Tracelet handles this flow automatically when you call `Tracelet.requestLocationAuthorization()`.
 
 ---
 
@@ -298,7 +298,7 @@ See [Database Encryption](DATABASE-ENCRYPTION.md) for full setup.
 - Customize it via `ForegroundServiceConfig`
 
 ### Permission denied errors
-- Call `Tracelet.requestPermission()` before `Tracelet.start()`
+- Call `Tracelet.requestLocationAuthorization()` before `Tracelet.start()`
 - On Android 11+, background location requires a separate grant
 
 ### Build errors with Google Play Services

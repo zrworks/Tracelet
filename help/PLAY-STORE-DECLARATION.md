@@ -166,7 +166,7 @@ This uses Android's **manifest merger** `tools:node="remove"` directive to strip
 the permission from the final merged manifest. The Play Store will no longer
 require a background location declaration.
 
-> **Warning:** With this permission removed, `Tracelet.requestPermission()` will
+> **Warning:** With this permission removed, `Tracelet.requestLocationAuthorization()` will
 > never escalate beyond `whenInUse` (status code `2`). Background tracking via
 > foreground service will **not receive location updates** on Android 10+.
 > Only use this if you are certain you do not need background tracking.

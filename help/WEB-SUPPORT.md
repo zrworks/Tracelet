@@ -44,8 +44,8 @@ These features work identically to Android/iOS:
 | **Logging** | `log()` / `getLog()` / `destroyLog()` | In-memory log buffer. |
 | **Connectivity** | `onConnectivityChange` | Uses `online`/`offline` browser events. |
 | **Enabled change** | `onEnabledChange` | Fires when `start()`/`stop()` is called. |
-| **Permission check** | `getPermissionStatus()` | Uses `navigator.permissions.query()`. |
-| **Permission request** | `requestPermission()` | Triggers implicit browser prompt via `getCurrentPosition()`. |
+| **Permission check** | `getLocationAuthorization()` | Uses `navigator.permissions.query()`. |
+| **Permission request** | `requestLocationAuthorization()` | Triggers implicit browser prompt via `getCurrentPosition()`. |
 | **Provider state** | `getProviderState()` | Reports geolocation availability and online status. |
 | **Device info** | `getDeviceInfo()` | Returns `navigator.userAgent`, platform, language. |
 | **Sensors** | `getSensors()` | Reports availability of geolocation, notifications, online status. |
@@ -60,7 +60,7 @@ These features work but with limitations compared to native platforms:
 
 | Feature | API | Web Behavior |
 |---|---|---|
-| **Notification permission** | `getNotificationPermissionStatus()` / `requestNotificationPermission()` | Uses `Notification.permission` / `Notification.requestPermission()`. Only relevant if your web app uses browser notifications. |
+| **Notification permission** | `getNotificationAuthorization()` / `requestNotificationAuthorization()` | Uses `Notification.permission` / `Notification.requestPermission()`. Only relevant if your web app uses browser notifications. |
 | **Scheduling** | `startSchedule()` / `stopSchedule()` | Foreground-only timers. Schedule stops when the tab is closed. |
 | **Stationarity detection** | `MotionConfig.stopTimeout` | Timer-based: if no movement exceeds `stationaryRadius` for `stopTimeout` minutes, device is considered stationary. No accelerometer/activity recognition. |
 | **Activity change** | `onActivityChange` | Always reports `unknown` activity with `medium` confidence. Browser has no Activity Recognition API. |
@@ -90,8 +90,8 @@ These features are **not available** on web. They return safe default values and
 | **Play sound** | `playSound()` | `false` | Could use `AudioContext` but not implemented. |
 | **Prevent suspend** | `AppConfig.preventSuspend` | Ignored | iOS-only silent audio keep-alive. |
 | **Alarm manager** | `AppConfig.scheduleUseAlarmManager` | Ignored | Android-only exact alarms. |
-| **Motion permission** | `getMotionPermissionStatus()` / `requestMotionPermission()` | `3` (always granted) | No separate motion permission on web. |
-| **Temporary full accuracy** | `requestTemporaryFullAccuracy()` | `0` (full) | iOS 14+ feature; browser always provides full accuracy. |
+| **Motion permission** | `getMotionAuthorization()` / `requestMotionAuthorization()` | `AuthorizationStatus.always` | No separate motion permission on web. |
+| **Temporary full accuracy** | `requestTemporaryFullAccuracyAuthorization()` | `AuthorizationStatus.always` | iOS 14+ feature; browser always provides full accuracy. |
 | **Elasticity** | `GeoConfig.disableElasticity` / `elasticityMultiplier` | ✅ Works | Runs in shared Dart `LocationProcessor`. |
 | **Location filter** | `LocationFilter` | ✅ Works | Runs in shared Dart `LocationProcessor` — accuracy, speed, and distance filtering. |
 | **Auto-stop** | `GeoConfig.stopAfterElapsedMinutes` | Ignored | Not implemented; trivial to add as a Dart timer if needed. |

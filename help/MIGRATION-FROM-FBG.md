@@ -412,14 +412,14 @@ sync()                   → sync()
 ```
 Before               → Tracelet
 ─────────────────────────────────────────────────────────────
-requestPermission()  → requestPermission()
-N/A                  → 🆕 getPermissionStatus()
+requestPermission()  → requestLocationAuthorization()
+N/A                  → 🆕 getLocationAuthorization()
 N/A                  → 🆕 hasBackgroundPermission (getter)
-N/A                  → 🆕 getNotificationPermissionStatus()
-N/A                  → 🆕 requestNotificationPermission()
-N/A                  → 🆕 getMotionPermissionStatus()
-N/A                  → 🆕 requestMotionPermission()
-N/A                  → 🆕 requestTemporaryFullAccuracy(purpose) — iOS 14+
+N/A                  → 🆕 getNotificationAuthorization()
+N/A                  → 🆕 requestNotificationAuthorization()
+N/A                  → 🆕 getMotionAuthorization()
+N/A                  → 🆕 requestMotionAuthorization()
+N/A                  → 🆕 requestTemporaryFullAccuracyAuthorization(purpose) — iOS 14+
 N/A                  → 🆕 canScheduleExactAlarms() — Android 12+
 N/A                  → 🆕 openExactAlarmSettings()
 N/A                  → 🆕 openAppSettings()

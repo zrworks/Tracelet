@@ -18,9 +18,9 @@ A persistent notification is shown while tracking.
 ```dart
 // 1. Request notification permission (Android 13+)
 if (Platform.isAndroid) {
-  final notifStatus = await tl.Tracelet.getNotificationPermissionStatus();
-  if (notifStatus != 3) {
-    await tl.Tracelet.requestNotificationPermission();
+  final notifStatus = await tl.Tracelet.getNotificationAuthorization();
+  if (notifStatus != tl.AuthorizationStatus.always) {
+    await tl.Tracelet.requestNotificationAuthorization();
   }
 }
 

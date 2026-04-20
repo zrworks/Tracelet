@@ -84,16 +84,37 @@ class PigeonTracelet extends TraceletPlatform {
     'vertices': g.vertices,
   };
 
-  TlGeofence _mapToGeofence(Map<String, Object?> m) => TlGeofence(
-    identifier: m['identifier']! as String,
-    latitude: (m['latitude']! as num).toDouble(),
-    longitude: (m['longitude']! as num).toDouble(),
-    radius: (m['radius']! as num).toDouble(),
-    notifyOnEntry: m['notifyOnEntry'] as bool? ?? true,
-    notifyOnExit: m['notifyOnExit'] as bool? ?? true,
-    notifyOnDwell: m['notifyOnDwell'] as bool? ?? false,
-    loiteringDelay: m['loiteringDelay'] as int? ?? 0,
-  );
+  TlGeofence _mapToGeofence(Map<String, Object?> m) {
+    final extrasRaw = m['extras'];
+    final Map<String?, Object?>? extras = extrasRaw is Map
+        ? extrasRaw.map<String?, Object?>(
+            (Object? k, Object? v) => MapEntry(k?.toString(), v),
+          )
+        : null;
+
+    final verticesRaw = m['vertices'];
+    final List<List<double?>?>? vertices = verticesRaw is List
+        ? verticesRaw.map<List<double?>?>((Object? row) {
+            if (row is! List) return null;
+            return row
+                .map<double?>((Object? v) => (v as num?)?.toDouble())
+                .toList();
+          }).toList()
+        : null;
+
+    return TlGeofence(
+      identifier: m['identifier']! as String,
+      latitude: (m['latitude']! as num).toDouble(),
+      longitude: (m['longitude']! as num).toDouble(),
+      radius: (m['radius']! as num).toDouble(),
+      notifyOnEntry: m['notifyOnEntry'] as bool? ?? true,
+      notifyOnExit: m['notifyOnExit'] as bool? ?? true,
+      notifyOnDwell: m['notifyOnDwell'] as bool? ?? false,
+      loiteringDelay: m['loiteringDelay'] as int? ?? 0,
+      extras: extras,
+      vertices: vertices,
+    );
+  }
 
   TlCurrentPositionOptions _mapToOptions(Map<String, Object?> m) =>
       TlCurrentPositionOptions(

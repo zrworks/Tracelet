@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.14
+
+- **CHORE**: Constraint bump to `tracelet_platform_interface` 1.8.14 (#58 fix). No web-side changes.
+
 ## 1.8.13
 
 - **CHORE**: Version bump for first-fix latency improvement in `tracelet_android` and `tracelet_ios` (#54).

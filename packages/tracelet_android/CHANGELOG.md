@@ -1,6 +1,8 @@
 ## 1.8.14
 
-- **FIX**: Picks up the `tracelet_platform_interface` 1.8.14 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.
+- **FIX**: `LocationService` no longer crashes the host app with `RemoteServiceException: Context.startForegroundService() did not then call Service.startForeground()` (#59). Reproducible on real devices when using `periodicUseForegroundService: true`. Root cause: `onStartCommand` only promoted to foreground for `ACTION_START`, but the system can deliver intents for other actions (and null-intent sticky restarts after a system kill) under the same foreground-service contract. Fixed in native `tracelet-sdk` 1.0.13 by always promoting at the top of `onStartCommand`.
+- **FIX**: Picks up the `tracelet_platform_interface` 1.8.14 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes for this part.
+- **TEST**: Added Robolectric `LocationServiceForegroundContractTest` covering all 5 entry paths (ACTION_START, ACTION_STOP, ACTION_UPDATE_NOTIFICATION, ACTION_BUTTON, null-intent sticky restart).
 - **TEST**: Added Robolectric regression test for `EventDispatcher` headless-fallback geofence extras forwarding.
 
 ## 1.8.13

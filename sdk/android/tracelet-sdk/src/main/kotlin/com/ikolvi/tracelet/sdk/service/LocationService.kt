@@ -161,9 +161,24 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Android contract: whenever a service is delivered an intent that
+        // originated from Context.startForegroundService(), it MUST call
+        // Service.startForeground() within ~5s or the system kills the app
+        // with `RemoteServiceException: Context.startForegroundService() did
+        // not then call Service.startForeground()` (#59).
+        //
+        // Every entry into onStartCommand promotes us to foreground first —
+        // including:
+        //   - null-intent sticky restarts after the system reclaims the service
+        //   - ACTION_UPDATE_NOTIFICATION / ACTION_BUTTON intents that may have
+        //     been routed via startForegroundService() on Android 12+ when the
+        //     app is in a restricted state
+        //   - ACTION_STOP (we promote then immediately demote/stop, which is
+        //     safe and satisfies the contract)
+        startForegroundWithNotification()
+
         when (intent?.action) {
             ACTION_START -> {
-                startForegroundWithNotification()
                 acquireOemWakelock()
                 isRunning = true
 
@@ -184,8 +199,17 @@ class LocationService : Service() {
                 updateNotificationContent()
             }
             ACTION_BUTTON -> {
-                val action = intent?.getStringExtra(EXTRA_BUTTON_ACTION) ?: return START_STICKY
-                onNotificationAction?.invoke(action)
+                val action = intent.getStringExtra(EXTRA_BUTTON_ACTION)
+                if (action != null) {
+                    onNotificationAction?.invoke(action)
+                }
+            }
+            null -> {
+                // Sticky restart after system kill — keep running. The
+                // startForegroundWithNotification() call above already
+                // satisfies the foreground contract.
+                acquireOemWakelock()
+                isRunning = true
             }
         }
         return START_STICKY

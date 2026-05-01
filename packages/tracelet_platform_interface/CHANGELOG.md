@@ -1,3 +1,7 @@
+## 1.9.1
+
+- **CHORE**: Constraint bump for `tracelet` 1.9.1 release. No interface changes.
+
 ## 1.9.0
 
 - **FIX**: `_mapToGeofence` was silently dropping `extras` and `vertices` when converting the Dart map into the Pigeon `TlGeofence`, so they never reached native and were persisted as `null` (#58). Both fields now round-trip from `Geofence.toMap()` through the platform channel intact. The earlier 1.8.12 patch only addressed the Android read path; the actual data loss was one layer up at the federated platform-interface layer and affected both Android and iOS.

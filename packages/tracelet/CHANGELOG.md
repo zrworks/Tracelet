@@ -1,3 +1,7 @@
+## 1.9.1
+
+- **FIX**: Android `destroyAll()` now respects `stopOnTerminate: false` for continuous and geofence tracking modes (#63). `locationEngine.destroy()` was unconditionally called in `onDetachedFromEngine()`, racing with `LocationService.onTaskRemoved()` which bootstraps native tracking. Background location tracking now survives app swipe from recents when `stopOnTerminate: false` is configured.
+
 ## 1.9.0
 
 - **FEAT**: Strongly typed permission APIs (#57). Added `getLocationAuthorization`, `requestLocationAuthorization`, `getNotificationAuthorization`, `requestNotificationAuthorization`, `getMotionAuthorization`, `requestMotionAuthorization`, and `requestTemporaryFullAccuracyAuthorization`, all returning `Future<AuthorizationStatus>` instead of magic ints. The matching int-returning methods (`getPermissionStatus`, `requestPermission`, `getNotificationPermissionStatus`, `requestNotificationPermission`, `getMotionPermissionStatus`, `requestMotionPermission`, `requestTemporaryFullAccuracy`) are now `@Deprecated` and will be removed in 2.0.0.

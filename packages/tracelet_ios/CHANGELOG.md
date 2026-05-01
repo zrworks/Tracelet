@@ -1,3 +1,7 @@
+## 1.9.1
+
+- **CHORE**: Constraint bump to `tracelet_platform_interface` 1.9.1. No iOS-side changes.
+
 ## 1.9.0
 
 - **FIX**: Picks up the `tracelet_platform_interface` 1.9.0 fix that restores `extras` and `vertices` propagation for `addGeofence` (#58). No native-side changes.

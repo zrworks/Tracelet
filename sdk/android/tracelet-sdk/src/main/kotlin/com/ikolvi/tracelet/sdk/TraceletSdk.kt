@@ -1439,7 +1439,18 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     fun destroyAll() {
-        locationEngine.destroy()
+        // When stopOnTerminate=false and tracking is active in continuous (mode 0)
+        // or geofence (mode 1) mode, LocationService.onTaskRemoved() bootstraps
+        // native tracking independently. Destroying the LocationEngine here would
+        // race against that bootstrap and kill background tracking — which is
+        // exactly the bug reported in issue #63. Only destroy the engine when
+        // stopOnTerminate=true, or tracking is not active, or we are in periodic
+        // mode (which has its own WorkManager/AlarmManager lifecycle).
+        val keepLocationEngineAlive = !configManager.getStopOnTerminate() &&
+            stateManager.enabled && stateManager.trackingMode != 2
+        if (!keepLocationEngineAlive) {
+            locationEngine.destroy()
+        }
         motionDetector.stop()
 
         val keepGeofencesAlive = !configManager.getStopOnTerminate() &&
@@ -1458,8 +1469,10 @@ class TraceletSdk private constructor(private val context: Context) {
         if (!keepPeriodicAlive) {
             PeriodicLocationWorker.cancel(context)
         }
-        PeriodicLocationWorker.eventSender = null
-        PeriodicLocationWorker.httpSyncManager = null
+        if (!keepPeriodicAlive) {
+            PeriodicLocationWorker.eventSender = null
+            PeriodicLocationWorker.httpSyncManager = null
+        }
         if (!keepGeofencesAlive) {
             GeofenceBroadcastReceiver.geofenceManager = null
         }

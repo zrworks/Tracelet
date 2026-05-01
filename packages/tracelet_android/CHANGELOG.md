@@ -1,3 +1,8 @@
+## 1.9.1
+
+- **FIX**: `destroyAll()` now respects `stopOnTerminate: false` for continuous (mode 0) and geofence (mode 1) tracking modes (#63). `locationEngine.destroy()` was unconditionally called, racing with `LocationService.onTaskRemoved()` native bootstrap. `PeriodicLocationWorker` static refs (`eventSender`, `httpSyncManager`) are also now preserved when `keepPeriodicAlive` is true.
+- **CHORE**: Bump native `tracelet-sdk` constraint to 1.1.1.
+
 ## 1.9.0
 
 - **FIX**: `LocationService` no longer crashes the host app with `RemoteServiceException: Context.startForegroundService() did not then call Service.startForeground()` (#59). Reproducible on real devices when using `periodicUseForegroundService: true`. Root cause: `onStartCommand` only promoted to foreground for `ACTION_START`, but the system can deliver intents for other actions (and null-intent sticky restarts after a system kill) under the same foreground-service contract. Fixed in native `tracelet-sdk` 1.1.0 by always promoting at the top of `onStartCommand`.

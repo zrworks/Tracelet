@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.9.2
+## 1.9.3
+2: 
+3: - **CHORE**: Version bump for monorepo consistency and native SDK alignment.
+4: 
+5: ## 1.9.2
 
 - **CHORE**: Constraint bump to `tracelet_platform_interface` 1.9.2. No web-side changes.
 

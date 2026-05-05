@@ -1,4 +1,8 @@
-## 1.9.2
+## 1.9.3
+2: 
+3: - **CHORE**: Bump native `tracelet-sdk` constraint to `1.1.4`.
+4: 
+5: ## 1.9.2
 
 - **FIX**: `Tracelet.locationStream` no longer goes silent when `flutter_overlay_window` (or any `FlutterEngineGroup` plugin) creates a secondary in-process `FlutterEngine`. The primary-instance guard (#51) unconditionally skipped `EventDispatcher` re-binding for all secondary engines, including in-process overlay engines that attach on the main thread. A Looper-based discriminator now selectively re-binds the dispatcher for main-thread overlay engines while preserving the full skip for off-thread headless/Firebase engines (#51 fix intact).
 - **FIX**: `destroyAll()` now guards all background-critical subsystems when `stopOnTerminate: false` (#65). `httpSyncManager.stop()`, `scheduleManager.stop()`, and `stopHeartbeat()` were still called unconditionally on every swipe-to-dismiss, killing HTTP sync and heartbeat even when background tracking should survive. Fixed in native `tracelet-sdk` 1.1.2.

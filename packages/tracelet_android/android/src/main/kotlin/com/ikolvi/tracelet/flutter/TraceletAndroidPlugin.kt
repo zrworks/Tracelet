@@ -51,6 +51,18 @@ class TraceletAndroidPlugin :
         @Volatile
         @JvmStatic
         private var primaryInstance: TraceletAndroidPlugin? = null
+
+        /**
+         * Returns true when the calling thread is the Android main (UI) thread.
+         *
+         * Exposed as an internal `@JvmField` lambda so unit tests can stub it
+         * via reflection without Robolectric. Production code must never
+         * reassign this field.
+         */
+        @JvmField
+        internal var isMainThread: () -> Boolean = {
+            Looper.myLooper() == Looper.getMainLooper()
+        }
     }
 
     private lateinit var context: Context
@@ -78,19 +90,32 @@ class TraceletAndroidPlugin :
         // ALL plugins on that engine, triggering onAttachedToEngine on a
         // NEW TraceletAndroidPlugin instance.
         //
-        // That secondary instance's BinaryMessenger is connected to the
-        // BACKGROUND Dart isolate, not the main one where the user's
-        // event listeners live. If we let it overwrite the SDK event
-        // sender or re-initialize subsystems, all events get routed to
-        // the wrong (short-lived) isolate and Dart callbacks stop firing.
-        // When that background engine detaches, destroying the SDK would
-        // kill the foreground tracking pipeline entirely.
+        // Two distinct secondary-engine scenarios require different handling:
+        //
+        //   (A) IN-PROCESS UI ENGINE (e.g. flutter_overlay_window via
+        //       FlutterEngineGroup). These engines attach on the MAIN thread
+        //       and live for the app's lifetime. On Flutter 3.22+ with
+        //       FlutterEngineGroup, the primary engine's BinaryMessenger
+        //       stops routing Pigeon FlutterApi messages back to the primary
+        //       Dart isolate once a second engine attaches. Re-binding the
+        //       EventDispatcher to the secondary engine's messenger restores
+        //       delivery (the secondary messenger does route correctly in
+        //       this configuration). SDK sub-systems are NOT re-initialized.
+        //
+        //   (B) HEADLESS BACKGROUND ENGINE (e.g. Firebase background message
+        //       handler, HeadlessTaskService). These engines attach on a
+        //       BACKGROUND thread. Letting them touch the SDK singleton
+        //       routes events to the wrong short-lived isolate and causes
+        //       destroyAll() on detach to kill the foreground pipeline (#51).
+        //       These must be fully skipped.
+        //
+        // Discriminator: Looper.myLooper() == Looper.getMainLooper()
+        //   • true  → scenario (A): re-bind dispatcher only
+        //   • false → scenario (B): skip everything (preserves #51 fix)
         //
         // Guard: Only the first (primary/foreground) instance — or the
-        // same instance on hot restart — initializes the SDK and wires
-        // callbacks. Secondary instances only register the Pigeon HostApi
-        // on their own BinaryMessenger (so host API calls from background
-        // isolates still work) but do NOT touch the SDK singleton.
+        // same instance on hot restart — fully initializes the SDK and
+        // wires callbacks.
         val isPrimary = primaryInstance == null || primaryInstance === this
         if (isPrimary) {
             primaryInstance = this
@@ -178,7 +203,46 @@ class TraceletAndroidPlugin :
 
             Log.d(TAG, "onAttachedToEngine: primary instance — SDK initialized, callbacks wired")
         } else {
-            Log.d(TAG, "onAttachedToEngine: secondary instance — skipping SDK init & callback wiring")
+            // ── Secondary engine discriminator ───────────────────────────
+            // Main-thread attach → in-process UI engine (e.g. flutter_overlay_window
+            // via FlutterEngineGroup). Re-bind the EventDispatcher so the SDK
+            // routes events through the messenger that actually delivers to the
+            // primary Dart isolate on this Flutter/engine-group configuration.
+            // SDK sub-systems (location engine, geofence manager, etc.) are NOT
+            // re-initialized — only the Pigeon FlutterApi channel is re-pointed.
+            //
+            // Off-thread attach → headless background engine (e.g. Firebase
+            // background messaging, HeadlessTaskService). Skip everything to
+            // preserve the #51 fix — events must not be routed to a wrong isolate.
+            val isMainThread = isMainThread()
+            if (isMainThread) {
+                // Re-bind dispatcher to the secondary (overlay) engine's messenger.
+                // The headlessFallback from the primary attach is deliberately
+                // preserved — it references the HeadlessTaskService that was
+                // constructed with the full configManager during primary init.
+                eventDispatcher = EventDispatcher()
+                eventDispatcher.register(binding.binaryMessenger)
+                if (::headlessService.isInitialized) {
+                    eventDispatcher.headlessFallback = { eventName, eventData ->
+                        if (headlessService.isRegistered()) {
+                            headlessService.dispatchEvent(eventName, eventData)
+                        }
+                    }
+                }
+                sdk.setEventSender(eventDispatcher)
+                Log.d(
+                    TAG,
+                    "onAttachedToEngine: secondary in-process UI engine (main thread) — " +
+                        "re-bound EventDispatcher to overlay messenger",
+                )
+            } else {
+                // Headless/background engine — full skip (preserves #51).
+                Log.d(
+                    TAG,
+                    "onAttachedToEngine: secondary headless engine (background thread) — " +
+                        "skipping SDK init & callback wiring",
+                )
+            }
         }
 
         // Pigeon API: register on EVERY engine so host API calls from

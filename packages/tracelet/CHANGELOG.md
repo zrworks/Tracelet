@@ -1,6 +1,7 @@
 ## 1.9.2
 
 - **FIX**: `Tracelet.locationStream` no longer goes silent when `flutter_overlay_window` (or any plugin using `FlutterEngineGroup`) creates a secondary in-process `FlutterEngine`. The primary-instance guard introduced in 1.9.0 (#51) blocked `EventDispatcher` re-binding for in-process overlay engines, causing Pigeon FlutterApi `onLocation` channel to report "Unable to establish connection". A Looper-based discriminator now distinguishes overlay engines (main-thread attach → re-bind dispatcher) from headless background engines (off-thread attach → full skip, preserving #51).
+- **FIX**: Android `destroyAll()` now guards all background-critical subsystems when `stopOnTerminate: false` (#65). `httpSyncManager.stop()`, `scheduleManager.stop()`, and `stopHeartbeat()` were still called unconditionally on every swipe-to-dismiss, permanently killing HTTP sync and heartbeat monitoring until the app was manually reopened. Fixed in native `tracelet-sdk` 1.1.2.
 
 ## 1.9.1
 

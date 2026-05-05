@@ -13,6 +13,7 @@ import com.ikolvi.tracelet.TlGeofence
 import com.ikolvi.tracelet.TlLocation
 import com.ikolvi.tracelet.TlProviderChangeEvent
 import com.ikolvi.tracelet.TlState
+import com.ikolvi.tracelet.TlTrackingMode
 import com.ikolvi.tracelet.TraceletHostApi
 import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
 import com.ikolvi.tracelet.sdk.TraceletSdk

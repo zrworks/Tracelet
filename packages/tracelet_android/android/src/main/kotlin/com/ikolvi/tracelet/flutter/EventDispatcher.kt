@@ -17,6 +17,7 @@ import com.ikolvi.tracelet.TlHttpEvent
 import com.ikolvi.tracelet.TlLocation
 import com.ikolvi.tracelet.TlProviderChangeEvent
 import com.ikolvi.tracelet.TlState
+import com.ikolvi.tracelet.TlTrackingMode
 import com.ikolvi.tracelet.TraceletEventApi
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import io.flutter.plugin.common.BinaryMessenger

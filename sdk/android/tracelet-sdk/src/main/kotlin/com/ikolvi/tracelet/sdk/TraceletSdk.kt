@@ -1439,33 +1439,47 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     fun destroyAll() {
-        // When stopOnTerminate=false and tracking is active in continuous (mode 0)
-        // or geofence (mode 1) mode, LocationService.onTaskRemoved() bootstraps
-        // native tracking independently. Destroying the LocationEngine here would
-        // race against that bootstrap and kill background tracking — which is
-        // exactly the bug reported in issue #63. Only destroy the engine when
-        // stopOnTerminate=true, or tracking is not active, or we are in periodic
-        // mode (which has its own WorkManager/AlarmManager lifecycle).
-        val keepLocationEngineAlive = !configManager.getStopOnTerminate() &&
-            stateManager.enabled && stateManager.trackingMode != 2
-        if (!keepLocationEngineAlive) {
+        // When stopOnTerminate=false and tracking is active,
+        // LocationService.onTaskRemoved() bootstraps native tracking
+        // independently. Tearing down subsystems here races against that
+        // bootstrap and kills background tracking — the bug reported in
+        // issues #63 and #65.
+        //
+        // Only tear down when stopOnTerminate=true OR tracking is not active.
+        val keepAlive = !configManager.getStopOnTerminate() && stateManager.enabled
+
+        // LocationEngine — keep alive for continuous (0) and geofence (1) modes.
+        // Periodic mode (2) has its own WorkManager/AlarmManager lifecycle.
+        if (!(keepAlive && stateManager.trackingMode != 2)) {
             locationEngine.destroy()
         }
         motionDetector.stop()
 
-        val keepGeofencesAlive = !configManager.getStopOnTerminate() &&
-            stateManager.enabled && stateManager.trackingMode == 1
+        // GeofenceManager — keep alive only in geofence mode (1).
+        val keepGeofencesAlive = keepAlive && stateManager.trackingMode == 1
         if (!keepGeofencesAlive) {
             geofenceManager.destroy()
         }
 
-        httpSyncManager.stop()
-        scheduleManager.stop()
-        if (::soundManager.isInitialized) soundManager.stop()
-        stopHeartbeat()
+        // HttpSyncManager — MUST survive for location uploads after task
+        // removal. LocationService.onTaskRemoved() creates a boot-mode
+        // HttpSyncManager, but the plugin's instance must not be torn down
+        // before that bootstrap completes (#65).
+        if (!keepAlive) {
+            httpSyncManager.stop()
+        }
 
-        val keepPeriodicAlive = !configManager.getStopOnTerminate() &&
-            stateManager.enabled && stateManager.trackingMode == 2
+        // ScheduleManager & heartbeat — keep alive for continuity.
+        if (!keepAlive) {
+            scheduleManager.stop()
+            stopHeartbeat()
+        }
+
+        // Sound is safe to stop unconditionally — no background impact.
+        if (::soundManager.isInitialized) soundManager.stop()
+
+        // PeriodicLocationWorker — keep alive only in periodic mode (2).
+        val keepPeriodicAlive = keepAlive && stateManager.trackingMode == 2
         if (!keepPeriodicAlive) {
             PeriodicLocationWorker.cancel(context)
         }

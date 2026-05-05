@@ -28,7 +28,16 @@ import kotlin.test.Test
  * 2. Re-initialize all subsystems (LocationEngine, GeofenceManager, etc.)
  * 3. Call `sdk.destroyAll()` on detach — killing the foreground pipeline
  *
- * These tests verify the guard prevents all three failure modes.
+ * **Secondary engine discriminator** (Looper heuristic, issue #overlay):
+ * When a secondary engine is an **in-process UI engine** (e.g.
+ * `flutter_overlay_window` via `FlutterEngineGroup`), it attaches on the
+ * main thread. The SDK's EventDispatcher must be re-bound to that engine's
+ * messenger so Pigeon FlutterApi messages are delivered correctly.
+ * When the secondary engine is a **headless background engine** (Firebase,
+ * HeadlessTaskService), it attaches on a background thread and must be
+ * fully skipped to preserve the #51 fix.
+ *
+ * These tests verify all three failure modes plus both discriminator branches.
  */
 internal class PluginSecondaryEngineGuardTest {
 
@@ -38,6 +47,8 @@ internal class PluginSecondaryEngineGuardTest {
     fun setUp() {
         // Reset the static primaryInstance before each test
         resetPrimaryInstance()
+        // Default: simulate main-thread attach (primary engine behaviour)
+        setIsMainThread(true)
 
         // Inject a mock TraceletSdk into the singleton field so that
         // TraceletSdk.getInstance(context) returns our mock without
@@ -55,6 +66,8 @@ internal class PluginSecondaryEngineGuardTest {
         instanceField.isAccessible = true
         instanceField.set(null, null)
         resetPrimaryInstance()
+        // Restore production Looper check so other test classes are unaffected
+        restoreIsMainThread()
     }
 
     // =========================================================================
@@ -77,13 +90,16 @@ internal class PluginSecondaryEngineGuardTest {
     }
 
     /**
-     * When a secondary FlutterEngine registers a new plugin instance
-     * (e.g. from FirebaseMessaging background isolate), the SDK's event
-     * sender must NOT be replaced — it should remain connected to the
+     * When a **headless** secondary FlutterEngine registers a new plugin
+     * instance (e.g. from FirebaseMessaging.onBackgroundMessage), the SDK's
+     * event sender must NOT be replaced — it should remain connected to the
      * primary (foreground) engine.
      *
+     * Simulates a background-thread attach by stubbing [isMainThread] to
+     * return `false`.
+     *
      * RED with old code: setEventSender was called unconditionally.
-     * GREEN with fix: secondary instance skips setEventSender.
+     * GREEN with fix: headless secondary skips setEventSender.
      */
     @Test
     fun secondaryInstance_doesNotReplaceEventSender() {
@@ -93,26 +109,28 @@ internal class PluginSecondaryEngineGuardTest {
         val primaryBinding = createMockBinding("primary")
         val secondaryBinding = createMockBinding("secondary")
 
-        // Attach primary first
+        // Attach primary (main thread — default stub)
         primaryPlugin.onAttachedToEngine(primaryBinding)
+        clearInvocations(mockSdk)
 
-        // Reset call counts so we only track secondary's behavior
-        org.mockito.Mockito.clearInvocations(mockSdk)
-
-        // Attach secondary (simulates Firebase background engine)
+        // Simulate headless engine: stub isMainThread to return false
+        setIsMainThread(false)
         secondaryPlugin.onAttachedToEngine(secondaryBinding)
 
-        // SDK event sender must NOT be touched by secondary
+        // SDK event sender must NOT be touched by headless secondary
         verify(mockSdk, never()).setEventSender(any())
         verify(mockSdk, never()).initialize()
     }
 
     /**
-     * When the secondary (background) engine detaches, `sdk.destroyAll()`
+     * When the **headless** secondary engine detaches, `sdk.destroyAll()`
      * must NOT be called — it would destroy the foreground tracking pipeline.
      *
+     * Simulates a background-thread attach by stubbing [isMainThread] to
+     * return `false`.
+     *
      * RED with old code: destroyAll was called unconditionally.
-     * GREEN with fix: secondary instance skips destroyAll.
+     * GREEN with fix: headless secondary skips destroyAll.
      */
     @Test
     fun secondaryDetach_doesNotDestroySDK() {
@@ -122,11 +140,14 @@ internal class PluginSecondaryEngineGuardTest {
         val primaryBinding = createMockBinding("primary")
         val secondaryBinding = createMockBinding("secondary")
 
-        // Attach both
+        // Attach primary (main thread — default stub)
         primaryPlugin.onAttachedToEngine(primaryBinding)
+        // Attach secondary as headless engine
+        setIsMainThread(false)
         secondaryPlugin.onAttachedToEngine(secondaryBinding)
+        setIsMainThread(true)
 
-        org.mockito.Mockito.clearInvocations(mockSdk)
+        clearInvocations(mockSdk)
 
         // Detach secondary (Firebase background engine done)
         secondaryPlugin.onDetachedFromEngine(secondaryBinding)
@@ -153,9 +174,11 @@ internal class PluginSecondaryEngineGuardTest {
     }
 
     /**
-     * Full lifecycle: primary attaches → secondary attaches → secondary
-     * detaches → primary still works. Simulates the complete Firebase
-     * background message scenario.
+     * Full lifecycle: primary attaches → headless secondary attaches →
+     * secondary detaches → primary still works. Simulates the complete
+     * Firebase background message scenario.
+     *
+     * Uses [isMainThread] stub: `false` for secondary attach, `true` otherwise.
      */
     @Test
     fun fullLifecycle_primarySurvivesSecondaryEngineLifecycle() {
@@ -165,14 +188,16 @@ internal class PluginSecondaryEngineGuardTest {
         val primaryBinding = createMockBinding("primary")
         val secondaryBinding = createMockBinding("secondary")
 
-        // 1. Primary attaches (app starts)
+        // 1. Primary attaches (main thread)
         primaryPlugin.onAttachedToEngine(primaryBinding)
         verify(mockSdk).setEventSender(any())
         verify(mockSdk).initialize()
 
-        // 2. Secondary attaches (Firebase background message arrives)
-        org.mockito.Mockito.clearInvocations(mockSdk)
+        // 2. Secondary attaches as headless engine (background thread)
+        clearInvocations(mockSdk)
+        setIsMainThread(false)
         secondaryPlugin.onAttachedToEngine(secondaryBinding)
+        setIsMainThread(true)
         verify(mockSdk, never()).setEventSender(any())
         verify(mockSdk, never()).initialize()
 
@@ -183,6 +208,67 @@ internal class PluginSecondaryEngineGuardTest {
         // 4. Primary is still alive — detach it normally
         primaryPlugin.onDetachedFromEngine(primaryBinding)
         verify(mockSdk).destroyAll()
+    }
+
+    /**
+     * Secondary in-process UI engine (main-thread attach, e.g.
+     * `flutter_overlay_window` via `FlutterEngineGroup`) should re-bind
+     * the EventDispatcher to its own BinaryMessenger so Pigeon FlutterApi
+     * messages are delivered to the primary Dart isolate.
+     *
+     * Crucially, `initialize()` must NOT be called again — only
+     * `setEventSender()` must be invoked to re-point the SDK's dispatcher.
+     *
+     * Uses the default [isMainThread] stub (`true`) — no extra setup needed.
+     */
+    @Test
+    fun secondaryMainThreadEngine_rebindsDispatcherOnly() {
+        val primaryPlugin = TraceletAndroidPlugin()
+        val secondaryPlugin = TraceletAndroidPlugin()
+
+        val primaryBinding = createMockBinding("primary")
+        // Secondary binding uses a DIFFERENT messenger — simulates overlay engine
+        val overlayBinding = createMockBinding("overlay")
+
+        // Attach primary (normal app start)
+        primaryPlugin.onAttachedToEngine(primaryBinding)
+        clearInvocations(mockSdk)
+
+        // isMainThread stub is already true (set in setUp) — simulates overlay engine
+        secondaryPlugin.onAttachedToEngine(overlayBinding)
+
+        // The SDK's event sender MUST be updated to the overlay messenger
+        verify(mockSdk).setEventSender(any())
+        // But initialize() must NOT be called — no subsystem re-init
+        verify(mockSdk, never()).initialize()
+    }
+
+    /**
+     * Secondary off-thread engine (background-thread attach, e.g.
+     * `FirebaseMessaging.onBackgroundMessage`) must be fully skipped.
+     *
+     * Stubs [isMainThread] to return `false` to exercise the headless-skip
+     * branch without needing a real background thread.
+     */
+    @Test
+    fun secondaryBackgroundThreadEngine_fullySkipped() {
+        val primaryPlugin = TraceletAndroidPlugin()
+        val secondaryPlugin = TraceletAndroidPlugin()
+
+        val primaryBinding = createMockBinding("primary")
+        val headlessBinding = createMockBinding("headless")
+
+        // Attach primary (main thread — default stub)
+        primaryPlugin.onAttachedToEngine(primaryBinding)
+        clearInvocations(mockSdk)
+
+        // Simulate headless engine: stub isMainThread to return false
+        setIsMainThread(false)
+        secondaryPlugin.onAttachedToEngine(headlessBinding)
+
+        // SDK must NOT be touched at all — full skip (#51 preserved)
+        verify(mockSdk, never()).setEventSender(any())
+        verify(mockSdk, never()).initialize()
     }
 
     // =========================================================================
@@ -218,5 +304,32 @@ internal class PluginSecondaryEngineGuardTest {
         val field = TraceletAndroidPlugin::class.java.getDeclaredField("primaryInstance")
         field.isAccessible = true
         field.set(null, null)
+    }
+
+    /**
+     * Stubs [TraceletAndroidPlugin.isMainThread] to return [value] for the
+     * duration of the current test. Call [restoreIsMainThread] in tearDown
+     * to reset to the real Looper check.
+     */
+    private fun setIsMainThread(value: Boolean) {
+        val field = TraceletAndroidPlugin::class.java.getDeclaredField("isMainThread")
+        field.isAccessible = true
+        field.set(null, { value })
+    }
+
+    /**
+     * Restores [TraceletAndroidPlugin.isMainThread] to the production default
+     * (real Looper check). Called in [tearDown] so other test classes are
+     * unaffected.
+     */
+    private fun restoreIsMainThread() {
+        val field = TraceletAndroidPlugin::class.java.getDeclaredField("isMainThread")
+        field.isAccessible = true
+        // Restore the default production lambda (real Looper check)
+        @Suppress("ObjectLiteralToLambda")
+        field.set(null, object : Function0<Boolean> {
+            override fun invoke(): Boolean =
+                android.os.Looper.myLooper() == android.os.Looper.getMainLooper()
+        })
     }
 }

@@ -1,13 +1,14 @@
 Pod::Spec.new do |s|
   s.name             = 'TraceletSDK'
-  s.version          = '1.0.12'
-  s.summary          = 'Tracelet SDK - background geolocation engine'
-  s.homepage         = 'https://github.com/Ikolvi/Tracelet'
-  s.license          = { :type => 'MIT' }
-  s.author           = 'Ikolvi'
+  s.version          = '1.1.4'
+  s.summary          = 'Production-grade background geolocation SDK for iOS.'
+  s.homepage         = 'https://github.com/Ikolvi/Tracelet/tree/main/sdk/ios'
+  s.license          = { :type => 'Apache-2.0', :file => '../../LICENSE' }
+  s.author           = { 'Ikolvi' => 'contact@ikolvi.com' }
   s.source           = { :path => '.' }
   s.ios.deployment_target = '14.0'
   s.swift_version    = '5.9'
   s.source_files     = 'Sources/TraceletSDK/**/*.swift'
-  s.frameworks       = 'Foundation', 'CoreLocation', 'Network', 'UIKit'
+  s.frameworks       = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks', 'AVFoundation', 'AudioToolbox', 'Network', 'DeviceCheck'
+  s.libraries        = 'sqlite3'
 end

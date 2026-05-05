@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.4
+
+- **CHORE**: Aligned repository podspec files and updated release documentation.
+- **CHORE**: Maintenance release to sync native SDK versions.
+
+## 1.1.3
+
+- **CHORE**: Version bump for monorepo consistency.
+
 ## 1.1.2
 
 - **FIX**: `destroyAll()` now guards **all** background-critical subsystems behind `stopOnTerminate: false`, not just `locationEngine` and `geofenceManager` (#65). `httpSyncManager.stop()`, `scheduleManager.stop()`, and `stopHeartbeat()` were still called unconditionally on every swipe-to-dismiss, killing HTTP sync, scheduled tasks, and heartbeat monitoring even when background tracking should survive. Uses a unified `keepAlive` flag derived from `!stopOnTerminate && stateManager.enabled`.

@@ -673,6 +673,8 @@ This is useful for:
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.1.4 | May 2026 | Aligned repository podspec files and synchronized release versioning |
+| 1.1.3 | May 2026 | Aligned native SDK versions and updated release documentation |
 | 0.1.0 | March 2026 | Initial release — full feature parity with Flutter plugin |
 
 ## License

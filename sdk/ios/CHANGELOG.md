@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.4
+
+- **CHORE**: Aligned repository podspec files and updated release documentation.
+- **CHORE**: Maintenance release to sync native SDK versions.
+
+## 1.1.3
+
+- **FIX**: Aligned `sdk/ios/TraceletSDK.podspec` with root production podspec.
+- **FIX**: Updated license to Apache-2.0 and included missing frameworks (CoreMotion, BackgroundTasks, AVFoundation, AudioToolbox, DeviceCheck) and sqlite3 library.
+- **FIX**: Synchronized release versioning with Android and Flutter monorepo.
+
 ## 1.0.11
 
 - **PERF**: `LocationEngine.changePace(true)` now fires an additional one-shot `requestLocation()` on stationary → moving transitions, delivering a fresh GPS fix as soon as the hardware is warm without waiting for `distanceFilter` to be satisfied on the continuous stream. Reduces first-fix latency on motion start from 11–50s to ~1–5s (#54).

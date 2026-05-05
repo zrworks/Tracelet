@@ -1,4 +1,9 @@
-## 1.9.2
+## 1.9.3
+2: 
+3: - **CHORE**: Bump native SDK dependencies to `1.1.4`.
+4: - **CHORE**: Aligned repository podspec files and updated release documentation.
+5: 
+6: ## 1.9.2
 
 - **REFACTOR**: Migrated `TlTrackingMode` to a strongly-typed enum across the entire Pigeon bridge. This improves type safety and developer experience by eliminating magic integers in the platform communication layer. Android and iOS native implementations now use the generated enum types directly.
 - **FIX**: Resolved "Unable to establish connection" regression in `locationStream` when secondary engines (like overlays or background isolates) detach. Ensured `destroyAll()` is correctly integrated into the `primaryInstance` guard on both Android and iOS to prevent resource leaks and duplicate registrations during hot restarts.

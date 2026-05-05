@@ -1,4 +1,8 @@
-## 1.9.2
+## 1.9.3
+2: 
+3: - **CHORE**: Version bump for monorepo consistency and native SDK alignment.
+4: 
+5: ## 1.9.2
 
 - **CHORE**: Constraint bump for `tracelet` 1.9.2 release. No interface changes.
 

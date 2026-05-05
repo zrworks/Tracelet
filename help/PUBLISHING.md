@@ -48,7 +48,9 @@ Before triggering a release, update these files manually:
 - [ ] `packages/tracelet/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_platform_interface/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_android/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
+- [ ] `packages/tracelet_android/android/build.gradle` — update `version = "X.Y.Z"`
 - [ ] `packages/tracelet_ios/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
+- [ ] `packages/tracelet_ios/ios/tracelet_ios.podspec` — update `s.version`
 - [ ] `packages/tracelet_web/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
 - [ ] `packages/tracelet/pubspec.yaml` — update dependencies for `tracelet_android`, `tracelet_ios`, `tracelet_web` to `^X.Y.Z`
 - [ ] All 5 `CHANGELOG.md` files — add entry with `**FEAT**:` / `**FIX**:` / `**PERF**:` prefix
@@ -59,6 +61,7 @@ Before triggering a release, update these files manually:
 
 ### iOS SDK (only if native SDK changed)
 - [ ] `TraceletSDK.podspec` (repo root) — update `s.version`
+- [ ] `sdk/ios/TraceletSDK.podspec` — update `s.version` (keep in sync with root)
 - [ ] `sdk/ios/CHANGELOG.md`
 
 ### Cross-package dependency constraints
@@ -214,11 +217,12 @@ This updates all 5 Flutter package versions and cross-references in a single com
 | What | Path |
 |------|------|
 | Flutter package versions | `packages/*/pubspec.yaml` |
+| Flutter native versions | `tracelet_android/android/build.gradle` & `tracelet_ios/ios/*.podspec` |
 | Flutter changelogs | `packages/*/CHANGELOG.md` |
 | Android SDK version | `sdk/android/gradle.properties` → `SDK_VERSION` |
 | Android build config | `sdk/android/tracelet-sdk/build.gradle.kts` |
 | Android Maven config | `sdk/android/build.gradle.kts` |
-| iOS SDK version | `TraceletSDK.podspec` (repo root) → `s.version` |
+| iOS SDK version | `TraceletSDK.podspec` (root) & `sdk/ios/TraceletSDK.podspec` |
 | iOS SPM manifest | `sdk/ios/Package.swift` |
 | Release CI workflow | `.github/workflows/release.yml` |
 | CI workflow | `.github/workflows/ci.yml` |

@@ -1,4 +1,8 @@
-## 1.9.2
+## 1.9.3
+2: 
+3: - **CHORE**: Bump native `TraceletSDK` dependency to `1.1.4`.
+4: 
+5: ## 1.9.2
 
 - **CHORE**: Constraint bump to `tracelet_platform_interface` 1.9.2. No iOS-side changes.
 

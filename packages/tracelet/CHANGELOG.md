@@ -1,3 +1,7 @@
+## 1.9.2
+
+- **FIX**: `Tracelet.locationStream` no longer goes silent when `flutter_overlay_window` (or any plugin using `FlutterEngineGroup`) creates a secondary in-process `FlutterEngine`. The primary-instance guard introduced in 1.9.0 (#51) blocked `EventDispatcher` re-binding for in-process overlay engines, causing Pigeon FlutterApi `onLocation` channel to report "Unable to establish connection". A Looper-based discriminator now distinguishes overlay engines (main-thread attach → re-bind dispatcher) from headless background engines (off-thread attach → full skip, preserving #51).
+
 ## 1.9.1
 
 - **FIX**: Android `destroyAll()` now respects `stopOnTerminate: false` for continuous and geofence tracking modes (#63). `locationEngine.destroy()` was unconditionally called in `onDetachedFromEngine()`, racing with `LocationService.onTaskRemoved()` which bootstraps native tracking. Background location tracking now survives app swipe from recents when `stopOnTerminate: false` is configured.

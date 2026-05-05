@@ -1,3 +1,8 @@
+## 1.9.2
+
+- **FIX**: `Tracelet.locationStream` no longer goes silent when `flutter_overlay_window` (or any `FlutterEngineGroup` plugin) creates a secondary in-process `FlutterEngine`. The primary-instance guard (#51) unconditionally skipped `EventDispatcher` re-binding for all secondary engines, including in-process overlay engines that attach on the main thread. A Looper-based discriminator now selectively re-binds the dispatcher for main-thread overlay engines while preserving the full skip for off-thread headless/Firebase engines (#51 fix intact).
+- **TEST**: Added `secondaryMainThreadEngine_rebindsDispatcherOnly` and `secondaryBackgroundThreadEngine_fullySkipped` to `PluginSecondaryEngineGuardTest` covering both discriminator branches. Existing headless tests updated to stub `isMainThread=false`.
+
 ## 1.9.1
 
 - **FIX**: `destroyAll()` now respects `stopOnTerminate: false` for continuous (mode 0) and geofence (mode 1) tracking modes (#63). `locationEngine.destroy()` was unconditionally called, racing with `LocationService.onTaskRemoved()` native bootstrap. `PeriodicLocationWorker` static refs (`eventSender`, `httpSyncManager`) are also now preserved when `keepPeriodicAlive` is true.

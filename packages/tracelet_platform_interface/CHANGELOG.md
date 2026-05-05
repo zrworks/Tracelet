@@ -1,3 +1,7 @@
+## 1.9.2
+
+- **CHORE**: Constraint bump for `tracelet` 1.9.2 release. No interface changes.
+
 ## 1.9.1
 
 - **CHORE**: Constraint bump for `tracelet` 1.9.1 release. No interface changes.

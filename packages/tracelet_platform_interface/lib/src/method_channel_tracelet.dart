@@ -680,146 +680,147 @@ class MethodChannelTracelet extends TraceletPlatform {
   }
 
   Map<String, Object?> _geoToMap(TlGeoConfig c) => {
-        'desiredAccuracy': c.desiredAccuracy.index,
-        'distanceFilter': c.distanceFilter,
-        'stationaryRadius': c.stationaryRadius,
-        'locationTimeout': c.locationTimeout,
-        'disableElasticity': c.disableElasticity,
-        'elasticityMultiplier': c.elasticityMultiplier,
-        'stopAfterElapsedMinutes': c.stopAfterElapsedMinutes,
-        'maxMonitoredGeofences': c.maxMonitoredGeofences,
-        'enableTimestampMeta': c.enableTimestampMeta,
-        'enableAdaptiveMode': c.enableAdaptiveMode,
-        'periodicLocationInterval': c.periodicLocationInterval,
-        'periodicDesiredAccuracy': c.periodicDesiredAccuracy.index,
-        'enableSparseUpdates': c.enableSparseUpdates,
-        'sparseDistanceThreshold': c.sparseDistanceThreshold,
-        'sparseMaxIdleSeconds': c.sparseMaxIdleSeconds,
-        'enableDeadReckoning': c.enableDeadReckoning,
-        'deadReckoningActivationDelay': c.deadReckoningActivationDelay,
-        'deadReckoningMaxDuration': c.deadReckoningMaxDuration,
-        'batteryBudgetPerHour': c.batteryBudgetPerHour,
-      };
+    'desiredAccuracy': c.desiredAccuracy.index,
+    'distanceFilter': c.distanceFilter,
+    'stationaryRadius': c.stationaryRadius,
+    'locationTimeout': c.locationTimeout,
+    'disableElasticity': c.disableElasticity,
+    'elasticityMultiplier': c.elasticityMultiplier,
+    'stopAfterElapsedMinutes': c.stopAfterElapsedMinutes,
+    'maxMonitoredGeofences': c.maxMonitoredGeofences,
+    'enableTimestampMeta': c.enableTimestampMeta,
+    'enableAdaptiveMode': c.enableAdaptiveMode,
+    'periodicLocationInterval': c.periodicLocationInterval,
+    'periodicDesiredAccuracy': c.periodicDesiredAccuracy.index,
+    'enableSparseUpdates': c.enableSparseUpdates,
+    'sparseDistanceThreshold': c.sparseDistanceThreshold,
+    'sparseMaxIdleSeconds': c.sparseMaxIdleSeconds,
+    'enableDeadReckoning': c.enableDeadReckoning,
+    'deadReckoningActivationDelay': c.deadReckoningActivationDelay,
+    'deadReckoningMaxDuration': c.deadReckoningMaxDuration,
+    'batteryBudgetPerHour': c.batteryBudgetPerHour,
+  };
 
   Map<String, Object?> _appToMap(TlAppConfig c) => {
-        'stopOnTerminate': c.stopOnTerminate,
-        'startOnBoot': c.startOnBoot,
-        'heartbeatInterval': c.heartbeatInterval,
-        'schedule': c.schedule,
-        'remoteConfigUrl': c.remoteConfigUrl,
-        'remoteConfigHeaders': c.remoteConfigHeaders,
-        'remoteConfigTimeout': c.remoteConfigTimeout,
-        'remoteConfigRefreshInterval': c.remoteConfigRefreshInterval,
-      };
+    'stopOnTerminate': c.stopOnTerminate,
+    'startOnBoot': c.startOnBoot,
+    'heartbeatInterval': c.heartbeatInterval,
+    'schedule': c.schedule,
+    'remoteConfigUrl': c.remoteConfigUrl,
+    'remoteConfigHeaders': c.remoteConfigHeaders,
+    'remoteConfigTimeout': c.remoteConfigTimeout,
+    'remoteConfigRefreshInterval': c.remoteConfigRefreshInterval,
+  };
 
   Map<String, Object?> _androidToMap(TlAndroidConfig c) => {
-        'locationUpdateInterval': c.locationUpdateInterval,
-        'fastestLocationUpdateInterval': c.fastestLocationUpdateInterval,
-        'deferTime': c.deferTime,
-        'allowIdenticalLocations': c.allowIdenticalLocations,
-        'geofenceModeHighAccuracy': c.geofenceModeHighAccuracy,
-        'periodicUseForegroundService': c.periodicUseForegroundService,
-        'periodicUseExactAlarms': c.periodicUseExactAlarms,
-        'scheduleUseAlarmManager': c.scheduleUseAlarmManager,
-        'foregroundService': _fgToMap(c.foregroundService),
-      };
+    'locationUpdateInterval': c.locationUpdateInterval,
+    'fastestLocationUpdateInterval': c.fastestLocationUpdateInterval,
+    'deferTime': c.deferTime,
+    'allowIdenticalLocations': c.allowIdenticalLocations,
+    'geofenceModeHighAccuracy': c.geofenceModeHighAccuracy,
+    'periodicUseForegroundService': c.periodicUseForegroundService,
+    'periodicUseExactAlarms': c.periodicUseExactAlarms,
+    'scheduleUseAlarmManager': c.scheduleUseAlarmManager,
+    'foregroundService': _fgToMap(c.foregroundService),
+  };
 
   Map<String, Object?> _fgToMap(TlForegroundServiceConfig c) => {
-        'enabled': c.enabled,
-        'channelId': c.channelId,
-        'channelName': c.channelName,
-        'notificationTitle': c.notificationTitle,
-        'notificationText': c.notificationText,
-        'notificationColor': c.notificationColor,
-        'notificationSmallIcon': c.notificationSmallIcon,
-        'notificationLargeIcon': c.notificationLargeIcon,
-        'notificationPriority': c.notificationPriority.index - 2,
-        'notificationOngoing': c.notificationOngoing,
-        'actions': c.actions,
-      };
+    'enabled': c.enabled,
+    'channelId': c.channelId,
+    'channelName': c.channelName,
+    'notificationTitle': c.notificationTitle,
+    'notificationText': c.notificationText,
+    'notificationColor': c.notificationColor,
+    'notificationSmallIcon': c.notificationSmallIcon,
+    'notificationLargeIcon': c.notificationLargeIcon,
+    'notificationPriority': c.notificationPriority.index - 2,
+    'notificationOngoing': c.notificationOngoing,
+    'actions': c.actions,
+  };
 
   Map<String, Object?> _iosToMap(TlIosConfig c) => {
-        'activityType': c.activityType.index,
-        'useSignificantChangesOnly': c.useSignificantChangesOnly,
-        'showsBackgroundLocationIndicator': c.showsBackgroundLocationIndicator,
-        'pausesLocationUpdatesAutomatically': c.pausesLocationUpdatesAutomatically,
-        'locationAuthorizationRequest':
-            c.locationAuthorizationRequest == TlAuthorizationRequest.always
-                ? 'Always'
-                : 'WhenInUse',
-        'disableLocationAuthorizationAlert': c.disableLocationAuthorizationAlert,
-        'preventSuspend': c.preventSuspend,
-      };
+    'activityType': c.activityType.index,
+    'useSignificantChangesOnly': c.useSignificantChangesOnly,
+    'showsBackgroundLocationIndicator': c.showsBackgroundLocationIndicator,
+    'pausesLocationUpdatesAutomatically': c.pausesLocationUpdatesAutomatically,
+    'locationAuthorizationRequest':
+        c.locationAuthorizationRequest == TlAuthorizationRequest.always
+        ? 'Always'
+        : 'WhenInUse',
+    'disableLocationAuthorizationAlert': c.disableLocationAuthorizationAlert,
+    'preventSuspend': c.preventSuspend,
+  };
 
   Map<String, Object?> _httpToMap(TlHttpConfig c) => {
-        'url': c.url,
-        'method': c.method.index,
-        'headers': c.headers,
-        'httpRootProperty': c.httpRootProperty,
-        'batchSync': c.batchSync,
-        'maxBatchSize': c.maxBatchSize,
-        'autoSync': c.autoSync,
-        'autoSyncThreshold': c.autoSyncThreshold,
-        'httpTimeout': c.httpTimeout,
-        'params': c.params,
-        'locationsOrderDirection': c.locationsOrderDirection.index,
-        'extras': c.extras,
-        'disableAutoSyncOnCellular': c.disableAutoSyncOnCellular,
-        'maxRetries': c.maxRetries,
-        'retryBackoffBase': c.retryBackoffBase,
-        'retryBackoffCap': c.retryBackoffCap,
-        'enableDeltaCompression': c.enableDeltaCompression,
-        'deltaCoordinatePrecision': c.deltaCoordinatePrecision,
-        'sslPinningCertificates': c.sslPinningCertificates,
-        'sslPinningFingerprints': c.sslPinningFingerprints,
-      };
+    'url': c.url,
+    'method': c.method.index,
+    'headers': c.headers,
+    'httpRootProperty': c.httpRootProperty,
+    'batchSync': c.batchSync,
+    'maxBatchSize': c.maxBatchSize,
+    'autoSync': c.autoSync,
+    'autoSyncThreshold': c.autoSyncThreshold,
+    'httpTimeout': c.httpTimeout,
+    'params': c.params,
+    'locationsOrderDirection': c.locationsOrderDirection.index,
+    'extras': c.extras,
+    'disableAutoSyncOnCellular': c.disableAutoSyncOnCellular,
+    'maxRetries': c.maxRetries,
+    'retryBackoffBase': c.retryBackoffBase,
+    'retryBackoffCap': c.retryBackoffCap,
+    'enableDeltaCompression': c.enableDeltaCompression,
+    'deltaCoordinatePrecision': c.deltaCoordinatePrecision,
+    'sslPinningCertificates': c.sslPinningCertificates,
+    'sslPinningFingerprints': c.sslPinningFingerprints,
+  };
 
   Map<String, Object?> _loggerToMap(TlLoggerConfig c) => {
-        'logLevel': c.logLevel.index,
-        'logMaxDays': c.logMaxDays,
-        'debug': c.debug,
-      };
+    'logLevel': c.logLevel.index,
+    'logMaxDays': c.logMaxDays,
+    'debug': c.debug,
+  };
 
   Map<String, Object?> _motionToMap(TlMotionConfig c) => {
-        'stopTimeout': c.stopTimeout,
-        'motionTriggerDelay': c.motionTriggerDelay,
-        'disableMotionActivityUpdates': c.disableMotionActivityUpdates,
-        'isMoving': c.isMoving,
-        'activityRecognitionInterval': c.activityRecognitionInterval,
-        'minimumActivityRecognitionConfidence': c.minimumActivityRecognitionConfidence,
-        'disableStopDetection': c.disableStopDetection,
-        'stopDetectionDelay': c.stopDetectionDelay,
-        'stopOnStationary': c.stopOnStationary,
-        'activityTypes': c.activityTypes?.map((e) => e?.name).toList(),
-      };
+    'stopTimeout': c.stopTimeout,
+    'motionTriggerDelay': c.motionTriggerDelay,
+    'disableMotionActivityUpdates': c.disableMotionActivityUpdates,
+    'isMoving': c.isMoving,
+    'activityRecognitionInterval': c.activityRecognitionInterval,
+    'minimumActivityRecognitionConfidence':
+        c.minimumActivityRecognitionConfidence,
+    'disableStopDetection': c.disableStopDetection,
+    'stopDetectionDelay': c.stopDetectionDelay,
+    'stopOnStationary': c.stopOnStationary,
+    'activityTypes': c.activityTypes?.map((e) => e?.name).toList(),
+  };
 
   Map<String, Object?> _geofenceToMap(TlGeofenceConfig c) => {
-        'geofenceModeHighAccuracy': c.geofenceModeHighAccuracy,
-        'geofenceInitialTriggerEntry': c.geofenceInitialTriggerEntry,
-        'geofenceProximityRadius': c.geofenceProximityRadius,
-      };
+    'geofenceModeHighAccuracy': c.geofenceModeHighAccuracy,
+    'geofenceInitialTriggerEntry': c.geofenceInitialTriggerEntry,
+    'geofenceProximityRadius': c.geofenceProximityRadius,
+  };
 
   Map<String, Object?> _persistenceToMap(TlPersistenceConfig c) => {
-        'persistMode': c.persistMode.index,
-        'maxDaysToPersist': c.maxDaysToPersist,
-        'maxRecordsToPersist': c.maxRecordsToPersist,
-      };
+    'persistMode': c.persistMode.index,
+    'maxDaysToPersist': c.maxDaysToPersist,
+    'maxRecordsToPersist': c.maxRecordsToPersist,
+  };
 
   Map<String, Object?> _auditToMap(TlAuditConfig c) => {
-        'enabled': c.enabled,
-        'hashAlgorithm': c.hashAlgorithm.index,
-      };
+    'enabled': c.enabled,
+    'hashAlgorithm': c.hashAlgorithm.index,
+  };
 
   Map<String, Object?> _privacyZoneToMap(TlPrivacyZoneConfig c) => {
-        'enabled': c.enabled,
-      };
+    'enabled': c.enabled,
+  };
 
   Map<String, Object?> _securityToMap(TlSecurityConfig c) => {
-        'encryptDatabase': c.encryptDatabase,
-      };
+    'encryptDatabase': c.encryptDatabase,
+  };
 
   Map<String, Object?> _attestationToMap(TlAttestationConfig c) => {
-        'enabled': c.enabled,
-        'refreshInterval': c.refreshInterval,
-      };
+    'enabled': c.enabled,
+    'refreshInterval': c.refreshInterval,
+  };
 }

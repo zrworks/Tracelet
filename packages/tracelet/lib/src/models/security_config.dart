@@ -89,9 +89,8 @@ class SecurityConfig {
     };
   }
 
-  TlSecurityConfig toTlConfig() => TlSecurityConfig(
-        encryptDatabase: encryptDatabase,
-      );
+  TlSecurityConfig toTlConfig() =>
+      TlSecurityConfig(encryptDatabase: encryptDatabase);
 
   @override
   String toString() =>

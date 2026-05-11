@@ -110,9 +110,9 @@ class AuditConfig {
   }
 
   TlAuditConfig toTlConfig() => TlAuditConfig(
-        enabled: enabled,
-        hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],
-      );
+    enabled: enabled,
+    hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],
+  );
 
   @override
   String toString() =>

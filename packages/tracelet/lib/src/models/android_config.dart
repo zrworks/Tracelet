@@ -95,16 +95,16 @@ class AndroidConfig {
 
   /// Converts to Pigeon [TlAndroidConfig].
   TlAndroidConfig toTlConfig() => TlAndroidConfig(
-        locationUpdateInterval: locationUpdateInterval,
-        fastestLocationUpdateInterval: fastestLocationUpdateInterval,
-        deferTime: deferTime,
-        allowIdenticalLocations: allowIdenticalLocations,
-        geofenceModeHighAccuracy: geofenceModeHighAccuracy,
-        periodicUseForegroundService: periodicUseForegroundService,
-        periodicUseExactAlarms: periodicUseExactAlarms,
-        scheduleUseAlarmManager: scheduleUseAlarmManager,
-        foregroundService: foregroundService.toTlConfig(),
-      );
+    locationUpdateInterval: locationUpdateInterval,
+    fastestLocationUpdateInterval: fastestLocationUpdateInterval,
+    deferTime: deferTime,
+    allowIdenticalLocations: allowIdenticalLocations,
+    geofenceModeHighAccuracy: geofenceModeHighAccuracy,
+    periodicUseForegroundService: periodicUseForegroundService,
+    periodicUseExactAlarms: periodicUseExactAlarms,
+    scheduleUseAlarmManager: scheduleUseAlarmManager,
+    foregroundService: foregroundService.toTlConfig(),
+  );
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -217,18 +217,19 @@ class ForegroundServiceConfig {
 
   /// Converts to Pigeon [TlForegroundServiceConfig].
   TlForegroundServiceConfig toTlConfig() => TlForegroundServiceConfig(
-        enabled: enabled,
-        channelId: channelId,
-        channelName: channelName,
-        notificationTitle: notificationTitle,
-        notificationText: notificationText,
-        notificationColor: notificationColor,
-        notificationSmallIcon: notificationSmallIcon,
-        notificationLargeIcon: notificationLargeIcon,
-        notificationPriority: TlNotificationPriority.values[notificationPriority.index],
-        notificationOngoing: notificationOngoing,
-        actions: actions,
-      );
+    enabled: enabled,
+    channelId: channelId,
+    channelName: channelName,
+    notificationTitle: notificationTitle,
+    notificationText: notificationText,
+    notificationColor: notificationColor,
+    notificationSmallIcon: notificationSmallIcon,
+    notificationLargeIcon: notificationLargeIcon,
+    notificationPriority:
+        TlNotificationPriority.values[notificationPriority.index],
+    notificationOngoing: notificationOngoing,
+    actions: actions,
+  );
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -265,18 +266,18 @@ class ForegroundServiceConfig {
 
   @override
   int get hashCode => Object.hash(
-        enabled,
-        channelId,
-        channelName,
-        notificationTitle,
-        notificationText,
-        notificationColor,
-        notificationSmallIcon,
-        notificationLargeIcon,
-        notificationPriority,
-        notificationOngoing,
-        actions,
-      );
+    enabled,
+    channelId,
+    channelName,
+    notificationTitle,
+    notificationText,
+    notificationColor,
+    notificationSmallIcon,
+    notificationLargeIcon,
+    notificationPriority,
+    notificationOngoing,
+    actions,
+  );
 }
 
 NotificationPriority _parseNotificationPriority(Object? value) {

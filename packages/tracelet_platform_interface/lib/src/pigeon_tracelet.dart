@@ -513,7 +513,9 @@ class PigeonTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> getCarbonReport([Map<String, Object?>? query]) async {
+  Future<Map<String, Object?>> getCarbonReport([
+    Map<String, Object?>? query,
+  ]) async {
     final result = await _api.getCarbonReport(query);
     return result.cast<String, Object?>();
   }

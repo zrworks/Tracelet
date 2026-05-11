@@ -140,5 +140,4 @@ void main() {
       expect(ctx.locations[1]['uuid'], 'also-valid');
     });
   });
-
 }

@@ -121,20 +121,20 @@ class Config {
 
   /// Converts this [Config] to a Pigeon-generated [TlConfig].
   TlConfig toTlConfig() => TlConfig(
-        geo: geo.toTlConfig(),
-        app: app.toTlConfig(),
-        android: android.toTlConfig(),
-        ios: ios.toTlConfig(),
-        http: http.toTlConfig(),
-        logger: logger.toTlConfig(),
-        motion: motion.toTlConfig(),
-        geofence: geofence.toTlConfig(),
-        persistence: persistence.toTlConfig(),
-        audit: audit.toTlConfig(),
-        privacyZone: privacyZone.toTlConfig(),
-        security: security.toTlConfig(),
-        attestation: attestation.toTlConfig(),
-      );
+    geo: geo.toTlConfig(),
+    app: app.toTlConfig(),
+    android: android.toTlConfig(),
+    ios: ios.toTlConfig(),
+    http: http.toTlConfig(),
+    logger: logger.toTlConfig(),
+    motion: motion.toTlConfig(),
+    geofence: geofence.toTlConfig(),
+    persistence: persistence.toTlConfig(),
+    audit: audit.toTlConfig(),
+    privacyZone: privacyZone.toTlConfig(),
+    security: security.toTlConfig(),
+    attestation: attestation.toTlConfig(),
+  );
 
   /// Serializes to a nested map suitable for platform channel transmission.
   Map<String, Object?> toMap() {
@@ -231,17 +231,24 @@ class LocationFilter {
 
   factory LocationFilter.fromMap(Map<String, Object?> map) {
     return LocationFilter(
-      trackingAccuracyThreshold:
-          ensureInt(map['trackingAccuracyThreshold'], fallback: 100),
+      trackingAccuracyThreshold: ensureInt(
+        map['trackingAccuracyThreshold'],
+        fallback: 100,
+      ),
       maxImpliedSpeed: ensureInt(map['maxImpliedSpeed'], fallback: 80),
-      odometerAccuracyThreshold:
-          ensureInt(map['odometerAccuracyThreshold'], fallback: 50),
+      odometerAccuracyThreshold: ensureInt(
+        map['odometerAccuracyThreshold'],
+        fallback: 50,
+      ),
       policy:
           LocationFilterPolicy.values[ensureInt(
             map['policy'],
             fallback: 0,
           ).clamp(0, LocationFilterPolicy.values.length - 1)],
-      rejectMockLocations: ensureBool(map['rejectMockLocations'], fallback: false),
+      rejectMockLocations: ensureBool(
+        map['rejectMockLocations'],
+        fallback: false,
+      ),
       mockDetectionLevel: ensureInt(map['mockDetectionLevel'], fallback: 1),
     );
   }
@@ -346,55 +353,82 @@ class GeoConfig {
         map['stopAfterElapsedMinutes'],
         fallback: -1,
       ),
-      maxMonitoredGeofences: ensureInt(map['maxMonitoredGeofences'], fallback: -1),
-      enableTimestampMeta: ensureBool(map['enableTimestampMeta'], fallback: false),
-      enableAdaptiveMode: ensureBool(map['enableAdaptiveMode'], fallback: false),
-      periodicLocationInterval:
-          ensureInt(map['periodicLocationInterval'], fallback: 900),
+      maxMonitoredGeofences: ensureInt(
+        map['maxMonitoredGeofences'],
+        fallback: -1,
+      ),
+      enableTimestampMeta: ensureBool(
+        map['enableTimestampMeta'],
+        fallback: false,
+      ),
+      enableAdaptiveMode: ensureBool(
+        map['enableAdaptiveMode'],
+        fallback: false,
+      ),
+      periodicLocationInterval: ensureInt(
+        map['periodicLocationInterval'],
+        fallback: 900,
+      ),
       periodicDesiredAccuracy:
           DesiredAccuracy.values[ensureInt(
             map['periodicDesiredAccuracy'],
             fallback: 1, // medium
           ).clamp(0, DesiredAccuracy.values.length - 1)],
-      enableSparseUpdates: ensureBool(map['enableSparseUpdates'], fallback: false),
-      sparseDistanceThreshold:
-          ensureDouble(map['sparseDistanceThreshold'], fallback: 50.0),
-      sparseMaxIdleSeconds:
-          ensureInt(map['sparseMaxIdleSeconds'], fallback: 300),
-      batteryBudgetPerHour:
-          ensureDouble(map['batteryBudgetPerHour'], fallback: 0.0),
-      enableDeadReckoning: ensureBool(map['enableDeadReckoning'], fallback: false),
-      deadReckoningActivationDelay:
-          ensureInt(map['deadReckoningActivationDelay'], fallback: 0),
-      deadReckoningMaxDuration:
-          ensureInt(map['deadReckoningMaxDuration'], fallback: 0),
+      enableSparseUpdates: ensureBool(
+        map['enableSparseUpdates'],
+        fallback: false,
+      ),
+      sparseDistanceThreshold: ensureDouble(
+        map['sparseDistanceThreshold'],
+        fallback: 50.0,
+      ),
+      sparseMaxIdleSeconds: ensureInt(
+        map['sparseMaxIdleSeconds'],
+        fallback: 300,
+      ),
+      batteryBudgetPerHour: ensureDouble(
+        map['batteryBudgetPerHour'],
+        fallback: 0.0,
+      ),
+      enableDeadReckoning: ensureBool(
+        map['enableDeadReckoning'],
+        fallback: false,
+      ),
+      deadReckoningActivationDelay: ensureInt(
+        map['deadReckoningActivationDelay'],
+        fallback: 0,
+      ),
+      deadReckoningMaxDuration: ensureInt(
+        map['deadReckoningMaxDuration'],
+        fallback: 0,
+      ),
       filter: LocationFilter.fromMap(safeMap(map['filter']) ?? map),
     );
   }
 
   /// Converts to Pigeon [TlGeoConfig].
   TlGeoConfig toTlConfig() => TlGeoConfig(
-        desiredAccuracy: TlDesiredAccuracy.values[desiredAccuracy.index],
-        distanceFilter: distanceFilter,
-        stationaryRadius: stationaryRadius,
-        locationTimeout: locationTimeout,
-        disableElasticity: disableElasticity,
-        elasticityMultiplier: elasticityMultiplier,
-        stopAfterElapsedMinutes: stopAfterElapsedMinutes,
-        maxMonitoredGeofences: maxMonitoredGeofences,
-        enableTimestampMeta: enableTimestampMeta,
-        enableAdaptiveMode: enableAdaptiveMode,
-        periodicLocationInterval: periodicLocationInterval,
-        periodicDesiredAccuracy:
-            TlDesiredAccuracy.values[periodicDesiredAccuracy.index],
-        enableSparseUpdates: enableSparseUpdates,
-        sparseDistanceThreshold: sparseDistanceThreshold,
-        sparseMaxIdleSeconds: sparseMaxIdleSeconds,
-        batteryBudgetPerHour: batteryBudgetPerHour,
-        enableDeadReckoning: enableDeadReckoning,
-        deadReckoningActivationDelay: deadReckoningActivationDelay,
-        deadReckoningMaxDuration: deadReckoningMaxDuration,
-      );
+    desiredAccuracy: TlDesiredAccuracy.values[desiredAccuracy.index],
+    distanceFilter: distanceFilter,
+    stationaryRadius: stationaryRadius,
+    locationTimeout: locationTimeout,
+    disableElasticity: disableElasticity,
+    elasticityMultiplier: elasticityMultiplier,
+    stopAfterElapsedMinutes: stopAfterElapsedMinutes,
+    maxMonitoredGeofences: maxMonitoredGeofences,
+    enableTimestampMeta: enableTimestampMeta,
+    enableAdaptiveMode: enableAdaptiveMode,
+    periodicLocationInterval: periodicLocationInterval,
+    periodicDesiredAccuracy:
+        TlDesiredAccuracy.values[periodicDesiredAccuracy.index],
+    enableSparseUpdates: enableSparseUpdates,
+    sparseDistanceThreshold: sparseDistanceThreshold,
+    sparseMaxIdleSeconds: sparseMaxIdleSeconds,
+    batteryBudgetPerHour: batteryBudgetPerHour,
+    enableDeadReckoning: enableDeadReckoning,
+    deadReckoningActivationDelay: deadReckoningActivationDelay,
+    deadReckoningMaxDuration: deadReckoningMaxDuration,
+  );
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -509,25 +543,30 @@ class AppConfig {
       heartbeatInterval: ensureInt(map['heartbeatInterval'], fallback: 60),
       schedule: scheduleList,
       remoteConfigUrl: map['remoteConfigUrl'] as String?,
-      remoteConfigHeaders:
-          (map['remoteConfigHeaders'] as Map?)?.cast<String, String>(),
-      remoteConfigTimeout: ensureInt(map['remoteConfigTimeout'], fallback: 60000),
-      remoteConfigRefreshInterval:
-          ensureInt(map['remoteConfigRefreshInterval'], fallback: 1440),
+      remoteConfigHeaders: (map['remoteConfigHeaders'] as Map?)
+          ?.cast<String, String>(),
+      remoteConfigTimeout: ensureInt(
+        map['remoteConfigTimeout'],
+        fallback: 60000,
+      ),
+      remoteConfigRefreshInterval: ensureInt(
+        map['remoteConfigRefreshInterval'],
+        fallback: 1440,
+      ),
     );
   }
 
   /// Converts to Pigeon [TlAppConfig].
   TlAppConfig toTlConfig() => TlAppConfig(
-        stopOnTerminate: stopOnTerminate,
-        startOnBoot: startOnBoot,
-        heartbeatInterval: heartbeatInterval,
-        schedule: schedule,
-        remoteConfigUrl: remoteConfigUrl,
-        remoteConfigHeaders: remoteConfigHeaders,
-        remoteConfigTimeout: remoteConfigTimeout,
-        remoteConfigRefreshInterval: remoteConfigRefreshInterval,
-      );
+    stopOnTerminate: stopOnTerminate,
+    startOnBoot: startOnBoot,
+    heartbeatInterval: heartbeatInterval,
+    schedule: schedule,
+    remoteConfigUrl: remoteConfigUrl,
+    remoteConfigHeaders: remoteConfigHeaders,
+    remoteConfigTimeout: remoteConfigTimeout,
+    remoteConfigRefreshInterval: remoteConfigRefreshInterval,
+  );
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -628,38 +667,44 @@ class HttpConfig {
             map['locationsOrderDirection'],
             fallback: 0,
           ).clamp(0, LocationOrderDirection.values.length - 1)],
-      disableAutoSyncOnCellular:
-          ensureBool(map['disableAutoSyncOnCellular'], fallback: false),
+      disableAutoSyncOnCellular: ensureBool(
+        map['disableAutoSyncOnCellular'],
+        fallback: false,
+      ),
       maxRetries: ensureInt(map['maxRetries'], fallback: 3),
       retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1),
       retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 60),
-      enableDeltaCompression:
-          ensureBool(map['enableDeltaCompression'], fallback: false),
-      deltaCoordinatePrecision:
-          ensureInt(map['deltaCoordinatePrecision'], fallback: 5),
+      enableDeltaCompression: ensureBool(
+        map['enableDeltaCompression'],
+        fallback: false,
+      ),
+      deltaCoordinatePrecision: ensureInt(
+        map['deltaCoordinatePrecision'],
+        fallback: 5,
+      ),
     );
   }
 
   /// Converts to Pigeon [TlHttpConfig].
   TlHttpConfig toTlConfig() => TlHttpConfig(
-        url: url,
-        method: TlHttpMethod.values[method.index],
-        headers: headers,
-        params: params,
-        autoSync: autoSync,
-        batchSync: batchSync,
-        maxBatchSize: maxBatchSize,
-        autoSyncThreshold: autoSyncThreshold,
-        httpTimeout: httpTimeout,
-        locationsOrderDirection:
-            TlLocationOrderDirection.values[locationsOrderDirection.index],
-        disableAutoSyncOnCellular: disableAutoSyncOnCellular,
-        maxRetries: maxRetries,
-        retryBackoffBase: retryBackoffBase,
-        retryBackoffCap: retryBackoffCap,
-        enableDeltaCompression: enableDeltaCompression,
-        deltaCoordinatePrecision: deltaCoordinatePrecision,
-      );
+    url: url,
+    method: TlHttpMethod.values[method.index],
+    headers: headers,
+    params: params,
+    autoSync: autoSync,
+    batchSync: batchSync,
+    maxBatchSize: maxBatchSize,
+    autoSyncThreshold: autoSyncThreshold,
+    httpTimeout: httpTimeout,
+    locationsOrderDirection:
+        TlLocationOrderDirection.values[locationsOrderDirection.index],
+    disableAutoSyncOnCellular: disableAutoSyncOnCellular,
+    maxRetries: maxRetries,
+    retryBackoffBase: retryBackoffBase,
+    retryBackoffCap: retryBackoffCap,
+    enableDeltaCompression: enableDeltaCompression,
+    deltaCoordinatePrecision: deltaCoordinatePrecision,
+  );
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -762,10 +807,10 @@ class LoggerConfig {
   }
 
   TlLoggerConfig toTlConfig() => TlLoggerConfig(
-        logLevel: TlLogLevel.values[logLevel.index],
-        logMaxDays: logMaxDays,
-        debug: debug,
-      );
+    logLevel: TlLogLevel.values[logLevel.index],
+    logMaxDays: logMaxDays,
+    debug: debug,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -840,17 +885,26 @@ class MotionConfig {
         fallback: false,
       ),
       isMoving: ensureBool(map['isMoving'], fallback: false),
-      activityRecognitionInterval:
-          ensureInt(map['activityRecognitionInterval'], fallback: 1000),
-      minimumActivityRecognitionConfidence:
-          ensureInt(map['minimumActivityRecognitionConfidence'], fallback: 75),
-      disableStopDetection: ensureBool(map['disableStopDetection'], fallback: false),
+      activityRecognitionInterval: ensureInt(
+        map['activityRecognitionInterval'],
+        fallback: 1000,
+      ),
+      minimumActivityRecognitionConfidence: ensureInt(
+        map['minimumActivityRecognitionConfidence'],
+        fallback: 75,
+      ),
+      disableStopDetection: ensureBool(
+        map['disableStopDetection'],
+        fallback: false,
+      ),
       stopDetectionDelay: ensureInt(map['stopDetectionDelay'], fallback: 0),
       stopOnStationary: ensureBool(map['stopOnStationary'], fallback: false),
       activityTypes: activityTypesList,
       stationaryRadius: ensureDouble(map['stationaryRadius'], fallback: 25.0),
-      useSignificantChangesOnly:
-          ensureBool(map['useSignificantChangesOnly'], fallback: false),
+      useSignificantChangesOnly: ensureBool(
+        map['useSignificantChangesOnly'],
+        fallback: false,
+      ),
       shakeThreshold: ensureDouble(map['shakeThreshold'], fallback: 2.5),
       stillThreshold: ensureDouble(map['stillThreshold'], fallback: 0.4),
       stillSampleCount: ensureInt(map['stillSampleCount'], fallback: 25),
@@ -864,7 +918,8 @@ class MotionConfig {
       'disableMotionActivityUpdates': disableMotionActivityUpdates,
       'isMoving': isMoving,
       'activityRecognitionInterval': activityRecognitionInterval,
-      'minimumActivityRecognitionConfidence': minimumActivityRecognitionConfidence,
+      'minimumActivityRecognitionConfidence':
+          minimumActivityRecognitionConfidence,
       'disableStopDetection': disableStopDetection,
       'stopDetectionDelay': stopDetectionDelay,
       'stopOnStationary': stopOnStationary,
@@ -879,24 +934,24 @@ class MotionConfig {
   }
 
   TlMotionConfig toTlConfig() => TlMotionConfig(
-        stopTimeout: stopTimeout,
-        motionTriggerDelay: motionTriggerDelay,
-        disableMotionActivityUpdates: disableMotionActivityUpdates,
-        isMoving: isMoving,
-        activityRecognitionInterval: activityRecognitionInterval,
-        minimumActivityRecognitionConfidence: minimumActivityRecognitionConfidence,
-        disableStopDetection: disableStopDetection,
-        stopDetectionDelay: stopDetectionDelay,
-        stopOnStationary: stopOnStationary,
-        stationaryRadius: stationaryRadius,
-        useSignificantChangesOnly: useSignificantChangesOnly,
-        shakeThreshold: shakeThreshold,
-        stillThreshold: stillThreshold,
-        stillSampleCount: stillSampleCount,
-        activityTypes: activityTypes
-            ?.map((e) => TlLocationActivityType.values[e.index])
-            .toList(),
-      );
+    stopTimeout: stopTimeout,
+    motionTriggerDelay: motionTriggerDelay,
+    disableMotionActivityUpdates: disableMotionActivityUpdates,
+    isMoving: isMoving,
+    activityRecognitionInterval: activityRecognitionInterval,
+    minimumActivityRecognitionConfidence: minimumActivityRecognitionConfidence,
+    disableStopDetection: disableStopDetection,
+    stopDetectionDelay: stopDetectionDelay,
+    stopOnStationary: stopOnStationary,
+    stationaryRadius: stationaryRadius,
+    useSignificantChangesOnly: useSignificantChangesOnly,
+    shakeThreshold: shakeThreshold,
+    stillThreshold: stillThreshold,
+    stillSampleCount: stillSampleCount,
+    activityTypes: activityTypes
+        ?.map((e) => TlLocationActivityType.values[e.index])
+        .toList(),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -978,11 +1033,11 @@ class GeofenceConfig {
   }
 
   TlGeofenceConfig toTlConfig() => TlGeofenceConfig(
-        geofenceModeHighAccuracy: geofenceModeHighAccuracy,
-        geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
-        geofenceProximityRadius: geofenceProximityRadius,
-        geofenceInitialTrigger: true,
-      );
+    geofenceModeHighAccuracy: geofenceModeHighAccuracy,
+    geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
+    geofenceProximityRadius: geofenceProximityRadius,
+    geofenceInitialTrigger: true,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -1024,8 +1079,10 @@ class PersistenceConfig {
             map['persistMode'],
             fallback: 0,
           ).clamp(0, PersistMode.values.length - 1)],
-      disableProviderChangeRecord:
-          ensureBool(map['disableProviderChangeRecord'], fallback: false),
+      disableProviderChangeRecord: ensureBool(
+        map['disableProviderChangeRecord'],
+        fallback: false,
+      ),
     );
   }
 
@@ -1039,11 +1096,11 @@ class PersistenceConfig {
   }
 
   TlPersistenceConfig toTlConfig() => TlPersistenceConfig(
-        persistMode: TlPersistMode.values[persistMode.index],
-        maxDaysToPersist: maxDaysToPersist,
-        maxRecordsToPersist: maxRecordsToPersist,
-        disableProviderChangeRecord: disableProviderChangeRecord,
-      );
+    persistMode: TlPersistMode.values[persistMode.index],
+    maxDaysToPersist: maxDaysToPersist,
+    maxRecordsToPersist: maxRecordsToPersist,
+    disableProviderChangeRecord: disableProviderChangeRecord,
+  );
 
   @override
   bool operator ==(Object other) =>

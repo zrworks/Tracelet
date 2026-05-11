@@ -534,9 +534,7 @@ class _DashboardPageState extends State<DashboardPage>
                 : tl.LocationActivityType.otherNavigation,
             preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
           ),
-          motion: const tl.MotionConfig(
-            stopTimeout: 5,
-          ),
+          motion: const tl.MotionConfig(stopTimeout: 5),
           http: const tl.HttpConfig(
             url: 'http://192.168.20.101:8099/locations',
             method: tl.HttpMethod.post,
@@ -786,10 +784,7 @@ class _DashboardPageState extends State<DashboardPage>
 
       await tl.Tracelet.setConfig(
         const tl.Config(
-          app: tl.AppConfig(
-            stopOnTerminate: false,
-            startOnBoot: true,
-          ),
+          app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
           android: tl.AndroidConfig(
             foregroundService: tl.ForegroundServiceConfig(
               notificationTitle: 'Tracelet Demo',
@@ -821,9 +816,7 @@ class _DashboardPageState extends State<DashboardPage>
       }
       await tl.Tracelet.setConfig(
         const tl.Config(
-          app: tl.AppConfig(
-            stopOnTerminate: true,
-          ),
+          app: tl.AppConfig(stopOnTerminate: true),
           android: tl.AndroidConfig(
             foregroundService: tl.ForegroundServiceConfig(enabled: false),
           ),
@@ -874,10 +867,7 @@ class _DashboardPageState extends State<DashboardPage>
             isMoving: true, // start in moving mode
             stopTimeout: 5,
           ),
-          app: const tl.AppConfig(
-            stopOnTerminate: false,
-            startOnBoot: true,
-          ),
+          app: const tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
           android: tl.AndroidConfig(
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
@@ -1937,9 +1927,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_kalmanEnabled;
       final state = await tl.Tracelet.setConfig(
-        const tl.Config(
-          geo: tl.GeoConfig(),
-        ),
+        const tl.Config(geo: tl.GeoConfig()),
       );
       setState(() {
         _kalmanEnabled = newValue;
@@ -2296,9 +2284,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_deadReckoningEnabled;
       final state = await tl.Tracelet.setConfig(
-        const tl.Config(
-          geo: tl.GeoConfig(),
-        ),
+        const tl.Config(geo: tl.GeoConfig()),
       );
       setState(() {
         _deadReckoningEnabled = newValue;
@@ -2621,9 +2607,7 @@ class _DashboardPageState extends State<DashboardPage>
   /// Toggle geofenceModeHighAccuracy and restart geofence-only mode.
   Future<void> _startGeofencesHighAccuracy() async {
     try {
-      await tl.Tracelet.setConfig(
-        const tl.Config(geo: tl.GeoConfig()),
-      );
+      await tl.Tracelet.setConfig(const tl.Config(geo: tl.GeoConfig()));
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
@@ -2743,9 +2727,7 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _setStrictFilter() async {
     try {
       final state = await tl.Tracelet.setConfig(
-        const tl.Config(
-          geo: tl.GeoConfig(),
-        ),
+        const tl.Config(geo: tl.GeoConfig()),
       );
       setState(() => _pluginState = state);
       _addLog(
@@ -2793,16 +2775,9 @@ class _DashboardPageState extends State<DashboardPage>
           next = 'Low';
       }
 
-      await tl.Tracelet.setConfig(
-        const tl.Config(
-          motion: tl.MotionConfig(),
-        ),
-      );
+      await tl.Tracelet.setConfig(const tl.Config(motion: tl.MotionConfig()));
       setState(() => _motionSensitivity = next);
-      _addLog(
-        'MOTION',
-        '$next sensitivity (Native OS default)',
-      );
+      _addLog('MOTION', '$next sensitivity (Native OS default)');
     } catch (e) {
       _addLog('ERROR', 'cycleMotionSensitivity() failed: $e');
     }

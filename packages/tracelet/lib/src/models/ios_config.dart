@@ -79,17 +79,17 @@ class IosConfig {
 
   /// Converts to Pigeon [TlIosConfig].
   TlIosConfig toTlConfig() => TlIosConfig(
-        activityType: TlIosActivityType.values[activityType.index],
-        useSignificantChangesOnly: useSignificantChangesOnly,
-        showsBackgroundLocationIndicator: showsBackgroundLocationIndicator,
-        pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
-        locationAuthorizationRequest:
-            locationAuthorizationRequest == LocationAuthorizationRequest.always
-                ? TlAuthorizationRequest.always
-                : TlAuthorizationRequest.whenInUse,
-        disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
-        preventSuspend: preventSuspend,
-      );
+    activityType: TlIosActivityType.values[activityType.index],
+    useSignificantChangesOnly: useSignificantChangesOnly,
+    showsBackgroundLocationIndicator: showsBackgroundLocationIndicator,
+    pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
+    locationAuthorizationRequest:
+        locationAuthorizationRequest == LocationAuthorizationRequest.always
+        ? TlAuthorizationRequest.always
+        : TlAuthorizationRequest.whenInUse,
+    disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
+    preventSuspend: preventSuspend,
+  );
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

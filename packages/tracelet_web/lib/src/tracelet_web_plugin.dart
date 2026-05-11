@@ -792,18 +792,15 @@ class TraceletWebPlugin extends TraceletPlatform {
         'persistMode': c.persistence.persistMode.index,
         'maxDaysToPersist': c.persistence.maxDaysToPersist,
         'maxRecordsToPersist': c.persistence.maxRecordsToPersist,
-        'disableProviderChangeRecord': c.persistence.disableProviderChangeRecord,
+        'disableProviderChangeRecord':
+            c.persistence.disableProviderChangeRecord,
       },
       'audit': {
         'enabled': c.audit.enabled,
         'hashAlgorithm': c.audit.hashAlgorithm.index,
       },
-      'privacyZone': {
-        'enabled': c.privacyZone.enabled,
-      },
-      'security': {
-        'encryptDatabase': c.security.encryptDatabase,
-      },
+      'privacyZone': {'enabled': c.privacyZone.enabled},
+      'security': {'encryptDatabase': c.security.encryptDatabase},
       'attestation': {
         'enabled': c.attestation.enabled,
         'refreshInterval': c.attestation.refreshInterval,

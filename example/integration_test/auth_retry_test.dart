@@ -79,8 +79,6 @@ void main() {
     });
   });
 
-
-
   group('setDynamicHeaders — API contract', () {
     testWidgets('setDynamicHeaders accepts token map', (tester) async {
       // This calls through to the platform channel, verifying the

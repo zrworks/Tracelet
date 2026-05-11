@@ -2551,14 +2551,14 @@ class Tracelet {
   static void _applyBudgetAdjustment(BudgetAdjustmentEvent adjustment) {
     final map = _currentConfig.toMap();
     final geoMap = Map<String, Object?>.from(map['geo'] as Map? ?? {});
-    
+
     geoMap['distanceFilter'] = adjustment.newDistanceFilter;
     geoMap['desiredAccuracy'] = adjustment.newDesiredAccuracy;
-    
+
     if (adjustment.newPeriodicInterval != null) {
       geoMap['periodicLocationInterval'] = adjustment.newPeriodicInterval;
     }
-    
+
     map['geo'] = geoMap;
     _currentConfig = Config.fromMap(map);
 

@@ -1660,9 +1660,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '$next sensitivity (Native OS default)',
-            ),
+            content: Text('$next sensitivity (Native OS default)'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1740,11 +1738,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   Future<void> _toggleKalmanFromMap() async {
     try {
       final newValue = !_kalmanEnabled;
-      await tl.Tracelet.setConfig(
-        const tl.Config(
-          geo: tl.GeoConfig(),
-        ),
-      );
+      await tl.Tracelet.setConfig(const tl.Config(geo: tl.GeoConfig()));
       setState(() {
         _kalmanEnabled = newValue;
       });

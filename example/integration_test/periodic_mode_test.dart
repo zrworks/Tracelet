@@ -83,9 +83,7 @@ void main() {
           periodicLocationInterval: 300, // 5 min — needs FG service
           periodicDesiredAccuracy: DesiredAccuracy.high,
         ),
-        android: AndroidConfig(
-          periodicUseForegroundService: true,
-        ),
+        android: AndroidConfig(periodicUseForegroundService: true),
       );
 
       expect(config.android.periodicUseForegroundService, isTrue);
@@ -156,9 +154,7 @@ void main() {
 
     testWidgets('periodic config combined with app config', (tester) async {
       final config = Config(
-        geo: const GeoConfig(
-          periodicLocationInterval: 900,
-        ),
+        geo: const GeoConfig(periodicLocationInterval: 900),
         android: const AndroidConfig(
           periodicUseForegroundService: true,
           foregroundService: ForegroundServiceConfig(
@@ -166,10 +162,7 @@ void main() {
             notificationText: 'Check-in every 15 min',
           ),
         ),
-        app: const AppConfig(
-          stopOnTerminate: false,
-          startOnBoot: true,
-        ),
+        app: const AppConfig(stopOnTerminate: false, startOnBoot: true),
       );
 
       final map = config.toMap();

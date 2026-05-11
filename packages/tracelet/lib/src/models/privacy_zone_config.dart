@@ -41,9 +41,7 @@ class PrivacyZoneConfig {
     return <String, Object?>{'privacyZoneEnabled': enabled};
   }
 
-  TlPrivacyZoneConfig toTlConfig() => TlPrivacyZoneConfig(
-        enabled: enabled,
-      );
+  TlPrivacyZoneConfig toTlConfig() => TlPrivacyZoneConfig(enabled: enabled);
 
   @override
   String toString() => 'PrivacyZoneConfig(enabled: $enabled)';

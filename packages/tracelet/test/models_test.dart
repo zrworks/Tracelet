@@ -92,8 +92,6 @@ void main() {
       expect(config.logger.debug, false);
     });
 
-
-
     test('round-trip preserves periodic config options', () {
       const config = Config(
         geo: GeoConfig(
@@ -191,8 +189,6 @@ void main() {
       });
     });
 
-
-
     test('HttpConfig.toMap serializes method as int index', () {
       const postConfig = HttpConfig(method: HttpMethod.post);
       const putConfig = HttpConfig(method: HttpMethod.put);
@@ -274,12 +270,6 @@ void main() {
       final config = ForegroundServiceConfig.fromMap(const {});
       expect(config.enabled, true);
     });
-
-
-
-
-
-
   });
 
   // ==========================================================================
@@ -1211,7 +1201,11 @@ void main() {
 
     test('toMap includes timestamps as milliseconds', () {
       final now = DateTime(2024, 6, 15, 12, 0, 0);
-      final query = SQLQuery(start: now, limit: 100, order: LocationOrderDirection.descending);
+      final query = SQLQuery(
+        start: now,
+        limit: 100,
+        order: LocationOrderDirection.descending,
+      );
       final map = query.toMap();
       expect(map['start'], now.millisecondsSinceEpoch);
       expect(map['limit'], 100);
@@ -1442,5 +1436,4 @@ void main() {
       }
     });
   });
-
 }

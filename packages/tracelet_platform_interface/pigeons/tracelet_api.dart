@@ -17,17 +17,27 @@ import 'package:pigeon/pigeon.dart';
         '../tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletApi.g.swift',
   ),
 )
-
 // =============================================================================
 // Enums
 // =============================================================================
-
 enum TlDesiredAccuracy { high, medium, low, veryLow, passive }
+
 enum TlTrackingMode { location, geofences, periodic }
+
 enum TlGeofenceAction { enter, exit, dwell }
-enum TlAuthorizationStatus { notDetermined, denied, whenInUse, always, deniedForever }
+
+enum TlAuthorizationStatus {
+  notDetermined,
+  denied,
+  whenInUse,
+  always,
+  deniedForever,
+}
+
 enum TlHttpMethod { post, put }
+
 enum TlIosActivityType { other, automotive, fitness, otherNavigation, airborne }
+
 enum TlNotificationPriority { min, low, defaultPriority, high, max }
 
 // =============================================================================
@@ -172,10 +182,7 @@ class TlIosConfig {
   final bool preventSuspend;
 }
 
-enum TlLocationOrderDirection {
-  ascending,
-  descending,
-}
+enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
@@ -311,7 +318,6 @@ class TlMotionConfig {
   final int stillSampleCount;
 }
 
-
 class TlGeofenceConfig {
   TlGeofenceConfig({
     required this.geofenceModeHighAccuracy,
@@ -361,8 +367,11 @@ class TlAttestationConfig {
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }
+
 enum TlPersistMode { all, location, geofence, none }
+
 enum TlHashAlgorithm { sha256 }
+
 enum TlAuthorizationRequest { always, whenInUse }
 
 // =============================================================================

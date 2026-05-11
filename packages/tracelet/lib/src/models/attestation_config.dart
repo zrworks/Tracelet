@@ -97,10 +97,8 @@ class AttestationConfig {
     };
   }
 
-  TlAttestationConfig toTlConfig() => TlAttestationConfig(
-        enabled: enabled,
-        refreshInterval: refreshInterval,
-      );
+  TlAttestationConfig toTlConfig() =>
+      TlAttestationConfig(enabled: enabled, refreshInterval: refreshInterval);
 
   @override
   String toString() =>

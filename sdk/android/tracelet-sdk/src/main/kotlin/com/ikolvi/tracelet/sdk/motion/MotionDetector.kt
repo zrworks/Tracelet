@@ -15,10 +15,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.google.android.gms.location.*
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
+import com.ikolvi.tracelet.sdk.wrapper.TraceletActivityRecognitionClient
+import com.ikolvi.tracelet.sdk.wrapper.TraceletActivityTransition
+import com.ikolvi.tracelet.sdk.wrapper.TraceletActivityTransitionRequest
+import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
 import kotlin.math.sqrt
 
 /**
@@ -45,7 +48,9 @@ class MotionDetector(
     private val config: ConfigManager,
     private val state: StateManager,
     private val events: TraceletEventSender,
+    private val activityClient: TraceletActivityRecognitionClient = TraceletServices.getInstance(context).getActivityRecognitionClient(context),
 ) {
+    private val extractor = TraceletServices.getInstance(context).getEventExtractor()
     companion object {
         private const val TAG = "MotionDetector"
         private const val ACTION_ACTIVITY_TRANSITION =
@@ -96,8 +101,6 @@ class MotionDetector(
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // Activity Recognition (full mode only — lazily initialized)
-    private var activityClient: ActivityRecognitionClient? = null
     private var transitionPendingIntent: PendingIntent? = null
 
     // Timeout & sensor state
@@ -249,21 +252,17 @@ class MotionDetector(
     // =========================================================================
 
     private fun registerActivityTransitions() {
-        if (activityClient == null) {
-            activityClient = ActivityRecognition.getClient(context)
-        }
-
         val transitions = listOf(
-            activityTransition(DetectedActivity.STILL, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
-            activityTransition(DetectedActivity.STILL, ActivityTransition.ACTIVITY_TRANSITION_EXIT),
-            activityTransition(DetectedActivity.WALKING, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
-            activityTransition(DetectedActivity.RUNNING, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
-            activityTransition(DetectedActivity.ON_BICYCLE, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
-            activityTransition(DetectedActivity.IN_VEHICLE, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
-            activityTransition(DetectedActivity.ON_FOOT, ActivityTransition.ACTIVITY_TRANSITION_ENTER),
+            TraceletActivityTransition(3, 0), // STILL, ENTER
+            TraceletActivityTransition(3, 1), // STILL, EXIT
+            TraceletActivityTransition(7, 0), // WALKING, ENTER
+            TraceletActivityTransition(8, 0), // RUNNING, ENTER
+            TraceletActivityTransition(1, 0), // ON_BICYCLE, ENTER
+            TraceletActivityTransition(0, 0), // IN_VEHICLE, ENTER
+            TraceletActivityTransition(2, 0), // ON_FOOT, ENTER
         )
 
-        val request = ActivityTransitionRequest(transitions)
+        val request = TraceletActivityTransitionRequest(transitions)
         val intent = Intent(ACTION_ACTIVITY_TRANSITION).apply {
             setPackage(context.packageName)
         }
@@ -271,17 +270,20 @@ class MotionDetector(
         transitionPendingIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
 
         try {
-            activityClient!!.requestActivityTransitionUpdates(request, transitionPendingIntent!!)
-                .addOnSuccessListener {
+            activityClient.requestActivityTransitionUpdates(
+                request = request,
+                pendingIntent = transitionPendingIntent!!,
+                onSuccess = {
                     Log.d(TAG, "Activity transition updates registered")
-                }
-                .addOnFailureListener { e ->
+                },
+                onFailure = { e ->
                     Log.w(TAG, "Failed to register activity transitions: ${e.message}")
                     // Fallback: start accelerometer-only if AT API fails
                     if (!isMonitoringAccelerometer && !state.isMoving) {
                         startAccelerometerMonitoring()
                     }
                 }
+            )
         } catch (e: SecurityException) {
             Log.w(TAG, "ACTIVITY_RECOGNITION permission not granted — " +
                     "falling back to accelerometer-only: ${e.message}")
@@ -300,13 +302,13 @@ class MotionDetector(
 
     private fun unregisterActivityTransitions() {
         transitionPendingIntent?.let { pi ->
-            activityClient?.let { client ->
-                try {
-                    client.removeActivityTransitionUpdates(pi)
-                } catch (e: Exception) {
+            activityClient.removeActivityTransitionUpdates(
+                pendingIntent = pi,
+                onSuccess = { },
+                onFailure = { e ->
                     Log.w(TAG, "Failed to remove activity transitions: ${e.message}")
                 }
-            }
+            )
         }
         transitionPendingIntent = null
 
@@ -320,19 +322,21 @@ class MotionDetector(
     private val transitionReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             if (intent == null) return
-            if (!ActivityTransitionResult.hasResult(intent)) return
-            val result = ActivityTransitionResult.extractResult(intent) ?: return
+            val result = extractor.extractActivityTransitionResult(intent) ?: return
             for (event in result.transitionEvents) {
-                handleTransitionEvent(event)
+                handleTransitionEvent(
+                    activityType = event.activityType,
+                    transitionType = event.transitionType
+                )
             }
         }
     }
 
-    private fun handleTransitionEvent(event: ActivityTransitionEvent) {
-        val activityType = activityTypeToString(event.activityType)
-        val isEntering = event.transitionType == ActivityTransition.ACTIVITY_TRANSITION_ENTER
+    private fun handleTransitionEvent(activityType: Int, transitionType: Int) {
+        val activityTypeStr = activityTypeToString(activityType)
+        val isEntering = transitionType == 0 // ACTIVITY_TRANSITION_ENTER
 
-        currentActivity = activityType
+        currentActivity = activityTypeStr
         currentConfidence = 100 // Transition API always reports 100% confidence
 
         // Apply confidence filter
@@ -343,12 +347,12 @@ class MotionDetector(
         val triggerActivities = config.getTriggerActivities()
         if (triggerActivities.isNotEmpty()) {
             val allowed = triggerActivities.split(",").map { it.trim().lowercase() }
-            if (activityType.lowercase() !in allowed && activityType != "still") return
+            if (activityTypeStr.lowercase() !in allowed && activityTypeStr != "still") return
         }
 
         // Dispatch activity change event to Dart
         events.sendActivityChange(mapOf(
-            "activity" to activityType,
+            "activity" to activityTypeStr,
             "confidence" to currentConfidence,
         ))
 
@@ -356,17 +360,17 @@ class MotionDetector(
 
         when {
             // Device became STILL → start stop-timeout countdown
-            event.activityType == DetectedActivity.STILL && isEntering -> {
+            activityType == 3 && isEntering -> { // STILL = 3 in GMS (Wait! I should check constant values)
                 if (!disableStopDetection) {
                     startStopTimeoutCountdown()
                 }
             }
             // Device exited STILL or any moving activity detected
-            event.activityType == DetectedActivity.STILL && !isEntering -> {
+            activityType == 3 && !isEntering -> {
                 cancelStopTimeout()
                 if (!state.isMoving) declareMoving()
             }
-            isEntering && event.activityType != DetectedActivity.STILL -> {
+            isEntering && activityType != 3 -> {
                 cancelStopTimeout()
                 if (!state.isMoving) declareMoving()
             }
@@ -577,21 +581,14 @@ class MotionDetector(
         return sensorManager
     }
 
-    private fun activityTransition(activityType: Int, transitionType: Int): ActivityTransition =
-        ActivityTransition.Builder()
-            .setActivityType(activityType)
-            .setActivityTransition(transitionType)
-            .build()
-
     private fun activityTypeToString(type: Int): String = when (type) {
-        DetectedActivity.STILL -> "still"
-        DetectedActivity.WALKING -> "walking"
-        DetectedActivity.RUNNING -> "running"
-        DetectedActivity.ON_BICYCLE -> "on_bicycle"
-        DetectedActivity.IN_VEHICLE -> "in_vehicle"
-        DetectedActivity.ON_FOOT -> "on_foot"
-        DetectedActivity.TILTING -> "tilting"
-        DetectedActivity.UNKNOWN -> "unknown"
+        3 -> "still" // DetectedActivity.STILL
+        7 -> "walking" // DetectedActivity.WALKING
+        8 -> "running" // DetectedActivity.RUNNING
+        1 -> "on_bicycle" // DetectedActivity.ON_BICYCLE
+        0 -> "in_vehicle" // DetectedActivity.IN_VEHICLE
+        2 -> "on_foot" // DetectedActivity.ON_FOOT
+        4 -> "tilting" // DetectedActivity.TILTING
         else -> "unknown"
     }
 }

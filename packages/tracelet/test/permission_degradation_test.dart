@@ -164,7 +164,7 @@ class MockPermissionPlatform extends TraceletPlatform
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async {
+  Future<Map<String, Object?>> ready(TlConfig config) async {
     calls.add((method: 'ready', args: config));
     return Map<String, Object?>.from(stateResult);
   }

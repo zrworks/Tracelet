@@ -142,12 +142,12 @@ enum HttpMethod {
 }
 
 /// Sort order for location queries.
-enum LocationOrder {
+enum LocationOrderDirection {
   /// Ascending (oldest first).
-  asc,
+  ascending,
 
   /// Descending (newest first).
-  desc,
+  descending,
 }
 
 /// iOS activity type hints for CLLocationManager.

@@ -79,31 +79,7 @@ void main() {
     });
   });
 
-  group('HttpConfig — retry settings serialization', () {
-    testWidgets('maxRetries defaults to 10', (tester) async {
-      const config = HttpConfig();
-      expect(config.maxRetries, 10);
-    });
 
-    testWidgets('retry backoff settings serialize correctly', (tester) async {
-      const config = HttpConfig(
-        maxRetries: 5,
-        retryBackoffBase: 2000,
-        retryBackoffCap: 120000,
-      );
-      final map = config.toMap();
-
-      expect(map['maxRetries'], 5);
-      expect(map['retryBackoffBase'], 2000);
-      expect(map['retryBackoffCap'], 120000);
-    });
-
-    testWidgets('zero maxRetries disables retry', (tester) async {
-      const config = HttpConfig(maxRetries: 0);
-      expect(config.maxRetries, 0);
-      expect(config.toMap()['maxRetries'], 0);
-    });
-  });
 
   group('setDynamicHeaders — API contract', () {
     testWidgets('setDynamicHeaders accepts token map', (tester) async {

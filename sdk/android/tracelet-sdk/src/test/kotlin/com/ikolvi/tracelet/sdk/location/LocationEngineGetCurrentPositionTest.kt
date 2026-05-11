@@ -4,19 +4,19 @@ import android.Manifest
 import android.app.Application
 import android.location.Location
 import androidx.test.core.app.ApplicationProvider
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.tasks.Tasks
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.ListenerEventSender
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.db.TraceletDatabase
+import com.ikolvi.tracelet.sdk.wrapper.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.Mockito.doReturn
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -42,7 +42,7 @@ class LocationEngineGetCurrentPositionTest {
     private lateinit var state: StateManager
     private lateinit var db: TraceletDatabase
     private lateinit var engine: LocationEngine
-    private lateinit var mockFusedClient: FusedLocationProviderClient
+    private lateinit var mockLocationClient: TraceletLocationClient
 
     @Before
     fun setUp() {
@@ -54,18 +54,30 @@ class LocationEngineGetCurrentPositionTest {
         config = ConfigManager.getInstance(context)
         state = StateManager(context)
         db = TraceletDatabase.getInstance(context)
-        engine = LocationEngine(context, config, state, ListenerEventSender(), db)
 
-        // Replace the private fusedClient with a mock
-        mockFusedClient = mock()
-        val field = LocationEngine::class.java.getDeclaredField("fusedClient")
-        field.isAccessible = true
-        field.set(engine, mockFusedClient)
+        mockLocationClient = mock()
+        
+        // Inject mock provider before creating engine
+        val mockProvider = object : TraceletServicesProvider {
+            override fun getLocationClient(context: android.content.Context) = mockLocationClient
+            override fun getGeofencingClient(context: android.content.Context) = mock<TraceletGeofencingClient>()
+            override fun getActivityRecognitionClient(context: android.content.Context) = mock<TraceletActivityRecognitionClient>()
+            override fun getEventExtractor() = mock<TraceletEventExtractor>()
+        }
+        TraceletServices.setProvider(mockProvider)
+
+        engine = LocationEngine(context, config, state, ListenerEventSender(), db)
     }
 
     @After
     fun tearDown() {
         ConfigManager.resetInstance()
+        // Reset provider to default
+        try {
+            val field = TraceletServices::class.java.getDeclaredField("provider")
+            field.isAccessible = true
+            field.set(null, null)
+        } catch (_: Exception) {}
     }
 
     // =====================================================================
@@ -74,9 +86,12 @@ class LocationEngineGetCurrentPositionTest {
 
     @Test
     fun `getCurrentPosition returns lastLocation when single sample returns null`() {
-        // Arrange: fusedClient.getCurrentLocation returns null (emulator)
-        doReturn(Tasks.forResult<Location>(null))
-            .`when`(mockFusedClient).getCurrentLocation(anyInt(), anyOrNull())
+        // Arrange: fusedClient.getCurrentLocation invokes onSuccess with null (emulator)
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(Location?) -> Unit>(2)
+            onSuccess(null)
+            null
+        }.`when`(mockLocationClient).getCurrentLocation(anyInt(), anyOrNull(), any())
 
         // Seed a lastLocation via reflection
         val fallback = Location("test").apply {
@@ -99,9 +114,6 @@ class LocationEngineGetCurrentPositionTest {
         }
 
         // Advance the looper through the full collectSamples timeout.
-        // Since 1.8.6, samples==1 routes through collectSamples which uses
-        // postDelayed for retry (800ms) and timeout (5s). We must advance
-        // far enough for the timeout + retry attempts to complete.
         val shadow = shadowOf(android.os.Looper.getMainLooper())
         shadow.idleFor(6, TimeUnit.SECONDS)
         latch.await(2, TimeUnit.SECONDS)
@@ -115,9 +127,12 @@ class LocationEngineGetCurrentPositionTest {
 
     @Test
     fun `getCurrentPosition returns null when no lastLocation and single sample returns null`() {
-        // Arrange: fusedClient returns null, no lastLocation seeded
-        doReturn(Tasks.forResult<Location>(null))
-            .`when`(mockFusedClient).getCurrentLocation(anyInt(), anyOrNull())
+        // Arrange: fusedClient invokes onSuccess with null
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(Location?) -> Unit>(2)
+            onSuccess(null)
+            null
+        }.`when`(mockLocationClient).getCurrentLocation(anyInt(), anyOrNull(), any())
 
         // Act
         val latch = CountDownLatch(1)
@@ -145,9 +160,12 @@ class LocationEngineGetCurrentPositionTest {
 
     @Test
     fun `getCurrentPosition with samples falls back to lastLocation when all samples return null`() {
-        // Arrange: fusedClient.getCurrentLocation always returns null
-        doReturn(Tasks.forResult<Location>(null))
-            .`when`(mockFusedClient).getCurrentLocation(anyInt(), anyOrNull())
+        // Arrange: fusedClient.getCurrentLocation always invokes onSuccess with null
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(Location?) -> Unit>(2)
+            onSuccess(null)
+            null
+        }.`when`(mockLocationClient).getCurrentLocation(anyInt(), anyOrNull(), any())
 
         // Seed lastLocation
         val fallback = Location("test").apply {

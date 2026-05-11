@@ -109,6 +109,11 @@ class AuditConfig {
     };
   }
 
+  TlAuditConfig toTlConfig() => TlAuditConfig(
+        enabled: enabled,
+        hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],
+      );
+
   @override
   String toString() =>
       'AuditConfig(enabled: $enabled, hashAlgorithm: $hashAlgorithm, '

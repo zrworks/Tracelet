@@ -6,32 +6,6 @@
 
 import 'package:pigeon/pigeon.dart';
 
-// =============================================================================
-// Pigeon schema for Tracelet Dart↔Native communication.
-//
-// This file defines the type-safe API contract between Dart and native
-// platforms (Android/Kotlin and iOS/Swift). Run pigeon to generate:
-//
-//   dart run pigeon --input pigeons/tracelet_api.dart
-//
-// Generated files:
-//   - lib/src/generated/tracelet_api.g.dart       (Dart)
-//   - android/.../TraceletApi.g.kt                (Kotlin)
-//   - ios/.../TraceletApi.g.swift                  (Swift)
-//
-// MIGRATION PLAN:
-// This Pigeon schema replaces the raw MethodChannel-based communication
-// in MethodChannelTracelet. Migration steps:
-//   1. Define typed messages and host APIs here (this file)
-//   2. Generate code with `dart run pigeon`
-//   3. Implement TraceletHostApi in Kotlin and Swift
-//   4. Replace MethodChannelTracelet with PigeonTracelet
-//   5. EventChannels replaced by TraceletEventApi (Pigeon FlutterApi)
-//
-// Note: TripManager and BatteryBudgetEngine are pure Dart algorithms
-// and do NOT need Pigeon definitions — they never cross the native boundary.
-// =============================================================================
-
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/src/generated/tracelet_api.g.dart',
@@ -43,35 +17,358 @@ import 'package:pigeon/pigeon.dart';
         '../tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletApi.g.swift',
   ),
 )
+
 // =============================================================================
 // Enums
 // =============================================================================
-/// Desired accuracy level for location requests.
+
 enum TlDesiredAccuracy { high, medium, low, veryLow, passive }
-
-/// Tracking mode.
 enum TlTrackingMode { location, geofences, periodic }
-
-/// Geofence transition action.
 enum TlGeofenceAction { enter, exit, dwell }
+enum TlAuthorizationStatus { notDetermined, denied, whenInUse, always, deniedForever }
+enum TlHttpMethod { post, put }
+enum TlIosActivityType { other, automotive, fitness, otherNavigation, airborne }
+enum TlNotificationPriority { min, low, defaultPriority, high, max }
 
-/// Authorization status for location permissions.
-enum TlAuthorizationStatus {
-  notDetermined,
-  denied,
-  whenInUse,
-  always,
-  deniedForever,
+// =============================================================================
+// Configuration Messages
+// =============================================================================
+
+class TlGeoConfig {
+  TlGeoConfig({
+    required this.desiredAccuracy,
+    required this.distanceFilter,
+    required this.stationaryRadius,
+    required this.locationTimeout,
+    required this.disableElasticity,
+    required this.elasticityMultiplier,
+    required this.stopAfterElapsedMinutes,
+    required this.maxMonitoredGeofences,
+    required this.enableTimestampMeta,
+    required this.enableAdaptiveMode,
+    required this.periodicLocationInterval,
+    required this.periodicDesiredAccuracy,
+    required this.enableSparseUpdates,
+    required this.sparseDistanceThreshold,
+    required this.sparseMaxIdleSeconds,
+    required this.enableDeadReckoning,
+    required this.deadReckoningActivationDelay,
+    required this.deadReckoningMaxDuration,
+    required this.batteryBudgetPerHour,
+  });
+
+  final TlDesiredAccuracy desiredAccuracy;
+  final double distanceFilter;
+  final double stationaryRadius;
+  final int locationTimeout;
+  final bool disableElasticity;
+  final double elasticityMultiplier;
+  final int stopAfterElapsedMinutes;
+  final int maxMonitoredGeofences;
+  final bool enableTimestampMeta;
+  final bool enableAdaptiveMode;
+  final int periodicLocationInterval;
+  final TlDesiredAccuracy periodicDesiredAccuracy;
+  final bool enableSparseUpdates;
+  final double sparseDistanceThreshold;
+  final int sparseMaxIdleSeconds;
+  final bool enableDeadReckoning;
+  final int deadReckoningActivationDelay;
+  final int deadReckoningMaxDuration;
+  final double batteryBudgetPerHour;
 }
 
-/// HTTP method for sync.
-enum TlHttpMethod { post, put }
+class TlAppConfig {
+  TlAppConfig({
+    required this.stopOnTerminate,
+    required this.startOnBoot,
+    required this.heartbeatInterval,
+    required this.schedule,
+    this.remoteConfigUrl,
+    this.remoteConfigHeaders,
+    required this.remoteConfigTimeout,
+    required this.remoteConfigRefreshInterval,
+  });
+
+  final bool stopOnTerminate;
+  final bool startOnBoot;
+  final int heartbeatInterval;
+  final List<String?> schedule;
+  final String? remoteConfigUrl;
+  final Map<String?, String?>? remoteConfigHeaders;
+  final int remoteConfigTimeout;
+  final int remoteConfigRefreshInterval;
+}
+
+class TlForegroundServiceConfig {
+  TlForegroundServiceConfig({
+    required this.enabled,
+    required this.channelId,
+    required this.channelName,
+    required this.notificationTitle,
+    required this.notificationText,
+    this.notificationColor,
+    this.notificationSmallIcon,
+    this.notificationLargeIcon,
+    required this.notificationPriority,
+    required this.notificationOngoing,
+    required this.actions,
+  });
+
+  final bool enabled;
+  final String channelId;
+  final String channelName;
+  final String notificationTitle;
+  final String notificationText;
+  final String? notificationColor;
+  final String? notificationSmallIcon;
+  final String? notificationLargeIcon;
+  final TlNotificationPriority notificationPriority;
+  final bool notificationOngoing;
+  final List<String?> actions;
+}
+
+class TlAndroidConfig {
+  TlAndroidConfig({
+    required this.locationUpdateInterval,
+    required this.fastestLocationUpdateInterval,
+    required this.deferTime,
+    required this.allowIdenticalLocations,
+    required this.geofenceModeHighAccuracy,
+    required this.periodicUseForegroundService,
+    required this.periodicUseExactAlarms,
+    required this.scheduleUseAlarmManager,
+    required this.foregroundService,
+  });
+
+  final int locationUpdateInterval;
+  final int fastestLocationUpdateInterval;
+  final int deferTime;
+  final bool allowIdenticalLocations;
+  final bool geofenceModeHighAccuracy;
+  final bool periodicUseForegroundService;
+  final bool periodicUseExactAlarms;
+  final bool scheduleUseAlarmManager;
+  final TlForegroundServiceConfig foregroundService;
+}
+
+class TlIosConfig {
+  TlIosConfig({
+    required this.activityType,
+    required this.useSignificantChangesOnly,
+    required this.showsBackgroundLocationIndicator,
+    required this.pausesLocationUpdatesAutomatically,
+    required this.locationAuthorizationRequest,
+    required this.disableLocationAuthorizationAlert,
+    required this.preventSuspend,
+  });
+
+  final TlIosActivityType activityType;
+  final bool useSignificantChangesOnly;
+  final bool showsBackgroundLocationIndicator;
+  final bool pausesLocationUpdatesAutomatically;
+  final TlAuthorizationRequest locationAuthorizationRequest;
+  final bool disableLocationAuthorizationAlert;
+  final bool preventSuspend;
+}
+
+enum TlLocationOrderDirection {
+  ascending,
+  descending,
+}
+
+class TlHttpConfig {
+  TlHttpConfig({
+    this.url,
+    required this.method,
+    this.headers,
+    this.params,
+    required this.autoSync,
+    required this.batchSync,
+    required this.maxBatchSize,
+    this.sslPinningFingerprints,
+    this.sslPinningCertificates,
+    this.httpRootProperty,
+    required this.autoSyncThreshold,
+    required this.httpTimeout,
+    required this.locationsOrderDirection,
+    this.extras,
+    required this.disableAutoSyncOnCellular,
+    required this.maxRetries,
+    required this.retryBackoffBase,
+    required this.retryBackoffCap,
+    required this.enableDeltaCompression,
+    required this.deltaCoordinatePrecision,
+  });
+
+  final String? url;
+  final TlHttpMethod method;
+  final Map<String?, String?>? headers;
+  final Map<String?, Object?>? params;
+  final bool autoSync;
+  final bool batchSync;
+  final int maxBatchSize;
+  final List<String?>? sslPinningFingerprints;
+  final List<String?>? sslPinningCertificates;
+  final String? httpRootProperty;
+  final int autoSyncThreshold;
+  final int httpTimeout;
+  final TlLocationOrderDirection locationsOrderDirection;
+  final Map<String?, Object?>? extras;
+  final bool disableAutoSyncOnCellular;
+  final int maxRetries;
+  final int retryBackoffBase;
+  final int retryBackoffCap;
+  final bool enableDeltaCompression;
+  final int deltaCoordinatePrecision;
+}
+
+class TlConfig {
+  TlConfig({
+    required this.geo,
+    required this.app,
+    required this.android,
+    required this.ios,
+    required this.http,
+    required this.logger,
+    required this.motion,
+    required this.geofence,
+    required this.persistence,
+    required this.audit,
+    required this.privacyZone,
+    required this.security,
+    required this.attestation,
+  });
+
+  final TlGeoConfig geo;
+  final TlAppConfig app;
+  final TlAndroidConfig android;
+  final TlIosConfig ios;
+  final TlHttpConfig http;
+  final TlLoggerConfig logger;
+  final TlMotionConfig motion;
+  final TlGeofenceConfig geofence;
+  final TlPersistenceConfig persistence;
+  final TlAuditConfig audit;
+  final TlPrivacyZoneConfig privacyZone;
+  final TlSecurityConfig security;
+  final TlAttestationConfig attestation;
+}
+
+class TlLoggerConfig {
+  TlLoggerConfig({
+    required this.logLevel,
+    required this.logMaxDays,
+    required this.debug,
+  });
+  final TlLogLevel logLevel;
+  final int logMaxDays;
+  final bool debug;
+}
+
+enum TlLocationActivityType {
+  still,
+  walking,
+  running,
+  onFoot,
+  inVehicle,
+  onBicycle,
+  unknown,
+}
+
+class TlMotionConfig {
+  TlMotionConfig({
+    required this.stopTimeout,
+    required this.motionTriggerDelay,
+    required this.disableMotionActivityUpdates,
+    required this.isMoving,
+    required this.activityRecognitionInterval,
+    required this.minimumActivityRecognitionConfidence,
+    required this.disableStopDetection,
+    required this.stopDetectionDelay,
+    required this.stopOnStationary,
+    this.activityTypes,
+    required this.stationaryRadius,
+    required this.useSignificantChangesOnly,
+    required this.shakeThreshold,
+    required this.stillThreshold,
+    required this.stillSampleCount,
+  });
+  final int stopTimeout;
+  final int motionTriggerDelay;
+  final bool disableMotionActivityUpdates;
+  final bool isMoving;
+  final int activityRecognitionInterval;
+  final int minimumActivityRecognitionConfidence;
+  final bool disableStopDetection;
+  final int stopDetectionDelay;
+  final bool stopOnStationary;
+  final List<TlLocationActivityType?>? activityTypes;
+  final double stationaryRadius;
+  final bool useSignificantChangesOnly;
+  final double shakeThreshold;
+  final double stillThreshold;
+  final int stillSampleCount;
+}
+
+
+class TlGeofenceConfig {
+  TlGeofenceConfig({
+    required this.geofenceModeHighAccuracy,
+    required this.geofenceInitialTriggerEntry,
+    required this.geofenceProximityRadius,
+    required this.geofenceInitialTrigger,
+  });
+  final bool geofenceModeHighAccuracy;
+  final bool geofenceInitialTriggerEntry;
+  final int geofenceProximityRadius;
+  final bool geofenceInitialTrigger;
+}
+
+class TlPersistenceConfig {
+  TlPersistenceConfig({
+    required this.persistMode,
+    required this.maxDaysToPersist,
+    required this.maxRecordsToPersist,
+    required this.disableProviderChangeRecord,
+  });
+  final TlPersistMode persistMode;
+  final int maxDaysToPersist;
+  final int maxRecordsToPersist;
+  final bool disableProviderChangeRecord;
+}
+
+class TlAuditConfig {
+  TlAuditConfig({required this.enabled, required this.hashAlgorithm});
+  final bool enabled;
+  final TlHashAlgorithm hashAlgorithm;
+}
+
+class TlPrivacyZoneConfig {
+  TlPrivacyZoneConfig({required this.enabled});
+  final bool enabled;
+}
+
+class TlSecurityConfig {
+  TlSecurityConfig({required this.encryptDatabase});
+  final bool encryptDatabase;
+}
+
+class TlAttestationConfig {
+  TlAttestationConfig({required this.enabled, required this.refreshInterval});
+  final bool enabled;
+  final int refreshInterval;
+}
+
+enum TlLogLevel { off, error, warn, info, debug, verbose }
+enum TlPersistMode { all, location, geofence, none }
+enum TlHashAlgorithm { sha256 }
+enum TlAuthorizationRequest { always, whenInUse }
 
 // =============================================================================
-// Data Messages — typed replacements for Map<String, Object?>
+// Data Messages
 // =============================================================================
 
-/// Coordinates sub-message within a location.
 class TlCoords {
   TlCoords({
     required this.latitude,
@@ -100,15 +397,12 @@ class TlCoords {
   final int? floor;
 }
 
-/// Battery info sub-message.
 class TlBattery {
   TlBattery({required this.level, required this.isCharging});
-
   final double level;
   final bool isCharging;
 }
 
-/// A location fix returned from the native platform.
 class TlLocation {
   TlLocation({
     required this.coords,
@@ -133,15 +427,12 @@ class TlLocation {
   final Map<String?, Object?>? extras;
 }
 
-/// Activity classification.
 class TlActivity {
   TlActivity({required this.type, required this.confidence});
-
   final String type;
   final int confidence;
 }
 
-/// Plugin state returned by ready/start/stop/getState.
 class TlState {
   TlState({
     required this.enabled,
@@ -160,7 +451,6 @@ class TlState {
   final String? lastLocationTimestamp;
 }
 
-/// A geofence definition.
 class TlGeofence {
   TlGeofence({
     required this.identifier,
@@ -187,7 +477,6 @@ class TlGeofence {
   final List<List<double?>?>? vertices;
 }
 
-/// Geofence event fired on transitions.
 class TlGeofenceEvent {
   TlGeofenceEvent({
     required this.identifier,
@@ -202,7 +491,6 @@ class TlGeofenceEvent {
   final Map<String?, Object?>? extras;
 }
 
-/// HTTP sync event.
 class TlHttpEvent {
   TlHttpEvent({
     required this.isSuccess,
@@ -215,7 +503,6 @@ class TlHttpEvent {
   final String responseText;
 }
 
-/// Provider change event (GPS/network/authorization state).
 class TlProviderChangeEvent {
   TlProviderChangeEvent({
     required this.enabled,
@@ -232,7 +519,6 @@ class TlProviderChangeEvent {
   final int? accuracyAuthorization;
 }
 
-/// Options for getCurrentPosition.
 class TlCurrentPositionOptions {
   TlCurrentPositionOptions({
     this.desiredAccuracy,
@@ -251,36 +537,23 @@ class TlCurrentPositionOptions {
   final Map<String?, Object?>? extras;
 }
 
-/// Activity change event data.
 class TlActivityChangeEvent {
   TlActivityChangeEvent({required this.activity, required this.confidence});
-
-  /// Activity type name (e.g. "still", "walking", "in_vehicle").
   final String activity;
-
-  /// Confidence percentage (0–100).
   final int confidence;
 }
 
-/// Change in the set of actively monitored geofences.
 class TlGeofencesChangeEvent {
   TlGeofencesChangeEvent({this.on, this.off});
-
-  /// Geofences that were activated (started monitoring).
-  final List<TlGeofence>? on;
-
-  /// Geofences that were deactivated (stopped monitoring).
-  final List<TlGeofence>? off;
+  final List<TlGeofence?>? on;
+  final List<TlGeofence?>? off;
 }
 
-/// Heartbeat event data (periodic location check-in).
 class TlHeartbeatEvent {
   TlHeartbeatEvent({required this.location});
-
   final TlLocation location;
 }
 
-/// Authorization / token-refresh event data.
 class TlAuthorizationEvent {
   TlAuthorizationEvent({
     required this.success,
@@ -293,419 +566,267 @@ class TlAuthorizationEvent {
   final String response;
 }
 
-/// Connectivity change event data.
 class TlConnectivityChangeEvent {
   TlConnectivityChangeEvent({required this.connected});
-
   final bool connected;
 }
 
 // =============================================================================
-// Host API — Dart calls native (request/response)
-//
-// These methods replace the raw MethodChannel.invokeMethod calls in
-// MethodChannelTracelet. Each method is strongly typed.
+// Host API
 // =============================================================================
 
 @HostApi()
 abstract class TraceletHostApi {
-  // ── Lifecycle ──────────────────────────────────────────────────────────
-
-  /// Initialize the plugin with configuration. Returns current state.
   @async
-  TlState ready(Map<String, Object?> config);
+  TlState ready(TlConfig config);
 
-  /// Start location tracking. Returns current state.
   @async
   TlState start();
 
-  /// Stop location tracking. Returns current state.
   @async
   TlState stop();
 
-  /// Start geofence-only mode. Returns current state.
   @async
   TlState startGeofences();
 
-  /// Start periodic one-shot mode. Returns current state.
   @async
   TlState startPeriodic();
 
-  /// Get current plugin state.
   @async
   TlState getState();
 
-  /// Update configuration. Returns current state.
   @async
-  TlState setConfig(Map<String, Object?> config);
+  TlState setConfig(TlConfig config);
 
-  /// Reset to defaults. Returns current state.
   @async
-  TlState reset(Map<String, Object?>? config);
+  TlState reset(TlConfig? config);
 
-  // ── Location ───────────────────────────────────────────────────────────
-
-  /// Get current position with options.
   @async
   TlLocation getCurrentPosition(TlCurrentPositionOptions options);
 
-  /// Get last known position without triggering a fix.
   @async
-  TlLocation? getLastKnownLocation(Map<String, Object?>? options);
+  TlLocation? getLastKnownLocation(TlCurrentPositionOptions? options);
 
-  /// Start watching position at an interval. Returns a watch ID.
   @async
-  int watchPosition(Map<String, Object?> options);
+  int watchPosition(TlCurrentPositionOptions options);
 
-  /// Stop a position watch by ID.
   @async
   bool stopWatchPosition(int watchId);
 
-  /// Toggle motion state.
   @async
   bool changePace(bool isMoving);
 
-  /// Get odometer value in meters.
   @async
   double getOdometer();
 
-  /// Reset odometer. Returns location at reset point.
   @async
   TlLocation setOdometer(double value);
 
-  // ── Geofencing ─────────────────────────────────────────────────────────
-
-  /// Add a single geofence.
   @async
   bool addGeofence(TlGeofence geofence);
 
-  /// Add multiple geofences.
   @async
   bool addGeofences(List<TlGeofence> geofences);
 
-  /// Remove a geofence by identifier.
   @async
   bool removeGeofence(String identifier);
 
-  /// Remove all geofences.
   @async
   bool removeGeofences();
 
-  /// Get all registered geofences.
   @async
-  List<TlGeofence> getGeofences();
+  List<TlGeofence?> getGeofences();
 
-  /// Get a single geofence by identifier.
   @async
   TlGeofence? getGeofence(String identifier);
 
-  /// Check if a geofence exists.
   @async
   bool geofenceExists(String identifier);
 
-  // ── Persistence ────────────────────────────────────────────────────────
-
-  /// Get stored locations.
   @async
-  List<TlLocation> getLocations(Map<String, Object?>? query);
+  List<TlLocation?> getLocations(Map<String?, Object?>? query);
 
-  /// Get count of stored locations.
   @async
-  int getCount(Map<String, Object?>? query);
+  int getCount(Map<String?, Object?>? query);
 
-  /// Delete all stored locations.
+  @async
+  String insertLocation(Map<String?, Object?> params);
+
   @async
   bool destroyLocations();
 
-  /// Delete only synced locations from the database. Returns count deleted.
   @async
   int destroySyncedLocations();
 
-  /// Delete a single location by UUID.
   @async
   bool destroyLocation(String uuid);
 
-  /// Insert a custom location. Returns UUID.
   @async
-  String insertLocation(Map<String, Object?> params);
+  List<TlLocation?> sync();
 
-  // ── HTTP Sync ──────────────────────────────────────────────────────────
-
-  /// Manually trigger HTTP sync. Returns synced locations.
   @async
-  List<TlLocation> sync();
+  bool setDynamicHeaders(Map<String?, String?> headers);
 
-  /// Update dynamic HTTP headers.
   @async
-  bool setDynamicHeaders(Map<String, String> headers);
+  bool setRouteContext(Map<String?, Object?> context);
 
-  /// Set route context for subsequent locations.
-  @async
-  bool setRouteContext(Map<String, Object?> context);
-
-  /// Clear route context.
   @async
   bool clearRouteContext();
 
-  // ── Permissions ────────────────────────────────────────────────────────
+  @async
+  bool registerHeadlessHeadersCallback(List<int?> callbackIds);
 
-  /// Get location permission status.
+  @async
+  bool registerHeadlessSyncBodyBuilder(List<int?> callbackIds);
+
   @async
   TlAuthorizationStatus getPermissionStatus();
 
-  /// Request location permission. Returns result.
   @async
   TlAuthorizationStatus requestPermission();
 
-  /// Get notification permission status (Android 13+).
   @async
   int getNotificationPermissionStatus();
 
-  /// Request notification permission (Android 13+).
   @async
   int requestNotificationPermission();
 
-  /// Check if exact alarms can be scheduled (Android 12+).
   @async
   bool canScheduleExactAlarms();
 
-  /// Open exact alarm settings (Android 12+).
   @async
   bool openExactAlarmSettings();
 
-  /// Get motion/activity recognition permission status.
   @async
   int getMotionPermissionStatus();
 
-  /// Request motion/activity recognition permission.
   @async
   int requestMotionPermission();
 
-  /// Request temporary full accuracy (iOS 14+). Returns accuracy status.
   @async
   int requestTemporaryFullAccuracy(String purpose);
 
-  // ── Utility ────────────────────────────────────────────────────────────
-
-  /// Whether device is in power-save mode.
   @async
   bool isPowerSaveMode();
 
-  /// Get location provider state.
   @async
   TlProviderChangeEvent getProviderState();
 
-  /// Get device info.
   @async
-  Map<String, Object?> getDeviceInfo();
+  Map<String?, Object?> getDeviceInfo();
 
-  /// Get available sensors.
-  @async
-  Map<String, Object?> getSensors();
-
-  /// Play a debug sound.
-  @async
-  bool playSound(String name);
-
-  /// Whether ignoring battery optimizations (Android).
-  @async
-  bool isIgnoringBatteryOptimizations();
-
-  /// Request a system settings page (e.g., battery optimization).
-  @async
-  bool requestSettings(String action);
-
-  /// Show a system settings page (e.g., location settings).
-  @async
-  bool showSettings(String action);
-
-  /// Get OEM settings health information.
-  @async
-  Map<String, Object?> getSettingsHealth();
-
-  /// Open an OEM-specific settings screen by label.
-  @async
-  bool openOemSettings(String label);
-
-  // ── Logging ────────────────────────────────────────────────────────────
-
-  /// Get plugin log.
-  @async
-  String getLog(Map<String, Object?>? query);
-
-  /// Destroy all log entries.
-  @async
-  bool destroyLog();
-
-  /// Email the log.
-  @async
-  bool emailLog(String email);
-
-  /// Write a custom log entry.
   @async
   bool log(String level, String message);
 
-  // ── Scheduling ─────────────────────────────────────────────────────────
+  @async
+  bool playSound(String name);
 
-  /// Start schedule-based tracking.
+  @async
+  bool isIgnoringBatteryOptimizations();
+
+  @async
+  bool requestSettings(String action);
+
+  @async
+  bool showSettings(String action);
+
   @async
   TlState startSchedule();
 
-  /// Stop schedule-based tracking.
   @async
   TlState stopSchedule();
 
-  // ── Background Tasks ───────────────────────────────────────────────────
+  @async
+  bool registerHeadlessTask(List<int?> callbackIds);
 
-  /// Start a background task. Returns task ID.
   @async
   int startBackgroundTask();
 
-  /// Complete a background task.
   @async
   int stopBackgroundTask(int taskId);
 
-  // ── Headless ───────────────────────────────────────────────────────────
-
-  /// Register a headless task callback for background event dispatch.
   @async
-  bool registerHeadlessTask(List<int> callbackIds);
+  Map<String?, Object?> getSensors();
 
-  /// Register a headless headers callback for background token recovery.
   @async
-  bool registerHeadlessHeadersCallback(List<int> callbackIds);
+  Map<String?, Object?> getSettingsHealth();
 
-  /// Register a headless sync body builder for background custom payloads.
   @async
-  bool registerHeadlessSyncBodyBuilder(List<int> callbackIds);
+  bool openOemSettings(String label);
 
-  // ── Enterprise: Audit Trail ────────────────────────────────────────────
-
-  /// Verify audit trail integrity.
   @async
-  Map<String, Object?> verifyAuditTrail();
+  String getLog(Map<String?, Object?>? query);
 
-  /// Get audit proof for a location UUID.
   @async
-  Map<String, Object?>? getAuditProof(String uuid);
+  bool destroyLog();
 
-  // ── Enterprise: Privacy Zones ──────────────────────────────────────────
-
-  /// Add a privacy zone.
   @async
-  bool addPrivacyZone(Map<String, Object?> zone);
+  bool emailLog(String email);
 
-  /// Add multiple privacy zones.
   @async
-  bool addPrivacyZones(List<Map<String, Object?>> zones);
+  Map<String?, Object?> verifyAuditTrail();
 
-  /// Remove a privacy zone by identifier.
+  @async
+  Map<String?, Object?>? getAuditProof(String uuid);
+
+  @async
+  bool addPrivacyZone(Map<String?, Object?> zone);
+
+  @async
+  bool addPrivacyZones(List<Map<String?, Object?>?> zones);
+
   @async
   bool removePrivacyZone(String identifier);
 
-  /// Remove all privacy zones.
   @async
   bool removePrivacyZones();
 
-  /// Get all privacy zones.
   @async
-  List<Map<String, Object?>> getPrivacyZones();
+  List<Map<String?, Object?>?> getPrivacyZones();
 
-  // ── Enterprise: Encrypted Database ─────────────────────────────────────
-
-  /// Check if database is encrypted.
   @async
   bool isDatabaseEncrypted();
 
-  /// Encrypt the database (one-time migration).
   @async
   bool encryptDatabase();
 
-  // ── Enterprise: Device Attestation ─────────────────────────────────────
-
-  /// Get a device attestation token.
   @async
-  Map<String, Object?>? getAttestationToken();
+  Map<String?, Object?>? getAttestationToken();
 
-  // ── Enterprise: Carbon Estimator ───────────────────────────────────────
-
-  /// Get carbon emissions report.
   @async
-  Map<String, Object?> getCarbonReport(Map<String, Object?>? query);
+  Map<String?, Object?>? getDeadReckoningState();
 
-  // ── Enterprise: Dead Reckoning ─────────────────────────────────────────
-
-  /// Get dead reckoning state.
   @async
-  Map<String, Object?>? getDeadReckoningState();
+  Map<String?, Object?> getCarbonReport(Map<String?, Object?>? query);
 }
 
 // =============================================================================
-// Flutter API — Native calls Dart
-//
-// TraceletFlutterApi: Headless callbacks (background isolate).
-// TraceletEventApi:   Streaming events (location, motion, geofence, etc.)
-//                     replacing raw EventChannels with type-safe Pigeon calls.
+// Flutter API
 // =============================================================================
 
 @FlutterApi()
 abstract class TraceletFlutterApi {
-  /// Called by native when a headless event fires.
-  void onHeadlessEvent(Map<String, Object?> event);
+  void onHeadlessEvent(Map<String?, Object?> event);
 
-  /// Called by native to request fresh authorization headers (401 recovery).
   @async
-  Map<String, String> onHeadlessHeaders();
+  Map<String?, String?> onHeadlessHeaders();
 }
 
-/// Type-safe event channel replacement.
-///
-/// Native platforms call these methods to push events to Dart instead of
-/// using raw EventChannel/EventSink. Each method maps to one event type.
 @FlutterApi()
 abstract class TraceletEventApi {
-  /// Fired on every recorded location.
   void onLocation(TlLocation location);
-
-  /// Fired when motion state changes (stationary ↔ moving).
   void onMotionChange(TlLocation location);
-
-  /// Fired when detected activity type changes (walking, running, etc.).
   void onActivityChange(TlActivityChangeEvent event);
-
-  /// Fired when location provider state changes (GPS, network, authorization).
   void onProviderChange(TlProviderChangeEvent event);
-
-  /// Fired on geofence transition (enter, exit, dwell).
   void onGeofence(TlGeofenceEvent event);
-
-  /// Fired when monitored geofences change (activated/deactivated list).
   void onGeofencesChange(TlGeofencesChangeEvent event);
-
-  /// Fired at configured heartbeat interval.
   void onHeartbeat(TlHeartbeatEvent event);
-
-  /// Fired on HTTP sync attempt (success or failure).
   void onHttp(TlHttpEvent event);
-
-  /// Fired on schedule start/stop transitions.
   void onSchedule(TlState state);
-
-  /// Fired when device power-save mode toggles.
   void onPowerSaveChange(bool isPowerSaveMode);
-
-  /// Fired when network connectivity changes.
   void onConnectivityChange(TlConnectivityChangeEvent event);
-
-  /// Fired when tracking is enabled or disabled.
   void onEnabledChange(bool enabled);
-
-  /// Fired when user taps a notification action button (Android).
   void onNotificationAction(String action);
-
-  /// Fired on HTTP authorization events (token refresh).
   void onAuthorization(TlAuthorizationEvent event);
-
-  /// Fired for watchPosition updates.
   void onWatchPosition(TlLocation location);
 }

@@ -16,10 +16,137 @@ class TraceletHostApiImpl: TraceletHostApi {
         self.headlessRunner = headlessRunner
     }
 
+    // MARK: - Mappers: Pigeon → SDK Dictionary
+
+    private func tlConfigToDict(_ c: TlConfig) -> [String: Any] {
+        var dict: [String: Any] = [:]
+
+        // Geo
+        dict["desiredAccuracy"] = c.geo.desiredAccuracy.rawValue
+        dict["distanceFilter"] = c.geo.distanceFilter
+        dict["stationaryRadius"] = c.geo.stationaryRadius
+        dict["locationTimeout"] = c.geo.locationTimeout
+        dict["disableElasticity"] = c.geo.disableElasticity
+        dict["elasticityMultiplier"] = c.geo.elasticityMultiplier
+        dict["stopAfterElapsedMinutes"] = c.geo.stopAfterElapsedMinutes
+        dict["maxMonitoredGeofences"] = c.geo.maxMonitoredGeofences
+        dict["enableTimestampMeta"] = c.geo.enableTimestampMeta
+        dict["enableAdaptiveMode"] = c.geo.enableAdaptiveMode
+        dict["periodicLocationInterval"] = c.geo.periodicLocationInterval
+        dict["periodicDesiredAccuracy"] = c.geo.periodicDesiredAccuracy.rawValue
+        dict["enableSparseUpdates"] = c.geo.enableSparseUpdates
+        dict["sparseDistanceThreshold"] = c.geo.sparseDistanceThreshold
+        dict["sparseMaxIdleSeconds"] = c.geo.sparseMaxIdleSeconds
+        dict["batteryBudgetPerHour"] = c.geo.batteryBudgetPerHour
+        dict["enableDeadReckoning"] = c.geo.enableDeadReckoning
+        dict["deadReckoningActivationDelay"] = c.geo.deadReckoningActivationDelay
+        dict["deadReckoningMaxDuration"] = c.geo.deadReckoningMaxDuration
+        dict["trackingAccuracyThreshold"] = c.geo.filter.trackingAccuracyThreshold
+        dict["maxImpliedSpeed"] = c.geo.filter.maxImpliedSpeed
+        dict["odometerAccuracyThreshold"] = c.geo.filter.odometerAccuracyThreshold
+        dict["locationFilterPolicy"] = c.geo.filter.policy.rawValue
+
+        // App
+        dict["stopOnTerminate"] = c.app.stopOnTerminate
+        dict["startOnBoot"] = c.app.startOnBoot
+        dict["heartbeatInterval"] = c.app.heartbeatInterval
+        dict["schedule"] = c.app.schedule
+        if let remoteConfigUrl = c.app.remoteConfigUrl { dict["remoteConfigUrl"] = remoteConfigUrl }
+        if let remoteConfigHeaders = c.app.remoteConfigHeaders { dict["remoteConfigHeaders"] = remoteConfigHeaders.compactMapValues { $0 } }
+        dict["remoteConfigTimeout"] = c.app.remoteConfigTimeout
+        dict["remoteConfigRefreshInterval"] = c.app.remoteConfigRefreshInterval
+
+        // Android (ignored on iOS but kept for parity in dictionary)
+        dict["locationUpdateInterval"] = c.android.locationUpdateInterval
+        dict["fastestLocationUpdateInterval"] = c.android.fastestLocationUpdateInterval
+        dict["deferTime"] = c.android.deferTime
+        dict["allowIdenticalLocations"] = c.android.allowIdenticalLocations
+        dict["geofenceModeHighAccuracy"] = c.android.geofenceModeHighAccuracy
+        dict["periodicUseForegroundService"] = c.android.periodicUseForegroundService
+        dict["periodicUseExactAlarms"] = c.android.periodicUseExactAlarms
+        dict["scheduleUseAlarmManager"] = c.android.scheduleUseAlarmManager
+
+        // iOS
+        dict["activityType"] = c.ios.activityType.rawValue
+        dict["useSignificantChangesOnly"] = c.ios.useSignificantChangesOnly
+        dict["showsBackgroundLocationIndicator"] = c.ios.showsBackgroundLocationIndicator
+        dict["pausesLocationUpdatesAutomatically"] = c.ios.pausesLocationUpdatesAutomatically
+        dict["locationAuthorizationRequest"] = c.ios.locationAuthorizationRequest == .always ? "Always" : "WhenInUse"
+        dict["disableLocationAuthorizationAlert"] = c.ios.disableLocationAuthorizationAlert
+        dict["preventSuspend"] = c.ios.preventSuspend
+
+        // HTTP
+        if let url = c.http.url { dict["url"] = url }
+        dict["method"] = c.http.method.rawValue
+        if let headers = c.http.headers { dict["headers"] = headers.compactMapValues { $0 } }
+        if let params = c.http.params { dict["params"] = params.compactMapValues { $0 } }
+        dict["autoSync"] = c.http.autoSync
+        dict["batchSync"] = c.http.batchSync
+        dict["maxBatchSize"] = c.http.maxBatchSize
+        dict["autoSyncThreshold"] = c.http.autoSyncThreshold
+        dict["httpTimeout"] = c.http.httpTimeout
+        dict["locationsOrderDirection"] = c.http.locationsOrderDirection.rawValue
+        dict["disableAutoSyncOnCellular"] = c.http.disableAutoSyncOnCellular
+        dict["maxRetries"] = c.http.maxRetries
+        dict["retryBackoffBase"] = c.http.retryBackoffBase
+        dict["retryBackoffCap"] = c.http.retryBackoffCap
+        dict["enableDeltaCompression"] = c.http.enableDeltaCompression
+        dict["deltaCoordinatePrecision"] = c.http.deltaCoordinatePrecision
+
+        // Logger
+        dict["logLevel"] = c.logger.logLevel.rawValue
+        dict["logMaxDays"] = c.logger.logMaxDays
+        dict["debug"] = c.logger.debug
+
+        // Motion
+        dict["stopTimeout"] = c.motion.stopTimeout
+        dict["motionTriggerDelay"] = c.motion.motionTriggerDelay
+        dict["disableMotionActivityUpdates"] = c.motion.disableMotionActivityUpdates
+        dict["isMoving"] = c.motion.isMoving
+        dict["activityRecognitionInterval"] = c.motion.activityRecognitionInterval
+        dict["minimumActivityRecognitionConfidence"] = c.motion.minimumActivityRecognitionConfidence
+        dict["disableStopDetection"] = c.motion.disableStopDetection
+        dict["stopDetectionDelay"] = c.motion.stopDetectionDelay
+        dict["stopOnStationary"] = c.motion.stopOnStationary
+        dict["stationaryRadius"] = c.motion.stationaryRadius
+        dict["useSignificantChangesOnly"] = c.motion.useSignificantChangesOnly
+        dict["shakeThreshold"] = c.motion.shakeThreshold
+        dict["stillThreshold"] = c.motion.stillThreshold
+        dict["stillSampleCount"] = c.motion.stillSampleCount
+
+        // Geofence
+        dict["geofenceModeHighAccuracy"] = c.geofence.geofenceModeHighAccuracy
+        dict["geofenceInitialTriggerEntry"] = c.geofence.geofenceInitialTriggerEntry
+        dict["geofenceProximityRadius"] = c.geofence.geofenceProximityRadius
+        dict["geofenceInitialTrigger"] = c.geofence.geofenceInitialTrigger
+
+        // Persistence
+        dict["persistMode"] = c.persistence.persistMode.rawValue
+        dict["maxDaysToPersist"] = c.persistence.maxDaysToPersist
+        dict["maxRecordsToPersist"] = c.persistence.maxRecordsToPersist
+        dict["disableProviderChangeRecord"] = c.persistence.disableProviderChangeRecord
+
+        // Security
+        dict["encryptDatabase"] = c.security.encryptDatabase
+
+        // Audit
+        dict["auditEnabled"] = c.audit.enabled
+        dict["auditHashAlgorithm"] = c.audit.hashAlgorithm.rawValue
+
+        // Privacy Zone
+        dict["privacyZoneEnabled"] = c.privacyZone.enabled
+
+        // Attestation
+        dict["attestationEnabled"] = c.attestation.enabled
+        dict["attestationRefreshInterval"] = c.attestation.refreshInterval
+
+        return dict
+    }
+
     // MARK: - Converters: SDK Dictionary → Pigeon types
 
     private func dictToTlState(_ d: [String: Any]) -> TlState {
-        let modeInt = d["trackingMode"] as? Int ?? TrackingMode.continuous.rawValue
+        let modeInt = d["trackingMode"] as? Int ?? 0
         return TlState(
             enabled: d["enabled"] as? Bool ?? false,
             isMoving: d["isMoving"] as? Bool ?? false,
@@ -79,7 +206,7 @@ class TraceletHostApiImpl: TraceletHostApi {
             notifyOnDwell: d["notifyOnDwell"] as? Bool ?? false,
             loiteringDelay: Int64(d["loiteringDelay"] as? Int ?? 0),
             extras: d["extras"] as? [String?: Any?],
-            vertices: (d["vertices"] as? [[Any]]).map { $0.map { inner in inner.map { $0 as? Double } } }
+            vertices: (d["vertices"] as? [[Double?]?])
         )
     }
 
@@ -94,18 +221,21 @@ class TraceletHostApiImpl: TraceletHostApi {
             "notifyOnDwell": g.notifyOnDwell,
             "loiteringDelay": g.loiteringDelay,
         ]
-        if let extras = g.extras { d["extras"] = extras }
+        if let extras = g.extras { d["extras"] = extras.compactMapValues { $0 } }
         if let vertices = g.vertices { d["vertices"] = vertices }
         return d
     }
 
     private func optionsToDict(_ o: TlCurrentPositionOptions) -> [String: Any] {
-        [
+        var d: [String: Any] = [
             "timeout": o.timeout,
             "maximumAge": o.maximumAge,
             "persist": o.persist,
             "samples": o.samples,
         ]
+        if let accuracy = o.desiredAccuracy { d["desiredAccuracy"] = accuracy.rawValue }
+        if let extras = o.extras { d["extras"] = extras.compactMapValues { $0 } }
+        return d
     }
 
     private func dictToTlProviderState(_ d: [String: Any]) -> TlProviderChangeEvent {
@@ -119,14 +249,25 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     private func intToAuthStatus(_ value: Int) -> TlAuthorizationStatus {
-        TlAuthorizationStatus(rawValue: value) ?? .notDetermined
+        // Native CLAuthorizationStatus:
+        // 0: notDetermined
+        // 1: restricted
+        // 2: denied
+        // 3: authorizedAlways
+        // 4: authorizedWhenInUse
+        switch value {
+        case 0: return .notDetermined
+        case 1, 2: return .denied
+        case 3: return .always
+        case 4: return .whenInUse
+        default: return .notDetermined
+        }
     }
 
     // MARK: - Lifecycle
 
-    func ready(config: [String: Any?], completion: @escaping (Result<TlState, Error>) -> Void) {
-        let c = config.compactMapValues { $0 }
-        let state = sdk.ready(config: c)
+    func ready(config: TlConfig, completion: @escaping (Result<TlState, Error>) -> Void) {
+        let state = sdk.ready(config: tlConfigToDict(config))
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }
 
@@ -177,23 +318,22 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }
 
-    func setConfig(config: [String: Any?], completion: @escaping (Result<TlState, Error>) -> Void) {
+    func setConfig(config: TlConfig, completion: @escaping (Result<TlState, Error>) -> Void) {
         guard sdk.isReadyState else {
             completion(.failure(PigeonError(code: "NOT_READY", message: "Call ready() before setConfig()", details: nil)))
             return
         }
-        let c = config.compactMapValues { $0 }
-        let state = sdk.setConfig(c)
+        let state = sdk.setConfig(tlConfigToDict(config))
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }
 
-    func reset(config: [String: Any?]?, completion: @escaping (Result<TlState, Error>) -> Void) {
+    func reset(config: TlConfig?, completion: @escaping (Result<TlState, Error>) -> Void) {
         guard sdk.isReadyState else {
             completion(.failure(PigeonError(code: "NOT_READY", message: "Call ready() before reset()", details: nil)))
             return
         }
-        let c = config?.compactMapValues { $0 }
-        let state = sdk.reset(c)
+        let dict = config.map { tlConfigToDict($0) }
+        let state = sdk.reset(dict)
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }
 
@@ -213,9 +353,9 @@ class TraceletHostApiImpl: TraceletHostApi {
         }
     }
 
-    func getLastKnownLocation(options: [String: Any?]?, completion: @escaping (Result<TlLocation?, Error>) -> Void) {
-        let opts = (options ?? [:]).compactMapValues { $0 }
-        let loc = sdk.getLastKnownLocation(options: opts)
+    func getLastKnownLocation(options: TlCurrentPositionOptions?, completion: @escaping (Result<TlLocation?, Error>) -> Void) {
+        let opts = options.map { optionsToDict($0) } ?? [:]
+        let loc = sdk.getLastKnownLocation(options: opts as [String: Any])
         if let loc = loc as? [String: Any] {
             completion(.success(dictToTlLocation(loc)))
         } else {
@@ -223,15 +363,14 @@ class TraceletHostApiImpl: TraceletHostApi {
         }
     }
 
-    func watchPosition(options: [String: Any?], completion: @escaping (Result<Int64, Error>) -> Void) {
-        let opts = options.compactMapValues { $0 }
-        let watchId = sdk.watchPosition(options: opts)
-        completion(.success(Int64(watchId as? Int ?? -1)))
+    func watchPosition(options: TlCurrentPositionOptions, completion: @escaping (Result<Int64, Error>) -> Void) {
+        let watchId = sdk.watchPosition(options: optionsToDict(options))
+        completion(.success(Int64(watchId)))
     }
 
     func stopWatchPosition(watchId: Int64, completion: @escaping (Result<Bool, Error>) -> Void) {
         let result = sdk.stopWatchPosition(Int(watchId))
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
     func changePace(isMoving: Bool, completion: @escaping (Result<Bool, Error>) -> Void) {
@@ -240,15 +379,15 @@ class TraceletHostApiImpl: TraceletHostApi {
             return
         }
         let result = sdk.changePace(isMoving)
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
     func getOdometer(completion: @escaping (Result<Double, Error>) -> Void) {
-        completion(.success(sdk.getOdometer() as? Double ?? 0.0))
+        completion(.success(sdk.getOdometer()))
     }
 
     func setOdometer(value: Double, completion: @escaping (Result<TlLocation, Error>) -> Void) {
-        let loc = sdk.setOdometer(value) as? [String: Any] ?? [:]
+        let loc = sdk.setOdometer(value)
         completion(.success(dictToTlLocation(loc)))
     }
 
@@ -256,53 +395,53 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     func addGeofence(geofence: TlGeofence, completion: @escaping (Result<Bool, Error>) -> Void) {
         let result = sdk.addGeofence(tlGeofenceToDict(geofence))
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
     func addGeofences(geofences: [TlGeofence], completion: @escaping (Result<Bool, Error>) -> Void) {
         let result = sdk.addGeofences(geofences.map(tlGeofenceToDict))
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
     func removeGeofence(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void) {
         let result = sdk.removeGeofence(identifier)
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
     func removeGeofences(completion: @escaping (Result<Bool, Error>) -> Void) {
         let result = sdk.removeGeofences()
-        completion(.success(result as? Bool ?? true))
+        completion(.success(result))
     }
 
-    func getGeofences(completion: @escaping (Result<[TlGeofence], Error>) -> Void) {
-        let raw = sdk.getGeofences() as? [[String: Any]] ?? []
+    func getGeofences(completion: @escaping (Result<[TlGeofence?], Error>) -> Void) {
+        let raw = sdk.getGeofences()
         completion(.success(raw.map(dictToTlGeofence)))
     }
 
     func getGeofence(identifier: String, completion: @escaping (Result<TlGeofence?, Error>) -> Void) {
-        let raw = sdk.getGeofence(identifier) as? [String: Any]
+        let raw = sdk.getGeofence(identifier)
         completion(.success(raw.map(dictToTlGeofence)))
     }
 
     func geofenceExists(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.geofenceExists(identifier) as? Bool ?? false))
+        completion(.success(sdk.geofenceExists(identifier)))
     }
 
     // MARK: - Persistence
 
-    func getLocations(query: [String: Any?]?, completion: @escaping (Result<[TlLocation], Error>) -> Void) {
-        let q = query?.compactMapValues { $0 }
-        let raw = sdk.getLocations(query: q) as? [[String: Any]] ?? []
+    func getLocations(query: [String?: Any?]?, completion: @escaping (Result<[TlLocation?], Error>) -> Void) {
+        let q = (query as? [String: Any?])?.compactMapValues { $0 }
+        let raw = sdk.getLocations(query: q as? [String: Any])
         completion(.success(raw.map(dictToTlLocation)))
     }
 
-    func getCount(query: [String: Any?]?, completion: @escaping (Result<Int64, Error>) -> Void) {
-        let q = query?.compactMapValues { $0 }
-        completion(.success(Int64(sdk.getCount(query: q) as? Int ?? 0)))
+    func getCount(query: [String?: Any?]?, completion: @escaping (Result<Int64, Error>) -> Void) {
+        let q = (query as? [String: Any?])?.compactMapValues { $0 }
+        completion(.success(Int64(sdk.getCount(query: q as? [String: Any]))))
     }
 
     func destroyLocations(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.destroyLocations() as? Bool ?? true))
+        completion(.success(sdk.destroyLocations()))
     }
 
     func destroySyncedLocations(completion: @escaping (Result<Int64, Error>) -> Void) {
@@ -310,31 +449,31 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func destroyLocation(uuid: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.destroyLocation(uuid) as? Bool ?? true))
+        completion(.success(sdk.destroyLocation(uuid)))
     }
 
-    func insertLocation(params: [String: Any?], completion: @escaping (Result<String, Error>) -> Void) {
-        let p = params.compactMapValues { $0 }
-        completion(.success(sdk.insertLocation(p) as? String ?? ""))
+    func insertLocation(params: [String?: Any?], completion: @escaping (Result<String, Error>) -> Void) {
+        let p = (params as? [String: Any?])?.compactMapValues { $0 } ?? [:]
+        completion(.success(sdk.insertLocation(p as [String: Any])))
     }
 
     // MARK: - HTTP Sync
 
-    func sync(completion: @escaping (Result<[TlLocation], Error>) -> Void) {
+    func sync(completion: @escaping (Result<[TlLocation?], Error>) -> Void) {
         sdk.sync { synced in
-            let list = synced as? [[String: Any]] ?? []
+            let list = synced
             completion(.success(list.map { self.dictToTlLocation($0) }))
         }
     }
 
-    func setDynamicHeaders(headers: [String: String], completion: @escaping (Result<Bool, Error>) -> Void) {
-        sdk.setDynamicHeaders(headers)
+    func setDynamicHeaders(headers: [String?: String?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        sdk.setDynamicHeaders((headers as? [String: String?])?.compactMapValues { $0 } ?? [:])
         completion(.success(true))
     }
 
-    func setRouteContext(context: [String: Any?], completion: @escaping (Result<Bool, Error>) -> Void) {
-        let c = context.compactMapValues { $0 }
-        sdk.setRouteContext(c)
+    func setRouteContext(context: [String?: Any?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let c = (context as? [String: Any?])?.compactMapValues { $0 } ?? [:]
+        sdk.setRouteContext(c as [String: Any])
         completion(.success(true))
     }
 
@@ -346,14 +485,19 @@ class TraceletHostApiImpl: TraceletHostApi {
     // MARK: - Permissions
 
     func getPermissionStatus(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void) {
-        let status = sdk.getPermissionStatus() as? Int ?? 0
+        let status = sdk.getPermissionStatus()
         completion(.success(intToAuthStatus(status)))
     }
 
     func requestPermission(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void) {
-        sdk.permissionManager.requestPermission { status in
-            let s = status as? Int ?? 0
-            completion(.success(self.intToAuthStatus(s)))
+        NSLog("[Tracelet] requestPermission called")
+        DispatchQueue.main.async {
+            self.sdk.permissionManager.requestPermission { status in
+                let s = status as? Int ?? 0
+                let result = self.intToAuthStatus(s)
+                NSLog("[Tracelet] requestPermission result: \(s) -> \(result)")
+                completion(.success(result))
+            }
         }
     }
 
@@ -382,8 +526,8 @@ class TraceletHostApiImpl: TraceletHostApi {
             let code: Int64
             switch status {
             case .notDetermined: code = 0
-            case .restricted:    code = 4
-            case .denied:        code = 4
+            case .restricted:    code = 2 // Denied/Restricted
+            case .denied:        code = 2
             case .authorized:    code = 3
             @unknown default:    code = 0
             }
@@ -397,14 +541,23 @@ class TraceletHostApiImpl: TraceletHostApi {
             completion(.success(0))
             return
         }
-        detector.requestMotionPermission { status in
-            completion(.success(Int64(status)))
+        NSLog("[Tracelet] requestMotionPermission called")
+        DispatchQueue.main.async {
+            detector.requestMotionPermission { status in
+                NSLog("[Tracelet] requestMotionPermission result: \(status)")
+                completion(.success(Int64(status)))
+            }
         }
     }
 
     func requestTemporaryFullAccuracy(purpose: String, completion: @escaping (Result<Int64, Error>) -> Void) {
-        let result = sdk.permissionManager.requestTemporaryFullAccuracy(purposeKey: purpose)
-        completion(.success(Int64(result as? Int ?? 0)))
+        NSLog("[Tracelet] requestTemporaryFullAccuracy called for purpose: \(purpose)")
+        DispatchQueue.main.async {
+            let result = self.sdk.permissionManager.requestTemporaryFullAccuracy(purposeKey: purpose)
+            let resInt = result as? Int ?? 0
+            NSLog("[Tracelet] requestTemporaryFullAccuracy result: \(resInt)")
+            completion(.success(Int64(resInt)))
+        }
     }
 
     // MARK: - Utility
@@ -414,22 +567,22 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func getProviderState(completion: @escaping (Result<TlProviderChangeEvent, Error>) -> Void) {
-        let state = sdk.getProviderState() as? [String: Any] ?? [:]
+        let state = sdk.getProviderState()
         completion(.success(dictToTlProviderState(state)))
     }
 
-    func getDeviceInfo(completion: @escaping (Result<[String: Any?], Error>) -> Void) {
+    func getDeviceInfo(completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
         var info = sdk.getDeviceInfo()
         info["framework"] = "flutter"
         completion(.success(info))
     }
 
-    func getSensors(completion: @escaping (Result<[String: Any?], Error>) -> Void) {
-        completion(.success(sdk.getSensors() as? [String: Any] ?? [:]))
+    func getSensors(completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
+        completion(.success(sdk.getSensors()))
     }
 
     func playSound(name: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.playSound(name) as? Bool ?? true))
+        completion(.success(sdk.playSound(name)))
     }
 
     func isIgnoringBatteryOptimizations(completion: @escaping (Result<Bool, Error>) -> Void) {
@@ -437,17 +590,21 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func requestSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.permissionManager.showLocationSettings() as? Bool ?? false))
+        DispatchQueue.main.async {
+            completion(.success(self.sdk.permissionManager.showLocationSettings()))
+        }
     }
 
     func showSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        let result = action == "app"
-            ? sdk.permissionManager.showAppSettings()
-            : sdk.permissionManager.showLocationSettings()
-        completion(.success(result as? Bool ?? false))
+        DispatchQueue.main.async {
+            let result = action == "app"
+                ? self.sdk.permissionManager.showAppSettings()
+                : self.sdk.permissionManager.showLocationSettings()
+            completion(.success(result))
+        }
     }
 
-    func getSettingsHealth(completion: @escaping (Result<[String: Any?], Error>) -> Void) {
+    func getSettingsHealth(completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
         completion(.success([
             "manufacturer": "Apple",
             "model": UIDevice.current.model,
@@ -465,13 +622,13 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Logging
 
-    func getLog(query: [String: Any?]?, completion: @escaping (Result<String, Error>) -> Void) {
-        let q = query?.compactMapValues { $0 }
-        completion(.success(sdk.getLog(query: q)))
+    func getLog(query: [String?: Any?]?, completion: @escaping (Result<String, Error>) -> Void) {
+        let q = (query as? [String: Any?])?.compactMapValues { $0 }
+        completion(.success(sdk.getLog(query: q as? [String: Any])))
     }
 
     func destroyLog(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.destroyLog() as? Bool ?? true))
+        completion(.success(sdk.destroyLog()))
     }
 
     func emailLog(email: String, completion: @escaping (Result<Bool, Error>) -> Void) {
@@ -527,26 +684,28 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Headless
 
-    func registerHeadlessTask(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void) {
-        let registrationId = callbackIds.first ?? -1
-        let dispatchId = callbackIds.last ?? -1
+    func registerHeadlessTask(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let validIds = callbackIds.compactMap { $0 }
+        let registrationId = validIds.first ?? -1
+        let dispatchId = validIds.last ?? -1
         headlessRunner.registerCallbacks(registrationId, dispatchId)
         completion(.success(true))
     }
 
-    func registerHeadlessHeadersCallback(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void) {
-        storeHeadlessCallback(callbackIds, key: "headlessHeaders")
+    func registerHeadlessHeadersCallback(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        storeHeadlessCallback(callbackIds.compactMap { $0 }, key: "headlessHeaders")
         completion(.success(true))
     }
 
-    func registerHeadlessSyncBodyBuilder(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void) {
-        storeHeadlessCallback(callbackIds, key: "headlessSyncBody")
+    func registerHeadlessSyncBodyBuilder(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        storeHeadlessCallback(callbackIds.compactMap { $0 }, key: "headlessSyncBody")
         completion(.success(true))
     }
 
     private func storeHeadlessCallback(_ callbackIds: [Int64], key: String) {
-        let registrationId = callbackIds.first ?? -1
-        let dispatchId = callbackIds.last ?? -1
+        let validIds = callbackIds.compactMap { $0 }
+        let registrationId = validIds.first ?? -1
+        let dispatchId = validIds.last ?? -1
         let defaults = UserDefaults.standard
         defaults.set(registrationId, forKey: "com.tracelet.headless.\(key)_registrationId")
         defaults.set(dispatchId, forKey: "com.tracelet.headless.\(key)_dispatchId")
@@ -554,36 +713,36 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Enterprise: Audit Trail
 
-    func verifyAuditTrail(completion: @escaping (Result<[String: Any?], Error>) -> Void) {
-        completion(.success(sdk.verifyAuditTrail() as? [String: Any] ?? [:]))
+    func verifyAuditTrail(completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
+        completion(.success(sdk.verifyAuditTrail()))
     }
 
-    func getAuditProof(uuid: String, completion: @escaping (Result<[String: Any?]?, Error>) -> Void) {
-        completion(.success(sdk.getAuditProof(uuid) as? [String: Any]))
+    func getAuditProof(uuid: String, completion: @escaping (Result<[String?: Any?]?, Error>) -> Void) {
+        completion(.success(sdk.getAuditProof(uuid)))
     }
 
     // MARK: - Enterprise: Privacy Zones
 
-    func addPrivacyZone(zone: [String: Any?], completion: @escaping (Result<Bool, Error>) -> Void) {
-        let z = zone.compactMapValues { $0 }
-        completion(.success(sdk.addPrivacyZone(z) as? Bool ?? true))
+    func addPrivacyZone(zone: [String?: Any?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let z = (zone as? [String: Any?])?.compactMapValues { $0 } ?? [:]
+        completion(.success(sdk.addPrivacyZone(z as [String: Any])))
     }
 
-    func addPrivacyZones(zones: [[String: Any?]], completion: @escaping (Result<Bool, Error>) -> Void) {
-        let zs = zones.map { $0.compactMapValues { $0 } }
-        completion(.success(sdk.addPrivacyZones(zs) as? Bool ?? true))
+    func addPrivacyZones(zones: [[String?: Any?]?], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let zs = zones.compactMap { $0 as? [String: Any?] }.map { $0.compactMapValues { $0 } }
+        completion(.success(sdk.addPrivacyZones(zs as [[String: Any]])))
     }
 
     func removePrivacyZone(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.removePrivacyZone(identifier) as? Bool ?? true))
+        completion(.success(sdk.removePrivacyZone(identifier)))
     }
 
     func removePrivacyZones(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.removePrivacyZones() as? Bool ?? true))
+        completion(.success(sdk.removePrivacyZones()))
     }
 
-    func getPrivacyZones(completion: @escaping (Result<[[String: Any?]], Error>) -> Void) {
-        completion(.success(sdk.getPrivacyZones() as? [[String: Any]] ?? []))
+    func getPrivacyZones(completion: @escaping (Result<[[String?: Any?]?], Error>) -> Void) {
+        completion(.success(sdk.getPrivacyZones()))
     }
 
     // MARK: - Enterprise: Encrypted Database
@@ -598,24 +757,24 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Enterprise: Device Attestation
 
-    func getAttestationToken(completion: @escaping (Result<[String: Any?]?, Error>) -> Void) {
+    func getAttestationToken(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void) {
         sdk.getAttestationToken { token in
             DispatchQueue.main.async {
-                completion(.success(token as? [String: Any]))
+                completion(.success(token))
             }
         }
     }
 
     // MARK: - Enterprise: Carbon Estimator
 
-    func getCarbonReport(query: [String: Any?]?, completion: @escaping (Result<[String: Any?], Error>) -> Void) {
-        let q = query?.compactMapValues { $0 }
-        completion(.success(sdk.getCarbonReport(query: q) as? [String: Any] ?? [:]))
+    func getCarbonReport(query: [String?: Any?]?, completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
+        let q = (query as? [String: Any?])?.compactMapValues { $0 }
+        completion(.success(sdk.getCarbonReport(query: q as? [String: Any])))
     }
 
     // MARK: - Enterprise: Dead Reckoning
 
-    func getDeadReckoningState(completion: @escaping (Result<[String: Any?]?, Error>) -> Void) {
-        completion(.success(sdk.getDeadReckoningState() as? [String: Any]))
+    func getDeadReckoningState(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void) {
+        completion(.success(sdk.getDeadReckoningState()))
     }
 }

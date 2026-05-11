@@ -112,9 +112,18 @@ if (token != null) {
 
 ### Android — Google Play Integrity API
 
+**Optional Dependency:** To enable Play Integrity on Android, you must explicitly add the dependency to your **app-level** `build.gradle.kts`:
+
+```kotlin
+// android/app/build.gradle.kts
+dependencies {
+    implementation("com.google.android.play:integrity:1.6.0")
+}
+```
+
 | Component | Detail |
 | --- | --- |
-| API | Play Integrity API (`com.google.android.play:integrity:1.4.0`) |
+| API | Play Integrity API (`com.google.android.play:integrity:1.6.0`) |
 | Nonce | SHA-256 of device fingerprint + timestamp + random bytes |
 | Token format | JWT (JSON Web Token) |
 | Cache duration | 5 minutes |

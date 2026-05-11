@@ -165,14 +165,12 @@ class Tracelet {
       disableElasticity: config.geo.disableElasticity,
       elasticityMultiplier: config.geo.elasticityMultiplier,
       enableAdaptiveMode: config.geo.enableAdaptiveMode,
-      trackingAccuracyThreshold:
-          config.geo.filter?.trackingAccuracyThreshold ?? 0,
-      filterPolicy: config.geo.filter?.policy.index ?? 0,
-      maxImpliedSpeed: config.geo.filter?.maxImpliedSpeed ?? 0,
-      odometerAccuracyThreshold:
-          config.geo.filter?.odometerAccuracyThreshold ?? 0,
-      rejectMockLocations: config.geo.filter?.rejectMockLocations ?? false,
-      mockDetectionLevel: config.geo.filter?.mockDetectionLevel.index ?? 1,
+      trackingAccuracyThreshold: config.geo.filter.trackingAccuracyThreshold,
+      filterPolicy: config.geo.filter.policy.index,
+      maxImpliedSpeed: config.geo.filter.maxImpliedSpeed,
+      odometerAccuracyThreshold: config.geo.filter.odometerAccuracyThreshold,
+      rejectMockLocations: config.geo.filter.rejectMockLocations,
+      mockDetectionLevel: config.geo.filter.mockDetectionLevel,
       enableSparseUpdates: config.geo.enableSparseUpdates,
       sparseDistanceThreshold: config.geo.sparseDistanceThreshold,
       sparseMaxIdleSeconds: config.geo.sparseMaxIdleSeconds,
@@ -198,20 +196,23 @@ class Tracelet {
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
+  static Config _currentConfig = const Config();
 
-  /// Initialize the plugin with the given [config].
+  /// Initialize the plugin and bind the native lifecycle.
   ///
-  /// **Must be called before any other method.** Returns the current [State].
+  /// This should be the first method called before [start] or [startGeofences].
   ///
   /// ```dart
   /// final state = await Tracelet.ready(Config(
-  ///   geo: GeoConfig(distanceFilter: 10),
+  ///   geo: GeoConfig(distanceFilter: 10.0),
   /// ));
   /// print('Enabled: ${state.enabled}');
   /// ```
   static Future<State> ready(Config config) async {
-    // Capture Kalman filter setting from config.
-    _useKalmanFilter = config.geo.filter?.useKalmanFilter ?? false;
+    _currentConfig = config;
+
+    // Capture Kalman filter setting.
+    _useKalmanFilter = false;
     _kalmanFilter.reset();
 
     // Capture adaptive sampling setting from config.
@@ -229,7 +230,7 @@ class Tracelet {
       _tripController.add(TripEvent.fromMap(tripData));
     };
 
-    final result = await _platform.ready(config.toMap());
+    final result = await _platform.ready(config.toTlConfig());
     return State.fromMap(result);
   }
 
@@ -369,8 +370,10 @@ class Tracelet {
   ///
   /// Returns the updated [State].
   static Future<State> setConfig(Config config) async {
+    _currentConfig = config;
+
     // Update Kalman filter setting.
-    _useKalmanFilter = config.geo.filter?.useKalmanFilter ?? false;
+    _useKalmanFilter = false;
 
     // Update adaptive sampling setting.
     _enableAdaptiveMode = config.geo.enableAdaptiveMode;
@@ -382,19 +385,18 @@ class Tracelet {
 
     // Update battery budget engine from config.
     _initBatteryBudget(config);
-
     // Invalidate cached stream pipeline so it rebuilds with new settings (D-M8).
     _processedLocationStream = null;
 
-    final result = await _platform.setConfig(config.toMap());
-    return State.fromMap(result);
+    final s = await _platform.setConfig(config.toTlConfig());
+    return State.fromMap(s);
   }
 
   /// Reset to default configuration, optionally applying a new [config].
   ///
   /// Returns the updated [State].
   static Future<State> reset([Config? config]) async {
-    final result = await _platform.reset(config?.toMap());
+    final result = await _platform.reset(config?.toTlConfig());
     return State.fromMap(result);
   }
 
@@ -1941,7 +1943,8 @@ class Tracelet {
     return _geofencesChangeStream ??= _platform.geofencesChangeEvents.map(
       (e) => GeofencesChangeEvent.fromMap({
         'on': e.on
-            ?.map(
+            ?.whereType<TlGeofence>()
+            .map(
               (g) => <String, Object?>{
                 'identifier': g.identifier,
                 'latitude': g.latitude,
@@ -1951,7 +1954,8 @@ class Tracelet {
             )
             .toList(),
         'off': e.off
-            ?.map(
+            ?.whereType<TlGeofence>()
+            .map(
               (g) => <String, Object?>{
                 'identifier': g.identifier,
                 'latitude': g.latitude,
@@ -2132,7 +2136,8 @@ class Tracelet {
           .map(
             (e) => GeofencesChangeEvent.fromMap({
               'on': e.on
-                  ?.map(
+                  ?.whereType<TlGeofence>()
+                  .map(
                     (g) => <String, Object?>{
                       'identifier': g.identifier,
                       'latitude': g.latitude,
@@ -2142,7 +2147,8 @@ class Tracelet {
                   )
                   .toList(),
               'off': e.off
-                  ?.map(
+                  ?.whereType<TlGeofence>()
+                  .map(
                     (g) => <String, Object?>{
                       'identifier': g.identifier,
                       'latitude': g.latitude,
@@ -2543,13 +2549,18 @@ class Tracelet {
 
   /// Apply a budget adjustment by sending updated geo config to native.
   static void _applyBudgetAdjustment(BudgetAdjustmentEvent adjustment) {
-    final geoUpdate = <String, Object?>{
-      'distanceFilter': adjustment.newDistanceFilter,
-      'desiredAccuracy': adjustment.newDesiredAccuracy,
-    };
+    final map = _currentConfig.toMap();
+    final geoMap = Map<String, Object?>.from(map['geo'] as Map? ?? {});
+    
+    geoMap['distanceFilter'] = adjustment.newDistanceFilter;
+    geoMap['desiredAccuracy'] = adjustment.newDesiredAccuracy;
+    
     if (adjustment.newPeriodicInterval != null) {
-      geoUpdate['periodicLocationInterval'] = adjustment.newPeriodicInterval;
+      geoMap['periodicLocationInterval'] = adjustment.newPeriodicInterval;
     }
+    
+    map['geo'] = geoMap;
+    _currentConfig = Config.fromMap(map);
 
     // Update the Dart-side location processor to match.
     final processor = _locationProcessor;
@@ -2574,7 +2585,7 @@ class Tracelet {
     }
 
     // Send to native (fire-and-forget — the native side merges & restarts).
-    _platform.setConfig(<String, Object?>{'geo': geoUpdate});
+    _platform.setConfig(_currentConfig.toTlConfig());
   }
 }
 

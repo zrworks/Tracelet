@@ -24,8 +24,6 @@ void main() {
       // Periodic mode defaults
       expect(config.geo.periodicLocationInterval, 900);
       expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.medium);
-      expect(config.geo.periodicUseForegroundService, false);
-      expect(config.geo.periodicUseExactAlarms, false);
     });
 
     test('round-trip serialization preserves all fields', () {
@@ -49,7 +47,7 @@ void main() {
         motion: MotionConfig(stopTimeout: 10, isMoving: true),
         geofence: GeofenceConfig(
           geofenceInitialTriggerEntry: false,
-          geofenceModeKnockOut: true,
+          geofenceModeHighAccuracy: true,
         ),
         logger: LoggerConfig(
           logLevel: LogLevel.info,
@@ -74,7 +72,7 @@ void main() {
       expect(restored.motion.stopTimeout, 10);
       expect(restored.motion.isMoving, true);
       expect(restored.geofence.geofenceInitialTriggerEntry, false);
-      expect(restored.geofence.geofenceModeKnockOut, true);
+      expect(restored.geofence.geofenceModeHighAccuracy, true);
       expect(restored.logger.logLevel, LogLevel.info);
       expect(restored.logger.logMaxDays, 7);
       expect(restored.logger.debug, true);
@@ -94,41 +92,13 @@ void main() {
       expect(config.logger.debug, false);
     });
 
-    test('toMap produces nested map (no flat spread collision)', () {
-      const config = Config(
-        http: HttpConfig(extras: {'apiKey': 'abc'}),
-        persistence: PersistenceConfig(extras: {'device': 'test'}),
-      );
-      final map = config.toMap();
 
-      // Config.toMap() should produce nested keys
-      expect(map.containsKey('http'), true);
-      expect(map.containsKey('persistence'), true);
-
-      // Each sub-config extras should be independent
-      final httpMap = map['http'] as Map<String, Object?>;
-      final persistenceMap = map['persistence'] as Map<String, Object?>;
-      expect(httpMap['httpExtras'], {'apiKey': 'abc'});
-      expect(persistenceMap['persistenceExtras'], {'device': 'test'});
-    });
-
-    test('round-trip preserves both http and persistence extras', () {
-      const config = Config(
-        http: HttpConfig(extras: {'httpKey': 'httpVal'}),
-        persistence: PersistenceConfig(extras: {'dbKey': 'dbVal'}),
-      );
-      final restored = Config.fromMap(config.toMap());
-      expect(restored.http.extras, {'httpKey': 'httpVal'});
-      expect(restored.persistence.extras, {'dbKey': 'dbVal'});
-    });
 
     test('round-trip preserves periodic config options', () {
       const config = Config(
         geo: GeoConfig(
           periodicLocationInterval: 1800,
           periodicDesiredAccuracy: DesiredAccuracy.high,
-          periodicUseForegroundService: true,
-          periodicUseExactAlarms: true,
         ),
       );
 
@@ -137,16 +107,12 @@ void main() {
 
       expect(restored.geo.periodicLocationInterval, 1800);
       expect(restored.geo.periodicDesiredAccuracy, DesiredAccuracy.high);
-      expect(restored.geo.periodicUseForegroundService, true);
-      expect(restored.geo.periodicUseExactAlarms, true);
     });
 
     test('periodic config defaults are correct in fromMap with empty map', () {
       final config = Config.fromMap(const {});
       expect(config.geo.periodicLocationInterval, 900);
       expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.medium);
-      expect(config.geo.periodicUseForegroundService, false);
-      expect(config.geo.periodicUseExactAlarms, false);
     });
 
     test('fromMap supports both nested and flat formats', () {
@@ -183,111 +149,49 @@ void main() {
       expect(a, isNot(equals(b)));
     });
 
-    test('HttpConfig retry fields have sensible defaults', () {
-      const c = HttpConfig();
-      expect(c.maxRetries, 10);
-      expect(c.retryBackoffBase, 1000);
-      expect(c.retryBackoffCap, 300000);
-    });
-
-    test('HttpConfig equality includes retry fields', () {
-      const a = HttpConfig(url: 'https://a.com', maxRetries: 5);
-      const b = HttpConfig(url: 'https://a.com', maxRetries: 10);
-      expect(a, isNot(equals(b)));
-
-      const c = HttpConfig(url: 'https://a.com', retryBackoffBase: 500);
-      const d = HttpConfig(url: 'https://a.com', retryBackoffBase: 1000);
-      expect(c, isNot(equals(d)));
-
-      const e = HttpConfig(url: 'https://a.com', retryBackoffCap: 60000);
-      const f = HttpConfig(url: 'https://a.com', retryBackoffCap: 300000);
-      expect(e, isNot(equals(f)));
-    });
-
-    test('HttpConfig fromMap parses retry fields', () {
-      final c = HttpConfig.fromMap(const {
-        'url': 'https://example.com',
-        'maxRetries': 5,
-        'retryBackoffBase': 2000,
-        'retryBackoffCap': 120000,
+    group('MotionConfig', () {
+      test('defaults', () {
+        const config = MotionConfig();
+        expect(config.stopTimeout, 5);
+        expect(config.shakeThreshold, 2.5);
+        expect(config.stillThreshold, 0.4);
+        expect(config.stillSampleCount, 25);
       });
-      expect(c.maxRetries, 5);
-      expect(c.retryBackoffBase, 2000);
-      expect(c.retryBackoffCap, 120000);
-    });
 
-    test('HttpConfig toMap includes retry fields', () {
-      const c = HttpConfig(
-        url: 'https://example.com',
-        maxRetries: 3,
-        retryBackoffBase: 500,
-        retryBackoffCap: 60000,
-      );
-      final map = c.toMap();
-      expect(map['maxRetries'], 3);
-      expect(map['retryBackoffBase'], 500);
-      expect(map['retryBackoffCap'], 60000);
-    });
+      test('round-trip serialization', () {
+        const config = MotionConfig(
+          stopTimeout: 10,
+          shakeThreshold: 3.5,
+          stillThreshold: 0.1,
+          stillSampleCount: 50,
+        );
+        final map = config.toMap();
+        expect(map['shakeThreshold'], 3.5);
+        expect(map['stillThreshold'], 0.1);
+        expect(map['stillSampleCount'], 50);
 
-    test('HttpConfig fromMap uses defaults for missing retry fields', () {
-      final c = HttpConfig.fromMap(const {'url': 'https://example.com'});
-      expect(c.maxRetries, 10);
-      expect(c.retryBackoffBase, 1000);
-      expect(c.retryBackoffCap, 300000);
-    });
-
-    test('HttpConfig round-trip preserves retry fields', () {
-      const original = HttpConfig(
-        url: 'https://example.com',
-        maxRetries: 7,
-        retryBackoffBase: 1500,
-        retryBackoffCap: 180000,
-      );
-      final restored = HttpConfig.fromMap(original.toMap());
-      expect(restored.maxRetries, 7);
-      expect(restored.retryBackoffBase, 1500);
-      expect(restored.retryBackoffCap, 180000);
-    });
-
-    test('HttpConfig syncInterval defaults to 0', () {
-      const c = HttpConfig();
-      expect(c.syncInterval, 0);
-    });
-
-    test('HttpConfig equality includes syncInterval', () {
-      const a = HttpConfig(url: 'https://a.com', syncInterval: 30);
-      const b = HttpConfig(url: 'https://a.com', syncInterval: 60);
-      expect(a, isNot(equals(b)));
-
-      const c = HttpConfig(url: 'https://a.com', syncInterval: 30);
-      const d = HttpConfig(url: 'https://a.com', syncInterval: 30);
-      expect(c, equals(d));
-    });
-
-    test('HttpConfig fromMap parses syncInterval', () {
-      final c = HttpConfig.fromMap(const {
-        'url': 'https://example.com',
-        'syncInterval': 45,
+        final restored = MotionConfig.fromMap(map);
+        expect(restored.shakeThreshold, 3.5);
+        expect(restored.stillThreshold, 0.1);
+        expect(restored.stillSampleCount, 50);
       });
-      expect(c.syncInterval, 45);
+
+      test('equality', () {
+        const a = MotionConfig(shakeThreshold: 2.0);
+        const b = MotionConfig(shakeThreshold: 2.0);
+        const c = MotionConfig(shakeThreshold: 3.0);
+        expect(a, equals(b));
+        expect(a, isNot(equals(c)));
+      });
+
+      test('hashCode equality', () {
+        const a = MotionConfig(stillThreshold: 0.5);
+        const b = MotionConfig(stillThreshold: 0.5);
+        expect(a.hashCode, equals(b.hashCode));
+      });
     });
 
-    test('HttpConfig fromMap defaults syncInterval to 0', () {
-      final c = HttpConfig.fromMap(const {'url': 'https://example.com'});
-      expect(c.syncInterval, 0);
-    });
 
-    test('HttpConfig toMap includes syncInterval', () {
-      const c = HttpConfig(url: 'https://example.com', syncInterval: 45);
-      final map = c.toMap();
-      expect(map['syncInterval'], 45);
-    });
-
-    test('HttpConfig round-trip preserves syncInterval', () {
-      const original = HttpConfig(url: 'https://example.com', syncInterval: 90);
-      final restored = HttpConfig.fromMap(original.toMap());
-      expect(restored.syncInterval, 90);
-    });
 
     test('HttpConfig.toMap serializes method as int index', () {
       const postConfig = HttpConfig(method: HttpMethod.post);
@@ -316,7 +220,7 @@ void main() {
 
     test('HttpConfig.fromMap handles missing headers gracefully', () {
       final config = HttpConfig.fromMap(const {});
-      expect(config.headers, isEmpty);
+      expect(config.headers, isNull);
     });
 
     test('HttpConfig maxBatchSize defaults to 250', () {
@@ -371,120 +275,11 @@ void main() {
       expect(config.enabled, true);
     });
 
-    test('MotionConfig equality includes stopDetectionDelay', () {
-      const a = MotionConfig(stopDetectionDelay: 0);
-      const b = MotionConfig(stopDetectionDelay: 10);
-      expect(a, isNot(equals(b)));
-    });
 
-    test('MotionConfig motion sensitivity defaults', () {
-      const config = MotionConfig();
-      expect(config.shakeThreshold, 2.5);
-      expect(config.stillThreshold, 0.4);
-      expect(config.stillSampleCount, 25);
-    });
 
-    test('MotionConfig motion sensitivity round-trip serialization', () {
-      const config = MotionConfig(
-        shakeThreshold: 4.0,
-        stillThreshold: 0.8,
-        stillSampleCount: 50,
-      );
-      final map = config.toMap();
-      expect(map['shakeThreshold'], 4.0);
-      expect(map['stillThreshold'], 0.8);
-      expect(map['stillSampleCount'], 50);
 
-      final restored = MotionConfig.fromMap(map);
-      expect(restored.shakeThreshold, 4.0);
-      expect(restored.stillThreshold, 0.8);
-      expect(restored.stillSampleCount, 50);
-      expect(restored, equals(config));
-    });
 
-    test('MotionConfig motion sensitivity affects equality', () {
-      const a = MotionConfig(shakeThreshold: 2.5);
-      const b = MotionConfig(shakeThreshold: 4.0);
-      expect(a, isNot(equals(b)));
 
-      const c = MotionConfig(stillThreshold: 0.4);
-      const d = MotionConfig(stillThreshold: 0.8);
-      expect(c, isNot(equals(d)));
-
-      const e = MotionConfig(stillSampleCount: 25);
-      const f = MotionConfig(stillSampleCount: 50);
-      expect(e, isNot(equals(f)));
-    });
-
-    test(
-      'MotionConfig fromMap with missing sensitivity fields uses defaults',
-      () {
-        final config = MotionConfig.fromMap(const {'stopTimeout': 10});
-        expect(config.stopTimeout, 10);
-        expect(config.shakeThreshold, 2.5);
-        expect(config.stillThreshold, 0.4);
-        expect(config.stillSampleCount, 25);
-      },
-    );
-
-    test('LocationFilter.rejectMockLocations defaults to false', () {
-      const filter = LocationFilter();
-      expect(filter.rejectMockLocations, false);
-    });
-
-    test('LocationFilter.rejectMockLocations round-trip serialization', () {
-      const filter = LocationFilter(rejectMockLocations: true);
-      final map = filter.toMap();
-      expect(map['rejectMockLocations'], true);
-
-      final restored = LocationFilter.fromMap(map);
-      expect(restored.rejectMockLocations, true);
-    });
-
-    test('LocationFilter.rejectMockLocations affects equality', () {
-      const a = LocationFilter(rejectMockLocations: false);
-      const b = LocationFilter(rejectMockLocations: true);
-      expect(a, isNot(equals(b)));
-    });
-
-    test(
-      'LocationFilter.rejectMockLocations from empty map defaults false',
-      () {
-        final filter = LocationFilter.fromMap(const {});
-        expect(filter.rejectMockLocations, false);
-      },
-    );
-
-    test('LocationFilter.mockDetectionLevel defaults to disabled', () {
-      const filter = LocationFilter();
-      expect(filter.mockDetectionLevel, MockDetectionLevel.disabled);
-    });
-
-    test('LocationFilter.mockDetectionLevel round-trip serialization', () {
-      const filter = LocationFilter(
-        mockDetectionLevel: MockDetectionLevel.heuristic,
-      );
-      final map = filter.toMap();
-      expect(map['mockDetectionLevel'], 2); // heuristic == index 2
-      final restored = LocationFilter.fromMap(map);
-      expect(restored.mockDetectionLevel, MockDetectionLevel.heuristic);
-    });
-
-    test('LocationFilter.mockDetectionLevel affects equality', () {
-      const a = LocationFilter(mockDetectionLevel: MockDetectionLevel.basic);
-      const b = LocationFilter(
-        mockDetectionLevel: MockDetectionLevel.heuristic,
-      );
-      expect(a, isNot(equals(b)));
-    });
-
-    test(
-      'LocationFilter.mockDetectionLevel from empty map defaults disabled',
-      () {
-        final filter = LocationFilter.fromMap(const {});
-        expect(filter.mockDetectionLevel, MockDetectionLevel.disabled);
-      },
-    );
   });
 
   // ==========================================================================
@@ -1409,14 +1204,14 @@ void main() {
     test('defaults', () {
       const query = SQLQuery();
       expect(query.limit, -1);
-      expect(query.order, LocationOrder.asc);
+      expect(query.order, LocationOrderDirection.ascending);
       expect(query.start, isNull);
       expect(query.end, isNull);
     });
 
     test('toMap includes timestamps as milliseconds', () {
       final now = DateTime(2024, 6, 15, 12, 0, 0);
-      final query = SQLQuery(start: now, limit: 100, order: LocationOrder.desc);
+      final query = SQLQuery(start: now, limit: 100, order: LocationOrderDirection.descending);
       final map = query.toMap();
       expect(map['start'], now.millisecondsSinceEpoch);
       expect(map['limit'], 100);
@@ -1430,7 +1225,7 @@ void main() {
       expect(map['start'], start.millisecondsSinceEpoch);
       expect(map['end'], end.millisecondsSinceEpoch);
       expect(map['limit'], -1);
-      expect(map['order'], LocationOrder.asc.index);
+      expect(map['order'], LocationOrderDirection.ascending.index);
     });
 
     test('toMap omits null start and end', () {
@@ -1448,13 +1243,13 @@ void main() {
         start: start,
         end: end,
         limit: 200,
-        order: LocationOrder.desc,
+        order: LocationOrderDirection.descending,
       );
       final restored = SQLQuery.fromMap(original.toMap());
       expect(restored.start, start);
       expect(restored.end, end);
       expect(restored.limit, 200);
-      expect(restored.order, LocationOrder.desc);
+      expect(restored.order, LocationOrderDirection.descending);
     });
 
     test('fromMap handles null start and end', () {
@@ -1528,53 +1323,53 @@ void main() {
       expect(config.notificationPriority, NotificationPriority.defaultPriority);
     });
 
-    test('fromMap parses int -2 as min', () {
+    test('fromMap parses int 0 as min', () {
       final config = ForegroundServiceConfig.fromMap(const {
-        'notificationPriority': -2,
+        'notificationPriority': 0,
       });
       expect(config.notificationPriority, NotificationPriority.min);
     });
 
-    test('fromMap parses int -1 as low', () {
+    test('fromMap parses int 1 as low', () {
       final config = ForegroundServiceConfig.fromMap(const {
-        'notificationPriority': -1,
+        'notificationPriority': 1,
       });
       expect(config.notificationPriority, NotificationPriority.low);
     });
 
-    test('fromMap parses int 0 as defaultPriority', () {
+    test('fromMap parses int 2 as defaultPriority', () {
       final config = ForegroundServiceConfig.fromMap(const {
-        'notificationPriority': 0,
+        'notificationPriority': 2,
       });
       expect(config.notificationPriority, NotificationPriority.defaultPriority);
     });
 
-    test('fromMap parses int 1 as high', () {
+    test('fromMap parses int 3 as high', () {
       final config = ForegroundServiceConfig.fromMap(const {
-        'notificationPriority': 1,
+        'notificationPriority': 3,
       });
       expect(config.notificationPriority, NotificationPriority.high);
     });
 
-    test('fromMap parses int 2 as max', () {
+    test('fromMap parses int 4 as max', () {
       final config = ForegroundServiceConfig.fromMap(const {
-        'notificationPriority': 2,
+        'notificationPriority': 4,
       });
       expect(config.notificationPriority, NotificationPriority.max);
     });
 
-    test('fromMap clamps out-of-range int to min', () {
+    test('fromMap defaults out-of-range int to defaultPriority', () {
       final config = ForegroundServiceConfig.fromMap(const {
         'notificationPriority': -5,
       });
-      expect(config.notificationPriority, NotificationPriority.min);
+      expect(config.notificationPriority, NotificationPriority.defaultPriority);
     });
 
-    test('fromMap clamps out-of-range int to max', () {
+    test('fromMap defaults out-of-range int to defaultPriority (high)', () {
       final config = ForegroundServiceConfig.fromMap(const {
         'notificationPriority': 10,
       });
-      expect(config.notificationPriority, NotificationPriority.max);
+      expect(config.notificationPriority, NotificationPriority.defaultPriority);
     });
 
     test('toMap serializes back to int', () {
@@ -1582,7 +1377,7 @@ void main() {
         notificationPriority: NotificationPriority.high,
       );
       final map = config.toMap();
-      expect(map['notificationPriority'], 1);
+      expect(map['notificationPriority'], 3);
     });
 
     test('round-trip preserves all priority values', () {
@@ -1648,102 +1443,4 @@ void main() {
     });
   });
 
-  // ==========================================================================
-  // triggerActivities Set<ActivityType> parsing
-  // ==========================================================================
-  group('triggerActivities', () {
-    test('MotionConfig defaults to empty set', () {
-      const config = MotionConfig();
-      expect(config.triggerActivities, isEmpty);
-    });
-
-    test('fromMap parses comma-separated string', () {
-      final config = MotionConfig.fromMap(const {
-        'triggerActivities': 'on_foot, in_vehicle',
-      });
-      expect(config.triggerActivities, {
-        ActivityType.onFoot,
-        ActivityType.inVehicle,
-      });
-    });
-
-    test('fromMap parses single activity', () {
-      final config = MotionConfig.fromMap(const {
-        'triggerActivities': 'walking',
-      });
-      expect(config.triggerActivities, {ActivityType.walking});
-    });
-
-    test('fromMap handles all activity types', () {
-      final config = MotionConfig.fromMap(const {
-        'triggerActivities':
-            'still,walking,running,on_foot,in_vehicle,on_bicycle,unknown',
-      });
-      expect(config.triggerActivities, {
-        ActivityType.still,
-        ActivityType.walking,
-        ActivityType.running,
-        ActivityType.onFoot,
-        ActivityType.inVehicle,
-        ActivityType.onBicycle,
-        ActivityType.unknown,
-      });
-    });
-
-    test('fromMap ignores invalid activity names', () {
-      final config = MotionConfig.fromMap(const {
-        'triggerActivities': 'walking, flying, running',
-      });
-      expect(config.triggerActivities, {
-        ActivityType.walking,
-        ActivityType.running,
-      });
-    });
-
-    test('fromMap handles empty string', () {
-      final config = MotionConfig.fromMap(const {'triggerActivities': ''});
-      expect(config.triggerActivities, isEmpty);
-    });
-
-    test('fromMap handles missing key', () {
-      final config = MotionConfig.fromMap(const <String, Object?>{});
-      expect(config.triggerActivities, isEmpty);
-    });
-
-    test('toMap serializes to comma-separated snake_case string', () {
-      const config = MotionConfig(
-        triggerActivities: {ActivityType.onFoot, ActivityType.inVehicle},
-      );
-      final value = config.toMap()['triggerActivities'] as String;
-      expect(value, contains('on_foot'));
-      expect(value, contains('in_vehicle'));
-    });
-
-    test('toMap serializes empty set to empty string', () {
-      const config = MotionConfig();
-      expect(config.toMap()['triggerActivities'], '');
-    });
-
-    test('round-trip preserves activities through serialization', () {
-      const activities = {
-        ActivityType.walking,
-        ActivityType.running,
-        ActivityType.onBicycle,
-      };
-      const config = MotionConfig(triggerActivities: activities);
-      final restored = MotionConfig.fromMap(config.toMap());
-      expect(restored.triggerActivities, activities);
-    });
-
-    test('case-insensitive parsing', () {
-      final config = MotionConfig.fromMap(const {
-        'triggerActivities': 'Walking, ON_FOOT, In_Vehicle',
-      });
-      expect(config.triggerActivities, {
-        ActivityType.walking,
-        ActivityType.onFoot,
-        ActivityType.inVehicle,
-      });
-    });
-  });
 }

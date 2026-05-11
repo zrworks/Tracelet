@@ -34,13 +34,15 @@ void main() {
             geofence: GeofenceConfig(
               geofenceProximityRadius: 10000,
               geofenceInitialTriggerEntry: true,
+              geofenceModeHighAccuracy: true,
             ),
             geo: GeoConfig(
               desiredAccuracy: DesiredAccuracy.high,
-              locationAuthorizationRequest: LocationAuthorizationRequest.always,
               distanceFilter: 0.0,
-              geofenceModeHighAccuracy: true,
               filter: LocationFilter(rejectMockLocations: false),
+            ),
+            ios: IosConfig(
+              locationAuthorizationRequest: LocationAuthorizationRequest.always,
             ),
             app: AppConfig(stopOnTerminate: true, startOnBoot: false),
             logger: LoggerConfig(debug: true, logLevel: LogLevel.verbose),

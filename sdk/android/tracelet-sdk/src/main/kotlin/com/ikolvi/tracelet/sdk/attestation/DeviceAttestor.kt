@@ -4,8 +4,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.google.android.play.core.integrity.IntegrityManagerFactory
-import com.google.android.play.core.integrity.IntegrityTokenRequest
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.Executors
@@ -34,13 +32,24 @@ class DeviceAttestor(private val context: Context) {
         fun isAvailable(): Boolean = try {
             Class.forName("com.google.android.play.core.integrity.IntegrityManagerFactory")
             true
-        } catch (_: ClassNotFoundException) {
+        } catch (e: Throwable) {
             false
         }
     }
 
     // Lazy: avoids NoClassDefFoundError when Play Integrity is absent.
-    private val integrityManager by lazy { IntegrityManagerFactory.create(context) }
+    private val integrityProvider by lazy {
+        if (isAvailable()) {
+            try {
+                Class.forName("com.ikolvi.tracelet.sdk.attestation.PlayIntegrityProvider")
+                    .getConstructor(Context::class.java)
+                    .newInstance(context) as IntegrityProvider
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -78,13 +87,8 @@ class DeviceAttestor(private val context: Context) {
 
         val nonce = generateNonce()
         try {
-            val request = IntegrityTokenRequest.builder()
-                .setNonce(nonce)
-                .build()
-
-            integrityManager.requestIntegrityToken(request)
-                .addOnSuccessListener { response ->
-                    val token = response.token()
+            integrityProvider?.requestToken(nonce,
+                onSuccess = { token ->
                     val result = mapOf<String, Any?>(
                         "token" to token,
                         "timestamp" to System.currentTimeMillis(),
@@ -94,11 +98,14 @@ class DeviceAttestor(private val context: Context) {
                     cachedToken = result
                     cachedTimestamp = System.currentTimeMillis()
                     callback(result)
-                }
-                .addOnFailureListener { e ->
+                },
+                onFailure = { e ->
                     Log.w(TAG, "Play Integrity request failed: ${e.message}")
                     callback(null)
                 }
+            ) ?: run {
+                callback(null)
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Play Integrity unavailable: ${e.message}")
             callback(null)
@@ -142,4 +149,8 @@ class DeviceAttestor(private val context: Context) {
         val digest = MessageDigest.getInstance("SHA-256").digest(data.toByteArray())
         return digest.joinToString("") { "%02x".format(it) }
     }
+}
+
+interface IntegrityProvider {
+    fun requestToken(nonce: String, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit)
 }

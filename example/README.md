@@ -1,6 +1,9 @@
-# tracelet_example
+# Tracelet Example
+ 
+A reference implementation of the Tracelet geolocation plugin.
 
-A new Flutter project.
+> [!IMPORTANT]
+> **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Migration Guide](../MIGRATION_2.0.md) for details.
 
 ## Getting Started
 

@@ -16,7 +16,7 @@ class _MockPlatform extends TraceletPlatform with EmptyEventStreamsMixin {
   }
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async {
+  Future<Map<String, Object?>> ready(TlConfig config) async {
     return {'enabled': false, 'trackingMode': 0};
   }
 }

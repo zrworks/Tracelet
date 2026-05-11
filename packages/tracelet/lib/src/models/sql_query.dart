@@ -6,7 +6,7 @@ import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 /// ```dart
 /// final locations = await Tracelet.getLocations(SQLQuery(
 ///   limit: 100,
-///   order: LocationOrder.desc,
+///   order: LocationOrderDirection.descending,
 ///   start: DateTime.now().subtract(Duration(hours: 24)),
 /// ));
 /// ```
@@ -18,7 +18,7 @@ class SQLQuery {
     this.end,
     this.limit = -1,
     this.offset = 0,
-    this.order = LocationOrder.asc,
+    this.order = LocationOrderDirection.ascending,
   });
 
   /// Start of the time range (inclusive). `null` means no lower bound.
@@ -33,8 +33,8 @@ class SQLQuery {
   /// Number of records to skip before returning results. Defaults to `0`.
   final int offset;
 
-  /// Sort order. Defaults to [LocationOrder.asc].
-  final LocationOrder order;
+  /// Sort order. Defaults to [LocationOrderDirection.ascending].
+  final LocationOrderDirection order;
 
   /// Serializes to a map for platform channel transmission.
   Map<String, Object?> toMap() {
@@ -60,9 +60,9 @@ class SQLQuery {
       limit: (map['limit'] as int?) ?? -1,
       offset: (map['offset'] as int?) ?? 0,
       order:
-          LocationOrder.values[((map['order'] as int?) ?? 0).clamp(
+          LocationOrderDirection.values[((map['order'] as int?) ?? 0).clamp(
             0,
-            LocationOrder.values.length - 1,
+            LocationOrderDirection.values.length - 1,
           )],
     );
   }

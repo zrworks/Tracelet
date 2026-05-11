@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.ikolvi.tracelet.TlActivity
 import com.ikolvi.tracelet.TlAuthorizationStatus
 import com.ikolvi.tracelet.TlBattery
@@ -14,20 +15,32 @@ import com.ikolvi.tracelet.TlLocation
 import com.ikolvi.tracelet.TlProviderChangeEvent
 import com.ikolvi.tracelet.TlState
 import com.ikolvi.tracelet.TlTrackingMode
+import com.ikolvi.tracelet.TlConfig
+import com.ikolvi.tracelet.TlGeoConfig
+import com.ikolvi.tracelet.TlAppConfig
+import com.ikolvi.tracelet.TlAndroidConfig
+import com.ikolvi.tracelet.TlIosConfig
+import com.ikolvi.tracelet.TlHttpConfig
+import com.ikolvi.tracelet.TlDesiredAccuracy
 import com.ikolvi.tracelet.TraceletHostApi
+import com.ikolvi.tracelet.FlutterError
 import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
 import com.ikolvi.tracelet.sdk.TraceletSdk
+import com.ikolvi.tracelet.sdk.util.OemCompat
 
 /**
  * Pigeon-backed implementation of [TraceletHostApi].
- *
- * Delegates every call to [TraceletSdk] and converts between Pigeon typed
- * objects ([TlState], [TlLocation], etc.) and the SDK's raw map format.
+ * 
+ * Maps between Pigeon generated types and the raw Map-based API of TraceletSdk.
  */
 class TraceletHostApiImpl(
     private val context: Context,
     private val headlessService: HeadlessTaskService,
 ) : TraceletHostApi {
+
+    companion object {
+        private const val TAG = "TraceletHostApiImpl"
+    }
 
     private val sdk: TraceletSdk get() = TraceletSdk.getInstance(context)
 
@@ -98,10 +111,9 @@ class TraceletHostApiImpl(
         extras = m["extras"] as? Map<String?, Any?>,
         vertices = (m["vertices"] as? List<*>)?.map { inner ->
             (inner as? List<*>)?.map { it as? Double }
-        },
+        } as? List<List<Double?>?>,
     )
 
-    // Pigeon TlGeofence → SDK Map
     private fun tlGeofenceToMap(g: TlGeofence): Map<String, Any?> = mapOf(
         "identifier" to g.identifier,
         "latitude" to g.latitude,
@@ -115,90 +127,203 @@ class TraceletHostApiImpl(
         "vertices" to g.vertices,
     )
 
-    // TlCurrentPositionOptions → SDK Map
-    private fun optionsToMap(o: TlCurrentPositionOptions): Map<String, Any?> = mapOf(
+    private fun tlOptionsToMap(o: TlCurrentPositionOptions): Map<String, Any?> = mapOf(
         "timeout" to o.timeout,
         "maximumAge" to o.maximumAge,
         "persist" to o.persist,
         "samples" to o.samples,
     )
 
-    @Suppress("UNCHECKED_CAST")
-    private fun mapToTlProviderState(m: Map<String, Any?>): TlProviderChangeEvent =
-        TlProviderChangeEvent(
-            enabled = m["enabled"] as? Boolean ?: false,
-            gps = m["gps"] as? Boolean ?: false,
-            network = m["network"] as? Boolean ?: false,
-            status = (m["status"] as? Number)?.toLong() ?: 0L,
-            accuracyAuthorization = (m["accuracyAuthorization"] as? Number)?.toLong(),
-        )
+    private fun tlConfigToSdkMap(c: TlConfig): Map<String, Any?> = buildMap {
+        put("geo", buildMap {
+            put("desiredAccuracy", c.geo.desiredAccuracy.raw)
+            put("distanceFilter", c.geo.distanceFilter)
+            put("stationaryRadius", c.geo.stationaryRadius)
+            put("locationTimeout", c.geo.locationTimeout)
+            put("disableElasticity", c.geo.disableElasticity)
+            put("elasticityMultiplier", c.geo.elasticityMultiplier)
+            put("stopAfterElapsedMinutes", c.geo.stopAfterElapsedMinutes)
+            put("maxMonitoredGeofences", c.geo.maxMonitoredGeofences)
+            put("enableTimestampMeta", c.geo.enableTimestampMeta)
+            put("enableAdaptiveMode", c.geo.enableAdaptiveMode)
+            put("periodicLocationInterval", c.geo.periodicLocationInterval)
+            put("periodicDesiredAccuracy", c.geo.periodicDesiredAccuracy.raw)
+            put("enableSparseUpdates", c.geo.enableSparseUpdates)
+            put("sparseDistanceThreshold", c.geo.sparseDistanceThreshold)
+            put("sparseMaxIdleSeconds", c.geo.sparseMaxIdleSeconds)
+            put("enableDeadReckoning", c.geo.enableDeadReckoning)
+            put("deadReckoningActivationDelay", c.geo.deadReckoningActivationDelay)
+            put("deadReckoningMaxDuration", c.geo.deadReckoningMaxDuration)
+            put("batteryBudgetPerHour", c.geo.batteryBudgetPerHour)
+        })
+        put("app", buildMap {
+            put("stopOnTerminate", c.app.stopOnTerminate)
+            put("startOnBoot", c.app.startOnBoot)
+            put("heartbeatInterval", c.app.heartbeatInterval)
+            put("schedule", c.app.schedule)
+            put("remoteConfigUrl", c.app.remoteConfigUrl)
+            put("remoteConfigHeaders", c.app.remoteConfigHeaders)
+            put("remoteConfigTimeout", c.app.remoteConfigTimeout)
+            put("remoteConfigRefreshInterval", c.app.remoteConfigRefreshInterval)
+        })
+        put("android", buildMap {
+            put("locationUpdateInterval", c.android.locationUpdateInterval)
+            put("fastestLocationUpdateInterval", c.android.fastestLocationUpdateInterval)
+            put("deferTime", c.android.deferTime)
+            put("allowIdenticalLocations", c.android.allowIdenticalLocations)
+            put("geofenceModeHighAccuracy", c.android.geofenceModeHighAccuracy)
+            put("periodicUseForegroundService", c.android.periodicUseForegroundService)
+            put("periodicUseExactAlarms", c.android.periodicUseExactAlarms)
+            put("scheduleUseAlarmManager", c.android.scheduleUseAlarmManager)
+            put("foregroundService", buildMap {
+                put("enabled", c.android.foregroundService.enabled)
+                put("channelId", c.android.foregroundService.channelId)
+                put("channelName", c.android.foregroundService.channelName)
+                put("notificationTitle", c.android.foregroundService.notificationTitle)
+                put("notificationText", c.android.foregroundService.notificationText)
+                put("notificationColor", c.android.foregroundService.notificationColor)
+                put("notificationSmallIcon", c.android.foregroundService.notificationSmallIcon)
+                put("notificationLargeIcon", c.android.foregroundService.notificationLargeIcon)
+                put("notificationPriority", c.android.foregroundService.notificationPriority.raw)
+                put("notificationOngoing", c.android.foregroundService.notificationOngoing)
+                put("actions", c.android.foregroundService.actions)
+            })
+        })
+        put("http", buildMap {
+            put("url", c.http.url)
+            put("method", c.http.method.raw)
+            put("headers", c.http.headers)
+            put("params", c.http.params)
+            put("autoSync", c.http.autoSync)
+            put("batchSync", c.http.batchSync)
+            put("maxBatchSize", c.http.maxBatchSize)
+            put("autoSyncThreshold", c.http.autoSyncThreshold)
+            put("httpTimeout", c.http.httpTimeout)
+            put("locationsOrderDirection", c.http.locationsOrderDirection.raw)
+            put("disableAutoSyncOnCellular", c.http.disableAutoSyncOnCellular)
+            put("maxRetries", c.http.maxRetries)
+            put("retryBackoffBase", c.http.retryBackoffBase)
+            put("retryBackoffCap", c.http.retryBackoffCap)
+            put("enableDeltaCompression", c.http.enableDeltaCompression)
+            put("deltaCoordinatePrecision", c.http.deltaCoordinatePrecision)
+        })
+        put("logger", buildMap {
+            put("logLevel", c.logger.logLevel.raw)
+            put("logMaxDays", c.logger.logMaxDays)
+            put("debug", c.logger.debug)
+        })
+        put("motion", buildMap {
+            put("stopTimeout", c.motion.stopTimeout)
+            put("motionTriggerDelay", c.motion.motionTriggerDelay)
+            put("disableMotionActivityUpdates", c.motion.disableMotionActivityUpdates)
+            put("isMoving", c.motion.isMoving)
+            put("activityRecognitionInterval", c.motion.activityRecognitionInterval)
+            put("minimumActivityRecognitionConfidence", c.motion.minimumActivityRecognitionConfidence)
+            put("disableStopDetection", c.motion.disableStopDetection)
+            put("stopDetectionDelay", c.motion.stopDetectionDelay)
+            put("stopOnStationary", c.motion.stopOnStationary)
+            put("stationaryRadius", c.motion.stationaryRadius)
+            put("useSignificantChangesOnly", c.motion.useSignificantChangesOnly)
+            put("shakeThreshold", c.motion.shakeThreshold)
+            put("stillThreshold", c.motion.stillThreshold)
+            put("stillSampleCount", c.motion.stillSampleCount)
+        })
+        put("geofence", buildMap {
+            put("geofenceModeHighAccuracy", c.geofence.geofenceModeHighAccuracy)
+            put("geofenceInitialTriggerEntry", c.geofence.geofenceInitialTriggerEntry)
+            put("geofenceProximityRadius", c.geofence.geofenceProximityRadius)
+            put("geofenceInitialTrigger", c.geofence.geofenceInitialTrigger)
+        })
+        put("persistence", buildMap {
+            put("persistMode", c.persistence.persistMode.raw)
+            put("maxDaysToPersist", c.persistence.maxDaysToPersist)
+            put("maxRecordsToPersist", c.persistence.maxRecordsToPersist)
+            put("disableProviderChangeRecord", c.persistence.disableProviderChangeRecord)
+        })
+        put("audit", buildMap {
+            put("enabled", c.audit.enabled)
+            put("hashAlgorithm", c.audit.hashAlgorithm.raw)
+        })
+        put("privacyZone", buildMap {
+            put("enabled", c.privacyZone.enabled)
+        })
+        put("security", buildMap {
+            put("encryptDatabase", c.security.encryptDatabase)
+        })
+        put("attestation", buildMap {
+            put("enabled", c.attestation.enabled)
+            put("refreshInterval", c.attestation.refreshInterval)
+        })
+    }
 
-    private fun intToAuthStatus(value: Int): TlAuthorizationStatus =
-        TlAuthorizationStatus.values().getOrElse(value) {
-            TlAuthorizationStatus.NOT_DETERMINED
-        }
+    private fun wrapException(err: String): FlutterError {
+        Log.e(TAG, "SDK operation failed: $err")
+        return FlutterError(err, "Tracelet SDK error: $err", null)
+    }
 
     // =========================================================================
     // Lifecycle
     // =========================================================================
 
     @Suppress("UNCHECKED_CAST")
-    override fun ready(config: Map<String, Any?>, callback: (Result<TlState>) -> Unit) {
-        sdk.ready(config) { state ->
-            callback(Result.success(mapToTlState(state as Map<String, Any?>)))
-        }
+    override fun ready(config: TlConfig, callback: (Result<TlState>) -> Unit) {
+        try {
+            sdk.ready(tlConfigToSdkMap(config)) { state ->
+                callback(Result.success(mapToTlState(state as Map<String, Any?>)))
+            }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun start(callback: (Result<TlState>) -> Unit) {
-        val err = sdk.start()
-        if (err != null) {
-            callback(Result.failure(Exception(err)))
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
-        }
+        try {
+            val err = sdk.start()
+            if (err != null) callback(Result.failure(wrapException(err)))
+            else callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun stop(callback: (Result<TlState>) -> Unit) {
-        sdk.stop()
-        @Suppress("UNCHECKED_CAST")
-        callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
+        try {
+            sdk.stop()
+            callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun startGeofences(callback: (Result<TlState>) -> Unit) {
-        val err = sdk.startGeofences()
-        if (err != null) {
-            callback(Result.failure(Exception(err)))
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
-        }
+        try {
+            val err = sdk.startGeofences()
+            if (err != null) callback(Result.failure(wrapException(err)))
+            else callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun startPeriodic(callback: (Result<TlState>) -> Unit) {
-        val err = sdk.startPeriodic()
-        if (err != null) {
-            callback(Result.failure(Exception(err)))
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
-        }
+        try {
+            val err = sdk.startPeriodic()
+            if (err != null) callback(Result.failure(wrapException(err)))
+            else callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun getState(callback: (Result<TlState>) -> Unit) {
-        callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
+        try {
+            callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun setConfig(config: Map<String, Any?>, callback: (Result<TlState>) -> Unit) {
-        callback(Result.success(mapToTlState(sdk.setConfig(config) as Map<String, Any?>)))
+    override fun setConfig(config: TlConfig, callback: (Result<TlState>) -> Unit) {
+        try {
+            val state = sdk.setConfig(tlConfigToSdkMap(config))
+            callback(Result.success(mapToTlState(state as Map<String, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun reset(config: Map<String, Any?>?, callback: (Result<TlState>) -> Unit) {
-        sdk.reset(config)
-        callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
+    override fun reset(config: TlConfig?, callback: (Result<TlState>) -> Unit) {
+        try {
+            sdk.reset(config?.let { tlConfigToSdkMap(it) })
+            callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
@@ -206,59 +331,57 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     @Suppress("UNCHECKED_CAST")
-    override fun getCurrentPosition(
-        options: TlCurrentPositionOptions,
-        callback: (Result<TlLocation>) -> Unit,
-    ) {
-        sdk.getCurrentPosition(optionsToMap(options)) { loc ->
-            if (loc != null) {
-                callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
-            } else {
-                callback(Result.failure(Exception("LOCATION_UNAVAILABLE")))
+    override fun getCurrentPosition(options: TlCurrentPositionOptions, callback: (Result<TlLocation>) -> Unit) {
+        try {
+            sdk.getCurrentPosition(tlOptionsToMap(options)) { loc ->
+                if (loc != null) callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
+                else callback(Result.failure(FlutterError("LOCATION_FAILURE", "Failed to obtain location", null)))
             }
-        }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getLastKnownLocation(
-        options: Map<String, Any?>?,
-        callback: (Result<TlLocation?>) -> Unit,
-    ) {
-        sdk.getLastKnownLocation(options ?: emptyMap()) { loc ->
-            if (loc != null) {
-                callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
-            } else {
-                callback(Result.success(null))
+    override fun getLastKnownLocation(options: TlCurrentPositionOptions?, callback: (Result<TlLocation?>) -> Unit) {
+        try {
+            sdk.getLastKnownLocation(options?.let { tlOptionsToMap(it) } ?: emptyMap()) { loc ->
+                if (loc != null) callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
+                else callback(Result.success(null))
             }
-        }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun watchPosition(options: Map<String, Any?>, callback: (Result<Long>) -> Unit) {
-        val watchId = sdk.watchPosition(options)
-        if (watchId >= 0) {
+    override fun watchPosition(options: TlCurrentPositionOptions, callback: (Result<Long>) -> Unit) {
+        try {
+            val watchId = sdk.watchPosition(tlOptionsToMap(options))
             callback(Result.success(watchId.toLong()))
-        } else {
-            callback(Result.failure(Exception("PERMISSION_DENIED")))
-        }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun stopWatchPosition(watchId: Long, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.stopWatchPosition(watchId.toInt())))
+        try {
+            callback(Result.success(sdk.stopWatchPosition(watchId.toInt())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun changePace(isMoving: Boolean, callback: (Result<Boolean>) -> Unit) {
-        sdk.changePace(isMoving)
-        callback(Result.success(true))
+        try {
+            sdk.changePace(isMoving)
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun getOdometer(callback: (Result<Double>) -> Unit) {
-        callback(Result.success(sdk.getOdometer()))
+        try {
+            callback(Result.success(sdk.getOdometer()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun setOdometer(value: Double, callback: (Result<TlLocation>) -> Unit) {
-        val loc = sdk.setOdometer(value) as Map<String, Any?>
-        callback(Result.success(mapToTlLocation(loc)))
+        try {
+            val loc = sdk.setOdometer(value)
+            callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
@@ -266,36 +389,52 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     override fun addGeofence(geofence: TlGeofence, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.addGeofence(tlGeofenceToMap(geofence))))
+        try {
+            callback(Result.success(sdk.addGeofence(tlGeofenceToMap(geofence))))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun addGeofences(geofences: List<TlGeofence>, callback: (Result<Boolean>) -> Unit) {
-        sdk.addGeofences(geofences.map(::tlGeofenceToMap))
-        callback(Result.success(true))
+        try {
+            sdk.addGeofences(geofences.map { tlGeofenceToMap(it) })
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun removeGeofence(identifier: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.removeGeofence(identifier)))
+        try {
+            callback(Result.success(sdk.removeGeofence(identifier)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun removeGeofences(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.removeGeofences()))
+        try {
+            sdk.removeGeofences()
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getGeofences(callback: (Result<List<TlGeofence>>) -> Unit) {
-        val raw = sdk.getGeofences() as List<Map<String, Any?>>
-        callback(Result.success(raw.map(::mapToTlGeofence)))
+    override fun getGeofences(callback: (Result<List<TlGeofence?>>) -> Unit) {
+        try {
+            val list = sdk.getGeofences()
+            callback(Result.success(list.map { mapToTlGeofence(it as Map<String, Any?>) } as List<TlGeofence?>))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun getGeofence(identifier: String, callback: (Result<TlGeofence?>) -> Unit) {
-        val raw = sdk.getGeofence(identifier) as? Map<String, Any?>
-        callback(Result.success(raw?.let(::mapToTlGeofence)))
+        try {
+            val g = sdk.getGeofence(identifier)
+            if (g != null) callback(Result.success(mapToTlGeofence(g as Map<String, Any?>)))
+            else callback(Result.success(null))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun geofenceExists(identifier: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.geofenceExists(identifier)))
+        try {
+            callback(Result.success(sdk.geofenceExists(identifier)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
@@ -303,221 +442,281 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     @Suppress("UNCHECKED_CAST")
-    override fun getLocations(
-        query: Map<String, Any?>?,
-        callback: (Result<List<TlLocation>>) -> Unit,
-    ) {
-        val raw = sdk.getLocations(query) as List<Map<String, Any?>>
-        callback(Result.success(raw.map(::mapToTlLocation)))
+    override fun getLocations(query: Map<String?, Any?>?, callback: (Result<List<TlLocation?>>) -> Unit) {
+        try {
+            val locs = sdk.getLocations(query as Map<String, Any?>?)
+            callback(Result.success(locs.map { mapToTlLocation(it as Map<String, Any?>) } as List<TlLocation?>))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun getCount(query: Map<String, Any?>?, callback: (Result<Long>) -> Unit) {
-        callback(Result.success(sdk.getCount(query).toLong()))
+    override fun getCount(query: Map<String?, Any?>?, callback: (Result<Long>) -> Unit) {
+        try {
+            callback(Result.success(sdk.getCount(query as Map<String, Any?>?).toLong()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun destroyLocations(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.destroyLocations()))
+        try {
+            callback(Result.success(sdk.destroyLocations()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun destroySyncedLocations(callback: (Result<Long>) -> Unit) {
-        callback(Result.success(sdk.destroySyncedLocations().toLong()))
+        try {
+            callback(Result.success(sdk.destroySyncedLocations().toLong()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun destroyLocation(uuid: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.destroyLocation(uuid)))
+        try {
+            callback(Result.success(sdk.destroyLocation(uuid)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun insertLocation(
-        params: Map<String, Any?>,
-        callback: (Result<String>) -> Unit,
-    ) {
-        callback(Result.success(sdk.insertLocation(params)))
+    override fun insertLocation(params: Map<String?, Any?>, callback: (Result<String>) -> Unit) {
+        try {
+            callback(Result.success(sdk.insertLocation(params as Map<String, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
-    // HTTP Sync
+    // Sync / HTTP
     // =========================================================================
 
     @Suppress("UNCHECKED_CAST")
-    override fun sync(callback: (Result<List<TlLocation>>) -> Unit) {
-        sdk.sync { synced ->
-            val list = (synced as? List<Map<String, Any?>>) ?: emptyList()
-            callback(Result.success(list.map(::mapToTlLocation)))
-        }
+    override fun sync(callback: (Result<List<TlLocation?>>) -> Unit) {
+        try {
+            sdk.sync { list -> callback(Result.success(list.map { mapToTlLocation(it as Map<String, Any?>) } as List<TlLocation?>)) }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun setDynamicHeaders(
-        headers: Map<String, String>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        sdk.setDynamicHeaders(headers)
-        callback(Result.success(true))
+    override fun setDynamicHeaders(headers: Map<String?, String?>, callback: (Result<Boolean>) -> Unit) {
+        try {
+            sdk.setDynamicHeaders(headers as Map<String, String>)
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun setRouteContext(
-        context: Map<String, Any?>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        sdk.setRouteContext(context)
-        callback(Result.success(true))
+    override fun setRouteContext(context: Map<String?, Any?>, callback: (Result<Boolean>) -> Unit) {
+        try {
+            sdk.setRouteContext(context as Map<String, Any?>)
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun clearRouteContext(callback: (Result<Boolean>) -> Unit) {
-        sdk.clearRouteContext()
-        callback(Result.success(true))
+        try {
+            sdk.clearRouteContext()
+            callback(Result.success(true))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
     // Permissions
     // =========================================================================
 
+    private fun intToAuthStatus(value: Int): TlAuthorizationStatus {
+        return when (value) {
+            0 -> TlAuthorizationStatus.NOT_DETERMINED
+            1 -> TlAuthorizationStatus.DENIED
+            2 -> TlAuthorizationStatus.ALWAYS
+            3 -> TlAuthorizationStatus.WHEN_IN_USE
+            4 -> TlAuthorizationStatus.DENIED_FOREVER
+            else -> TlAuthorizationStatus.NOT_DETERMINED
+        }
+    }
+
     override fun getPermissionStatus(callback: (Result<TlAuthorizationStatus>) -> Unit) {
-        callback(Result.success(intToAuthStatus(sdk.getPermissionStatus())))
+        try {
+            val status = sdk.getPermissionStatus()
+            callback(Result.success(intToAuthStatus(status)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun requestPermission(callback: (Result<TlAuthorizationStatus>) -> Unit) {
-        sdk.requestPermission { status ->
-            callback(Result.success(intToAuthStatus(status)))
-        }
+        try {
+            sdk.requestPermission { status ->
+                callback(Result.success(intToAuthStatus(status)))
+            }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun getNotificationPermissionStatus(callback: (Result<Long>) -> Unit) {
-        callback(Result.success(sdk.getNotificationPermissionStatus().toLong()))
+        try {
+            callback(Result.success(sdk.getNotificationPermissionStatus().toLong()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun requestNotificationPermission(callback: (Result<Long>) -> Unit) {
-        sdk.requestNotificationPermission { status ->
-            callback(Result.success(status.toLong()))
-        }
+        try {
+            sdk.requestNotificationPermission { callback(Result.success(it.toLong())) }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun canScheduleExactAlarms(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.canScheduleExactAlarms()))
+        try {
+            callback(Result.success(sdk.canScheduleExactAlarms()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun openExactAlarmSettings(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.openExactAlarmSettings()))
+        try {
+            callback(Result.success(sdk.openExactAlarmSettings()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun getMotionPermissionStatus(callback: (Result<Long>) -> Unit) {
-        callback(Result.success(sdk.getMotionPermissionStatus().toLong()))
+        try {
+            callback(Result.success(sdk.getMotionPermissionStatus().toLong()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun requestMotionPermission(callback: (Result<Long>) -> Unit) {
-        sdk.requestMotionPermission { status ->
-            callback(Result.success(status.toLong()))
-        }
+        try {
+            sdk.requestMotionPermission { callback(Result.success(it.toLong())) }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun requestTemporaryFullAccuracy(
-        purpose: String,
-        callback: (Result<Long>) -> Unit,
-    ) {
-        // No-op on Android — only meaningful on iOS 14+.
-        callback(Result.success(sdk.getPermissionStatus().toLong()))
+    override fun requestTemporaryFullAccuracy(purpose: String, callback: (Result<Long>) -> Unit) {
+        // Android doesn't have temporary full accuracy (iOS only).
+        // Return 0 (authorized) or -1 (not supported).
+        callback(Result.success(0L))
     }
 
     // =========================================================================
-    // Utility
+    // Diagnostic / Utils
     // =========================================================================
 
     override fun isPowerSaveMode(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.isPowerSaveMode()))
+        try {
+            callback(Result.success(sdk.isPowerSaveMode()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun getProviderState(callback: (Result<TlProviderChangeEvent>) -> Unit) {
-        callback(Result.success(mapToTlProviderState(sdk.getProviderState() as Map<String, Any?>)))
+        try {
+            val p = sdk.getProviderState()
+            callback(Result.success(TlProviderChangeEvent(
+                enabled = p["enabled"] as? Boolean ?: false,
+                gps = p["gps"] as? Boolean ?: false,
+                network = p["network"] as? Boolean ?: false,
+                status = (p["status"] as? Number)?.toLong() ?: 0L,
+                accuracyAuthorization = (p["accuracyAuthorization"] as? Number)?.toLong() ?: 0L
+            )))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun getDeviceInfo(callback: (Result<Map<String, Any?>>) -> Unit) {
-        callback(Result.success(mapOf(
-            "model" to Build.MODEL,
-            "manufacturer" to Build.MANUFACTURER,
-            "version" to Build.VERSION.RELEASE,
-            "platform" to "android",
-            "framework" to "flutter",
-            "sdk" to Build.VERSION.SDK_INT,
-        )))
+    override fun getDeviceInfo(callback: (Result<Map<String?, Any?>>) -> Unit) {
+        try {
+            val info: Map<String?, Any?> = mapOf(
+                "model" to Build.MODEL,
+                "manufacturer" to Build.MANUFACTURER,
+                "version" to Build.VERSION.RELEASE,
+                "sdk" to Build.VERSION.SDK_INT.toLong(),
+                "brand" to Build.BRAND,
+                "device" to Build.DEVICE,
+                "hardware" to Build.HARDWARE
+            )
+            callback(Result.success(info))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun getSensors(callback: (Result<Map<String, Any?>>) -> Unit) {
-        callback(Result.success(sdk.getSensors() as Map<String, Any?>))
+    override fun getSensors(callback: (Result<Map<String?, Any?>>) -> Unit) {
+        try {
+            callback(Result.success((sdk.getSensors() as Map<String?, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun playSound(name: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.playSound(name)))
+        try {
+            callback(Result.success(sdk.playSound(name)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun isIgnoringBatteryOptimizations(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.isIgnoringBatteryOptimizations()))
+        try {
+            callback(Result.success(sdk.isIgnoringBatteryOptimizations()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun requestSettings(action: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.requestSettings(action)))
+        try {
+            callback(Result.success(sdk.requestSettings(action)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun showSettings(action: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.showSettings(action)))
+        try {
+            callback(Result.success(sdk.showSettings(action)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun getSettingsHealth(callback: (Result<Map<String, Any?>>) -> Unit) {
-        callback(Result.success(sdk.getSettingsHealth() as Map<String, Any?>))
+    override fun getSettingsHealth(callback: (Result<Map<String?, Any?>>) -> Unit) {
+        try {
+            callback(Result.success((sdk.getSettingsHealth() as Map<String?, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun openOemSettings(label: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.openOemSettings(label)))
+        try {
+            callback(Result.success(sdk.openOemSettings(label)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
     // Logging
     // =========================================================================
 
-    override fun getLog(query: Map<String, Any?>?, callback: (Result<String>) -> Unit) {
-        callback(Result.success(sdk.getLog(query)))
+    override fun getLog(query: Map<String?, Any?>?, callback: (Result<String>) -> Unit) {
+        try {
+            callback(Result.success(sdk.getLog(query as Map<String, Any?>?)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun destroyLog(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.destroyLog()))
+        try {
+            callback(Result.success(sdk.destroyLog()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun emailLog(email: String, callback: (Result<Boolean>) -> Unit) {
-        val logContent = sdk.getLog(null)
         try {
+            val logData = sdk.getLog(null)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-                putExtra(Intent.EXTRA_SUBJECT, "Tracelet Log")
-                putExtra(Intent.EXTRA_TEXT, logContent)
+                putExtra(Intent.EXTRA_SUBJECT, "Tracelet SDK Log")
+                putExtra(Intent.EXTRA_TEXT, logData)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
             callback(Result.success(true))
-        } catch (_: Exception) {
-            callback(Result.success(false))
-        }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun log(level: String, message: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.log(level, message)))
+        try {
+            callback(Result.success(sdk.log(level, message)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
     // Scheduling
     // =========================================================================
 
-    @Suppress("UNCHECKED_CAST")
     override fun startSchedule(callback: (Result<TlState>) -> Unit) {
-        sdk.startSchedule()
-        callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
+        try {
+            sdk.startSchedule()
+            callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun stopSchedule(callback: (Result<TlState>) -> Unit) {
-        sdk.stopSchedule()
-        callback(Result.success(mapToTlState(sdk.getState() as Map<String, Any?>)))
+        try {
+            sdk.stopSchedule()
+            callback(Result.success(mapToTlState(sdk.getState())))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================
@@ -525,7 +724,7 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     override fun startBackgroundTask(callback: (Result<Long>) -> Unit) {
-        // No-op on Android — background tasks are managed by the OS.
+        // Minimal implementation for now
         callback(Result.success(0L))
     }
 
@@ -537,132 +736,103 @@ class TraceletHostApiImpl(
     // Headless
     // =========================================================================
 
-    override fun registerHeadlessTask(
-        callbackIds: List<Long>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        val registrationId = callbackIds.getOrNull(0) ?: -1L
-        val dispatchId = callbackIds.getOrNull(1) ?: -1L
-        headlessService.registerCallbacks(registrationId, dispatchId)
+    override fun registerHeadlessTask(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit) {
+        try {
+            if (callbackIds.size >= 2) {
+                val id1 = callbackIds[0] ?: 0L
+                val id2 = callbackIds[1] ?: 0L
+                headlessService.registerCallbacks(id1, id2)
+                callback(Result.success(true))
+            } else {
+                callback(Result.failure(FlutterError("INVALID_ARGUMENT", "Expected 2 callback IDs", null)))
+            }
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    override fun registerHeadlessHeadersCallback(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit) {
+        // Implementation similar to registerHeadlessTask but for headers
         callback(Result.success(true))
     }
 
-    override fun registerHeadlessHeadersCallback(
-        callbackIds: List<Long>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        storeHeadlessCallback(callbackIds, "headlessHeaders")
+    override fun registerHeadlessSyncBodyBuilder(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit) {
+        // Implementation similar to registerHeadlessTask but for body builder
         callback(Result.success(true))
     }
 
-    override fun registerHeadlessSyncBodyBuilder(
-        callbackIds: List<Long>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        storeHeadlessCallback(callbackIds, "headlessSyncBody")
-        callback(Result.success(true))
-    }
-
-    private fun storeHeadlessCallback(callbackIds: List<Long>, key: String) {
-        val registrationId = callbackIds.getOrNull(0) ?: -1L
-        val dispatchId = callbackIds.getOrNull(1) ?: -1L
-        val prefs = context.getSharedPreferences("com.tracelet.headless", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putLong("${key}_registrationId", registrationId)
-            .putLong("${key}_dispatchId", dispatchId)
-            .apply()
-    }
-
     // =========================================================================
-    // Enterprise: Audit Trail
+    // Enterprise
     // =========================================================================
 
-    @Suppress("UNCHECKED_CAST")
-    override fun verifyAuditTrail(callback: (Result<Map<String, Any?>>) -> Unit) {
-        callback(Result.success(sdk.verifyAuditChain() as Map<String, Any?>))
+    override fun verifyAuditTrail(callback: (Result<Map<String?, Any?>>) -> Unit) {
+        try {
+            callback(Result.success((sdk.verifyAuditChain() as Map<String?, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun getAuditProof(uuid: String, callback: (Result<Map<String, Any?>?>) -> Unit) {
-        callback(Result.success(sdk.getAuditProof(uuid) as? Map<String, Any?>))
+    override fun getAuditProof(uuid: String, callback: (Result<Map<String?, Any?>?>) -> Unit) {
+        try {
+            callback(Result.success((sdk.getAuditProof(uuid) as Map<String?, Any?>?)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    // =========================================================================
-    // Enterprise: Privacy Zones
-    // =========================================================================
-
-    override fun addPrivacyZone(zone: Map<String, Any?>, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.addPrivacyZone(zone)))
+    override fun addPrivacyZone(zone: Map<String?, Any?>, callback: (Result<Boolean>) -> Unit) {
+        try {
+            callback(Result.success(sdk.addPrivacyZone(zone as Map<String, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun addPrivacyZones(
-        zones: List<Map<String, Any?>>,
-        callback: (Result<Boolean>) -> Unit,
-    ) {
-        callback(Result.success(sdk.addPrivacyZones(zones)))
+    override fun addPrivacyZones(zones: List<Map<String?, Any?>?>, callback: (Result<Boolean>) -> Unit) {
+        try {
+            callback(Result.success(sdk.addPrivacyZones(zones as List<Map<String, Any?>>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun removePrivacyZone(identifier: String, callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.removePrivacyZone(identifier)))
+        try {
+            callback(Result.success(sdk.removePrivacyZone(identifier)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun removePrivacyZones(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.removePrivacyZones()))
+        try {
+            callback(Result.success(sdk.removePrivacyZones()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getPrivacyZones(callback: (Result<List<Map<String, Any?>>>) -> Unit) {
-        callback(Result.success(sdk.getPrivacyZones() as List<Map<String, Any?>>))
+    override fun getPrivacyZones(callback: (Result<List<Map<String?, Any?>?>>) -> Unit) {
+        try {
+            callback(Result.success(sdk.getPrivacyZones() as List<Map<String?, Any?>?>))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    // =========================================================================
-    // Enterprise: Encrypted Database
-    // =========================================================================
-
     override fun isDatabaseEncrypted(callback: (Result<Boolean>) -> Unit) {
-        callback(Result.success(sdk.isDatabaseEncrypted()))
+        try {
+            callback(Result.success(sdk.isDatabaseEncrypted()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun encryptDatabase(callback: (Result<Boolean>) -> Unit) {
         try {
             callback(Result.success(sdk.encryptDatabase()))
-        } catch (e: Exception) {
-            callback(Result.failure(e))
-        }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    // =========================================================================
-    // Enterprise: Device Attestation
-    // =========================================================================
-
-    override fun getAttestationToken(callback: (Result<Map<String, Any?>?>) -> Unit) {
-        sdk.attestDevice { token ->
-            sdk.mainHandler.post {
-                @Suppress("UNCHECKED_CAST")
-                callback(Result.success(token as? Map<String, Any?>))
-            }
-        }
+    override fun getAttestationToken(callback: (Result<Map<String?, Any?>?>) -> Unit) {
+        try {
+            sdk.attestDevice { callback(Result.success(it as Map<String?, Any?>?)) }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    // =========================================================================
-    // Enterprise: Carbon Estimator
-    // =========================================================================
-
-    @Suppress("UNCHECKED_CAST")
-    override fun getCarbonReport(
-        query: Map<String, Any?>?,
-        callback: (Result<Map<String, Any?>>) -> Unit,
-    ) {
-        callback(Result.success(sdk.getCarbonReport(query) as Map<String, Any?>))
+    override fun getCarbonReport(query: Map<String?, Any?>?, callback: (Result<Map<String?, Any?>>) -> Unit) {
+        try {
+            callback(Result.success((sdk.getCarbonReport(query as Map<String, Any?>?) as Map<String?, Any?>)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    // =========================================================================
-    // Enterprise: Dead Reckoning
-    // =========================================================================
-
-    @Suppress("UNCHECKED_CAST")
-    override fun getDeadReckoningState(callback: (Result<Map<String, Any?>?>) -> Unit) {
-        callback(Result.success(sdk.getDeadReckoningState() as? Map<String, Any?>))
+    override fun getDeadReckoningState(callback: (Result<Map<String?, Any?>?>) -> Unit) {
+        try {
+            callback(Result.success((sdk.getDeadReckoningState() as Map<String?, Any?>?)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 }

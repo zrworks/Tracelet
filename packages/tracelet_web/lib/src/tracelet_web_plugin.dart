@@ -206,11 +206,12 @@ class TraceletWebPlugin extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async {
-    _config = Map<String, Object?>.from(config);
-    _locationEngine.applyConfig(config);
-    _storage.applyConfig(config);
-    _httpEngine.applyConfig(config);
+  Future<Map<String, Object?>> ready(TlConfig config) async {
+    final map = _tlConfigToMap(config);
+    _config = map;
+    _locationEngine.applyConfig(map);
+    _storage.applyConfig(map);
+    _httpEngine.applyConfig(map);
     _permissions.startConnectivityMonitoring();
     _isReady = true;
     _events.log('info', '[Tracelet Web] ready()');
@@ -268,25 +269,27 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
-  Future<Map<String, Object?>> setConfig(Map<String, Object?> config) async {
-    _config = Map<String, Object?>.from(config);
-    _locationEngine.applyConfig(config);
-    _storage.applyConfig(config);
-    _httpEngine.applyConfig(config);
+  Future<Map<String, Object?>> setConfig(TlConfig config) async {
+    final map = _tlConfigToMap(config);
+    _config = map;
+    _locationEngine.applyConfig(map);
+    _storage.applyConfig(map);
+    _httpEngine.applyConfig(map);
     return _buildState();
   }
 
   @override
-  Future<Map<String, Object?>> reset([Map<String, Object?>? config]) async {
+  Future<Map<String, Object?>> reset([TlConfig? config]) async {
     await stop();
     await _storage.destroyLocations();
     await _storage.destroyLog();
     _geofenceEngine.removeGeofences();
-    _config = config ?? <String, Object?>{};
+    final map = config != null ? _tlConfigToMap(config) : <String, Object?>{};
+    _config = map;
     if (config != null) {
-      _locationEngine.applyConfig(config);
-      _storage.applyConfig(config);
-      _httpEngine.applyConfig(config);
+      _locationEngine.applyConfig(map);
+      _storage.applyConfig(map);
+      _httpEngine.applyConfig(map);
     }
     return _buildState();
   }
@@ -708,6 +711,105 @@ class TraceletWebPlugin extends TraceletPlatform {
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
+
+  Map<String, Object?> _tlConfigToMap(TlConfig c) {
+    return {
+      'geo': {
+        'desiredAccuracy': c.geo.desiredAccuracy.index,
+        'distanceFilter': c.geo.distanceFilter,
+        'stationaryRadius': c.geo.stationaryRadius,
+        'locationTimeout': c.geo.locationTimeout,
+        'disableElasticity': c.geo.disableElasticity,
+        'elasticityMultiplier': c.geo.elasticityMultiplier,
+        'stopAfterElapsedMinutes': c.geo.stopAfterElapsedMinutes,
+        'maxMonitoredGeofences': c.geo.maxMonitoredGeofences,
+        'enableTimestampMeta': c.geo.enableTimestampMeta,
+        'enableAdaptiveMode': c.geo.enableAdaptiveMode,
+        'periodicLocationInterval': c.geo.periodicLocationInterval,
+        'periodicDesiredAccuracy': c.geo.periodicDesiredAccuracy.index,
+        'enableSparseUpdates': c.geo.enableSparseUpdates,
+        'sparseDistanceThreshold': c.geo.sparseDistanceThreshold,
+        'sparseMaxIdleSeconds': c.geo.sparseMaxIdleSeconds,
+        'enableDeadReckoning': c.geo.enableDeadReckoning,
+        'deadReckoningActivationDelay': c.geo.deadReckoningActivationDelay,
+        'deadReckoningMaxDuration': c.geo.deadReckoningMaxDuration,
+        'batteryBudgetPerHour': c.geo.batteryBudgetPerHour,
+      },
+      'app': {
+        'stopOnTerminate': c.app.stopOnTerminate,
+        'startOnBoot': c.app.startOnBoot,
+        'heartbeatInterval': c.app.heartbeatInterval,
+        'schedule': c.app.schedule,
+        'remoteConfigUrl': c.app.remoteConfigUrl,
+        'remoteConfigHeaders': c.app.remoteConfigHeaders,
+        'remoteConfigTimeout': c.app.remoteConfigTimeout,
+        'remoteConfigRefreshInterval': c.app.remoteConfigRefreshInterval,
+      },
+      'http': {
+        'url': c.http.url,
+        'method': c.http.method.index,
+        'headers': c.http.headers,
+        'params': c.http.params,
+        'autoSync': c.http.autoSync,
+        'batchSync': c.http.batchSync,
+        'maxBatchSize': c.http.maxBatchSize,
+        'autoSyncThreshold': c.http.autoSyncThreshold,
+        'httpTimeout': c.http.httpTimeout,
+        'locationsOrderDirection': c.http.locationsOrderDirection.index,
+        'disableAutoSyncOnCellular': c.http.disableAutoSyncOnCellular,
+        'maxRetries': c.http.maxRetries,
+        'retryBackoffBase': c.http.retryBackoffBase,
+        'retryBackoffCap': c.http.retryBackoffCap,
+        'enableDeltaCompression': c.http.enableDeltaCompression,
+        'deltaCoordinatePrecision': c.http.deltaCoordinatePrecision,
+      },
+      'logger': {
+        'logLevel': c.logger.logLevel.index,
+        'logMaxDays': c.logger.logMaxDays,
+        'debug': c.logger.debug,
+      },
+      'motion': {
+        'stopTimeout': c.motion.stopTimeout,
+        'motionTriggerDelay': c.motion.motionTriggerDelay,
+        'disableMotionActivityUpdates': c.motion.disableMotionActivityUpdates,
+        'isMoving': c.motion.isMoving,
+        'activityRecognitionInterval': c.motion.activityRecognitionInterval,
+        'minimumActivityRecognitionConfidence':
+            c.motion.minimumActivityRecognitionConfidence,
+        'disableStopDetection': c.motion.disableStopDetection,
+        'stopDetectionDelay': c.motion.stopDetectionDelay,
+        'stopOnStationary': c.motion.stopOnStationary,
+        'stationaryRadius': c.motion.stationaryRadius,
+        'useSignificantChangesOnly': c.motion.useSignificantChangesOnly,
+      },
+      'geofence': {
+        'geofenceModeHighAccuracy': c.geofence.geofenceModeHighAccuracy,
+        'geofenceInitialTriggerEntry': c.geofence.geofenceInitialTriggerEntry,
+        'geofenceProximityRadius': c.geofence.geofenceProximityRadius,
+        'geofenceInitialTrigger': c.geofence.geofenceInitialTrigger,
+      },
+      'persistence': {
+        'persistMode': c.persistence.persistMode.index,
+        'maxDaysToPersist': c.persistence.maxDaysToPersist,
+        'maxRecordsToPersist': c.persistence.maxRecordsToPersist,
+        'disableProviderChangeRecord': c.persistence.disableProviderChangeRecord,
+      },
+      'audit': {
+        'enabled': c.audit.enabled,
+        'hashAlgorithm': c.audit.hashAlgorithm.index,
+      },
+      'privacyZone': {
+        'enabled': c.privacyZone.enabled,
+      },
+      'security': {
+        'encryptDatabase': c.security.encryptDatabase,
+      },
+      'attestation': {
+        'enabled': c.attestation.enabled,
+        'refreshInterval': c.attestation.refreshInterval,
+      },
+    };
+  }
 
   void _assertReady() {
     if (!_isReady) {

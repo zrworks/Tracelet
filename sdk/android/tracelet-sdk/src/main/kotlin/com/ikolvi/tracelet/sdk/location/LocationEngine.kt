@@ -10,8 +10,8 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
-import com.google.android.gms.location.*
-import com.google.android.gms.tasks.CancellationTokenSource
+import com.ikolvi.tracelet.sdk.wrapper.*
+import com.ikolvi.tracelet.sdk.wrapper.TraceletCancellationTokenSource
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
@@ -29,7 +29,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Core location tracking engine wrapping FusedLocationProviderClient.
+ * Core location tracking engine wrapping TraceletLocationClient.
  *
  * Handles:
  * - Continuous location tracking (start/stop)
@@ -80,15 +80,15 @@ class LocationEngine(
         }
     }
 
-    private val fusedClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
+    private val fusedClient: TraceletLocationClient =
+        TraceletServices.getProvider().getLocationClient(context)
 
-    private var trackingCallback: LocationCallback? = null
+    private var trackingCallback: TraceletLocationCallback? = null
 
     /** Cancellation source for the in-flight stationary→moving one-shot fix.
      *  Cancelled on `stop()` and superseded on each new transition so that
      *  late callbacks from a prior request can’t leak past a stop. */
-    private var immediateFixCts: CancellationTokenSource? = null
+    private var immediateFixCts: TraceletCancellationTokenSource? = null
     private var lastLocation: Location? = null
     /** Last GPS-quality location (accuracy ≤ 100m).
      *  Used by heartbeat to avoid returning low-accuracy significant-change fixes. */
@@ -119,7 +119,7 @@ class LocationEngine(
     var privacyZoneManager: PrivacyZoneManager? = null
 
     // watchPosition watchers: watchId -> LocationCallback
-    private val watchers = ConcurrentHashMap<Int, LocationCallback>()
+    private val watchers = ConcurrentHashMap<Int, TraceletLocationCallback>()
     private var nextWatchId = 1
 
     /** Whether a mock location warning has already been fired for this session. */
@@ -129,7 +129,7 @@ class LocationEngine(
      * Whether continuous tracking priority was auto-downgraded because the
      * GPS hardware provider is disabled (user toggled GPS off).
      *
-     * When true, the engine is using [Priority.PRIORITY_BALANCED_POWER_ACCURACY]
+     * When true, the engine is using [TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY]
      * to obtain Wi-Fi / cell tower fixes instead of the configured priority.
      * Once GPS is re-enabled, the engine restores the original priority and
      * re-subscribes to location updates.
@@ -152,7 +152,7 @@ class LocationEngine(
      *
      * If the GPS provider is disabled (user toggled GPS off in system
      * settings), the engine automatically downgrades to
-     * [Priority.PRIORITY_BALANCED_POWER_ACCURACY] so that
+     * [TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY] so that
      * Wi-Fi / cell-tower fixes are delivered instead of nothing.
      * When GPS is re-enabled, [restoreOriginalPriority] re-subscribes
      * with the configured accuracy.
@@ -163,14 +163,14 @@ class LocationEngine(
 
         val request = buildLocationRequestWithGpsFallback()
 
-        trackingCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                for (location in result.locations) {
+        trackingCallback = object : TraceletLocationCallback {
+            override fun onLocationResult(locations: List<Location>) {
+                for (location in locations) {
                     onLocationReceived(location, "location")
                 }
             }
 
-            override fun onLocationAvailability(availability: LocationAvailability) {
+            override fun onLocationAvailability(isLocationAvailable: Boolean) {
                 val providerState = buildProviderState()
                 val gpsNowEnabled = providerState["gps"] as? Boolean ?: false
 
@@ -184,7 +184,7 @@ class LocationEngine(
                     activateGpsFallback()
                 }
 
-                if (!availability.isLocationAvailable) {
+                if (!isLocationAvailable) {
                     events.sendProviderChange(providerState)
                 }
             }
@@ -377,7 +377,7 @@ class LocationEngine(
         }
 
         // Use collectSamples for all cases — including samples == 1.
-        // FusedLocationProviderClient.getCurrentLocation() may return a stale
+        // TraceletLocationClient.getCurrentLocation() may return a stale
         // cached location without waking the GPS hardware, causing
         // getCurrentPosition() to return old positions. collectSamples uses
         // requestLocationUpdates() which forces a fresh GPS fix with proper
@@ -418,39 +418,21 @@ class LocationEngine(
             return
         }
 
-        // 2. Try FusedLocationProviderClient cache.
+        // 2. Try TraceletLocationClient cache.
         try {
-            fusedClient.lastLocation
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        lastLocation = location
-                        val enriched = enrichLocation(location, "getLastKnownLocation").toMutableMap()
-                        if (extras.isNotEmpty()) enriched["extras"] = extras
-                        if (persist) {
-                            db.insertLocationAsync(enriched)
-                            onLocationPersisted?.invoke()
-                        }
-                        callback(enriched)
-                    } else {
-                        // 3. Fallback to system LocationManager — works even when
-                        //    FusedLocationProviderClient has no cache.
-                        val fallback = getSystemLastKnownLocation()
-                        if (fallback != null) {
-                            lastLocation = fallback
-                            val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
-                            if (extras.isNotEmpty()) enriched["extras"] = extras
-                            if (persist) {
-                                db.insertLocationAsync(enriched)
-                                onLocationPersisted?.invoke()
-                            }
-                            callback(enriched)
-                        } else {
-                            callback(null)
-                        }
+            fusedClient.getLastLocation(onSuccess = { location ->
+                if (location != null) {
+                    lastLocation = location
+                    val enriched = enrichLocation(location, "getLastKnownLocation").toMutableMap()
+                    if (extras.isNotEmpty()) enriched["extras"] = extras
+                    if (persist) {
+                        db.insertLocationAsync(enriched)
+                        onLocationPersisted?.invoke()
                     }
-                }
-                .addOnFailureListener {
-                    // Fallback to system LocationManager on failure too.
+                    callback(enriched)
+                } else {
+                    // 3. Fallback to system LocationManager — works even when
+                    //    TraceletLocationClient has no cache.
                     val fallback = getSystemLastKnownLocation()
                     if (fallback != null) {
                         lastLocation = fallback
@@ -465,6 +447,22 @@ class LocationEngine(
                         callback(null)
                     }
                 }
+            }, onFailure = {
+                // Fallback to system LocationManager on failure too.
+                val fallback = getSystemLastKnownLocation()
+                if (fallback != null) {
+                    lastLocation = fallback
+                    val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
+                    if (extras.isNotEmpty()) enriched["extras"] = extras
+                    if (persist) {
+                        db.insertLocationAsync(enriched)
+                        onLocationPersisted?.invoke()
+                    }
+                    callback(enriched)
+                } else {
+                    callback(null)
+                }
+            })
         } catch (e: SecurityException) {
             callback(null)
         }
@@ -504,13 +502,11 @@ class LocationEngine(
         val desiredAccuracy = (options["desiredAccuracy"] as? Number)?.toInt() ?: 0
         val priority = accuracyToPriority(desiredAccuracy)
 
-        val request = LocationRequest.Builder(priority, interval)
-            .setMinUpdateDistanceMeters(distanceFilter)
-            .build()
+        val request = TraceletLocationRequest(priority = priority, intervalMillis = interval, minUpdateDistanceMeters = distanceFilter)
 
-        val watchCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                for (location in result.locations) {
+        val watchCallback = object : TraceletLocationCallback {
+            override fun onLocationResult(locations: List<Location>) {
+                for (location in locations) {
                     // enrichLocation() already returns a MutableMap; avoid
                     // unnecessary shallow copy from toMutableMap() (A-L3).
                     val data = enrichLocation(location, "watchPosition") as MutableMap<String, Any?>
@@ -518,6 +514,7 @@ class LocationEngine(
                     events.sendWatchPosition(data)
                 }
             }
+            override fun onLocationAvailability(isLocationAvailable: Boolean) {}
         }
 
         try {
@@ -585,19 +582,15 @@ class LocationEngine(
         if (!hasPermission()) return
         // Supersede any prior in-flight one-shot so we never have two racing.
         immediateFixCts?.cancel()
-        val cts = CancellationTokenSource()
+        val cts = TraceletCancellationTokenSource()
         immediateFixCts = cts
         val priority = accuracyToPriority(config.getDesiredAccuracy())
         try {
-            fusedClient.getCurrentLocation(priority, cts.token)
-                .addOnSuccessListener { location ->
-                    // Drop the result if we’ve been superseded or stopped.
-                    if (location != null && immediateFixCts === cts) {
-                        onLocationReceived(location, "location")
-                    }
+            fusedClient.getCurrentLocation(priority, cts.token, onSuccess = { location ->
+                if (location != null && immediateFixCts === cts) {
+                    onLocationReceived(location, "location")
                 }
-                // Failures are expected (e.g. GPS warming up); the continuous
-                // stream will deliver the next fix, so we silently ignore.
+            })
         } catch (_: SecurityException) {
             // Permission revoked mid-call — ignore.
         }
@@ -904,9 +897,8 @@ class LocationEngine(
         fun fetchNext() {
             if (finished) return
             try {
-                fusedClient.getCurrentLocation(priority, null)
-                    .addOnSuccessListener { location ->
-                        if (finished) return@addOnSuccessListener
+                fusedClient.getCurrentLocation(priority, null, onSuccess = { location ->
+                        if (finished) return@getCurrentLocation
                         if (location != null) {
                             collected.add(location)
                         }
@@ -918,11 +910,7 @@ class LocationEngine(
                             handler.postDelayed({ fetchNext() }, 800L)
                         }
                     }
-                    .addOnFailureListener {
-                        if (finished) return@addOnFailureListener
-                        // Continue trying even if one sample fails
-                        handler.postDelayed({ fetchNext() }, 800L)
-                    }
+                )
             } catch (_: SecurityException) {
                 if (!finished) {
                     finished = true
@@ -956,54 +944,47 @@ class LocationEngine(
         callback(enriched)
     }
 
-    private fun buildLocationRequest(): LocationRequest {
+    private fun buildLocationRequest(): TraceletLocationRequest {
         val priority = accuracyToPriority(config.getDesiredAccuracy())
-        val builder = LocationRequest.Builder(priority, config.getLocationUpdateInterval())
-            .setMinUpdateDistanceMeters(config.getDistanceFilter().toFloat())
-            .setMinUpdateIntervalMillis(config.getFastestLocationUpdateInterval())
-
-        // Apply batched delivery delay if configured (A-M9).
-        // This allows the platform to batch location fixes and deliver them
-        // together, significantly reducing wakeup frequency and saving battery.
         val deferTime = config.getDeferTime().toLong()
-        if (deferTime > 0) {
-            builder.setMaxUpdateDelayMillis(deferTime)
-        }
-
-        return builder.build()
+        return TraceletLocationRequest(
+            priority = priority,
+            intervalMillis = config.getLocationUpdateInterval(),
+            minUpdateDistanceMeters = config.getDistanceFilter().toFloat(),
+            minUpdateIntervalMillis = config.getFastestLocationUpdateInterval(),
+            maxUpdateDelayMillis = if (deferTime > 0) deferTime else 0L
+        )
     }
 
     /**
      * Builds a [LocationRequest] with automatic GPS-off fallback.
      *
-     * If the configured accuracy requires GPS ([Priority.PRIORITY_HIGH_ACCURACY])
+     * If the configured accuracy requires GPS ([TraceletLocationPriority.PRIORITY_HIGH_ACCURACY])
      * but the GPS provider is disabled, downgrades to
-     * [Priority.PRIORITY_BALANCED_POWER_ACCURACY] so the fused engine delivers
+     * [TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY] so the fused engine delivers
      * Wi-Fi / cell-tower fixes instead of timing out.
      */
-    private fun buildLocationRequestWithGpsFallback(): LocationRequest {
+    private fun buildLocationRequestWithGpsFallback(): TraceletLocationRequest {
         val configuredPriority = accuracyToPriority(config.getDesiredAccuracy())
-        val effectivePriority = if (configuredPriority == Priority.PRIORITY_HIGH_ACCURACY &&
+        val effectivePriority = if (configuredPriority == TraceletLocationPriority.PRIORITY_HIGH_ACCURACY &&
             !isGpsProviderEnabled(context)
         ) {
             gpsFallbackActive = true
             Log.d(TAG, "GPS provider disabled — using BALANCED_POWER_ACCURACY (Wi-Fi/cell)")
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY
+            TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY
         } else {
             gpsFallbackActive = false
             configuredPriority
         }
 
-        val builder = LocationRequest.Builder(effectivePriority, config.getLocationUpdateInterval())
-            .setMinUpdateDistanceMeters(config.getDistanceFilter().toFloat())
-            .setMinUpdateIntervalMillis(config.getFastestLocationUpdateInterval())
-
         val deferTime = config.getDeferTime().toLong()
-        if (deferTime > 0) {
-            builder.setMaxUpdateDelayMillis(deferTime)
-        }
-
-        return builder.build()
+        return TraceletLocationRequest(
+            priority = effectivePriority,
+            intervalMillis = config.getLocationUpdateInterval(),
+            minUpdateDistanceMeters = config.getDistanceFilter().toFloat(),
+            minUpdateIntervalMillis = config.getFastestLocationUpdateInterval(),
+            maxUpdateDelayMillis = if (deferTime > 0) deferTime else 0L
+        )
     }
 
     /** Returns true if the configured desired accuracy requires GPS hardware. */
@@ -1020,13 +1001,12 @@ class LocationEngine(
         gpsFallbackActive = true
 
         val callback = trackingCallback ?: return
-        val fallbackRequest = LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-            config.getLocationUpdateInterval(),
+        val fallbackRequest = TraceletLocationRequest(
+            priority = TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY,
+            intervalMillis = config.getLocationUpdateInterval(),
+            minUpdateDistanceMeters = config.getDistanceFilter().toFloat(),
+            minUpdateIntervalMillis = config.getFastestLocationUpdateInterval()
         )
-            .setMinUpdateDistanceMeters(config.getDistanceFilter().toFloat())
-            .setMinUpdateIntervalMillis(config.getFastestLocationUpdateInterval())
-            .build()
 
         try {
             // Re-subscribe with lower priority (replaces existing request).
@@ -1060,11 +1040,11 @@ class LocationEngine(
 
     private fun accuracyToPriority(accuracy: Int): Int {
         return when (accuracy) {
-            0 -> Priority.PRIORITY_HIGH_ACCURACY       // high
-            1 -> Priority.PRIORITY_BALANCED_POWER_ACCURACY // medium
-            2 -> Priority.PRIORITY_LOW_POWER            // low
-            3 -> Priority.PRIORITY_PASSIVE              // passive
-            else -> Priority.PRIORITY_HIGH_ACCURACY
+            0 -> TraceletLocationPriority.PRIORITY_HIGH_ACCURACY       // high
+            1 -> TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY // medium
+            2 -> TraceletLocationPriority.PRIORITY_LOW_POWER            // low
+            3 -> TraceletLocationPriority.PRIORITY_PASSIVE              // passive
+            else -> TraceletLocationPriority.PRIORITY_HIGH_ACCURACY
         }
     }
 

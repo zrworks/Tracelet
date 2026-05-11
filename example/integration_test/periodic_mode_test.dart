@@ -4,86 +4,108 @@ import 'package:tracelet/tracelet.dart';
 
 /// Integration tests for the Periodic Mode feature.
 ///
-/// These tests verify GeoConfig serialization for periodic mode properties,
+/// These tests verify GeoConfig and AndroidConfig serialization for periodic mode properties,
 /// tracking mode enum, and configuration combinations. Actual periodic
 /// scheduling requires a real device with background execution.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('GeoConfig — Periodic Mode Properties', () {
-    testWidgets('GeoConfig accepts periodic mode properties', (tester) async {
-      const config = GeoConfig(
-        periodicLocationInterval: 300,
-        periodicDesiredAccuracy: DesiredAccuracy.high,
-        periodicUseForegroundService: true,
-        periodicUseExactAlarms: false,
+  group('Periodic Mode Properties', () {
+    testWidgets('Config accepts periodic mode properties', (tester) async {
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 300,
+          periodicDesiredAccuracy: DesiredAccuracy.high,
+        ),
+        android: AndroidConfig(
+          periodicUseForegroundService: true,
+          periodicUseExactAlarms: false,
+        ),
       );
 
-      expect(config.periodicLocationInterval, 300);
-      expect(config.periodicDesiredAccuracy, DesiredAccuracy.high);
-      expect(config.periodicUseForegroundService, isTrue);
-      expect(config.periodicUseExactAlarms, isFalse);
+      expect(config.geo.periodicLocationInterval, 300);
+      expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.high);
+      expect(config.android.periodicUseForegroundService, isTrue);
+      expect(config.android.periodicUseExactAlarms, isFalse);
     });
 
-    testWidgets('GeoConfig periodic defaults are correct', (tester) async {
-      const config = GeoConfig();
+    testWidgets('Periodic defaults are correct', (tester) async {
+      const config = Config();
 
-      expect(config.periodicLocationInterval, 900);
-      expect(config.periodicDesiredAccuracy, DesiredAccuracy.medium);
-      expect(config.periodicUseForegroundService, isFalse);
-      expect(config.periodicUseExactAlarms, isFalse);
+      expect(config.geo.periodicLocationInterval, 900);
+      expect(config.geo.periodicDesiredAccuracy, DesiredAccuracy.medium);
+      expect(config.android.periodicUseForegroundService, isFalse);
+      expect(config.android.periodicUseExactAlarms, isFalse);
     });
 
-    testWidgets('GeoConfig.toMap includes periodic fields', (tester) async {
-      const config = GeoConfig(
-        periodicLocationInterval: 1800,
-        periodicDesiredAccuracy: DesiredAccuracy.low,
-        periodicUseForegroundService: false,
-        periodicUseExactAlarms: true,
+    testWidgets('Config.toMap includes periodic fields', (tester) async {
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 1800,
+          periodicDesiredAccuracy: DesiredAccuracy.low,
+        ),
+        android: AndroidConfig(
+          periodicUseForegroundService: false,
+          periodicUseExactAlarms: true,
+        ),
       );
       final map = config.toMap();
+      final geoMap = map['geo'] as Map<String, Object?>;
+      final androidMap = map['android'] as Map<String, Object?>;
 
-      expect(map['periodicLocationInterval'], 1800);
-      expect(map['periodicUseExactAlarms'], isTrue);
+      expect(geoMap['periodicLocationInterval'], 1800);
+      expect(androidMap['periodicUseExactAlarms'], isTrue);
     });
   });
 
   group('Periodic Mode — Configuration Combinations', () {
     testWidgets('WorkManager config (default)', (tester) async {
-      const config = GeoConfig(
-        periodicLocationInterval: 900,
-        periodicDesiredAccuracy: DesiredAccuracy.medium,
-        periodicUseForegroundService: false,
-        periodicUseExactAlarms: false,
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 900,
+          periodicDesiredAccuracy: DesiredAccuracy.medium,
+        ),
+        android: AndroidConfig(
+          periodicUseForegroundService: false,
+          periodicUseExactAlarms: false,
+        ),
       );
 
       // WorkManager: no notification, 15-min minimum
-      expect(config.periodicUseForegroundService, isFalse);
-      expect(config.periodicUseExactAlarms, isFalse);
-      expect(config.periodicLocationInterval, greaterThanOrEqualTo(60));
+      expect(config.android.periodicUseForegroundService, isFalse);
+      expect(config.android.periodicUseExactAlarms, isFalse);
+      expect(config.geo.periodicLocationInterval, greaterThanOrEqualTo(60));
     });
 
     testWidgets('Foreground Service config', (tester) async {
-      const config = GeoConfig(
-        periodicLocationInterval: 300, // 5 min — needs FG service
-        periodicDesiredAccuracy: DesiredAccuracy.high,
-        periodicUseForegroundService: true,
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 300, // 5 min — needs FG service
+          periodicDesiredAccuracy: DesiredAccuracy.high,
+        ),
+        android: AndroidConfig(
+          periodicUseForegroundService: true,
+        ),
       );
 
-      expect(config.periodicUseForegroundService, isTrue);
-      expect(config.periodicLocationInterval, 300);
+      expect(config.android.periodicUseForegroundService, isTrue);
+      expect(config.geo.periodicLocationInterval, 300);
     });
 
     testWidgets('Exact Alarms config', (tester) async {
-      const config = GeoConfig(
-        periodicLocationInterval: 1800,
-        periodicDesiredAccuracy: DesiredAccuracy.medium,
-        periodicUseForegroundService: false,
-        periodicUseExactAlarms: true,
+      const config = Config(
+        geo: GeoConfig(
+          periodicLocationInterval: 1800,
+          periodicDesiredAccuracy: DesiredAccuracy.medium,
+        ),
+        android: AndroidConfig(
+          periodicUseForegroundService: false,
+          periodicUseExactAlarms: true,
+        ),
       );
 
-      expect(config.periodicUseExactAlarms, isTrue);
-      expect(config.periodicUseForegroundService, isFalse);
+      expect(config.android.periodicUseExactAlarms, isTrue);
+      expect(config.android.periodicUseForegroundService, isFalse);
     });
 
     testWidgets('min interval boundary (60s)', (tester) async {
@@ -118,6 +140,8 @@ void main() {
         geo: const GeoConfig(
           periodicLocationInterval: 600,
           periodicDesiredAccuracy: DesiredAccuracy.high,
+        ),
+        android: const AndroidConfig(
           periodicUseForegroundService: true,
           periodicUseExactAlarms: false,
         ),
@@ -125,29 +149,33 @@ void main() {
 
       final map = config.toMap();
       final geoMap = map['geo'] as Map<String, Object?>;
+      final androidMap = map['android'] as Map<String, Object?>;
       expect(geoMap['periodicLocationInterval'], 600);
-      expect(geoMap['periodicUseForegroundService'], isTrue);
+      expect(androidMap['periodicUseForegroundService'], isTrue);
     });
 
     testWidgets('periodic config combined with app config', (tester) async {
       final config = Config(
         geo: const GeoConfig(
           periodicLocationInterval: 900,
-          periodicUseForegroundService: true,
         ),
-        app: const AppConfig(
-          stopOnTerminate: false,
-          startOnBoot: true,
+        android: const AndroidConfig(
+          periodicUseForegroundService: true,
           foregroundService: ForegroundServiceConfig(
             notificationTitle: 'Periodic Tracking',
             notificationText: 'Check-in every 15 min',
           ),
+        ),
+        app: const AppConfig(
+          stopOnTerminate: false,
+          startOnBoot: true,
         ),
       );
 
       final map = config.toMap();
       expect(map.containsKey('geo'), isTrue);
       expect(map.containsKey('app'), isTrue);
+      expect(map.containsKey('android'), isTrue);
     });
   });
 }

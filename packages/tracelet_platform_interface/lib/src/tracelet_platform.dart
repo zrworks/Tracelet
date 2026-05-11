@@ -38,7 +38,7 @@ abstract class TraceletPlatform extends PlatformInterface {
 
   /// Initialize the plugin with the given [config].
   /// Returns the current [State] as a map.
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) {
+  Future<Map<String, Object?>> ready(TlConfig config) {
     throw UnimplementedError('ready() has not been implemented.');
   }
 
@@ -72,13 +72,13 @@ abstract class TraceletPlatform extends PlatformInterface {
   }
 
   /// Update configuration. Returns [State] map.
-  Future<Map<String, Object?>> setConfig(Map<String, Object?> config) {
+  Future<Map<String, Object?>> setConfig(TlConfig config) {
     throw UnimplementedError('setConfig() has not been implemented.');
   }
 
   /// Reset to default configuration. Optionally apply [config].
   /// Returns [State] map.
-  Future<Map<String, Object?>> reset([Map<String, Object?>? config]) {
+  Future<Map<String, Object?>> reset([TlConfig? config]) {
     throw UnimplementedError('reset() has not been implemented.');
   }
 

@@ -129,7 +129,7 @@ class PigeonTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async {
+  Future<Map<String, Object?>> ready(TlConfig config) async {
     final state = await _api.ready(config);
     return _stateToMap(state);
   }
@@ -160,12 +160,12 @@ class PigeonTracelet extends TraceletPlatform {
   }
 
   @override
-  Future<Map<String, Object?>> setConfig(Map<String, Object?> config) async {
+  Future<Map<String, Object?>> setConfig(TlConfig config) async {
     return _stateToMap(await _api.setConfig(config));
   }
 
   @override
-  Future<Map<String, Object?>> reset([Map<String, Object?>? config]) async {
+  Future<Map<String, Object?>> reset([TlConfig? config]) async {
     return _stateToMap(await _api.reset(config));
   }
 
@@ -185,14 +185,16 @@ class PigeonTracelet extends TraceletPlatform {
   Future<Map<String, Object?>> getLastKnownLocation([
     Map<String, Object?>? options,
   ]) async {
-    final location = await _api.getLastKnownLocation(options);
+    final location = await _api.getLastKnownLocation(
+      options != null ? _mapToOptions(options) : null,
+    );
     if (location == null) return <String, Object?>{};
     return _locationToMap(location);
   }
 
   @override
   Future<int> watchPosition(Map<String, Object?> options) =>
-      _api.watchPosition(options);
+      _api.watchPosition(_mapToOptions(options));
 
   @override
   Future<bool> stopWatchPosition(int watchId) =>
@@ -231,7 +233,7 @@ class PigeonTracelet extends TraceletPlatform {
   @override
   Future<List<Map<String, Object?>>> getGeofences() async {
     final geofences = await _api.getGeofences();
-    return geofences.map(_geofenceToMap).toList();
+    return geofences.whereType<TlGeofence>().map(_geofenceToMap).toList();
   }
 
   @override
@@ -252,8 +254,8 @@ class PigeonTracelet extends TraceletPlatform {
   Future<List<Map<String, Object?>>> getLocations([
     Map<String, Object?>? query,
   ]) async {
-    final locations = await _api.getLocations(query);
-    return locations.map(_locationToMap).toList();
+    final locations = await _api.getLocations(query?.cast<String?, Object?>());
+    return locations.whereType<TlLocation>().map(_locationToMap).toList();
   }
 
   @override
@@ -279,7 +281,7 @@ class PigeonTracelet extends TraceletPlatform {
   @override
   Future<List<Map<String, Object?>>> sync() async {
     final locations = await _api.sync();
-    return locations.map(_locationToMap).toList();
+    return locations.whereType<TlLocation>().map(_locationToMap).toList();
   }
 
   @override
@@ -353,10 +355,16 @@ class PigeonTracelet extends TraceletPlatform {
   }
 
   @override
-  Future<Map<String, Object?>> getDeviceInfo() => _api.getDeviceInfo();
+  Future<Map<String, Object?>> getDeviceInfo() async {
+    final result = await _api.getDeviceInfo();
+    return result.cast<String, Object?>();
+  }
 
   @override
-  Future<Map<String, Object?>> getSensors() => _api.getSensors();
+  Future<Map<String, Object?>> getSensors() async {
+    final result = await _api.getSensors();
+    return result.cast<String, Object?>();
+  }
 
   @override
   Future<bool> playSound(String name) => _api.playSound(name);
@@ -372,7 +380,10 @@ class PigeonTracelet extends TraceletPlatform {
   Future<bool> showSettings(String action) => _api.showSettings(action);
 
   @override
-  Future<Map<String, Object?>> getSettingsHealth() => _api.getSettingsHealth();
+  Future<Map<String, Object?>> getSettingsHealth() async {
+    final result = await _api.getSettingsHealth();
+    return result.cast<String, Object?>();
+  }
 
   @override
   Future<bool> openOemSettings(String label) => _api.openOemSettings(label);
@@ -438,11 +449,16 @@ class PigeonTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> verifyAuditTrail() => _api.verifyAuditTrail();
+  Future<Map<String, Object?>> verifyAuditTrail() async {
+    final result = await _api.verifyAuditTrail();
+    return result.cast<String, Object?>();
+  }
 
   @override
-  Future<Map<String, Object?>?> getAuditProof(String uuid) =>
-      _api.getAuditProof(uuid);
+  Future<Map<String, Object?>?> getAuditProof(String uuid) async {
+    final result = await _api.getAuditProof(uuid);
+    return result?.cast<String, Object?>();
+  }
 
   // ---------------------------------------------------------------------------
   // Enterprise: Privacy Zones
@@ -464,8 +480,13 @@ class PigeonTracelet extends TraceletPlatform {
   Future<bool> removePrivacyZones() => _api.removePrivacyZones();
 
   @override
-  Future<List<Map<String, Object?>>> getPrivacyZones() =>
-      _api.getPrivacyZones();
+  Future<List<Map<String, Object?>>> getPrivacyZones() async {
+    final result = await _api.getPrivacyZones();
+    return result
+        .whereType<Map<Object?, Object?>>()
+        .map((m) => m.cast<String, Object?>())
+        .toList();
+  }
 
   // ---------------------------------------------------------------------------
   // Enterprise: Encrypted Database
@@ -482,24 +503,30 @@ class PigeonTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>?> getAttestationToken() =>
-      _api.getAttestationToken();
+  Future<Map<String, Object?>?> getAttestationToken() async {
+    final result = await _api.getAttestationToken();
+    return result?.cast<String, Object?>();
+  }
 
   // ---------------------------------------------------------------------------
   // Enterprise: Carbon Estimator
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>> getCarbonReport([Map<String, Object?>? query]) =>
-      _api.getCarbonReport(query);
+  Future<Map<String, Object?>> getCarbonReport([Map<String, Object?>? query]) async {
+    final result = await _api.getCarbonReport(query);
+    return result.cast<String, Object?>();
+  }
 
   // ---------------------------------------------------------------------------
   // Enterprise: Dead Reckoning
   // ---------------------------------------------------------------------------
 
   @override
-  Future<Map<String, Object?>?> getDeadReckoningState() =>
-      _api.getDeadReckoningState();
+  Future<Map<String, Object?>?> getDeadReckoningState() async {
+    final result = await _api.getDeadReckoningState();
+    return result?.cast<String, Object?>();
+  }
 
   // ---------------------------------------------------------------------------
   // Event Streams (via PigeonEventReceiver / TraceletEventApi)

@@ -41,10 +41,6 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["enableDeadReckoning"] = c.geo.enableDeadReckoning
         dict["deadReckoningActivationDelay"] = c.geo.deadReckoningActivationDelay
         dict["deadReckoningMaxDuration"] = c.geo.deadReckoningMaxDuration
-        dict["trackingAccuracyThreshold"] = c.geo.filter.trackingAccuracyThreshold
-        dict["maxImpliedSpeed"] = c.geo.filter.maxImpliedSpeed
-        dict["odometerAccuracyThreshold"] = c.geo.filter.odometerAccuracyThreshold
-        dict["locationFilterPolicy"] = c.geo.filter.policy.rawValue
 
         // App
         dict["stopOnTerminate"] = c.app.stopOnTerminate

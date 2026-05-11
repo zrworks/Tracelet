@@ -81,7 +81,6 @@ class FlutterError (
   val details: Any? = null
 ) : Throwable()
 
-/** Desired accuracy level for location requests. */
 enum class TlDesiredAccuracy(val raw: Int) {
   HIGH(0),
   MEDIUM(1),
@@ -96,7 +95,6 @@ enum class TlDesiredAccuracy(val raw: Int) {
   }
 }
 
-/** Tracking mode. */
 enum class TlTrackingMode(val raw: Int) {
   LOCATION(0),
   GEOFENCES(1),
@@ -109,7 +107,6 @@ enum class TlTrackingMode(val raw: Int) {
   }
 }
 
-/** Geofence transition action. */
 enum class TlGeofenceAction(val raw: Int) {
   ENTER(0),
   EXIT(1),
@@ -122,7 +119,6 @@ enum class TlGeofenceAction(val raw: Int) {
   }
 }
 
-/** Authorization status for location permissions. */
 enum class TlAuthorizationStatus(val raw: Int) {
   NOT_DETERMINED(0),
   DENIED(1),
@@ -137,7 +133,6 @@ enum class TlAuthorizationStatus(val raw: Int) {
   }
 }
 
-/** HTTP method for sync. */
 enum class TlHttpMethod(val raw: Int) {
   POST(0),
   PUT(1);
@@ -149,11 +144,843 @@ enum class TlHttpMethod(val raw: Int) {
   }
 }
 
-/**
- * Coordinates sub-message within a location.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+enum class TlIosActivityType(val raw: Int) {
+  OTHER(0),
+  AUTOMOTIVE(1),
+  FITNESS(2),
+  OTHER_NAVIGATION(3),
+  AIRBORNE(4);
+
+  companion object {
+    fun ofRaw(raw: Int): TlIosActivityType? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlNotificationPriority(val raw: Int) {
+  MIN(0),
+  LOW(1),
+  DEFAULT_PRIORITY(2),
+  HIGH(3),
+  MAX(4);
+
+  companion object {
+    fun ofRaw(raw: Int): TlNotificationPriority? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlLocationOrderDirection(val raw: Int) {
+  ASCENDING(0),
+  DESCENDING(1);
+
+  companion object {
+    fun ofRaw(raw: Int): TlLocationOrderDirection? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlLocationActivityType(val raw: Int) {
+  STILL(0),
+  WALKING(1),
+  RUNNING(2),
+  ON_FOOT(3),
+  IN_VEHICLE(4),
+  ON_BICYCLE(5),
+  UNKNOWN(6);
+
+  companion object {
+    fun ofRaw(raw: Int): TlLocationActivityType? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlLogLevel(val raw: Int) {
+  OFF(0),
+  ERROR(1),
+  WARN(2),
+  INFO(3),
+  DEBUG(4),
+  VERBOSE(5);
+
+  companion object {
+    fun ofRaw(raw: Int): TlLogLevel? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlPersistMode(val raw: Int) {
+  ALL(0),
+  LOCATION(1),
+  GEOFENCE(2),
+  NONE(3);
+
+  companion object {
+    fun ofRaw(raw: Int): TlPersistMode? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlHashAlgorithm(val raw: Int) {
+  SHA256(0);
+
+  companion object {
+    fun ofRaw(raw: Int): TlHashAlgorithm? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class TlAuthorizationRequest(val raw: Int) {
+  ALWAYS(0),
+  WHEN_IN_USE(1);
+
+  companion object {
+    fun ofRaw(raw: Int): TlAuthorizationRequest? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlGeoConfig (
+  val desiredAccuracy: TlDesiredAccuracy,
+  val distanceFilter: Double,
+  val stationaryRadius: Double,
+  val locationTimeout: Long,
+  val disableElasticity: Boolean,
+  val elasticityMultiplier: Double,
+  val stopAfterElapsedMinutes: Long,
+  val maxMonitoredGeofences: Long,
+  val enableTimestampMeta: Boolean,
+  val enableAdaptiveMode: Boolean,
+  val periodicLocationInterval: Long,
+  val periodicDesiredAccuracy: TlDesiredAccuracy,
+  val enableSparseUpdates: Boolean,
+  val sparseDistanceThreshold: Double,
+  val sparseMaxIdleSeconds: Long,
+  val enableDeadReckoning: Boolean,
+  val deadReckoningActivationDelay: Long,
+  val deadReckoningMaxDuration: Long,
+  val batteryBudgetPerHour: Double
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlGeoConfig {
+      val desiredAccuracy = pigeonVar_list[0] as TlDesiredAccuracy
+      val distanceFilter = pigeonVar_list[1] as Double
+      val stationaryRadius = pigeonVar_list[2] as Double
+      val locationTimeout = pigeonVar_list[3] as Long
+      val disableElasticity = pigeonVar_list[4] as Boolean
+      val elasticityMultiplier = pigeonVar_list[5] as Double
+      val stopAfterElapsedMinutes = pigeonVar_list[6] as Long
+      val maxMonitoredGeofences = pigeonVar_list[7] as Long
+      val enableTimestampMeta = pigeonVar_list[8] as Boolean
+      val enableAdaptiveMode = pigeonVar_list[9] as Boolean
+      val periodicLocationInterval = pigeonVar_list[10] as Long
+      val periodicDesiredAccuracy = pigeonVar_list[11] as TlDesiredAccuracy
+      val enableSparseUpdates = pigeonVar_list[12] as Boolean
+      val sparseDistanceThreshold = pigeonVar_list[13] as Double
+      val sparseMaxIdleSeconds = pigeonVar_list[14] as Long
+      val enableDeadReckoning = pigeonVar_list[15] as Boolean
+      val deadReckoningActivationDelay = pigeonVar_list[16] as Long
+      val deadReckoningMaxDuration = pigeonVar_list[17] as Long
+      val batteryBudgetPerHour = pigeonVar_list[18] as Double
+      return TlGeoConfig(desiredAccuracy, distanceFilter, stationaryRadius, locationTimeout, disableElasticity, elasticityMultiplier, stopAfterElapsedMinutes, maxMonitoredGeofences, enableTimestampMeta, enableAdaptiveMode, periodicLocationInterval, periodicDesiredAccuracy, enableSparseUpdates, sparseDistanceThreshold, sparseMaxIdleSeconds, enableDeadReckoning, deadReckoningActivationDelay, deadReckoningMaxDuration, batteryBudgetPerHour)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      desiredAccuracy,
+      distanceFilter,
+      stationaryRadius,
+      locationTimeout,
+      disableElasticity,
+      elasticityMultiplier,
+      stopAfterElapsedMinutes,
+      maxMonitoredGeofences,
+      enableTimestampMeta,
+      enableAdaptiveMode,
+      periodicLocationInterval,
+      periodicDesiredAccuracy,
+      enableSparseUpdates,
+      sparseDistanceThreshold,
+      sparseMaxIdleSeconds,
+      enableDeadReckoning,
+      deadReckoningActivationDelay,
+      deadReckoningMaxDuration,
+      batteryBudgetPerHour,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlGeoConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlAppConfig (
+  val stopOnTerminate: Boolean,
+  val startOnBoot: Boolean,
+  val heartbeatInterval: Long,
+  val schedule: List<String?>,
+  val remoteConfigUrl: String? = null,
+  val remoteConfigHeaders: Map<String?, String?>? = null,
+  val remoteConfigTimeout: Long,
+  val remoteConfigRefreshInterval: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlAppConfig {
+      val stopOnTerminate = pigeonVar_list[0] as Boolean
+      val startOnBoot = pigeonVar_list[1] as Boolean
+      val heartbeatInterval = pigeonVar_list[2] as Long
+      val schedule = pigeonVar_list[3] as List<String?>
+      val remoteConfigUrl = pigeonVar_list[4] as String?
+      val remoteConfigHeaders = pigeonVar_list[5] as Map<String?, String?>?
+      val remoteConfigTimeout = pigeonVar_list[6] as Long
+      val remoteConfigRefreshInterval = pigeonVar_list[7] as Long
+      return TlAppConfig(stopOnTerminate, startOnBoot, heartbeatInterval, schedule, remoteConfigUrl, remoteConfigHeaders, remoteConfigTimeout, remoteConfigRefreshInterval)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      stopOnTerminate,
+      startOnBoot,
+      heartbeatInterval,
+      schedule,
+      remoteConfigUrl,
+      remoteConfigHeaders,
+      remoteConfigTimeout,
+      remoteConfigRefreshInterval,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlAppConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlForegroundServiceConfig (
+  val enabled: Boolean,
+  val channelId: String,
+  val channelName: String,
+  val notificationTitle: String,
+  val notificationText: String,
+  val notificationColor: String? = null,
+  val notificationSmallIcon: String? = null,
+  val notificationLargeIcon: String? = null,
+  val notificationPriority: TlNotificationPriority,
+  val notificationOngoing: Boolean,
+  val actions: List<String?>
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlForegroundServiceConfig {
+      val enabled = pigeonVar_list[0] as Boolean
+      val channelId = pigeonVar_list[1] as String
+      val channelName = pigeonVar_list[2] as String
+      val notificationTitle = pigeonVar_list[3] as String
+      val notificationText = pigeonVar_list[4] as String
+      val notificationColor = pigeonVar_list[5] as String?
+      val notificationSmallIcon = pigeonVar_list[6] as String?
+      val notificationLargeIcon = pigeonVar_list[7] as String?
+      val notificationPriority = pigeonVar_list[8] as TlNotificationPriority
+      val notificationOngoing = pigeonVar_list[9] as Boolean
+      val actions = pigeonVar_list[10] as List<String?>
+      return TlForegroundServiceConfig(enabled, channelId, channelName, notificationTitle, notificationText, notificationColor, notificationSmallIcon, notificationLargeIcon, notificationPriority, notificationOngoing, actions)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      enabled,
+      channelId,
+      channelName,
+      notificationTitle,
+      notificationText,
+      notificationColor,
+      notificationSmallIcon,
+      notificationLargeIcon,
+      notificationPriority,
+      notificationOngoing,
+      actions,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlForegroundServiceConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlAndroidConfig (
+  val locationUpdateInterval: Long,
+  val fastestLocationUpdateInterval: Long,
+  val deferTime: Long,
+  val allowIdenticalLocations: Boolean,
+  val geofenceModeHighAccuracy: Boolean,
+  val periodicUseForegroundService: Boolean,
+  val periodicUseExactAlarms: Boolean,
+  val scheduleUseAlarmManager: Boolean,
+  val foregroundService: TlForegroundServiceConfig
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlAndroidConfig {
+      val locationUpdateInterval = pigeonVar_list[0] as Long
+      val fastestLocationUpdateInterval = pigeonVar_list[1] as Long
+      val deferTime = pigeonVar_list[2] as Long
+      val allowIdenticalLocations = pigeonVar_list[3] as Boolean
+      val geofenceModeHighAccuracy = pigeonVar_list[4] as Boolean
+      val periodicUseForegroundService = pigeonVar_list[5] as Boolean
+      val periodicUseExactAlarms = pigeonVar_list[6] as Boolean
+      val scheduleUseAlarmManager = pigeonVar_list[7] as Boolean
+      val foregroundService = pigeonVar_list[8] as TlForegroundServiceConfig
+      return TlAndroidConfig(locationUpdateInterval, fastestLocationUpdateInterval, deferTime, allowIdenticalLocations, geofenceModeHighAccuracy, periodicUseForegroundService, periodicUseExactAlarms, scheduleUseAlarmManager, foregroundService)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      locationUpdateInterval,
+      fastestLocationUpdateInterval,
+      deferTime,
+      allowIdenticalLocations,
+      geofenceModeHighAccuracy,
+      periodicUseForegroundService,
+      periodicUseExactAlarms,
+      scheduleUseAlarmManager,
+      foregroundService,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlAndroidConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlIosConfig (
+  val activityType: TlIosActivityType,
+  val useSignificantChangesOnly: Boolean,
+  val showsBackgroundLocationIndicator: Boolean,
+  val pausesLocationUpdatesAutomatically: Boolean,
+  val locationAuthorizationRequest: TlAuthorizationRequest,
+  val disableLocationAuthorizationAlert: Boolean,
+  val preventSuspend: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlIosConfig {
+      val activityType = pigeonVar_list[0] as TlIosActivityType
+      val useSignificantChangesOnly = pigeonVar_list[1] as Boolean
+      val showsBackgroundLocationIndicator = pigeonVar_list[2] as Boolean
+      val pausesLocationUpdatesAutomatically = pigeonVar_list[3] as Boolean
+      val locationAuthorizationRequest = pigeonVar_list[4] as TlAuthorizationRequest
+      val disableLocationAuthorizationAlert = pigeonVar_list[5] as Boolean
+      val preventSuspend = pigeonVar_list[6] as Boolean
+      return TlIosConfig(activityType, useSignificantChangesOnly, showsBackgroundLocationIndicator, pausesLocationUpdatesAutomatically, locationAuthorizationRequest, disableLocationAuthorizationAlert, preventSuspend)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      activityType,
+      useSignificantChangesOnly,
+      showsBackgroundLocationIndicator,
+      pausesLocationUpdatesAutomatically,
+      locationAuthorizationRequest,
+      disableLocationAuthorizationAlert,
+      preventSuspend,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlIosConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlHttpConfig (
+  val url: String? = null,
+  val method: TlHttpMethod,
+  val headers: Map<String?, String?>? = null,
+  val params: Map<String?, Any?>? = null,
+  val autoSync: Boolean,
+  val batchSync: Boolean,
+  val maxBatchSize: Long,
+  val sslPinningFingerprints: List<String?>? = null,
+  val sslPinningCertificates: List<String?>? = null,
+  val httpRootProperty: String? = null,
+  val autoSyncThreshold: Long,
+  val httpTimeout: Long,
+  val locationsOrderDirection: TlLocationOrderDirection,
+  val extras: Map<String?, Any?>? = null,
+  val disableAutoSyncOnCellular: Boolean,
+  val maxRetries: Long,
+  val retryBackoffBase: Long,
+  val retryBackoffCap: Long,
+  val enableDeltaCompression: Boolean,
+  val deltaCoordinatePrecision: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlHttpConfig {
+      val url = pigeonVar_list[0] as String?
+      val method = pigeonVar_list[1] as TlHttpMethod
+      val headers = pigeonVar_list[2] as Map<String?, String?>?
+      val params = pigeonVar_list[3] as Map<String?, Any?>?
+      val autoSync = pigeonVar_list[4] as Boolean
+      val batchSync = pigeonVar_list[5] as Boolean
+      val maxBatchSize = pigeonVar_list[6] as Long
+      val sslPinningFingerprints = pigeonVar_list[7] as List<String?>?
+      val sslPinningCertificates = pigeonVar_list[8] as List<String?>?
+      val httpRootProperty = pigeonVar_list[9] as String?
+      val autoSyncThreshold = pigeonVar_list[10] as Long
+      val httpTimeout = pigeonVar_list[11] as Long
+      val locationsOrderDirection = pigeonVar_list[12] as TlLocationOrderDirection
+      val extras = pigeonVar_list[13] as Map<String?, Any?>?
+      val disableAutoSyncOnCellular = pigeonVar_list[14] as Boolean
+      val maxRetries = pigeonVar_list[15] as Long
+      val retryBackoffBase = pigeonVar_list[16] as Long
+      val retryBackoffCap = pigeonVar_list[17] as Long
+      val enableDeltaCompression = pigeonVar_list[18] as Boolean
+      val deltaCoordinatePrecision = pigeonVar_list[19] as Long
+      return TlHttpConfig(url, method, headers, params, autoSync, batchSync, maxBatchSize, sslPinningFingerprints, sslPinningCertificates, httpRootProperty, autoSyncThreshold, httpTimeout, locationsOrderDirection, extras, disableAutoSyncOnCellular, maxRetries, retryBackoffBase, retryBackoffCap, enableDeltaCompression, deltaCoordinatePrecision)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      url,
+      method,
+      headers,
+      params,
+      autoSync,
+      batchSync,
+      maxBatchSize,
+      sslPinningFingerprints,
+      sslPinningCertificates,
+      httpRootProperty,
+      autoSyncThreshold,
+      httpTimeout,
+      locationsOrderDirection,
+      extras,
+      disableAutoSyncOnCellular,
+      maxRetries,
+      retryBackoffBase,
+      retryBackoffCap,
+      enableDeltaCompression,
+      deltaCoordinatePrecision,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlHttpConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlConfig (
+  val geo: TlGeoConfig,
+  val app: TlAppConfig,
+  val android: TlAndroidConfig,
+  val ios: TlIosConfig,
+  val http: TlHttpConfig,
+  val logger: TlLoggerConfig,
+  val motion: TlMotionConfig,
+  val geofence: TlGeofenceConfig,
+  val persistence: TlPersistenceConfig,
+  val audit: TlAuditConfig,
+  val privacyZone: TlPrivacyZoneConfig,
+  val security: TlSecurityConfig,
+  val attestation: TlAttestationConfig
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlConfig {
+      val geo = pigeonVar_list[0] as TlGeoConfig
+      val app = pigeonVar_list[1] as TlAppConfig
+      val android = pigeonVar_list[2] as TlAndroidConfig
+      val ios = pigeonVar_list[3] as TlIosConfig
+      val http = pigeonVar_list[4] as TlHttpConfig
+      val logger = pigeonVar_list[5] as TlLoggerConfig
+      val motion = pigeonVar_list[6] as TlMotionConfig
+      val geofence = pigeonVar_list[7] as TlGeofenceConfig
+      val persistence = pigeonVar_list[8] as TlPersistenceConfig
+      val audit = pigeonVar_list[9] as TlAuditConfig
+      val privacyZone = pigeonVar_list[10] as TlPrivacyZoneConfig
+      val security = pigeonVar_list[11] as TlSecurityConfig
+      val attestation = pigeonVar_list[12] as TlAttestationConfig
+      return TlConfig(geo, app, android, ios, http, logger, motion, geofence, persistence, audit, privacyZone, security, attestation)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      geo,
+      app,
+      android,
+      ios,
+      http,
+      logger,
+      motion,
+      geofence,
+      persistence,
+      audit,
+      privacyZone,
+      security,
+      attestation,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlLoggerConfig (
+  val logLevel: TlLogLevel,
+  val logMaxDays: Long,
+  val debug: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlLoggerConfig {
+      val logLevel = pigeonVar_list[0] as TlLogLevel
+      val logMaxDays = pigeonVar_list[1] as Long
+      val debug = pigeonVar_list[2] as Boolean
+      return TlLoggerConfig(logLevel, logMaxDays, debug)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      logLevel,
+      logMaxDays,
+      debug,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlLoggerConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlMotionConfig (
+  val stopTimeout: Long,
+  val motionTriggerDelay: Long,
+  val disableMotionActivityUpdates: Boolean,
+  val isMoving: Boolean,
+  val activityRecognitionInterval: Long,
+  val minimumActivityRecognitionConfidence: Long,
+  val disableStopDetection: Boolean,
+  val stopDetectionDelay: Long,
+  val stopOnStationary: Boolean,
+  val activityTypes: List<TlLocationActivityType?>? = null,
+  val stationaryRadius: Double,
+  val useSignificantChangesOnly: Boolean,
+  val shakeThreshold: Double,
+  val stillThreshold: Double,
+  val stillSampleCount: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlMotionConfig {
+      val stopTimeout = pigeonVar_list[0] as Long
+      val motionTriggerDelay = pigeonVar_list[1] as Long
+      val disableMotionActivityUpdates = pigeonVar_list[2] as Boolean
+      val isMoving = pigeonVar_list[3] as Boolean
+      val activityRecognitionInterval = pigeonVar_list[4] as Long
+      val minimumActivityRecognitionConfidence = pigeonVar_list[5] as Long
+      val disableStopDetection = pigeonVar_list[6] as Boolean
+      val stopDetectionDelay = pigeonVar_list[7] as Long
+      val stopOnStationary = pigeonVar_list[8] as Boolean
+      val activityTypes = pigeonVar_list[9] as List<TlLocationActivityType?>?
+      val stationaryRadius = pigeonVar_list[10] as Double
+      val useSignificantChangesOnly = pigeonVar_list[11] as Boolean
+      val shakeThreshold = pigeonVar_list[12] as Double
+      val stillThreshold = pigeonVar_list[13] as Double
+      val stillSampleCount = pigeonVar_list[14] as Long
+      return TlMotionConfig(stopTimeout, motionTriggerDelay, disableMotionActivityUpdates, isMoving, activityRecognitionInterval, minimumActivityRecognitionConfidence, disableStopDetection, stopDetectionDelay, stopOnStationary, activityTypes, stationaryRadius, useSignificantChangesOnly, shakeThreshold, stillThreshold, stillSampleCount)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      stopTimeout,
+      motionTriggerDelay,
+      disableMotionActivityUpdates,
+      isMoving,
+      activityRecognitionInterval,
+      minimumActivityRecognitionConfidence,
+      disableStopDetection,
+      stopDetectionDelay,
+      stopOnStationary,
+      activityTypes,
+      stationaryRadius,
+      useSignificantChangesOnly,
+      shakeThreshold,
+      stillThreshold,
+      stillSampleCount,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlMotionConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlGeofenceConfig (
+  val geofenceModeHighAccuracy: Boolean,
+  val geofenceInitialTriggerEntry: Boolean,
+  val geofenceProximityRadius: Long,
+  val geofenceInitialTrigger: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlGeofenceConfig {
+      val geofenceModeHighAccuracy = pigeonVar_list[0] as Boolean
+      val geofenceInitialTriggerEntry = pigeonVar_list[1] as Boolean
+      val geofenceProximityRadius = pigeonVar_list[2] as Long
+      val geofenceInitialTrigger = pigeonVar_list[3] as Boolean
+      return TlGeofenceConfig(geofenceModeHighAccuracy, geofenceInitialTriggerEntry, geofenceProximityRadius, geofenceInitialTrigger)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      geofenceModeHighAccuracy,
+      geofenceInitialTriggerEntry,
+      geofenceProximityRadius,
+      geofenceInitialTrigger,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlGeofenceConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlPersistenceConfig (
+  val persistMode: TlPersistMode,
+  val maxDaysToPersist: Long,
+  val maxRecordsToPersist: Long,
+  val disableProviderChangeRecord: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlPersistenceConfig {
+      val persistMode = pigeonVar_list[0] as TlPersistMode
+      val maxDaysToPersist = pigeonVar_list[1] as Long
+      val maxRecordsToPersist = pigeonVar_list[2] as Long
+      val disableProviderChangeRecord = pigeonVar_list[3] as Boolean
+      return TlPersistenceConfig(persistMode, maxDaysToPersist, maxRecordsToPersist, disableProviderChangeRecord)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      persistMode,
+      maxDaysToPersist,
+      maxRecordsToPersist,
+      disableProviderChangeRecord,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlPersistenceConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlAuditConfig (
+  val enabled: Boolean,
+  val hashAlgorithm: TlHashAlgorithm
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlAuditConfig {
+      val enabled = pigeonVar_list[0] as Boolean
+      val hashAlgorithm = pigeonVar_list[1] as TlHashAlgorithm
+      return TlAuditConfig(enabled, hashAlgorithm)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      enabled,
+      hashAlgorithm,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlAuditConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlPrivacyZoneConfig (
+  val enabled: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlPrivacyZoneConfig {
+      val enabled = pigeonVar_list[0] as Boolean
+      return TlPrivacyZoneConfig(enabled)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      enabled,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlPrivacyZoneConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlSecurityConfig (
+  val encryptDatabase: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlSecurityConfig {
+      val encryptDatabase = pigeonVar_list[0] as Boolean
+      return TlSecurityConfig(encryptDatabase)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      encryptDatabase,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlSecurityConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlAttestationConfig (
+  val enabled: Boolean,
+  val refreshInterval: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlAttestationConfig {
+      val enabled = pigeonVar_list[0] as Boolean
+      val refreshInterval = pigeonVar_list[1] as Long
+      return TlAttestationConfig(enabled, refreshInterval)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      enabled,
+      refreshInterval,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlAttestationConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlCoords (
   val latitude: Double,
   val longitude: Double,
@@ -211,11 +1038,7 @@ data class TlCoords (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Battery info sub-message.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlBattery (
   val level: Double,
   val isCharging: Boolean
@@ -246,11 +1069,7 @@ data class TlBattery (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * A location fix returned from the native platform.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlLocation (
   val coords: TlCoords,
   val battery: TlBattery,
@@ -302,11 +1121,7 @@ data class TlLocation (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Activity classification.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlActivity (
   val type: String,
   val confidence: Long
@@ -337,11 +1152,7 @@ data class TlActivity (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Plugin state returned by ready/start/stop/getState.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlState (
   val enabled: Boolean,
   val isMoving: Boolean,
@@ -384,11 +1195,7 @@ data class TlState (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * A geofence definition.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlGeofence (
   val identifier: String,
   val latitude: Double,
@@ -443,11 +1250,7 @@ data class TlGeofence (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Geofence event fired on transitions.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlGeofenceEvent (
   val identifier: String,
   val action: TlGeofenceAction,
@@ -484,11 +1287,7 @@ data class TlGeofenceEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * HTTP sync event.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlHttpEvent (
   val isSuccess: Boolean,
   val status: Long,
@@ -522,11 +1321,7 @@ data class TlHttpEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Provider change event (GPS/network/authorization state).
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlProviderChangeEvent (
   val enabled: Boolean,
   val gps: Boolean,
@@ -566,11 +1361,7 @@ data class TlProviderChangeEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Options for getCurrentPosition.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlCurrentPositionOptions (
   val desiredAccuracy: TlDesiredAccuracy? = null,
   val timeout: Long,
@@ -613,15 +1404,9 @@ data class TlCurrentPositionOptions (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Activity change event data.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlActivityChangeEvent (
-  /** Activity type name (e.g. "still", "walking", "in_vehicle"). */
   val activity: String,
-  /** Confidence percentage (0–100). */
   val confidence: Long
 )
  {
@@ -650,22 +1435,16 @@ data class TlActivityChangeEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Change in the set of actively monitored geofences.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlGeofencesChangeEvent (
-  /** Geofences that were activated (started monitoring). */
-  val on: List<TlGeofence>? = null,
-  /** Geofences that were deactivated (stopped monitoring). */
-  val off: List<TlGeofence>? = null
+  val on: List<TlGeofence?>? = null,
+  val off: List<TlGeofence?>? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): TlGeofencesChangeEvent {
-      val on = pigeonVar_list[0] as List<TlGeofence>?
-      val off = pigeonVar_list[1] as List<TlGeofence>?
+      val on = pigeonVar_list[0] as List<TlGeofence?>?
+      val off = pigeonVar_list[1] as List<TlGeofence?>?
       return TlGeofencesChangeEvent(on, off)
     }
   }
@@ -687,11 +1466,7 @@ data class TlGeofencesChangeEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Heartbeat event data (periodic location check-in).
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlHeartbeatEvent (
   val location: TlLocation
 )
@@ -719,11 +1494,7 @@ data class TlHeartbeatEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Authorization / token-refresh event data.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlAuthorizationEvent (
   val success: Boolean,
   val status: Long,
@@ -757,11 +1528,7 @@ data class TlAuthorizationEvent (
   override fun hashCode(): Int = toList().hashCode()
 }
 
-/**
- * Connectivity change event data.
- *
- * Generated class from Pigeon that represents data sent in messages.
- */
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlConnectivityChangeEvent (
   val connected: Boolean
 )
@@ -817,76 +1584,191 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         }
       }
       134.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlCoords.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlIosActivityType.ofRaw(it.toInt())
         }
       }
       135.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlBattery.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlNotificationPriority.ofRaw(it.toInt())
         }
       }
       136.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlLocation.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlLocationOrderDirection.ofRaw(it.toInt())
         }
       }
       137.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivity.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlLocationActivityType.ofRaw(it.toInt())
         }
       }
       138.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlState.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlLogLevel.ofRaw(it.toInt())
         }
       }
       139.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofence.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlPersistMode.ofRaw(it.toInt())
         }
       }
       140.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceEvent.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlHashAlgorithm.ofRaw(it.toInt())
         }
       }
       141.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpEvent.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlAuthorizationRequest.ofRaw(it.toInt())
         }
       }
       142.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlProviderChangeEvent.fromList(it)
+          TlGeoConfig.fromList(it)
         }
       }
       143.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCurrentPositionOptions.fromList(it)
+          TlAppConfig.fromList(it)
         }
       }
       144.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivityChangeEvent.fromList(it)
+          TlForegroundServiceConfig.fromList(it)
         }
       }
       145.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofencesChangeEvent.fromList(it)
+          TlAndroidConfig.fromList(it)
         }
       }
       146.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHeartbeatEvent.fromList(it)
+          TlIosConfig.fromList(it)
         }
       }
       147.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuthorizationEvent.fromList(it)
+          TlHttpConfig.fromList(it)
         }
       }
       148.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlConfig.fromList(it)
+        }
+      }
+      149.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlLoggerConfig.fromList(it)
+        }
+      }
+      150.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlMotionConfig.fromList(it)
+        }
+      }
+      151.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlGeofenceConfig.fromList(it)
+        }
+      }
+      152.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlPersistenceConfig.fromList(it)
+        }
+      }
+      153.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlAuditConfig.fromList(it)
+        }
+      }
+      154.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlPrivacyZoneConfig.fromList(it)
+        }
+      }
+      155.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlSecurityConfig.fromList(it)
+        }
+      }
+      156.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlAttestationConfig.fromList(it)
+        }
+      }
+      157.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlCoords.fromList(it)
+        }
+      }
+      158.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlBattery.fromList(it)
+        }
+      }
+      159.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlLocation.fromList(it)
+        }
+      }
+      160.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlActivity.fromList(it)
+        }
+      }
+      161.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlState.fromList(it)
+        }
+      }
+      162.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlGeofence.fromList(it)
+        }
+      }
+      163.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlGeofenceEvent.fromList(it)
+        }
+      }
+      164.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlHttpEvent.fromList(it)
+        }
+      }
+      165.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlProviderChangeEvent.fromList(it)
+        }
+      }
+      166.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlCurrentPositionOptions.fromList(it)
+        }
+      }
+      167.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlActivityChangeEvent.fromList(it)
+        }
+      }
+      168.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlGeofencesChangeEvent.fromList(it)
+        }
+      }
+      169.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlHeartbeatEvent.fromList(it)
+        }
+      }
+      170.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlAuthorizationEvent.fromList(it)
+        }
+      }
+      171.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           TlConnectivityChangeEvent.fromList(it)
         }
@@ -916,64 +1798,156 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(133)
         writeValue(stream, value.raw.toLong())
       }
-      is TlCoords -> {
+      is TlIosActivityType -> {
         stream.write(134)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlBattery -> {
+      is TlNotificationPriority -> {
         stream.write(135)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlLocation -> {
+      is TlLocationOrderDirection -> {
         stream.write(136)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlActivity -> {
+      is TlLocationActivityType -> {
         stream.write(137)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlState -> {
+      is TlLogLevel -> {
         stream.write(138)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlGeofence -> {
+      is TlPersistMode -> {
         stream.write(139)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlGeofenceEvent -> {
+      is TlHashAlgorithm -> {
         stream.write(140)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlHttpEvent -> {
+      is TlAuthorizationRequest -> {
         stream.write(141)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlProviderChangeEvent -> {
+      is TlGeoConfig -> {
         stream.write(142)
         writeValue(stream, value.toList())
       }
-      is TlCurrentPositionOptions -> {
+      is TlAppConfig -> {
         stream.write(143)
         writeValue(stream, value.toList())
       }
-      is TlActivityChangeEvent -> {
+      is TlForegroundServiceConfig -> {
         stream.write(144)
         writeValue(stream, value.toList())
       }
-      is TlGeofencesChangeEvent -> {
+      is TlAndroidConfig -> {
         stream.write(145)
         writeValue(stream, value.toList())
       }
-      is TlHeartbeatEvent -> {
+      is TlIosConfig -> {
         stream.write(146)
         writeValue(stream, value.toList())
       }
-      is TlAuthorizationEvent -> {
+      is TlHttpConfig -> {
         stream.write(147)
         writeValue(stream, value.toList())
       }
-      is TlConnectivityChangeEvent -> {
+      is TlConfig -> {
         stream.write(148)
+        writeValue(stream, value.toList())
+      }
+      is TlLoggerConfig -> {
+        stream.write(149)
+        writeValue(stream, value.toList())
+      }
+      is TlMotionConfig -> {
+        stream.write(150)
+        writeValue(stream, value.toList())
+      }
+      is TlGeofenceConfig -> {
+        stream.write(151)
+        writeValue(stream, value.toList())
+      }
+      is TlPersistenceConfig -> {
+        stream.write(152)
+        writeValue(stream, value.toList())
+      }
+      is TlAuditConfig -> {
+        stream.write(153)
+        writeValue(stream, value.toList())
+      }
+      is TlPrivacyZoneConfig -> {
+        stream.write(154)
+        writeValue(stream, value.toList())
+      }
+      is TlSecurityConfig -> {
+        stream.write(155)
+        writeValue(stream, value.toList())
+      }
+      is TlAttestationConfig -> {
+        stream.write(156)
+        writeValue(stream, value.toList())
+      }
+      is TlCoords -> {
+        stream.write(157)
+        writeValue(stream, value.toList())
+      }
+      is TlBattery -> {
+        stream.write(158)
+        writeValue(stream, value.toList())
+      }
+      is TlLocation -> {
+        stream.write(159)
+        writeValue(stream, value.toList())
+      }
+      is TlActivity -> {
+        stream.write(160)
+        writeValue(stream, value.toList())
+      }
+      is TlState -> {
+        stream.write(161)
+        writeValue(stream, value.toList())
+      }
+      is TlGeofence -> {
+        stream.write(162)
+        writeValue(stream, value.toList())
+      }
+      is TlGeofenceEvent -> {
+        stream.write(163)
+        writeValue(stream, value.toList())
+      }
+      is TlHttpEvent -> {
+        stream.write(164)
+        writeValue(stream, value.toList())
+      }
+      is TlProviderChangeEvent -> {
+        stream.write(165)
+        writeValue(stream, value.toList())
+      }
+      is TlCurrentPositionOptions -> {
+        stream.write(166)
+        writeValue(stream, value.toList())
+      }
+      is TlActivityChangeEvent -> {
+        stream.write(167)
+        writeValue(stream, value.toList())
+      }
+      is TlGeofencesChangeEvent -> {
+        stream.write(168)
+        writeValue(stream, value.toList())
+      }
+      is TlHeartbeatEvent -> {
+        stream.write(169)
+        writeValue(stream, value.toList())
+      }
+      is TlAuthorizationEvent -> {
+        stream.write(170)
+        writeValue(stream, value.toList())
+      }
+      is TlConnectivityChangeEvent -> {
+        stream.write(171)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -984,154 +1958,80 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface TraceletHostApi {
-  /** Initialize the plugin with configuration. Returns current state. */
-  fun ready(config: Map<String, Any?>, callback: (Result<TlState>) -> Unit)
-  /** Start location tracking. Returns current state. */
+  fun ready(config: TlConfig, callback: (Result<TlState>) -> Unit)
   fun start(callback: (Result<TlState>) -> Unit)
-  /** Stop location tracking. Returns current state. */
   fun stop(callback: (Result<TlState>) -> Unit)
-  /** Start geofence-only mode. Returns current state. */
   fun startGeofences(callback: (Result<TlState>) -> Unit)
-  /** Start periodic one-shot mode. Returns current state. */
   fun startPeriodic(callback: (Result<TlState>) -> Unit)
-  /** Get current plugin state. */
   fun getState(callback: (Result<TlState>) -> Unit)
-  /** Update configuration. Returns current state. */
-  fun setConfig(config: Map<String, Any?>, callback: (Result<TlState>) -> Unit)
-  /** Reset to defaults. Returns current state. */
-  fun reset(config: Map<String, Any?>?, callback: (Result<TlState>) -> Unit)
-  /** Get current position with options. */
+  fun setConfig(config: TlConfig, callback: (Result<TlState>) -> Unit)
+  fun reset(config: TlConfig?, callback: (Result<TlState>) -> Unit)
   fun getCurrentPosition(options: TlCurrentPositionOptions, callback: (Result<TlLocation>) -> Unit)
-  /** Get last known position without triggering a fix. */
-  fun getLastKnownLocation(options: Map<String, Any?>?, callback: (Result<TlLocation?>) -> Unit)
-  /** Start watching position at an interval. Returns a watch ID. */
-  fun watchPosition(options: Map<String, Any?>, callback: (Result<Long>) -> Unit)
-  /** Stop a position watch by ID. */
+  fun getLastKnownLocation(options: TlCurrentPositionOptions?, callback: (Result<TlLocation?>) -> Unit)
+  fun watchPosition(options: TlCurrentPositionOptions, callback: (Result<Long>) -> Unit)
   fun stopWatchPosition(watchId: Long, callback: (Result<Boolean>) -> Unit)
-  /** Toggle motion state. */
   fun changePace(isMoving: Boolean, callback: (Result<Boolean>) -> Unit)
-  /** Get odometer value in meters. */
   fun getOdometer(callback: (Result<Double>) -> Unit)
-  /** Reset odometer. Returns location at reset point. */
   fun setOdometer(value: Double, callback: (Result<TlLocation>) -> Unit)
-  /** Add a single geofence. */
   fun addGeofence(geofence: TlGeofence, callback: (Result<Boolean>) -> Unit)
-  /** Add multiple geofences. */
   fun addGeofences(geofences: List<TlGeofence>, callback: (Result<Boolean>) -> Unit)
-  /** Remove a geofence by identifier. */
   fun removeGeofence(identifier: String, callback: (Result<Boolean>) -> Unit)
-  /** Remove all geofences. */
   fun removeGeofences(callback: (Result<Boolean>) -> Unit)
-  /** Get all registered geofences. */
-  fun getGeofences(callback: (Result<List<TlGeofence>>) -> Unit)
-  /** Get a single geofence by identifier. */
+  fun getGeofences(callback: (Result<List<TlGeofence?>>) -> Unit)
   fun getGeofence(identifier: String, callback: (Result<TlGeofence?>) -> Unit)
-  /** Check if a geofence exists. */
   fun geofenceExists(identifier: String, callback: (Result<Boolean>) -> Unit)
-  /** Get stored locations. */
-  fun getLocations(query: Map<String, Any?>?, callback: (Result<List<TlLocation>>) -> Unit)
-  /** Get count of stored locations. */
-  fun getCount(query: Map<String, Any?>?, callback: (Result<Long>) -> Unit)
-  /** Delete all stored locations. */
+  fun getLocations(query: Map<String?, Any?>?, callback: (Result<List<TlLocation?>>) -> Unit)
+  fun getCount(query: Map<String?, Any?>?, callback: (Result<Long>) -> Unit)
+  fun insertLocation(params: Map<String?, Any?>, callback: (Result<String>) -> Unit)
   fun destroyLocations(callback: (Result<Boolean>) -> Unit)
-  /** Delete only synced locations from the database. Returns count deleted. */
   fun destroySyncedLocations(callback: (Result<Long>) -> Unit)
-  /** Delete a single location by UUID. */
   fun destroyLocation(uuid: String, callback: (Result<Boolean>) -> Unit)
-  /** Insert a custom location. Returns UUID. */
-  fun insertLocation(params: Map<String, Any?>, callback: (Result<String>) -> Unit)
-  /** Manually trigger HTTP sync. Returns synced locations. */
-  fun sync(callback: (Result<List<TlLocation>>) -> Unit)
-  /** Update dynamic HTTP headers. */
-  fun setDynamicHeaders(headers: Map<String, String>, callback: (Result<Boolean>) -> Unit)
-  /** Set route context for subsequent locations. */
-  fun setRouteContext(context: Map<String, Any?>, callback: (Result<Boolean>) -> Unit)
-  /** Clear route context. */
+  fun sync(callback: (Result<List<TlLocation?>>) -> Unit)
+  fun setDynamicHeaders(headers: Map<String?, String?>, callback: (Result<Boolean>) -> Unit)
+  fun setRouteContext(context: Map<String?, Any?>, callback: (Result<Boolean>) -> Unit)
   fun clearRouteContext(callback: (Result<Boolean>) -> Unit)
-  /** Get location permission status. */
+  fun registerHeadlessHeadersCallback(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit)
+  fun registerHeadlessSyncBodyBuilder(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit)
   fun getPermissionStatus(callback: (Result<TlAuthorizationStatus>) -> Unit)
-  /** Request location permission. Returns result. */
   fun requestPermission(callback: (Result<TlAuthorizationStatus>) -> Unit)
-  /** Get notification permission status (Android 13+). */
   fun getNotificationPermissionStatus(callback: (Result<Long>) -> Unit)
-  /** Request notification permission (Android 13+). */
   fun requestNotificationPermission(callback: (Result<Long>) -> Unit)
-  /** Check if exact alarms can be scheduled (Android 12+). */
   fun canScheduleExactAlarms(callback: (Result<Boolean>) -> Unit)
-  /** Open exact alarm settings (Android 12+). */
   fun openExactAlarmSettings(callback: (Result<Boolean>) -> Unit)
-  /** Get motion/activity recognition permission status. */
   fun getMotionPermissionStatus(callback: (Result<Long>) -> Unit)
-  /** Request motion/activity recognition permission. */
   fun requestMotionPermission(callback: (Result<Long>) -> Unit)
-  /** Request temporary full accuracy (iOS 14+). Returns accuracy status. */
   fun requestTemporaryFullAccuracy(purpose: String, callback: (Result<Long>) -> Unit)
-  /** Whether device is in power-save mode. */
   fun isPowerSaveMode(callback: (Result<Boolean>) -> Unit)
-  /** Get location provider state. */
   fun getProviderState(callback: (Result<TlProviderChangeEvent>) -> Unit)
-  /** Get device info. */
-  fun getDeviceInfo(callback: (Result<Map<String, Any?>>) -> Unit)
-  /** Get available sensors. */
-  fun getSensors(callback: (Result<Map<String, Any?>>) -> Unit)
-  /** Play a debug sound. */
-  fun playSound(name: String, callback: (Result<Boolean>) -> Unit)
-  /** Whether ignoring battery optimizations (Android). */
-  fun isIgnoringBatteryOptimizations(callback: (Result<Boolean>) -> Unit)
-  /** Request a system settings page (e.g., battery optimization). */
-  fun requestSettings(action: String, callback: (Result<Boolean>) -> Unit)
-  /** Show a system settings page (e.g., location settings). */
-  fun showSettings(action: String, callback: (Result<Boolean>) -> Unit)
-  /** Get OEM settings health information. */
-  fun getSettingsHealth(callback: (Result<Map<String, Any?>>) -> Unit)
-  /** Open an OEM-specific settings screen by label. */
-  fun openOemSettings(label: String, callback: (Result<Boolean>) -> Unit)
-  /** Get plugin log. */
-  fun getLog(query: Map<String, Any?>?, callback: (Result<String>) -> Unit)
-  /** Destroy all log entries. */
-  fun destroyLog(callback: (Result<Boolean>) -> Unit)
-  /** Email the log. */
-  fun emailLog(email: String, callback: (Result<Boolean>) -> Unit)
-  /** Write a custom log entry. */
+  fun getDeviceInfo(callback: (Result<Map<String?, Any?>>) -> Unit)
   fun log(level: String, message: String, callback: (Result<Boolean>) -> Unit)
-  /** Start schedule-based tracking. */
+  fun playSound(name: String, callback: (Result<Boolean>) -> Unit)
+  fun isIgnoringBatteryOptimizations(callback: (Result<Boolean>) -> Unit)
+  fun requestSettings(action: String, callback: (Result<Boolean>) -> Unit)
+  fun showSettings(action: String, callback: (Result<Boolean>) -> Unit)
   fun startSchedule(callback: (Result<TlState>) -> Unit)
-  /** Stop schedule-based tracking. */
   fun stopSchedule(callback: (Result<TlState>) -> Unit)
-  /** Start a background task. Returns task ID. */
+  fun registerHeadlessTask(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit)
   fun startBackgroundTask(callback: (Result<Long>) -> Unit)
-  /** Complete a background task. */
   fun stopBackgroundTask(taskId: Long, callback: (Result<Long>) -> Unit)
-  /** Register a headless task callback for background event dispatch. */
-  fun registerHeadlessTask(callbackIds: List<Long>, callback: (Result<Boolean>) -> Unit)
-  /** Register a headless headers callback for background token recovery. */
-  fun registerHeadlessHeadersCallback(callbackIds: List<Long>, callback: (Result<Boolean>) -> Unit)
-  /** Register a headless sync body builder for background custom payloads. */
-  fun registerHeadlessSyncBodyBuilder(callbackIds: List<Long>, callback: (Result<Boolean>) -> Unit)
-  /** Verify audit trail integrity. */
-  fun verifyAuditTrail(callback: (Result<Map<String, Any?>>) -> Unit)
-  /** Get audit proof for a location UUID. */
-  fun getAuditProof(uuid: String, callback: (Result<Map<String, Any?>?>) -> Unit)
-  /** Add a privacy zone. */
-  fun addPrivacyZone(zone: Map<String, Any?>, callback: (Result<Boolean>) -> Unit)
-  /** Add multiple privacy zones. */
-  fun addPrivacyZones(zones: List<Map<String, Any?>>, callback: (Result<Boolean>) -> Unit)
-  /** Remove a privacy zone by identifier. */
+  fun getSensors(callback: (Result<Map<String?, Any?>>) -> Unit)
+  fun getSettingsHealth(callback: (Result<Map<String?, Any?>>) -> Unit)
+  fun openOemSettings(label: String, callback: (Result<Boolean>) -> Unit)
+  fun getLog(query: Map<String?, Any?>?, callback: (Result<String>) -> Unit)
+  fun destroyLog(callback: (Result<Boolean>) -> Unit)
+  fun emailLog(email: String, callback: (Result<Boolean>) -> Unit)
+  fun verifyAuditTrail(callback: (Result<Map<String?, Any?>>) -> Unit)
+  fun getAuditProof(uuid: String, callback: (Result<Map<String?, Any?>?>) -> Unit)
+  fun addPrivacyZone(zone: Map<String?, Any?>, callback: (Result<Boolean>) -> Unit)
+  fun addPrivacyZones(zones: List<Map<String?, Any?>?>, callback: (Result<Boolean>) -> Unit)
   fun removePrivacyZone(identifier: String, callback: (Result<Boolean>) -> Unit)
-  /** Remove all privacy zones. */
   fun removePrivacyZones(callback: (Result<Boolean>) -> Unit)
-  /** Get all privacy zones. */
-  fun getPrivacyZones(callback: (Result<List<Map<String, Any?>>>) -> Unit)
-  /** Check if database is encrypted. */
+  fun getPrivacyZones(callback: (Result<List<Map<String?, Any?>?>>) -> Unit)
   fun isDatabaseEncrypted(callback: (Result<Boolean>) -> Unit)
-  /** Encrypt the database (one-time migration). */
   fun encryptDatabase(callback: (Result<Boolean>) -> Unit)
-  /** Get a device attestation token. */
-  fun getAttestationToken(callback: (Result<Map<String, Any?>?>) -> Unit)
-  /** Get carbon emissions report. */
-  fun getCarbonReport(query: Map<String, Any?>?, callback: (Result<Map<String, Any?>>) -> Unit)
-  /** Get dead reckoning state. */
-  fun getDeadReckoningState(callback: (Result<Map<String, Any?>?>) -> Unit)
+  fun getAttestationToken(callback: (Result<Map<String?, Any?>?>) -> Unit)
+  fun getDeadReckoningState(callback: (Result<Map<String?, Any?>?>) -> Unit)
+  fun getCarbonReport(query: Map<String?, Any?>?, callback: (Result<Map<String?, Any?>>) -> Unit)
 
   companion object {
     /** The codec used by TraceletHostApi. */
@@ -1147,7 +2047,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val configArg = args[0] as Map<String, Any?>
+            val configArg = args[0] as TlConfig
             api.ready(configArg) { result: Result<TlState> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1257,7 +2157,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val configArg = args[0] as Map<String, Any?>
+            val configArg = args[0] as TlConfig
             api.setConfig(configArg) { result: Result<TlState> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1277,7 +2177,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val configArg = args[0] as Map<String, Any?>?
+            val configArg = args[0] as TlConfig?
             api.reset(configArg) { result: Result<TlState> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1317,7 +2217,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val optionsArg = args[0] as Map<String, Any?>?
+            val optionsArg = args[0] as TlCurrentPositionOptions?
             api.getLastKnownLocation(optionsArg) { result: Result<TlLocation?> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1337,7 +2237,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val optionsArg = args[0] as Map<String, Any?>
+            val optionsArg = args[0] as TlCurrentPositionOptions
             api.watchPosition(optionsArg) { result: Result<Long> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1512,7 +2412,7 @@ interface TraceletHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofences$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getGeofences{ result: Result<List<TlGeofence>> ->
+            api.getGeofences{ result: Result<List<TlGeofence?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1571,8 +2471,8 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val queryArg = args[0] as Map<String, Any?>?
-            api.getLocations(queryArg) { result: Result<List<TlLocation>> ->
+            val queryArg = args[0] as Map<String?, Any?>?
+            api.getLocations(queryArg) { result: Result<List<TlLocation?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1591,8 +2491,28 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val queryArg = args[0] as Map<String, Any?>?
+            val queryArg = args[0] as Map<String?, Any?>?
             api.getCount(queryArg) { result: Result<Long> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val paramsArg = args[0] as Map<String?, Any?>
+            api.insertLocation(paramsArg) { result: Result<String> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1663,30 +2583,10 @@ interface TraceletHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val paramsArg = args[0] as Map<String, Any?>
-            api.insertLocation(paramsArg) { result: Result<String> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.sync$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.sync{ result: Result<List<TlLocation>> ->
+            api.sync{ result: Result<List<TlLocation?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1705,7 +2605,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val headersArg = args[0] as Map<String, String>
+            val headersArg = args[0] as Map<String?, String?>
             api.setDynamicHeaders(headersArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1725,7 +2625,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val contextArg = args[0] as Map<String, Any?>
+            val contextArg = args[0] as Map<String?, Any?>
             api.setRouteContext(contextArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -1745,6 +2645,46 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.clearRouteContext{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val callbackIdsArg = args[0] as List<Long?>
+            api.registerHeadlessHeadersCallback(callbackIdsArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val callbackIdsArg = args[0] as List<Long?>
+            api.registerHeadlessSyncBodyBuilder(callbackIdsArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1962,7 +2902,7 @@ interface TraceletHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeviceInfo$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getDeviceInfo{ result: Result<Map<String, Any?>> ->
+            api.getDeviceInfo{ result: Result<Map<String?, Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -1977,10 +2917,13 @@ interface TraceletHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.log$separatedMessageChannelSuffix", codec)
         if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.getSensors{ result: Result<Map<String, Any?>> ->
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val levelArg = args[0] as String
+            val messageArg = args[1] as String
+            api.log(levelArg, messageArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2073,10 +3016,122 @@ interface TraceletHostApi {
         }
       }
       run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startSchedule$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.startSchedule{ result: Result<TlState> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopSchedule$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.stopSchedule{ result: Result<TlState> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val callbackIdsArg = args[0] as List<Long?>
+            api.registerHeadlessTask(callbackIdsArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startBackgroundTask$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.startBackgroundTask{ result: Result<Long> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopBackgroundTask$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val taskIdArg = args[0] as Long
+            api.stopBackgroundTask(taskIdArg) { result: Result<Long> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.getSensors{ result: Result<Map<String?, Any?>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSettingsHealth$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getSettingsHealth{ result: Result<Map<String, Any?>> ->
+            api.getSettingsHealth{ result: Result<Map<String?, Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2115,7 +3170,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val queryArg = args[0] as Map<String, Any?>?
+            val queryArg = args[0] as Map<String?, Any?>?
             api.getLog(queryArg) { result: Result<String> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -2169,165 +3224,10 @@ interface TraceletHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.log$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val levelArg = args[0] as String
-            val messageArg = args[1] as String
-            api.log(levelArg, messageArg) { result: Result<Boolean> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startSchedule$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.startSchedule{ result: Result<TlState> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopSchedule$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.stopSchedule{ result: Result<TlState> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startBackgroundTask$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.startBackgroundTask{ result: Result<Long> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopBackgroundTask$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val taskIdArg = args[0] as Long
-            api.stopBackgroundTask(taskIdArg) { result: Result<Long> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val callbackIdsArg = args[0] as List<Long>
-            api.registerHeadlessTask(callbackIdsArg) { result: Result<Boolean> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val callbackIdsArg = args[0] as List<Long>
-            api.registerHeadlessHeadersCallback(callbackIdsArg) { result: Result<Boolean> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val callbackIdsArg = args[0] as List<Long>
-            api.registerHeadlessSyncBodyBuilder(callbackIdsArg) { result: Result<Boolean> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.verifyAuditTrail$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.verifyAuditTrail{ result: Result<Map<String, Any?>> ->
+            api.verifyAuditTrail{ result: Result<Map<String?, Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2347,7 +3247,7 @@ interface TraceletHostApi {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
             val uuidArg = args[0] as String
-            api.getAuditProof(uuidArg) { result: Result<Map<String, Any?>?> ->
+            api.getAuditProof(uuidArg) { result: Result<Map<String?, Any?>?> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2366,7 +3266,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val zoneArg = args[0] as Map<String, Any?>
+            val zoneArg = args[0] as Map<String?, Any?>
             api.addPrivacyZone(zoneArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -2386,7 +3286,7 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val zonesArg = args[0] as List<Map<String, Any?>>
+            val zonesArg = args[0] as List<Map<String?, Any?>?>
             api.addPrivacyZones(zonesArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
@@ -2443,7 +3343,7 @@ interface TraceletHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPrivacyZones$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getPrivacyZones{ result: Result<List<Map<String, Any?>>> ->
+            api.getPrivacyZones{ result: Result<List<Map<String?, Any?>?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2497,7 +3397,25 @@ interface TraceletHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAttestationToken$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getAttestationToken{ result: Result<Map<String, Any?>?> ->
+            api.getAttestationToken{ result: Result<Map<String?, Any?>?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeadReckoningState$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.getDeadReckoningState{ result: Result<Map<String?, Any?>?> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2516,26 +3434,8 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val queryArg = args[0] as Map<String, Any?>?
-            api.getCarbonReport(queryArg) { result: Result<Map<String, Any?>> ->
-              val error = result.exceptionOrNull()
-              if (error != null) {
-                reply.reply(TraceletApiPigeonUtils.wrapError(error))
-              } else {
-                val data = result.getOrNull()
-                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
-              }
-            }
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeadReckoningState$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.getDeadReckoningState{ result: Result<Map<String, Any?>?> ->
+            val queryArg = args[0] as Map<String?, Any?>?
+            api.getCarbonReport(queryArg) { result: Result<Map<String?, Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
@@ -2560,8 +3460,7 @@ class TraceletFlutterApi(private val binaryMessenger: BinaryMessenger, private v
       TraceletApiPigeonCodec()
     }
   }
-  /** Called by native when a headless event fires. */
-  fun onHeadlessEvent(eventArg: Map<String, Any?>, callback: (Result<Unit>) -> Unit)
+  fun onHeadlessEvent(eventArg: Map<String?, Any?>, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
     val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessEvent$separatedMessageChannelSuffix"
@@ -2578,8 +3477,7 @@ class TraceletFlutterApi(private val binaryMessenger: BinaryMessenger, private v
       } 
     }
   }
-  /** Called by native to request fresh authorization headers (401 recovery). */
-  fun onHeadlessHeaders(callback: (Result<Map<String, String>>) -> Unit)
+  fun onHeadlessHeaders(callback: (Result<Map<String?, String?>>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
     val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessHeaders$separatedMessageChannelSuffix"
@@ -2591,7 +3489,7 @@ class TraceletFlutterApi(private val binaryMessenger: BinaryMessenger, private v
         } else if (it[0] == null) {
           callback(Result.failure(FlutterError("null-error", "Flutter api returned null value for non-null return value.", "")))
         } else {
-          val output = it[0] as Map<String, String>
+          val output = it[0] as Map<String?, String?>
           callback(Result.success(output))
         }
       } else {
@@ -2600,14 +3498,7 @@ class TraceletFlutterApi(private val binaryMessenger: BinaryMessenger, private v
     }
   }
 }
-/**
- * Type-safe event channel replacement.
- *
- * Native platforms call these methods to push events to Dart instead of
- * using raw EventChannel/EventSink. Each method maps to one event type.
- *
- * Generated class from Pigeon that represents Flutter messages that can be called from Kotlin.
- */
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
 class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
   companion object {
     /** The codec used by TraceletEventApi. */
@@ -2615,7 +3506,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       TraceletApiPigeonCodec()
     }
   }
-  /** Fired on every recorded location. */
   fun onLocation(locationArg: TlLocation, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2633,7 +3523,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when motion state changes (stationary ↔ moving). */
   fun onMotionChange(locationArg: TlLocation, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2651,7 +3540,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when detected activity type changes (walking, running, etc.). */
   fun onActivityChange(eventArg: TlActivityChangeEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2669,7 +3557,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when location provider state changes (GPS, network, authorization). */
   fun onProviderChange(eventArg: TlProviderChangeEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2687,7 +3574,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired on geofence transition (enter, exit, dwell). */
   fun onGeofence(eventArg: TlGeofenceEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2705,7 +3591,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when monitored geofences change (activated/deactivated list). */
   fun onGeofencesChange(eventArg: TlGeofencesChangeEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2723,7 +3608,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired at configured heartbeat interval. */
   fun onHeartbeat(eventArg: TlHeartbeatEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2741,7 +3625,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired on HTTP sync attempt (success or failure). */
   fun onHttp(eventArg: TlHttpEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2759,7 +3642,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired on schedule start/stop transitions. */
   fun onSchedule(stateArg: TlState, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2777,7 +3659,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when device power-save mode toggles. */
   fun onPowerSaveChange(isPowerSaveModeArg: Boolean, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2795,7 +3676,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when network connectivity changes. */
   fun onConnectivityChange(eventArg: TlConnectivityChangeEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2813,7 +3693,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when tracking is enabled or disabled. */
   fun onEnabledChange(enabledArg: Boolean, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2831,7 +3710,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired when user taps a notification action button (Android). */
   fun onNotificationAction(actionArg: String, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2849,7 +3727,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired on HTTP authorization events (token refresh). */
   fun onAuthorization(eventArg: TlAuthorizationEvent, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2867,7 +3744,6 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
       } 
     }
   }
-  /** Fired for watchPosition updates. */
   fun onWatchPosition(locationArg: TlLocation, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""

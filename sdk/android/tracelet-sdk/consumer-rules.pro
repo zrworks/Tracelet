@@ -27,6 +27,8 @@
 
 # Play Integrity (optional — only applied if present on classpath)
 -dontwarn com.google.android.play.core.integrity.**
+-dontwarn com.google.android.play.core.tasks.**
+-dontwarn com.google.android.gms.**
 
 # Security-crypto (optional — only needed with SQLCipher)
 -dontwarn androidx.security.crypto.**

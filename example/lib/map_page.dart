@@ -1661,7 +1661,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '$next sensitivity — shake=${shake}m/s² still=${still}m/s²',
+              '$next sensitivity (Native OS default)',
             ),
             duration: const Duration(seconds: 2),
           ),
@@ -1741,10 +1741,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     try {
       final newValue = !_kalmanEnabled;
       await tl.Tracelet.setConfig(
-        tl.Config(
-          geo: tl.GeoConfig(
-            filter: tl.LocationFilter(useKalmanFilter: newValue),
-          ),
+        const tl.Config(
+          geo: tl.GeoConfig(),
         ),
       );
       setState(() {

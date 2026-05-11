@@ -1,3 +1,10 @@
+## 2.0.0
+
+- **BREAKING**: Adopts an "on-demand" dependency model. Core SDK no longer bundles GMS Location, SQLCipher, or Play Integrity by default, reducing APK size by ~16 MB. Developers must now explicitly add these to their `android/app/build.gradle` if required.
+- **BREAKING**: Migrated to Pigeon for all platform-to-native communication, replacing `MethodChannel` with type-safe generated interfaces.
+- **FEAT**: Full support for AOSP-only environments via standard `LocationManager` fallback when GMS is unavailable.
+- **CHORE**: Bump native `tracelet-sdk` constraint to `2.0.0`.
+
 ## 1.9.3
 2: 
 3: - **CHORE**: Bump native `tracelet-sdk` constraint to `1.1.4`.

@@ -12,9 +12,6 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.work.*
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.ListenerEventSender
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
@@ -25,6 +22,9 @@ import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.http.HttpSyncManager
 import com.ikolvi.tracelet.sdk.receiver.PeriodicAlarmReceiver
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
+import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationPriority
+import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
+import com.ikolvi.tracelet.sdk.wrapper.TraceletCancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -36,16 +36,6 @@ import kotlin.coroutines.resume
 
 /**
  * WorkManager Worker that performs a single one-shot location fix.
- *
- * Used by [TrackingMode.periodic] when [periodicUseForegroundService] is `false`.
- * The Worker wakes, fetches a single location via [FusedLocationProviderClient],
- * persists it to SQLite, dispatches it via EventChannel (if alive) or headless
- * Dart callback, and completes — keeping the GPS icon visible for only ~5–10 seconds.
- *
- * Scheduling:
- * - Default: [PeriodicWorkRequest] with `periodicLocationInterval` flex.
- * - Exact alarms: [OneTimeWorkRequest] chained via [AlarmManager], scheduled
- *   by the plugin when `periodicUseExactAlarms` is `true`.
  */
 class PeriodicLocationWorker(
     appContext: Context,
@@ -58,33 +48,16 @@ class PeriodicLocationWorker(
         const val ACTION_PERIODIC_ALARM = "com.tracelet.PERIODIC_ALARM"
         private const val ALARM_REQUEST_CODE = 8001
 
-        /**
-         * Shared reference to the plugin's event sender.
-         * Set by the host framework adapter when the UI engine is alive.
-         * Null when the app process is running without a UI (headless).
-         */
         @Volatile
         var eventSender: TraceletEventSender? = null
 
-        /**
-         * Shared reference to the plugin's HttpSyncManager.
-         * Set by TraceletAndroidPlugin so periodic fixes trigger auto-sync.
-         * Null when the app process is running without a Flutter UI (headless).
-         */
         @Volatile
         var httpSyncManager: HttpSyncManager? = null
 
-        /**
-         * Schedules periodic location work using WorkManager.
-         *
-         * Uses a [PeriodicWorkRequest] with the configured interval.
-         * WorkManager's minimum interval is 15 minutes.
-         */
         fun schedule(context: Context, intervalSeconds: Int) {
             val interval = intervalSeconds.toLong().coerceAtLeast(900L)
             val request = PeriodicWorkRequestBuilder<PeriodicLocationWorker>(
                 interval, TimeUnit.SECONDS,
-                // Flex window: allow execution in the last 5 minutes of each interval
                 5L.coerceAtMost(interval), TimeUnit.MINUTES,
             )
                 .setConstraints(
@@ -103,10 +76,6 @@ class PeriodicLocationWorker(
             Log.d(TAG, "Scheduled periodic location work: interval=${interval}s")
         }
 
-        /**
-         * Schedules a one-time location work for exact-alarm chaining.
-         * Called by the plugin when `periodicUseExactAlarms` is `true`.
-         */
         fun scheduleOneTime(context: Context) {
             val request = OneTimeWorkRequestBuilder<PeriodicLocationWorker>()
                 .addTag(WORK_NAME)
@@ -119,7 +88,6 @@ class PeriodicLocationWorker(
             )
         }
 
-        /** Cancels all periodic location work. */
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
             WorkManager.getInstance(context).cancelUniqueWork("${WORK_NAME}_onetime")
@@ -127,21 +95,6 @@ class PeriodicLocationWorker(
             Log.d(TAG, "Cancelled periodic location work")
         }
 
-        // =================================================================
-        // Exact Alarm scheduling
-        // =================================================================
-
-        /**
-         * Schedules an alarm to fire after [intervalSeconds].
-         *
-         * On Android 12+ (API 31), checks [AlarmManager.canScheduleExactAlarms]
-         * and falls back to a Doze-safe inexact alarm if the permission is
-         * not granted. The inexact fallback uses [setAndAllowWhileIdle] which
-         * can fire even in Doze mode, though timing is approximate.
-         *
-         * The alarm triggers [PeriodicAlarmReceiver], which enqueues a
-         * [OneTimeWorkRequest] to perform the location fix.
-         */
         fun scheduleExactAlarm(context: Context, intervalSeconds: Int) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE)
                 as? AlarmManager ?: return
@@ -151,8 +104,7 @@ class PeriodicLocationWorker(
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (!alarmManager.canScheduleExactAlarms()) {
-                    // Permission not granted — fall back to Doze-safe inexact alarm
-                    Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted — using setAndAllowWhileIdle (inexact but Doze-safe)")
+                    Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted \u2014 using setAndAllowWhileIdle")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
                     } else {
@@ -172,8 +124,7 @@ class PeriodicLocationWorker(
                 }
                 Log.d(TAG, "Scheduled exact alarm in ${intervalSeconds}s")
             } catch (e: SecurityException) {
-                // Fallback on SecurityException
-                Log.w(TAG, "Exact alarm SecurityException — using setAndAllowWhileIdle", e)
+                Log.w(TAG, "Exact alarm SecurityException \u2014 using setAndAllowWhileIdle", e)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
                 } else {
@@ -182,7 +133,6 @@ class PeriodicLocationWorker(
             }
         }
 
-        /** Cancels any pending exact alarm. */
         fun cancelExactAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE)
                 as? AlarmManager ?: return
@@ -190,10 +140,6 @@ class PeriodicLocationWorker(
             Log.d(TAG, "Cancelled exact periodic alarm")
         }
 
-        /**
-         * Checks whether exact alarms can be scheduled.
-         * Returns `true` on API < 31 (no restriction) or if the permission is granted.
-         */
         fun canScheduleExactAlarms(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE)
@@ -214,22 +160,17 @@ class PeriodicLocationWorker(
     }
 
     override suspend fun doWork(): Result {
-        // Proactive background permission check — if the user revoked
-        // "Allow all the time" permission, stop periodic scheduling early
-        // instead of relying on the SecurityException from FusedLocation.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val hasBackground = ContextCompat.checkSelfPermission(
                 applicationContext, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
                 Log.w(TAG, "ACCESS_BACKGROUND_LOCATION revoked \u2014 stopping periodic work")
-                // Mark tracking disabled so alarms / re-schedules also stop.
                 StateManager(applicationContext).apply {
                     enabled = false
                 }
                 return Result.failure()
             }
-            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 proceeding with periodic fix")
         }
 
         return try {
@@ -240,7 +181,6 @@ class PeriodicLocationWorker(
             if (location != null) {
                 val db = TraceletDatabase.getInstance(applicationContext)
 
-                // Compute distance from last periodic fix for odometer
                 val lastLat = state.lastPeriodicLatitude
                 val lastLng = state.lastPeriodicLongitude
                 if (!lastLat.isNaN() && !lastLng.isNaN()) {
@@ -260,17 +200,10 @@ class PeriodicLocationWorker(
                 state.lastPeriodicLongitude = location.longitude
                 state.lastLocationTime = location.time
 
-                // Build enriched location map (reads updated odometer)
                 val locationMap = buildLocationMap(location, config, state)
-
-                // Persist to database
                 db.insertLocation(locationMap)
 
-                // Trigger HTTP auto-sync — use static manager if available,
-                // otherwise create a local headless instance so locations
-                // sync even when the Flutter UI process is dead.
                 val sharedSync = httpSyncManager
-                Log.d(TAG, "HTTP sync: sharedSync=${if (sharedSync != null) "SHARED" else "LOCAL"}, url=${config.getHttpUrl()}, autoSync=${config.getAutoSync()}")
                 val syncManager = sharedSync ?: run {
                     val sender = TraceletBootstrap.eventSenderFactory
                         ?.invoke(applicationContext)
@@ -281,94 +214,49 @@ class PeriodicLocationWorker(
                 }
                 try {
                     if (sharedSync != null) {
-                        // Shared instance — async is fine, it outlives the worker.
                         syncManager.onLocationInserted()
                     } else {
-                        // Local instance — must sync synchronously since the
-                        // async path would race with stop() below.
-                        val synced = syncManager.syncBlocking()
-                        Log.d(TAG, "HTTP sync (local): synced ${synced.size} locations")
+                        syncManager.syncBlocking()
                     }
                 } finally {
-                    // Stop locally-created HttpSyncManager to prevent leaking
-                    // network connections and listeners across worker runs.
                     if (sharedSync == null) {
                         syncManager.stop()
                     }
                 }
 
-                // Dispatch to Dart
                 dispatchLocation(locationMap)
-
-                Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, odo=${state.odometer}")
-            } else {
-                Log.w(TAG, "Periodic fix failed: no location obtained")
+                Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}")
             }
 
-            // Re-schedule next alarm if periodic tracking is still active.
-            // Use exact alarms when explicitly configured OR when the interval
-            // is under 15 min (matching the auto-select logic in
-            // TraceletAndroidPlugin.handleStartPeriodic).
             val interval = config.getPeriodicLocationInterval()
             val useExact = config.getPeriodicUseExactAlarms() || interval < 900
 
             if (state.enabled && state.trackingMode == TrackingMode.PERIODIC && useExact) {
                 scheduleExactAlarm(applicationContext, interval)
-                Log.d(TAG, "Re-scheduled next alarm in ${interval}s")
             }
 
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Periodic location work failed: ${e.message}", e)
-            // Re-schedule next alarm even on failure so the chain doesn't break.
-            try {
-                val config = ConfigManager.getInstance(applicationContext)
-                val state = StateManager(applicationContext)
-                val interval = config.getPeriodicLocationInterval()
-                val useExact = config.getPeriodicUseExactAlarms() || interval < 900
-                if (state.enabled && state.trackingMode == TrackingMode.PERIODIC && useExact) {
-                    scheduleExactAlarm(applicationContext, interval)
-                    Log.d(TAG, "Re-scheduled next alarm in ${interval}s (after failure)")
-                }
-            } catch (rescheduleErr: Exception) {
-                Log.e(TAG, "Failed to re-schedule alarm: ${rescheduleErr.message}")
-            }
             Result.retry()
         }
     }
 
-    /**
-     * Fetches a single location using FusedLocationProviderClient.getCurrentLocation().
-     * Returns an Android Location or null on timeout/failure.
-     */
     private suspend fun fetchLocation(config: ConfigManager): android.location.Location? {
-        val fusedClient = LocationServices.getFusedLocationProviderClient(applicationContext)
+        val client = TraceletServices.getInstance(applicationContext).getLocationClient(applicationContext)
         val priority = mapAccuracyToPriority(config.getPeriodicDesiredAccuracy())
-        val cancellationSource = CancellationTokenSource()
+        val cts = TraceletCancellationTokenSource()
 
-        return try {
-            suspendCancellableCoroutine { continuation ->
-                fusedClient.getCurrentLocation(priority, cancellationSource.token)
-                    .addOnSuccessListener { location ->
-                        continuation.resume(location)
-                    }
-                    .addOnFailureListener {
-                        continuation.resume(null)
-                    }
-
-                continuation.invokeOnCancellation {
-                    cancellationSource.cancel()
-                }
+        return suspendCancellableCoroutine { continuation ->
+            client.getCurrentLocation(priority, cts.token) { location ->
+                continuation.resume(location)
             }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Location permission denied", e)
-            null
+            continuation.invokeOnCancellation {
+                cts.cancel()
+            }
         }
     }
 
-    /**
-     * Builds an enriched location map matching the format used by LocationEngine.
-     */
     private fun buildLocationMap(
         location: android.location.Location,
         config: ConfigManager,
@@ -405,54 +293,39 @@ class PeriodicLocationWorker(
             ),
         )
 
-        // Battery info
         val batteryInfo = BatteryUtils.getBatteryInfo(applicationContext)
         map["battery"] = batteryInfo
 
-        // Age of fix (ms since boot vs location elapsed time)
         val ageMs = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
         map["age"] = ageMs
 
         return map
     }
 
-    /**
-     * Dispatches the location to the host framework via event sender or headless dispatcher.
-     */
     private fun dispatchLocation(locationMap: Map<String, Any?>) {
         val sender = eventSender
         if (sender != null) {
-            val hasListener = sender.hasListener("location")
-            Log.d(TAG, "Dispatching to event sender (hasListener=$hasListener)")
             Handler(Looper.getMainLooper()).post {
                 sender.sendLocation(locationMap)
             }
         } else {
-            Log.d(TAG, "Event sender is null — trying headless dispatch")
             try {
                 val headless = TraceletBootstrap.headlessDispatcherFactory?.invoke(applicationContext)
                 if (headless != null && headless.isRegistered()) {
                     headless.dispatchEvent("location", locationMap)
-                } else {
-                    Log.w(TAG, "Headless not registered — location event dropped!")
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Headless dispatch failed: ${e.message}")
-            }
+            } catch (_: Exception) {}
         }
     }
 
-    /**
-     * Maps DesiredAccuracy enum index to FusedLocationProvider Priority.
-     */
     private fun mapAccuracyToPriority(accuracyIndex: Int): Int {
         return when (accuracyIndex) {
-            0 -> Priority.PRIORITY_HIGH_ACCURACY
-            1 -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
-            2 -> Priority.PRIORITY_LOW_POWER
-            3 -> Priority.PRIORITY_PASSIVE
-            4 -> Priority.PRIORITY_PASSIVE
-            else -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
+            0 -> TraceletLocationPriority.PRIORITY_HIGH_ACCURACY
+            1 -> TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY
+            2 -> TraceletLocationPriority.PRIORITY_LOW_POWER
+            3 -> TraceletLocationPriority.PRIORITY_PASSIVE
+            4 -> TraceletLocationPriority.PRIORITY_PASSIVE
+            else -> TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY
         }
     }
 }

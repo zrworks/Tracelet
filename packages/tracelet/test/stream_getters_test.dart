@@ -93,7 +93,7 @@ class StreamTestPlatform extends TraceletPlatform {
   Stream<TlLocation> get watchPositionEvents => watchPositionCtrl.stream;
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async => {
+  Future<Map<String, Object?>> ready(TlConfig config) async => {
     'enabled': false,
     'trackingMode': TlTrackingMode.location.index,
     'isMoving': false,

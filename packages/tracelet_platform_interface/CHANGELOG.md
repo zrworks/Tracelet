@@ -1,3 +1,11 @@
+## 2.0.0
+
+- **BREAKING**: Migrated all platform communication to Pigeon for strictly-typed host and flutter APIs.
+- **BREAKING**: Refactored `Config` into a nested compound model (`GeoConfig`, `AppConfig`, `AndroidConfig`, `HttpConfig`, `LoggerConfig`, `MotionConfig`, `GeofenceConfig`, `SecurityConfig`).
+- **FEAT**: Added `shakeThreshold`, `stillThreshold`, and `stillSampleCount` to `TlMotionConfig` Pigeon model for granular motion sensitivity tuning.
+- **BREAKING**: Prefixed internal platform interface enums with `Tl` (e.g., `TlAuthorizationStatus`, `TlTrackingMode`) to avoid naming collisions while maintaining stable public-facing Dart enums.
+- **FEAT**: Added comprehensive support for optional native dependencies (GMS, SQLCipher) via graceful degradation in the platform layer.
+
 ## 1.9.3
 2: 
 3: - **CHORE**: Version bump for monorepo consistency and native SDK alignment.

@@ -25,12 +25,13 @@ encrypted or not.
 Database encryption on Android uses SQLCipher, which is an **optional**
 dependency to keep APK size small for apps that don't need it.
 
-Add the following to your **app-level** `build.gradle` (not the plugin):
+Add the following to your **app-level** `build.gradle.kts` (not the plugin):
 
 ```kotlin
-// android/app/build.gradle.kts  (or build.gradle)
+// android/app/build.gradle.kts
 dependencies {
     implementation("net.zetetic:sqlcipher-android:4.6.1@aar")
+    implementation("androidx.security:security-crypto:1.1.0")
 }
 ```
 

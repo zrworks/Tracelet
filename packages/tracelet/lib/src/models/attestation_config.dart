@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 import '_helpers.dart';
 
 // ---------------------------------------------------------------------------
@@ -96,6 +96,11 @@ class AttestationConfig {
       'attestationVerificationUrl': verificationUrl,
     };
   }
+
+  TlAttestationConfig toTlConfig() => TlAttestationConfig(
+        enabled: enabled,
+        refreshInterval: refreshInterval,
+      );
 
   @override
   String toString() =>

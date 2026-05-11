@@ -46,8 +46,10 @@ Future<void> singleLocationExample() async {
   await tl.Tracelet.ready(
     tl.Config(
       geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: true,
+      ),
+      android: const tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(
           enabled: false, // No foreground notification on Android.
         ),
@@ -85,8 +87,10 @@ Future<void> bestOfThreeSamplesExample() async {
   await tl.Tracelet.ready(
     tl.Config(
       geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: true,
+      ),
+      android: const tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(enabled: false),
       ),
     ),
@@ -122,8 +126,10 @@ Future<void> lastKnownLocationExample() async {
   await tl.Tracelet.ready(
     tl.Config(
       geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: true,
+      ),
+      android: const tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(enabled: false),
       ),
     ),
@@ -250,8 +256,10 @@ Future<void> persistenceConfigExample() async {
 Future<void> geofenceHighAccuracyExample() async {
   await tl.Tracelet.ready(
     tl.Config(
-      geo: tl.GeoConfig(
+      geo: const tl.GeoConfig(
         desiredAccuracy: tl.DesiredAccuracy.high,
+      ),
+      android: const tl.AndroidConfig(
         // Enable high-accuracy geofence monitoring (Android only).
         geofenceModeHighAccuracy: true,
       ),
@@ -329,9 +337,11 @@ Future<void> motionTuningExample() async {
 Future<void> preventSuspendExample() async {
   await tl.Tracelet.ready(
     tl.Config(
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: false,
         startOnBoot: true,
+      ),
+      ios: const tl.IosConfig(
         // iOS only: prevent iOS from suspending the app.
         preventSuspend: true,
       ),
@@ -347,13 +357,15 @@ Future<void> preventSuspendExample() async {
 Future<void> scheduleAlarmManagerExample() async {
   await tl.Tracelet.ready(
     tl.Config(
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: false,
         startOnBoot: true,
-        // Android only: use AlarmManager for exact schedule timing.
-        scheduleUseAlarmManager: true,
         // Define a schedule: Mon-Fri, 9am-5pm
         schedule: ['1-5 09:00-17:00'],
+      ),
+      android: const tl.AndroidConfig(
+        // Android only: use AlarmManager for exact schedule timing.
+        scheduleUseAlarmManager: true,
       ),
     ),
   );
@@ -444,21 +456,25 @@ Future<void> fullFeaturedExample() async {
         elasticityMultiplier: 1.0,
         enableTimestampMeta: true,
         stopAfterElapsedMinutes: -1,
-        geofenceModeHighAccuracy: false,
         filter: tl.LocationFilter(
           trackingAccuracyThreshold: 100,
           maxImpliedSpeed: 80,
           odometerAccuracyThreshold: 50,
         ),
       ),
-      app: tl.AppConfig(
+      app: const tl.AppConfig(
         stopOnTerminate: false,
         startOnBoot: true,
         heartbeatInterval: 60,
-        preventSuspend: false,
+      ),
+      android: const tl.AndroidConfig(
+        geofenceModeHighAccuracy: false,
         scheduleUseAlarmManager: false,
       ),
-      motion: tl.MotionConfig(
+      ios: const tl.IosConfig(
+        preventSuspend: false,
+      ),
+      motion: const tl.MotionConfig(
         stopTimeout: 5,
         minimumActivityRecognitionConfidence: 75,
         disableStopDetection: false,

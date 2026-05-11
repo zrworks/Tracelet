@@ -48,7 +48,9 @@ android {
 
 dependencies {
     // Play Services Location (FusedLocationProvider, ActivityRecognition, Geofencing)
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    // compileOnly: not bundled in the AAR. Apps that need GMS must add
+    // implementation("com.google.android.gms:play-services-location:21.3.0") to their build.gradle.
+    compileOnly("com.google.android.gms:play-services-location:21.3.0")
 
     // WorkManager for reliable background scheduling
     implementation("androidx.work:work-runtime-ktx:2.11.1")

@@ -167,13 +167,17 @@ buildTypes {
 
 ---
 
-## 7. Google Play Services
+## 7. Google Play Services (Optional)
 
-Tracelet uses the **Fused Location Provider** from Google Play Services. This is available on all Google-certified devices. If you need to support devices without Google Play Services (e.g., Huawei HMS), custom integration would be required.
+Tracelet uses the **Fused Location Provider** from Google Play Services for high-accuracy tracking and activity recognition. In version 2.0.0+, this is an **optional dependency**.
 
-The plugin dependency (automatically included):
-```
-com.google.android.gms:play-services-location:21.3.0
+If you do NOT include it, the SDK will fall back to standard AOSP `LocationManager` (GPS/Network).
+
+To enable high-accuracy GMS tracking, add this to your `android/app/build.gradle.kts`:
+```kotlin
+dependencies {
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+}
 ```
 
 ---
@@ -262,27 +266,35 @@ Here is a minimal `AndroidManifest.xml` for your app. Tracelet's permissions are
 
 ---
 
-## Optional Dependencies
+## 11. Optional Dependencies (Enterprise & Performance)
 
-### Database Encryption (SQLCipher)
+Tracelet 2.0.0+ adopts an "on-demand" dependency model to keep your APK size small. Add only what you need to your **app-level** `build.gradle.kts`:
 
-If you need application-level database encryption (enterprise feature),
-add SQLCipher to your **app-level** `build.gradle`:
-
+### High-Accuracy GMS & Activity Recognition
+Enables the Fused Location Provider and `onActivityChange` events.
 ```kotlin
-// android/app/build.gradle.kts
-dependencies {
-    implementation("net.zetetic:sqlcipher-android:4.6.1@aar")
-}
+implementation("com.google.android.gms:play-services-location:21.3.0")
 ```
 
-**Without this dependency:** Tracelet works normally with Android's built-in
-File-Based Encryption (FBE). Calling `encryptDatabase()` or setting
-`encryptDatabase: true` will throw a clear error.
+### Database Encryption (SQLCipher)
+Enables AES-256 SQLite encryption for the local database.
+```kotlin
+implementation("net.zetetic:sqlcipher-android:4.6.1@aar")
+implementation("androidx.security:security-crypto:1.1.0")
+```
 
-**Size impact:** ~7.5 MB per ABI. Use App Bundles to minimize.
+### Device Attestation (Play Integrity)
+Enables `getAttestationToken()` and advanced tamper detection.
+```kotlin
+implementation("com.google.android.play:integrity:1.6.0")
+```
 
-See [Database Encryption](DATABASE-ENCRYPTION.md) for full setup.
+**Estimated Size Impact:**
+* **GMS Location:** ~1.2 MB
+* **SQLCipher:** ~7.5 MB per ABI (use App Bundles to minimize)
+* **Play Integrity:** ~0.5 MB
+
+See [Database Encryption](DATABASE-ENCRYPTION.md) and [Device Attestation](DEVICE-ATTESTATION.md) for full setup details.
 
 ---
 

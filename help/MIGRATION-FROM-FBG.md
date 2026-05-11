@@ -533,6 +533,7 @@ Delete `flutter_background_geolocation` and any license-key packages. You won't 
 
 See [INSTALL-ANDROID.md](https://github.com/Ikolvi/Tracelet/blob/main/help/INSTALL-ANDROID.md). Key differences:
 
+- **Optional Dependencies** — 🆕 Tracelet 2.0.0+ requires you to explicitly add `play-services-location` to your `build.gradle` if you want high-accuracy GMS tracking. Otherwise, it falls back to standard AOSP GPS.
 - **No license key** — remove any `BackgroundGeolocation.org` config from `AndroidManifest.xml`
 - **Permissions** — auto-merged via Gradle, you don't declare them
 - **`minSdkVersion`** — API 21+ (same as before)

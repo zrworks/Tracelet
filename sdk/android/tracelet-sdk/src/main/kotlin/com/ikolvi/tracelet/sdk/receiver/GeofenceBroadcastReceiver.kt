@@ -4,95 +4,67 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.google.android.gms.location.GeofenceStatusCodes
-import com.google.android.gms.location.GeofencingEvent
 import com.ikolvi.tracelet.sdk.ListenerEventSender
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
+import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
+import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofence
+import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofencingEvent
 
-/**
- * Receives geofence transition events from the platform.
- *
- * Registered in AndroidManifest.xml and triggered by GeofencingClient
- * when the device enters/exits/dwells in a monitored geofence.
- */
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "GeofenceBroadcastRcvr"
-
-        /**
-         * Static reference to GeofenceManager for dispatching events.
-         * Set by TraceletAndroidPlugin when the plugin initializes.
-         */
         var geofenceManager: GeofenceManager? = null
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null || context == null) return
 
-        val geofencingEvent = GeofencingEvent.fromIntent(intent)
-        if (geofencingEvent == null) {
-            Log.w(TAG, "GeofencingEvent.fromIntent returned null")
+        val extractor = TraceletServices.getInstance(context).getEventExtractor()
+        val event: TraceletGeofencingEvent = extractor.extractGeofencingEvent(intent) ?: return
+
+        if (event.hasError) {
+            Log.e(TAG, "Geofence error: code=${event.errorCode}")
             return
         }
 
-        if (geofencingEvent.hasError()) {
-            val errorMessage = GeofenceStatusCodes.getStatusCodeString(geofencingEvent.errorCode)
-            Log.e(TAG, "Geofence error: $errorMessage (code=${geofencingEvent.errorCode})")
-            return
-        }
-
-        val transitionType = geofencingEvent.geofenceTransition
-        val triggeringGeofences = geofencingEvent.triggeringGeofences ?: return
-        val triggeringLocation = geofencingEvent.triggeringLocation
-
-        val latitude = triggeringLocation?.latitude ?: 0.0
-        val longitude = triggeringLocation?.longitude ?: 0.0
+        val transitionType = event.geofenceTransition
+        val triggeringGeofences = event.triggeringGeofences ?: emptyList<TraceletGeofence>()
+        
+        val location = event.triggeringLocation
+        val lat = location?.latitude ?: 0.0
+        val lng = location?.longitude ?: 0.0
 
         Log.d(TAG, "Geofence transition: type=$transitionType, " +
-                "geofences=${triggeringGeofences.map { it.requestId }}")
+                "geofences=${triggeringGeofences.map { g: TraceletGeofence -> g.requestId }}")
 
         val manager = geofenceManager ?: run {
-            // App was killed — bootstrap SDK subsystems to handle the event.
-            Log.d(TAG, "GeofenceManager is null (app was killed) — bootstrapping")
             try {
                 val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(context)
                 try {
                     sdk.geofenceManager
                 } catch (_: UninitializedPropertyAccessException) {
-                    // Ensure an event sender exists before initialize().
-                    // Prefer the host framework's factory (Flutter plugin, etc.)
-                    // which provides headless Dart dispatch. Fall back to a
-                    // bare ListenerEventSender that buffers events until the
-                    // UI attaches.
                     val sender = TraceletBootstrap.eventSenderFactory?.invoke(context)
                         ?: ListenerEventSender()
                     sdk.setEventSender(sender)
                     sdk.initialize()
-
-                    // Start HTTP sync so the geofence event is synced to the
-                    // server immediately, not just persisted to the database.
                     sdk.httpSyncManager.start()
-
                     sdk.geofenceManager
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to bootstrap SDK for geofence event: ${e.message}")
+                Log.e(TAG, "Failed to bootstrap SDK: ${e.message}")
                 null
             }
         }
 
-        if (manager == null) {
-            Log.w(TAG, "GeofenceManager unavailable — event dropped")
-            return
-        }
+        if (manager == null) return
 
         manager.handleGeofenceEvent(
             transitionType = transitionType,
             triggeringGeofences = triggeringGeofences,
-            latitude = latitude,
-            longitude = longitude,
+            latitude = lat,
+            longitude = lng,
         )
     }
 }

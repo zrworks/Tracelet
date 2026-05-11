@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 import '_helpers.dart';
 
 // ---------------------------------------------------------------------------
@@ -88,6 +88,10 @@ class SecurityConfig {
       'encryptionKey': encryptionKey,
     };
   }
+
+  TlSecurityConfig toTlConfig() => TlSecurityConfig(
+        encryptDatabase: encryptDatabase,
+      );
 
   @override
   String toString() =>

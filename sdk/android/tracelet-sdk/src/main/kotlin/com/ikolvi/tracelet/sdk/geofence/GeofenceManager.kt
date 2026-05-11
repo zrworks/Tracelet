@@ -7,15 +7,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationServices
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.algorithm.GeofenceEvaluator
 import com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver
 import com.ikolvi.tracelet.sdk.db.TraceletDatabase
+import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofence
+import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofencingClient
+import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofencingRequest
+import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
 import android.os.Looper
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
@@ -36,6 +36,7 @@ class GeofenceManager(
     private val config: ConfigManager,
     private val events: TraceletEventSender,
     private val db: TraceletDatabase,
+    private val geofencingClient: TraceletGeofencingClient = TraceletServices.getInstance(context).getGeofencingClient(context),
 ) {
     companion object {
         private const val TAG = "GeofenceManager"
@@ -47,9 +48,6 @@ class GeofenceManager(
         /** Timeout for Play Services geofence registration (ms). */
         private const val REGISTRATION_TIMEOUT_MS = 5000L
     }
-
-    private val geofencingClient: GeofencingClient =
-        LocationServices.getGeofencingClient(context)
 
     private var geofencePendingIntent: PendingIntent? = null
 
@@ -177,7 +175,7 @@ class GeofenceManager(
      */
     fun handleGeofenceEvent(
         transitionType: Int,
-        triggeringGeofences: List<Geofence>,
+        triggeringGeofences: List<TraceletGeofence>,
         latitude: Double,
         longitude: Double,
     ) {
@@ -185,9 +183,9 @@ class GeofenceManager(
         if (config.getGeofenceModeHighAccuracy()) return
 
         val action = when (transitionType) {
-            Geofence.GEOFENCE_TRANSITION_ENTER -> "ENTER"
-            Geofence.GEOFENCE_TRANSITION_EXIT -> "EXIT"
-            Geofence.GEOFENCE_TRANSITION_DWELL -> "DWELL"
+            1 -> "ENTER" // Geofence.GEOFENCE_TRANSITION_ENTER
+            2 -> "EXIT"  // Geofence.GEOFENCE_TRANSITION_EXIT
+            4 -> "DWELL" // Geofence.GEOFENCE_TRANSITION_DWELL
             else -> return
         }
 
@@ -390,61 +388,48 @@ class GeofenceManager(
         val loiteringDelay = (geofenceMap["loiteringDelay"] as? Number)?.toInt() ?: 0
 
         var transitionTypes = 0
-        if (notifyOnEntry) transitionTypes = transitionTypes or Geofence.GEOFENCE_TRANSITION_ENTER
-        if (notifyOnExit) transitionTypes = transitionTypes or Geofence.GEOFENCE_TRANSITION_EXIT
-        if (notifyOnDwell) transitionTypes = transitionTypes or Geofence.GEOFENCE_TRANSITION_DWELL
+        if (notifyOnEntry) transitionTypes = transitionTypes or 1 // ENTER
+        if (notifyOnExit) transitionTypes = transitionTypes or 2  // EXIT
+        if (notifyOnDwell) transitionTypes = transitionTypes or 4 // DWELL
 
-        val geofence = Geofence.Builder()
-            .setRequestId(identifier)
-            .setCircularRegion(latitude, longitude, radius)
-            .setTransitionTypes(transitionTypes)
-            .setExpirationDuration(Geofence.NEVER_EXPIRE)
-            .apply {
-                if (notifyOnDwell && loiteringDelay > 0) {
-                    setLoiteringDelay(loiteringDelay)
-                }
-            }
-            .build()
+        val initialTrigger = if (config.getGeofenceInitialTriggerEntry()) 1 else 0
 
-        val initialTrigger = if (config.getGeofenceInitialTriggerEntry()) {
-            GeofencingRequest.INITIAL_TRIGGER_ENTER
-        } else {
-            0
-        }
-
-        val request = GeofencingRequest.Builder()
-            .setInitialTrigger(initialTrigger)
-            .addGeofence(geofence)
-            .build()
+        val request = TraceletGeofencingRequest(
+            geofences = listOf(
+                TraceletGeofence(
+                    requestId = identifier,
+                    latitude = latitude,
+                    longitude = longitude,
+                    radiusMeters = radius,
+                    expirationTime = -1L, // Geofence.NEVER_EXPIRE
+                    transitionTypes = transitionTypes,
+                    loiteringDelayMs = loiteringDelay
+                )
+            ),
+            initialTrigger = initialTrigger
+        )
 
         return try {
-            val task = geofencingClient.addGeofences(request, getGeofencePendingIntent())
-            // When called from a background thread (headless task, boot service),
-            // block until Play Services confirms registration. On the main thread,
-            // the Task completes asynchronously — acceptable since the app is alive.
-            if (Looper.myLooper() != Looper.getMainLooper()) {
-                val latch = CountDownLatch(1)
-                var success = false
-                task.addOnSuccessListener {
+            val latch = CountDownLatch(1)
+            var success = false
+            geofencingClient.addGeofences(
+                request = request,
+                pendingIntent = getGeofencePendingIntent(),
+                onSuccess = {
                     activeGeofenceIds.add(identifier)
                     success = true
                     latch.countDown()
                     Log.d(TAG, "Geofence registered: $identifier")
-                }.addOnFailureListener { e ->
+                },
+                onFailure = { e ->
                     latch.countDown()
                     Log.e(TAG, "Failed to register geofence $identifier: ${e.message}")
                 }
+            )
+            if (Looper.myLooper() != Looper.getMainLooper()) {
                 latch.await(REGISTRATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                success
-            } else {
-                task.addOnSuccessListener {
-                    activeGeofenceIds.add(identifier)
-                    Log.d(TAG, "Geofence registered: $identifier")
-                }.addOnFailureListener { e ->
-                    Log.e(TAG, "Failed to register geofence $identifier: ${e.message}")
-                }
-                true
             }
+            success
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied for geofencing: ${e.message}")
             false
@@ -452,39 +437,37 @@ class GeofenceManager(
     }
 
     private fun unregisterGeofence(identifier: String): Boolean {
-        val task = geofencingClient.removeGeofences(listOf(identifier))
+        val latch = CountDownLatch(1)
+        geofencingClient.removeGeofences(
+            requestIds = listOf(identifier),
+            onSuccess = {
+                activeGeofenceIds.remove(identifier)
+                latch.countDown()
+                Log.d(TAG, "Geofence removed: $identifier")
+            },
+            onFailure = { e ->
+                latch.countDown()
+                Log.w(TAG, "Failed to remove geofence $identifier: ${e.message}")
+            }
+        )
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            val latch = CountDownLatch(1)
-            task.addOnSuccessListener {
-                activeGeofenceIds.remove(identifier)
-                latch.countDown()
-                Log.d(TAG, "Geofence removed: $identifier")
-            }.addOnFailureListener { e ->
-                latch.countDown()
-                Log.w(TAG, "Failed to remove geofence $identifier: ${e.message}")
-            }
             latch.await(REGISTRATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-        } else {
-            task.addOnSuccessListener {
-                activeGeofenceIds.remove(identifier)
-                Log.d(TAG, "Geofence removed: $identifier")
-            }.addOnFailureListener { e ->
-                Log.w(TAG, "Failed to remove geofence $identifier: ${e.message}")
-            }
         }
         return true
     }
 
     private fun unregisterAllGeofences(): Boolean {
         geofencePendingIntent?.let {
-            geofencingClient.removeGeofences(it)
-                .addOnSuccessListener {
+            geofencingClient.removeGeofences(
+                pendingIntent = it,
+                onSuccess = {
                     activeGeofenceIds.clear()
                     Log.d(TAG, "All geofences removed")
-                }
-                .addOnFailureListener { e ->
+                },
+                onFailure = { e ->
                     Log.w(TAG, "Failed to remove all geofences: ${e.message}")
                 }
+            )
         }
         return true
     }

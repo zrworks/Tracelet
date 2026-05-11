@@ -19,6 +19,9 @@
 
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
+> [!IMPORTANT]
+> **Tracelet 2.0.0 Migration**: This version introduces a new structured configuration schema and optional Android dependencies. See the [Migration Guide](MIGRATION_2.0.md) for details.
+
 ## Features
 
 - **Motion-detection intelligence** — Uses accelerometer, gyroscope & activity recognition to detect when the device is moving or stationary. Automatically toggles location services to conserve battery.
@@ -108,11 +111,6 @@ final state = await tl.Tracelet.ready(tl.Config(
   geo: tl.GeoConfig(
     desiredAccuracy: tl.DesiredAccuracy.high,
     distanceFilter: 10.0,
-    // Reject GPS spikes and low-accuracy readings
-    filter: tl.LocationFilter(
-      trackingAccuracyThreshold: 100,
-      maxImpliedSpeed: 80,
-    ),
   ),
   app: tl.AppConfig(
     stopOnTerminate: false,

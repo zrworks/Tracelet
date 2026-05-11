@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 import '_helpers.dart';
 
 /// **Enterprise** — Configuration for Privacy Zones.
@@ -40,6 +40,10 @@ class PrivacyZoneConfig {
   Map<String, Object?> toMap() {
     return <String, Object?>{'privacyZoneEnabled': enabled};
   }
+
+  TlPrivacyZoneConfig toTlConfig() => TlPrivacyZoneConfig(
+        enabled: enabled,
+      );
 
   @override
   String toString() => 'PrivacyZoneConfig(enabled: $enabled)';

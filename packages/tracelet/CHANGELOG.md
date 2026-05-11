@@ -1,3 +1,21 @@
+## 2.0.0
+
+### 🎉 Major Milestone: Tracelet 2.0.0
+
+Tracelet 2.0.0 introduces a modernized configuration schema, robust type-safe platform communication via Pigeon, and a flexible dependency model to optimize app size and compatibility.
+
+### 🚨 Breaking Changes
+- **Refactored Configuration**: The `Config` model is now a nested compound structure. Fields are grouped into `GeoConfig`, `AppConfig`, `AndroidConfig`, `HttpConfig`, `LoggerConfig`, `MotionConfig`, `GeofenceConfig`, and `SecurityConfig`.
+- **Android On-Demand Dependencies**: Optional features (GMS Location, SQLCipher, Play Integrity) are no longer bundled by default, reducing APK size by ~16 MB. Developers must now explicitly add these to their `android/app/build.gradle` if required.
+- **Pigeon Migration**: All platform-to-native communication now uses strictly-typed Pigeon interfaces, improving reliability and eliminating magic string/map errors.
+- **Removed Deprecated APIs**: Permission methods that returned raw integers (e.g., `getPermissionStatus`, `requestPermission`) have been removed in favor of the strongly-typed `Future<AuthorizationStatus>` methods introduced in 1.9.0.
+
+### 🛠️ Improvements
+- **Motion Sensitivity Tuning**: Added `shakeThreshold`, `stillThreshold`, and `stillSampleCount` to `MotionConfig`, providing granular control over accelerometer-based motion detection across all platforms.
+- **iOS Stability**: Resolved a critical issue where native permission dialogs failed to appear by enforcing main-thread execution for all `CoreLocation` and `CoreMotion` requests.
+- **Cross-Platform Parity**: Aligned authorization status mapping across Android and iOS to ensure consistent behavior when checking permissions.
+- **AOSP Support**: Improved fallback to standard `LocationManager` on Android when Google Play Services are unavailable.
+
 ## 1.9.3
 2: 
 3: - **CHORE**: Bump native SDK dependencies to `1.1.4`.

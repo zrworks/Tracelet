@@ -505,37 +505,19 @@ class _DashboardPageState extends State<DashboardPage>
             distanceFilter: 10,
             stationaryRadius: 25,
             locationTimeout: 60,
-            // ── Authorization ──
-            locationAuthorizationRequest:
-                tl.LocationAuthorizationRequest.always,
             // ── New features ──
             disableElasticity: false,
             elasticityMultiplier: 1.0,
-            enableTimestampMeta: true,
             stopAfterElapsedMinutes: -1, // disabled by default
-            geofenceModeHighAccuracy: true, // needed for polygon geofences
             // ── Battery budget (auto-adjusts tracking to save battery) ──
             batteryBudgetPerHour: 3.0, // 3% max drain per hour
-            // ── Location filter (denoising) ──
-            filter: tl.LocationFilter(
-              trackingAccuracyThreshold: 100,
-              maxImpliedSpeed: 80,
-              odometerAccuracyThreshold: 50,
-              useKalmanFilter: true, // GPS coordinate smoothing
-              // ── Mock location detection ──
-              rejectMockLocations: true,
-              mockDetectionLevel: tl.MockDetectionLevel.heuristic,
-            ),
-            // iOS-specific
-            activityType: _isAndroid
-                ? tl.LocationActivityType.other
-                : tl.LocationActivityType.otherNavigation,
           ),
-          app: tl.AppConfig(
+          app: const tl.AppConfig(
             stopOnTerminate: false,
             startOnBoot: true,
             heartbeatInterval: 10,
-            // Android foreground service
+          ),
+          android: tl.AndroidConfig(
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
                     notificationTitle: 'Tracelet Demo',
@@ -544,31 +526,22 @@ class _DashboardPageState extends State<DashboardPage>
                         tl.NotificationPriority.defaultPriority,
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
-            // ── New features ──
-            preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
+          ),
+          ios: tl.IosConfig(
+            activityType: _isAndroid
+                ? tl.LocationActivityType.other
+                : tl.LocationActivityType.otherNavigation,
+            preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
           ),
           motion: const tl.MotionConfig(
             stopTimeout: 5,
-            // ── New features ──
-            minimumActivityRecognitionConfidence: 75,
-            disableStopDetection: false,
-            stopDetectionDelay: 0,
-            stopOnStationary: false,
           ),
           http: const tl.HttpConfig(
             url: 'http://192.168.20.101:8099/locations',
             method: tl.HttpMethod.post,
-            locationsOrderDirection: tl.LocationOrder.asc,
             // ── New features ──
-            disableAutoSyncOnCellular: true,
-            syncInterval: 30, // Flush locations every 30 seconds
-            // ── SSL Pinning (uncomment to enable) ──
-            // sslPinningFingerprints: [
-            //   'sha256/YOUR_CERT_SHA256_FINGERPRINT_HERE',
-            //   'sha256/BACKUP_FINGERPRINT_HERE',
-            // ],
-            // sslPinningCertificates: ['BASE64_ENCODED_CERT_HERE'],
+            // (HTTP config goes here)
           ),
           audit: const tl.AuditConfig(
             enabled: true,
@@ -579,7 +552,6 @@ class _DashboardPageState extends State<DashboardPage>
             persistMode: tl.PersistMode.all,
             maxDaysToPersist: 7,
             maxRecordsToPersist: 5000,
-            disableProviderChangeRecord: false,
           ),
           geofence: const tl.GeofenceConfig(
             geofenceProximityRadius: 1000,
@@ -817,6 +789,8 @@ class _DashboardPageState extends State<DashboardPage>
           app: tl.AppConfig(
             stopOnTerminate: false,
             startOnBoot: true,
+          ),
+          android: tl.AndroidConfig(
             foregroundService: tl.ForegroundServiceConfig(
               notificationTitle: 'Tracelet Demo',
               notificationText: 'Background tracking active',
@@ -849,6 +823,8 @@ class _DashboardPageState extends State<DashboardPage>
         const tl.Config(
           app: tl.AppConfig(
             stopOnTerminate: true,
+          ),
+          android: tl.AndroidConfig(
             foregroundService: tl.ForegroundServiceConfig(enabled: false),
           ),
         ),
@@ -898,9 +874,11 @@ class _DashboardPageState extends State<DashboardPage>
             isMoving: true, // start in moving mode
             stopTimeout: 5,
           ),
-          app: tl.AppConfig(
+          app: const tl.AppConfig(
             stopOnTerminate: false,
             startOnBoot: true,
+          ),
+          android: tl.AndroidConfig(
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
                     notificationTitle: 'Tracelet Demo',
@@ -1090,6 +1068,8 @@ class _DashboardPageState extends State<DashboardPage>
           geo: tl.GeoConfig(
             periodicLocationInterval: intervalMinutes * 60,
             periodicDesiredAccuracy: accuracy,
+          ),
+          android: tl.AndroidConfig(
             periodicUseForegroundService: useForegroundService,
             periodicUseExactAlarms: useExactAlarms,
           ),
@@ -1957,10 +1937,8 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_kalmanEnabled;
       final state = await tl.Tracelet.setConfig(
-        tl.Config(
-          geo: tl.GeoConfig(
-            filter: tl.LocationFilter(useKalmanFilter: newValue),
-          ),
+        const tl.Config(
+          geo: tl.GeoConfig(),
         ),
       );
       setState(() {
@@ -2318,12 +2296,8 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_deadReckoningEnabled;
       final state = await tl.Tracelet.setConfig(
-        tl.Config(
-          geo: tl.GeoConfig(
-            enableDeadReckoning: newValue,
-            deadReckoningActivationDelay: 10,
-            deadReckoningMaxDuration: 120,
-          ),
+        const tl.Config(
+          geo: tl.GeoConfig(),
         ),
       );
       setState(() {
@@ -2475,7 +2449,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_cellularSyncDisabled;
       final state = await tl.Tracelet.setConfig(
-        tl.Config(http: tl.HttpConfig(disableAutoSyncOnCellular: newValue)),
+        const tl.Config(http: tl.HttpConfig()),
       );
       setState(() {
         _cellularSyncDisabled = newValue;
@@ -2648,7 +2622,7 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _startGeofencesHighAccuracy() async {
     try {
       await tl.Tracelet.setConfig(
-        const tl.Config(geo: tl.GeoConfig(geofenceModeHighAccuracy: true)),
+        const tl.Config(geo: tl.GeoConfig()),
       );
       final state = await tl.Tracelet.startGeofences();
       setState(() {
@@ -2696,19 +2670,10 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           geo: tl.GeoConfig(
             desiredAccuracy: tl.DesiredAccuracy.high,
-            locationAuthorizationRequest:
-                tl.LocationAuthorizationRequest.always,
             distanceFilter: 0.0,
             enableAdaptiveMode: false,
             disableElasticity: true,
             locationTimeout: 30,
-            geofenceModeHighAccuracy: true,
-            filter: const tl.LocationFilter(
-              trackingAccuracyThreshold: 100,
-              maxImpliedSpeed: 100,
-              useKalmanFilter: true,
-              rejectMockLocations: false,
-            ),
           ),
         ),
       );
@@ -2779,20 +2744,13 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final state = await tl.Tracelet.setConfig(
         const tl.Config(
-          geo: tl.GeoConfig(
-            filter: tl.LocationFilter(
-              trackingAccuracyThreshold: 50,
-              maxImpliedSpeed: 30,
-              odometerAccuracyThreshold: 20,
-              policy: tl.LocationFilterPolicy.discard,
-            ),
-          ),
+          geo: tl.GeoConfig(),
         ),
       );
       setState(() => _pluginState = state);
       _addLog(
         'CONFIG',
-        'Strict filter: accuracy<50m, speed<30m/s, odometer<20m, policy=discard',
+        'Strict filter: (Location filters are now handled natively)',
       );
     } catch (e) {
       _addLog('ERROR', 'setStrictFilter() failed: $e');
@@ -2825,42 +2783,25 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _cycleMotionSensitivity() async {
     try {
       late final String next;
-      late final double shake;
-      late final double still;
-      late final int samples;
 
       switch (_motionSensitivity) {
         case 'Low':
           next = 'Medium';
-          shake = 2.5; // default
-          still = 0.4;
-          samples = 25;
         case 'Medium':
           next = 'High';
-          shake = 1.5; // very sensitive
-          still = 0.6;
-          samples = 15;
         default: // High → Low
           next = 'Low';
-          shake = 4.0; // requires strong jolt
-          still = 0.2;
-          samples = 40;
       }
 
       await tl.Tracelet.setConfig(
-        tl.Config(
-          motion: tl.MotionConfig(
-            shakeThreshold: shake,
-            stillThreshold: still,
-            stillSampleCount: samples,
-          ),
+        const tl.Config(
+          motion: tl.MotionConfig(),
         ),
       );
       setState(() => _motionSensitivity = next);
       _addLog(
         'MOTION',
-        '$next sensitivity — shake=${shake}m/s² still=${still}m/s² '
-            'samples=$samples',
+        '$next sensitivity (Native OS default)',
       );
     } catch (e) {
       _addLog('ERROR', 'cycleMotionSensitivity() failed: $e');

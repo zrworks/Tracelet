@@ -33,7 +33,7 @@ export 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
         AuthorizationStatus,
         AccuracyAuthorization,
         HttpMethod,
-        LocationOrder,
+        LocationOrderDirection,
         LocationActivityType,
         PersistMode,
         LocationFilterPolicy,

@@ -21,7 +21,7 @@ class MockTraceletPlatform extends TraceletPlatform
   bool failCurrentPosition = false;
 
   @override
-  Future<Map<String, Object?>> ready(Map<String, Object?> config) async {
+  Future<Map<String, Object?>> ready(TlConfig config) async {
     calls.add((method: 'ready', args: config));
     return {'enabled': false, 'trackingMode': 0};
   }
@@ -289,55 +289,53 @@ void main() {
   group('ForegroundServiceConfig.enabled', () {
     test('defaults to true in Config', () {
       const config = Config();
-      expect(config.app.foregroundService.enabled, true);
+      expect(config.android.foregroundService.enabled, true);
     });
 
     test('can be set to false', () {
       const config = Config(
-        app: AppConfig(
+        android: AndroidConfig(
           foregroundService: ForegroundServiceConfig(enabled: false),
         ),
       );
-      expect(config.app.foregroundService.enabled, false);
+      expect(config.android.foregroundService.enabled, false);
     });
 
     test('serializes to map and back', () {
       const config = Config(
-        app: AppConfig(
+        android: AndroidConfig(
           foregroundService: ForegroundServiceConfig(enabled: false),
         ),
       );
 
       final map = config.toMap();
       final restored = Config.fromMap(map);
-      expect(restored.app.foregroundService.enabled, false);
+      expect(restored.android.foregroundService.enabled, false);
     });
 
     test('enabled: true round-trip', () {
       const config = Config(
-        app: AppConfig(
+        android: AndroidConfig(
           foregroundService: ForegroundServiceConfig(enabled: true),
         ),
       );
 
       final map = config.toMap();
       final restored = Config.fromMap(map);
-      expect(restored.app.foregroundService.enabled, true);
+      expect(restored.android.foregroundService.enabled, true);
     });
 
     test('Config ready passes foreground enabled flag to platform', () async {
       const config = Config(
-        app: AppConfig(
+        android: AndroidConfig(
           foregroundService: ForegroundServiceConfig(enabled: false),
         ),
       );
 
       await Tracelet.ready(config);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
-      final appMap = args['app'] as Map<String, Object?>;
-      final fgMap = appMap['foregroundService'] as Map<String, Object?>;
-      expect(fgMap['enabled'], false);
+      final configArg = mock.calls.first.args as TlConfig;
+      expect(configArg.android.foregroundService.enabled, false);
     });
   });
 
@@ -350,7 +348,7 @@ void main() {
       // No start() call, no foreground service
       await Tracelet.ready(
         const Config(
-          app: AppConfig(
+          android: AndroidConfig(
             foregroundService: ForegroundServiceConfig(enabled: false),
           ),
         ),

@@ -132,7 +132,6 @@ func deepHashTraceletApi(value: Any?, hasher: inout Hasher) {
 
     
 
-/// Desired accuracy level for location requests.
 enum TlDesiredAccuracy: Int {
   case high = 0
   case medium = 1
@@ -141,21 +140,18 @@ enum TlDesiredAccuracy: Int {
   case passive = 4
 }
 
-/// Tracking mode.
 enum TlTrackingMode: Int {
   case location = 0
   case geofences = 1
   case periodic = 2
 }
 
-/// Geofence transition action.
 enum TlGeofenceAction: Int {
   case enter = 0
   case exit = 1
   case dwell = 2
 }
 
-/// Authorization status for location permissions.
 enum TlAuthorizationStatus: Int {
   case notDetermined = 0
   case denied = 1
@@ -164,14 +160,858 @@ enum TlAuthorizationStatus: Int {
   case deniedForever = 4
 }
 
-/// HTTP method for sync.
 enum TlHttpMethod: Int {
   case post = 0
   case put = 1
 }
 
-/// Coordinates sub-message within a location.
-///
+enum TlIosActivityType: Int {
+  case other = 0
+  case automotive = 1
+  case fitness = 2
+  case otherNavigation = 3
+  case airborne = 4
+}
+
+enum TlNotificationPriority: Int {
+  case min = 0
+  case low = 1
+  case defaultPriority = 2
+  case high = 3
+  case max = 4
+}
+
+enum TlLocationOrderDirection: Int {
+  case ascending = 0
+  case descending = 1
+}
+
+enum TlLocationActivityType: Int {
+  case still = 0
+  case walking = 1
+  case running = 2
+  case onFoot = 3
+  case inVehicle = 4
+  case onBicycle = 5
+  case unknown = 6
+}
+
+enum TlLogLevel: Int {
+  case off = 0
+  case error = 1
+  case warn = 2
+  case info = 3
+  case debug = 4
+  case verbose = 5
+}
+
+enum TlPersistMode: Int {
+  case all = 0
+  case location = 1
+  case geofence = 2
+  case none = 3
+}
+
+enum TlHashAlgorithm: Int {
+  case sha256 = 0
+}
+
+enum TlAuthorizationRequest: Int {
+  case always = 0
+  case whenInUse = 1
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlGeoConfig: Hashable {
+  var desiredAccuracy: TlDesiredAccuracy
+  var distanceFilter: Double
+  var stationaryRadius: Double
+  var locationTimeout: Int64
+  var disableElasticity: Bool
+  var elasticityMultiplier: Double
+  var stopAfterElapsedMinutes: Int64
+  var maxMonitoredGeofences: Int64
+  var enableTimestampMeta: Bool
+  var enableAdaptiveMode: Bool
+  var periodicLocationInterval: Int64
+  var periodicDesiredAccuracy: TlDesiredAccuracy
+  var enableSparseUpdates: Bool
+  var sparseDistanceThreshold: Double
+  var sparseMaxIdleSeconds: Int64
+  var enableDeadReckoning: Bool
+  var deadReckoningActivationDelay: Int64
+  var deadReckoningMaxDuration: Int64
+  var batteryBudgetPerHour: Double
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlGeoConfig? {
+    let desiredAccuracy = pigeonVar_list[0] as! TlDesiredAccuracy
+    let distanceFilter = pigeonVar_list[1] as! Double
+    let stationaryRadius = pigeonVar_list[2] as! Double
+    let locationTimeout = pigeonVar_list[3] as! Int64
+    let disableElasticity = pigeonVar_list[4] as! Bool
+    let elasticityMultiplier = pigeonVar_list[5] as! Double
+    let stopAfterElapsedMinutes = pigeonVar_list[6] as! Int64
+    let maxMonitoredGeofences = pigeonVar_list[7] as! Int64
+    let enableTimestampMeta = pigeonVar_list[8] as! Bool
+    let enableAdaptiveMode = pigeonVar_list[9] as! Bool
+    let periodicLocationInterval = pigeonVar_list[10] as! Int64
+    let periodicDesiredAccuracy = pigeonVar_list[11] as! TlDesiredAccuracy
+    let enableSparseUpdates = pigeonVar_list[12] as! Bool
+    let sparseDistanceThreshold = pigeonVar_list[13] as! Double
+    let sparseMaxIdleSeconds = pigeonVar_list[14] as! Int64
+    let enableDeadReckoning = pigeonVar_list[15] as! Bool
+    let deadReckoningActivationDelay = pigeonVar_list[16] as! Int64
+    let deadReckoningMaxDuration = pigeonVar_list[17] as! Int64
+    let batteryBudgetPerHour = pigeonVar_list[18] as! Double
+
+    return TlGeoConfig(
+      desiredAccuracy: desiredAccuracy,
+      distanceFilter: distanceFilter,
+      stationaryRadius: stationaryRadius,
+      locationTimeout: locationTimeout,
+      disableElasticity: disableElasticity,
+      elasticityMultiplier: elasticityMultiplier,
+      stopAfterElapsedMinutes: stopAfterElapsedMinutes,
+      maxMonitoredGeofences: maxMonitoredGeofences,
+      enableTimestampMeta: enableTimestampMeta,
+      enableAdaptiveMode: enableAdaptiveMode,
+      periodicLocationInterval: periodicLocationInterval,
+      periodicDesiredAccuracy: periodicDesiredAccuracy,
+      enableSparseUpdates: enableSparseUpdates,
+      sparseDistanceThreshold: sparseDistanceThreshold,
+      sparseMaxIdleSeconds: sparseMaxIdleSeconds,
+      enableDeadReckoning: enableDeadReckoning,
+      deadReckoningActivationDelay: deadReckoningActivationDelay,
+      deadReckoningMaxDuration: deadReckoningMaxDuration,
+      batteryBudgetPerHour: batteryBudgetPerHour
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      desiredAccuracy,
+      distanceFilter,
+      stationaryRadius,
+      locationTimeout,
+      disableElasticity,
+      elasticityMultiplier,
+      stopAfterElapsedMinutes,
+      maxMonitoredGeofences,
+      enableTimestampMeta,
+      enableAdaptiveMode,
+      periodicLocationInterval,
+      periodicDesiredAccuracy,
+      enableSparseUpdates,
+      sparseDistanceThreshold,
+      sparseMaxIdleSeconds,
+      enableDeadReckoning,
+      deadReckoningActivationDelay,
+      deadReckoningMaxDuration,
+      batteryBudgetPerHour,
+    ]
+  }
+  static func == (lhs: TlGeoConfig, rhs: TlGeoConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlAppConfig: Hashable {
+  var stopOnTerminate: Bool
+  var startOnBoot: Bool
+  var heartbeatInterval: Int64
+  var schedule: [String?]
+  var remoteConfigUrl: String? = nil
+  var remoteConfigHeaders: [String?: String?]? = nil
+  var remoteConfigTimeout: Int64
+  var remoteConfigRefreshInterval: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlAppConfig? {
+    let stopOnTerminate = pigeonVar_list[0] as! Bool
+    let startOnBoot = pigeonVar_list[1] as! Bool
+    let heartbeatInterval = pigeonVar_list[2] as! Int64
+    let schedule = pigeonVar_list[3] as! [String?]
+    let remoteConfigUrl: String? = nilOrValue(pigeonVar_list[4])
+    let remoteConfigHeaders: [String?: String?]? = nilOrValue(pigeonVar_list[5])
+    let remoteConfigTimeout = pigeonVar_list[6] as! Int64
+    let remoteConfigRefreshInterval = pigeonVar_list[7] as! Int64
+
+    return TlAppConfig(
+      stopOnTerminate: stopOnTerminate,
+      startOnBoot: startOnBoot,
+      heartbeatInterval: heartbeatInterval,
+      schedule: schedule,
+      remoteConfigUrl: remoteConfigUrl,
+      remoteConfigHeaders: remoteConfigHeaders,
+      remoteConfigTimeout: remoteConfigTimeout,
+      remoteConfigRefreshInterval: remoteConfigRefreshInterval
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      stopOnTerminate,
+      startOnBoot,
+      heartbeatInterval,
+      schedule,
+      remoteConfigUrl,
+      remoteConfigHeaders,
+      remoteConfigTimeout,
+      remoteConfigRefreshInterval,
+    ]
+  }
+  static func == (lhs: TlAppConfig, rhs: TlAppConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlForegroundServiceConfig: Hashable {
+  var enabled: Bool
+  var channelId: String
+  var channelName: String
+  var notificationTitle: String
+  var notificationText: String
+  var notificationColor: String? = nil
+  var notificationSmallIcon: String? = nil
+  var notificationLargeIcon: String? = nil
+  var notificationPriority: TlNotificationPriority
+  var notificationOngoing: Bool
+  var actions: [String?]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlForegroundServiceConfig? {
+    let enabled = pigeonVar_list[0] as! Bool
+    let channelId = pigeonVar_list[1] as! String
+    let channelName = pigeonVar_list[2] as! String
+    let notificationTitle = pigeonVar_list[3] as! String
+    let notificationText = pigeonVar_list[4] as! String
+    let notificationColor: String? = nilOrValue(pigeonVar_list[5])
+    let notificationSmallIcon: String? = nilOrValue(pigeonVar_list[6])
+    let notificationLargeIcon: String? = nilOrValue(pigeonVar_list[7])
+    let notificationPriority = pigeonVar_list[8] as! TlNotificationPriority
+    let notificationOngoing = pigeonVar_list[9] as! Bool
+    let actions = pigeonVar_list[10] as! [String?]
+
+    return TlForegroundServiceConfig(
+      enabled: enabled,
+      channelId: channelId,
+      channelName: channelName,
+      notificationTitle: notificationTitle,
+      notificationText: notificationText,
+      notificationColor: notificationColor,
+      notificationSmallIcon: notificationSmallIcon,
+      notificationLargeIcon: notificationLargeIcon,
+      notificationPriority: notificationPriority,
+      notificationOngoing: notificationOngoing,
+      actions: actions
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enabled,
+      channelId,
+      channelName,
+      notificationTitle,
+      notificationText,
+      notificationColor,
+      notificationSmallIcon,
+      notificationLargeIcon,
+      notificationPriority,
+      notificationOngoing,
+      actions,
+    ]
+  }
+  static func == (lhs: TlForegroundServiceConfig, rhs: TlForegroundServiceConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlAndroidConfig: Hashable {
+  var locationUpdateInterval: Int64
+  var fastestLocationUpdateInterval: Int64
+  var deferTime: Int64
+  var allowIdenticalLocations: Bool
+  var geofenceModeHighAccuracy: Bool
+  var periodicUseForegroundService: Bool
+  var periodicUseExactAlarms: Bool
+  var scheduleUseAlarmManager: Bool
+  var foregroundService: TlForegroundServiceConfig
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlAndroidConfig? {
+    let locationUpdateInterval = pigeonVar_list[0] as! Int64
+    let fastestLocationUpdateInterval = pigeonVar_list[1] as! Int64
+    let deferTime = pigeonVar_list[2] as! Int64
+    let allowIdenticalLocations = pigeonVar_list[3] as! Bool
+    let geofenceModeHighAccuracy = pigeonVar_list[4] as! Bool
+    let periodicUseForegroundService = pigeonVar_list[5] as! Bool
+    let periodicUseExactAlarms = pigeonVar_list[6] as! Bool
+    let scheduleUseAlarmManager = pigeonVar_list[7] as! Bool
+    let foregroundService = pigeonVar_list[8] as! TlForegroundServiceConfig
+
+    return TlAndroidConfig(
+      locationUpdateInterval: locationUpdateInterval,
+      fastestLocationUpdateInterval: fastestLocationUpdateInterval,
+      deferTime: deferTime,
+      allowIdenticalLocations: allowIdenticalLocations,
+      geofenceModeHighAccuracy: geofenceModeHighAccuracy,
+      periodicUseForegroundService: periodicUseForegroundService,
+      periodicUseExactAlarms: periodicUseExactAlarms,
+      scheduleUseAlarmManager: scheduleUseAlarmManager,
+      foregroundService: foregroundService
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      locationUpdateInterval,
+      fastestLocationUpdateInterval,
+      deferTime,
+      allowIdenticalLocations,
+      geofenceModeHighAccuracy,
+      periodicUseForegroundService,
+      periodicUseExactAlarms,
+      scheduleUseAlarmManager,
+      foregroundService,
+    ]
+  }
+  static func == (lhs: TlAndroidConfig, rhs: TlAndroidConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlIosConfig: Hashable {
+  var activityType: TlIosActivityType
+  var useSignificantChangesOnly: Bool
+  var showsBackgroundLocationIndicator: Bool
+  var pausesLocationUpdatesAutomatically: Bool
+  var locationAuthorizationRequest: TlAuthorizationRequest
+  var disableLocationAuthorizationAlert: Bool
+  var preventSuspend: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlIosConfig? {
+    let activityType = pigeonVar_list[0] as! TlIosActivityType
+    let useSignificantChangesOnly = pigeonVar_list[1] as! Bool
+    let showsBackgroundLocationIndicator = pigeonVar_list[2] as! Bool
+    let pausesLocationUpdatesAutomatically = pigeonVar_list[3] as! Bool
+    let locationAuthorizationRequest = pigeonVar_list[4] as! TlAuthorizationRequest
+    let disableLocationAuthorizationAlert = pigeonVar_list[5] as! Bool
+    let preventSuspend = pigeonVar_list[6] as! Bool
+
+    return TlIosConfig(
+      activityType: activityType,
+      useSignificantChangesOnly: useSignificantChangesOnly,
+      showsBackgroundLocationIndicator: showsBackgroundLocationIndicator,
+      pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
+      locationAuthorizationRequest: locationAuthorizationRequest,
+      disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
+      preventSuspend: preventSuspend
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      activityType,
+      useSignificantChangesOnly,
+      showsBackgroundLocationIndicator,
+      pausesLocationUpdatesAutomatically,
+      locationAuthorizationRequest,
+      disableLocationAuthorizationAlert,
+      preventSuspend,
+    ]
+  }
+  static func == (lhs: TlIosConfig, rhs: TlIosConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlHttpConfig: Hashable {
+  var url: String? = nil
+  var method: TlHttpMethod
+  var headers: [String?: String?]? = nil
+  var params: [String?: Any?]? = nil
+  var autoSync: Bool
+  var batchSync: Bool
+  var maxBatchSize: Int64
+  var sslPinningFingerprints: [String?]? = nil
+  var sslPinningCertificates: [String?]? = nil
+  var httpRootProperty: String? = nil
+  var autoSyncThreshold: Int64
+  var httpTimeout: Int64
+  var locationsOrderDirection: TlLocationOrderDirection
+  var extras: [String?: Any?]? = nil
+  var disableAutoSyncOnCellular: Bool
+  var maxRetries: Int64
+  var retryBackoffBase: Int64
+  var retryBackoffCap: Int64
+  var enableDeltaCompression: Bool
+  var deltaCoordinatePrecision: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlHttpConfig? {
+    let url: String? = nilOrValue(pigeonVar_list[0])
+    let method = pigeonVar_list[1] as! TlHttpMethod
+    let headers: [String?: String?]? = nilOrValue(pigeonVar_list[2])
+    let params: [String?: Any?]? = nilOrValue(pigeonVar_list[3])
+    let autoSync = pigeonVar_list[4] as! Bool
+    let batchSync = pigeonVar_list[5] as! Bool
+    let maxBatchSize = pigeonVar_list[6] as! Int64
+    let sslPinningFingerprints: [String?]? = nilOrValue(pigeonVar_list[7])
+    let sslPinningCertificates: [String?]? = nilOrValue(pigeonVar_list[8])
+    let httpRootProperty: String? = nilOrValue(pigeonVar_list[9])
+    let autoSyncThreshold = pigeonVar_list[10] as! Int64
+    let httpTimeout = pigeonVar_list[11] as! Int64
+    let locationsOrderDirection = pigeonVar_list[12] as! TlLocationOrderDirection
+    let extras: [String?: Any?]? = nilOrValue(pigeonVar_list[13])
+    let disableAutoSyncOnCellular = pigeonVar_list[14] as! Bool
+    let maxRetries = pigeonVar_list[15] as! Int64
+    let retryBackoffBase = pigeonVar_list[16] as! Int64
+    let retryBackoffCap = pigeonVar_list[17] as! Int64
+    let enableDeltaCompression = pigeonVar_list[18] as! Bool
+    let deltaCoordinatePrecision = pigeonVar_list[19] as! Int64
+
+    return TlHttpConfig(
+      url: url,
+      method: method,
+      headers: headers,
+      params: params,
+      autoSync: autoSync,
+      batchSync: batchSync,
+      maxBatchSize: maxBatchSize,
+      sslPinningFingerprints: sslPinningFingerprints,
+      sslPinningCertificates: sslPinningCertificates,
+      httpRootProperty: httpRootProperty,
+      autoSyncThreshold: autoSyncThreshold,
+      httpTimeout: httpTimeout,
+      locationsOrderDirection: locationsOrderDirection,
+      extras: extras,
+      disableAutoSyncOnCellular: disableAutoSyncOnCellular,
+      maxRetries: maxRetries,
+      retryBackoffBase: retryBackoffBase,
+      retryBackoffCap: retryBackoffCap,
+      enableDeltaCompression: enableDeltaCompression,
+      deltaCoordinatePrecision: deltaCoordinatePrecision
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      url,
+      method,
+      headers,
+      params,
+      autoSync,
+      batchSync,
+      maxBatchSize,
+      sslPinningFingerprints,
+      sslPinningCertificates,
+      httpRootProperty,
+      autoSyncThreshold,
+      httpTimeout,
+      locationsOrderDirection,
+      extras,
+      disableAutoSyncOnCellular,
+      maxRetries,
+      retryBackoffBase,
+      retryBackoffCap,
+      enableDeltaCompression,
+      deltaCoordinatePrecision,
+    ]
+  }
+  static func == (lhs: TlHttpConfig, rhs: TlHttpConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlConfig: Hashable {
+  var geo: TlGeoConfig
+  var app: TlAppConfig
+  var android: TlAndroidConfig
+  var ios: TlIosConfig
+  var http: TlHttpConfig
+  var logger: TlLoggerConfig
+  var motion: TlMotionConfig
+  var geofence: TlGeofenceConfig
+  var persistence: TlPersistenceConfig
+  var audit: TlAuditConfig
+  var privacyZone: TlPrivacyZoneConfig
+  var security: TlSecurityConfig
+  var attestation: TlAttestationConfig
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlConfig? {
+    let geo = pigeonVar_list[0] as! TlGeoConfig
+    let app = pigeonVar_list[1] as! TlAppConfig
+    let android = pigeonVar_list[2] as! TlAndroidConfig
+    let ios = pigeonVar_list[3] as! TlIosConfig
+    let http = pigeonVar_list[4] as! TlHttpConfig
+    let logger = pigeonVar_list[5] as! TlLoggerConfig
+    let motion = pigeonVar_list[6] as! TlMotionConfig
+    let geofence = pigeonVar_list[7] as! TlGeofenceConfig
+    let persistence = pigeonVar_list[8] as! TlPersistenceConfig
+    let audit = pigeonVar_list[9] as! TlAuditConfig
+    let privacyZone = pigeonVar_list[10] as! TlPrivacyZoneConfig
+    let security = pigeonVar_list[11] as! TlSecurityConfig
+    let attestation = pigeonVar_list[12] as! TlAttestationConfig
+
+    return TlConfig(
+      geo: geo,
+      app: app,
+      android: android,
+      ios: ios,
+      http: http,
+      logger: logger,
+      motion: motion,
+      geofence: geofence,
+      persistence: persistence,
+      audit: audit,
+      privacyZone: privacyZone,
+      security: security,
+      attestation: attestation
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      geo,
+      app,
+      android,
+      ios,
+      http,
+      logger,
+      motion,
+      geofence,
+      persistence,
+      audit,
+      privacyZone,
+      security,
+      attestation,
+    ]
+  }
+  static func == (lhs: TlConfig, rhs: TlConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlLoggerConfig: Hashable {
+  var logLevel: TlLogLevel
+  var logMaxDays: Int64
+  var debug: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlLoggerConfig? {
+    let logLevel = pigeonVar_list[0] as! TlLogLevel
+    let logMaxDays = pigeonVar_list[1] as! Int64
+    let debug = pigeonVar_list[2] as! Bool
+
+    return TlLoggerConfig(
+      logLevel: logLevel,
+      logMaxDays: logMaxDays,
+      debug: debug
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      logLevel,
+      logMaxDays,
+      debug,
+    ]
+  }
+  static func == (lhs: TlLoggerConfig, rhs: TlLoggerConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlMotionConfig: Hashable {
+  var stopTimeout: Int64
+  var motionTriggerDelay: Int64
+  var disableMotionActivityUpdates: Bool
+  var isMoving: Bool
+  var activityRecognitionInterval: Int64
+  var minimumActivityRecognitionConfidence: Int64
+  var disableStopDetection: Bool
+  var stopDetectionDelay: Int64
+  var stopOnStationary: Bool
+  var activityTypes: [TlLocationActivityType?]? = nil
+  var stationaryRadius: Double
+  var useSignificantChangesOnly: Bool
+  var shakeThreshold: Double
+  var stillThreshold: Double
+  var stillSampleCount: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlMotionConfig? {
+    let stopTimeout = pigeonVar_list[0] as! Int64
+    let motionTriggerDelay = pigeonVar_list[1] as! Int64
+    let disableMotionActivityUpdates = pigeonVar_list[2] as! Bool
+    let isMoving = pigeonVar_list[3] as! Bool
+    let activityRecognitionInterval = pigeonVar_list[4] as! Int64
+    let minimumActivityRecognitionConfidence = pigeonVar_list[5] as! Int64
+    let disableStopDetection = pigeonVar_list[6] as! Bool
+    let stopDetectionDelay = pigeonVar_list[7] as! Int64
+    let stopOnStationary = pigeonVar_list[8] as! Bool
+    let activityTypes: [TlLocationActivityType?]? = nilOrValue(pigeonVar_list[9])
+    let stationaryRadius = pigeonVar_list[10] as! Double
+    let useSignificantChangesOnly = pigeonVar_list[11] as! Bool
+    let shakeThreshold = pigeonVar_list[12] as! Double
+    let stillThreshold = pigeonVar_list[13] as! Double
+    let stillSampleCount = pigeonVar_list[14] as! Int64
+
+    return TlMotionConfig(
+      stopTimeout: stopTimeout,
+      motionTriggerDelay: motionTriggerDelay,
+      disableMotionActivityUpdates: disableMotionActivityUpdates,
+      isMoving: isMoving,
+      activityRecognitionInterval: activityRecognitionInterval,
+      minimumActivityRecognitionConfidence: minimumActivityRecognitionConfidence,
+      disableStopDetection: disableStopDetection,
+      stopDetectionDelay: stopDetectionDelay,
+      stopOnStationary: stopOnStationary,
+      activityTypes: activityTypes,
+      stationaryRadius: stationaryRadius,
+      useSignificantChangesOnly: useSignificantChangesOnly,
+      shakeThreshold: shakeThreshold,
+      stillThreshold: stillThreshold,
+      stillSampleCount: stillSampleCount
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      stopTimeout,
+      motionTriggerDelay,
+      disableMotionActivityUpdates,
+      isMoving,
+      activityRecognitionInterval,
+      minimumActivityRecognitionConfidence,
+      disableStopDetection,
+      stopDetectionDelay,
+      stopOnStationary,
+      activityTypes,
+      stationaryRadius,
+      useSignificantChangesOnly,
+      shakeThreshold,
+      stillThreshold,
+      stillSampleCount,
+    ]
+  }
+  static func == (lhs: TlMotionConfig, rhs: TlMotionConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlGeofenceConfig: Hashable {
+  var geofenceModeHighAccuracy: Bool
+  var geofenceInitialTriggerEntry: Bool
+  var geofenceProximityRadius: Int64
+  var geofenceInitialTrigger: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlGeofenceConfig? {
+    let geofenceModeHighAccuracy = pigeonVar_list[0] as! Bool
+    let geofenceInitialTriggerEntry = pigeonVar_list[1] as! Bool
+    let geofenceProximityRadius = pigeonVar_list[2] as! Int64
+    let geofenceInitialTrigger = pigeonVar_list[3] as! Bool
+
+    return TlGeofenceConfig(
+      geofenceModeHighAccuracy: geofenceModeHighAccuracy,
+      geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
+      geofenceProximityRadius: geofenceProximityRadius,
+      geofenceInitialTrigger: geofenceInitialTrigger
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      geofenceModeHighAccuracy,
+      geofenceInitialTriggerEntry,
+      geofenceProximityRadius,
+      geofenceInitialTrigger,
+    ]
+  }
+  static func == (lhs: TlGeofenceConfig, rhs: TlGeofenceConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlPersistenceConfig: Hashable {
+  var persistMode: TlPersistMode
+  var maxDaysToPersist: Int64
+  var maxRecordsToPersist: Int64
+  var disableProviderChangeRecord: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlPersistenceConfig? {
+    let persistMode = pigeonVar_list[0] as! TlPersistMode
+    let maxDaysToPersist = pigeonVar_list[1] as! Int64
+    let maxRecordsToPersist = pigeonVar_list[2] as! Int64
+    let disableProviderChangeRecord = pigeonVar_list[3] as! Bool
+
+    return TlPersistenceConfig(
+      persistMode: persistMode,
+      maxDaysToPersist: maxDaysToPersist,
+      maxRecordsToPersist: maxRecordsToPersist,
+      disableProviderChangeRecord: disableProviderChangeRecord
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      persistMode,
+      maxDaysToPersist,
+      maxRecordsToPersist,
+      disableProviderChangeRecord,
+    ]
+  }
+  static func == (lhs: TlPersistenceConfig, rhs: TlPersistenceConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlAuditConfig: Hashable {
+  var enabled: Bool
+  var hashAlgorithm: TlHashAlgorithm
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlAuditConfig? {
+    let enabled = pigeonVar_list[0] as! Bool
+    let hashAlgorithm = pigeonVar_list[1] as! TlHashAlgorithm
+
+    return TlAuditConfig(
+      enabled: enabled,
+      hashAlgorithm: hashAlgorithm
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enabled,
+      hashAlgorithm,
+    ]
+  }
+  static func == (lhs: TlAuditConfig, rhs: TlAuditConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlPrivacyZoneConfig: Hashable {
+  var enabled: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlPrivacyZoneConfig? {
+    let enabled = pigeonVar_list[0] as! Bool
+
+    return TlPrivacyZoneConfig(
+      enabled: enabled
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enabled
+    ]
+  }
+  static func == (lhs: TlPrivacyZoneConfig, rhs: TlPrivacyZoneConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlSecurityConfig: Hashable {
+  var encryptDatabase: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlSecurityConfig? {
+    let encryptDatabase = pigeonVar_list[0] as! Bool
+
+    return TlSecurityConfig(
+      encryptDatabase: encryptDatabase
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      encryptDatabase
+    ]
+  }
+  static func == (lhs: TlSecurityConfig, rhs: TlSecurityConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlAttestationConfig: Hashable {
+  var enabled: Bool
+  var refreshInterval: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlAttestationConfig? {
+    let enabled = pigeonVar_list[0] as! Bool
+    let refreshInterval = pigeonVar_list[1] as! Int64
+
+    return TlAttestationConfig(
+      enabled: enabled,
+      refreshInterval: refreshInterval
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enabled,
+      refreshInterval,
+    ]
+  }
+  static func == (lhs: TlAttestationConfig, rhs: TlAttestationConfig) -> Bool {
+    return deepEqualsTraceletApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashTraceletApi(value: toList(), hasher: &hasher)
+  }
+}
+
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlCoords: Hashable {
   var latitude: Double
@@ -237,8 +1077,6 @@ struct TlCoords: Hashable {
   }
 }
 
-/// Battery info sub-message.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlBattery: Hashable {
   var level: Double
@@ -268,8 +1106,6 @@ struct TlBattery: Hashable {
   }
 }
 
-/// A location fix returned from the native platform.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlLocation: Hashable {
   var coords: TlCoords
@@ -327,8 +1163,6 @@ struct TlLocation: Hashable {
   }
 }
 
-/// Activity classification.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlActivity: Hashable {
   var type: String
@@ -358,8 +1192,6 @@ struct TlActivity: Hashable {
   }
 }
 
-/// Plugin state returned by ready/start/stop/getState.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlState: Hashable {
   var enabled: Bool
@@ -405,8 +1237,6 @@ struct TlState: Hashable {
   }
 }
 
-/// A geofence definition.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlGeofence: Hashable {
   var identifier: String
@@ -468,8 +1298,6 @@ struct TlGeofence: Hashable {
   }
 }
 
-/// Geofence event fired on transitions.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlGeofenceEvent: Hashable {
   var identifier: String
@@ -507,8 +1335,6 @@ struct TlGeofenceEvent: Hashable {
   }
 }
 
-/// HTTP sync event.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlHttpEvent: Hashable {
   var isSuccess: Bool
@@ -542,8 +1368,6 @@ struct TlHttpEvent: Hashable {
   }
 }
 
-/// Provider change event (GPS/network/authorization state).
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlProviderChangeEvent: Hashable {
   var enabled: Bool
@@ -585,8 +1409,6 @@ struct TlProviderChangeEvent: Hashable {
   }
 }
 
-/// Options for getCurrentPosition.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlCurrentPositionOptions: Hashable {
   var desiredAccuracy: TlDesiredAccuracy? = nil
@@ -632,13 +1454,9 @@ struct TlCurrentPositionOptions: Hashable {
   }
 }
 
-/// Activity change event data.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlActivityChangeEvent: Hashable {
-  /// Activity type name (e.g. "still", "walking", "in_vehicle").
   var activity: String
-  /// Confidence percentage (0–100).
   var confidence: Int64
 
 
@@ -665,20 +1483,16 @@ struct TlActivityChangeEvent: Hashable {
   }
 }
 
-/// Change in the set of actively monitored geofences.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlGeofencesChangeEvent: Hashable {
-  /// Geofences that were activated (started monitoring).
-  var on: [TlGeofence]? = nil
-  /// Geofences that were deactivated (stopped monitoring).
-  var off: [TlGeofence]? = nil
+  var on: [TlGeofence?]? = nil
+  var off: [TlGeofence?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> TlGeofencesChangeEvent? {
-    let on: [TlGeofence]? = nilOrValue(pigeonVar_list[0])
-    let off: [TlGeofence]? = nilOrValue(pigeonVar_list[1])
+    let on: [TlGeofence?]? = nilOrValue(pigeonVar_list[0])
+    let off: [TlGeofence?]? = nilOrValue(pigeonVar_list[1])
 
     return TlGeofencesChangeEvent(
       on: on,
@@ -698,8 +1512,6 @@ struct TlGeofencesChangeEvent: Hashable {
   }
 }
 
-/// Heartbeat event data (periodic location check-in).
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlHeartbeatEvent: Hashable {
   var location: TlLocation
@@ -725,8 +1537,6 @@ struct TlHeartbeatEvent: Hashable {
   }
 }
 
-/// Authorization / token-refresh event data.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlAuthorizationEvent: Hashable {
   var success: Bool
@@ -760,8 +1570,6 @@ struct TlAuthorizationEvent: Hashable {
   }
 }
 
-/// Connectivity change event data.
-///
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlConnectivityChangeEvent: Hashable {
   var connected: Bool
@@ -821,34 +1629,112 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
       }
       return nil
     case 134:
-      return TlCoords.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlIosActivityType(rawValue: enumResultAsInt)
+      }
+      return nil
     case 135:
-      return TlBattery.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlNotificationPriority(rawValue: enumResultAsInt)
+      }
+      return nil
     case 136:
-      return TlLocation.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlLocationOrderDirection(rawValue: enumResultAsInt)
+      }
+      return nil
     case 137:
-      return TlActivity.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlLocationActivityType(rawValue: enumResultAsInt)
+      }
+      return nil
     case 138:
-      return TlState.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlLogLevel(rawValue: enumResultAsInt)
+      }
+      return nil
     case 139:
-      return TlGeofence.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlPersistMode(rawValue: enumResultAsInt)
+      }
+      return nil
     case 140:
-      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlHashAlgorithm(rawValue: enumResultAsInt)
+      }
+      return nil
     case 141:
-      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlAuthorizationRequest(rawValue: enumResultAsInt)
+      }
+      return nil
     case 142:
-      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlGeoConfig.fromList(self.readValue() as! [Any?])
     case 143:
-      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+      return TlAppConfig.fromList(self.readValue() as! [Any?])
     case 144:
-      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlForegroundServiceConfig.fromList(self.readValue() as! [Any?])
     case 145:
-      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlAndroidConfig.fromList(self.readValue() as! [Any?])
     case 146:
-      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+      return TlIosConfig.fromList(self.readValue() as! [Any?])
     case 147:
-      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+      return TlHttpConfig.fromList(self.readValue() as! [Any?])
     case 148:
+      return TlConfig.fromList(self.readValue() as! [Any?])
+    case 149:
+      return TlLoggerConfig.fromList(self.readValue() as! [Any?])
+    case 150:
+      return TlMotionConfig.fromList(self.readValue() as! [Any?])
+    case 151:
+      return TlGeofenceConfig.fromList(self.readValue() as! [Any?])
+    case 152:
+      return TlPersistenceConfig.fromList(self.readValue() as! [Any?])
+    case 153:
+      return TlAuditConfig.fromList(self.readValue() as! [Any?])
+    case 154:
+      return TlPrivacyZoneConfig.fromList(self.readValue() as! [Any?])
+    case 155:
+      return TlSecurityConfig.fromList(self.readValue() as! [Any?])
+    case 156:
+      return TlAttestationConfig.fromList(self.readValue() as! [Any?])
+    case 157:
+      return TlCoords.fromList(self.readValue() as! [Any?])
+    case 158:
+      return TlBattery.fromList(self.readValue() as! [Any?])
+    case 159:
+      return TlLocation.fromList(self.readValue() as! [Any?])
+    case 160:
+      return TlActivity.fromList(self.readValue() as! [Any?])
+    case 161:
+      return TlState.fromList(self.readValue() as! [Any?])
+    case 162:
+      return TlGeofence.fromList(self.readValue() as! [Any?])
+    case 163:
+      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+    case 164:
+      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+    case 165:
+      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+    case 166:
+      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+    case 167:
+      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+    case 168:
+      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+    case 169:
+      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+    case 170:
+      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+    case 171:
       return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -873,50 +1759,119 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlHttpMethod {
       super.writeByte(133)
       super.writeValue(value.rawValue)
-    } else if let value = value as? TlCoords {
+    } else if let value = value as? TlIosActivityType {
       super.writeByte(134)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlBattery {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlNotificationPriority {
       super.writeByte(135)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlLocation {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlLocationOrderDirection {
       super.writeByte(136)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlActivity {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlLocationActivityType {
       super.writeByte(137)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlState {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlLogLevel {
       super.writeByte(138)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlGeofence {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlPersistMode {
       super.writeByte(139)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceEvent {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlHashAlgorithm {
       super.writeByte(140)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlHttpEvent {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlAuthorizationRequest {
       super.writeByte(141)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlProviderChangeEvent {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlGeoConfig {
       super.writeByte(142)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCurrentPositionOptions {
+    } else if let value = value as? TlAppConfig {
       super.writeByte(143)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivityChangeEvent {
+    } else if let value = value as? TlForegroundServiceConfig {
       super.writeByte(144)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofencesChangeEvent {
+    } else if let value = value as? TlAndroidConfig {
       super.writeByte(145)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHeartbeatEvent {
+    } else if let value = value as? TlIosConfig {
       super.writeByte(146)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuthorizationEvent {
+    } else if let value = value as? TlHttpConfig {
       super.writeByte(147)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConnectivityChangeEvent {
+    } else if let value = value as? TlConfig {
       super.writeByte(148)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLoggerConfig {
+      super.writeByte(149)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlMotionConfig {
+      super.writeByte(150)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlGeofenceConfig {
+      super.writeByte(151)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlPersistenceConfig {
+      super.writeByte(152)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlAuditConfig {
+      super.writeByte(153)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlPrivacyZoneConfig {
+      super.writeByte(154)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlSecurityConfig {
+      super.writeByte(155)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlAttestationConfig {
+      super.writeByte(156)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlCoords {
+      super.writeByte(157)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlBattery {
+      super.writeByte(158)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLocation {
+      super.writeByte(159)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlActivity {
+      super.writeByte(160)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlState {
+      super.writeByte(161)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlGeofence {
+      super.writeByte(162)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlGeofenceEvent {
+      super.writeByte(163)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlHttpEvent {
+      super.writeByte(164)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlProviderChangeEvent {
+      super.writeByte(165)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlCurrentPositionOptions {
+      super.writeByte(166)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlActivityChangeEvent {
+      super.writeByte(167)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlGeofencesChangeEvent {
+      super.writeByte(168)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlHeartbeatEvent {
+      super.writeByte(169)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlAuthorizationEvent {
+      super.writeByte(170)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlConnectivityChangeEvent {
+      super.writeByte(171)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -941,154 +1896,80 @@ class TraceletApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol TraceletHostApi {
-  /// Initialize the plugin with configuration. Returns current state.
-  func ready(config: [String: Any?], completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Start location tracking. Returns current state.
+  func ready(config: TlConfig, completion: @escaping (Result<TlState, Error>) -> Void)
   func start(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Stop location tracking. Returns current state.
   func stop(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Start geofence-only mode. Returns current state.
   func startGeofences(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Start periodic one-shot mode. Returns current state.
   func startPeriodic(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Get current plugin state.
   func getState(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Update configuration. Returns current state.
-  func setConfig(config: [String: Any?], completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Reset to defaults. Returns current state.
-  func reset(config: [String: Any?]?, completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Get current position with options.
+  func setConfig(config: TlConfig, completion: @escaping (Result<TlState, Error>) -> Void)
+  func reset(config: TlConfig?, completion: @escaping (Result<TlState, Error>) -> Void)
   func getCurrentPosition(options: TlCurrentPositionOptions, completion: @escaping (Result<TlLocation, Error>) -> Void)
-  /// Get last known position without triggering a fix.
-  func getLastKnownLocation(options: [String: Any?]?, completion: @escaping (Result<TlLocation?, Error>) -> Void)
-  /// Start watching position at an interval. Returns a watch ID.
-  func watchPosition(options: [String: Any?], completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Stop a position watch by ID.
+  func getLastKnownLocation(options: TlCurrentPositionOptions?, completion: @escaping (Result<TlLocation?, Error>) -> Void)
+  func watchPosition(options: TlCurrentPositionOptions, completion: @escaping (Result<Int64, Error>) -> Void)
   func stopWatchPosition(watchId: Int64, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Toggle motion state.
   func changePace(isMoving: Bool, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get odometer value in meters.
   func getOdometer(completion: @escaping (Result<Double, Error>) -> Void)
-  /// Reset odometer. Returns location at reset point.
   func setOdometer(value: Double, completion: @escaping (Result<TlLocation, Error>) -> Void)
-  /// Add a single geofence.
   func addGeofence(geofence: TlGeofence, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Add multiple geofences.
   func addGeofences(geofences: [TlGeofence], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Remove a geofence by identifier.
   func removeGeofence(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Remove all geofences.
   func removeGeofences(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get all registered geofences.
-  func getGeofences(completion: @escaping (Result<[TlGeofence], Error>) -> Void)
-  /// Get a single geofence by identifier.
+  func getGeofences(completion: @escaping (Result<[TlGeofence?], Error>) -> Void)
   func getGeofence(identifier: String, completion: @escaping (Result<TlGeofence?, Error>) -> Void)
-  /// Check if a geofence exists.
   func geofenceExists(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get stored locations.
-  func getLocations(query: [String: Any?]?, completion: @escaping (Result<[TlLocation], Error>) -> Void)
-  /// Get count of stored locations.
-  func getCount(query: [String: Any?]?, completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Delete all stored locations.
+  func getLocations(query: [String?: Any?]?, completion: @escaping (Result<[TlLocation?], Error>) -> Void)
+  func getCount(query: [String?: Any?]?, completion: @escaping (Result<Int64, Error>) -> Void)
+  func insertLocation(params: [String?: Any?], completion: @escaping (Result<String, Error>) -> Void)
   func destroyLocations(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Delete only synced locations from the database. Returns count deleted.
   func destroySyncedLocations(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Delete a single location by UUID.
   func destroyLocation(uuid: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Insert a custom location. Returns UUID.
-  func insertLocation(params: [String: Any?], completion: @escaping (Result<String, Error>) -> Void)
-  /// Manually trigger HTTP sync. Returns synced locations.
-  func sync(completion: @escaping (Result<[TlLocation], Error>) -> Void)
-  /// Update dynamic HTTP headers.
-  func setDynamicHeaders(headers: [String: String], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Set route context for subsequent locations.
-  func setRouteContext(context: [String: Any?], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Clear route context.
+  func sync(completion: @escaping (Result<[TlLocation?], Error>) -> Void)
+  func setDynamicHeaders(headers: [String?: String?], completion: @escaping (Result<Bool, Error>) -> Void)
+  func setRouteContext(context: [String?: Any?], completion: @escaping (Result<Bool, Error>) -> Void)
   func clearRouteContext(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get location permission status.
+  func registerHeadlessHeadersCallback(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void)
+  func registerHeadlessSyncBodyBuilder(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void)
   func getPermissionStatus(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void)
-  /// Request location permission. Returns result.
   func requestPermission(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void)
-  /// Get notification permission status (Android 13+).
   func getNotificationPermissionStatus(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Request notification permission (Android 13+).
   func requestNotificationPermission(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Check if exact alarms can be scheduled (Android 12+).
   func canScheduleExactAlarms(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Open exact alarm settings (Android 12+).
   func openExactAlarmSettings(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get motion/activity recognition permission status.
   func getMotionPermissionStatus(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Request motion/activity recognition permission.
   func requestMotionPermission(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Request temporary full accuracy (iOS 14+). Returns accuracy status.
   func requestTemporaryFullAccuracy(purpose: String, completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Whether device is in power-save mode.
   func isPowerSaveMode(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get location provider state.
   func getProviderState(completion: @escaping (Result<TlProviderChangeEvent, Error>) -> Void)
-  /// Get device info.
-  func getDeviceInfo(completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  /// Get available sensors.
-  func getSensors(completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  /// Play a debug sound.
-  func playSound(name: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Whether ignoring battery optimizations (Android).
-  func isIgnoringBatteryOptimizations(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Request a system settings page (e.g., battery optimization).
-  func requestSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Show a system settings page (e.g., location settings).
-  func showSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get OEM settings health information.
-  func getSettingsHealth(completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  /// Open an OEM-specific settings screen by label.
-  func openOemSettings(label: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get plugin log.
-  func getLog(query: [String: Any?]?, completion: @escaping (Result<String, Error>) -> Void)
-  /// Destroy all log entries.
-  func destroyLog(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Email the log.
-  func emailLog(email: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Write a custom log entry.
+  func getDeviceInfo(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
   func log(level: String, message: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Start schedule-based tracking.
+  func playSound(name: String, completion: @escaping (Result<Bool, Error>) -> Void)
+  func isIgnoringBatteryOptimizations(completion: @escaping (Result<Bool, Error>) -> Void)
+  func requestSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void)
+  func showSettings(action: String, completion: @escaping (Result<Bool, Error>) -> Void)
   func startSchedule(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Stop schedule-based tracking.
   func stopSchedule(completion: @escaping (Result<TlState, Error>) -> Void)
-  /// Start a background task. Returns task ID.
+  func registerHeadlessTask(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void)
   func startBackgroundTask(completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Complete a background task.
   func stopBackgroundTask(taskId: Int64, completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Register a headless task callback for background event dispatch.
-  func registerHeadlessTask(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Register a headless headers callback for background token recovery.
-  func registerHeadlessHeadersCallback(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Register a headless sync body builder for background custom payloads.
-  func registerHeadlessSyncBodyBuilder(callbackIds: [Int64], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Verify audit trail integrity.
-  func verifyAuditTrail(completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  /// Get audit proof for a location UUID.
-  func getAuditProof(uuid: String, completion: @escaping (Result<[String: Any?]?, Error>) -> Void)
-  /// Add a privacy zone.
-  func addPrivacyZone(zone: [String: Any?], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Add multiple privacy zones.
-  func addPrivacyZones(zones: [[String: Any?]], completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Remove a privacy zone by identifier.
+  func getSensors(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
+  func getSettingsHealth(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
+  func openOemSettings(label: String, completion: @escaping (Result<Bool, Error>) -> Void)
+  func getLog(query: [String?: Any?]?, completion: @escaping (Result<String, Error>) -> Void)
+  func destroyLog(completion: @escaping (Result<Bool, Error>) -> Void)
+  func emailLog(email: String, completion: @escaping (Result<Bool, Error>) -> Void)
+  func verifyAuditTrail(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
+  func getAuditProof(uuid: String, completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
+  func addPrivacyZone(zone: [String?: Any?], completion: @escaping (Result<Bool, Error>) -> Void)
+  func addPrivacyZones(zones: [[String?: Any?]?], completion: @escaping (Result<Bool, Error>) -> Void)
   func removePrivacyZone(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Remove all privacy zones.
   func removePrivacyZones(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get all privacy zones.
-  func getPrivacyZones(completion: @escaping (Result<[[String: Any?]], Error>) -> Void)
-  /// Check if database is encrypted.
+  func getPrivacyZones(completion: @escaping (Result<[[String?: Any?]?], Error>) -> Void)
   func isDatabaseEncrypted(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Encrypt the database (one-time migration).
   func encryptDatabase(completion: @escaping (Result<Bool, Error>) -> Void)
-  /// Get a device attestation token.
-  func getAttestationToken(completion: @escaping (Result<[String: Any?]?, Error>) -> Void)
-  /// Get carbon emissions report.
-  func getCarbonReport(query: [String: Any?]?, completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  /// Get dead reckoning state.
-  func getDeadReckoningState(completion: @escaping (Result<[String: Any?]?, Error>) -> Void)
+  func getAttestationToken(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
+  func getDeadReckoningState(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
+  func getCarbonReport(query: [String?: Any?]?, completion: @escaping (Result<[String?: Any?], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -1097,12 +1978,11 @@ class TraceletHostApiSetup {
   /// Sets up an instance of `TraceletHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: TraceletHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    /// Initialize the plugin with configuration. Returns current state.
     let readyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.ready\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       readyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let configArg = args[0] as! [String: Any?]
+        let configArg = args[0] as! TlConfig
         api.ready(config: configArg) { result in
           switch result {
           case .success(let res):
@@ -1115,7 +1995,6 @@ class TraceletHostApiSetup {
     } else {
       readyChannel.setMessageHandler(nil)
     }
-    /// Start location tracking. Returns current state.
     let startChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.start\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startChannel.setMessageHandler { _, reply in
@@ -1131,7 +2010,6 @@ class TraceletHostApiSetup {
     } else {
       startChannel.setMessageHandler(nil)
     }
-    /// Stop location tracking. Returns current state.
     let stopChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stop\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopChannel.setMessageHandler { _, reply in
@@ -1147,7 +2025,6 @@ class TraceletHostApiSetup {
     } else {
       stopChannel.setMessageHandler(nil)
     }
-    /// Start geofence-only mode. Returns current state.
     let startGeofencesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startGeofences\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startGeofencesChannel.setMessageHandler { _, reply in
@@ -1163,7 +2040,6 @@ class TraceletHostApiSetup {
     } else {
       startGeofencesChannel.setMessageHandler(nil)
     }
-    /// Start periodic one-shot mode. Returns current state.
     let startPeriodicChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startPeriodic\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startPeriodicChannel.setMessageHandler { _, reply in
@@ -1179,7 +2055,6 @@ class TraceletHostApiSetup {
     } else {
       startPeriodicChannel.setMessageHandler(nil)
     }
-    /// Get current plugin state.
     let getStateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getState\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getStateChannel.setMessageHandler { _, reply in
@@ -1195,12 +2070,11 @@ class TraceletHostApiSetup {
     } else {
       getStateChannel.setMessageHandler(nil)
     }
-    /// Update configuration. Returns current state.
     let setConfigChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setConfig\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setConfigChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let configArg = args[0] as! [String: Any?]
+        let configArg = args[0] as! TlConfig
         api.setConfig(config: configArg) { result in
           switch result {
           case .success(let res):
@@ -1213,12 +2087,11 @@ class TraceletHostApiSetup {
     } else {
       setConfigChannel.setMessageHandler(nil)
     }
-    /// Reset to defaults. Returns current state.
     let resetChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.reset\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       resetChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let configArg: [String: Any?]? = nilOrValue(args[0])
+        let configArg: TlConfig? = nilOrValue(args[0])
         api.reset(config: configArg) { result in
           switch result {
           case .success(let res):
@@ -1231,7 +2104,6 @@ class TraceletHostApiSetup {
     } else {
       resetChannel.setMessageHandler(nil)
     }
-    /// Get current position with options.
     let getCurrentPositionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCurrentPosition\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getCurrentPositionChannel.setMessageHandler { message, reply in
@@ -1249,12 +2121,11 @@ class TraceletHostApiSetup {
     } else {
       getCurrentPositionChannel.setMessageHandler(nil)
     }
-    /// Get last known position without triggering a fix.
     let getLastKnownLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLastKnownLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getLastKnownLocationChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let optionsArg: [String: Any?]? = nilOrValue(args[0])
+        let optionsArg: TlCurrentPositionOptions? = nilOrValue(args[0])
         api.getLastKnownLocation(options: optionsArg) { result in
           switch result {
           case .success(let res):
@@ -1267,12 +2138,11 @@ class TraceletHostApiSetup {
     } else {
       getLastKnownLocationChannel.setMessageHandler(nil)
     }
-    /// Start watching position at an interval. Returns a watch ID.
     let watchPositionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.watchPosition\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       watchPositionChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let optionsArg = args[0] as! [String: Any?]
+        let optionsArg = args[0] as! TlCurrentPositionOptions
         api.watchPosition(options: optionsArg) { result in
           switch result {
           case .success(let res):
@@ -1285,7 +2155,6 @@ class TraceletHostApiSetup {
     } else {
       watchPositionChannel.setMessageHandler(nil)
     }
-    /// Stop a position watch by ID.
     let stopWatchPositionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopWatchPosition\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopWatchPositionChannel.setMessageHandler { message, reply in
@@ -1303,7 +2172,6 @@ class TraceletHostApiSetup {
     } else {
       stopWatchPositionChannel.setMessageHandler(nil)
     }
-    /// Toggle motion state.
     let changePaceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.changePace\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       changePaceChannel.setMessageHandler { message, reply in
@@ -1321,7 +2189,6 @@ class TraceletHostApiSetup {
     } else {
       changePaceChannel.setMessageHandler(nil)
     }
-    /// Get odometer value in meters.
     let getOdometerChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getOdometer\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getOdometerChannel.setMessageHandler { _, reply in
@@ -1337,7 +2204,6 @@ class TraceletHostApiSetup {
     } else {
       getOdometerChannel.setMessageHandler(nil)
     }
-    /// Reset odometer. Returns location at reset point.
     let setOdometerChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setOdometer\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setOdometerChannel.setMessageHandler { message, reply in
@@ -1355,7 +2221,6 @@ class TraceletHostApiSetup {
     } else {
       setOdometerChannel.setMessageHandler(nil)
     }
-    /// Add a single geofence.
     let addGeofenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofence\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addGeofenceChannel.setMessageHandler { message, reply in
@@ -1373,7 +2238,6 @@ class TraceletHostApiSetup {
     } else {
       addGeofenceChannel.setMessageHandler(nil)
     }
-    /// Add multiple geofences.
     let addGeofencesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofences\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addGeofencesChannel.setMessageHandler { message, reply in
@@ -1391,7 +2255,6 @@ class TraceletHostApiSetup {
     } else {
       addGeofencesChannel.setMessageHandler(nil)
     }
-    /// Remove a geofence by identifier.
     let removeGeofenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofence\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeGeofenceChannel.setMessageHandler { message, reply in
@@ -1409,7 +2272,6 @@ class TraceletHostApiSetup {
     } else {
       removeGeofenceChannel.setMessageHandler(nil)
     }
-    /// Remove all geofences.
     let removeGeofencesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofences\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeGeofencesChannel.setMessageHandler { _, reply in
@@ -1425,7 +2287,6 @@ class TraceletHostApiSetup {
     } else {
       removeGeofencesChannel.setMessageHandler(nil)
     }
-    /// Get all registered geofences.
     let getGeofencesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofences\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getGeofencesChannel.setMessageHandler { _, reply in
@@ -1441,7 +2302,6 @@ class TraceletHostApiSetup {
     } else {
       getGeofencesChannel.setMessageHandler(nil)
     }
-    /// Get a single geofence by identifier.
     let getGeofenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofence\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getGeofenceChannel.setMessageHandler { message, reply in
@@ -1459,7 +2319,6 @@ class TraceletHostApiSetup {
     } else {
       getGeofenceChannel.setMessageHandler(nil)
     }
-    /// Check if a geofence exists.
     let geofenceExistsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.geofenceExists\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       geofenceExistsChannel.setMessageHandler { message, reply in
@@ -1477,12 +2336,11 @@ class TraceletHostApiSetup {
     } else {
       geofenceExistsChannel.setMessageHandler(nil)
     }
-    /// Get stored locations.
     let getLocationsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLocations\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getLocationsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let queryArg: [String: Any?]? = nilOrValue(args[0])
+        let queryArg: [String?: Any?]? = nilOrValue(args[0])
         api.getLocations(query: queryArg) { result in
           switch result {
           case .success(let res):
@@ -1495,12 +2353,11 @@ class TraceletHostApiSetup {
     } else {
       getLocationsChannel.setMessageHandler(nil)
     }
-    /// Get count of stored locations.
     let getCountChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCount\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getCountChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let queryArg: [String: Any?]? = nilOrValue(args[0])
+        let queryArg: [String?: Any?]? = nilOrValue(args[0])
         api.getCount(query: queryArg) { result in
           switch result {
           case .success(let res):
@@ -1513,7 +2370,23 @@ class TraceletHostApiSetup {
     } else {
       getCountChannel.setMessageHandler(nil)
     }
-    /// Delete all stored locations.
+    let insertLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      insertLocationChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let paramsArg = args[0] as! [String?: Any?]
+        api.insertLocation(params: paramsArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      insertLocationChannel.setMessageHandler(nil)
+    }
     let destroyLocationsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocations\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyLocationsChannel.setMessageHandler { _, reply in
@@ -1529,7 +2402,6 @@ class TraceletHostApiSetup {
     } else {
       destroyLocationsChannel.setMessageHandler(nil)
     }
-    /// Delete only synced locations from the database. Returns count deleted.
     let destroySyncedLocationsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroySyncedLocations\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroySyncedLocationsChannel.setMessageHandler { _, reply in
@@ -1545,7 +2417,6 @@ class TraceletHostApiSetup {
     } else {
       destroySyncedLocationsChannel.setMessageHandler(nil)
     }
-    /// Delete a single location by UUID.
     let destroyLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyLocationChannel.setMessageHandler { message, reply in
@@ -1563,25 +2434,6 @@ class TraceletHostApiSetup {
     } else {
       destroyLocationChannel.setMessageHandler(nil)
     }
-    /// Insert a custom location. Returns UUID.
-    let insertLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      insertLocationChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let paramsArg = args[0] as! [String: Any?]
-        api.insertLocation(params: paramsArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      insertLocationChannel.setMessageHandler(nil)
-    }
-    /// Manually trigger HTTP sync. Returns synced locations.
     let syncChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.sync\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       syncChannel.setMessageHandler { _, reply in
@@ -1597,12 +2449,11 @@ class TraceletHostApiSetup {
     } else {
       syncChannel.setMessageHandler(nil)
     }
-    /// Update dynamic HTTP headers.
     let setDynamicHeadersChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setDynamicHeaders\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setDynamicHeadersChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let headersArg = args[0] as! [String: String]
+        let headersArg = args[0] as! [String?: String?]
         api.setDynamicHeaders(headers: headersArg) { result in
           switch result {
           case .success(let res):
@@ -1615,12 +2466,11 @@ class TraceletHostApiSetup {
     } else {
       setDynamicHeadersChannel.setMessageHandler(nil)
     }
-    /// Set route context for subsequent locations.
     let setRouteContextChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setRouteContext\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setRouteContextChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let contextArg = args[0] as! [String: Any?]
+        let contextArg = args[0] as! [String?: Any?]
         api.setRouteContext(context: contextArg) { result in
           switch result {
           case .success(let res):
@@ -1633,7 +2483,6 @@ class TraceletHostApiSetup {
     } else {
       setRouteContextChannel.setMessageHandler(nil)
     }
-    /// Clear route context.
     let clearRouteContextChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearRouteContext\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearRouteContextChannel.setMessageHandler { _, reply in
@@ -1649,7 +2498,40 @@ class TraceletHostApiSetup {
     } else {
       clearRouteContextChannel.setMessageHandler(nil)
     }
-    /// Get location permission status.
+    let registerHeadlessHeadersCallbackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      registerHeadlessHeadersCallbackChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let callbackIdsArg = args[0] as! [Int64?]
+        api.registerHeadlessHeadersCallback(callbackIds: callbackIdsArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      registerHeadlessHeadersCallbackChannel.setMessageHandler(nil)
+    }
+    let registerHeadlessSyncBodyBuilderChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      registerHeadlessSyncBodyBuilderChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let callbackIdsArg = args[0] as! [Int64?]
+        api.registerHeadlessSyncBodyBuilder(callbackIds: callbackIdsArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      registerHeadlessSyncBodyBuilderChannel.setMessageHandler(nil)
+    }
     let getPermissionStatusChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPermissionStatus\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPermissionStatusChannel.setMessageHandler { _, reply in
@@ -1665,7 +2547,6 @@ class TraceletHostApiSetup {
     } else {
       getPermissionStatusChannel.setMessageHandler(nil)
     }
-    /// Request location permission. Returns result.
     let requestPermissionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestPermission\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       requestPermissionChannel.setMessageHandler { _, reply in
@@ -1681,7 +2562,6 @@ class TraceletHostApiSetup {
     } else {
       requestPermissionChannel.setMessageHandler(nil)
     }
-    /// Get notification permission status (Android 13+).
     let getNotificationPermissionStatusChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getNotificationPermissionStatus\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getNotificationPermissionStatusChannel.setMessageHandler { _, reply in
@@ -1697,7 +2577,6 @@ class TraceletHostApiSetup {
     } else {
       getNotificationPermissionStatusChannel.setMessageHandler(nil)
     }
-    /// Request notification permission (Android 13+).
     let requestNotificationPermissionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestNotificationPermission\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       requestNotificationPermissionChannel.setMessageHandler { _, reply in
@@ -1713,7 +2592,6 @@ class TraceletHostApiSetup {
     } else {
       requestNotificationPermissionChannel.setMessageHandler(nil)
     }
-    /// Check if exact alarms can be scheduled (Android 12+).
     let canScheduleExactAlarmsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.canScheduleExactAlarms\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       canScheduleExactAlarmsChannel.setMessageHandler { _, reply in
@@ -1729,7 +2607,6 @@ class TraceletHostApiSetup {
     } else {
       canScheduleExactAlarmsChannel.setMessageHandler(nil)
     }
-    /// Open exact alarm settings (Android 12+).
     let openExactAlarmSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openExactAlarmSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       openExactAlarmSettingsChannel.setMessageHandler { _, reply in
@@ -1745,7 +2622,6 @@ class TraceletHostApiSetup {
     } else {
       openExactAlarmSettingsChannel.setMessageHandler(nil)
     }
-    /// Get motion/activity recognition permission status.
     let getMotionPermissionStatusChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getMotionPermissionStatus\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getMotionPermissionStatusChannel.setMessageHandler { _, reply in
@@ -1761,7 +2637,6 @@ class TraceletHostApiSetup {
     } else {
       getMotionPermissionStatusChannel.setMessageHandler(nil)
     }
-    /// Request motion/activity recognition permission.
     let requestMotionPermissionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestMotionPermission\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       requestMotionPermissionChannel.setMessageHandler { _, reply in
@@ -1777,7 +2652,6 @@ class TraceletHostApiSetup {
     } else {
       requestMotionPermissionChannel.setMessageHandler(nil)
     }
-    /// Request temporary full accuracy (iOS 14+). Returns accuracy status.
     let requestTemporaryFullAccuracyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestTemporaryFullAccuracy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       requestTemporaryFullAccuracyChannel.setMessageHandler { message, reply in
@@ -1795,7 +2669,6 @@ class TraceletHostApiSetup {
     } else {
       requestTemporaryFullAccuracyChannel.setMessageHandler(nil)
     }
-    /// Whether device is in power-save mode.
     let isPowerSaveModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isPowerSaveMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isPowerSaveModeChannel.setMessageHandler { _, reply in
@@ -1811,7 +2684,6 @@ class TraceletHostApiSetup {
     } else {
       isPowerSaveModeChannel.setMessageHandler(nil)
     }
-    /// Get location provider state.
     let getProviderStateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getProviderState\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getProviderStateChannel.setMessageHandler { _, reply in
@@ -1827,7 +2699,6 @@ class TraceletHostApiSetup {
     } else {
       getProviderStateChannel.setMessageHandler(nil)
     }
-    /// Get device info.
     let getDeviceInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeviceInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getDeviceInfoChannel.setMessageHandler { _, reply in
@@ -1843,179 +2714,6 @@ class TraceletHostApiSetup {
     } else {
       getDeviceInfoChannel.setMessageHandler(nil)
     }
-    /// Get available sensors.
-    let getSensorsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getSensorsChannel.setMessageHandler { _, reply in
-        api.getSensors { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      getSensorsChannel.setMessageHandler(nil)
-    }
-    /// Play a debug sound.
-    let playSoundChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.playSound\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      playSoundChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let nameArg = args[0] as! String
-        api.playSound(name: nameArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      playSoundChannel.setMessageHandler(nil)
-    }
-    /// Whether ignoring battery optimizations (Android).
-    let isIgnoringBatteryOptimizationsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isIgnoringBatteryOptimizations\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      isIgnoringBatteryOptimizationsChannel.setMessageHandler { _, reply in
-        api.isIgnoringBatteryOptimizations { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      isIgnoringBatteryOptimizationsChannel.setMessageHandler(nil)
-    }
-    /// Request a system settings page (e.g., battery optimization).
-    let requestSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      requestSettingsChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let actionArg = args[0] as! String
-        api.requestSettings(action: actionArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      requestSettingsChannel.setMessageHandler(nil)
-    }
-    /// Show a system settings page (e.g., location settings).
-    let showSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      showSettingsChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let actionArg = args[0] as! String
-        api.showSettings(action: actionArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      showSettingsChannel.setMessageHandler(nil)
-    }
-    /// Get OEM settings health information.
-    let getSettingsHealthChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSettingsHealth\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getSettingsHealthChannel.setMessageHandler { _, reply in
-        api.getSettingsHealth { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      getSettingsHealthChannel.setMessageHandler(nil)
-    }
-    /// Open an OEM-specific settings screen by label.
-    let openOemSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openOemSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      openOemSettingsChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let labelArg = args[0] as! String
-        api.openOemSettings(label: labelArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      openOemSettingsChannel.setMessageHandler(nil)
-    }
-    /// Get plugin log.
-    let getLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getLogChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let queryArg: [String: Any?]? = nilOrValue(args[0])
-        api.getLog(query: queryArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      getLogChannel.setMessageHandler(nil)
-    }
-    /// Destroy all log entries.
-    let destroyLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      destroyLogChannel.setMessageHandler { _, reply in
-        api.destroyLog { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      destroyLogChannel.setMessageHandler(nil)
-    }
-    /// Email the log.
-    let emailLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.emailLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      emailLogChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let emailArg = args[0] as! String
-        api.emailLog(email: emailArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      emailLogChannel.setMessageHandler(nil)
-    }
-    /// Write a custom log entry.
     let logChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.log\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       logChannel.setMessageHandler { message, reply in
@@ -2034,7 +2732,72 @@ class TraceletHostApiSetup {
     } else {
       logChannel.setMessageHandler(nil)
     }
-    /// Start schedule-based tracking.
+    let playSoundChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.playSound\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      playSoundChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let nameArg = args[0] as! String
+        api.playSound(name: nameArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      playSoundChannel.setMessageHandler(nil)
+    }
+    let isIgnoringBatteryOptimizationsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isIgnoringBatteryOptimizations\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      isIgnoringBatteryOptimizationsChannel.setMessageHandler { _, reply in
+        api.isIgnoringBatteryOptimizations { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      isIgnoringBatteryOptimizationsChannel.setMessageHandler(nil)
+    }
+    let requestSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      requestSettingsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let actionArg = args[0] as! String
+        api.requestSettings(action: actionArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      requestSettingsChannel.setMessageHandler(nil)
+    }
+    let showSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      showSettingsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let actionArg = args[0] as! String
+        api.showSettings(action: actionArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      showSettingsChannel.setMessageHandler(nil)
+    }
     let startScheduleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startSchedule\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startScheduleChannel.setMessageHandler { _, reply in
@@ -2050,7 +2813,6 @@ class TraceletHostApiSetup {
     } else {
       startScheduleChannel.setMessageHandler(nil)
     }
-    /// Stop schedule-based tracking.
     let stopScheduleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopSchedule\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopScheduleChannel.setMessageHandler { _, reply in
@@ -2066,7 +2828,23 @@ class TraceletHostApiSetup {
     } else {
       stopScheduleChannel.setMessageHandler(nil)
     }
-    /// Start a background task. Returns task ID.
+    let registerHeadlessTaskChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      registerHeadlessTaskChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let callbackIdsArg = args[0] as! [Int64?]
+        api.registerHeadlessTask(callbackIds: callbackIdsArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      registerHeadlessTaskChannel.setMessageHandler(nil)
+    }
     let startBackgroundTaskChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startBackgroundTask\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startBackgroundTaskChannel.setMessageHandler { _, reply in
@@ -2082,7 +2860,6 @@ class TraceletHostApiSetup {
     } else {
       startBackgroundTaskChannel.setMessageHandler(nil)
     }
-    /// Complete a background task.
     let stopBackgroundTaskChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopBackgroundTask\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopBackgroundTaskChannel.setMessageHandler { message, reply in
@@ -2100,13 +2877,10 @@ class TraceletHostApiSetup {
     } else {
       stopBackgroundTaskChannel.setMessageHandler(nil)
     }
-    /// Register a headless task callback for background event dispatch.
-    let registerHeadlessTaskChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getSensorsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      registerHeadlessTaskChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let callbackIdsArg = args[0] as! [Int64]
-        api.registerHeadlessTask(callbackIds: callbackIdsArg) { result in
+      getSensorsChannel.setMessageHandler { _, reply in
+        api.getSensors { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -2116,15 +2890,12 @@ class TraceletHostApiSetup {
         }
       }
     } else {
-      registerHeadlessTaskChannel.setMessageHandler(nil)
+      getSensorsChannel.setMessageHandler(nil)
     }
-    /// Register a headless headers callback for background token recovery.
-    let registerHeadlessHeadersCallbackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getSettingsHealthChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSettingsHealth\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      registerHeadlessHeadersCallbackChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let callbackIdsArg = args[0] as! [Int64]
-        api.registerHeadlessHeadersCallback(callbackIds: callbackIdsArg) { result in
+      getSettingsHealthChannel.setMessageHandler { _, reply in
+        api.getSettingsHealth { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -2134,15 +2905,14 @@ class TraceletHostApiSetup {
         }
       }
     } else {
-      registerHeadlessHeadersCallbackChannel.setMessageHandler(nil)
+      getSettingsHealthChannel.setMessageHandler(nil)
     }
-    /// Register a headless sync body builder for background custom payloads.
-    let registerHeadlessSyncBodyBuilderChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let openOemSettingsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openOemSettings\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      registerHeadlessSyncBodyBuilderChannel.setMessageHandler { message, reply in
+      openOemSettingsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let callbackIdsArg = args[0] as! [Int64]
-        api.registerHeadlessSyncBodyBuilder(callbackIds: callbackIdsArg) { result in
+        let labelArg = args[0] as! String
+        api.openOemSettings(label: labelArg) { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -2152,9 +2922,57 @@ class TraceletHostApiSetup {
         }
       }
     } else {
-      registerHeadlessSyncBodyBuilderChannel.setMessageHandler(nil)
+      openOemSettingsChannel.setMessageHandler(nil)
     }
-    /// Verify audit trail integrity.
+    let getLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getLogChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let queryArg: [String?: Any?]? = nilOrValue(args[0])
+        api.getLog(query: queryArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getLogChannel.setMessageHandler(nil)
+    }
+    let destroyLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      destroyLogChannel.setMessageHandler { _, reply in
+        api.destroyLog { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      destroyLogChannel.setMessageHandler(nil)
+    }
+    let emailLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.emailLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      emailLogChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let emailArg = args[0] as! String
+        api.emailLog(email: emailArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      emailLogChannel.setMessageHandler(nil)
+    }
     let verifyAuditTrailChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.verifyAuditTrail\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       verifyAuditTrailChannel.setMessageHandler { _, reply in
@@ -2170,7 +2988,6 @@ class TraceletHostApiSetup {
     } else {
       verifyAuditTrailChannel.setMessageHandler(nil)
     }
-    /// Get audit proof for a location UUID.
     let getAuditProofChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAuditProof\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getAuditProofChannel.setMessageHandler { message, reply in
@@ -2188,12 +3005,11 @@ class TraceletHostApiSetup {
     } else {
       getAuditProofChannel.setMessageHandler(nil)
     }
-    /// Add a privacy zone.
     let addPrivacyZoneChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZone\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addPrivacyZoneChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let zoneArg = args[0] as! [String: Any?]
+        let zoneArg = args[0] as! [String?: Any?]
         api.addPrivacyZone(zone: zoneArg) { result in
           switch result {
           case .success(let res):
@@ -2206,12 +3022,11 @@ class TraceletHostApiSetup {
     } else {
       addPrivacyZoneChannel.setMessageHandler(nil)
     }
-    /// Add multiple privacy zones.
     let addPrivacyZonesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZones\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addPrivacyZonesChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let zonesArg = args[0] as! [[String: Any?]]
+        let zonesArg = args[0] as! [[String?: Any?]?]
         api.addPrivacyZones(zones: zonesArg) { result in
           switch result {
           case .success(let res):
@@ -2224,7 +3039,6 @@ class TraceletHostApiSetup {
     } else {
       addPrivacyZonesChannel.setMessageHandler(nil)
     }
-    /// Remove a privacy zone by identifier.
     let removePrivacyZoneChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZone\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removePrivacyZoneChannel.setMessageHandler { message, reply in
@@ -2242,7 +3056,6 @@ class TraceletHostApiSetup {
     } else {
       removePrivacyZoneChannel.setMessageHandler(nil)
     }
-    /// Remove all privacy zones.
     let removePrivacyZonesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZones\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removePrivacyZonesChannel.setMessageHandler { _, reply in
@@ -2258,7 +3071,6 @@ class TraceletHostApiSetup {
     } else {
       removePrivacyZonesChannel.setMessageHandler(nil)
     }
-    /// Get all privacy zones.
     let getPrivacyZonesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPrivacyZones\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPrivacyZonesChannel.setMessageHandler { _, reply in
@@ -2274,7 +3086,6 @@ class TraceletHostApiSetup {
     } else {
       getPrivacyZonesChannel.setMessageHandler(nil)
     }
-    /// Check if database is encrypted.
     let isDatabaseEncryptedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isDatabaseEncrypted\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isDatabaseEncryptedChannel.setMessageHandler { _, reply in
@@ -2290,7 +3101,6 @@ class TraceletHostApiSetup {
     } else {
       isDatabaseEncryptedChannel.setMessageHandler(nil)
     }
-    /// Encrypt the database (one-time migration).
     let encryptDatabaseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.encryptDatabase\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       encryptDatabaseChannel.setMessageHandler { _, reply in
@@ -2306,7 +3116,6 @@ class TraceletHostApiSetup {
     } else {
       encryptDatabaseChannel.setMessageHandler(nil)
     }
-    /// Get a device attestation token.
     let getAttestationTokenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAttestationToken\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getAttestationTokenChannel.setMessageHandler { _, reply in
@@ -2322,25 +3131,6 @@ class TraceletHostApiSetup {
     } else {
       getAttestationTokenChannel.setMessageHandler(nil)
     }
-    /// Get carbon emissions report.
-    let getCarbonReportChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getCarbonReportChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let queryArg: [String: Any?]? = nilOrValue(args[0])
-        api.getCarbonReport(query: queryArg) { result in
-          switch result {
-          case .success(let res):
-            reply(wrapResult(res))
-          case .failure(let error):
-            reply(wrapError(error))
-          }
-        }
-      }
-    } else {
-      getCarbonReportChannel.setMessageHandler(nil)
-    }
-    /// Get dead reckoning state.
     let getDeadReckoningStateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeadReckoningState\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getDeadReckoningStateChannel.setMessageHandler { _, reply in
@@ -2356,14 +3146,29 @@ class TraceletHostApiSetup {
     } else {
       getDeadReckoningStateChannel.setMessageHandler(nil)
     }
+    let getCarbonReportChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getCarbonReportChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let queryArg: [String?: Any?]? = nilOrValue(args[0])
+        api.getCarbonReport(query: queryArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getCarbonReportChannel.setMessageHandler(nil)
+    }
   }
 }
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
 protocol TraceletFlutterApiProtocol {
-  /// Called by native when a headless event fires.
-  func onHeadlessEvent(event eventArg: [String: Any?], completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Called by native to request fresh authorization headers (401 recovery).
-  func onHeadlessHeaders(completion: @escaping (Result<[String: String], PigeonError>) -> Void)
+  func onHeadlessEvent(event eventArg: [String?: Any?], completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onHeadlessHeaders(completion: @escaping (Result<[String?: String?], PigeonError>) -> Void)
 }
 class TraceletFlutterApi: TraceletFlutterApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -2375,8 +3180,7 @@ class TraceletFlutterApi: TraceletFlutterApiProtocol {
   var codec: TraceletApiPigeonCodec {
     return TraceletApiPigeonCodec.shared
   }
-  /// Called by native when a headless event fires.
-  func onHeadlessEvent(event eventArg: [String: Any?], completion: @escaping (Result<Void, PigeonError>) -> Void) {
+  func onHeadlessEvent(event eventArg: [String?: Any?], completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessEvent\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([eventArg] as [Any?]) { response in
@@ -2394,8 +3198,7 @@ class TraceletFlutterApi: TraceletFlutterApiProtocol {
       }
     }
   }
-  /// Called by native to request fresh authorization headers (401 recovery).
-  func onHeadlessHeaders(completion: @escaping (Result<[String: String], PigeonError>) -> Void) {
+  func onHeadlessHeaders(completion: @escaping (Result<[String?: String?], PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessHeaders\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage(nil) { response in
@@ -2411,48 +3214,28 @@ class TraceletFlutterApi: TraceletFlutterApiProtocol {
       } else if listResponse[0] == nil {
         completion(.failure(PigeonError(code: "null-error", message: "Flutter api returned null value for non-null return value.", details: "")))
       } else {
-        let result = listResponse[0] as! [String: String]
+        let result = listResponse[0] as! [String?: String?]
         completion(.success(result))
       }
     }
   }
 }
-/// Type-safe event channel replacement.
-///
-/// Native platforms call these methods to push events to Dart instead of
-/// using raw EventChannel/EventSink. Each method maps to one event type.
-///
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
 protocol TraceletEventApiProtocol {
-  /// Fired on every recorded location.
   func onLocation(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when motion state changes (stationary ↔ moving).
   func onMotionChange(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when detected activity type changes (walking, running, etc.).
   func onActivityChange(event eventArg: TlActivityChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when location provider state changes (GPS, network, authorization).
   func onProviderChange(event eventArg: TlProviderChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired on geofence transition (enter, exit, dwell).
   func onGeofence(event eventArg: TlGeofenceEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when monitored geofences change (activated/deactivated list).
   func onGeofencesChange(event eventArg: TlGeofencesChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired at configured heartbeat interval.
   func onHeartbeat(event eventArg: TlHeartbeatEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired on HTTP sync attempt (success or failure).
   func onHttp(event eventArg: TlHttpEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired on schedule start/stop transitions.
   func onSchedule(state stateArg: TlState, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when device power-save mode toggles.
   func onPowerSaveChange(isPowerSaveMode isPowerSaveModeArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when network connectivity changes.
   func onConnectivityChange(event eventArg: TlConnectivityChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when tracking is enabled or disabled.
   func onEnabledChange(enabled enabledArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired when user taps a notification action button (Android).
   func onNotificationAction(action actionArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired on HTTP authorization events (token refresh).
   func onAuthorization(event eventArg: TlAuthorizationEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
-  /// Fired for watchPosition updates.
   func onWatchPosition(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void)
 }
 class TraceletEventApi: TraceletEventApiProtocol {
@@ -2465,7 +3248,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
   var codec: TraceletApiPigeonCodec {
     return TraceletApiPigeonCodec.shared
   }
-  /// Fired on every recorded location.
   func onLocation(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onLocation\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2484,7 +3266,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when motion state changes (stationary ↔ moving).
   func onMotionChange(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onMotionChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2503,7 +3284,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when detected activity type changes (walking, running, etc.).
   func onActivityChange(event eventArg: TlActivityChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onActivityChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2522,7 +3302,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when location provider state changes (GPS, network, authorization).
   func onProviderChange(event eventArg: TlProviderChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onProviderChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2541,7 +3320,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired on geofence transition (enter, exit, dwell).
   func onGeofence(event eventArg: TlGeofenceEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofence\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2560,7 +3338,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when monitored geofences change (activated/deactivated list).
   func onGeofencesChange(event eventArg: TlGeofencesChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofencesChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2579,7 +3356,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired at configured heartbeat interval.
   func onHeartbeat(event eventArg: TlHeartbeatEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHeartbeat\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2598,7 +3374,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired on HTTP sync attempt (success or failure).
   func onHttp(event eventArg: TlHttpEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHttp\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2617,7 +3392,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired on schedule start/stop transitions.
   func onSchedule(state stateArg: TlState, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onSchedule\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2636,7 +3410,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when device power-save mode toggles.
   func onPowerSaveChange(isPowerSaveMode isPowerSaveModeArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onPowerSaveChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2655,7 +3428,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when network connectivity changes.
   func onConnectivityChange(event eventArg: TlConnectivityChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onConnectivityChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2674,7 +3446,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when tracking is enabled or disabled.
   func onEnabledChange(enabled enabledArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onEnabledChange\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2693,7 +3464,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired when user taps a notification action button (Android).
   func onNotificationAction(action actionArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onNotificationAction\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2712,7 +3482,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired on HTTP authorization events (token refresh).
   func onAuthorization(event eventArg: TlAuthorizationEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onAuthorization\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
@@ -2731,7 +3500,6 @@ class TraceletEventApi: TraceletEventApiProtocol {
       }
     }
   }
-  /// Fired for watchPosition updates.
   func onWatchPosition(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onWatchPosition\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)

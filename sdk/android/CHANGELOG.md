@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0
+
+- **CHORE**: Major release synchronized with Tracelet Flutter 2.0.0.
+- **FEAT**: Added `shakeThreshold`, `stillThreshold`, and `stillSampleCount` to `MotionConfig` for granular accelerometer tuning.
+- **REFACTOR**: Core SDK now supports an "on-demand" dependency model. GMS Location, SQLCipher, and Play Integrity are no longer hard dependencies and are resolved via reflection at runtime.
+- **CHORE**: Aligned versioning across the entire Tracelet monorepo.
+
 ## 1.1.4
 
 - **CHORE**: Aligned repository podspec files and updated release documentation.

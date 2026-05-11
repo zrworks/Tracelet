@@ -18,6 +18,9 @@
 
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
+> [!IMPORTANT]
+> **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Migration Guide](../../MIGRATION_2.0.md) for details.
+
 ## Features
 
 - **Background location tracking** — continuous GPS with configurable `distanceFilter` and `desiredAccuracy`
@@ -75,15 +78,11 @@ tl.Tracelet.onMotionChange((tl.Location location) {
 });
 
 // 2. Initialize
+// 2. Configure & ready
 final state = await tl.Tracelet.ready(tl.Config(
   geo: tl.GeoConfig(
     desiredAccuracy: tl.DesiredAccuracy.high,
     distanceFilter: 10.0,
-    filter: tl.LocationFilter(
-      trackingAccuracyThreshold: 100,
-      maxImpliedSpeed: 80,
-      useKalmanFilter: true, // smooth GPS coordinates
-    ),
   ),
   app: tl.AppConfig(
     stopOnTerminate: false,

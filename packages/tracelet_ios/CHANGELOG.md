@@ -1,3 +1,10 @@
+## 2.0.0
+
+- **BREAKING**: Migrated to Pigeon for all platform-to-native communication, providing a type-safe interface for host and flutter API calls.
+- **FIX**: Resolved silent failures of native permission dialogs by ensuring all `CoreLocation` and `CoreMotion` requests are dispatched on the main thread.
+- **FIX**: Corrected `CLAuthorizationStatus` mapping in the native bridge to ensure accurate permission status reporting to Flutter.
+- **CHORE**: Bump native `TraceletSDK` dependency to `2.0.0`.
+
 ## 1.9.3
 2: 
 3: - **CHORE**: Bump native `TraceletSDK` dependency to `1.1.4`.

@@ -67,7 +67,7 @@ class FakeHostApi extends TraceletHostApi {
 
   // Lifecycle
   @override
-  Future<TlState> ready(Map<String?, Object?> config) async {
+  Future<TlState> ready(TlConfig config) async {
     _record('ready', [config]);
     return _defaultState;
   }
@@ -103,13 +103,13 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<TlState> setConfig(Map<String?, Object?> config) async {
+  Future<TlState> setConfig(TlConfig config) async {
     _record('setConfig', [config]);
     return _defaultState;
   }
 
   @override
-  Future<TlState> reset(Map<String?, Object?>? config) async {
+  Future<TlState> reset([TlConfig? config]) async {
     _record('reset', [config]);
     return _defaultState;
   }
@@ -125,14 +125,14 @@ class FakeHostApi extends TraceletHostApi {
 
   @override
   Future<TlLocation?> getLastKnownLocation(
-    Map<String?, Object?>? options,
+    TlCurrentPositionOptions? options,
   ) async {
     _record('getLastKnownLocation', [options]);
     return _defaultLocation;
   }
 
   @override
-  Future<int> watchPosition(Map<String?, Object?> options) async {
+  Future<int> watchPosition(TlCurrentPositionOptions options) async {
     _record('watchPosition', [options]);
     return 42;
   }
@@ -206,7 +206,7 @@ class FakeHostApi extends TraceletHostApi {
 
   // Persistence
   @override
-  Future<List<TlLocation>> getLocations(Map<String?, Object?>? query) async {
+  Future<List<TlLocation?>> getLocations(Map<String?, Object?>? query) async {
     _record('getLocations', [query]);
     return [_defaultLocation];
   }
@@ -243,7 +243,7 @@ class FakeHostApi extends TraceletHostApi {
 
   // HTTP Sync
   @override
-  Future<List<TlLocation>> sync() async {
+  Future<List<TlLocation?>> sync() async {
     _record('sync');
     return [_defaultLocation];
   }
@@ -263,6 +263,18 @@ class FakeHostApi extends TraceletHostApi {
   @override
   Future<bool> clearRouteContext() async {
     _record('clearRouteContext');
+    return true;
+  }
+
+  @override
+  Future<bool> registerHeadlessHeadersCallback(List<int?> callbackIds) async {
+    _record('registerHeadlessHeadersCallback', [callbackIds]);
+    return true;
+  }
+
+  @override
+  Future<bool> registerHeadlessSyncBodyBuilder(List<int?> callbackIds) async {
+    _record('registerHeadlessSyncBodyBuilder', [callbackIds]);
     return true;
   }
 
@@ -335,13 +347,13 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<Map<String, Object?>> getDeviceInfo() async {
+  Future<Map<String?, Object?>> getDeviceInfo() async {
     _record('getDeviceInfo');
     return {'platform': 'test', 'framework': 'flutter'};
   }
 
   @override
-  Future<Map<String, Object?>> getSensors() async {
+  Future<Map<String?, Object?>> getSensors() async {
     _record('getSensors');
     return {'accelerometer': true};
   }
@@ -371,7 +383,7 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<Map<String, Object?>> getSettingsHealth() async {
+  Future<Map<String?, Object?>> getSettingsHealth() async {
     _record('getSettingsHealth');
     return {'manufacturer': 'Test'};
   }
@@ -435,32 +447,20 @@ class FakeHostApi extends TraceletHostApi {
 
   // Headless
   @override
-  Future<bool> registerHeadlessTask(List<int> callbackIds) async {
+  Future<bool> registerHeadlessTask(List<int?> callbackIds) async {
     _record('registerHeadlessTask', [callbackIds]);
-    return true;
-  }
-
-  @override
-  Future<bool> registerHeadlessHeadersCallback(List<int> callbackIds) async {
-    _record('registerHeadlessHeadersCallback', [callbackIds]);
-    return true;
-  }
-
-  @override
-  Future<bool> registerHeadlessSyncBodyBuilder(List<int> callbackIds) async {
-    _record('registerHeadlessSyncBodyBuilder', [callbackIds]);
     return true;
   }
 
   // Enterprise: Audit
   @override
-  Future<Map<String, Object?>> verifyAuditTrail() async {
+  Future<Map<String?, Object?>> verifyAuditTrail() async {
     _record('verifyAuditTrail');
     return {'valid': true, 'count': 10};
   }
 
   @override
-  Future<Map<String, Object?>?> getAuditProof(String uuid) async {
+  Future<Map<String?, Object?>?> getAuditProof(String uuid) async {
     _record('getAuditProof', [uuid]);
     return {'uuid': uuid, 'hash': 'abc123'};
   }
@@ -473,7 +473,7 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<bool> addPrivacyZones(List<Map<String?, Object?>> zones) async {
+  Future<bool> addPrivacyZones(List<Map<String?, Object?>?> zones) async {
     _record('addPrivacyZones', [zones]);
     return true;
   }
@@ -491,7 +491,7 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<List<Map<String, Object?>>> getPrivacyZones() async {
+  Future<List<Map<String?, Object?>?>> getPrivacyZones() async {
     _record('getPrivacyZones');
     return [
       {'identifier': 'home', 'latitude': 37.42},
@@ -513,14 +513,14 @@ class FakeHostApi extends TraceletHostApi {
 
   // Enterprise: Attestation
   @override
-  Future<Map<String, Object?>?> getAttestationToken() async {
+  Future<Map<String?, Object?>?> getAttestationToken() async {
     _record('getAttestationToken');
     return {'token': 'test-token'};
   }
 
   // Enterprise: Carbon
   @override
-  Future<Map<String, Object?>> getCarbonReport(
+  Future<Map<String?, Object?>> getCarbonReport(
     Map<String?, Object?>? query,
   ) async {
     _record('getCarbonReport', [query]);
@@ -529,7 +529,7 @@ class FakeHostApi extends TraceletHostApi {
 
   // Enterprise: Dead Reckoning
   @override
-  Future<Map<String, Object?>?> getDeadReckoningState() async {
+  Future<Map<String?, Object?>?> getDeadReckoningState() async {
     _record('getDeadReckoningState');
     return {'active': true};
   }
@@ -544,11 +544,131 @@ void main() {
     pigeon = PigeonTracelet(api: fakeApi);
   });
 
+  // Helper to create a dummy TlConfig
+  TlConfig createMockConfig() {
+    return TlConfig(
+      geo: TlGeoConfig(
+        desiredAccuracy: TlDesiredAccuracy.high,
+        distanceFilter: 10.0,
+        stationaryRadius: 25.0,
+        locationTimeout: 60,
+        disableElasticity: false,
+        elasticityMultiplier: 1.0,
+        stopAfterElapsedMinutes: -1,
+        maxMonitoredGeofences: -1,
+        enableTimestampMeta: false,
+        enableAdaptiveMode: false,
+        periodicLocationInterval: 900,
+        periodicDesiredAccuracy: TlDesiredAccuracy.medium,
+        enableSparseUpdates: false,
+        sparseDistanceThreshold: 50.0,
+        sparseMaxIdleSeconds: 300,
+        enableDeadReckoning: false,
+        deadReckoningActivationDelay: 10,
+        deadReckoningMaxDuration: 120,
+        batteryBudgetPerHour: 0.0,
+      ),
+      app: TlAppConfig(
+        stopOnTerminate: true,
+        startOnBoot: false,
+        heartbeatInterval: 60,
+        schedule: [],
+        remoteConfigTimeout: 30,
+        remoteConfigRefreshInterval: 3600,
+      ),
+      android: TlAndroidConfig(
+        locationUpdateInterval: 1000,
+        fastestLocationUpdateInterval: 500,
+        deferTime: 0,
+        allowIdenticalLocations: false,
+        geofenceModeHighAccuracy: false,
+        periodicUseForegroundService: false,
+        periodicUseExactAlarms: false,
+        scheduleUseAlarmManager: false,
+        foregroundService: TlForegroundServiceConfig(
+          enabled: true,
+          channelId: 'tracelet',
+          channelName: 'Tracelet',
+          notificationTitle: 'Tracking',
+          notificationText: 'Tracking active',
+          notificationPriority: TlNotificationPriority.defaultPriority,
+          notificationOngoing: true,
+          actions: [],
+        ),
+      ),
+      ios: TlIosConfig(
+        activityType: TlIosActivityType.other,
+        useSignificantChangesOnly: false,
+        showsBackgroundLocationIndicator: false,
+        pausesLocationUpdatesAutomatically: false,
+        locationAuthorizationRequest: TlAuthorizationRequest.always,
+        disableLocationAuthorizationAlert: false,
+        preventSuspend: false,
+      ),
+      http: TlHttpConfig(
+        autoSync: true,
+        batchSync: false,
+        maxBatchSize: 250,
+        method: TlHttpMethod.post,
+        autoSyncThreshold: 0,
+        httpTimeout: 60000,
+        locationsOrderDirection: TlLocationOrderDirection.ascending,
+        disableAutoSyncOnCellular: false,
+        maxRetries: 3,
+        retryBackoffBase: 1,
+        retryBackoffCap: 60,
+        enableDeltaCompression: false,
+        deltaCoordinatePrecision: 5,
+      ),
+      logger: TlLoggerConfig(
+        logLevel: TlLogLevel.info,
+        logMaxDays: 3,
+        debug: false,
+      ),
+      motion: TlMotionConfig(
+        stopTimeout: 5,
+        motionTriggerDelay: 0,
+        disableMotionActivityUpdates: false,
+        isMoving: false,
+        activityRecognitionInterval: 1000,
+        minimumActivityRecognitionConfidence: 75,
+        disableStopDetection: false,
+        stopDetectionDelay: 0,
+        stopOnStationary: false,
+        stationaryRadius: 25.0,
+        useSignificantChangesOnly: false,
+        shakeThreshold: 2.5,
+        stillThreshold: 0.4,
+        stillSampleCount: 25,
+      ),
+      geofence: TlGeofenceConfig(
+        geofenceModeHighAccuracy: false,
+        geofenceInitialTriggerEntry: true,
+        geofenceProximityRadius: 1000,
+        geofenceInitialTrigger: true,
+      ),
+      persistence: TlPersistenceConfig(
+        persistMode: TlPersistMode.all,
+        maxDaysToPersist: 1,
+        maxRecordsToPersist: -1,
+        disableProviderChangeRecord: false,
+      ),
+      audit: TlAuditConfig(
+        enabled: false,
+        hashAlgorithm: TlHashAlgorithm.sha256,
+      ),
+      privacyZone: TlPrivacyZoneConfig(enabled: false),
+      security: TlSecurityConfig(encryptDatabase: false),
+      attestation: TlAttestationConfig(enabled: false, refreshInterval: 3600),
+    );
+  }
+
   // ===================== Lifecycle =====================
 
   group('Lifecycle', () {
     test('ready() returns state map', () async {
-      final state = await pigeon.ready({'debug': true});
+      final config = createMockConfig();
+      final state = await pigeon.ready(config);
       expect(state['enabled'], true);
       expect(state['isMoving'], false);
       expect(state['trackingMode'], 1);
@@ -587,17 +707,20 @@ void main() {
     });
 
     test('setConfig() returns state map', () async {
-      final state = await pigeon.setConfig({'distanceFilter': 50});
+      final config = createMockConfig();
+      final state = await pigeon.setConfig(config);
       expect(state['enabled'], true);
       expect(fakeApi.wasCalled('setConfig'), true);
     });
 
     test('reset() returns state map', () async {
-      final state = await pigeon.reset({'debug': false});
+      final config = createMockConfig();
+      final state = await pigeon.reset(config);
       expect(state['enabled'], true);
       expect(fakeApi.wasCalled('reset'), true);
     });
   });
+
 
   // ===================== Location =====================
 

@@ -1,3 +1,7 @@
+## 2.0.1
+
+- **CHORE**: Version bump for iOS status bar fix consistency.
+
 ## 2.0.0
 
 - **BREAKING**: Migrated all platform communication to Pigeon for strictly-typed host and flutter APIs.

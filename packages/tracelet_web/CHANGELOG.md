@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+
+- **CHORE**: Version bump for iOS status bar fix consistency.
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.1`.
+
 ## 2.0.0
 
 - **CHORE**: Global version synchronization for the Tracelet 2.0.0 release.

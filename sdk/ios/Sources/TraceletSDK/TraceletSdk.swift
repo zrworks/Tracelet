@@ -313,12 +313,28 @@ public final class TraceletSdk {
         // geofenceModeHighAccuracy: start GPS for in-app transition detection.
         if configManager.getGeofenceModeHighAccuracy() {
             geofenceManager.clearHighAccuracyState()
-        }
-        locationEngine.start()
+            locationEngine.start()
 
-        preventSuspendManager.start()
-        backgroundActivitySessionManager.start()
-        serviceSessionManager.start()
+            preventSuspendManager.start()
+            backgroundActivitySessionManager.start()
+            serviceSessionManager.start()
+        } else {
+            locationEngine.start()
+
+            if configManager.getPreventSuspend() {
+                preventSuspendManager.start()
+            } else {
+                preventSuspendManager.stop()
+            }
+
+            // Explicitly stop CLBackgroundActivitySession if switching from High to Low
+            backgroundActivitySessionManager.stop()
+
+            // Do NOT start CLBackgroundActivitySession for standard geofence mode.
+            // It causes a persistent blue location indicator in the status bar.
+            // iOS 18+: Preserve authorization across suspension/termination.
+            startServiceSessionForCurrentAuth()
+        }
 
         eventSender.sendEnabledChange(true)
 

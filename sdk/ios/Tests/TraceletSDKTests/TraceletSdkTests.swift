@@ -670,6 +670,34 @@ final class TraceletSdkTests: XCTestCase {
         XCTAssertEqual(sensors["accelerometer"] as? Bool, true)
         XCTAssertEqual(sensors["motionActivity"] as? Bool, true)
     }
+
+    // MARK: - startGeofences
+
+    func testStartGeofencesLowAccuracyDoesNotStartBackgroundSession() {
+        let sdk = TraceletSdk.shared
+        sdk.reset(nil)
+        sdk.ready(config: ["geofence": ["geofenceModeHighAccuracy": false]])
+
+        sdk.startGeofences()
+
+        XCTAssertFalse(sdk.backgroundActivitySessionManager.isActive)
+        sdk.stop()
+    }
+
+    func testStartGeofencesHighAccuracyStartsBackgroundSession() {
+        let sdk = TraceletSdk.shared
+        sdk.reset(nil)
+        sdk.ready(config: ["geofence": ["geofenceModeHighAccuracy": true]])
+
+        sdk.startGeofences()
+
+        if #available(iOS 17.0, *) {
+            XCTAssertTrue(sdk.backgroundActivitySessionManager.isActive)
+        } else {
+            XCTAssertFalse(sdk.backgroundActivitySessionManager.isActive)
+        }
+        sdk.stop()
+    }
 }
 
 // MARK: - Mock Delegate

@@ -1,3 +1,8 @@
+## 2.0.1
+
+- **FIX**: Fixed persistent blue location indicator on iOS by properly conditionally disabling `CLBackgroundActivitySession` and continuous GPS in low-accuracy geofence-only mode.
+- **CHORE**: Bumped native SDK dependencies to `2.0.1`.
+
 ## 2.0.0
 
 ### 🎉 Major Milestone: Tracelet 2.0.0

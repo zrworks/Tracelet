@@ -1,3 +1,8 @@
+## 2.0.1
+
+- **FIX**: Fixed persistent blue location indicator by properly conditionally disabling `CLBackgroundActivitySession` and `startUpdatingLocation()` in low-accuracy geofence-only mode.
+- **CHORE**: Bump native `TraceletSDK` dependency to `2.0.1`.
+
 ## 2.0.0
 
 - **BREAKING**: Migrated to Pigeon for all platform-to-native communication, providing a type-safe interface for host and flutter API calls.

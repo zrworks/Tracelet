@@ -2607,7 +2607,11 @@ class _DashboardPageState extends State<DashboardPage>
   /// Toggle geofenceModeHighAccuracy and restart geofence-only mode.
   Future<void> _startGeofencesHighAccuracy() async {
     try {
-      await tl.Tracelet.setConfig(const tl.Config(geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: true)));
+      await tl.Tracelet.setConfig(
+        const tl.Config(
+          geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: true),
+        ),
+      );
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
@@ -2625,7 +2629,11 @@ class _DashboardPageState extends State<DashboardPage>
   /// Toggle geofenceModeHighAccuracy to false and restart geofence-only mode.
   Future<void> _startGeofencesLowAccuracy() async {
     try {
-      await tl.Tracelet.setConfig(const tl.Config(geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: false)));
+      await tl.Tracelet.setConfig(
+        const tl.Config(
+          geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: false),
+        ),
+      );
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;

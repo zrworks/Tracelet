@@ -2607,7 +2607,7 @@ class _DashboardPageState extends State<DashboardPage>
   /// Toggle geofenceModeHighAccuracy and restart geofence-only mode.
   Future<void> _startGeofencesHighAccuracy() async {
     try {
-      await tl.Tracelet.setConfig(const tl.Config(geo: tl.GeoConfig()));
+      await tl.Tracelet.setConfig(const tl.Config(geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: true)));
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
@@ -2619,6 +2619,24 @@ class _DashboardPageState extends State<DashboardPage>
       );
     } catch (e) {
       _addLog('ERROR', 'startGeofencesHighAccuracy() failed: $e');
+    }
+  }
+
+  /// Toggle geofenceModeHighAccuracy to false and restart geofence-only mode.
+  Future<void> _startGeofencesLowAccuracy() async {
+    try {
+      await tl.Tracelet.setConfig(const tl.Config(geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: false)));
+      final state = await tl.Tracelet.startGeofences();
+      setState(() {
+        _isTracking = state.enabled;
+        _pluginState = state;
+      });
+      _addLog(
+        'GEOFENCES_LA',
+        'Low-accuracy geofences started (iOS blue arrow should hide)  mode=${state.trackingMode.name}',
+      );
+    } catch (e) {
+      _addLog('ERROR', 'startGeofencesLowAccuracy() failed: $e');
     }
   }
 
@@ -3693,6 +3711,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'High-Accuracy GF',
                         Icons.gps_fixed,
                         _startGeofencesHighAccuracy,
+                      ),
+                      _Chip(
+                        'Low-Accuracy GF',
+                        Icons.battery_charging_full,
+                        _startGeofencesLowAccuracy,
                       ),
                       _Chip(
                         'Track + Geofences (#51)',

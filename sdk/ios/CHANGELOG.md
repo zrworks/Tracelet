@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+
+- **FIX**: Fixed persistent blue location indicator by properly conditionally disabling `CLBackgroundActivitySession` and `startUpdatingLocation()` in low-accuracy geofence-only mode.
+- **FIX**: `TraceletSdk.startGeofences()` now properly cleans up `CLBackgroundActivitySession` if switching from high to low accuracy.
+
 ## 2.0.0
 
 - **CHORE**: Major release synchronized with Tracelet Flutter 2.0.0.

@@ -102,10 +102,13 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // the killed-state entry point for Always-only enforcement).
         locationManager.startMonitoringSignificantLocationChanges()
 
-        if !configManager.getUseSignificantChangesOnly() {
+        let isLowPowerGeofences = stateManager.trackingMode == .geofences && !configManager.getGeofenceModeHighAccuracy()
+        let skipContinuousGps = configManager.getUseSignificantChangesOnly() || isLowPowerGeofences
+
+        if !skipContinuousGps {
             locationManager.startUpdatingLocation()
+            startGpsLossTimer()
         }
-        startGpsLossTimer()
     }
 
     public func stop() {

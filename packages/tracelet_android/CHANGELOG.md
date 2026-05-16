@@ -1,3 +1,8 @@
+## 2.0.1
+
+- **CHORE**: Version bump for iOS status bar fix consistency.
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.1`.
+
 ## 2.0.0
 
 - **BREAKING**: Adopts an "on-demand" dependency model. Core SDK no longer bundles GMS Location, SQLCipher, or Play Integrity by default, reducing APK size by ~16 MB. Developers must now explicitly add these to their `android/app/build.gradle` if required.

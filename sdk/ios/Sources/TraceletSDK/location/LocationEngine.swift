@@ -1103,8 +1103,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Real GPS locations have a timestamp very close to the current time
         // (within a few seconds). Replayed or injected locations often have
         // timestamps far in the past or future.
+        // Account for deferTime which inherently delays location delivery.
+        let deferTimeSeconds = Double(configManager.getDeferTime()) / 1000.0
+        let maxDriftSeconds = 10.0 + deferTimeSeconds
         let driftSeconds = abs(Date().timeIntervalSince(location.timestamp))
-        if driftSeconds > 10.0 {
+        if driftSeconds > maxDriftSeconds {
             return true
         }
 

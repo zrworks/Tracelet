@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+- **FIX**: `deferTime` is now accounted for in the heuristic mock detection drift calculation. Deferred locations are no longer incorrectly flagged as mock locations.
+
 ## 2.0.0
 
 - **CHORE**: Major release synchronized with Tracelet Flutter 2.0.0.

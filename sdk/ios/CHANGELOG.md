@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.2
+
+- **FIX**: `deferTime` is now accounted for in the heuristic mock detection drift calculation. Deferred locations are no longer incorrectly flagged as mock locations.
+- **FIX**: Refactored `TraceletConfigTests.swift` to match the current configuration structure.
+
 ## 2.0.1
 
 - **FIX**: Fixed persistent blue location indicator by properly conditionally disabling `CLBackgroundActivitySession` and `startUpdatingLocation()` in low-accuracy geofence-only mode.

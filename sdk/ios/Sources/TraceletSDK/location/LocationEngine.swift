@@ -955,18 +955,15 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         let mock = isLocationMock(location)
 
-        // Build optional heuristic metadata when detection level is 'heuristic'.
-        var mockHeuristics: [String: Any]? = nil
-        if configManager.getMockDetectionLevel() >= 2 {
-            let driftMs = Date().timeIntervalSince(location.timestamp) * 1000.0
-            var heuristics: [String: Any] = [
-                "timestampDriftMs": driftMs,
-            ]
-            if #available(iOS 15.0, *) {
-                heuristics["platformFlagMock"] = location.sourceInformation?.isSimulatedBySoftware ?? false
-            }
-            mockHeuristics = heuristics
+        // Always include heuristic metadata even if rejection is off
+        let driftMs = Date().timeIntervalSince(location.timestamp) * 1000.0
+        var heuristics: [String: Any] = [
+            "timestampDriftMs": driftMs,
+        ]
+        if #available(iOS 15.0, *) {
+            heuristics["platformFlagMock"] = location.sourceInformation?.isSimulatedBySoftware ?? false
         }
+        let mockHeuristics = heuristics
 
         // Classify the location source based on accuracy heuristic.
         // iOS does not expose provider names; accuracy is the best signal.
@@ -1100,17 +1097,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if level < 2 { return false }
 
         // Level 2 (heuristic): Timestamp drift check
-        // Real GPS locations have a timestamp very close to the current time
-        // (within a few seconds). Replayed or injected locations often have
-        // timestamps far in the past or future.
-        // Account for deferTime which inherently delays location delivery.
-        let deferTimeSeconds = Double(configManager.getDeferTime()) / 1000.0
-        let maxDriftSeconds = 10.0 + deferTimeSeconds
-        let driftSeconds = abs(Date().timeIntervalSince(location.timestamp))
-        if driftSeconds > maxDriftSeconds {
-            return true
-        }
-
+        // Real GPS locations have a timestamp very close to the current time.
+        // However, unlike Android, iOS does not provide a monotonic hardware timestamp
+        // (`elapsedRealtimeNanos`) on `CLLocation`. Comparing `location.timestamp`
+        // against `Date()` is extremely dangerous because it will falsely flag
+        // perfectly valid locations if the user's device clock is slightly out of sync
+        // with network UTC time.
+        // Therefore, we do not reject locations based on timestamp drift on iOS.
+        
         return false
     }
 

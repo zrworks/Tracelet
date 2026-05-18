@@ -1,3 +1,7 @@
+## 2.0.3
+
+- **FIX**: Removed unreliable timestamp drift heuristic from location spoofing detection.
+
 ## 2.0.1
 
 - **FIX**: Fixed persistent blue location indicator by properly conditionally disabling `CLBackgroundActivitySession` and `startUpdatingLocation()` in low-accuracy geofence-only mode.

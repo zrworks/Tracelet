@@ -670,6 +670,8 @@ class LocationEngine(
             }
         }
 
+        val speed = location.speed.toDouble()
+        
         // --- Mock location rejection (defense-in-depth) ---
         if (config.getRejectMockLocations() && isLocationMock(location)) {
             // Fire a provider change event to notify Dart that mock was detected.
@@ -791,18 +793,16 @@ class LocationEngine(
 
         val mock = isLocationMock(location)
 
-        // Build optional heuristic metadata when detection level is 'heuristic'.
-        val mockHeuristics: Map<String, Any?>? = if (config.getMockDetectionLevel() >= 2) {
-            val extras = location.extras
-            val satellites = extras?.getInt("satellites", -1) ?: -1
-            val driftNanos = SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
-            val driftMs = driftNanos / 1_000_000.0
-            mapOf(
-                "satellites" to satellites,
-                "elapsedRealtimeDriftMs" to driftMs,
-                "platformFlagMock" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) location.isMock else location.isFromMockProvider,
-            )
-        } else null
+        // Always include heuristic metadata (like satellite count) even if rejection is off
+        val extras = location.extras
+        val satellites = extras?.getInt("satellites", -1) ?: -1
+        val driftNanos = SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
+        val driftMs = driftNanos / 1_000_000.0
+        val mockHeuristics = mapOf(
+            "satellites" to satellites,
+            "elapsedRealtimeDriftMs" to driftMs,
+            "platformFlagMock" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) location.isMock else location.isFromMockProvider,
+        )
 
         // Classify the location source based on provider and accuracy.
         val locationSource = when {
@@ -1150,17 +1150,23 @@ class LocationEngine(
 
         // 2. Elapsed realtime drift: Compare the location's elapsedRealtimeNanos
         //    (set by GPS hardware using the monotonic clock) against the current
-        //    SystemClock.elapsedRealtimeNanos(). A large discrepancy means the
-        //    location was not produced by real hardware at the claimed time.
+        //    SystemClock.elapsedRealtimeNanos().
+        //    We check for manipulation by ensuring the age of the location according to
+        //    the wall clock (location.time) matches the age according to the monotonic clock.
         val locationElapsedNanos = location.elapsedRealtimeNanos
         val currentElapsedNanos = SystemClock.elapsedRealtimeNanos()
-        // Location should be recent — within 10 seconds. Old or future values
-        // indicate replay or time manipulation. Account for deferTime which delays delivery.
-        val driftNanos = currentElapsedNanos - locationElapsedNanos
-        val driftSeconds = driftNanos / 1_000_000_000.0
-        val deferTimeSeconds = config.getDeferTime() / 1000.0
-        val maxDriftSeconds = 10.0 + deferTimeSeconds
-        if (driftSeconds < -1.0 || driftSeconds > maxDriftSeconds) {
+        val locationTimeMs = location.time
+        val currentTimeMs = System.currentTimeMillis()
+
+        val ageByWallClockMs = currentTimeMs - locationTimeMs
+        val ageByMonotonicMs = (currentElapsedNanos - locationElapsedNanos) / 1_000_000
+
+        // If the location age according to the monotonic clock differs significantly
+        // from the wall clock age (e.g., > 10 seconds), the location was likely replayed
+        // or the elapsedRealtime was manipulated (common in mock location apps).
+        val discrepancyMs = kotlin.math.abs(ageByWallClockMs - ageByMonotonicMs)
+        val maxDriftMs = 10000L + config.getDeferTime()
+        if (discrepancyMs > maxDriftMs) {
             return true
         }
 

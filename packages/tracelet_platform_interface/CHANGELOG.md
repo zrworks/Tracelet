@@ -1,3 +1,7 @@
+## 2.0.3
+
+- **FIX**: Removed unreliable timestamp drift heuristic from location spoofing detection.
+
 ## 2.0.1
 
 - **CHORE**: Version bump for iOS status bar fix consistency.

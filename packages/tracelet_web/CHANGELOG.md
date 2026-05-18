@@ -1,3 +1,7 @@
+## 2.0.3
+
+- **FIX**: Removed unreliable timestamp drift heuristic from location spoofing detection.
+
 # Changelog
 
 ## 2.0.1

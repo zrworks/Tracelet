@@ -1,3 +1,7 @@
+## 2.0.3
+
+- **FIX**: Removed unreliable timestamp drift heuristic from Android and iOS location spoofing detection. This prevents valid locations from being incorrectly rejected when a device's wall-clock time is slightly out of sync with GPS UTC time.
+
 ## 2.0.1
 
 - **FIX**: Fixed persistent blue location indicator on iOS by properly conditionally disabling `CLBackgroundActivitySession` and continuous GPS in low-accuracy geofence-only mode.

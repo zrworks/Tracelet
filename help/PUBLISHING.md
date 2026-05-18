@@ -48,9 +48,9 @@ Before triggering a release, update these files manually:
 - [ ] `packages/tracelet/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_platform_interface/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_android/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
-- [ ] `packages/tracelet_android/android/build.gradle` — update `version = "X.Y.Z"`
+- [ ] `packages/tracelet_android/android/build.gradle` — update `version = "X.Y.Z"` AND update native SDK reference `implementation("com.ikolvi:tracelet-sdk:X.Y.Z")`
 - [ ] `packages/tracelet_ios/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
-- [ ] `packages/tracelet_ios/ios/tracelet_ios.podspec` — update `s.version`
+- [ ] `packages/tracelet_ios/ios/tracelet_ios.podspec` — update `s.version` AND update native SDK reference `s.dependency 'TraceletSDK', 'X.Y.Z'`
 - [ ] `packages/tracelet_web/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
 - [ ] `packages/tracelet/pubspec.yaml` — update dependencies for `tracelet_android`, `tracelet_ios`, `tracelet_web` to `^X.Y.Z`
 - [ ] All 5 `CHANGELOG.md` files — add entry with `**FEAT**:` / `**FIX**:` / `**PERF**:` prefix

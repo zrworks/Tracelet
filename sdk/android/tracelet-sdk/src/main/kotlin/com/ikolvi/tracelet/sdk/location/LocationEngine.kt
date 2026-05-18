@@ -1155,10 +1155,12 @@ class LocationEngine(
         val locationElapsedNanos = location.elapsedRealtimeNanos
         val currentElapsedNanos = SystemClock.elapsedRealtimeNanos()
         // Location should be recent — within 10 seconds. Old or future values
-        // indicate replay or time manipulation.
+        // indicate replay or time manipulation. Account for deferTime which delays delivery.
         val driftNanos = currentElapsedNanos - locationElapsedNanos
         val driftSeconds = driftNanos / 1_000_000_000.0
-        if (driftSeconds < -1.0 || driftSeconds > 10.0) {
+        val deferTimeSeconds = config.getDeferTime() / 1000.0
+        val maxDriftSeconds = 10.0 + deferTimeSeconds
+        if (driftSeconds < -1.0 || driftSeconds > maxDriftSeconds) {
             return true
         }
 

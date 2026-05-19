@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet/tracelet.dart';
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 void main() {
   test('Config has sensible defaults', () {
@@ -20,4 +21,119 @@ void main() {
     expect(restored.geo.distanceFilter, 50.0);
     expect(restored.app.heartbeatInterval, 120);
   });
+
+  group('Tracelet Kalman Filter integration', () {
+    late MockTraceletPlatform mockPlatform;
+
+    setUp(() {
+      mockPlatform = MockTraceletPlatform();
+      TraceletPlatform.instance = mockPlatform;
+    });
+
+    test('ready with useKalmanFilter: true enables filter', () async {
+      const config = Config(
+        geo: GeoConfig(
+          filter: LocationFilter(useKalmanFilter: true),
+        ),
+      );
+
+      expect(Tracelet.isKalmanFilterEnabled, isFalse);
+
+      await Tracelet.ready(config);
+
+      expect(Tracelet.isKalmanFilterEnabled, isTrue);
+    });
+
+    test('ready with useKalmanFilter: false disables filter', () async {
+      const config = Config(
+        geo: GeoConfig(
+          filter: LocationFilter(useKalmanFilter: false),
+        ),
+      );
+
+      await Tracelet.ready(config);
+
+      expect(Tracelet.isKalmanFilterEnabled, isFalse);
+    });
+
+    test('setConfig updates useKalmanFilter setting', () async {
+      const configWithFilter = Config(
+        geo: GeoConfig(
+          filter: LocationFilter(useKalmanFilter: true),
+        ),
+      );
+
+      const configWithoutFilter = Config(
+        geo: GeoConfig(
+          filter: LocationFilter(useKalmanFilter: false),
+        ),
+      );
+
+      await Tracelet.ready(configWithoutFilter);
+      expect(Tracelet.isKalmanFilterEnabled, isFalse);
+
+      await Tracelet.setConfig(configWithFilter);
+      expect(Tracelet.isKalmanFilterEnabled, isTrue);
+
+      await Tracelet.setConfig(configWithoutFilter);
+      expect(Tracelet.isKalmanFilterEnabled, isFalse);
+    });
+  });
+}
+
+class MockTraceletPlatform extends TraceletPlatform with EmptyEventStreamsMixin {
+  final Map<String, Object?> stateResult = {
+    'enabled': false,
+    'trackingMode': 0,
+    'isMoving': false,
+    'schedulerEnabled': false,
+    'odometer': 0.0,
+  };
+
+  @override
+  Future<Map<String, Object?>> ready(TlConfig config) async {
+    return Map<String, Object?>.from(stateResult);
+  }
+
+  @override
+  Future<Map<String, Object?>> setConfig(TlConfig config) async {
+    return Map<String, Object?>.from(stateResult);
+  }
+}
+
+mixin EmptyEventStreamsMixin on TraceletPlatform {
+  @override
+  Stream<TlLocation> get locationEvents => const Stream.empty();
+  @override
+  Stream<TlLocation> get motionChangeEvents => const Stream.empty();
+  @override
+  Stream<TlActivityChangeEvent> get activityChangeEvents =>
+      const Stream.empty();
+  @override
+  Stream<TlProviderChangeEvent> get providerChangeEvents =>
+      const Stream.empty();
+  @override
+  Stream<TlGeofenceEvent> get geofenceEvents => const Stream.empty();
+  @override
+  Stream<TlGeofencesChangeEvent> get geofencesChangeEvents =>
+      const Stream.empty();
+  @override
+  Stream<TlHeartbeatEvent> get heartbeatEvents => const Stream.empty();
+  @override
+  Stream<TlHttpEvent> get httpEvents => const Stream.empty();
+  @override
+  Stream<TlState> get scheduleEvents => const Stream.empty();
+  @override
+  Stream<bool> get powerSaveChangeEvents => const Stream.empty();
+  @override
+  Stream<TlConnectivityChangeEvent> get connectivityChangeEvents =>
+      const Stream.empty();
+  @override
+  Stream<bool> get enabledChangeEvents => const Stream.empty();
+  @override
+  Stream<String> get notificationActionEvents => const Stream.empty();
+  @override
+  Stream<TlAuthorizationEvent> get authorizationEvents => const Stream.empty();
+  @override
+  Stream<TlLocation> get watchPositionEvents => const Stream.empty();
 }

@@ -505,6 +505,7 @@ class _DashboardPageState extends State<DashboardPage>
             distanceFilter: 10,
             stationaryRadius: 25,
             locationTimeout: 60,
+            filter: const tl.LocationFilter(useKalmanFilter: true),
             // ── New features ──
             disableElasticity: false,
             elasticityMultiplier: 1.0,
@@ -1927,7 +1928,11 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_kalmanEnabled;
       final state = await tl.Tracelet.setConfig(
-        const tl.Config(geo: tl.GeoConfig()),
+        tl.Config(
+          geo: tl.GeoConfig(
+            filter: tl.LocationFilter(useKalmanFilter: newValue),
+          ),
+        ),
       );
       setState(() {
         _kalmanEnabled = newValue;

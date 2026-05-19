@@ -1,3 +1,8 @@
+## 2.0.4
+
+- **CHORE**: Version bump for monorepo consistency and native SDK alignment.
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.4`.
+
 ## 2.0.3
 
 - **FIX**: Removed unreliable timestamp drift heuristic from location spoofing detection.

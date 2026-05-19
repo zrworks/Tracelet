@@ -1,3 +1,8 @@
+## 2.0.4
+
+- **FEAT**: Integrated Kalman Location Filter GPS smoothing into the Flutter plugin and the dynamic config settings in the Example App.
+- **CHORE**: Update platform-specific dependency constraints to `^2.0.4`.
+
 ## 2.0.3
 
 - **FIX**: Removed unreliable timestamp drift heuristic from Android and iOS location spoofing detection. This prevents valid locations from being incorrectly rejected when a device's wall-clock time is slightly out of sync with GPS UTC time.

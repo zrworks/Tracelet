@@ -1,3 +1,7 @@
+## 2.0.4
+
+- **CHORE**: Version bump for monorepo consistency and native SDK alignment.
+
 ## 2.0.3
 
 - **FIX**: Removed unreliable timestamp drift heuristic from location spoofing detection.

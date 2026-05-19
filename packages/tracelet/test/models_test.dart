@@ -272,6 +272,36 @@ void main() {
     });
   });
 
+  group('LocationFilter', () {
+    test('defaults are correct', () {
+      const filter = LocationFilter();
+      expect(filter.useKalmanFilter, false);
+      expect(filter.trackingAccuracyThreshold, 100);
+    });
+
+    test('round-trip serialization preserves useKalmanFilter', () {
+      const filter = LocationFilter(
+        useKalmanFilter: true,
+        trackingAccuracyThreshold: 150,
+      );
+      final map = filter.toMap();
+      expect(map['useKalmanFilter'], true);
+
+      final restored = LocationFilter.fromMap(map);
+      expect(restored.useKalmanFilter, true);
+      expect(restored.trackingAccuracyThreshold, 150);
+    });
+
+    test('equality and hashCode', () {
+      const a = LocationFilter(useKalmanFilter: true);
+      const b = LocationFilter(useKalmanFilter: true);
+      const c = LocationFilter(useKalmanFilter: false);
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+  });
+
   // ==========================================================================
   // Location
   // ==========================================================================

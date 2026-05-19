@@ -212,7 +212,7 @@ class Tracelet {
     _currentConfig = config;
 
     // Capture Kalman filter setting.
-    _useKalmanFilter = false;
+    _useKalmanFilter = config.geo.filter.useKalmanFilter;
     _kalmanFilter.reset();
 
     // Capture adaptive sampling setting from config.
@@ -373,7 +373,7 @@ class Tracelet {
     _currentConfig = config;
 
     // Update Kalman filter setting.
-    _useKalmanFilter = false;
+    _useKalmanFilter = config.geo.filter.useKalmanFilter;
 
     // Update adaptive sampling setting.
     _enableAdaptiveMode = config.geo.enableAdaptiveMode;

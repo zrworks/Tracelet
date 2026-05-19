@@ -209,6 +209,7 @@ class LocationFilter {
     this.policy = LocationFilterPolicy.adjust,
     this.rejectMockLocations = false,
     this.mockDetectionLevel = 1,
+    this.useKalmanFilter = false,
   });
 
   /// Reject locations with accuracy worse than this value (meters).
@@ -228,6 +229,9 @@ class LocationFilter {
 
   /// Sensitivity level for custom mock detection.
   final int mockDetectionLevel;
+
+  /// Whether the Kalman filter is currently enabled for GPS smoothing.
+  final bool useKalmanFilter;
 
   factory LocationFilter.fromMap(Map<String, Object?> map) {
     return LocationFilter(
@@ -250,6 +254,10 @@ class LocationFilter {
         fallback: false,
       ),
       mockDetectionLevel: ensureInt(map['mockDetectionLevel'], fallback: 1),
+      useKalmanFilter: ensureBool(
+        map['useKalmanFilter'],
+        fallback: false,
+      ),
     );
   }
 
@@ -261,6 +269,7 @@ class LocationFilter {
       'policy': policy.index,
       'rejectMockLocations': rejectMockLocations,
       'mockDetectionLevel': mockDetectionLevel,
+      'useKalmanFilter': useKalmanFilter,
     };
   }
 
@@ -274,7 +283,8 @@ class LocationFilter {
           odometerAccuracyThreshold == other.odometerAccuracyThreshold &&
           policy == other.policy &&
           rejectMockLocations == other.rejectMockLocations &&
-          mockDetectionLevel == other.mockDetectionLevel;
+          mockDetectionLevel == other.mockDetectionLevel &&
+          useKalmanFilter == other.useKalmanFilter;
 
   @override
   int get hashCode => Object.hash(
@@ -284,6 +294,7 @@ class LocationFilter {
     policy,
     rejectMockLocations,
     mockDetectionLevel,
+    useKalmanFilter,
   );
 }
 

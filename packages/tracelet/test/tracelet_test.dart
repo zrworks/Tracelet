@@ -32,9 +32,7 @@ void main() {
 
     test('ready with useKalmanFilter: true enables filter', () async {
       const config = Config(
-        geo: GeoConfig(
-          filter: LocationFilter(useKalmanFilter: true),
-        ),
+        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: true)),
       );
 
       expect(Tracelet.isKalmanFilterEnabled, isFalse);
@@ -46,9 +44,7 @@ void main() {
 
     test('ready with useKalmanFilter: false disables filter', () async {
       const config = Config(
-        geo: GeoConfig(
-          filter: LocationFilter(useKalmanFilter: false),
-        ),
+        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: false)),
       );
 
       await Tracelet.ready(config);
@@ -58,15 +54,11 @@ void main() {
 
     test('setConfig updates useKalmanFilter setting', () async {
       const configWithFilter = Config(
-        geo: GeoConfig(
-          filter: LocationFilter(useKalmanFilter: true),
-        ),
+        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: true)),
       );
 
       const configWithoutFilter = Config(
-        geo: GeoConfig(
-          filter: LocationFilter(useKalmanFilter: false),
-        ),
+        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: false)),
       );
 
       await Tracelet.ready(configWithoutFilter);
@@ -81,7 +73,8 @@ void main() {
   });
 }
 
-class MockTraceletPlatform extends TraceletPlatform with EmptyEventStreamsMixin {
+class MockTraceletPlatform extends TraceletPlatform
+    with EmptyEventStreamsMixin {
   final Map<String, Object?> stateResult = {
     'enabled': false,
     'trackingMode': 0,

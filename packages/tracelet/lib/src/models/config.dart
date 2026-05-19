@@ -254,10 +254,7 @@ class LocationFilter {
         fallback: false,
       ),
       mockDetectionLevel: ensureInt(map['mockDetectionLevel'], fallback: 1),
-      useKalmanFilter: ensureBool(
-        map['useKalmanFilter'],
-        fallback: false,
-      ),
+      useKalmanFilter: ensureBool(map['useKalmanFilter'], fallback: false),
     );
   }
 

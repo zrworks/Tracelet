@@ -1,3 +1,9 @@
+## 2.0.5
+
+- **CHORE**: Version bump for monorepo consistency and package lockstep alignment.
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.5`.
+- **CHORE**: Bump native podspec version to `2.0.5`.
+
 ## 2.0.4
 
 - **CHORE**: Version bump for monorepo consistency and native SDK alignment.

@@ -198,6 +198,18 @@ class Tracelet {
   // ---------------------------------------------------------------------------
   static Config _currentConfig = const Config();
 
+  /// Whether [registerHeadlessTask] has been called in this isolate.
+  ///
+  /// Used by diagnostic tools (e.g. `tracelet_doctor`) to warn when
+  /// background tracking is configured but no headless handler is registered.
+  static bool _headlessRegistered = false;
+
+  /// Whether a headless background task callback has been registered.
+  ///
+  /// Returns `true` after [registerHeadlessTask] has been called.
+  /// Returns `false` on web (headless isolates not supported).
+  static bool get isHeadlessRegistered => _headlessRegistered;
+
   /// Initialize the plugin and bind the native lifecycle.
   ///
   /// This should be the first method called before [start] or [startGeofences].
@@ -1535,6 +1547,7 @@ class Tracelet {
       );
     }
 
+    _headlessRegistered = true;
     return _platform.registerHeadlessTask(<int>[
       registrationHandle.toRawHandle(),
       dispatchHandle.toRawHandle(),

@@ -26,10 +26,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet_platform_interface: ^2.0.4
-  tracelet_android: ^2.0.4
-  tracelet_ios: ^2.0.4
-  tracelet_web: ^2.0.4
+  tracelet_platform_interface: ^2.0.5
+  tracelet_android: ^2.0.5
+  tracelet_ios: ^2.0.5
+  tracelet_web: ^2.0.5
   collection: ^1.19.1
   meta: ^1.17.0
 

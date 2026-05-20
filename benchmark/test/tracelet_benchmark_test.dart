@@ -463,7 +463,6 @@ void _benchDeltaEncoder() {
     final batch = <Map<String, Object?>>[];
     var lat = 37.4220;
     var lng = -122.0841;
-    var ts = 1700000000000;
     for (var i = 0; i < n; i++) {
       lat += (_rng.nextDouble() - 0.5) * 0.0002;
       lng += (_rng.nextDouble() - 0.5) * 0.0002;
@@ -482,7 +481,6 @@ void _benchDeltaEncoder() {
         'timestamp': '2024-11-01T12:34:${(56 + i) % 60}.000Z',
         'battery': <String, Object?>{'level': 0.75, 'is_charging': false},
       });
-      ts += 1000;
     }
     return batch;
   }
@@ -765,26 +763,42 @@ void main() {
     _benchSyncBodyContext();
     _benchHttpConfigSsl();
 
-    // Print results table
-    print('');
-    print('| Benchmark | ops/sec | µs/op |');
-    print('|---|---:|---:|');
+    // Build table content
+    final tableBuffer = StringBuffer();
+    tableBuffer.writeln('| Benchmark | ops/sec | µs/op |');
+    tableBuffer.writeln('|---|---:|---:|');
     for (final r in _results) {
-      print(
+      tableBuffer.writeln(
         '| ${r.name} | ${r.opsPerSec.toStringAsFixed(0)} | ${r.usPerOp.toStringAsFixed(2)} |',
       );
     }
-
-    // Print JSON for CI
+    final tableString = tableBuffer.toString();
     print('');
-    print('--- JSON ---');
-    print('{');
+    print(tableString);
+    try {
+      File('benchmark_table.md').writeAsStringSync(tableString);
+    } catch (e) {
+      print('Warning: Failed to write benchmark_table.md: $e');
+    }
+
+    // Build JSON content
+    final jsonBuffer = StringBuffer();
+    jsonBuffer.writeln('{');
     for (var i = 0; i < _results.length; i++) {
       final r = _results[i];
       final comma = i < _results.length - 1 ? ',' : '';
-      print('  "${r.name}": ${r.usPerOp.toStringAsFixed(2)}$comma');
+      jsonBuffer.writeln('  "${r.name}": ${r.usPerOp.toStringAsFixed(2)}$comma');
     }
-    print('}');
+    jsonBuffer.writeln('}');
+    final jsonString = jsonBuffer.toString();
+    print('');
+    print('--- JSON ---');
+    print(jsonString);
+    try {
+      File('benchmark_results.json').writeAsStringSync(jsonString);
+    } catch (e) {
+      print('Warning: Failed to write benchmark_results.json: $e');
+    }
 
     // Verify all benchmarks produced results
     expect(_results.length, greaterThanOrEqualTo(48));

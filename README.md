@@ -13,6 +13,7 @@
 </p>
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pub Package](https://img.shields.io/pub/v/tracelet.svg)](https://pub.dev/packages/tracelet)
 [![CI](https://github.com/Ikolvi/Tracelet/actions/workflows/ci.yml/badge.svg)](https://github.com/Ikolvi/Tracelet/actions)
 
 > **Production-grade background geolocation for Flutter — fully open-source.**

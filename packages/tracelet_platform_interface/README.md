@@ -1,5 +1,7 @@
 # tracelet_platform_interface
 
+[![Pub Package](https://img.shields.io/pub/v/tracelet_platform_interface.svg)](https://pub.dev/packages/tracelet_platform_interface)
+
 A common platform interface for the [Tracelet](https://pub.dev/packages/tracelet) background geolocation plugin.
 
 This package provides the abstract classes and types that the platform-specific implementations (`tracelet_android`, `tracelet_ios`, `tracelet_web`) implement.

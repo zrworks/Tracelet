@@ -159,8 +159,8 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
             child: _loading
                 ? _buildLoading()
                 : _error != null
-                    ? _buildError()
-                    : _buildContent(),
+                ? _buildError()
+                : _buildContent(),
           ),
         ],
       ),
@@ -323,10 +323,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'QUICK FIX',
-                    style: DoctorTheme.sectionStyle,
-                  ),
+                  Text('QUICK FIX', style: DoctorTheme.sectionStyle),
                   const SizedBox(height: 8),
                   Text(
                     'await Tracelet.ready(Config(\n'
@@ -349,9 +346,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               onPressed: _runCheck,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Retry'),
-              style: TextButton.styleFrom(
-                foregroundColor: DoctorTheme.accent,
-              ),
+              style: TextButton.styleFrom(foregroundColor: DoctorTheme.accent),
             ),
           ],
         ),
@@ -389,9 +384,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               onPressed: _runCheck,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Retry'),
-              style: TextButton.styleFrom(
-                foregroundColor: DoctorTheme.accent,
-              ),
+              style: TextButton.styleFrom(foregroundColor: DoctorTheme.accent),
             ),
           ],
         ),
@@ -406,10 +399,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
       padding: DoctorTheme.contentPadding,
       children: [
         // Warnings section
-        _SectionLabel(
-          label: 'WARNINGS',
-          count: health.warningCount,
-        ),
+        _SectionLabel(label: 'WARNINGS', count: health.warningCount),
         const SizedBox(height: 8),
         WarningList(warnings: health.warnings),
         const SizedBox(height: DoctorTheme.cardSpacing + 8),
@@ -531,10 +521,7 @@ class _HeaderButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: DoctorTheme.cardSurface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: DoctorTheme.cardBorder,
-              width: 0.5,
-            ),
+            border: Border.all(color: DoctorTheme.cardBorder, width: 0.5),
           ),
           child: Icon(icon, size: 18, color: DoctorTheme.accent),
         ),

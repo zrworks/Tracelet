@@ -120,10 +120,10 @@ class DatabaseCard extends StatelessWidget {
     final queueColor = health.locationCount == 0
         ? DoctorTheme.success
         : health.locationCount < 100
-            ? DoctorTheme.accent
-            : health.locationCount < 500
-                ? DoctorTheme.warning
-                : DoctorTheme.error;
+        ? DoctorTheme.accent
+        : health.locationCount < 500
+        ? DoctorTheme.warning
+        : DoctorTheme.error;
 
     return DiagnosticCard(
       icon: Icons.storage_rounded,
@@ -172,7 +172,10 @@ class DatabaseCard extends StatelessWidget {
                 icon: const Icon(Icons.delete_sweep_rounded, size: 18),
                 label: Text(
                   'Clear ${health.locationCount} Pending Location${health.locationCount == 1 ? '' : 's'}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

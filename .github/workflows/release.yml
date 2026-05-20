@@ -50,6 +50,7 @@ jobs:
       android_sdk_version: ${{ steps.versions.outputs.android_sdk }}
       ios_sdk_version: ${{ steps.versions.outputs.ios_sdk }}
       flutter_version: ${{ steps.versions.outputs.flutter }}
+      flutter_doctor_version: ${{ steps.versions.outputs.flutter_doctor }}
     steps:
       - uses: actions/checkout@v5
 
@@ -69,24 +70,27 @@ jobs:
           ANDROID_SDK=$(grep '^SDK_VERSION=' sdk/android/gradle.properties | cut -d= -f2)
           IOS_SDK=$(grep "s.version" TraceletSDK.podspec | head -1 | sed "s/.*= '//;s/'//;s/ //g")
           FLUTTER=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
+          FLUTTER_DOCTOR=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
 
           echo "android_sdk=$ANDROID_SDK" >> "$GITHUB_OUTPUT"
           echo "ios_sdk=$IOS_SDK" >> "$GITHUB_OUTPUT"
           echo "flutter=$FLUTTER" >> "$GITHUB_OUTPUT"
+          echo "flutter_doctor=$FLUTTER_DOCTOR" >> "$GITHUB_OUTPUT"
 
           echo "## Versions to publish" >> "$GITHUB_STEP_SUMMARY"
           echo "| Component | Version |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Android SDK | \`$ANDROID_SDK\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| iOS SDK | \`$IOS_SDK\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Flutter packages | \`$FLUTTER\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter core packages | \`$FLUTTER\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter doctor package | \`$FLUTTER_DOCTOR\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Analyze
         run: melos run analyze
 
       - name: Dry-run pub publish
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
             cd "packages/${pkg}"
@@ -354,8 +358,8 @@ jobs:
       - name: Publish packages
         if: ${{ !inputs.dry_run }}
         run: |
-          # Publish order: platform_interface → android, ios, web → tracelet
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          # Publish order: platform_interface → android, ios, web → tracelet → tracelet_doctor
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
 
           for pkg in $ORDERED; do
             echo "══════════════════════════════════════"
@@ -389,6 +393,18 @@ jobs:
               CREATED=$((CREATED + 1))
             fi
           done
+
+          # Create independent tag for tracelet_doctor
+          DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
+          DOCTOR_TAG="tracelet_doctor-v${DOCTOR_VERSION}"
+          if git rev-parse "$DOCTOR_TAG" >/dev/null 2>&1; then
+            echo "ℹ️ Tag $DOCTOR_TAG already exists — skipping"
+          else
+            git tag "$DOCTOR_TAG" -m "Release tracelet_doctor v${DOCTOR_VERSION}"
+            echo "🏷️ Tagged: $DOCTOR_TAG"
+            CREATED=$((CREATED + 1))
+          fi
+
           if [ "$CREATED" -gt 0 ]; then
             git push origin --tags
           else
@@ -398,7 +414,7 @@ jobs:
       - name: Dry-run publish
         if: inputs.dry_run
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
             cd "packages/${pkg}"
@@ -410,6 +426,7 @@ jobs:
         if: always()
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
           echo "## Flutter Packages" >> "$GITHUB_STEP_SUMMARY"
           echo "| Package | Version |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
@@ -417,6 +434,7 @@ jobs:
           for pkg in $PACKAGES; do
             echo "| \`$pkg\` | $VERSION |" >> "$GITHUB_STEP_SUMMARY"
           done
+          echo "| \`tracelet_doctor\` | $DOCTOR_VERSION |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 **Dry run — nothing was published.**" >> "$GITHUB_STEP_SUMMARY"
@@ -445,7 +463,8 @@ jobs:
           echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Android SDK | \`${{ needs.validate.outputs.android_sdk_version }}\` | ${{ needs.publish-android-sdk.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| iOS SDK | \`${{ needs.validate.outputs.ios_sdk_version }}\` | ${{ needs.publish-ios-sdk.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Flutter packages | \`${{ needs.validate.outputs.flutter_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter core packages | \`${{ needs.validate.outputs.flutter_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter doctor package | \`${{ needs.validate.outputs.flutter_doctor_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 **This was a dry run. Nothing was published.**" >> "$GITHUB_STEP_SUMMARY"

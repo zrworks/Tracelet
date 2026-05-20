@@ -5,11 +5,7 @@ import '../doctor_theme.dart';
 /// A reusable status chip showing a colored dot and label.
 class StatusChip extends StatelessWidget {
   /// Creates a [StatusChip].
-  const StatusChip({
-    required this.label,
-    required this.color,
-    super.key,
-  });
+  const StatusChip({required this.label, required this.color, super.key});
 
   /// The text label to display.
   final String label;
@@ -36,10 +32,7 @@ class StatusChip extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.5),
-                  blurRadius: 4,
-                ),
+                BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4),
               ],
             ),
           ),
@@ -89,9 +82,7 @@ class DiagnosticCard extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: DoctorTheme.accent),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(title, style: DoctorTheme.cardTitleStyle),
-              ),
+              Expanded(child: Text(title, style: DoctorTheme.cardTitleStyle)),
               if (trailing != null) trailing!,
             ],
           ),

@@ -37,13 +37,15 @@ class PermissionCard extends StatelessWidget {
     final motionColor = health.motionPermission == 3
         ? DoctorTheme.success
         : health.motionPermission == 0
-            ? DoctorTheme.warning
-            : DoctorTheme.error;
+        ? DoctorTheme.warning
+        : DoctorTheme.error;
 
-    final accuracyLabel = health.accuracyAuthorization == AccuracyAuthorization.full
+    final accuracyLabel =
+        health.accuracyAuthorization == AccuracyAuthorization.full
         ? 'Full'
         : 'Reduced';
-    final accuracyColor = health.accuracyAuthorization == AccuracyAuthorization.full
+    final accuracyColor =
+        health.accuracyAuthorization == AccuracyAuthorization.full
         ? DoctorTheme.success
         : DoctorTheme.warning;
 
@@ -53,11 +55,7 @@ class PermissionCard extends StatelessWidget {
       trailing: StatusChip(label: permLabel, color: permColor),
       child: Column(
         children: [
-          InfoRow(
-            label: 'Location',
-            value: permLabel,
-            valueColor: permColor,
-          ),
+          InfoRow(label: 'Location', value: permLabel, valueColor: permColor),
           InfoRow(
             label: 'Motion Activity',
             value: motionLabel,

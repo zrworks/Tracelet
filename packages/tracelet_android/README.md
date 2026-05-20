@@ -1,5 +1,7 @@
 # tracelet_android
 
+[![Pub Package](https://img.shields.io/pub/v/tracelet_android.svg)](https://pub.dev/packages/tracelet_android)
+
 Android implementation of the [Tracelet](https://pub.dev/packages/tracelet) background geolocation plugin.
 
 This package uses Kotlin and native Android APIs (FusedLocationProvider, Room, WorkManager, Geofencing API) to provide production-grade background location tracking.

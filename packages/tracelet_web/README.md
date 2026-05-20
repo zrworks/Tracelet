@@ -1,5 +1,7 @@
 # tracelet_web
 
+[![Pub Package](https://img.shields.io/pub/v/tracelet_web.svg)](https://pub.dev/packages/tracelet_web)
+
 Web implementation of the [Tracelet](https://pub.dev/packages/tracelet) background geolocation plugin.
 
 This package uses browser APIs (Geolocation, Permissions, `fetch`, `navigator.onLine`) to provide foreground-only location tracking on the web.

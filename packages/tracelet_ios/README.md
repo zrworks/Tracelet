@@ -1,5 +1,7 @@
 # tracelet_ios
 
+[![Pub Package](https://img.shields.io/pub/v/tracelet_ios.svg)](https://pub.dev/packages/tracelet_ios)
+
 iOS implementation of the [Tracelet](https://pub.dev/packages/tracelet) background geolocation plugin.
 
 This package uses Swift and native Apple frameworks (CoreLocation, CoreMotion, BackgroundTasks, SQLite3) to provide production-grade background location tracking.

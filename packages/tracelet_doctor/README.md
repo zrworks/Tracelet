@@ -1,6 +1,7 @@
 # Tracelet Doctor
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pub Package](https://img.shields.io/pub/v/tracelet_doctor.svg)](https://pub.dev/packages/tracelet_doctor)
 
 > **Drop-in diagnostic overlay for Tracelet** — visualize permissions, OEM health, battery state, sensors, and tracking status in a single tap.
 

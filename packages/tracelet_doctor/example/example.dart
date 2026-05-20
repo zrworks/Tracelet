@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import 'package:tracelet/tracelet.dart' as tl;
+import 'package:tracelet_doctor/tracelet_doctor.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Initialize core Tracelet configuration
+  await tl.Tracelet.ready(
+    tl.Config(
+      geo: tl.GeoConfig(
+        desiredAccuracy: tl.DesiredAccuracy.high,
+        distanceFilter: 10.0,
+      ),
+      app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
+      logger: tl.LoggerConfig(debug: true, logLevel: tl.LogLevel.verbose),
+    ),
+  );
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Tracelet Doctor Example',
+      theme: ThemeData.dark(),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tracelet Companion Dashboard')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Tracelet Background Geolocation is Active',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () {
+                // 2. Trigger the drop-in diagnostic overlay dashboard
+                TraceletDoctor.show(context);
+              },
+              icon: const Icon(Icons.medical_services_outlined),
+              label: const Text('Launch Tracelet Doctor'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

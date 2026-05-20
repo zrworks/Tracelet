@@ -1,317 +1,398 @@
 # Configuration Guide
 
-Configuration is organized into logical groups. Pass a `Config` object to
-`Tracelet.ready()` or update at runtime with `Tracelet.setConfig()`.
+Configuration in Tracelet 2.x.x is organized into logical, strongly-typed, nested sub-configurations. You can pass a compound `Config` object to `Tracelet.ready()` during initialization, or update individual sub-configurations at runtime using `Tracelet.setConfig()`.
 
 ---
 
-## Full Example
+## Complete Example
 
 ```dart
-Config(
-  geo: GeoConfig(                    // Location accuracy & sampling
+import 'package:tracelet/tracelet.dart';
+
+final config = Config(
+  // 1. Core location tracking and sampling settings
+  geo: GeoConfig(
     desiredAccuracy: DesiredAccuracy.high,
     distanceFilter: 10.0,
     stationaryRadius: 25.0,
-    disableElasticity: false,        // Fixed vs speed-adaptive distance filter
-    elasticityMultiplier: 1.0,       // Scale factor for adaptive filter
-    enableAdaptiveMode: true,        // Auto-adjust distanceFilter (activity + battery + speed)
-    enableTimestampMeta: true,       // Extra timing fields on each location
-    stopAfterElapsedMinutes: -1,     // Auto-stop after N minutes (-1 = off)
-    geofenceModeHighAccuracy: false, // Full GPS in geofence-only mode (Android)
-    locationUpdateInterval: 1000,    // Android: desired update interval (ms)
-    fastestLocationUpdateInterval: 500, // Android: fastest update interval (ms)
-    locationTimeout: 60,             // Timeout for location request (s)
-    activityType: LocationActivityType.other, // iOS: activity type hint
-    deferTime: 0,                    // Android: defer updates for N ms
-    locationAuthorizationRequest: LocationAuthorizationRequest.always, // Authorization level
-    disableLocationAuthorizationAlert: false, // Suppress system auth prompt
-    // Battery budget:
-    batteryBudgetPerHour: 3.0,       // Target max %/hr drain (0 = disabled)
-    // Sparse updates:
-    enableSparseUpdates: true,       // App-level location deduplication
-    sparseDistanceThreshold: 50.0,   // Min meters between recorded locations
-    sparseMaxIdleSeconds: 300,       // Force update after N seconds idle
-    // Dead reckoning:
-    enableDeadReckoning: true,       // IMU navigation during GPS loss
-    deadReckoningActivationDelay: 10, // Seconds without GPS before IMU
-    deadReckoningMaxDuration: 120,   // Max seconds of dead reckoning
-    // Periodic mode options (used with Tracelet.startPeriodic()):
-    periodicLocationInterval: 900,           // 15 min between fixes
+    locationTimeout: 60,
+    disableElasticity: false,
+    elasticityMultiplier: 1.0,
+    stopAfterElapsedMinutes: -1,
+    maxMonitoredGeofences: -1,
+    enableTimestampMeta: false,
+    enableAdaptiveMode: false,
+    periodicLocationInterval: 900,
     periodicDesiredAccuracy: DesiredAccuracy.medium,
-    periodicUseForegroundService: false,     // Android: WorkManager (no notification)
-    periodicUseExactAlarms: false,           // Android: inexact alarms
-    filter: LocationFilter(          // GPS denoising
+    enableSparseUpdates: false,
+    sparseDistanceThreshold: 50.0,
+    sparseMaxIdleSeconds: 300,
+    batteryBudgetPerHour: 0.0,
+    enableDeadReckoning: false,
+    deadReckoningActivationDelay: 0,
+    deadReckoningMaxDuration: 0,
+    filter: const LocationFilter(
       trackingAccuracyThreshold: 100,
       maxImpliedSpeed: 80,
       odometerAccuracyThreshold: 50,
       policy: LocationFilterPolicy.adjust,
-      useKalmanFilter: true,         // Real-time GPS smoothing
-      rejectMockLocations: true,     // Block spoofed GPS
-      mockDetectionLevel: MockDetectionLevel.heuristic, // Advanced detection
+      rejectMockLocations: true,
+      mockDetectionLevel: 1, // basic
+      useKalmanFilter: true,
     ),
   ),
-  app: AppConfig(                    // Lifecycle behavior
+
+  // 2. Application lifecycle and remote scheduling/sync
+  app: AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
     heartbeatInterval: 60,
-    preventSuspend: false,           // iOS: silent audio keep-alive
-    scheduleUseAlarmManager: false,  // Android: exact-time scheduling
+    schedule: ['1-5 09:00-17:00'], // Active hours Monday-Friday
+    remoteConfigUrl: 'https://api.my-server.com/tracelet/config',
+    remoteConfigHeaders: {'Authorization': 'Bearer YOUR_TOKEN'},
+    remoteConfigTimeout: 60000,
+    remoteConfigRefreshInterval: 1440,
+  ),
+
+  // 3. Android platform-specific options
+  android: AndroidConfig(
+    locationUpdateInterval: 1000,
+    fastestLocationUpdateInterval: 500,
+    deferTime: 0,
+    allowIdenticalLocations: false,
+    geofenceModeHighAccuracy: false,
+    periodicUseForegroundService: false,
+    periodicUseExactAlarms: false,
+    scheduleUseAlarmManager: false,
     foregroundService: ForegroundServiceConfig(
-      notificationTitle: 'My App',   // Android foreground notification
-      notificationText: 'Tracking',
-      // enabled: false,             // Set false to disable notification
+      enabled: true,
+      channelId: 'tracelet_channel',
+      channelName: 'Location Tracking',
+      notificationTitle: 'Tracking Active',
+      notificationText: 'Tracking location in background',
+      notificationColor: '#4CAF50',
+      notificationPriority: NotificationPriority.defaultPriority,
+      notificationOngoing: true,
     ),
   ),
-  http: HttpConfig(                  // Server sync
-    url: 'https://example.com/locations',
+
+  // 4. iOS platform-specific options
+  ios: IosConfig(
+    activityType: LocationActivityType.other,
+    useSignificantChangesOnly: false,
+    showsBackgroundLocationIndicator: true,
+    pausesLocationUpdatesAutomatically: false,
+    locationAuthorizationRequest: LocationAuthorizationRequest.always,
+    disableLocationAuthorizationAlert: false,
+    preventSuspend: false,
+  ),
+
+  // 5. Server sync and upload settings
+  http: HttpConfig(
+    url: 'https://api.my-server.com/locations',
     method: HttpMethod.post,
+    headers: {'Authorization': 'Bearer YOUR_TOKEN'},
+    params: {'device_id': 'unique_device_id'},
     autoSync: true,
     batchSync: true,
-    disableAutoSyncOnCellular: false, // Wi-Fi-only sync
-    maxRetries: 10,                  // Retry transient failures
-    retryBackoffBase: 1000,          // 1s base delay
-    retryBackoffCap: 300000,         // 5 min max backoff
-    enableDeltaCompression: true,    // Delta encoding for batch payloads
-    deltaCoordinatePrecision: 6,     // Coordinate decimal places (6 ≈ 0.11m)
+    maxBatchSize: 250,
+    autoSyncThreshold: 0,
+    httpTimeout: 60000,
+    locationsOrderDirection: LocationOrderDirection.ascending,
+    disableAutoSyncOnCellular: false,
+    maxRetries: 3,
+    retryBackoffBase: 1,
+    retryBackoffCap: 60,
+    enableDeltaCompression: false,
+    deltaCoordinatePrecision: 5,
   ),
-  motion: MotionConfig(              // Motion detection
+
+  // 6. Accelerometer-based motion and sleep tuning
+  motion: MotionConfig(
     stopTimeout: 5,
+    motionTriggerDelay: 0,
+    disableMotionActivityUpdates: false,
+    isMoving: false,
+    activityRecognitionInterval: 1000,
     minimumActivityRecognitionConfidence: 75,
     disableStopDetection: false,
     stopDetectionDelay: 0,
     stopOnStationary: false,
-    shakeThreshold: 2.5,             // m/s² — jolt to trigger moving
-    stillThreshold: 0.4,             // m/s² — below this counts as still
-    stillSampleCount: 25,            // consecutive still samples
+    stationaryRadius: 25.0,
+    useSignificantChangesOnly: false,
+    shakeThreshold: 2.5,
+    stillThreshold: 0.4,
+    stillSampleCount: 25,
   ),
-  persistence: PersistenceConfig(    // Database retention
-    persistMode: PersistMode.all,    // all | location | geofence | none
-    maxDaysToPersist: 7,             // Auto-prune after N days (-1 = unlimited)
-    maxRecordsToPersist: 5000,       // Max records (-1 = unlimited)
+
+  // 7. Core geofencing engine settings
+  geofence: GeofenceConfig(
+    geofenceModeHighAccuracy: false,
+    geofenceInitialTriggerEntry: true,
+    geofenceProximityRadius: 1000,
+  ),
+
+  // 8. Database retention limits
+  persistence: PersistenceConfig(
+    maxDaysToPersist: 7,
+    maxRecordsToPersist: 5000,
+    persistMode: PersistMode.all,
     disableProviderChangeRecord: false,
   ),
-  geofence: GeofenceConfig(          // Geofence behavior
-    geofenceProximityRadius: 1000,
-    geofenceInitialTriggerEntry: true,
-  ),
-  logger: LoggerConfig(              // Logging
-    debug: true,
-    logLevel: LogLevel.verbose,
+
+  // 9. Logger and console debug options
+  logger: LoggerConfig(
+    logLevel: LogLevel.info,
     logMaxDays: 3,
+    debug: false,
   ),
-)
+
+  // 10. Cryptographic proof and security settings (Enterprise)
+  audit: AuditConfig(
+    enabled: true,
+    hashAlgorithm: HashAlgorithm.sha256,
+    includeExtrasInHash: false,
+  ),
+  privacyZone: PrivacyZoneConfig(
+    enabled: true,
+  ),
+  security: SecurityConfig(
+    encryptDatabase: true,
+  ),
+  attestation: AttestationConfig(
+    enabled: true,
+    refreshInterval: 3600,
+  ),
+);
 ```
 
 ---
 
-## GeoConfig
+## 1. GeoConfig
 
-Location accuracy, sampling, and filtering.
+Configures Core Location parameters, accuracy, sampling filter thresholds, battery budgets, and dead reckoning behavior.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `desiredAccuracy` | `DesiredAccuracy` | `high` | GPS accuracy level |
-| `distanceFilter` | `double` | `10.0` | Minimum meters between updates |
-| `stationaryRadius` | `double` | `25.0` | Radius for stationary geofence |
-| `disableElasticity` | `bool` | `false` | Disable speed-based distance filter scaling |
-| `elasticityMultiplier` | `double` | `1.0` | Scale factor for elastic distance filter |
-| `enableTimestampMeta` | `bool` | `false` | Add extra timing fields to each location |
-| `stopAfterElapsedMinutes` | `int` | `-1` | Auto-stop after N minutes (-1 = off) |
-| `geofenceModeHighAccuracy` | `bool` | `false` | Full GPS in geofence-only mode |
-| `maxMonitoredGeofences` | `int` | `-1` | Max simultaneously monitored geofences (-1 = platform default: 100 Android, 20 iOS). Used with proximity-based geofence loading. |
-| `useSignificantChangesOnly` | `bool` | `false` | Use significant location changes only |
-| `showsBackgroundLocationIndicator` | `bool` | `true` | iOS: show blue status bar indicator |
-| `pausesLocationUpdatesAutomatically` | `bool` | `false` | iOS: allow system to pause updates |
-| `enableAdaptiveMode` | `bool` | `false` | Enable adaptive sampling — automatically adjusts `distanceFilter` based on activity, battery, and speed ([details](ADAPTIVE-SAMPLING.md)) |
-| `locationUpdateInterval` | `int` | `1000` | **Android**: desired update interval in ms |
-| `fastestLocationUpdateInterval` | `int` | `500` | **Android**: fastest update interval in ms |
-| `locationTimeout` | `int` | `60` | Timeout for individual location request in seconds |
-| `activityType` | `LocationActivityType` | `other` | **iOS**: hint for CLLocationManager (`other`, `automotiveNavigation`, `fitness`, `airborne`) |
-| `deferTime` | `int` | `0` | **Android**: defer location updates for N ms (batching) |
-| `locationAuthorizationRequest` | `LocationAuthorizationRequest` | `always` | Authorization level: `always` or `whenInUse` |
-| `disableLocationAuthorizationAlert` | `bool` | `false` | Suppress system authorization prompt |
-| **Battery Budget** | | | |
-| `batteryBudgetPerHour` | `double` | `0.0` | Target max battery drain %/hr. `0` = disabled. Adjusts distanceFilter, accuracy, and periodic interval automatically ([details](BATTERY-BUDGET.md)) |
-| **Sparse Updates** | | | |
-| `enableSparseUpdates` | `bool` | `false` | App-level location deduplication — record only when moved beyond threshold ([details](SPARSE-UPDATES.md)) |
-| `sparseDistanceThreshold` | `double` | `50.0` | Min meters from last recorded point before recording |
-| `sparseMaxIdleSeconds` | `int` | `300` | Force a record after N seconds of no movement (`0` = disabled) |
-| **Dead Reckoning** | | | |
-| `enableDeadReckoning` | `bool` | `false` | IMU-based inertial navigation when GPS signal lost ([details](DEAD-RECKONING.md)) |
-| `deadReckoningActivationDelay` | `int` | `10` | Seconds without GPS before activating IMU |
-| `deadReckoningMaxDuration` | `int` | `120` | Max seconds of dead reckoning estimation |
-| `filter` | `LocationFilter?` | `null` | GPS denoising configuration |
-| **Periodic Mode** | | | |
-| `periodicLocationInterval` | `int` | `900` | Seconds between periodic fixes (min 60). WorkManager enforces ≥ 15 min on Android. |
-| `periodicDesiredAccuracy` | `DesiredAccuracy` | `medium` | Accuracy level per individual fix |
-| `periodicUseForegroundService` | `bool` | `false` | **Android only.** `true` = foreground service + Handler timer (reliable, shows notification). `false` = WorkManager (no notification, ~15-min minimum). |
-| `periodicUseExactAlarms` | `bool` | `false` | **Android only.** Use `AlarmManager` exact alarms for precise timing. Falls back to inexact alarms if `SCHEDULE_EXACT_ALARM` is not granted (Android 13+). See [Exact Alarms](BACKGROUND-TRACKING.md#exact-alarms-periodicuseexactalarms-true). |
-
-> **Periodic mode** is activated via `Tracelet.startPeriodic()`. The GPS icon only appears for ~5–10 seconds per fix. See [Background Tracking](BACKGROUND-TRACKING.md#periodic-mode) for usage details.
->
-> **iOS:** Periodic mode uses `BGAppRefreshTask` for supplementary wake-ups and `CLServiceSession` (iOS 18+) for authorization preservation. Killed-state auto-resume requires "Always" permission. See [iOS Setup](INSTALL-IOS.md#bgtaskscheduler-permitted-identifiers-required-for-periodic-mode) for required Info.plist keys.
+| `desiredAccuracy` | `DesiredAccuracy` | `DesiredAccuracy.high` | The desired location accuracy: `high`, `medium`, `low`, `lowest`, or `nav`. |
+| `distanceFilter` | `double` | `10.0` | Minimum horizontal movement in meters required before a new location is recorded. |
+| `stationaryRadius` | `double` | `25.0` | Radius in meters around the stationary location where the device is considered stationary. |
+| `locationTimeout` | `int` | `60` | Timeout in seconds for individual location requests. |
+| `disableElasticity` | `bool` | `false` | Disable speed-based distance filter scaling (fixed vs speed-adaptive filters). |
+| `elasticityMultiplier` | `double` | `1.0` | Scale factor for adaptive elasticity. Higher value increases filter size faster with speed. |
+| `stopAfterElapsedMinutes` | `int` | `-1` | Automatically stop tracking after this many minutes. `-1` to disable. |
+| `maxMonitoredGeofences` | `int` | `-1` | Maximum monitored geofences. `-1` falls back to platform default (100 on Android, 20 on iOS). |
+| `enableTimestampMeta` | `bool` | `false` | Add extra timing metadata fields to each location payload. |
+| `enableAdaptiveMode` | `bool` | `false` | Enable adaptive mode to automatically scale [distanceFilter] based on activity, speed, and battery. |
+| `periodicLocationInterval` | `int` | `900` | Interval in seconds between location updates in periodic mode (minimum 60s). |
+| `periodicDesiredAccuracy` | `DesiredAccuracy` | `DesiredAccuracy.medium` | The desired accuracy for each periodic location update. |
+| `enableSparseUpdates` | `bool` | `false` | Deduplicate location recording at the database layer. Drops locations within [sparseDistanceThreshold]. |
+| `sparseDistanceThreshold` | `double` | `50.0` | Minimum horizontal distance in meters between consecutive locations in sparse mode. |
+| `sparseMaxIdleSeconds` | `int` | `300` | Force a recorded location update after this many idle seconds even if the device has not moved. |
+| `batteryBudgetPerHour` | `double` | `0.0` | Target maximum hourly battery drain percentage (e.g. `2.0` for 2%). `0.0` to disable. |
+| `enableDeadReckoning` | `bool` | `false` | Enable inertial sensor fusion positioning during GPS signal loss. |
+| `deadReckoningActivationDelay` | `int` | `0` | Seconds without a GPS fix before activating dead reckoning. |
+| `deadReckoningMaxDuration` | `int` | `0` | Maximum seconds to execute dead reckoning estimation. `0` for unlimited. |
+| `filter` | `LocationFilter` | `const LocationFilter()` | Detailed GPS filtering and smoothing options. |
 
 ### LocationFilter
 
+Nested under `GeoConfig.filter`. Controls GPS denoising, Extended Kalman Filter smoothing, and spoofing protection.
+
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `trackingAccuracyThreshold` | `int` | `0` | Max horizontal accuracy (0 = off) |
-| `maxImpliedSpeed` | `int` | `0` | Max implied speed in m/s (0 = off) |
-| `odometerAccuracyThreshold` | `int` | `0` | Max accuracy for odometer (0 = off) |
-| `policy` | `LocationFilterPolicy` | `adjust` | `adjust`, `ignore`, or `discard` |
-| `useKalmanFilter` | `bool` | `false` | Enable Extended Kalman Filter GPS smoothing ([details](KALMAN-FILTER.md)) |
-| `rejectMockLocations` | `bool` | `false` | Reject mock/spoofed locations ([details](MOCK-DETECTION.md)) |
-| `mockDetectionLevel` | `MockDetectionLevel` | `disabled` | Detection depth: `disabled`, `basic`, or `heuristic` ([details](MOCK-DETECTION.md)) |
+| `trackingAccuracyThreshold` | `int` | `100` | Reject location fixes with horizontal accuracy worse than this value in meters. |
+| `maxImpliedSpeed` | `int` | `80` | Reject locations implying a physical speed greater than this value in m/s. |
+| `odometerAccuracyThreshold` | `int` | `50` | Only count location updates with accuracy better than this value toward odometer metrics. |
+| `policy` | `LocationFilterPolicy` | `LocationFilterPolicy.adjust` | How to handle rejected fixes: `adjust`, `ignore`, or `discard`. |
+| `rejectMockLocations` | `bool` | `false` | Reject locations flagged as fake or spoofed by the host OS. |
+| `mockDetectionLevel` | `int` | `1` | Heuristic mock detection sensitivity depth level: `0` (disabled), `1` (basic), `2` (heuristic). |
+| `useKalmanFilter` | `bool` | `false` | Enable Extended Kalman Filter (EKF) smoothing to eliminate GPS drift and jitter. |
 
 ---
 
-## AppConfig
+## 2. AppConfig
 
-App lifecycle, foreground service, and scheduling.
+Controls application-level lifecycle behavior, background execution, and remote configurations.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `stopOnTerminate` | `bool` | `true` | Stop tracking when app is killed |
-| `startOnBoot` | `bool` | `false` | Resume tracking after device reboot |
-| `heartbeatInterval` | `int` | `-1` | Heartbeat interval in seconds (-1 = off) |
-| `preventSuspend` | `bool` | `false` | iOS: silent audio keep-alive |
-| `scheduleUseAlarmManager` | `bool` | `false` | Android: use AlarmManager for scheduling |
-| `schedule` | `List<String>?` | `null` | Time-based schedule (e.g., `['1-5 09:00-17:00']`) |
-| `foregroundService` | `ForegroundServiceConfig` | — | Android notification config |
+| `stopOnTerminate` | `bool` | `true` | Stop location tracking immediately when the app process is swiped away or terminated. |
+| `startOnBoot` | `bool` | `false` | Resume location tracking automatically when the device boots or restarts (Android). |
+| `heartbeatInterval` | `int` | `60` | The interval in seconds between heartbeat ticks. Set to `-1` to disable. |
+| `schedule` | `List<String>` | `[]` | Cron-like schedule strings representing active tracking windows (e.g. `['1-5 09:00-17:00']`). |
+| `remoteConfigUrl` | `String?` | `null` | Server endpoint to dynamically fetch configuration updates at runtime. |
+| `remoteConfigHeaders` | `Map<String, String>?` | `null` | Custom HTTP headers included with the remote configuration fetch request. |
+| `remoteConfigTimeout` | `int` | `60000` | Remote configuration request timeout in milliseconds. |
+| `remoteConfigRefreshInterval` | `int` | `1440` | Refresh interval in minutes to check for configuration changes. |
+
+---
+
+## 3. AndroidConfig
+
+Android-specific configurations. Ignored on iOS and Web.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `locationUpdateInterval` | `int` | `1000` | The desired interval (in milliseconds) between location updates. |
+| `fastestLocationUpdateInterval` | `int` | `500` | The absolute fastest interval (in milliseconds) the app can handle location updates. |
+| `deferTime` | `int` | `0` | Max wait time in milliseconds for location updates before batching/dispatching them. |
+| `allowIdenticalLocations` | `bool` | `false` | Allow recording identical consecutive locations (no movement detection check). |
+| `geofenceModeHighAccuracy` | `bool` | `false` | Enforce full high-accuracy GPS monitoring during geofence-only tracking mode. |
+| `periodicUseForegroundService` | `bool` | `false` | Use a persistent foreground service for periodic mode instead of WorkManager. |
+| `periodicUseExactAlarms` | `bool` | `false` | Use AlarmManager exact alarms for periodic updates instead of WorkManager. |
+| `scheduleUseAlarmManager` | `bool` | `false` | Use `AlarmManager` exact scheduling to precisely execute schedule events. |
+| `foregroundService` | `ForegroundServiceConfig` | — | Configures the notification visible while the background service is running. |
 
 ### ForegroundServiceConfig
 
+Nested under `AndroidConfig.foregroundService`. Controls the user-facing foreground service notification.
+
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | `bool` | `true` | Enable foreground service |
-| `channelId` | `String` | `'tracelet_channel'` | Notification channel ID |
-| `channelName` | `String` | `'Location Tracking'` | Notification channel name |
-| `notificationTitle` | `String` | `'App'` | Notification title |
-| `notificationText` | `String` | `'Location tracking active'` | Notification body |
-| `notificationSmallIcon` | `String?` | `null` | Custom icon resource name |
-| `notificationColor` | `String?` | `null` | Notification accent color (hex string, e.g. `'#FF0000'`) |
-| `notificationLargeIcon` | `String?` | `null` | Large notification icon resource name |
-| `notificationOngoing` | `bool` | `true` | Make notification non-dismissible |
-| `notificationPriority` | `NotificationPriority` | `defaultPriority` | Notification priority (`min`, `low`, `defaultPriority`, `high`, `max`) |
-| `actions` | `List<String>` | `[]` | Custom notification action buttons |
+| `enabled` | `bool` | `true` | Enable or disable the user-visible foreground service notification. |
+| `channelId` | `String` | `'tracelet_channel'` | Notification channel ID. |
+| `channelName` | `String` | `'Tracelet'` | Human-readable notification channel name. |
+| `notificationTitle` | `String` | `'Tracelet'` | Title displayed in the notification. |
+| `notificationText` | `String` | `'Tracking location...'` | Content body text displayed in the notification. |
+| `notificationColor` | `String?` | `null` | Notification accent color hex string (e.g. `'#4CAF50'`). |
+| `notificationSmallIcon` | `String?` | `null` | Custom resource name for the notification's small icon. |
+| `notificationLargeIcon` | `String?` | `null` | Custom resource name for the notification's large icon. |
+| `notificationPriority` | `NotificationPriority` | `defaultPriority` | Priority level: `min`, `low`, `defaultPriority`, `high`, or `max`. |
+| `notificationOngoing` | `bool` | `true` | When true, the notification cannot be cleared by swiping. |
+| `actions` | `List<String>` | `[]` | Custom action buttons to display inside the notification. |
 
 ---
 
-## HttpConfig
+## 4. IosConfig
 
-Server sync configuration.
+iOS-specific configurations. Ignored on Android and Web.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `url` | `String` | `''` | Server endpoint URL |
-| `method` | `HttpMethod` | `post` | HTTP method (`post` or `put`) |
-| `autoSync` | `bool` | `true` | Auto-sync on location insert |
-| `batchSync` | `bool` | `false` | Send all locations in one request |
-| `maxBatchSize` | `int` | `250` | Max locations per batch (-1 = unlimited) |
-| `headers` | `Map<String, String>` | `{}` | Custom HTTP headers |
-| `params` | `Map<String, String>` | `{}` | Query parameters |
-| `extras` | `Map<String, Object?>` | `{}` | Extra data added to each location |
-| `autoSyncThreshold` | `int` | `0` | Min locations before auto-sync |
-| `syncInterval` | `int` | `0` | Flush every N seconds (0 = per-insert). Range: 0–3600 ([details](HTTP-SYNC.md#interval-based-sync)) |
-| `disableAutoSyncOnCellular` | `bool` | `false` | Wi-Fi-only auto-sync |
-| `httpTimeout` | `int` | `60000` | Request timeout in milliseconds |
-| `maxRetries` | `int` | `10` | Max retry attempts for transient failures (5xx, 429, timeout). Set to `0` to disable retries ([details](HTTP-SYNC.md)) |
-| `retryBackoffBase` | `int` | `1000` | Base delay in ms for exponential backoff between retries |
-| `retryBackoffCap` | `int` | `300000` | Max backoff delay in ms (5 min). Caps exponential growth |
-| `httpRootProperty` | `String` | `'location'` | Root JSON key wrapping each location in payloads |
-| `locationsOrderDirection` | `LocationOrder` | `asc` | Sort order for synced locations: `asc` (oldest first) or `desc` |
-| `enableDeltaCompression` | `bool` | `false` | Delta-encode batch payloads for 60–80% size reduction. Requires `batchSync: true` ([details](DELTA-ENCODING.md)) |
-| `deltaCoordinatePrecision` | `int` | `6` | Decimal places for coordinate deltas: `5` ≈ 1.1m, `6` ≈ 0.11m, `7` ≈ 0.011m |
-| `authorization` | `Authorization?` | `null` | Token refresh config |
-| `sslPinningCertificates` | `List<String>` | `[]` | Base64-encoded X.509 certificates for SSL pinning. Server must present one of these certificates. See [SSL Pinning](HTTP-SYNC.md#ssl-pinning) |
-| `sslPinningFingerprints` | `List<String>` | `[]` | SHA-256 fingerprints for certificate pinning (format: `sha256/...`). See [SSL Pinning](HTTP-SYNC.md#ssl-pinning) |
+| `activityType` | `LocationActivityType` | `other` | Hint to the system about the activity type: `other`, `automotiveNavigation`, `fitness`, or `airborne`. |
+| `useSignificantChangesOnly` | `bool` | `false` | Use significant-change monitoring instead of standard continuous GPS to save battery. |
+| `showsBackgroundLocationIndicator` | `bool` | `false` | Show the native blue status bar background indicator when tracking in the background. |
+| `pausesLocationUpdatesAutomatically` | `bool` | `false` | Allow iOS Core Location to automatically pause updates when the device stops moving. |
+| `locationAuthorizationRequest` | `LocationAuthorizationRequest` | `always` | Authorization level to request: `always` or `whenInUse`. |
+| `disableLocationAuthorizationAlert` | `bool` | `false` | Suppress the automatic dialog warning when required permissions are missing. |
+| `preventSuspend` | `bool` | `false` | Play an extremely quiet silent audio clip in the background to prevent iOS from suspending the process. |
 
 ---
 
-## MotionConfig
+## 5. HttpConfig
 
-Motion detection tuning.
+Configures the native HTTP Sync engine for local database uploads.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `stopTimeout` | `int` | `5` | Minutes of stillness before declaring stationary |
-| `minimumActivityRecognitionConfidence` | `int` | `75` | Min confidence (0–100) |
-| `triggerActivities` | `Set<ActivityType>` | `{}` | Activity types that trigger motion |
-| `disableStopDetection` | `bool` | `false` | Never declare stationary |
-| `stopDetectionDelay` | `int` | `0` | Extra delay (seconds) before stationary |
-| `stopOnStationary` | `bool` | `false` | Fully stop tracking when stationary |
-| `motionTriggerDelay` | `int` | `0` | Delay (ms) before declaring moving |
-| `disableMotionActivityUpdates` | `bool` | `false` | Disable platform activity recognition; falls back to permission-free accelerometer-only motion detection |
-| `shakeThreshold` | `double` | `2.5` | Accelerometer magnitude (m/s²) to trigger stationary → moving. Higher = less sensitive |
-| `stillThreshold` | `double` | `0.4` | Accelerometer magnitude (m/s²) below which a sample counts as "still". Lower = stricter |
-| `stillSampleCount` | `int` | `25` | Consecutive still samples before starting stop-timeout. Higher = needs longer sustained stillness |
-
-### Motion Sensitivity Presets
-
-The 3 accelerometer fields work together. Here are recommended presets:
-
-| Preset | `shakeThreshold` | `stillThreshold` | `stillSampleCount` | Behavior |
-|---|---|---|---|---|
-| **High** | `1.5` | `0.6` | `15` | Very responsive. Best for walking/exercise apps that need quick transitions. May cause false starts from phone vibration. |
-| **Medium** (default) | `2.5` | `0.4` | `25` | Balanced. Good for general-purpose tracking. |
-| **Low** | `4.0` | `0.2` | `40` | Conservative. Requires deliberate movement. Best for vehicle-only tracking or when false starts are a problem. |
-
-```dart
-// Example: Low sensitivity for vehicle tracking
-await Tracelet.setConfig(Config(
-  motion: MotionConfig(
-    shakeThreshold: 4.0,   // strong jolt required
-    stillThreshold: 0.2,   // very still before stop
-    stillSampleCount: 40,  // ~8 seconds of stillness
-  ),
-));
-```
-
-> **Note:** Values are in m/s² on both Android and iOS. The iOS implementation
-> automatically converts to g-force internally.
+| `url` | `String?` | `null` | Server endpoint URL to upload locations to. |
+| `method` | `HttpMethod` | `HttpMethod.post` | The HTTP method to use: `post` or `put`. |
+| `headers` | `Map<String, String>?` | `null` | Custom HTTP headers to include with sync requests. |
+| `params` | `Map<String, Object?>?` | `null` | Query parameters or additional JSON fields attached to sync payloads. |
+| `autoSync` | `bool` | `true` | Sync locations immediately as they are recorded. |
+| `batchSync` | `bool` | `false` | Send stored locations in a batch array within a single request. |
+| `maxBatchSize` | `int` | `250` | Maximum locations allowed in a single batch request (-1 for unlimited). |
+| `autoSyncThreshold` | `int` | `0` | Minimum locations required in the database before auto-sync is triggered. |
+| `httpTimeout` | `int` | `60000` | Upload request timeout in milliseconds. |
+| `locationsOrderDirection` | `LocationOrderDirection` | `ascending` | Sort direction for batch payloads: `ascending` (oldest first) or `descending`. |
+| `disableAutoSyncOnCellular` | `bool` | `false` | Restrict sync requests to Wi-Fi networks only. |
+| `maxRetries` | `int` | `3` | Maximum retry attempts for transient server failures. |
+| `retryBackoffBase` | `int` | `1` | Base delay in seconds for exponential backoff between retries. |
+| `retryBackoffCap` | `int` | `60` | Maximum retry backoff delay in seconds (caps exponential growth). |
+| `enableDeltaCompression` | `bool` | `false` | Compresses location fields using delta-encoding, reducing payload size by 60–80%. |
+| `deltaCoordinatePrecision` | `int` | `5` | Decimal precision for coordinate deltas in delta compression (e.g. `5` ≈ 1.1m, `6` ≈ 0.11m). |
 
 ---
 
-## PersistenceConfig
+## 6. MotionConfig
 
-Database retention and persistence behavior.
+Granular control over accelerometer activity sensors and stationary state detection.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `persistMode` | `PersistMode` | `all` | `all`, `location`, `geofence`, or `none` |
-| `maxDaysToPersist` | `int` | `-1` | Auto-prune after N days (-1 = unlimited) |
-| `maxRecordsToPersist` | `int` | `-1` | Max stored records (-1 = unlimited) |
-| `disableProviderChangeRecord` | `bool` | `false` | Skip provider change records |
-| `allowIdenticalLocations` | `bool` | `false` | Allow locations at the same spot |
+| `stopTimeout` | `int` | `5` | Minutes of sustained stillness required before the SDK declares the stationary state. |
+| `motionTriggerDelay` | `int` | `0` | Delay in milliseconds before starting tracking when movement is triggered. |
+| `disableMotionActivityUpdates` | `bool` | `false` | Disable platform activity recognition and use permission-free accelerometer-only detection. |
+| `isMoving` | `bool` | `false` | The initial motion state on boot/ready: `true` (moving) or `false` (stationary). |
+| `activityRecognitionInterval` | `int` | `1000` | Update interval in milliseconds for activity recognition sensors. |
+| `minimumActivityRecognitionConfidence` | `int` | `75` | Minimum confidence score (0-100) required to accept a detected activity. |
+| `disableStopDetection` | `bool` | `false` | Prevent the SDK from automatically transitioning back to the stationary state. |
+| `stopDetectionDelay` | `int` | `0` | Additional delay in seconds before declaring a stationary state. |
+| `stopOnStationary` | `bool` | `false` | Completely shut down the tracking engine when the device becomes stationary. |
+| `activityTypes` | `List<LocationActivityType>?` | `null` | List of activity types allowed to trigger moving state. `null` for any moving activity. |
+| `stationaryRadius` | `double` | `25.0` | Stationary radius in meters. |
+| `useSignificantChangesOnly` | `bool` | `false` | Rely only on significant movement changes (iOS only). |
+| `shakeThreshold` | `double` | `2.5` | Acceleration threshold (m/s²) required to trigger stationary → moving state. |
+| `stillThreshold` | `double` | `0.4` | Acceleration threshold (m/s²) below which a sample counts as stationary. |
+| `stillSampleCount` | `int` | `25` | Consecutive stationary samples required to initiate the `stopTimeout` countdown. |
 
 ---
 
-## GeofenceConfig
+## 7. GeofenceConfig
 
-Geofence behavior and proximity-based monitoring.
+Proximity-based unlimited geofence engine configuration.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `geofenceProximityRadius` | `int` | `1000` | Proximity radius in meters. Only geofences within this radius of the device are actively registered with the OS. Enables unlimited geofences by loading/unloading based on proximity. |
-| `geofenceInitialTriggerEntry` | `bool` | `true` | Fire enter event if already inside |
-| `geofenceModeKnockOut` | `bool` | `false` | Remove geofence after first EXIT trigger |
-
-> **Unlimited Geofences:** iOS limits apps to 20 monitored regions; Android limits to 100.
-> Tracelet uses a built-in geospatial proximity query to automatically load and unload
-> geofences based on `geofenceProximityRadius`, allowing you to effectively monitor
-> **thousands of geofences**. As the device moves, the closest geofences are registered
-> with the OS and far-away ones are unregistered. A `geofencesChange` event fires
-> whenever geofences are activated or deactivated.
+| `geofenceModeHighAccuracy` | `bool` | `false` | Force high-accuracy continuous location tracking during geofencing. |
+| `geofenceInitialTriggerEntry` | `bool` | `true` | Immediately trigger an `ENTER` event if the device is already inside the geofence at registration. |
+| `geofenceProximityRadius` | `int` | `1000` | Proximity radius in meters. Only geofences within this radius are actively loaded into the OS. |
 
 ---
 
-## LoggerConfig
+## 8. PersistenceConfig
 
-Logging behavior.
+Configures the local SQLite cache size and data retention rules.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `debug` | `bool` | `false` | Enable debug mode (sounds + verbose logging) |
-| `logLevel` | `LogLevel` | `off` | `off`, `error`, `warning`, `info`, `debug`, `verbose` |
-| `logMaxDays` | `int` | `3` | Auto-prune logs after N days |
+| `maxDaysToPersist` | `int` | `1` | Maximum days to keep location history in the database. `-1` to disable auto-pruning. |
+| `maxRecordsToPersist` | `int` | `-1` | Maximum location records to retain in the database. `-1` to disable record caps. |
+| `persistMode` | `PersistMode` | `PersistMode.all` | Persistence depth filter: `all` (locations + geofences), `location`, `geofence`, or `none`. |
+| `disableProviderChangeRecord` | `bool` | `false` | Skip writing location records when GPS/Wi-Fi positioning toggles occur. |
+
+---
+
+## 9. LoggerConfig
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `logLevel` | `LogLevel` | `LogLevel.info` | Minimum log severity level to capture: `off`, `error`, `warning`, `info`, `debug`, or `verbose`. |
+| `logMaxDays` | `int` | `3` | Maximum days to retain log files in the database. |
+| `debug` | `bool` | `false` | Enable debug mode. Emits system-level sounds and flashes visual indicators for tracking events. |
+
+---
+
+## 10. Enterprise Security & Attestation Configs
+
+These advanced security configurations are exclusively available to **Tracelet Enterprise** customers.
+
+### SecurityConfig (At-Rest Database Encryption)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `encryptDatabase` | `bool` | `false` | Enable SQLCipher AES-256 at-rest database encryption. |
+| `encryptionKey` | `String?` | `null` | Optional custom encryption key. If `null`, a secure random key is automatically managed. |
+
+### AttestationConfig (Device Attestation)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | `bool` | `false` | Periodically generate a hardware-attested token (Play Integrity on Android, App Attest on iOS). |
+| `refreshInterval` | `int` | `3600` | Refresh interval in seconds for the device integrity token. |
+| `verificationUrl` | `String?` | `null` | HTTPS endpoint to verify device integrity verdicts before sending sync payloads. |
+
+### AuditConfig (Tamper-Proof Audit Trail)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | `bool` | `false` | Enable blockchain-like SHA-256 hash chaining of location records. |
+| `hashAlgorithm` | `HashAlgorithm` | `HashAlgorithm.sha256` | Hash algorithm to use for signature generation. |
+| `includeExtrasInHash` | `bool` | `false` | Cryptographically tie the `extras` map to the integrity verification chain. |
+
+### PrivacyZoneConfig (Privacy Protection)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | `bool` | `false` | Evaluate locations against registered privacy zones to obscure, obfuscate, or drop telemetry data. |

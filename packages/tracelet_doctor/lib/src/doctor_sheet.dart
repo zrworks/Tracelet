@@ -63,6 +63,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
   HealthCheck? _health;
   bool _loading = true;
   String? _error;
+  bool _notInitialized = false;
   late AnimationController _pulseController;
 
   @override
@@ -81,10 +82,21 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
     super.dispose();
   }
 
+  /// Heuristic to determine if the error means Tracelet is not initialized.
+  static bool _isNotInitializedError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('missingpluginexception') ||
+        msg.contains('not ready') ||
+        msg.contains('not initialized') ||
+        msg.contains('no implementation found') ||
+        msg.contains('channel') && msg.contains('null');
+  }
+
   Future<void> _runCheck() async {
     setState(() {
       _loading = true;
       _error = null;
+      _notInitialized = false;
     });
     try {
       final health = await Tracelet.getHealth();
@@ -97,6 +109,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
     } catch (e) {
       if (mounted) {
         setState(() {
+          _notInitialized = _isNotInitializedError(e);
           _error = e.toString();
           _loading = false;
         });
@@ -195,7 +208,14 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Tracelet Doctor', style: DoctorTheme.titleStyle),
-                if (health != null)
+                if (_notInitialized)
+                  Text(
+                    'Plugin not initialized',
+                    style: DoctorTheme.cardBodyStyle.copyWith(
+                      color: DoctorTheme.warning,
+                    ),
+                  )
+                else if (health != null)
                   Text(
                     warningCount == 0
                         ? 'All systems healthy'
@@ -256,6 +276,89 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
   }
 
   Widget _buildError() {
+    if (_notInitialized) return _buildNotAvailable();
+    return _buildGenericError();
+  }
+
+  Widget _buildNotAvailable() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: DoctorTheme.warning.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.power_off_rounded,
+                color: DoctorTheme.warning,
+                size: 44,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Tracelet Not Available',
+              style: DoctorTheme.cardTitleStyle.copyWith(
+                color: DoctorTheme.warning,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'The Tracelet plugin has not been initialized yet.\n'
+              'Call Tracelet.ready() before opening the Doctor.',
+              textAlign: TextAlign.center,
+              style: DoctorTheme.cardBodyStyle,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: DoctorTheme.cardDecoration,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'QUICK FIX',
+                    style: DoctorTheme.sectionStyle,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'await Tracelet.ready(Config(\n'
+                    '  geo: GeoConfig(...),\n'
+                    '));\n\n'
+                    '// Then open the Doctor:\n'
+                    'TraceletDoctor.show(context);',
+                    style: DoctorTheme.cardBodyStyle.copyWith(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: DoctorTheme.accent,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextButton.icon(
+              onPressed: _runCheck,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: TextButton.styleFrom(
+                foregroundColor: DoctorTheme.accent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenericError() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),

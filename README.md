@@ -272,6 +272,25 @@ await tl.Tracelet.start();
 | [Sparse Updates](help/SPARSE-UPDATES.md) | App-level location deduplication — reduce DB writes and sync volume |
 | [Periodic Mode](help/PERIODIC-MODE.md) | Timed one-shot GPS fixes — WorkManager, foreground service, exact alarms |
 
+## Tracelet Doctor (Diagnostic UI Overlay)
+
+Visualize and troubleshoot permissions, tracking state, active sensors, SQLite database queue size, and OEM battery optimizations with a single line of code using the `tracelet_doctor` package:
+
+```yaml
+dependencies:
+  tracelet: ^2.0.5
+  tracelet_doctor: ^1.0.0
+```
+
+```dart
+import 'package:tracelet_doctor/tracelet_doctor.dart';
+
+// Show the premium diagnostic dashboard overlay:
+TraceletDoctor.show(context);
+```
+
+For more details, see the [Tracelet Doctor Package README](packages/tracelet_doctor/README.md).
+
 ## Requirements
 
 | Platform | Minimum Version |

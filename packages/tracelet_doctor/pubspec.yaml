@@ -22,7 +22,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: ^2.0.4
+  tracelet: ^2.0.5
 
 dev_dependencies:
   flutter_test:

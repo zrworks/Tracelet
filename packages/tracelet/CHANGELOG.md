@@ -1,3 +1,8 @@
+## 2.0.5
+
+- **FEAT**: Added `Tracelet.isHeadlessRegistered` static getter. Returns `true` after `registerHeadlessTask()` has been called. Useful for diagnostic tools like `tracelet_doctor` to detect missing headless handlers.
+- **CHORE**: New companion package `tracelet_doctor` (v1.0.0) — drop-in diagnostic overlay widget. See [tracelet_doctor](https://pub.dev/packages/tracelet_doctor).
+
 ## 2.0.4
 
 - **FEAT**: Integrated Kalman Location Filter GPS smoothing into the Flutter plugin and the dynamic config settings in the Example App.

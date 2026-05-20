@@ -1,3 +1,13 @@
+## 2.0.6
+
+- **PERF**: Hardware-level sensor batching on Android reduces CPU wake-ups by over 90% during active accelerometer monitoring.
+- **FIX**: iOS `BatteryBudgetEngine` adjustments (distance filter, desired accuracy, periodic interval) are now correctly applied to the location engine.
+- **PERF**: iOS Heartbeat deduplication avoids redundant SQLite writes and HTTP sync attempts when stationary.
+- **FIX**: Restored fast stationary detection (~5s dwell window) on iOS by correcting sample calculations to match 10Hz accelerometer rate.
+- **FEAT**: Added graceful hardware fallback on Android to use `TYPE_SIGNIFICANT_MOTION` when the primary accelerometer is missing.
+- **FEAT**: Added explicit permission checks and events upon start when location permissions are missing.
+- **CHORE**: Update platform-specific dependency constraints to `^2.0.6`.
+
 ## 2.0.5
 
 - **FEAT**: Added `Tracelet.isHeadlessRegistered` static getter. Returns `true` after `registerHeadlessTask()` has been called. Useful for diagnostic tools like `tracelet_doctor` to detect missing headless handlers.

@@ -723,6 +723,8 @@ class HttpConfig {
     this.retryBackoffCap = 60,
     this.enableDeltaCompression = false,
     this.deltaCoordinatePrecision = 5,
+    this.sslPinningFingerprints,
+    this.sslPinningCertificates,
   });
 
   /// The HTTP server URL to sync locations to.
@@ -790,6 +792,12 @@ class HttpConfig {
   /// Defaults to `5`.
   final int deltaCoordinatePrecision;
 
+  /// **Enterprise** — SHA-256 SSL public key pin fingerprints.
+  final List<String>? sslPinningFingerprints;
+
+  /// **Enterprise** — Base64 encoded SSL certificates.
+  final List<String>? sslPinningCertificates;
+
   factory HttpConfig.fromMap(Map<String, Object?> map) {
     return HttpConfig(
       url: map['url'] as String?,
@@ -825,6 +833,10 @@ class HttpConfig {
         map['deltaCoordinatePrecision'],
         fallback: 5,
       ),
+      sslPinningFingerprints: (map['sslPinningFingerprints'] as List?)
+          ?.cast<String>(),
+      sslPinningCertificates: (map['sslPinningCertificates'] as List?)
+          ?.cast<String>(),
     );
   }
 
@@ -847,6 +859,8 @@ class HttpConfig {
     retryBackoffCap: retryBackoffCap,
     enableDeltaCompression: enableDeltaCompression,
     deltaCoordinatePrecision: deltaCoordinatePrecision,
+    sslPinningFingerprints: sslPinningFingerprints,
+    sslPinningCertificates: sslPinningCertificates,
   );
 
   Map<String, Object?> toMap() {
@@ -867,6 +881,8 @@ class HttpConfig {
       'retryBackoffCap': retryBackoffCap,
       'enableDeltaCompression': enableDeltaCompression,
       'deltaCoordinatePrecision': deltaCoordinatePrecision,
+      'sslPinningFingerprints': sslPinningFingerprints,
+      'sslPinningCertificates': sslPinningCertificates,
     };
   }
 
@@ -890,7 +906,9 @@ class HttpConfig {
           retryBackoffBase == other.retryBackoffBase &&
           retryBackoffCap == other.retryBackoffCap &&
           enableDeltaCompression == other.enableDeltaCompression &&
-          deltaCoordinatePrecision == other.deltaCoordinatePrecision;
+          deltaCoordinatePrecision == other.deltaCoordinatePrecision &&
+          _listEquals(sslPinningFingerprints, other.sslPinningFingerprints) &&
+          _listEquals(sslPinningCertificates, other.sslPinningCertificates);
 
   @override
   int get hashCode => Object.hash(
@@ -910,6 +928,8 @@ class HttpConfig {
     retryBackoffCap,
     enableDeltaCompression,
     deltaCoordinatePrecision,
+    sslPinningFingerprints,
+    sslPinningCertificates,
   );
 }
 
@@ -1334,4 +1354,15 @@ class PersistenceConfig {
     persistMode,
     disableProviderChangeRecord,
   );
+}
+
+bool _listEquals<T>(List<T>? a, List<T>? b) {
+  if (a == null) return b == null;
+  if (b == null) return false;
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }

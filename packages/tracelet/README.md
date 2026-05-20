@@ -293,12 +293,14 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 
 ## Tracelet Doctor (Diagnostic UI Overlay)
 
+[![Pub Package](https://img.shields.io/pub/v/tracelet_doctor.svg)](https://pub.dev/packages/tracelet_doctor)
+
 Visualize and troubleshoot permissions, tracking state, active sensors, SQLite database queue size, and OEM battery optimizations with a single line of code using the `tracelet_doctor` package:
 
 ```yaml
 dependencies:
-  tracelet: ^2.0.5
-  tracelet_doctor: ^1.0.0
+  tracelet: ^2.0.6
+  tracelet_doctor: ^1.0.1
 ```
 
 ```dart
@@ -308,7 +310,7 @@ import 'package:tracelet_doctor/tracelet_doctor.dart';
 TraceletDoctor.show(context);
 ```
 
-For more details, see the [Tracelet Doctor Package README](../../packages/tracelet_doctor/README.md).
+For more details, see the [Tracelet Doctor Package README](../../packages/tracelet_doctor/README.md) or go directly to the [tracelet_doctor pub.dev page](https://pub.dev/packages/tracelet_doctor).
 
 ## Architecture
 

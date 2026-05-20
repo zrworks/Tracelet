@@ -1,0 +1,30 @@
+name: tracelet_doctor
+description: >-
+  Drop-in diagnostic overlay widget for Tracelet. Visualizes permissions,
+  battery health, OEM compatibility, sensor availability, and tracking
+  state with actionable fix suggestions.
+version: 1.0.0
+license: Apache-2.0
+homepage: https://github.com/Ikolvi/Tracelet
+repository: https://github.com/Ikolvi/Tracelet/tree/main/packages/tracelet_doctor
+issue_tracker: https://github.com/Ikolvi/Tracelet/issues
+resolution: workspace
+topics:
+  - geolocation
+  - diagnostics
+  - debug
+  - developer-tools
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  tracelet: ^2.0.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

@@ -10,6 +10,7 @@ workspace:
   - packages/tracelet_android
   - packages/tracelet_ios
   - packages/tracelet_web
+  - packages/tracelet_doctor
   - example
 
 dev_dependencies:

@@ -6,6 +6,7 @@ import 'package:tracelet/tracelet.dart' hide State;
 
 import 'doctor_theme.dart';
 import 'widgets/battery_oem_card.dart';
+import 'widgets/config_review_card.dart';
 import 'widgets/database_card.dart';
 import 'widgets/permission_card.dart';
 import 'widgets/sensor_grid.dart';
@@ -429,6 +430,12 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
         const _SectionLabel(label: 'BATTERY & OEM'),
         const SizedBox(height: 8),
         BatteryOemCard(health: health),
+        const SizedBox(height: DoctorTheme.cardSpacing),
+
+        // Configuration Review
+        const _SectionLabel(label: 'CONFIGURATION'),
+        const SizedBox(height: 8),
+        ConfigReviewCard(health: health),
         const SizedBox(height: DoctorTheme.cardSpacing),
 
         // Sensors

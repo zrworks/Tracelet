@@ -21,6 +21,22 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 > [!IMPORTANT]
 > **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Migration Guide](../../MIGRATION_2.0.md) for details.
 
+---
+
+### 💖 Support Open-Source Development!
+
+Tracelet is a labor of love, built to provide a robust, fully open-source, battery-conscious background tracking experience for the Flutter community. If this library has saved you hours of work or is powering your production applications, **please consider supporting its active maintenance and future development!**
+
+Your support is deeply appreciated and directly helps keep this plugin up-to-date with evolving OS requirements. Every contribution, no matter the size, makes a massive difference and keeps me highly motivated to push new updates! Thank you so much for your generosity! 🙏
+
+<p align="left">
+  <a href="https://buymeacoffee.com/kiranbjm">
+    <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/buy_me_a_coffee.png" alt="Buy Me a Coffee" width="220"/>
+  </a>
+</p>
+
+---
+
 ## Features
 
 - **Background location tracking** — continuous GPS with configurable `distanceFilter` and `desiredAccuracy`
@@ -60,6 +76,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **iOS background hardening** — all critical native operations wrapped in `beginBackgroundTask`, with iOS 17+ `CLBackgroundActivitySession` and iOS 18+ `CLServiceSession` for extended background runtime. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/IOS-BACKGROUND-HARDENING.md)
 - **Adaptive sampling** — auto-adjusts `distanceFilter` based on detected activity, battery level, and speed for optimal battery/accuracy trade-off. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md)
 - **Health check API** — `getHealth()` returns a comprehensive diagnostic snapshot covering permissions, battery, sensors, database, and geofence state with actionable warnings. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md)
+- **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
 - **HTTP sync retry engine** — configurable retry with exponential backoff for transient server failures (5xx, 429, timeout). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
 - **Configurable motion sensitivity** — tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) for Low/Medium/High preset profiles or custom values
 
@@ -280,24 +297,11 @@ This is the **app-facing package** in a federated plugin:
 | Package | Description |
 |---|---|
 | **`tracelet`** (this package) | Dart API — the only package apps depend on |
+| `tracelet_doctor` | Advanced in-app diagnostic dashboard and health analysis overlay UI |
 | `tracelet_platform_interface` | Abstract platform interface |
 | `tracelet_android` | Kotlin Android implementation |
 | `tracelet_ios` | Swift iOS implementation |
 | `tracelet_web` | Web implementation (experimental) |
-
-## Support
-
-If you find Tracelet useful, consider buying me a coffee:
-
-<p align="center">
-  <a href="https://buymeacoffee.com/kiranbjm">
-    <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/buy_me_a_coffee.png" alt="Buy Me a Coffee" width="200"/>
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://buymeacoffee.com/kiranbjm">buymeacoffee.com/kiranbjm</a>
-</p>
 
 ## License
 

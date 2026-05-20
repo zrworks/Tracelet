@@ -22,6 +22,22 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 > [!IMPORTANT]
 > **Tracelet 2.0.0 Migration**: This version introduces a new structured configuration schema and optional Android dependencies. See the [Migration Guide](MIGRATION_2.0.md) for details.
 
+---
+
+### 💖 Support Open-Source Development!
+
+Tracelet is a labor of love, built to provide a robust, fully open-source, battery-conscious background tracking experience for the Flutter community. If this library has saved you hours of work or is powering your production applications, **please consider supporting its active maintenance and future development!**
+
+Your support is deeply appreciated and directly helps keep this plugin up-to-date with evolving OS requirements. Every contribution, no matter the size, makes a massive difference and keeps me highly motivated to push new updates! Thank you so much for your generosity! 🙏
+
+<p align="left">
+  <a href="https://buymeacoffee.com/kiranbjm">
+    <img src="assets/buy_me_a_coffee.png" alt="Buy Me a Coffee" width="220"/>
+  </a>
+</p>
+
+---
+
 ## Features
 
 - **Motion-detection intelligence** — Uses accelerometer, gyroscope & activity recognition to detect when the device is moving or stationary. Automatically toggles location services to conserve battery.
@@ -67,15 +83,17 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 - **Device attestation** — Verify device and app integrity using Google Play Integrity (Android) and App Attest (iOS). Generate cryptographic attestation tokens for server-side verification. Auto-refresh with configurable intervals.
 - **Wi-Fi-only sync** — `disableAutoSyncOnCellular` skips HTTP auto-sync on cellular networks, syncing only when connected to Wi-Fi. Supported on Android, iOS, and Web.
 - **Periodic mode** — Configurable one-shot location fixes at intervals from 60 seconds to 12 hours. Android supports sub-15-minute intervals via foreground service and exact alarms via `AlarmManager`.
+- **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
 - **Live map view** — Built-in example with OpenStreetMap tiles, speed-colored route trail, geofence visualization, trip overlay, and real-time status overlay.
 
 ## Architecture
 
-Tracelet uses a **federated plugin architecture** with 4 packages:
+Tracelet uses a **federated plugin architecture** with 5 packages:
 
 | Package | Description |
 |---|---|
 | [`tracelet`](packages/tracelet/) | App-facing Dart API — the only package you depend on |
+| [`tracelet_doctor`](packages/tracelet_doctor/) | Advanced in-app diagnostic dashboard and health analysis overlay UI |
 | [`tracelet_platform_interface`](packages/tracelet_platform_interface/) | Abstract platform interface + Pigeon definitions |
 | [`tracelet_android`](packages/tracelet_android/) | Kotlin Android implementation |
 | [`tracelet_ios`](packages/tracelet_ios/) | Swift iOS implementation |
@@ -267,20 +285,6 @@ await tl.Tracelet.start();
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## Support
-
-If you find Tracelet useful, consider buying me a coffee:
-
-<p align="center">
-  <a href="https://buymeacoffee.com/kiranbjm">
-    <img src="assets/buy_me_a_coffee.png" alt="Buy Me a Coffee" width="200"/>
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://buymeacoffee.com/kiranbjm">buymeacoffee.com/kiranbjm</a>
-</p>
 
 ## License
 

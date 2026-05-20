@@ -65,8 +65,8 @@ class _AggressionMeter extends StatelessWidget {
     final color = clampedRating <= 1
         ? DoctorTheme.success
         : clampedRating <= 3
-            ? DoctorTheme.warning
-            : DoctorTheme.error;
+        ? DoctorTheme.warning
+        : DoctorTheme.error;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

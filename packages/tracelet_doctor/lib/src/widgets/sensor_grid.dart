@@ -15,10 +15,22 @@ class SensorGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sensors = [
-      _SensorInfo('Accelerometer', Icons.vibration_rounded, health.hasAccelerometer),
+      _SensorInfo(
+        'Accelerometer',
+        Icons.vibration_rounded,
+        health.hasAccelerometer,
+      ),
       _SensorInfo('Gyroscope', Icons.threesixty_rounded, health.hasGyroscope),
-      _SensorInfo('Magnetometer', Icons.explore_rounded, health.hasMagnetometer),
-      _SensorInfo('Sig. Motion', Icons.directions_walk_rounded, health.hasSignificantMotion),
+      _SensorInfo(
+        'Magnetometer',
+        Icons.explore_rounded,
+        health.hasMagnetometer,
+      ),
+      _SensorInfo(
+        'Sig. Motion',
+        Icons.directions_walk_rounded,
+        health.hasSignificantMotion,
+      ),
     ];
 
     return DiagnosticCard(
@@ -63,10 +75,7 @@ class _SensorTile extends StatelessWidget {
           Text(
             sensor.label,
             textAlign: TextAlign.center,
-            style: DoctorTheme.chipStyle.copyWith(
-              color: color,
-              fontSize: 9,
-            ),
+            style: DoctorTheme.chipStyle.copyWith(color: color, fontSize: 9),
           ),
         ],
       ),

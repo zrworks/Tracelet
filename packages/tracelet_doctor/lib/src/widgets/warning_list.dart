@@ -83,7 +83,8 @@ class _WarningTile extends StatelessWidget {
     HealthWarning.noSignificantMotion => Icons.directions_walk_rounded,
     HealthWarning.motionPermissionDenied => Icons.do_not_step_rounded,
     HealthWarning.mockLocationsDetected => Icons.warning_amber_rounded,
-    HealthWarning.locationPermissionOnlyWhenInUse => Icons.location_searching_rounded,
+    HealthWarning.locationPermissionOnlyWhenInUse =>
+      Icons.location_searching_rounded,
   };
 
   @override

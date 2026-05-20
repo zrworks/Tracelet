@@ -21,7 +21,9 @@ class ConfigReviewCard extends StatelessWidget {
       icon: Icons.tune_rounded,
       title: 'Configuration',
       trailing: StatusChip(
-        label: issues.isEmpty ? 'OK' : '${issues.length} issue${issues.length > 1 ? 's' : ''}',
+        label: issues.isEmpty
+            ? 'OK'
+            : '${issues.length} issue${issues.length > 1 ? 's' : ''}',
         color: issues.isEmpty ? DoctorTheme.success : DoctorTheme.warning,
       ),
       child: Column(
@@ -35,10 +37,7 @@ class ConfigReviewCard extends StatelessWidget {
             label: 'Did Launch in Background',
             value: health.didLaunchInBackground,
           ),
-          BoolRow(
-            label: 'Device Rebooted',
-            value: health.didDeviceReboot,
-          ),
+          BoolRow(label: 'Device Rebooted', value: health.didDeviceReboot),
           if (issues.isNotEmpty) ...[
             const SizedBox(height: 10),
             ...issues.map((i) => _IssueRow(issue: i)),
@@ -53,53 +52,68 @@ class ConfigReviewCard extends StatelessWidget {
 
     // 1. Headless not registered on a mobile platform
     if (health.platform != 'web' && !Tracelet.isHeadlessRegistered) {
-      issues.add(const _ConfigIssue(
-        icon: Icons.code_off_rounded,
-        message: 'No headless task registered — background events '
-            'will be lost when the app is terminated.',
-        severity: _Severity.warning,
-      ));
+      issues.add(
+        const _ConfigIssue(
+          icon: Icons.code_off_rounded,
+          message:
+              'No headless task registered — background events '
+              'will be lost when the app is terminated.',
+          severity: _Severity.warning,
+        ),
+      );
     }
 
     // 2. Tracking active but location permission not "always"
     if (health.trackingEnabled &&
         health.locationPermission != AuthorizationStatus.always) {
-      issues.add(const _ConfigIssue(
-        icon: Icons.location_off_rounded,
-        message: 'Tracking is active but location permission is not "Always" '
-            '— background updates may stop.',
-        severity: _Severity.error,
-      ));
+      issues.add(
+        const _ConfigIssue(
+          icon: Icons.location_off_rounded,
+          message:
+              'Tracking is active but location permission is not "Always" '
+              '— background updates may stop.',
+          severity: _Severity.error,
+        ),
+      );
     }
 
     // 3. Mock locations detected while tracking
     if (health.trackingEnabled && health.mockLocationsDetected) {
-      issues.add(const _ConfigIssue(
-        icon: Icons.warning_amber_rounded,
-        message: 'Mock locations detected while tracking is active '
-            '— location data may be spoofed.',
-        severity: _Severity.error,
-      ));
+      issues.add(
+        const _ConfigIssue(
+          icon: Icons.warning_amber_rounded,
+          message:
+              'Mock locations detected while tracking is active '
+              '— location data may be spoofed.',
+          severity: _Severity.error,
+        ),
+      );
     }
 
     // 4. Power save mode ON during active tracking
     if (health.trackingEnabled && health.isPowerSaveMode) {
-      issues.add(const _ConfigIssue(
-        icon: Icons.battery_saver_rounded,
-        message: 'Power Save mode is ON during active tracking '
-            '— OS may throttle GPS updates.',
-        severity: _Severity.warning,
-      ));
+      issues.add(
+        const _ConfigIssue(
+          icon: Icons.battery_saver_rounded,
+          message:
+              'Power Save mode is ON during active tracking '
+              '— OS may throttle GPS updates.',
+          severity: _Severity.warning,
+        ),
+      );
     }
 
     // 5. Aggressive OEM + no battery optimization exemption
     if (health.isAggressiveOem && !health.isIgnoringBatteryOptimizations) {
-      issues.add(_ConfigIssue(
-        icon: Icons.phonelink_erase_rounded,
-        message: '${health.manufacturer} is known to kill background apps '
-            'and battery optimizations are not disabled.',
-        severity: _Severity.error,
-      ));
+      issues.add(
+        _ConfigIssue(
+          icon: Icons.phonelink_erase_rounded,
+          message:
+              '${health.manufacturer} is known to kill background apps '
+              'and battery optimizations are not disabled.',
+          severity: _Severity.error,
+        ),
+      );
     }
 
     return issues;

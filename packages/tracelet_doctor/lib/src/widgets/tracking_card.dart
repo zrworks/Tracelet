@@ -14,8 +14,9 @@ class TrackingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stateColor =
-        health.trackingEnabled ? DoctorTheme.success : DoctorTheme.muted;
+    final stateColor = health.trackingEnabled
+        ? DoctorTheme.success
+        : DoctorTheme.muted;
     final stateLabel = health.trackingEnabled ? 'Active' : 'Inactive';
 
     final modeLabel = switch (health.trackingMode) {

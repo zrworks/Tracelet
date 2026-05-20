@@ -41,6 +41,7 @@ jobs:
           - tracelet_android
           - tracelet_ios
           - tracelet_web
+          - tracelet_doctor
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
@@ -136,7 +137,7 @@ jobs:
         run: |
           mkdir -p coverage
           LCOV_FILES=""
-          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web; do
+          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor; do
             FILE="coverage-artifacts/coverage-${pkg}/lcov.info"
             if [ -f "$FILE" ]; then
               LCOV_FILES="$LCOV_FILES -a $FILE"
@@ -184,7 +185,7 @@ jobs:
       - name: Check CHANGELOG entries
         run: |
           echo "Checking CHANGELOG.md files exist and have entries..."
-          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web; do
+          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor; do
             FILE="packages/$pkg/CHANGELOG.md"
             if [ ! -f "$FILE" ]; then
               echo "❌ Missing $FILE"
@@ -206,4 +207,10 @@ jobs:
             CONSTRAINT=$(grep 'tracelet_platform_interface:' "packages/$pkg/pubspec.yaml" | head -1 | awk '{print $2}')
             echo "  $pkg depends on tracelet_platform_interface: $CONSTRAINT (interface is $IFACE_VER)"
           done
+          
+          # Verify tracelet_doctor dependency on tracelet
+          CORE_VER=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
+          DOCTOR_CONSTRAINT=$(grep 'tracelet:' packages/tracelet_doctor/pubspec.yaml | head -1 | awk '{print $2}')
+          echo "  tracelet_doctor depends on tracelet: $DOCTOR_CONSTRAINT (core is $CORE_VER)"
+          
           echo "✅ Dependency constraints checked"

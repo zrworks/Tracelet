@@ -158,7 +158,11 @@ class LocationEngine(
      * with the configured accuracy.
      */
     fun start() {
-        if (!hasPermission()) return
+        if (!hasPermission()) {
+            Log.w(TAG, "start() — no location permission granted, dispatching providerChange(status=0)")
+            events.sendProviderChange(buildProviderState())
+            return
+        }
         stop() // Ensure clean state
 
         val request = buildLocationRequestWithGpsFallback()

@@ -90,6 +90,21 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     // MARK: - Start / Stop
 
     public func start() {
+        // Guard: require at least WhenInUse authorization before starting.
+        // Dispatch a providerChange event so the app/Flutter UI can react
+        // instead of silently doing nothing.
+        let authStatus: CLAuthorizationStatus
+        if #available(iOS 14.0, *) {
+            authStatus = locationManager.authorizationStatus
+        } else {
+            authStatus = CLLocationManager.authorizationStatus()
+        }
+        if authStatus != .authorizedWhenInUse && authStatus != .authorizedAlways {
+            NSLog("[Tracelet] start() called without location authorization (status=\(authStatus.rawValue))")
+            eventDispatcher.sendProviderChange(buildProviderState())
+            return
+        }
+
         guard !isTracking else { return }
         isTracking = true
 

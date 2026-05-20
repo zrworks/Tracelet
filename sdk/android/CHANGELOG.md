@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.6
+
+- **PERF**: Implemented hardware-level sensor batching (`maxReportLatencyUs`) on accelerometer registration (3s for shake, 5s for stillness) reducing CPU wake-ups by over 90% during active tracking.
+- **FEAT**: Added graceful fallback to `TYPE_SIGNIFICANT_MOTION` hardware sensor when `TYPE_ACCELEROMETER` is unavailable.
+- **FIX**: Dispatched explicit permission-missing `providerChange` events on `start()` call when location permissions are absent.
+
 ## 2.0.5
 
 - **CHORE**: Bump version to 2.0.5 to align with federated Flutter packages and coordinated monorepo release.

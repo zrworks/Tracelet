@@ -321,25 +321,89 @@ class GeoConfig {
     this.filter = const LocationFilter(),
   });
 
+  /// The desired location accuracy.
+  /// Defaults to [DesiredAccuracy.high].
   final DesiredAccuracy desiredAccuracy;
+
+  /// The minimum distance (in meters) the device must move horizontally before
+  /// a new location update is recorded. Defaults to `10.0`.
   final double distanceFilter;
+
+  /// The radius (in meters) around the stationary location where the device
+  /// is considered stationary. Defaults to `25.0`.
   final double stationaryRadius;
+
+  /// The timeout (in seconds) for a location request before giving up.
+  /// Defaults to `60`.
   final int locationTimeout;
+
+  /// Disable speed-based distance filter elasticity.
+  /// Defaults to `false`.
   final bool disableElasticity;
+
+  /// Scale factor for the speed-based elastic distance filter.
+  /// Defaults to `1.0`.
   final double elasticityMultiplier;
+
+  /// Auto-stop tracking after this many minutes have elapsed since start.
+  /// `-1` means disabled. Defaults to `-1`.
   final int stopAfterElapsedMinutes;
+
+  /// Maximum simultaneously monitored geofences.
+  /// `-1` to fall back to platform defaults (100 on Android, 20 on iOS).
+  /// Defaults to `-1`.
   final int maxMonitoredGeofences;
+
+  /// Enable adding extra timestamp metadata to each location payload.
+  /// Defaults to `false`.
   final bool enableTimestampMeta;
+
+  /// Enable adaptive sampling mode which automatically scales [distanceFilter]
+  /// based on detected activity, speed, and battery levels.
+  /// Defaults to `false`.
   final bool enableAdaptiveMode;
+
+  /// The interval (in seconds) between locations in periodic mode.
+  /// Minimum is 60s. Defaults to `900`.
   final int periodicLocationInterval;
+
+  /// The desired GPS accuracy level for each periodic update.
+  /// Defaults to [DesiredAccuracy.medium].
   final DesiredAccuracy periodicDesiredAccuracy;
+
+  /// Enable sparse updates to deduplicate location recording at the database layer.
+  /// Drops locations within [sparseDistanceThreshold] of the last recorded position.
+  /// Defaults to `false`.
   final bool enableSparseUpdates;
+
+  /// Minimum horizontal distance (in meters) between locations in sparse mode.
+  /// Defaults to `50.0`.
   final double sparseDistanceThreshold;
+
+  /// Force a recorded location update after this many seconds of idle time
+  /// even if the device hasn't moved beyond [sparseDistanceThreshold].
+  /// Defaults to `300`.
   final int sparseMaxIdleSeconds;
+
+  /// Target maximum battery drain per hour (%).
+  /// `0.0` disables battery budget-based parameter scaling.
+  /// Defaults to `0.0`.
   final double batteryBudgetPerHour;
+
+  /// Enable dead reckoning inertial sensor fusion for GPS-denied environments.
+  /// Defaults to `false`.
   final bool enableDeadReckoning;
+
+  /// Seconds without GPS signal before starting dead reckoning estimation.
+  /// Defaults to `0`.
   final int deadReckoningActivationDelay;
+
+  /// Maximum seconds to run dead reckoning positioning.
+  /// Defaults to `0` (unlimited).
   final int deadReckoningMaxDuration;
+
+  /// The GPS filtering and smoothing configuration.
+  /// Defaults to [LocationFilter].
   final LocationFilter filter;
 
   factory GeoConfig.fromMap(Map<String, Object?> map) {
@@ -528,13 +592,36 @@ class AppConfig {
     this.remoteConfigRefreshInterval = 1440,
   });
 
+  /// Whether to stop location tracking when the application is terminated/killed by the user or OS.
+  /// Defaults to `true`.
   final bool stopOnTerminate;
+
+  /// Whether to automatically start/resume location tracking after the device reboots.
+  /// Defaults to `false`.
   final bool startOnBoot;
+
+  /// The interval (in seconds) between heartbeat events.
+  /// Set to `-1` to disable heartbeat monitoring. Defaults to `60`.
   final int heartbeatInterval;
+
+  /// A list of cron-like schedule strings representing active tracking windows.
+  /// Defaults to empty list (no schedule constraint).
   final List<String> schedule;
+
+  /// URL of the remote configuration server to fetch settings dynamically at runtime.
+  /// Defaults to `null`.
   final String? remoteConfigUrl;
+
+  /// Custom HTTP headers to include with the remote configuration fetch request.
+  /// Defaults to `null`.
   final Map<String, String>? remoteConfigHeaders;
+
+  /// Timeout in milliseconds for fetching the remote configuration.
+  /// Defaults to `60000` (60 seconds).
   final int remoteConfigTimeout;
+
+  /// How often to refresh/fetch the remote configuration (in minutes).
+  /// Defaults to `1440` (24 hours).
   final int remoteConfigRefreshInterval;
 
   factory AppConfig.fromMap(Map<String, Object?> map) {
@@ -638,21 +725,69 @@ class HttpConfig {
     this.deltaCoordinatePrecision = 5,
   });
 
+  /// The HTTP server URL to sync locations to.
+  /// Defaults to `null`.
   final String? url;
+
+  /// The HTTP method to use for sync requests (POST or PUT).
+  /// Defaults to [HttpMethod.post].
   final HttpMethod method;
+
+  /// Custom HTTP headers to include with each sync request.
+  /// Defaults to `null`.
   final Map<String, String>? headers;
+
+  /// Custom query parameters or extra JSON fields to send with each sync payload.
+  /// Defaults to `null`.
   final Map<String, Object?>? params;
+
+  /// Whether to auto-sync locations immediately when they are recorded/inserted into the database.
+  /// Defaults to `true`.
   final bool autoSync;
+
+  /// Send all locations in a batch array within one request instead of one request per location.
+  /// Defaults to `false`.
   final bool batchSync;
+
+  /// The maximum number of records to send in a single batch.
+  /// Defaults to `250`.
   final int maxBatchSize;
+
+  /// Minimum number of unsynced locations in the database before auto-sync triggers.
+  /// Defaults to `0`.
   final int autoSyncThreshold;
+
+  /// Request timeout in milliseconds.
+  /// Defaults to `60000` (60 seconds).
   final int httpTimeout;
+
+  /// The chronological sort order for synced locations.
+  /// Defaults to [LocationOrderDirection.ascending].
   final LocationOrderDirection locationsOrderDirection;
+
+  /// Disable auto-syncing when on a cellular data network (syncs only on Wi-Fi).
+  /// Defaults to `false`.
   final bool disableAutoSyncOnCellular;
+
+  /// Maximum retry attempts for transient HTTP failures (e.g. 5xx, 429, timeout).
+  /// Defaults to `3`.
   final int maxRetries;
+
+  /// Base delay in seconds for exponential backoff between retries.
+  /// Defaults to `1`.
   final int retryBackoffBase;
+
+  /// Maximum backoff delay in seconds (caps exponential growth).
+  /// Defaults to `60`.
   final int retryBackoffCap;
+
+  /// Enable delta-encoding compression for batch sync payloads.
+  /// Drops duplicate headers and applies delta compression to coordinates, returning 60–80% size reduction.
+  /// Defaults to `false`.
   final bool enableDeltaCompression;
+
+  /// Coordinate decimal precision for delta compression (e.g. 5 ≈ 1.1m, 6 ≈ 0.11m).
+  /// Defaults to `5`.
   final int deltaCoordinatePrecision;
 
   factory HttpConfig.fromMap(Map<String, Object?> map) {
@@ -790,8 +925,16 @@ class LoggerConfig {
     this.debug = false,
   });
 
+  /// The minimum level of logs to capture and persist.
+  /// Defaults to [LogLevel.info].
   final LogLevel logLevel;
+
+  /// The maximum number of days to retain logs in the database.
+  /// Defaults to `3`.
   final int logMaxDays;
+
+  /// Enable debugging mode (which produces platform-specific tracking sounds
+  /// and verbose local logging). Defaults to `false`.
   final bool debug;
 
   factory LoggerConfig.fromMap(Map<String, Object?> map) {
@@ -853,20 +996,64 @@ class MotionConfig {
     this.stillSampleCount = 25,
   });
 
+  /// The amount of time (in minutes) the device must be stationary before declaring the stationary state.
+  /// Defaults to `5`.
   final int stopTimeout;
+
+  /// The delay (in milliseconds) before starting tracking when motion is triggered.
+  /// Defaults to `0`.
   final int motionTriggerDelay;
+
+  /// Disable platform activity recognition and fall back to permission-free accelerometer-only motion detection.
+  /// Defaults to `false`.
   final bool disableMotionActivityUpdates;
+
+  /// The current state of motion (moving or stationary).
+  /// Defaults to `false` (stationary).
   final bool isMoving;
+
+  /// The interval (in milliseconds) for activity recognition updates.
+  /// Defaults to `1000`.
   final int activityRecognitionInterval;
+
+  /// The minimum confidence level (0–100) required to accept a detected activity.
+  /// Defaults to `75`.
   final int minimumActivityRecognitionConfidence;
+
+  /// Disable the automatic stationary state transition entirely.
+  /// Defaults to `false`.
   final bool disableStopDetection;
+
+  /// The extra delay (in seconds) to add after the stop timeout before stopping location updates.
+  /// Defaults to `0`.
   final int stopDetectionDelay;
+
+  /// Stop tracking entirely when a stationary state is declared.
+  /// Defaults to `false`.
   final bool stopOnStationary;
+
+  /// The list of specific [LocationActivityType]s that can trigger a transition from stationary to moving.
+  /// Defaults to `null` (any moving activity).
   final List<LocationActivityType>? activityTypes;
+
+  /// The radius (in meters) of the stationary geofence.
+  /// Defaults to `25.0`.
   final double stationaryRadius;
+
+  /// Whether significant motion changes only should be tracked (iOS only).
+  /// Defaults to `false`.
   final bool useSignificantChangesOnly;
+
+  /// The acceleration threshold (in m/s²) to trigger a transition from stationary to moving.
+  /// Defaults to `2.5`.
   final double shakeThreshold;
+
+  /// The acceleration threshold (in m/s²) below which a sample is counted as still.
+  /// Defaults to `0.4`.
   final double stillThreshold;
+
+  /// The number of consecutive still samples required to initiate the [stopTimeout].
+  /// Defaults to `25`.
   final int stillSampleCount;
 
   factory MotionConfig.fromMap(Map<String, Object?> map) {
@@ -1011,8 +1198,17 @@ class GeofenceConfig {
     this.geofenceProximityRadius = 1000,
   });
 
+  /// Enable high-accuracy location tracking during geofence monitoring (Android only).
+  /// Defaults to `false`.
   final bool geofenceModeHighAccuracy;
+
+  /// Fire enter trigger immediately upon registration if device is already inside the geofence.
+  /// Defaults to `true`.
   final bool geofenceInitialTriggerEntry;
+
+  /// The radius (in meters) for proximity-based geofence loading.
+  /// Only geofences within this distance are actively registered with the OS.
+  /// Defaults to `1000`.
   final int geofenceProximityRadius;
 
   factory GeofenceConfig.fromMap(Map<String, Object?> map) {
@@ -1073,9 +1269,20 @@ class PersistenceConfig {
     this.disableProviderChangeRecord = false,
   });
 
+  /// The maximum number of days to retain tracked locations and geofence events in the database.
+  /// Set to `-1` for unlimited retention. Defaults to `1`.
   final int maxDaysToPersist;
+
+  /// The maximum number of location records to keep in the database.
+  /// Set to `-1` for unlimited. Defaults to `-1`.
   final int maxRecordsToPersist;
+
+  /// The tracking data persistence mode.
+  /// Defaults to [PersistMode.all].
   final PersistMode persistMode;
+
+  /// Skip writing a database record when location providers change (e.g. GPS disabled/enabled).
+  /// Defaults to `false`.
   final bool disableProviderChangeRecord;
 
   factory PersistenceConfig.fromMap(Map<String, Object?> map) {

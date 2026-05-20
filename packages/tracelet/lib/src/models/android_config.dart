@@ -173,16 +173,48 @@ class ForegroundServiceConfig {
     this.actions = const <String>[],
   });
 
+  /// Whether the foreground service notification is enabled.
+  /// Defaults to `true`.
   final bool enabled;
+
+  /// The unique channel ID for the foreground service notification.
+  /// Defaults to `'tracelet_channel'`.
   final String channelId;
+
+  /// The user-visible channel name for the foreground service notification.
+  /// Defaults to `'Tracelet'`.
   final String channelName;
+
+  /// The notification title shown in the status bar/drawer.
+  /// Defaults to `'Tracelet'`.
   final String notificationTitle;
+
+  /// The notification body text.
+  /// Defaults to `'Tracking location in background'`.
   final String notificationText;
+
+  /// The hex color code for the notification's accent color (e.g. `'#4CAF50'`).
+  /// Defaults to `null`.
   final String? notificationColor;
+
+  /// The resource name for the notification's small icon.
+  /// Defaults to `null`.
   final String? notificationSmallIcon;
+
+  /// The resource name for the notification's large icon.
+  /// Defaults to `null`.
   final String? notificationLargeIcon;
+
+  /// The notification priority level.
+  /// Defaults to [NotificationPriority.defaultPriority].
   final NotificationPriority notificationPriority;
+
+  /// Whether the notification is persistent and cannot be swiped away by the user.
+  /// Defaults to `true`.
   final bool notificationOngoing;
+
+  /// Action buttons to display inside the notification drawer (e.g. `['Stop', 'Sync']`).
+  /// Defaults to empty list.
   final List<String> actions;
 
   factory ForegroundServiceConfig.fromMap(Map<String, Object?> map) {

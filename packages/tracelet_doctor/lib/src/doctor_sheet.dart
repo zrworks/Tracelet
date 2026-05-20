@@ -337,7 +337,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
         // Database
         const _SectionLabel(label: 'DATABASE & DEVICE'),
         const SizedBox(height: 8),
-        DatabaseCard(health: health),
+        DatabaseCard(health: health, onLocationsCleared: _runCheck),
         const SizedBox(height: DoctorTheme.cardSpacing),
 
         // Timestamp footer

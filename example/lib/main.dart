@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, debugPrint, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
+import 'package:tracelet_doctor/tracelet_doctor.dart';
 import 'map_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3465,6 +3466,11 @@ class _DashboardPageState extends State<DashboardPage>
               MaterialPageRoute<void>(builder: (_) => const MapPage()),
             ),
             icon: const Icon(Icons.map),
+          ),
+          IconButton(
+            tooltip: 'Doctor',
+            onPressed: () => TraceletDoctor.show(context),
+            icon: const Icon(Icons.health_and_safety),
           ),
           IconButton(
             tooltip: 'Clear log',

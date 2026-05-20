@@ -16,6 +16,8 @@ dependencies:
     path: ../packages/tracelet_android
   tracelet_ios:
     path: ../packages/tracelet_ios
+  tracelet_doctor:
+    path: ../packages/tracelet_doctor
   cupertino_icons: ^1.0.8
   flutter_map: ^8.2.2
   latlong2: ^0.9.1

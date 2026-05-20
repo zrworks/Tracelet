@@ -89,6 +89,13 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 ## Results History
 
+### 2026-05-20 — Commit 70a1a0a
+
+**Environment:** Dart 3.12.0, ubuntu-latest (CI)
+
+(no table captured)
+
+
 ### 2026-05-19 — Commit 6a5ef60
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)

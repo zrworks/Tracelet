@@ -1,3 +1,7 @@
+## 2.0.6
+
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.6`.
+
 ## 2.0.5
 
 - **CHORE**: Version bump for monorepo consistency and package lockstep alignment.

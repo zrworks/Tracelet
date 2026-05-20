@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- **CHORE**: Update `tracelet` dependency to `^2.0.6`.
+- **DOCS**: Added `example/example.dart` for pub.dev documentation scoring.
+- **DOCS**: Added documentation cross-references back to `tracelet` in README.md.
+
 ## 1.0.0
 
 - **Initial release** of Tracelet Doctor.

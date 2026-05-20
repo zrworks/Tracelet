@@ -2,8 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Pub Package](https://img.shields.io/pub/v/tracelet_doctor.svg)](https://pub.dev/packages/tracelet_doctor)
+[![tracelet Pub](https://img.shields.io/pub/v/tracelet.svg)](https://pub.dev/packages/tracelet)
 
-> **Drop-in diagnostic overlay for Tracelet** — visualize permissions, OEM health, battery state, sensors, and tracking status in a single tap.
+> **Drop-in diagnostic overlay for [Tracelet](https://pub.dev/packages/tracelet)** — visualize permissions, OEM health, battery state, sensors, and tracking status in a single tap.
 
 ## Screenshot
 
@@ -20,8 +21,8 @@ The Doctor shows a premium dark-themed bottom sheet with:
 
 ```yaml
 dependencies:
-  tracelet: ^2.0.4
-  tracelet_doctor: ^1.0.0
+  tracelet: ^2.0.6
+  tracelet_doctor: ^1.0.1
 ```
 
 ```dart
@@ -67,7 +68,7 @@ This is a **separate, optional package** in the Tracelet monorepo:
 
 | Package | Description |
 |---|---|
-| `tracelet` | Core SDK — the only package apps depend on |
+| `tracelet` | Core SDK — the only package apps depend on ([pub.dev](https://pub.dev/packages/tracelet)) |
 | **`tracelet_doctor`** (this package) | Diagnostic overlay widget |
 | `tracelet_platform_interface` | Abstract platform interface |
 | `tracelet_android` | Kotlin Android implementation |

@@ -138,6 +138,13 @@ class _DashboardPageState extends State<DashboardPage>
   bool _sparseUpdatesEnabled = false;
   bool _cellularSyncDisabled = true; // matches config default
 
+  // ── Issue #74: deferTime batch detection ──
+  // Tracks timing between location events to identify batching.
+  DateTime? _lastLocationArrival;
+  int _currentBatchCount = 0;
+  DateTime? _batchStartTime;
+  DateTime? _lastBatchEndTime;
+
   // Scroll controller for the main ListView
   final ScrollController _scrollController = ScrollController();
 
@@ -237,6 +244,45 @@ class _DashboardPageState extends State<DashboardPage>
     _subs.add(
       tl.Tracelet.onLocation((loc) {
         setState(() => _lastLocation = loc);
+
+        // ── deferTime batch detection ──
+        final now = DateTime.now();
+        final msSinceLast = _lastLocationArrival != null
+            ? now.difference(_lastLocationArrival!).inMilliseconds
+            : -1;
+        _lastLocationArrival = now;
+
+        // If < 500ms since last event, it's part of the same batch
+        if (msSinceLast >= 0 && msSinceLast < 500) {
+          _currentBatchCount++;
+        } else {
+          // New batch started — log the previous batch if it had multiple
+          if (_currentBatchCount > 1) {
+            final batchDuration = _batchStartTime != null
+                ? now.difference(_batchStartTime!).inMilliseconds - msSinceLast
+                : 0;
+            final gapFromPrev =
+                _lastBatchEndTime != null && _batchStartTime != null
+                ? _batchStartTime!.difference(_lastBatchEndTime!).inMilliseconds
+                : 0;
+            _addLog(
+              '✅ BATCH',
+              'deferTime WORKING — received $_currentBatchCount locations '
+                  'in ${batchDuration}ms (gap since prev batch: ${(gapFromPrev / 1000.0).toStringAsFixed(1)}s)',
+            );
+            _lastBatchEndTime = now;
+          } else if (_currentBatchCount == 1 && _lastBatchEndTime != null) {
+            // Single location = no batching
+            _addLog(
+              '⚠️ SINGLE',
+              'Location arrived individually (no batching detected)',
+            );
+            _lastBatchEndTime = now;
+          }
+          _currentBatchCount = 1;
+          _batchStartTime = now;
+        }
+
         final mockTag = loc.isMock ? ' [MOCK]' : '';
         var heuristicsInfo = '';
         if (loc.mockHeuristics != null) {
@@ -519,13 +565,21 @@ class _DashboardPageState extends State<DashboardPage>
             startOnBoot: true,
             heartbeatInterval: 10,
           ),
+          // ── Issue #74 fix verification ──
+          // Custom Android config with distinctive notification and deferTime.
+          // Before the fix, these values were silently ignored and defaults
+          // were used instead. After the fix, the notification should show
+          // the custom title/text and deferTime should be 60s.
           android: tl.AndroidConfig(
+            locationUpdateInterval: 2000, // 2s
+            deferTime: 10000, // 10s — batches ~5 locations every 10s
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
-                    notificationTitle: 'Tracelet Demo',
-                    notificationText: 'Tracking in background',
-                    notificationPriority:
-                        tl.NotificationPriority.defaultPriority,
+                    notificationTitle: '📍 Issue #74 Fix Verified',
+                    notificationText: 'Custom config working — deferTime=10s',
+                    channelId: 'tracelet_demo_channel',
+                    channelName: 'Tracelet Demo Background',
+                    notificationPriority: tl.NotificationPriority.high,
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
@@ -576,6 +630,20 @@ class _DashboardPageState extends State<DashboardPage>
         'READY',
         'enabled=${state.enabled}  mode=${state.trackingMode.name}  odometer=${state.odometer.toStringAsFixed(0)}m',
       );
+      // ── Issue #74 diagnostic: confirm Android config was applied ──
+      if (_isAndroid) {
+        _addLog(
+          'ANDROID_CFG',
+          'notification="📍 Issue #74 Fix Verified"  '
+              'deferTime=10000  locationUpdateInterval=2000  '
+              'channelId=tracelet_demo_channel  priority=HIGH',
+        );
+        _addLog(
+          'VERIFY',
+          '✅ If notification shows "📍 Issue #74 Fix Verified" → fix works!  '
+              '❌ If it shows "Tracelet" → fix not applied.',
+        );
+      }
 
       // ── Dynamic Headers ──
       // Register a callback that provides fresh auth headers before each
@@ -787,10 +855,15 @@ class _DashboardPageState extends State<DashboardPage>
       await tl.Tracelet.setConfig(
         const tl.Config(
           app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
+          // Issue #74 fix: custom notification values
           android: tl.AndroidConfig(
+            deferTime: 10000,
             foregroundService: tl.ForegroundServiceConfig(
-              notificationTitle: 'Tracelet Demo',
-              notificationText: 'Background tracking active',
+              notificationTitle: '📍 Issue #74 Fix Verified',
+              notificationText: 'Background tracking — deferTime=10s',
+              channelId: 'tracelet_demo_channel',
+              channelName: 'Tracelet Demo Background',
+              notificationPriority: tl.NotificationPriority.high,
             ),
           ),
         ),

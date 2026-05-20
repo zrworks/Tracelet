@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.5
+
+- **CHORE**: Bump version to 2.0.5 to align with federated Flutter packages and coordinated monorepo release.
+
+## 2.0.3
+
+- **FIX**: Refined Android elapsed realtime drift mock detection check. Age comparisons are now verified between wall-clock time and monotonic system clock to avoid false positives under network clock drift.
+
 ## 2.0.2
 
 - **FIX**: `deferTime` is now accounted for in the heuristic mock detection drift calculation. Deferred locations are no longer incorrectly flagged as mock locations.

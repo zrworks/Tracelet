@@ -1173,6 +1173,9 @@ public final class TraceletSdk {
 
     // MARK: - Private: Heartbeat
 
+    /// Last location timestamp persisted by a heartbeat — used to deduplicate DB writes.
+    private var lastHeartbeatLocationTime: TimeInterval = 0
+
     private func startHeartbeat() {
         stopHeartbeat()
         let interval = configManager.getHeartbeatInterval()
@@ -1193,10 +1196,19 @@ public final class TraceletSdk {
                 var locationMap = self.locationEngine.buildLocationMap(location)
                 locationMap["event"] = "heartbeat"
 
-                // Persist to database so it syncs via HTTP automatically.
-                let _ = self.database.insertLocation(locationMap)
-                self.locationEngine.onLocationPersisted?()
+                // Only persist to DB if this is a genuinely new GPS fix
+                // (different timestamp from the last heartbeat write).
+                // This avoids hundreds of redundant DB inserts per hour
+                // when the user is stationary and the cached location
+                // hasn't changed.
+                let fixTime = location.timestamp.timeIntervalSince1970
+                if fixTime != self.lastHeartbeatLocationTime {
+                    self.lastHeartbeatLocationTime = fixTime
+                    let _ = self.database.insertLocation(locationMap)
+                    self.locationEngine.onLocationPersisted?()
+                }
 
+                // Always send the event so Flutter UI stays alive
                 let data: [String: Any] = ["location": locationMap]
                 self.eventSender.sendHeartbeat(data)
                 NSLog("[Tracelet] Heartbeat: lat=%.6f, lon=%.6f, accuracy=%.1fm",
@@ -1224,8 +1236,35 @@ public final class TraceletSdk {
                 repeats: true
             ) { [weak self] _ in
                 guard let self = self, self.stateManager.enabled else { return }
+
+                // Skip sampling while charging — drain will be negative and
+                // there's no reason to throttle accuracy on external power.
+                if BatteryUtils.isCharging() {
+                    return
+                }
+
                 let level = Double(BatteryUtils.getBatteryLevel())
                 if let event = engine.processSample(level) {
+                    // ── Apply the computed adjustments to the live config ──
+                    // Without this, the engine calculates new values but the
+                    // LocationEngine keeps running with the original settings.
+                    self.configManager.setConfig([
+                        "distanceFilter": event.newDistanceFilter,
+                        "desiredAccuracy": event.newDesiredAccuracy,
+                    ])
+                    if let interval = event.newPeriodicInterval {
+                        self.configManager.setConfig([
+                            "periodicLocationInterval": interval,
+                        ])
+                    }
+
+                    // Restart the location engine so it picks up the new
+                    // distanceFilter and accuracy from ConfigManager.
+                    if self.stateManager.enabled {
+                        self.locationEngine.stop()
+                        self.locationEngine.start()
+                    }
+
                     self.eventSender.sendBudgetAdjustment([
                         "currentBatteryDrain": event.currentBatteryDrain,
                         "targetBudget": event.targetBudget,

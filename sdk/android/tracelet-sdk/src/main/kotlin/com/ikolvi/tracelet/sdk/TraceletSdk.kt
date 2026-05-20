@@ -1303,6 +1303,9 @@ class TraceletSdk private constructor(private val context: Context) {
         eventSender.sendEnabledChange(false)
     }
 
+    /** Last location persisted by a heartbeat — used to deduplicate DB writes. */
+    private var lastHeartbeatLocationTime: Long = 0L
+
     internal fun startHeartbeat() {
         stopHeartbeat()
         val intervalSeconds = configManager.getHeartbeatInterval()
@@ -1316,9 +1319,20 @@ class TraceletSdk private constructor(private val context: Context) {
                 if (cached != null) {
                     // Build enriched location map with UUID, battery, etc.
                     val locationData = locationEngine.enrichLocation(cached, "heartbeat").toMutableMap()
-                    // Persist to database so it syncs via HTTP automatically.
-                    database.insertLocationAsync(locationData)
-                    locationEngine.onLocationPersisted?.invoke()
+
+                    // Only persist to DB if this is a genuinely new GPS fix
+                    // (different timestamp from the last heartbeat write).
+                    // This avoids hundreds of redundant DB inserts per hour
+                    // when the user is stationary and the cached location
+                    // hasn't changed.
+                    val fixTime = cached.time
+                    if (fixTime != lastHeartbeatLocationTime) {
+                        lastHeartbeatLocationTime = fixTime
+                        database.insertLocationAsync(locationData)
+                        locationEngine.onLocationPersisted?.invoke()
+                    }
+
+                    // Always send the event so Dart/Flutter UI stays alive
                     eventSender.sendHeartbeat(mapOf("location" to locationData))
                     android.util.Log.d("Tracelet",
                         "Heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, accuracy=${cached.accuracy}m")
@@ -1343,9 +1357,39 @@ class TraceletSdk private constructor(private val context: Context) {
         batteryBudgetRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
+
+                // Skip sampling while charging — drain will be negative and
+                // there's no reason to throttle accuracy on external power.
+                if (BatteryUtils.isCharging(context)) {
+                    mainHandler.postDelayed(this, BATTERY_SAMPLE_INTERVAL_MS)
+                    return
+                }
+
                 val level = BatteryUtils.getBatteryLevel(context)
                 val event = engine.processSample(level)
                 if (event != null) {
+                    // ── Apply the computed adjustments to the live config ──
+                    // Without this, the engine calculates new values but the
+                    // LocationEngine keeps running with the original settings.
+                    configManager.setConfig(
+                        mapOf(
+                            "distanceFilter" to event.newDistanceFilter,
+                            "desiredAccuracy" to event.newDesiredAccuracy,
+                        )
+                    )
+                    event.newPeriodicInterval?.let { interval ->
+                        configManager.setConfig(
+                            mapOf("periodicLocationInterval" to interval)
+                        )
+                    }
+
+                    // Restart the location engine so it picks up the new
+                    // distanceFilter and accuracy from ConfigManager.
+                    if (stateManager.enabled) {
+                        locationEngine.stop()
+                        locationEngine.start()
+                    }
+
                     eventSender.sendBudgetAdjustment(
                         mapOf(
                             "currentBatteryDrain" to event.currentBatteryDrain,

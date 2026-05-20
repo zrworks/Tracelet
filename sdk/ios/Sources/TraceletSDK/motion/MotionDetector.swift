@@ -37,14 +37,14 @@ public final class MotionDetector {
     private var currentConfidence: Int = -1
 
     /// Consecutive low-acceleration samples before triggering stillness.
-    /// At 50Hz (accelerometer update interval), 150 samples ≈ 3 seconds.
+    /// At 10Hz (accelerometer update interval), 50 samples ≈ 5 seconds.
     ///
     /// Android uses 25 samples at ~5 Hz (SENSOR_DELAY_NORMAL) ≈ 5 seconds.
-    /// iOS can afford a shorter dwell window because CoreMotion provides
-    /// higher-resolution, less noisy data via `CMMotionManager`.
+    /// Both platforms target a ~5 second dwell window to balance fast
+    /// stationary detection with avoiding false positives from brief stops.
     ///
     /// - SeeAlso: Android `MotionDetector.STILL_SAMPLE_COUNT` (25 at ~5 Hz ≈ 5s)
-    private static let stillSampleCount = 150
+    private static let stillSampleCount = 50
 
     /// Acceleration magnitude (gravity-subtracted) below which a sample is "still".
     ///

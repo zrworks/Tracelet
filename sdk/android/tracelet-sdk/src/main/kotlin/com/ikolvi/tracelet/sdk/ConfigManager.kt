@@ -157,7 +157,7 @@ class ConfigManager(context: Context) {
 
         // Dart sends a nested structure: {geo: {...}, app: {...}, http: {...}, ...}
         // Flatten known section sub-maps into the top level first.
-        val sectionKeys = setOf("geo", "app", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone")
+        val sectionKeys = setOf("geo", "app", "android", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone", "security")
         val flat = mutableMapOf<String, Any?>()
         for ((key, value) in newConfig) {
             if (key in sectionKeys && value is Map<*, *>) {
@@ -170,7 +170,7 @@ class ConfigManager(context: Context) {
             }
         }
 
-        // Flatten foregroundService sub-map (nested inside app section) with fg_ prefix
+        // Flatten foregroundService sub-map (nested inside android section) with fg_ prefix
         val fgService = flat["foregroundService"]
         if (fgService is Map<*, *>) {
             @Suppress("UNCHECKED_CAST")
@@ -188,8 +188,25 @@ class ConfigManager(context: Context) {
             }
         }
 
+        // Flatten attestation sub-map with prefixed names matching the SDK expectations
+        val attestation = flat["attestation"]
+        if (attestation is Map<*, *>) {
+            @Suppress("UNCHECKED_CAST")
+            for ((k, v) in attestation as Map<String, Any?>) {
+                if (v != null) {
+                    val key = when (k) {
+                        "enabled" -> "attestationEnabled"
+                        "refreshInterval" -> "attestationRefreshInterval"
+                        "verificationUrl" -> "attestationVerificationUrl"
+                        else -> "attestation_$k"
+                    }
+                    merged[key] = v
+                }
+            }
+        }
+
         for ((key, value) in flat) {
-            if (key == "foregroundService" || key == "filter") continue
+            if (key == "foregroundService" || key == "filter" || key == "attestation") continue
             // Skip null values — a partial setConfig() must not overwrite
             // existing non-null config with defaults.  E.g. calling
             // setConfig({app: {heartbeatInterval: -1}}) must not wipe the

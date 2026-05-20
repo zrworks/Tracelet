@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.6
+
+- **FIX**: Resolved critical issue where calculated `BatteryBudgetEngine` parameter adjustments (distance filter, accuracy) were not applied to `LocationEngine`.
+- **FEAT**: Added "Charging Bypass" to skip battery budgeting updates while connected to external power.
+- **PERF**: Implemented heartbeat deduplication, saving hundreds of redundant SQLite inserts/hour when stationary by tracking last persisted location timestamps.
+- **FIX**: Corrected `stillSampleCount` dwell window regression to match the actual 10Hz accelerometer rate (reduced stationary delay from 15s to 5s).
+- **FIX**: Added permission-missing checks and explicit feedback via `providerChange` events on `start()` call.
+
 ## 2.0.5
 
 - **CHORE**: Bump version to 2.0.5 to align with federated Flutter packages and coordinated monorepo release.

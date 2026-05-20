@@ -397,6 +397,56 @@ internal class TraceletSdkTest {
         assertEquals("https://new.example.com", config.getHttpUrl())
     }
 
+    @Test
+    fun setConfig_flattensAndroidSecurityAndAttestationConfigs() {
+        val config = ConfigManager.getInstance(context)
+        config.reset(null)
+
+        // 1. Android Config
+        config.setConfig(mapOf(
+            "android" to mapOf<String, Any?>(
+                "locationUpdateInterval" to 10000L,
+                "deferTime" to 60000,
+                "foregroundService" to mapOf<String, Any?>(
+                    "notificationTitle" to "Custom Title",
+                    "notificationText" to "Custom Text",
+                    "channelName" to "Custom Channel"
+                )
+            )
+        ))
+
+        // Verify top-level android config values are flattened
+        assertEquals(10000L, config.getLocationUpdateInterval())
+        assertEquals(60000, config.getDeferTime())
+        assertEquals("Custom Title", config.getFgNotificationTitle())
+        assertEquals("Custom Text", config.getFgNotificationText())
+        assertEquals("Custom Channel", config.getFgChannelName())
+
+        // 2. Security Config
+        config.setConfig(mapOf(
+            "security" to mapOf<String, Any?>(
+                "encryptDatabase" to true,
+                "encryptionKey" to "super-secret"
+            )
+        ))
+
+        // Verify security config values are flattened
+        assertTrue(config.getEncryptDatabase())
+        assertEquals("super-secret", config.getEncryptionKey())
+
+        // 3. Attestation Config
+        config.setConfig(mapOf(
+            "attestation" to mapOf<String, Any?>(
+                "enabled" to true,
+                "refreshInterval" to 1800
+            )
+        ))
+
+        // Verify attestation config values are flattened and properly mapped
+        assertTrue(config.getAttestationEnabled())
+        assertEquals(1800, config.getAttestationRefreshInterval())
+    }
+
     // =========================================================================
     // Database — deleteSyncedLocations
     // =========================================================================

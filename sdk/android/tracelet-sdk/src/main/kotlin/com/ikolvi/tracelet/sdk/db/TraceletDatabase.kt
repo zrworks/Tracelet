@@ -1020,7 +1020,7 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
      * @throws IllegalStateException if SQLCipher is not available
      */
     fun encryptDatabase(key: ByteArray, encryptionManager: DatabaseEncryptionManager): Boolean {
-        check(SqlCipherMigrator.isAvailable()) {
+        check(DatabaseEncryptionManager.isSqlCipherAvailable()) {
             "Database encryption requires the SQLCipher dependency. " +
                 "Add implementation(\"net.zetetic:sqlcipher-android:4.6.1@aar\") " +
                 "to your app's build.gradle."
@@ -1034,7 +1034,7 @@ class TraceletDatabase private constructor(context: Context, private val dbPassw
             close()
 
             // Run SQLCipher ATTACH + export migration
-            SqlCipherMigrator.migrate(dbPath, encryptedPath, key)
+            SqlCipherMigrator.migrate(appContext, dbPath, encryptedPath, key)
 
             // Replace unencrypted with encrypted
             val originalFile = File(dbPath)

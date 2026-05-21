@@ -18,7 +18,7 @@ class SqlCipherMigratorTest {
     fun isAvailable_returnsFalseWithoutSqlCipherRuntime() {
         // sqlcipher-android is compileOnly — not on the test runtime classpath.
         // This verifies the Class.forName detection works correctly.
-        assertFalse(SqlCipherMigrator.isAvailable())
+        assertFalse(DatabaseEncryptionManager.isSqlCipherAvailable())
     }
 
     @Test

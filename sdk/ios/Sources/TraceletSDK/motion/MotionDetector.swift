@@ -139,6 +139,23 @@ public final class MotionDetector {
                 }
             }
         }
+
+        // Accelerometer fallback for stillness detection
+        if stateManager.isMoving {
+            if motionManager.isAccelerometerAvailable {
+                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+                consecutiveStillSamples = 0
+                let accelQueue = OperationQueue()
+                accelQueue.name = "com.tracelet.accelerometer.fallback"
+                accelQueue.qualityOfService = .utility
+                motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                    guard let self = self, let data = data, error == nil else { return }
+                    self.handleAccelerometerData(data)
+                }
+                NSLog("[Tracelet] Accelerometer stillness fallback started (threshold=%.3f, samples=%d)",
+                      configManager.getStillThreshold(), configManager.getStillSampleCount())
+            }
+        }
     }
 
     // MARK: - Accelerometer-only mode (no permission required)
@@ -187,6 +204,8 @@ public final class MotionDetector {
                 consecutiveStillSamples += 1
                 if consecutiveStillSamples >= configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
+                    NSLog("[Tracelet] Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
+                          consecutiveStillSamples)
                     motionManager.stopAccelerometerUpdates()
                     startStopTimeoutCountdown()
                 }
@@ -198,18 +217,6 @@ public final class MotionDetector {
             if abs(magnitude) > configManager.getShakeThreshold() {
                 motionManager.stopAccelerometerUpdates()
                 triggerMotionChange(isMoving: true)
-
-                // After declaring moving, restart to monitor for stillness
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    guard let self = self, self.isRunning, self.stateManager.isMoving else { return }
-                    self.consecutiveStillSamples = 0
-                    if self.motionManager.isAccelerometerAvailable {
-                        self.motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, error in
-                            guard let self = self, let data = data, error == nil else { return }
-                            self.handleAccelerometerData(data)
-                        }
-                    }
-                }
             }
         }
     }
@@ -288,13 +295,17 @@ public final class MotionDetector {
     // MARK: - Activity handling (full mode only)
 
     private func handleActivityUpdate(_ activity: CMMotionActivity) {
+        // Motion state detection (must run before filters so low-confidence OS 
+        // events can still correctly trigger internal tracking state changes)
+        if activity.stationary {
+            handleStationaryDetected()
+        } else if activity.walking || activity.running || activity.cycling || activity.automotive {
+            handleMovingDetected()
+        }
+
         let (type, confidence) = classifyActivity(activity)
 
-        let prevActivity = currentActivity
-        currentActivity = type
-        currentConfidence = confidence
-
-        // Apply confidence filter
+        // Apply confidence filter (for the Dart event stream)
         let minConfidence = configManager.getMinimumActivityRecognitionConfidence()
         if confidence < minConfidence { return }
 
@@ -307,19 +318,16 @@ public final class MotionDetector {
             if !allowed.contains(type.lowercased()) && type != "still" { return }
         }
 
+        let prevActivity = currentActivity
+        currentActivity = type
+        currentConfidence = confidence
+
         // Dispatch activity change event to Dart
         if type != prevActivity {
             eventDispatcher.sendActivityChange([
                 "activity": type,
                 "confidence": confidence,
             ])
-        }
-
-        // Motion state detection
-        if activity.stationary {
-            handleStationaryDetected()
-        } else if activity.walking || activity.running || activity.cycling || activity.automotive {
-            handleMovingDetected()
         }
     }
 
@@ -353,6 +361,23 @@ public final class MotionDetector {
             } else {
                 triggerMotionChange(isMoving: true)
             }
+        } else {
+            // Already moving. If the accelerometer was stopped because it previously
+            // detected stillness (but the timer was just invalidated by this moving blip),
+            // we must restart the accelerometer to continue monitoring for stillness.
+            if isRunning {
+                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+                consecutiveStillSamples = 0
+                if motionManager.isAccelerometerAvailable {
+                    let accelQueue = OperationQueue()
+                    accelQueue.name = "com.tracelet.accelerometer.fallback"
+                    accelQueue.qualityOfService = .utility
+                    motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                        guard let self = self, let data = data, error == nil else { return }
+                        self.handleAccelerometerData(data)
+                    }
+                }
+            }
         }
     }
 
@@ -365,46 +390,65 @@ public final class MotionDetector {
     // MARK: - Stop timeout (shared by both modes)
 
     private func startStopTimeoutCountdown() {
-        stopTimer?.invalidate()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.stopTimer != nil { return } // Timer is already running
 
-        let stopTimeout = configManager.getStopTimeout()
-        let stopDetectionDelay = configManager.getStopDetectionDelay()
-        let totalDelay = TimeInterval(stopTimeout * 60 + stopDetectionDelay)
-        guard totalDelay > 0 else {
-            triggerMotionChange(isMoving: false)
-            return
-        }
+            let stopTimeout = self.configManager.getStopTimeout()
+            let stopDetectionDelay = self.configManager.getStopDetectionDelay()
+            let totalDelay = TimeInterval(stopTimeout * 60 + stopDetectionDelay)
+            guard totalDelay > 0 else {
+                self.triggerMotionChange(isMoving: false)
+                return
+            }
 
-        // Only create a new timer if one isn't already running
-        stopTimer = Timer.scheduledTimer(
-            withTimeInterval: totalDelay,
-            repeats: false
-        ) { [weak self] _ in
-            self?.triggerMotionChange(isMoving: false)
+            // Only create a new timer if one isn't already running
+            self.stopTimer = Timer.scheduledTimer(
+                withTimeInterval: totalDelay,
+                repeats: false
+            ) { [weak self] _ in
+                self?.triggerMotionChange(isMoving: false)
+            }
         }
     }
 
     // MARK: - State transitions
 
     private func triggerMotionChange(isMoving: Bool) {
-        guard stateManager.isMoving != isMoving else { return }
-        stateManager.isMoving = isMoving
-        onMotionStateChanged?(isMoving)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard self.stateManager.isMoving != isMoving else { return }
+            self.stateManager.isMoving = isMoving
+            self.onMotionStateChanged?(isMoving)
 
-        if !isMoving && configManager.getStopOnStationary() {
-            onStopRequested?()
-            return // Full stop — no further monitoring
-        }
-
-        // In accelerometer-only mode, restart monitoring for the new state
-        if isAccelerometerOnlyMode && isRunning {
-            consecutiveStillSamples = 0
-            if motionManager.isAccelerometerAvailable {
-                motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, error in
-                    guard let self = self, let data = data, error == nil else { return }
-                    self.handleAccelerometerData(data)
-                }
+            if !isMoving && self.configManager.getStopOnStationary() {
+                self.onStopRequested?()
+                return // Full stop — no further monitoring
             }
+
+        // In accelerometer-only mode, we always restart monitoring for the new state.
+        // In full mode, we only start accelerometer monitoring when transitioning 
+        // to `moving`, to provide a reliable hardware fallback for stillness detection
+        // in case Activity Recognition fails to send an update.
+        if self.isRunning {
+            if self.isAccelerometerOnlyMode || isMoving {
+                self.motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+                self.consecutiveStillSamples = 0
+                if self.motionManager.isAccelerometerAvailable {
+                    // Use a background queue for stillness detection
+                    let accelQueue = OperationQueue()
+                    accelQueue.name = "com.tracelet.accelerometer.fallback"
+                    accelQueue.qualityOfService = .utility
+                    self.motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                        guard let self = self, let data = data, error == nil else { return }
+                        self.handleAccelerometerData(data)
+                    }
+                }
+            } else {
+                // In full mode, stop the accelerometer when stationary to save battery
+                self.motionManager.stopAccelerometerUpdates()
+            }
+        }
         }
     }
 }

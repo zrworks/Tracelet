@@ -144,21 +144,26 @@ public final class ConfigManager {
     public func getStopOnStationary() -> Bool { cache["stopOnStationary"] as? Bool ?? false }
     public func getTriggerActivities() -> String { cache["triggerActivities"] as? String ?? "" }
 
-    /// Shake threshold in g-force (converted from m/s² config value).
-    /// Default: 2.5 m/s² ÷ 9.81 ≈ 0.255 g
+    /// Shake threshold (gravity-subtracted magnitude).
+    ///
+    /// iOS accelerometer data is processed as `sqrt(x²+y²+z²) - 1.0`,
+    /// yielding gravity-subtracted values in g-force units.
+    /// Default 0.35 is tuned for CoreMotion's clean, high-precision output.
+    /// Do NOT divide by 9.81 — the handler already works in g-force space.
     public func getShakeThreshold() -> Double {
-        let msSquared = cache["shakeThreshold"] as? Double ?? 2.5
-        return msSquared / 9.81
+        cache["shakeThreshold"] as? Double ?? 0.35
     }
-    /// Still threshold in g-force (converted from m/s² config value).
-    /// Default: 0.4 m/s² ÷ 9.81 ≈ 0.041 g
+    /// Still threshold (gravity-subtracted magnitude).
+    ///
+    /// Samples with `abs(magnitude) < stillThreshold` count as "still".
+    /// Default 0.15 is tuned for CoreMotion. Higher than Android's equivalent
+    /// because we operate in g-force space directly.
     public func getStillThreshold() -> Double {
-        let msSquared = cache["stillThreshold"] as? Double ?? 0.4
-        return msSquared / 9.81
+        cache["stillThreshold"] as? Double ?? 0.15
     }
-    /// Consecutive still samples needed. iOS samples at 50 Hz so
-    /// adjust accordingly. Default: 25 (matches Dart default).
-    public func getStillSampleCount() -> Int { cache["stillSampleCount"] as? Int ?? 25 }
+    /// Consecutive still samples needed before triggering stillness.
+    /// At 10 Hz, 30 samples ≈ 3 seconds of sustained stillness.
+    public func getStillSampleCount() -> Int { cache["stillSampleCount"] as? Int ?? 30 }
 
     // GeofenceConfig
     public func getGeofenceInitialTriggerEntry() -> Bool { cache["geofenceInitialTriggerEntry"] as? Bool ?? true }

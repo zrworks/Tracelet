@@ -1,3 +1,7 @@
+## 2.0.7
+
+ - Update a dependency to the latest release.
+
 ## 2.0.6
 
 - **PERF**: Hardware-level sensor batching on Android reduces CPU wake-ups by over 90% during active accelerometer monitoring.

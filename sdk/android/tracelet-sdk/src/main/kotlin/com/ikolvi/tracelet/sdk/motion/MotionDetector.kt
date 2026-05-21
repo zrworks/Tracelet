@@ -456,10 +456,11 @@ class MotionDetector(
             onMotionStateChanged?.invoke(true)
         }
 
-        // In accelerometer-only mode, start monitoring for stillness
-        if (isAccelerometerOnlyMode) {
-            startAccelerometerStillnessMonitoring()
-        }
+        // Start monitoring for stillness
+        // Run this in all modes (not just accelerometer-only) because Activity
+        // Recognition may fail to dispatch an ENTER_STILL event if the device
+        // entered 'moving' via the shake detector but AR thought it never left STILL.
+        startAccelerometerStillnessMonitoring()
     }
 
     // =========================================================================

@@ -13,29 +13,20 @@ internal object SqlCipherMigrator {
 
     private const val TAG = "SqlCipherMigrator"
 
-    /**
-     * Returns `true` if the `sqlcipher-android` library is on the classpath.
-     *
-     * Uses [Class.forName] so this method itself does **not** trigger class
-     * loading of any SQLCipher types.
-     */
-    @JvmStatic
-    fun isAvailable(): Boolean = try {
-        Class.forName("net.zetetic.database.sqlcipher.SQLiteDatabase")
-        true
-    } catch (_: ClassNotFoundException) {
-        false
-    }
+
 
     /**
      * Runs the actual ATTACH/sqlcipher_export migration.
      *
+     * @param context       Application context needed to load SQLCipher native libs.
      * @param dbPath       Absolute path to the unencrypted database file.
      * @param encryptedPath Destination path for the encrypted copy.
      * @param key           Encryption key bytes.
      */
     @JvmStatic
-    fun migrate(dbPath: String, encryptedPath: String, key: ByteArray) {
+    fun migrate(context: android.content.Context, dbPath: String, encryptedPath: String, key: ByteArray) {
+        System.loadLibrary("sqlcipher")
+
         val unencryptedDb = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
             dbPath, "", null,
             net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READWRITE, null, null

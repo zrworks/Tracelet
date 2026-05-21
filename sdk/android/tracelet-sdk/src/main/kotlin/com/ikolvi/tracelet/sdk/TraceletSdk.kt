@@ -15,7 +15,7 @@ import com.ikolvi.tracelet.sdk.algorithm.TripManager
 import com.ikolvi.tracelet.sdk.attestation.DeviceAttestor
 import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
 import com.ikolvi.tracelet.sdk.db.DatabaseEncryptionManager
-import com.ikolvi.tracelet.sdk.db.SqlCipherMigrator
+
 import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
 import com.ikolvi.tracelet.sdk.http.HttpSyncManager
@@ -280,10 +280,9 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // Auto-encrypt if enabled and SQLCipher is available
         if (configManager.getEncryptDatabase() && !encryptionManager.isDatabaseEncrypted()) {
-            if (!SqlCipherMigrator.isAvailable()) {
+            if (!DatabaseEncryptionManager.isSqlCipherAvailable()) {
                 logger.warning("encryptDatabase is enabled but SQLCipher is not on the classpath. " +
-                    "Add implementation(\"net.zetetic:sqlcipher-android:4.6.1@aar\") " +
-                    "to your app's build.gradle to enable database encryption.")
+                        "Database will remain unencrypted until the dependency is added.")
             } else {
                 val customKey = configManager.getEncryptionKey()
                 val key = encryptionManager.getOrCreateKey(customKey)

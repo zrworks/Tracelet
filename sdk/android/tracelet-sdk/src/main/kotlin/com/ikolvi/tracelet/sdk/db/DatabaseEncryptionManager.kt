@@ -36,6 +36,20 @@ class DatabaseEncryptionManager(private val context: Context) {
         } catch (_: ClassNotFoundException) {
             false
         }
+
+        /**
+         * Returns `true` if the `sqlcipher-android` library is on the classpath.
+         *
+         * Uses [Class.forName] so this method itself does **not** trigger class
+         * loading of any SQLCipher types.
+         */
+        @JvmStatic
+        fun isSqlCipherAvailable(): Boolean = try {
+            Class.forName("net.zetetic.database.sqlcipher.SQLiteDatabase")
+            true
+        } catch (_: ClassNotFoundException) {
+            false
+        }
     }
 
     private val masterKey: MasterKey by lazy {

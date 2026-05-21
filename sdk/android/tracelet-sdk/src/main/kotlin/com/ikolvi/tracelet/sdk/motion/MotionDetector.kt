@@ -148,6 +148,10 @@ class MotionDetector(
     @Volatile
     private var consecutiveStillSamples = 0
 
+    @Volatile
+    var isRunning = false
+        private set
+
     // =========================================================================
     // Public API
     // =========================================================================
@@ -160,6 +164,8 @@ class MotionDetector(
      * sensor only — no permissions required.
      */
     fun start() {
+        if (isRunning) return
+        isRunning = true
         if (isAccelerometerOnlyMode) {
             startAccelerometerOnlyMode()
         } else {
@@ -169,6 +175,8 @@ class MotionDetector(
 
     /** Stop all motion detection and clean up resources. */
     fun stop() {
+        if (!isRunning) return
+        isRunning = false
         unregisterActivityTransitions()
         cancelStopTimeout()
         stopAccelerometerMonitoring()
@@ -351,6 +359,7 @@ class MotionDetector(
     }
 
     private fun handleTransitionEvent(activityType: Int, transitionType: Int) {
+        if (!isRunning) return
         val activityTypeStr = activityTypeToString(activityType)
         val isEntering = transitionType == 0 // ACTIVITY_TRANSITION_ENTER
 
@@ -491,6 +500,7 @@ class MotionDetector(
 
         accelerometerListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
+                if (!isRunning) return
                 val x = event.values[0]
                 val y = event.values[1]
                 val z = event.values[2]
@@ -552,6 +562,7 @@ class MotionDetector(
 
         accelerometerListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
+                if (!isRunning) return
                 val x = event.values[0]
                 val y = event.values[1]
                 val z = event.values[2]

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.7
+
+- **FIX**: Resolved an issue where low-confidence Activity Recognition updates were ignored by the Dart event stream but were still silently updating the internal state machine, causing subsequent high-confidence updates to be dispatched as spurious "changes" even when the activity type hadn't actually changed.
+- **FIX**: Resolved a bug where the `stopTimer` countdown (for transitioning from moving to stationary) was being incorrectly reset on every `CMMotionActivity` update. This caused the SDK to get stuck in the `moving` state because the countdown timer never had a chance to reach zero.
+
 ## 2.0.6
 
 - **FIX**: Resolved critical issue where calculated `BatteryBudgetEngine` parameter adjustments (distance filter, accuracy) were not applied to `LocationEngine`.

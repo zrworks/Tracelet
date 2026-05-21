@@ -590,7 +590,7 @@ class _DashboardPageState extends State<DashboardPage>
                 : tl.LocationActivityType.otherNavigation,
             preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
           ),
-          motion: const tl.MotionConfig(stopTimeout: 5),
+          motion: const tl.MotionConfig(stopTimeout: 0),
           http: const tl.HttpConfig(
             url: 'http://192.168.20.101:8099/locations',
             method: tl.HttpMethod.post,
@@ -940,7 +940,7 @@ class _DashboardPageState extends State<DashboardPage>
           motion: const tl.MotionConfig(
             disableMotionActivityUpdates: true,
             isMoving: true, // start in moving mode
-            stopTimeout: 5,
+            stopTimeout: 0,
           ),
           app: const tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
           android: tl.AndroidConfig(

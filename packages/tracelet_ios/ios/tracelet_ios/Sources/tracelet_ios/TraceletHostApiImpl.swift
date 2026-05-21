@@ -244,20 +244,8 @@ class TraceletHostApiImpl: TraceletHostApi {
         )
     }
 
-    private func intToAuthStatus(_ value: Int) -> TlAuthorizationStatus {
-        // Native CLAuthorizationStatus:
-        // 0: notDetermined
-        // 1: restricted
-        // 2: denied
-        // 3: authorizedAlways
-        // 4: authorizedWhenInUse
-        switch value {
-        case 0: return .notDetermined
-        case 1, 2: return .denied
-        case 3: return .always
-        case 4: return .whenInUse
-        default: return .notDetermined
-        }
+    func intToAuthStatus(_ value: Int) -> TlAuthorizationStatus {
+        return TlAuthorizationStatus(rawValue: value) ?? .notDetermined
     }
 
     // MARK: - Lifecycle

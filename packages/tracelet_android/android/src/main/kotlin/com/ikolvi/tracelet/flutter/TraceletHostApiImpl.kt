@@ -519,8 +519,8 @@ class TraceletHostApiImpl(
         return when (value) {
             0 -> TlAuthorizationStatus.NOT_DETERMINED
             1 -> TlAuthorizationStatus.DENIED
-            2 -> TlAuthorizationStatus.ALWAYS
-            3 -> TlAuthorizationStatus.WHEN_IN_USE
+            2 -> TlAuthorizationStatus.WHEN_IN_USE
+            3 -> TlAuthorizationStatus.ALWAYS
             4 -> TlAuthorizationStatus.DENIED_FOREVER
             else -> TlAuthorizationStatus.NOT_DETERMINED
         }

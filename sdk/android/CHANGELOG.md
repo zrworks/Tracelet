@@ -4,6 +4,7 @@
 
 - **FIX**: Resolved `UnsatisfiedLinkError` crash when optional SQLCipher dependency was added by explicitly loading the `sqlcipher` JNI library before creating the encrypted database ([#78](https://github.com/Ikolvi/Tracelet/issues/78)).
 - **FIX**: Prevented false-positive shake events on Android by applying absolute magnitude thresholds (`Math.abs(magnitude)`) to align with iOS behavior, and fixed an edge case where a `stopTimeout` of 0 would skip the stillness transition entirely ([#79](https://github.com/Ikolvi/Tracelet/issues/79)).
+- **FIX**: Resolved an issue where Android could get permanently stuck in the `moving` state in full mode if the device was woken up via the shake detector, by enabling accelerometer stillness detection as a continuous fallback even when Activity Recognition is active.
 
 ## 2.0.6
 

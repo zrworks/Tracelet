@@ -404,7 +404,10 @@ class MotionDetector(
         val timeoutMs = config.getStopTimeout() * 60 * 1000L
         val stopDetectionDelayMs = config.getStopDetectionDelay() * 1000L
         val totalDelayMs = timeoutMs + stopDetectionDelayMs
-        if (totalDelayMs <= 0) return
+        if (totalDelayMs <= 0) {
+            declareStationary()
+            return
+        }
 
         stopTimeoutRunnable = Runnable { declareStationary() }
         mainHandler.postDelayed(stopTimeoutRunnable!!, totalDelayMs)
@@ -492,7 +495,7 @@ class MotionDetector(
                 val z = event.values[2]
                 val magnitude = sqrt((x * x + y * y + z * z).toDouble()) - 9.81
 
-                if (magnitude > config.getShakeThreshold()) {
+                if (Math.abs(magnitude) > config.getShakeThreshold()) {
                     stopAccelerometerMonitoring()
                     declareMoving()
                 }

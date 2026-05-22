@@ -75,24 +75,24 @@ public final class ConfigManager {
     // MARK: - Typed Getters
 
     // GeoConfig
-    public func getDesiredAccuracy() -> Int { cache["desiredAccuracy"] as? Int ?? -1 }
+    public func getDesiredAccuracy() -> Int { (cache["desiredAccuracy"] as? NSNumber)?.intValue ?? -1 }
     public func getDistanceFilter() -> Double { cache["distanceFilter"] as? Double ?? 10.0 }
-    public func getLocationTimeout() -> Int { cache["locationTimeout"] as? Int ?? 60 }
+    public func getLocationTimeout() -> Int { (cache["locationTimeout"] as? NSNumber)?.intValue ?? 60 }
     public func getStationaryRadius() -> Double { cache["stationaryRadius"] as? Double ?? 25.0 }
     public func getGeofenceProximityRadius() -> Double { cache["geofenceProximityRadius"] as? Double ?? 1000.0 }
-    public func getMaxDaysToPersist() -> Int { cache["maxDaysToPersist"] as? Int ?? -1 }
-    public func getMaxRecordsToPersist() -> Int { cache["maxRecordsToPersist"] as? Int ?? -1 }
-    public func getLocationUpdateInterval() -> Int { cache["locationUpdateInterval"] as? Int ?? 1000 }
-    public func getFastestLocationUpdateInterval() -> Int { cache["fastestLocationUpdateInterval"] as? Int ?? -1 }
-    public func getDeferTime() -> Int { cache["deferTime"] as? Int ?? 0 }
+    public func getMaxDaysToPersist() -> Int { (cache["maxDaysToPersist"] as? NSNumber)?.intValue ?? -1 }
+    public func getMaxRecordsToPersist() -> Int { (cache["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1 }
+    public func getLocationUpdateInterval() -> Int { (cache["locationUpdateInterval"] as? NSNumber)?.intValue ?? 1000 }
+    public func getFastestLocationUpdateInterval() -> Int { (cache["fastestLocationUpdateInterval"] as? NSNumber)?.intValue ?? -1 }
+    public func getDeferTime() -> Int { (cache["deferTime"] as? NSNumber)?.intValue ?? 0 }
     public func getAllowIdenticalLocations() -> Bool { cache["allowIdenticalLocations"] as? Bool ?? false }
     public func getUseSignificantChangesOnly() -> Bool { cache["useSignificantChangesOnly"] as? Bool ?? false }
     public func getShowsBackgroundLocationIndicator() -> Bool { cache["showsBackgroundLocationIndicator"] as? Bool ?? false }
     public func getPausesLocationUpdatesAutomatically() -> Bool { cache["pausesLocationUpdatesAutomatically"] as? Bool ?? true }
     public func getDisableLocationAuthorizationAlert() -> Bool { cache["disableLocationAuthorizationAlert"] as? Bool ?? false }
     public func getLocationAuthorizationRequest() -> String { cache["locationAuthorizationRequest"] as? String ?? "Always" }
-    public func getStopAfterElapsedMinutes() -> Int { cache["stopAfterElapsedMinutes"] as? Int ?? -1 }
-    public func getMaxMonitoredGeofences() -> Int { cache["maxMonitoredGeofences"] as? Int ?? -1 }
+    public func getStopAfterElapsedMinutes() -> Int { (cache["stopAfterElapsedMinutes"] as? NSNumber)?.intValue ?? -1 }
+    public func getMaxMonitoredGeofences() -> Int { (cache["maxMonitoredGeofences"] as? NSNumber)?.intValue ?? -1 }
     public func getEnableTimestampMeta() -> Bool { cache["enableTimestampMeta"] as? Bool ?? false }
 
     /// Maps the `activityType` config string to a `CLActivityType` (I-M2).
@@ -109,38 +109,38 @@ public final class ConfigManager {
         }
     }
     // Periodic mode config
-    public func getPeriodicLocationInterval() -> Int { cache["periodicLocationInterval"] as? Int ?? 900 }
-    public func getPeriodicDesiredAccuracy() -> Int { cache["periodicDesiredAccuracy"] as? Int ?? 1 }
+    public func getPeriodicLocationInterval() -> Int { (cache["periodicLocationInterval"] as? NSNumber)?.intValue ?? 900 }
+    public func getPeriodicDesiredAccuracy() -> Int { (cache["periodicDesiredAccuracy"] as? NSNumber)?.intValue ?? 1 }
     public func getPeriodicUseForegroundService() -> Bool { cache["periodicUseForegroundService"] as? Bool ?? false }
     public func getPeriodicUseExactAlarms() -> Bool { cache["periodicUseExactAlarms"] as? Bool ?? false }
     // LocationFilter
-    public func getOdometerAccuracyThreshold() -> Int { cache["odometerAccuracyThreshold"] as? Int ?? 0 }
+    public func getOdometerAccuracyThreshold() -> Int { (cache["odometerAccuracyThreshold"] as? NSNumber)?.intValue ?? 0 }
     public func getRejectMockLocations() -> Bool { cache["rejectMockLocations"] as? Bool ?? false }
-    public func getMockDetectionLevel() -> Int { cache["mockDetectionLevel"] as? Int ?? 1 }
+    public func getMockDetectionLevel() -> Int { (cache["mockDetectionLevel"] as? NSNumber)?.intValue ?? 1 }
 
     // Dead Reckoning
     public func getEnableDeadReckoning() -> Bool { cache["enableDeadReckoning"] as? Bool ?? false }
-    public func getDeadReckoningActivationDelay() -> Int { cache["deadReckoningActivationDelay"] as? Int ?? 10 }
-    public func getDeadReckoningMaxDuration() -> Int { cache["deadReckoningMaxDuration"] as? Int ?? 120 }
+    public func getDeadReckoningActivationDelay() -> Int { (cache["deadReckoningActivationDelay"] as? NSNumber)?.intValue ?? 10 }
+    public func getDeadReckoningMaxDuration() -> Int { (cache["deadReckoningMaxDuration"] as? NSNumber)?.intValue ?? 120 }
 
     // AppConfig
     public func isDebug() -> Bool { cache["debug"] as? Bool ?? false }
-    public func getLogLevel() -> Int { cache["logLevel"] as? Int ?? 5 }
+    public func getLogLevel() -> Int { (cache["logLevel"] as? NSNumber)?.intValue ?? 5 }
     public func getStopOnTerminate() -> Bool { cache["stopOnTerminate"] as? Bool ?? true }
     public func getStartOnBoot() -> Bool { cache["startOnBoot"] as? Bool ?? false }
-    public func getHeartbeatInterval() -> Int { cache["heartbeatInterval"] as? Int ?? 60 }
+    public func getHeartbeatInterval() -> Int { (cache["heartbeatInterval"] as? NSNumber)?.intValue ?? 60 }
     public func getSchedule() -> [String] { cache["schedule"] as? [String] ?? [] }
     public func getPreventSuspend() -> Bool { cache["preventSuspend"] as? Bool ?? false }
 
     // MotionConfig
     public func getIsMoving() -> Bool { cache["isMoving"] as? Bool ?? false }
-    public func getStopTimeout() -> Int { cache["stopTimeout"] as? Int ?? 5 }
-    public func getMotionTriggerDelay() -> Int { cache["motionTriggerDelay"] as? Int ?? 0 }
-    public func getStopDetectionDelay() -> Int { cache["stopDetectionDelay"] as? Int ?? 0 }
+    public func getStopTimeout() -> Int { (cache["stopTimeout"] as? NSNumber)?.intValue ?? 5 }
+    public func getMotionTriggerDelay() -> Int { (cache["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0 }
+    public func getStopDetectionDelay() -> Int { (cache["stopDetectionDelay"] as? NSNumber)?.intValue ?? 0 }
     public func getDisableMotionActivityUpdates() -> Bool { cache["disableMotionActivityUpdates"] as? Bool ?? false }
     public func getDisableStopDetection() -> Bool { cache["disableStopDetection"] as? Bool ?? false }
-    public func getActivityRecognitionInterval() -> Int { cache["activityRecognitionInterval"] as? Int ?? 10000 }
-    public func getMinimumActivityRecognitionConfidence() -> Int { cache["minimumActivityRecognitionConfidence"] as? Int ?? 75 }
+    public func getActivityRecognitionInterval() -> Int { (cache["activityRecognitionInterval"] as? NSNumber)?.intValue ?? 10000 }
+    public func getMinimumActivityRecognitionConfidence() -> Int { (cache["minimumActivityRecognitionConfidence"] as? NSNumber)?.intValue ?? 75 }
     public func getStopOnStationary() -> Bool { cache["stopOnStationary"] as? Bool ?? false }
     public func getTriggerActivities() -> String { cache["triggerActivities"] as? String ?? "" }
 
@@ -163,7 +163,7 @@ public final class ConfigManager {
     }
     /// Consecutive still samples needed before triggering stillness.
     /// At 10 Hz, 30 samples ≈ 3 seconds of sustained stillness.
-    public func getStillSampleCount() -> Int { cache["stillSampleCount"] as? Int ?? 30 }
+    public func getStillSampleCount() -> Int { (cache["stillSampleCount"] as? NSNumber)?.intValue ?? 30 }
 
     // GeofenceConfig
     public func getGeofenceInitialTriggerEntry() -> Bool { cache["geofenceInitialTriggerEntry"] as? Bool ?? true }
@@ -173,11 +173,11 @@ public final class ConfigManager {
     // HttpConfig
     public func getUrl() -> String { cache["url"] as? String ?? "" }
     public func getAutoSync() -> Bool { cache["autoSync"] as? Bool ?? true }
-    public func getAutoSyncThreshold() -> Int { cache["autoSyncThreshold"] as? Int ?? 0 }
-    public func getSyncInterval() -> Int { cache["syncInterval"] as? Int ?? 0 }
+    public func getAutoSyncThreshold() -> Int { (cache["autoSyncThreshold"] as? NSNumber)?.intValue ?? 0 }
+    public func getSyncInterval() -> Int { (cache["syncInterval"] as? NSNumber)?.intValue ?? 0 }
     public func getBatchSync() -> Bool { cache["batchSync"] as? Bool ?? false }
     public func getMaxBatchSize() -> Int {
-        let value = cache["maxBatchSize"] as? Int ?? 250
+        let value = (cache["maxBatchSize"] as? NSNumber)?.intValue ?? 250
         return value < 0 ? 250 : value
     }
     public func getHttpRootProperty() -> String { cache["httpRootProperty"] as? String ?? "location" }
@@ -193,29 +193,29 @@ public final class ConfigManager {
     }
     public func getHttpMethod() -> String {
         // Dart serializes method as an Int (0 = POST, 1 = PUT).
-        if let index = cache["method"] as? Int {
+        if let index = (cache["method"] as? NSNumber)?.intValue {
             return index == 1 ? "PUT" : "POST"
         }
         return cache["method"] as? String ?? "POST"
     }
-    public func getHttpTimeout() -> Int { cache["httpTimeout"] as? Int ?? 60000 }
+    public func getHttpTimeout() -> Int { (cache["httpTimeout"] as? NSNumber)?.intValue ?? 60000 }
     public func getLocationsOrderDirection() -> String { cache["locationsOrderDirection"] as? String ?? "ASC" }
     public func getDisableAutoSyncOnCellular() -> Bool { cache["disableAutoSyncOnCellular"] as? Bool ?? false }
-    public func getMaxRetries() -> Int { cache["maxRetries"] as? Int ?? 10 }
-    public func getRetryBackoffBase() -> Int { cache["retryBackoffBase"] as? Int ?? 1000 }
-    public func getRetryBackoffCap() -> Int { cache["retryBackoffCap"] as? Int ?? 300000 }
+    public func getMaxRetries() -> Int { (cache["maxRetries"] as? NSNumber)?.intValue ?? 10 }
+    public func getRetryBackoffBase() -> Int { (cache["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000 }
+    public func getRetryBackoffCap() -> Int { (cache["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000 }
     public func getEnableDeltaCompression() -> Bool { cache["enableDeltaCompression"] as? Bool ?? false }
-    public func getDeltaCoordinatePrecision() -> Int { cache["deltaCoordinatePrecision"] as? Int ?? 6 }
+    public func getDeltaCoordinatePrecision() -> Int { (cache["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 6 }
 
     // PersistenceConfig
-    public func getPersistMode() -> Int { cache["persistMode"] as? Int ?? 0 }
+    public func getPersistMode() -> Int { (cache["persistMode"] as? NSNumber)?.intValue ?? 0 }
     public func getLocationTemplate() -> String? { cache["locationTemplate"] as? String }
     public func getGeofenceTemplate() -> String? { cache["geofenceTemplate"] as? String }
     public func getDisableProviderChangeRecord() -> Bool { cache["disableProviderChangeRecord"] as? Bool ?? false }
     public func getPersistenceExtras() -> [String: Any] { cache["persistenceExtras"] as? [String: Any] ?? cache["extras"] as? [String: Any] ?? [:] }
 
     // LoggerConfig
-    public func getLogMaxDays() -> Int { cache["logMaxDays"] as? Int ?? 3 }
+    public func getLogMaxDays() -> Int { (cache["logMaxDays"] as? NSNumber)?.intValue ?? 3 }
 
     // AuditConfig (Enterprise)
     public func getAuditEnabled() -> Bool { cache["auditEnabled"] as? Bool ?? cache["enabled"] as? Bool ?? false }
@@ -231,7 +231,7 @@ public final class ConfigManager {
 
     // AttestationConfig (Enterprise)
     public func getAttestationEnabled() -> Bool { cache["attestationEnabled"] as? Bool ?? false }
-    public func getAttestationRefreshInterval() -> Int { cache["attestationRefreshInterval"] as? Int ?? 3600 }
+    public func getAttestationRefreshInterval() -> Int { (cache["attestationRefreshInterval"] as? NSNumber)?.intValue ?? 3600 }
     public func getAttestationVerificationUrl() -> String? { cache["attestationVerificationUrl"] as? String }
 
     // RemoteConfig (Enterprise)
@@ -242,8 +242,8 @@ public final class ConfigManager {
     public func getRemoteConfigHeaders() -> [String: String] {
         cache["remoteConfigHeaders"] as? [String: String] ?? [:]
     }
-    public func getRemoteConfigTimeout() -> Int { cache["remoteConfigTimeout"] as? Int ?? 30000 }
-    public func getRemoteConfigRefreshInterval() -> Int { cache["remoteConfigRefreshInterval"] as? Int ?? 3600 }
+    public func getRemoteConfigTimeout() -> Int { (cache["remoteConfigTimeout"] as? NSNumber)?.intValue ?? 30000 }
+    public func getRemoteConfigRefreshInterval() -> Int { (cache["remoteConfigRefreshInterval"] as? NSNumber)?.intValue ?? 3600 }
 
     // MARK: - Battery Budget
     public func getBatteryBudgetPerHour() -> Double { cache["batteryBudgetPerHour"] as? Double ?? 0.0 }

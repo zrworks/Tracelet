@@ -253,24 +253,24 @@ public final class TraceletGeoConfigObjC: NSObject {
             filterObjC = TraceletLocationFilterObjC.fromMap(filterMap)
         }
         return TraceletGeoConfigObjC(
-            desiredAccuracy: map["desiredAccuracy"] as? Int ?? 0,
+            desiredAccuracy: (map["desiredAccuracy"] as? NSNumber)?.intValue ?? 0,
             distanceFilter: (map["distanceFilter"] as? NSNumber)?.doubleValue ?? 10.0,
             stationaryRadius: (map["stationaryRadius"] as? NSNumber)?.doubleValue ?? 25.0,
-            locationTimeout: map["locationTimeout"] as? Int ?? 60,
+            locationTimeout: (map["locationTimeout"] as? NSNumber)?.intValue ?? 60,
             disableElasticity: map["disableElasticity"] as? Bool ?? false,
             elasticityMultiplier: (map["elasticityMultiplier"] as? NSNumber)?.doubleValue ?? 1.0,
-            stopAfterElapsedMinutes: map["stopAfterElapsedMinutes"] as? Int ?? -1,
-            maxMonitoredGeofences: map["maxMonitoredGeofences"] as? Int ?? -1,
+            stopAfterElapsedMinutes: (map["stopAfterElapsedMinutes"] as? NSNumber)?.intValue ?? -1,
+            maxMonitoredGeofences: (map["maxMonitoredGeofences"] as? NSNumber)?.intValue ?? -1,
             enableTimestampMeta: map["enableTimestampMeta"] as? Bool ?? false,
             enableAdaptiveMode: map["enableAdaptiveMode"] as? Bool ?? false,
-            periodicLocationInterval: map["periodicLocationInterval"] as? Int ?? 900,
-            periodicDesiredAccuracy: map["periodicDesiredAccuracy"] as? Int ?? 1,
+            periodicLocationInterval: (map["periodicLocationInterval"] as? NSNumber)?.intValue ?? 900,
+            periodicDesiredAccuracy: (map["periodicDesiredAccuracy"] as? NSNumber)?.intValue ?? 1,
             enableSparseUpdates: map["enableSparseUpdates"] as? Bool ?? false,
             sparseDistanceThreshold: (map["sparseDistanceThreshold"] as? NSNumber)?.doubleValue ?? 50.0,
-            sparseMaxIdleSeconds: map["sparseMaxIdleSeconds"] as? Int ?? 300,
+            sparseMaxIdleSeconds: (map["sparseMaxIdleSeconds"] as? NSNumber)?.intValue ?? 300,
             enableDeadReckoning: map["enableDeadReckoning"] as? Bool ?? false,
-            deadReckoningActivationDelay: map["deadReckoningActivationDelay"] as? Int ?? 10,
-            deadReckoningMaxDuration: map["deadReckoningMaxDuration"] as? Int ?? 120,
+            deadReckoningActivationDelay: (map["deadReckoningActivationDelay"] as? NSNumber)?.intValue ?? 10,
+            deadReckoningMaxDuration: (map["deadReckoningMaxDuration"] as? NSNumber)?.intValue ?? 120,
             batteryBudgetPerHour: (map["batteryBudgetPerHour"] as? NSNumber)?.doubleValue ?? 0.0,
             filter: filterObjC
         )
@@ -344,9 +344,9 @@ public final class TraceletAndroidConfigObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletAndroidConfigObjC {
         TraceletAndroidConfigObjC(
-            locationUpdateInterval: map["locationUpdateInterval"] as? Int ?? 1000,
-            fastestLocationUpdateInterval: map["fastestLocationUpdateInterval"] as? Int ?? 500,
-            deferTime: map["deferTime"] as? Int ?? 0,
+            locationUpdateInterval: (map["locationUpdateInterval"] as? NSNumber)?.intValue ?? 1000,
+            fastestLocationUpdateInterval: (map["fastestLocationUpdateInterval"] as? NSNumber)?.intValue ?? 500,
+            deferTime: (map["deferTime"] as? NSNumber)?.intValue ?? 0,
             allowIdenticalLocations: map["allowIdenticalLocations"] as? Bool ?? false,
             geofenceModeHighAccuracy: map["geofenceModeHighAccuracy"] as? Bool ?? false,
             periodicUseForegroundService: map["periodicUseForegroundService"] as? Bool ?? false,
@@ -414,7 +414,7 @@ public final class TraceletIosConfigObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletIosConfigObjC {
         TraceletIosConfigObjC(
-            activityType: map["activityType"] as? Int ?? 0,
+            activityType: (map["activityType"] as? NSNumber)?.intValue ?? 0,
             useSignificantChangesOnly: map["useSignificantChangesOnly"] as? Bool ?? false,
             showsBackgroundLocationIndicator: map["showsBackgroundLocationIndicator"] as? Bool ?? false,
             pausesLocationUpdatesAutomatically: map["pausesLocationUpdatesAutomatically"] as? Bool ?? false,
@@ -485,13 +485,13 @@ public final class TraceletLocationFilterObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletLocationFilterObjC {
         TraceletLocationFilterObjC(
-            policy: map["policy"] as? Int ?? 0,
-            maxImpliedSpeed: map["maxImpliedSpeed"] as? Int ?? 0,
-            odometerAccuracyThreshold: map["odometerAccuracyThreshold"] as? Int ?? 0,
-            trackingAccuracyThreshold: map["trackingAccuracyThreshold"] as? Int ?? 0,
+            policy: (map["policy"] as? NSNumber)?.intValue ?? 0,
+            maxImpliedSpeed: (map["maxImpliedSpeed"] as? NSNumber)?.intValue ?? 0,
+            odometerAccuracyThreshold: (map["odometerAccuracyThreshold"] as? NSNumber)?.intValue ?? 0,
+            trackingAccuracyThreshold: (map["trackingAccuracyThreshold"] as? NSNumber)?.intValue ?? 0,
             useKalmanFilter: map["useKalmanFilter"] as? Bool ?? false,
             rejectMockLocations: map["rejectMockLocations"] as? Bool ?? false,
-            mockDetectionLevel: map["mockDetectionLevel"] as? Int ?? 0
+            mockDetectionLevel: (map["mockDetectionLevel"] as? NSNumber)?.intValue ?? 0
         )
     }
 }
@@ -562,12 +562,12 @@ public final class TraceletAppConfigObjC: NSObject {
         TraceletAppConfigObjC(
             stopOnTerminate: map["stopOnTerminate"] as? Bool ?? true,
             startOnBoot: map["startOnBoot"] as? Bool ?? false,
-            heartbeatInterval: map["heartbeatInterval"] as? Int ?? 60,
+            heartbeatInterval: (map["heartbeatInterval"] as? NSNumber)?.intValue ?? 60,
             schedule: map["schedule"] as? [String] ?? [],
             remoteConfigUrl: map["remoteConfigUrl"] as? String,
             remoteConfigHeaders: map["remoteConfigHeaders"] as? [String: String] ?? [:],
-            remoteConfigTimeout: map["remoteConfigTimeout"] as? Int ?? 10000,
-            remoteConfigRefreshInterval: map["remoteConfigRefreshInterval"] as? Int ?? 0
+            remoteConfigTimeout: (map["remoteConfigTimeout"] as? NSNumber)?.intValue ?? 10000,
+            remoteConfigRefreshInterval: (map["remoteConfigRefreshInterval"] as? NSNumber)?.intValue ?? 0
         )
     }
 }
@@ -660,7 +660,7 @@ public final class TraceletForegroundServiceConfigObjC: NSObject {
             notificationColor: map["notificationColor"] as? String,
             notificationSmallIcon: map["notificationSmallIcon"] as? String,
             notificationLargeIcon: map["notificationLargeIcon"] as? String,
-            notificationPriority: map["notificationPriority"] as? Int ?? 0,
+            notificationPriority: (map["notificationPriority"] as? NSNumber)?.intValue ?? 0,
             notificationOngoing: map["notificationOngoing"] as? Bool ?? true,
             actions: map["actions"] as? [String] ?? []
         )
@@ -728,11 +728,11 @@ public final class TraceletHttpConfigObjC: NSObject {
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletHttpConfigObjC {
         TraceletHttpConfigObjC(
             url: map["url"] as? String,
-            method: map["method"] as? Int ?? 0,
+            method: (map["method"] as? NSNumber)?.intValue ?? 0,
             headers: map["headers"] as? [String: String] ?? [:],
             params: map["params"] as? [String: Any] ?? [:],
             batchSync: map["batchSync"] as? Bool ?? false,
-            maxBatchSize: map["maxBatchSize"] as? Int ?? 250,
+            maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250,
             autoSync: map["autoSync"] as? Bool ?? true
         )
     }
@@ -769,8 +769,8 @@ public final class TraceletLoggerConfigObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletLoggerConfigObjC {
         TraceletLoggerConfigObjC(
-            logLevel: map["logLevel"] as? Int ?? 2,
-            logMaxDays: map["logMaxDays"] as? Int ?? 3,
+            logLevel: (map["logLevel"] as? NSNumber)?.intValue ?? 2,
+            logMaxDays: (map["logMaxDays"] as? NSNumber)?.intValue ?? 3,
             debug: map["debug"] as? Bool ?? false
         )
     }
@@ -819,8 +819,8 @@ public final class TraceletMotionConfigObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletMotionConfigObjC {
         TraceletMotionConfigObjC(
-            stopTimeout: map["stopTimeout"] as? Int ?? 5,
-            motionTriggerDelay: map["motionTriggerDelay"] as? Int ?? 0,
+            stopTimeout: (map["stopTimeout"] as? NSNumber)?.intValue ?? 5,
+            motionTriggerDelay: (map["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0,
             disableMotionActivityUpdates: map["disableMotionActivityUpdates"] as? Bool ?? false,
             isMoving: map["isMoving"] as? Bool ?? false
         )
@@ -867,7 +867,7 @@ public final class TraceletGeofenceConfigObjC: NSObject {
         TraceletGeofenceConfigObjC(
             geofenceModeHighAccuracy: map["geofenceModeHighAccuracy"] as? Bool ?? false,
             geofenceInitialTriggerEntry: map["geofenceInitialTriggerEntry"] as? Bool ?? true,
-            geofenceProximityRadius: map["geofenceProximityRadius"] as? Int ?? 1000
+            geofenceProximityRadius: (map["geofenceProximityRadius"] as? NSNumber)?.intValue ?? 1000
         )
     }
 }
@@ -911,9 +911,9 @@ public final class TraceletPersistenceConfigObjC: NSObject {
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletPersistenceConfigObjC {
         TraceletPersistenceConfigObjC(
-            persistMode: map["persistMode"] as? Int ?? 0,
-            maxDaysToPersist: map["maxDaysToPersist"] as? Int ?? 1,
-            maxRecordsToPersist: map["maxRecordsToPersist"] as? Int ?? -1
+            persistMode: (map["persistMode"] as? NSNumber)?.intValue ?? 0,
+            maxDaysToPersist: (map["maxDaysToPersist"] as? NSNumber)?.intValue ?? 1,
+            maxRecordsToPersist: (map["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1
         )
     }
 }
@@ -947,7 +947,7 @@ public final class TraceletAuditConfigObjC: NSObject {
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletAuditConfigObjC {
         TraceletAuditConfigObjC(
             enabled: map["enabled"] as? Bool ?? false,
-            hashAlgorithm: map["hashAlgorithm"] as? Int ?? 0
+            hashAlgorithm: (map["hashAlgorithm"] as? NSNumber)?.intValue ?? 0
         )
     }
 }
@@ -1027,7 +1027,7 @@ public final class TraceletAttestationConfigObjC: NSObject {
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletAttestationConfigObjC {
         TraceletAttestationConfigObjC(
             enabled: map["enabled"] as? Bool ?? false,
-            refreshInterval: map["refreshInterval"] as? Int ?? 3600
+            refreshInterval: (map["refreshInterval"] as? NSNumber)?.intValue ?? 3600
         )
     }
 }

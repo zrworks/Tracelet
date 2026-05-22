@@ -223,7 +223,7 @@ public final class TraceletDatabase {
             sqlite3_bind_int(stmt, 13, (data["is_moving"] as? Bool ?? false) ? 1 : 0)
             sqlite3_bind_double(stmt, 14, data["odometer"] as? Double ?? 0)
             sqlite3_bind_text(stmt, 15, nsString(activity?["type"] as? String ?? "unknown"), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-            sqlite3_bind_int(stmt, 16, Int32(activity?["confidence"] as? Int ?? -1))
+            sqlite3_bind_int(stmt, 16, Int32((activity?["confidence"] as? NSNumber)?.intValue ?? -1))
             sqlite3_bind_double(stmt, 17, battery?["level"] as? Double ?? Double(BatteryUtils.getBatteryLevel()))
             sqlite3_bind_int(stmt, 18, (battery?["is_charging"] as? Bool ?? BatteryUtils.isCharging()) ? 1 : 0)
             sqlite3_bind_text(stmt, 19, nsString(extrasJson ?? ""), -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
@@ -459,7 +459,7 @@ public final class TraceletDatabase {
             sqlite3_bind_int(stmt, 5, (data["notifyOnEntry"] as? Bool ?? true) ? 1 : 0)
             sqlite3_bind_int(stmt, 6, (data["notifyOnExit"] as? Bool ?? true) ? 1 : 0)
             sqlite3_bind_int(stmt, 7, (data["notifyOnDwell"] as? Bool ?? false) ? 1 : 0)
-            sqlite3_bind_int(stmt, 8, Int32(data["loiteringDelay"] as? Int ?? 0))
+            sqlite3_bind_int(stmt, 8, Int32((data["loiteringDelay"] as? NSNumber)?.intValue ?? 0))
             let extras = data["extras"] as? [String: Any]
             let extrasJson = extras.flatMap { try? JSONSerialization.data(withJSONObject: $0) }
                 .flatMap { String(data: $0, encoding: .utf8) }
@@ -574,7 +574,7 @@ public final class TraceletDatabase {
     public func getLogs(query: [String: Any]? = nil) -> [[String: Any]] {
         var results: [[String: Any]] = []
         queue.sync {
-            let limit = query?["limit"] as? Int ?? 500
+            let limit = (query?["limit"] as? NSNumber)?.intValue ?? 500
             var stmt: OpaquePointer?
             let sql = "SELECT * FROM logs ORDER BY id DESC LIMIT ?"
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }

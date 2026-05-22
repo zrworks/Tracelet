@@ -671,9 +671,9 @@ public final class TraceletSdk {
     /// - Returns: Array of location dictionaries.
     public func getLocations(query: [String: Any]? = nil) -> [[String: Any]] {
         guard isReady else { return [] }
-        let limit = query?["limit"] as? Int ?? -1
-        let offset = query?["offset"] as? Int ?? 0
-        let orderAsc = (query?["order"] as? Int ?? 0) == 0
+        let limit = (query?["limit"] as? NSNumber)?.intValue ?? -1
+        let offset = (query?["offset"] as? NSNumber)?.intValue ?? 0
+        let orderAsc = ((query?["order"] as? NSNumber)?.intValue ?? 0) == 0
         let start = query?["start"] as? Int64
         let end = query?["end"] as? Int64
         return database.getLocations(limit: limit, offset: offset, orderAsc: orderAsc,

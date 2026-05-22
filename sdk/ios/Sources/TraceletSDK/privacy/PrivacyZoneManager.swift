@@ -108,7 +108,7 @@ public final class PrivacyZoneManager {
             )
 
             if distance <= zRadius {
-                let action = zone["action"] as? Int ?? PrivacyZoneManager.actionExclude
+                let action = (zone["action"] as? NSNumber)?.intValue ?? PrivacyZoneManager.actionExclude
                 if matchedAction == nil || isActionMoreRestrictive(action, than: matchedAction!) {
                     matchedAction = action
                     matchedZone = zone

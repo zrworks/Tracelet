@@ -24,14 +24,36 @@ enum TlDesiredAccuracy { high, medium, low, veryLow, passive }
 
 enum TlTrackingMode { location, geofences, periodic }
 
+enum TlMotionDetectionMode { accelerometer, speed }
+
+enum TlStationaryTrackingMode { periodic, geofences }
+
 enum TlGeofenceAction { enter, exit, dwell }
 
 enum TlAuthorizationStatus {
   notDetermined,
+  restricted,
   denied,
   whenInUse,
   always,
   deniedForever,
+}
+
+enum TlMotionAuthorizationStatus {
+  notDetermined,
+  restricted,
+  denied,
+  authorized,
+  deniedForever,
+}
+
+enum TlNotificationAuthorizationStatus {
+  notDetermined,
+  denied,
+  authorized,
+  deniedForever,
+  provisional,
+  ephemeral,
 }
 
 enum TlHttpMethod { post, put }
@@ -300,6 +322,13 @@ class TlMotionConfig {
     required this.shakeThreshold,
     required this.stillThreshold,
     required this.stillSampleCount,
+    required this.motionDetectionMode,
+    required this.speedMovingThreshold,
+    required this.speedStationaryDelay,
+    required this.stationaryTrackingMode,
+    required this.stationaryPeriodicInterval,
+    required this.stationaryPeriodicAccuracy,
+    required this.speedWakeConfirmCount,
   });
   final int stopTimeout;
   final int motionTriggerDelay;
@@ -316,6 +345,13 @@ class TlMotionConfig {
   final double shakeThreshold;
   final double stillThreshold;
   final int stillSampleCount;
+  final TlMotionDetectionMode motionDetectionMode;
+  final double speedMovingThreshold;
+  final int speedStationaryDelay;
+  final TlStationaryTrackingMode stationaryTrackingMode;
+  final int stationaryPeriodicInterval;
+  final TlDesiredAccuracy stationaryPeriodicAccuracy;
+  final int speedWakeConfirmCount;
 }
 
 class TlGeofenceConfig {
@@ -563,6 +599,24 @@ class TlHeartbeatEvent {
   final TlLocation location;
 }
 
+class TlSpeedMotionEvent {
+  TlSpeedMotionEvent({
+    required this.state,
+    required this.previousState,
+    required this.trackingMode,
+  });
+
+  /// New state: `"moving"`, `"slowing"`, or `"stationary"`.
+  final String state;
+
+  /// Previous state before this transition.
+  final String previousState;
+
+  /// Underlying tracking mode after the transition: `"continuous"`,
+  /// `"periodic"`, or `"geofences"`.
+  final String trackingMode;
+}
+
 class TlAuthorizationEvent {
   TlAuthorizationEvent({
     required this.success,
@@ -695,10 +749,10 @@ abstract class TraceletHostApi {
   TlAuthorizationStatus requestPermission();
 
   @async
-  int getNotificationPermissionStatus();
+  TlNotificationAuthorizationStatus getNotificationPermissionStatus();
 
   @async
-  int requestNotificationPermission();
+  TlNotificationAuthorizationStatus requestNotificationPermission();
 
   @async
   bool canScheduleExactAlarms();
@@ -707,10 +761,10 @@ abstract class TraceletHostApi {
   bool openExactAlarmSettings();
 
   @async
-  int getMotionPermissionStatus();
+  TlMotionAuthorizationStatus getMotionPermissionStatus();
 
   @async
-  int requestMotionPermission();
+  TlMotionAuthorizationStatus requestMotionPermission();
 
   @async
   int requestTemporaryFullAccuracy(String purpose);
@@ -825,6 +879,7 @@ abstract class TraceletFlutterApi {
 abstract class TraceletEventApi {
   void onLocation(TlLocation location);
   void onMotionChange(TlLocation location);
+  void onMotionModeChange(TlSpeedMotionEvent event);
   void onActivityChange(TlActivityChangeEvent event);
   void onProviderChange(TlProviderChangeEvent event);
   void onGeofence(TlGeofenceEvent event);

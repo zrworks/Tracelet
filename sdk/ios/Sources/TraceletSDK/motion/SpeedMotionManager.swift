@@ -33,10 +33,10 @@ public final class SpeedMotionManager {
 
     // MARK: - State
 
-    public enum SpeedMotionState: String {
-        case moving
-        case slowing
-        case stationary
+    public enum SpeedMotionState: Int {
+        case moving = 0
+        case slowing = 1
+        case stationary = 2
     }
 
     public private(set) var state: SpeedMotionState = .moving
@@ -64,8 +64,8 @@ public final class SpeedMotionManager {
     /// Seconds of sustained low speed before transitioning to STATIONARY.
     public var speedStationaryDelay: Int = 180
 
-    /// Stationary tracking mode: "periodic" or "geofences".
-    public var stationaryTrackingMode: String = "periodic"
+    /// Stationary tracking mode: periodic or geofences.
+    public var stationaryTrackingMode: StationaryTrackingMode = .periodic
 
     /// Interval for periodic one-shot fixes in stationary mode (seconds).
     public var stationaryPeriodicInterval: Int = 120
@@ -115,7 +115,7 @@ public final class SpeedMotionManager {
         wakeCount = stateManager.speedWakeCount
         slowingStartTime = stateManager.speedLastTransition
 
-        NSLog("[SpeedMotion] start: restored state=%@, lowSpeedCount=%d, wakeCount=%d",
+        NSLog("[SpeedMotion] start: restored state=%d, lowSpeedCount=%d, wakeCount=%d",
               state.rawValue, lowSpeedCount, wakeCount)
     }
 
@@ -190,7 +190,7 @@ public final class SpeedMotionManager {
                   elapsed, speedStationaryDelay, lowSpeedCount)
 
             // Switch tracking mode
-            if stationaryTrackingMode == "geofences" {
+            if stationaryTrackingMode == .geofences {
                 delegate?.switchToStationaryGeofences()
             } else {
                 delegate?.switchToStationaryPeriodic()
@@ -233,11 +233,25 @@ public final class SpeedMotionManager {
 
     private func emitEvent(previous: SpeedMotionState, current: SpeedMotionState) {
         let trackingMode: String = (current == .stationary)
-            ? stationaryTrackingMode
+            ? (stationaryTrackingMode == .geofences ? "geofences" : "periodic")
             : "continuous"
+        let stateString: String
+        switch current {
+        case .moving: stateString = "moving"
+        case .slowing: stateString = "slowing"
+        case .stationary: stateString = "stationary"
+        }
+        
+        let previousStateString: String
+        switch previous {
+        case .moving: previousStateString = "moving"
+        case .slowing: previousStateString = "slowing"
+        case .stationary: previousStateString = "stationary"
+        }
+
         delegate?.emitSpeedMotionEvent(
-            state: current.rawValue,
-            previousState: previous.rawValue,
+            state: stateString,
+            previousState: previousStateString,
             trackingMode: trackingMode
         )
     }
@@ -253,7 +267,7 @@ public final class SpeedMotionManager {
             speedStationaryDelay = delay
         }
         if let mode = motionConfig["stationaryTrackingMode"] as? String {
-            stationaryTrackingMode = mode
+            stationaryTrackingMode = mode == "geofences" ? .geofences : .periodic
         }
         if let interval = motionConfig["stationaryPeriodicInterval"] as? Int {
             stationaryPeriodicInterval = interval

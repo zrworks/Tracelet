@@ -76,7 +76,7 @@ class SpeedMotionManagerTest {
 
     @Test
     fun `restores STATIONARY state from StateManager on start`() {
-        state.speedMotionState = "stationary"
+        state.speedMotionState = com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY
         configure()
         assertEquals("stationary", manager.getCurrentState())
     }
@@ -157,7 +157,7 @@ class SpeedMotionManagerTest {
 
     @Test
     fun `STATIONARY wakes to MOVING after wakeConfirmCount high-speed fixes`() {
-        state.speedMotionState = "stationary"
+        state.speedMotionState = com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY
         configure(wakeConfirmCount = 2)
 
         manager.onLocation(3.0)   // wakeCount=1, stay stationary
@@ -176,7 +176,7 @@ class SpeedMotionManagerTest {
 
     @Test
     fun `STATIONARY low-speed fix resets wakeCount`() {
-        state.speedMotionState = "stationary"
+        state.speedMotionState = com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY
         configure(wakeConfirmCount = 3)
 
         manager.onLocation(3.0)   // wakeCount=1
@@ -199,10 +199,10 @@ class SpeedMotionManagerTest {
 
         manager.onLocation(5.0)
         manager.onLocation(0.1)
-        assertEquals("slowing", state.speedMotionState)
+        assertEquals(com.ikolvi.tracelet.sdk.model.SpeedMotionState.SLOWING, state.speedMotionState)
 
         repeat(10) { manager.onLocation(0.1) }
-        assertEquals("stationary", state.speedMotionState)
+        assertEquals(com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY, state.speedMotionState)
         assertTrue(state.speedLastTransition > 0L)
     }
 

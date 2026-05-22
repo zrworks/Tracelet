@@ -327,6 +327,18 @@ public struct TraceletGeofence {
     }
 }
 
+/// Stationary tracking mode for speed-based motion detection.
+@objc public enum StationaryTrackingMode: Int {
+    case periodic = 0
+    case geofences = 1
+}
+
+/// Motion detection algorithm selection.
+@objc public enum MotionDetectionMode: Int {
+    case activity = 0
+    case speed = 1
+}
+
 // MARK: - TraceletState
 
 /// Current state of the Tracelet SDK.

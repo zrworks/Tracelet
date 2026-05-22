@@ -263,6 +263,49 @@ enum class TrackingMode(val value: Int) {
 }
 
 /**
+ * State of the speed-based motion detection state machine.
+ */
+enum class SpeedMotionState(val value: Int) {
+    MOVING(0),
+    SLOWING(1),
+    STATIONARY(2);
+
+    companion object {
+        fun fromInt(value: Int): SpeedMotionState = entries.firstOrNull { it.value == value } ?: MOVING
+    }
+}
+
+/**
+ * Stationary tracking mode.
+ */
+enum class StationaryTrackingMode(val value: Int) {
+    PERIODIC(0),
+    GEOFENCES(1);
+
+    companion object {
+        fun fromString(s: String?): StationaryTrackingMode = when (s) {
+            "geofences" -> GEOFENCES
+            else -> PERIODIC
+        }
+    }
+}
+
+/**
+ * Motion detection mode.
+ */
+enum class MotionDetectionMode(val value: Int) {
+    ACCELEROMETER(0),
+    SPEED(1);
+
+    companion object {
+        fun fromString(s: String?): MotionDetectionMode = when (s) {
+            "speed" -> SPEED
+            else -> ACCELEROMETER
+        }
+    }
+}
+
+/**
  * Current state of the Tracelet SDK.
  */
 data class TraceletState(

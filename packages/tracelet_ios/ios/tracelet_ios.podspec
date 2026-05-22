@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'tracelet_ios'
-  s.version          = '2.0.6'
+  s.version          = '2.0.8'
   s.summary          = 'iOS implementation of the Tracelet background geolocation plugin.'
   s.description      = <<-DESC
 Production-grade background geolocation for Flutter. Battery-conscious
@@ -17,7 +17,7 @@ execution for iOS.
   s.source           = { :path => '.' }
   s.source_files = 'tracelet_ios/Sources/tracelet_ios/**/*.swift'
   s.dependency 'Flutter'
-  s.dependency 'TraceletSDK', '2.0.6'
+  s.dependency 'TraceletSDK', '2.0.8'
   s.platform = :ios, '14.0'
   s.frameworks = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks', 'AVFoundation', 'AudioToolbox', 'Network', 'DeviceCheck'
   s.libraries = 'sqlite3'

@@ -1,6 +1,8 @@
 ## 2.0.8
 
- - Update a dependency to the latest release.
+- **FIX**(ios): Resolved type casting bug for 64-bit Pigeon `Int64` integer values across all iOS config mappings. Integer configurations (such as `stopTimeout`, `locationUpdateInterval`, etc.) are now correctly applied on iOS instead of silently falling back to defaults.
+- **PERF**(ios): Added optimization to skip the GPS `distanceFilter` override to continuous tracking during `stopTimeout` when `preventSuspend` is enabled. This significantly reduces stationary battery drain when using the audio keep-alive feature.
+- **CHORE**: Update platform-specific dependency constraints to `^2.0.8`.
 
 ## 2.0.7
 

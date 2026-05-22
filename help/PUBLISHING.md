@@ -58,6 +58,11 @@ Before triggering a release, update these files manually:
 - [ ] `packages/tracelet_doctor/pubspec.yaml` — bump `version:` + update `tracelet: ^X.Y.Z`
 - [ ] All 6 `CHANGELOG.md` files — add entry with `**FEAT**:` / `**FIX**:` / `**PERF**:` prefix
 
+### Code Quality & Validation
+- [ ] Run `dart run melos run format:fix` to auto-format all package code
+- [ ] Run `dart run melos run analyze` to ensure zero analysis errors/warnings
+- [ ] Run `dart run melos run test` to confirm all package unit tests pass perfectly
+
 ### Android SDK (only if native SDK changed)
 - [ ] `sdk/android/gradle.properties` — update `SDK_VERSION=X.Y.Z`
 - [ ] `sdk/android/CHANGELOG.md`
@@ -210,15 +215,25 @@ git push origin --tags
 
 ---
 
-## Version Bumping with Melos
+## Version Bumping & Quality Verification with Melos
 
-For Flutter packages, melos can automate version bumps and changelog generation:
+For Flutter packages, Melos can automate version bumps and changelog generation:
 
 ```bash
 melos version   # Interactive — bumps all packages, updates CHANGELOGs
 ```
 
 This updates all 6 Flutter package versions and cross-references in a single commit. Native SDK versions must still be bumped manually.
+
+To verify and automatically apply code formatting across all packages before release:
+
+```bash
+# Fix and apply formatting across all packages
+dart run melos run format:fix
+
+# Verify that formatting is completely correct
+dart run melos run format
+```
 
 ---
 

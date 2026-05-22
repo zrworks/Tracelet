@@ -267,6 +267,7 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 |---|---|
 | [Android Setup](https://github.com/Ikolvi/Tracelet/blob/main/help/INSTALL-ANDROID.md) | Gradle, permissions, and manifest configuration |
 | [iOS Setup](https://github.com/Ikolvi/Tracelet/blob/main/help/INSTALL-IOS.md) | Info.plist, capabilities, and entitlements |
+| [Motion Detection Architecture](https://github.com/Ikolvi/Tracelet/blob/main/help/MOTION-DETECTION.md) | How `STATIONARY`/`MOVING` states and heartbeat actually work |
 | [Permissions](https://github.com/Ikolvi/Tracelet/blob/main/help/PERMISSIONS.md) | Permission flow, status codes, Dart dialog examples |
 | [Background Tracking](https://github.com/Ikolvi/Tracelet/blob/main/help/BACKGROUND-TRACKING.md) | Foreground service, silent mode, runtime switching |
 | [API Reference](https://github.com/Ikolvi/Tracelet/blob/main/help/API.md) | All methods, events, and return types |

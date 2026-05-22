@@ -28,7 +28,7 @@ public final class AuditTrailManager {
 
         // Restore persisted chain state
         let prefs = defaults.dictionary(forKey: prefsKey) ?? [:]
-        self.chainIndex = prefs["chain_index"] as? Int ?? -1
+        self.chainIndex = (prefs["chain_index"] as? NSNumber)?.intValue ?? -1
         self.latestHash = prefs["latest_hash"] as? String ?? ""
 
         // If no chain exists yet, compute genesis hash
@@ -104,7 +104,7 @@ public final class AuditTrailManager {
         for (i, record) in records.enumerated() {
             let storedHash = record["hash"] as? String ?? ""
             let storedPrevious = record["previous_hash"] as? String ?? ""
-            let storedIndex = record["chain_index"] as? Int ?? -1
+            let storedIndex = (record["chain_index"] as? NSNumber)?.intValue ?? -1
             let uuid = record["uuid"] as? String ?? ""
 
             // 1. Check chain linkage
@@ -206,7 +206,7 @@ public final class AuditTrailManager {
         let isMoving: Bool
         if let moving = location["is_moving"] as? Bool {
             isMoving = moving
-        } else if let moving = location["is_moving"] as? Int {
+        } else if let moving = (location["is_moving"] as? NSNumber)?.intValue {
             isMoving = moving == 1
         } else {
             isMoving = false

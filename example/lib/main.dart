@@ -1410,11 +1410,7 @@ class _DashboardPageState extends State<DashboardPage>
         if (mounted) {
           final shouldUpgrade = await _showBackgroundRationaleDialog();
           if (shouldUpgrade) {
-            final result = await tl.Tracelet.requestLocationAuthorization();
-            _addLog('PERMISSION', 'background upgrade=${result.name}');
-            if (result == tl.AuthorizationStatus.deniedForever && mounted) {
-              _showPermissionDeniedDialog();
-            }
+            await _upgradeToAlways();
           }
         }
         return;
@@ -1430,11 +1426,7 @@ class _DashboardPageState extends State<DashboardPage>
         // Foreground granted → offer background upgrade
         final shouldUpgrade = await _showBackgroundRationaleDialog();
         if (shouldUpgrade) {
-          final bgResult = await tl.Tracelet.requestLocationAuthorization();
-          _addLog('PERMISSION', 'background upgrade=${bgResult.name}');
-          if (bgResult == tl.AuthorizationStatus.deniedForever && mounted) {
-            _showPermissionDeniedDialog();
-          }
+          await _upgradeToAlways();
         }
       }
     } catch (e) {
@@ -1482,11 +1474,13 @@ class _DashboardPageState extends State<DashboardPage>
     final bgResult = await tl.Tracelet.requestLocationAuthorization();
     _addLog('PERMISSION', 'background upgrade=${bgResult.name}');
 
-    // On iOS, if the result is still whenInUse the OS didn't show a dialog.
-    // Open Settings so the user can toggle to "Always" manually.
-    if (!_isAndroid &&
+    if (bgResult == tl.AuthorizationStatus.deniedForever && mounted) {
+      _showPermissionDeniedDialog();
+    } else if (!_isAndroid &&
         bgResult == tl.AuthorizationStatus.whenInUse &&
         mounted) {
+      // On iOS, if the result is still whenInUse the OS didn't show a dialog.
+      // Open Settings so the user can toggle to "Always" manually.
       _addLog(
         'PERMISSION',
         'iOS did not show Always prompt — opening Settings',

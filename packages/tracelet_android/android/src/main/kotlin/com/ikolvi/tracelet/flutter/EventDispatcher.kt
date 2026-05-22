@@ -81,27 +81,13 @@ class EventDispatcher : TraceletEventSender {
     override fun sendSpeedMotionChange(data: Map<String, Any?>) {
         val api = eventApi
         if (api != null) {
-            val stateStr = (data["state"] as? String)?.lowercase() ?: "moving"
-            val previousStateStr = (data["previousState"] as? String)?.lowercase() ?: "moving"
-            val trackingModeStr = (data["trackingMode"] as? String)?.lowercase() ?: "continuous"
+            val stateInt = (data["state"] as? Int) ?: 0
+            val previousStateInt = (data["previousState"] as? Int) ?: 0
+            val trackingModeInt = (data["trackingMode"] as? Int) ?: 0
 
-            val state = when (stateStr) {
-                "slowing" -> com.ikolvi.tracelet.TlSpeedMotionState.SLOWING
-                "stationary" -> com.ikolvi.tracelet.TlSpeedMotionState.STATIONARY
-                else -> com.ikolvi.tracelet.TlSpeedMotionState.MOVING
-            }
-
-            val previousState = when (previousStateStr) {
-                "slowing" -> com.ikolvi.tracelet.TlSpeedMotionState.SLOWING
-                "stationary" -> com.ikolvi.tracelet.TlSpeedMotionState.STATIONARY
-                else -> com.ikolvi.tracelet.TlSpeedMotionState.MOVING
-            }
-
-            val trackingMode = when (trackingModeStr) {
-                "periodic" -> com.ikolvi.tracelet.TlTrackingMode.PERIODIC
-                "geofences" -> com.ikolvi.tracelet.TlTrackingMode.GEOFENCES
-                else -> com.ikolvi.tracelet.TlTrackingMode.LOCATION
-            }
+            val state = com.ikolvi.tracelet.TlSpeedMotionState.entries.getOrNull(stateInt) ?: com.ikolvi.tracelet.TlSpeedMotionState.MOVING
+            val previousState = com.ikolvi.tracelet.TlSpeedMotionState.entries.getOrNull(previousStateInt) ?: com.ikolvi.tracelet.TlSpeedMotionState.MOVING
+            val trackingMode = com.ikolvi.tracelet.TlTrackingMode.entries.getOrNull(trackingModeInt) ?: com.ikolvi.tracelet.TlTrackingMode.LOCATION
 
             val event = com.ikolvi.tracelet.TlSpeedMotionEvent(
                 state = state,

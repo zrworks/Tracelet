@@ -283,8 +283,8 @@ enum class StationaryTrackingMode(val value: Int) {
     GEOFENCES(1);
 
     companion object {
-        fun fromString(s: String?): StationaryTrackingMode = when (s) {
-            "geofences" -> GEOFENCES
+        fun fromInt(value: Int): StationaryTrackingMode = when (value) {
+            GEOFENCES.value -> GEOFENCES
             else -> PERIODIC
         }
     }
@@ -298,8 +298,8 @@ enum class MotionDetectionMode(val value: Int) {
     SPEED(1);
 
     companion object {
-        fun fromString(s: String?): MotionDetectionMode = when (s) {
-            "speed" -> SPEED
+        fun fromInt(value: Int): MotionDetectionMode = when (value) {
+            SPEED.value -> SPEED
             else -> ACCELEROMETER
         }
     }

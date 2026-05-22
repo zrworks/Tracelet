@@ -7,7 +7,7 @@ public protocol SpeedMotionDelegate: AnyObject {
     func switchToStationaryPeriodic()
     func switchToStationaryGeofences()
     /// Emit a speed-motion state change event to Dart.
-    func emitSpeedMotionEvent(state: String, previousState: String, trackingMode: String)
+    func emitSpeedMotionEvent(state: Int, previousState: Int, trackingMode: Int)
 }
 
 /// GPS-speed-based motion detection state machine.
@@ -232,26 +232,13 @@ public final class SpeedMotionManager {
     // MARK: - Event Emission
 
     private func emitEvent(previous: SpeedMotionState, current: SpeedMotionState) {
-        let trackingMode: String = (current == .stationary)
-            ? (stationaryTrackingMode == .geofences ? "geofences" : "periodic")
-            : "continuous"
-        let stateString: String
-        switch current {
-        case .moving: stateString = "moving"
-        case .slowing: stateString = "slowing"
-        case .stationary: stateString = "stationary"
-        }
+        let trackingMode: Int = (current == .stationary)
+            ? (stationaryTrackingMode == .geofences ? 2 : 1) // geofences=2, periodic=1
+            : 0 // continuous=0
         
-        let previousStateString: String
-        switch previous {
-        case .moving: previousStateString = "moving"
-        case .slowing: previousStateString = "slowing"
-        case .stationary: previousStateString = "stationary"
-        }
-
         delegate?.emitSpeedMotionEvent(
-            state: stateString,
-            previousState: previousStateString,
+            state: current.rawValue,
+            previousState: previous.rawValue,
             trackingMode: trackingMode
         )
     }
@@ -266,8 +253,8 @@ public final class SpeedMotionManager {
         if let delay = motionConfig["speedStationaryDelay"] as? Int {
             speedStationaryDelay = delay
         }
-        if let mode = motionConfig["stationaryTrackingMode"] as? String {
-            stationaryTrackingMode = mode == "geofences" ? .geofences : .periodic
+        if let val = motionConfig["stationaryTrackingMode"] as? Int, let mode = StationaryTrackingMode(rawValue: val) {
+            stationaryTrackingMode = mode
         }
         if let interval = motionConfig["stationaryPeriodicInterval"] as? Int {
             stationaryPeriodicInterval = interval

@@ -146,14 +146,18 @@ public final class ConfigManager {
     
     // Speed Motion Config
     public func getMotionDetectionMode() -> MotionDetectionMode {
-        let val = cache["motionDetectionMode"] as? String ?? "activity"
-        return val == "speed" ? .speed : .activity
+        if let val = cache["motionDetectionMode"] as? Int, let mode = MotionDetectionMode(rawValue: val) {
+            return mode
+        }
+        return .activity
     }
     public func getSpeedMovingThreshold() -> Double { cache["speedMovingThreshold"] as? Double ?? 1.5 }
     public func getSpeedStationaryDelay() -> Int { (cache["speedStationaryDelay"] as? NSNumber)?.intValue ?? 180 }
     public func getStationaryTrackingMode() -> StationaryTrackingMode {
-        let val = cache["stationaryTrackingMode"] as? String ?? "periodic"
-        return val == "geofences" ? .geofences : .periodic
+        if let val = cache["stationaryTrackingMode"] as? Int, let mode = StationaryTrackingMode(rawValue: val) {
+            return mode
+        }
+        return .periodic
     }
     public func getStationaryPeriodicInterval() -> Int { (cache["stationaryPeriodicInterval"] as? NSNumber)?.intValue ?? 120 }
     public func getSpeedWakeConfirmCount() -> Int { (cache["speedWakeConfirmCount"] as? NSNumber)?.intValue ?? 1 }

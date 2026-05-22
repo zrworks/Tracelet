@@ -1088,6 +1088,12 @@ public final class TraceletSdk {
         motionDetector.onMotionStateChanged = { [weak self] isMoving in
             self?.handleMotionStateChange(isMoving)
         }
+        motionDetector.onStopTimeoutStarted = { [weak self] in
+            self?.locationEngine.overrideDistanceFilter(forStopTimeout: true)
+        }
+        motionDetector.onStopTimeoutCancelled = { [weak self] in
+            self?.locationEngine.overrideDistanceFilter(forStopTimeout: false)
+        }
         motionDetector.onStopRequested = { [weak self] in
             self?.stop()
         }

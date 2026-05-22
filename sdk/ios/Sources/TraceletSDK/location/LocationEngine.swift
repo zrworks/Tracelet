@@ -351,6 +351,13 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Used by TraceletSdk to keep the app awake during the stop timeout by forcing continuous GPS updates.
     public func overrideDistanceFilter(forStopTimeout: Bool) {
         if forStopTimeout {
+            // If preventSuspend is enabled, the app is already kept alive via 
+            // audio session. Overriding the GPS to continuous is redundant 
+            // and wastes battery.
+            if configManager.getPreventSuspend() {
+                NSLog("[Tracelet-Location] overrideDistanceFilter: skipped because preventSuspend is true")
+                return
+            }
             locationManager.distanceFilter = kCLDistanceFilterNone
         } else {
             let distanceFilter = configManager.getDistanceFilter()

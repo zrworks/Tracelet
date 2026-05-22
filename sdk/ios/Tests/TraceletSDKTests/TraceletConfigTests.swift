@@ -123,4 +123,87 @@ final class TraceletConfigTests: XCTestCase {
         let restored = TraceletAttestationConfig.fromMap(map)
         XCTAssertEqual(restored.enableDeviceAttestation, true)
     }
+
+    func testConfigFromMapWithNSNumberValues() {
+        // Construct maps where all integer and floating point fields are explicit NSNumbers.
+        // This simulates the behavior of Pigeon decoding numbers from Dart into Swift.
+        let geoMap: [String: Any] = [
+            "desiredAccuracy": NSNumber(value: 0), // high
+            "distanceFilter": NSNumber(value: 15.0),
+            "stationaryRadius": NSNumber(value: 25.0),
+            "locationTimeout": NSNumber(value: 60),
+            "elasticityMultiplier": NSNumber(value: 1.0),
+            "stopAfterElapsedMinutes": NSNumber(value: -1),
+            "maxMonitoredGeofences": NSNumber(value: -1),
+            "periodicLocationInterval": NSNumber(value: 900),
+            "periodicDesiredAccuracy": NSNumber(value: 1), // medium
+            "sparseDistanceThreshold": NSNumber(value: 50.0),
+            "sparseMaxIdleSeconds": NSNumber(value: 300),
+            "deadReckoningActivationDelay": NSNumber(value: 10),
+            "deadReckoningMaxDuration": NSNumber(value: 120),
+            "batteryBudgetPerHour": NSNumber(value: 0.0)
+        ]
+        
+        let appMap: [String: Any] = [
+            "stopOnTerminate": true,
+            "startOnBoot": false,
+            "heartbeatInterval": NSNumber(value: 45),
+            "remoteConfigTimeout": NSNumber(value: 5000),
+            "remoteConfigRefreshInterval": NSNumber(value: 0)
+        ]
+        
+        let androidMap: [String: Any] = [
+            "locationUpdateInterval": NSNumber(value: 2000),
+            "fastestLocationUpdateInterval": NSNumber(value: 1000),
+            "deferTime": NSNumber(value: 5000)
+        ]
+        
+        let iosMap: [String: Any] = [
+            "activityType": NSNumber(value: 1) // automotiveNavigation
+        ]
+        
+        let motionMap: [String: Any] = [
+            "stopTimeout": NSNumber(value: 10),
+            "motionTriggerDelay": NSNumber(value: 5),
+            "activityRecognitionInterval": NSNumber(value: 30),
+            "minimumActivityRecognitionConfidence": NSNumber(value: 75),
+            "stopDetectionDelay": NSNumber(value: 120),
+            "stationaryRadius": NSNumber(value: 50),
+            "shakeThreshold": NSNumber(value: 10),
+            "stillThreshold": NSNumber(value: 5),
+            "stillSampleCount": NSNumber(value: 3)
+        ]
+        
+        let geoConfig = TraceletGeoConfig.fromMap(geoMap)
+        XCTAssertEqual(geoConfig.desiredAccuracy, .high)
+        XCTAssertEqual(geoConfig.distanceFilter, 15.0)
+        XCTAssertEqual(geoConfig.stationaryRadius, 25.0)
+        XCTAssertEqual(geoConfig.locationTimeout, 60)
+        XCTAssertEqual(geoConfig.periodicDesiredAccuracy, .medium)
+        
+        let appConfig = TraceletAppConfig.fromMap(appMap)
+        XCTAssertEqual(appConfig.heartbeatInterval, 45)
+        XCTAssertEqual(appConfig.remoteConfigTimeout, 5000)
+        XCTAssertEqual(appConfig.remoteConfigRefreshInterval, 0)
+        
+        let androidConfig = TraceletAndroidConfig.fromMap(androidMap)
+        XCTAssertEqual(androidConfig.locationUpdateInterval, 2000)
+        XCTAssertEqual(androidConfig.fastestLocationUpdateInterval, 1000)
+        XCTAssertEqual(androidConfig.deferTime, 5000)
+        
+        let iosConfig = TraceletIosConfig.fromMap(iosMap)
+        XCTAssertEqual(iosConfig.activityType, .automotiveNavigation)
+        
+        let motionConfig = TraceletMotionConfig.fromMap(motionMap)
+        XCTAssertEqual(motionConfig.stopTimeout, 10)
+        XCTAssertEqual(motionConfig.motionTriggerDelay, 5)
+        XCTAssertEqual(motionConfig.activityRecognitionInterval, 30)
+        XCTAssertEqual(motionConfig.minimumActivityRecognitionConfidence, 75)
+        XCTAssertEqual(motionConfig.stopDetectionDelay, 120)
+        XCTAssertEqual(motionConfig.stationaryRadius, 50)
+        XCTAssertEqual(motionConfig.shakeThreshold, 10)
+        XCTAssertEqual(motionConfig.stillThreshold, 5)
+        XCTAssertEqual(motionConfig.stillSampleCount, 3)
+    }
 }
+

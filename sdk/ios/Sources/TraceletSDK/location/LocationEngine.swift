@@ -347,6 +347,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         locationManager.activityType = configManager.getActivityType()
     }
 
+    /// Overrides the distance filter temporarily.
+    /// Used by TraceletSdk to keep the app awake during the stop timeout by forcing continuous GPS updates.
+    public func overrideDistanceFilter(forStopTimeout: Bool) {
+        if forStopTimeout {
+            locationManager.distanceFilter = kCLDistanceFilterNone
+        } else {
+            let distanceFilter = configManager.getDistanceFilter()
+            locationManager.distanceFilter = distanceFilter > 0 ? distanceFilter : kCLDistanceFilterNone
+        }
+    }
+
     /// Checks for iOS 14+ reduced accuracy authorization and auto-requests
     /// temporary full accuracy if available. Logs a warning when reduced.
     private func checkReducedAccuracy() {

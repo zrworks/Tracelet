@@ -73,6 +73,12 @@ public final class MotionDetector {
     /// Called when stopOnStationary fires — requests full tracking stop.
     public var onStopRequested: (() -> Void)?
 
+    /// Called when the stopTimeout countdown begins.
+    public var onStopTimeoutStarted: (() -> Void)?
+
+    /// Called when the stopTimeout countdown is cancelled or finishes.
+    public var onStopTimeoutCancelled: (() -> Void)?
+
     /// Whether operating in accelerometer-only (permission-free) mode.
     private var isAccelerometerOnlyMode: Bool {
         configManager.getDisableMotionActivityUpdates()
@@ -111,8 +117,11 @@ public final class MotionDetector {
         motionManager.stopAccelerometerUpdates()
 
         // Shared cleanup
-        stopTimer?.invalidate()
-        stopTimer = nil
+        if stopTimer != nil {
+            stopTimer?.invalidate()
+            stopTimer = nil
+            onStopTimeoutCancelled?()
+        }
         consecutiveStillSamples = 0
     }
 
@@ -349,8 +358,11 @@ public final class MotionDetector {
     }
 
     private func handleMovingDetected() {
-        stopTimer?.invalidate()
-        stopTimer = nil
+        if stopTimer != nil {
+            stopTimer?.invalidate()
+            stopTimer = nil
+            onStopTimeoutCancelled?()
+        }
 
         if !stateManager.isMoving {
             let delay = configManager.getMotionTriggerDelay()
@@ -402,11 +414,14 @@ public final class MotionDetector {
                 return
             }
 
+            self.onStopTimeoutStarted?()
+
             // Only create a new timer if one isn't already running
             self.stopTimer = Timer.scheduledTimer(
                 withTimeInterval: totalDelay,
                 repeats: false
             ) { [weak self] _ in
+                self?.onStopTimeoutCancelled?()
                 self?.triggerMotionChange(isMoving: false)
             }
         }

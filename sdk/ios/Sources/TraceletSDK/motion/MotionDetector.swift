@@ -32,6 +32,7 @@ public final class MotionDetector {
     private let motionManager = CMMotionManager()
 
     private var isRunning = false
+    private var isFullModeStarted = false
     private var stopTimer: Timer?
     private var currentActivity: String = "unknown"
     private var currentConfidence: Int = -1
@@ -109,9 +110,12 @@ public final class MotionDetector {
         guard isRunning else { return }
         isRunning = false
 
-        // Full mode cleanup
-        activityManager.stopActivityUpdates()
-        pedometer.stopUpdates()
+        if isFullModeStarted {
+            // Full mode cleanup
+            activityManager.stopActivityUpdates()
+            pedometer.stopUpdates()
+            isFullModeStarted = false
+        }
 
         // Accelerometer-only mode cleanup
         motionManager.stopAccelerometerUpdates()
@@ -133,6 +137,8 @@ public final class MotionDetector {
             startAccelerometerOnlyMode()
             return
         }
+
+        isFullModeStarted = true
 
         activityManager.startActivityUpdates(to: .main) { [weak self] activity in
             guard let self = self, let activity = activity else { return }

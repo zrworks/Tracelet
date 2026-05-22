@@ -144,6 +144,7 @@ class TlForegroundServiceConfig {
     this.notificationLargeIcon,
     required this.notificationPriority,
     required this.notificationOngoing,
+    required this.showNotificationOnPauseOnly,
     required this.actions,
   });
 
@@ -157,6 +158,7 @@ class TlForegroundServiceConfig {
   final String? notificationLargeIcon;
   final TlNotificationPriority notificationPriority;
   final bool notificationOngoing;
+  final bool showNotificationOnPauseOnly;
   final List<String?> actions;
 }
 

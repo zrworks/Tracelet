@@ -170,6 +170,7 @@ class ForegroundServiceConfig {
     this.notificationLargeIcon,
     this.notificationPriority = NotificationPriority.defaultPriority,
     this.notificationOngoing = true,
+    this.showNotificationOnPauseOnly = false,
     this.actions = const <String>[],
   });
 
@@ -213,6 +214,14 @@ class ForegroundServiceConfig {
   /// Defaults to `true`.
   final bool notificationOngoing;
 
+  /// Whether the notification is only shown when the app is in the background (paused).
+  ///
+  /// When `true`, the persistent notification is automatically dismissed when the app
+  /// enters the foreground and restored when it enters the background.
+  ///
+  /// Defaults to `false`.
+  final bool showNotificationOnPauseOnly;
+
   /// Action buttons to display inside the notification drawer (e.g. `['Stop', 'Sync']`).
   /// Defaults to empty list.
   final List<String> actions;
@@ -243,6 +252,10 @@ class ForegroundServiceConfig {
         map['notificationOngoing'],
         fallback: true,
       ),
+      showNotificationOnPauseOnly: ensureBool(
+        map['showNotificationOnPauseOnly'],
+        fallback: false,
+      ),
       actions: actionsList,
     );
   }
@@ -260,6 +273,7 @@ class ForegroundServiceConfig {
     notificationPriority:
         TlNotificationPriority.values[notificationPriority.index],
     notificationOngoing: notificationOngoing,
+    showNotificationOnPauseOnly: showNotificationOnPauseOnly,
     actions: actions,
   );
 
@@ -275,6 +289,7 @@ class ForegroundServiceConfig {
       'notificationLargeIcon': notificationLargeIcon,
       'notificationPriority': notificationPriority.index,
       'notificationOngoing': notificationOngoing,
+      'showNotificationOnPauseOnly': showNotificationOnPauseOnly,
       'actions': actions,
     };
   }
@@ -294,6 +309,7 @@ class ForegroundServiceConfig {
           notificationLargeIcon == other.notificationLargeIcon &&
           notificationPriority == other.notificationPriority &&
           notificationOngoing == other.notificationOngoing &&
+          showNotificationOnPauseOnly == other.showNotificationOnPauseOnly &&
           actions == other.actions;
 
   @override
@@ -308,6 +324,7 @@ class ForegroundServiceConfig {
     notificationLargeIcon,
     notificationPriority,
     notificationOngoing,
+    showNotificationOnPauseOnly,
     actions,
   );
 }

@@ -455,6 +455,7 @@ data class TlForegroundServiceConfig (
   val notificationLargeIcon: String? = null,
   val notificationPriority: TlNotificationPriority,
   val notificationOngoing: Boolean,
+  val showNotificationOnPauseOnly: Boolean,
   val actions: List<String?>
 )
  {
@@ -470,8 +471,9 @@ data class TlForegroundServiceConfig (
       val notificationLargeIcon = pigeonVar_list[7] as String?
       val notificationPriority = pigeonVar_list[8] as TlNotificationPriority
       val notificationOngoing = pigeonVar_list[9] as Boolean
-      val actions = pigeonVar_list[10] as List<String?>
-      return TlForegroundServiceConfig(enabled, channelId, channelName, notificationTitle, notificationText, notificationColor, notificationSmallIcon, notificationLargeIcon, notificationPriority, notificationOngoing, actions)
+      val showNotificationOnPauseOnly = pigeonVar_list[10] as Boolean
+      val actions = pigeonVar_list[11] as List<String?>
+      return TlForegroundServiceConfig(enabled, channelId, channelName, notificationTitle, notificationText, notificationColor, notificationSmallIcon, notificationLargeIcon, notificationPriority, notificationOngoing, showNotificationOnPauseOnly, actions)
     }
   }
   fun toList(): List<Any?> {
@@ -486,6 +488,7 @@ data class TlForegroundServiceConfig (
       notificationLargeIcon,
       notificationPriority,
       notificationOngoing,
+      showNotificationOnPauseOnly,
       actions,
     )
   }

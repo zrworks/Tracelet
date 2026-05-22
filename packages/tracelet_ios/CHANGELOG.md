@@ -1,6 +1,8 @@
 ## 2.0.8
 
- - Bump "tracelet_ios" to `2.0.8`.
+ - **FIX**(ios): Resolved type casting bug for 64-bit Pigeon `Int64` integer values across all iOS config mappings. This ensures that integer configurations (such as `stopTimeout`) sent from Dart are correctly applied on iOS.
+ - **PERF**(ios): Avoid overriding GPS `distanceFilter` to continuous tracking during `stopTimeout` when `preventSuspend` is active, significantly reducing stationary battery drain.
+ - **CHORE**: Bump native `TraceletSDK` dependency to `2.0.8`.
 
 ## 2.0.7
 

@@ -2,6 +2,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'generated/tracelet_api.g.dart';
 import 'pigeon_tracelet.dart';
+import 'types/enums.dart';
 
 /// The interface that platform implementations of Tracelet must extend.
 ///
@@ -291,16 +292,13 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('isPowerSaveMode() has not been implemented.');
   }
 
-  /// Get current permission status without triggering any dialog.
+  /// Get current location permission status without triggering any dialog.
   ///
-  /// Returns a status code matching [AuthorizationStatus]:
-  /// - `0` notDetermined — never asked
-  /// - `1` denied — denied but can ask again (Android only)
-  /// - `2` whenInUse — foreground granted
-  /// - `3` always — background granted
-  /// - `4` deniedForever — permanently denied, must open Settings
-  Future<int> getPermissionStatus() {
-    throw UnimplementedError('getPermissionStatus() has not been implemented.');
+  /// Get the current location permission status asynchronously.
+  ///
+  /// Does **not** trigger any dialogs.
+  Future<AuthorizationStatus> getLocationAuthorization() {
+    throw UnimplementedError('getLocationAuthorization() has not been implemented.');
   }
 
   /// Request location permission asynchronously.
@@ -310,36 +308,26 @@ abstract class TraceletPlatform extends PlatformInterface {
   ///
   /// Escalation: notDetermined → foreground, whenInUse → background.
   /// Terminal states (denied/always) return immediately.
-  Future<int> requestPermission() {
-    throw UnimplementedError('requestPermission() has not been implemented.');
+  Future<AuthorizationStatus> requestLocationAuthorization() {
+    throw UnimplementedError('requestLocationAuthorization() has not been implemented.');
   }
 
-  /// Get the notification permission status (Android 13+ / API 33+ only).
+
+  /// Get notification permission status as a typed [NotificationAuthorizationStatus].
   ///
-  /// Returns:
-  /// - `0` notDetermined — never asked
-  /// - `1` denied — denied but can ask again
-  /// - `3` always (granted)
-  /// - `4` deniedForever — permanently denied
-  ///
-  /// On Android < 13 and on iOS, always returns `3` (granted).
-  Future<int> getNotificationPermissionStatus() {
-    throw UnimplementedError(
-      'getNotificationPermissionStatus() has not been implemented.',
-    );
+  /// On Android < 13 and on iOS (when permitted), always returns [NotificationAuthorizationStatus.authorized].
+  Future<NotificationAuthorizationStatus> getNotificationAuthorization() {
+    throw UnimplementedError('getNotificationAuthorization() has not been implemented.');
   }
 
-  /// Request notification permission asynchronously (Android 13+ / API 33+).
+  /// Request notification permission and return the result as a typed
+  /// [NotificationAuthorizationStatus].
   ///
-  /// Triggers the OS POST_NOTIFICATIONS dialog and returns the actual result
-  /// after the user responds.
-  ///
-  /// On Android < 13 and on iOS, returns `3` (granted) immediately.
-  Future<int> requestNotificationPermission() {
-    throw UnimplementedError(
-      'requestNotificationPermission() has not been implemented.',
-    );
+  /// On Android < 13 and on iOS, returns [NotificationAuthorizationStatus.authorized] immediately.
+  Future<NotificationAuthorizationStatus> requestNotificationAuthorization() {
+    throw UnimplementedError('requestNotificationAuthorization() has not been implemented.');
   }
+
 
   /// Check whether the app can schedule exact alarms (Android 12+ / API 31+).
   ///
@@ -372,37 +360,80 @@ abstract class TraceletPlatform extends PlatformInterface {
 
   /// Get the motion / activity recognition permission status.
   ///
-  /// Returns:
-  /// - `0` notDetermined — never asked
-  /// - `1` denied — denied but can ask again (Android only)
-  /// - `3` always (granted)
-  /// - `4` deniedForever — permanently denied
-  ///
-  /// On Android < 10 (API < 29), always returns `3` since no runtime
+  /// On Android < 10 (API < 29), always returns `authorized` since no runtime
   /// permission is needed. On iOS, returns the CMMotionActivityManager
   /// authorization status.
-  Future<int> getMotionPermissionStatus() {
-    throw UnimplementedError(
-      'getMotionPermissionStatus() has not been implemented.',
-    );
+  Future<MotionAuthorizationStatus> getMotionAuthorization() {
+    throw UnimplementedError('getMotionAuthorization() has not been implemented.');
   }
 
   /// Request motion / activity recognition permission asynchronously.
   ///
-  /// On Android 10+ (API 29+), triggers the ACTIVITY_RECOGNITION dialog.
-  /// On iOS, triggers the Motion & Fitness permission dialog.
-  /// On Android < 10, returns `3` (granted) immediately.
-  Future<int> requestMotionPermission() {
-    throw UnimplementedError(
-      'requestMotionPermission() has not been implemented.',
-    );
+  /// Triggers the OS ACTIVITY_RECOGNITION dialog on Android 10+.
+  /// Returns the actual result after user responds.
+  Future<MotionAuthorizationStatus> requestMotionAuthorization() {
+    throw UnimplementedError('requestMotionAuthorization() has not been implemented.');
   }
 
-  /// Request temporary full accuracy (iOS 14+). Returns accuracy status.
+  /// Request temporary full accuracy (iOS 14+).
+  ///
+  /// Returns raw int: `0` full, `1` reduced.
+  /// Prefer [requestTemporaryFullAccuracyAuthorization] for type-safe results.
+  @Deprecated('Use requestTemporaryFullAccuracyAuthorization() which returns FullAccuracyStatus.')
   Future<int> requestTemporaryFullAccuracy(String purpose) {
     throw UnimplementedError(
       'requestTemporaryFullAccuracy() has not been implemented.',
     );
+  }
+
+  /// Request temporary full accuracy (iOS 14+) and return the result as a
+  /// typed [FullAccuracyStatus].
+  ///
+  /// On Android and iOS < 14, returns [FullAccuracyStatus.full] immediately.
+  Future<FullAccuracyStatus> requestTemporaryFullAccuracyAuthorization(
+    String purpose,
+  ) async {
+    // ignore: deprecated_member_use_from_same_package
+    final raw = await requestTemporaryFullAccuracy(purpose);
+    return raw == 0 ? FullAccuracyStatus.full : FullAccuracyStatus.reduced;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers — raw-int → enum conversion
+  // ---------------------------------------------------------------------------
+
+  /// Maps the raw platform integer to [NotificationAuthorizationStatus].
+  ///
+  /// Channel contract:
+  ///   0 → notDetermined, 1 → denied, 3 → granted, 4 → deniedForever
+  static NotificationAuthorizationStatus _rawIntToNotificationStatus(int raw) {
+    switch (raw) {
+      case 0:
+        return NotificationAuthorizationStatus.notDetermined;
+      case 1:
+        return NotificationAuthorizationStatus.denied;
+      case 3:
+        return NotificationAuthorizationStatus.granted;
+      case 4:
+        return NotificationAuthorizationStatus.deniedForever;
+      default:
+        return NotificationAuthorizationStatus.notDetermined;
+    }
+  }
+
+  /// Maps the raw platform integer to [MotionAuthorizationStatus].
+  ///
+  /// Channel contract:
+  ///   0 → notDetermined, 3 → granted, 4 → deniedForever
+  static MotionAuthorizationStatus _rawIntToMotionStatus(int raw) {
+    switch (raw) {
+      case 3:
+        return MotionAuthorizationStatus.granted;
+      case 4:
+        return MotionAuthorizationStatus.deniedForever;
+      default:
+        return MotionAuthorizationStatus.notDetermined;
+    }
   }
 
   /// Get the current location provider state.
@@ -741,4 +772,22 @@ abstract class TraceletPlatform extends PlatformInterface {
   Stream<TlLocation> get watchPositionEvents {
     throw UnimplementedError('watchPositionEvents has not been implemented.');
   }
+
+  /// Stream of speed-based motion mode change events.
+  ///
+  /// Fires only when [MotionConfig.motionDetectionMode] is
+  /// [MotionDetectionMode.speed] (i.e., `TlMotionDetectionMode.speed` in the
+  /// Pigeon layer). Each event carries:
+  /// - [TlSpeedMotionEvent.state]: the new state (`moving`, `slowing`, or
+  ///   `stationary`).
+  /// - [TlSpeedMotionEvent.previousState]: the state before the transition.
+  /// - [TlSpeedMotionEvent.trackingMode]: the current tracking mode after
+  ///   the transition (`continuous`, `periodic`, or `geofences`).
+  ///
+  /// Subscribe via [Tracelet.onMotionModeChange] or read the broadcast
+  /// stream from [Tracelet.motionModeChangeStream].
+  Stream<TlSpeedMotionEvent> get motionModeChangeEvents {
+    throw UnimplementedError('motionModeChangeEvents has not been implemented.');
+  }
 }
+

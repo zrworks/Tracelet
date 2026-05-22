@@ -1,6 +1,7 @@
 ## 2.0.7
 
  - **FIX**(interface): correct intToAuthStatus permission index mappings ([[#80](https://github.com/Ikolvi/Tracelet/issues/80)](https://github.com/Ikolvi/Tracelet/issues/80)). ([8cfd7f51](https://github.com/Ikolvi/Tracelet/commit/8cfd7f5150791063bc1286c5c185d01f1d3fc306))
+ - **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.7`.
 
 ## 2.0.6
 

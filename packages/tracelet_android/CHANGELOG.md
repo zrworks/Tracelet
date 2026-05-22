@@ -1,6 +1,10 @@
 ## 2.0.7
 
  - **FIX**(interface): correct intToAuthStatus permission index mappings ([[#80](https://github.com/Ikolvi/Tracelet/issues/80)](https://github.com/Ikolvi/Tracelet/issues/80)). ([8cfd7f51](https://github.com/Ikolvi/Tracelet/commit/8cfd7f5150791063bc1286c5c185d01f1d3fc306))
+ - **FIX**(android): resolve SQLCipher migration crashes by explicitly loading the sqlcipher native library and decoupling the classpath availability check ([[#78](https://github.com/Ikolvi/Tracelet/issues/78)](https://github.com/Ikolvi/Tracelet/issues/78)). ([757147ee](https://github.com/Ikolvi/Tracelet/commit/757147eeacae07866aa04989a24ca9937307ff2f))
+ - **FIX**(android): prevent false positive shake events using absolute sensor magnitude, and declare stationary state immediately when timeout is zero or negative ([[#79](https://github.com/Ikolvi/Tracelet/issues/79)](https://github.com/Ikolvi/Tracelet/issues/79)). ([2aac0a17](https://github.com/Ikolvi/Tracelet/commit/2aac0a179c04debf816ed682f581666cd62006e7))
+ - **FIX**(android): removed manual Kotlin Gradle Plugin (KGP) configuration to support Flutter's new Built-in Kotlin feature ([[#81](https://github.com/Ikolvi/Tracelet/issues/81)](https://github.com/Ikolvi/Tracelet/issues/81)).
+ - **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.7`.
 
 ## 2.0.6
 

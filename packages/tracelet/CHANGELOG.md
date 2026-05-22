@@ -1,6 +1,10 @@
 ## 2.0.7
 
- - Update a dependency to the latest release.
+- **FIX**: Corrected `intToAuthStatus` permission index mappings on Android and iOS — `getLocationAuthorization()` and `requestLocationAuthorization()` now return the correct `AuthorizationStatus` values ([#80](https://github.com/Ikolvi/Tracelet/issues/80)).
+- **FIX**: Resolved Android SQLCipher migration crashes by loading the SQLCipher native library explicitly before migration and decoupling classpath availability checks to avoid class loading errors ([#78](https://github.com/Ikolvi/Tracelet/issues/78)).
+- **FIX**: Prevented false positive shake events on Android by applying absolute values to motion sensor magnitude readings and fixed zero-timeout logic to immediately transition to stationary state when delay is zero or negative ([#79](https://github.com/Ikolvi/Tracelet/issues/79)).
+- **FIX**: Removed manual Kotlin Gradle Plugin (KGP) configuration to support Flutter's new Built-in Kotlin feature, resolving build warnings and failures on newer Flutter versions ([#81](https://github.com/Ikolvi/Tracelet/issues/81)).
+- **CHORE**: Update platform-specific dependency constraints to `^2.0.7`.
 
 ## 2.0.6
 

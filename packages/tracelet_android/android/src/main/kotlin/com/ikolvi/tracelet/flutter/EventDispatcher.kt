@@ -81,10 +81,32 @@ class EventDispatcher : TraceletEventSender {
     override fun sendSpeedMotionChange(data: Map<String, Any?>) {
         val api = eventApi
         if (api != null) {
+            val stateStr = (data["state"] as? String)?.lowercase() ?: "moving"
+            val previousStateStr = (data["previousState"] as? String)?.lowercase() ?: "moving"
+            val trackingModeStr = (data["trackingMode"] as? String)?.lowercase() ?: "continuous"
+
+            val state = when (stateStr) {
+                "slowing" -> com.ikolvi.tracelet.TlSpeedMotionState.SLOWING
+                "stationary" -> com.ikolvi.tracelet.TlSpeedMotionState.STATIONARY
+                else -> com.ikolvi.tracelet.TlSpeedMotionState.MOVING
+            }
+
+            val previousState = when (previousStateStr) {
+                "slowing" -> com.ikolvi.tracelet.TlSpeedMotionState.SLOWING
+                "stationary" -> com.ikolvi.tracelet.TlSpeedMotionState.STATIONARY
+                else -> com.ikolvi.tracelet.TlSpeedMotionState.MOVING
+            }
+
+            val trackingMode = when (trackingModeStr) {
+                "periodic" -> com.ikolvi.tracelet.TlTrackingMode.PERIODIC
+                "geofences" -> com.ikolvi.tracelet.TlTrackingMode.GEOFENCES
+                else -> com.ikolvi.tracelet.TlTrackingMode.LOCATION
+            }
+
             val event = com.ikolvi.tracelet.TlSpeedMotionEvent(
-                state = data["state"] as? String ?: "unknown",
-                previousState = data["previousState"] as? String ?: "unknown",
-                trackingMode = data["trackingMode"] as? String ?: "unknown",
+                state = state,
+                previousState = previousState,
+                trackingMode = trackingMode,
             )
             postToMain { api.onMotionModeChange(event) {} }
         } else {

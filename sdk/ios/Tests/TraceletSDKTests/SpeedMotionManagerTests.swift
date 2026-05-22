@@ -30,7 +30,7 @@ final class SpeedMotionManagerTests: XCTestCase {
     private func makeManager(
         movingThreshold: Double = 1.5,
         stationaryDelaySeconds: Int = 2,
-        stationaryMode: String = "periodic",
+        stationaryMode: StationaryTrackingMode = .periodic,
         wakeConfirmCount: Int = 1
     ) {
         manager = SpeedMotionManager(stateManager: stateManager)
@@ -99,7 +99,7 @@ final class SpeedMotionManagerTests: XCTestCase {
     }
 
     func testSlowingTransitionsToStationaryGeofencesWhenConfigured() {
-        makeManager(stationaryDelaySeconds: 0, stationaryMode: "geofences")
+        makeManager(stationaryDelaySeconds: 0, stationaryMode: .geofences)
 
         manager.onLocation(speed: 5.0)
         manager.onLocation(speed: 0.1)
@@ -152,10 +152,10 @@ final class SpeedMotionManagerTests: XCTestCase {
 
         manager.onLocation(speed: 5.0)
         manager.onLocation(speed: 0.1)
-        XCTAssertEqual(stateManager.speedMotionState, "slowing")
+        XCTAssertEqual(stateManager.speedMotionState, SpeedMotionManager.SpeedMotionState.slowing.rawValue)
 
         manager.onLocation(speed: 0.1)
-        XCTAssertEqual(stateManager.speedMotionState, "stationary")
+        XCTAssertEqual(stateManager.speedMotionState, SpeedMotionManager.SpeedMotionState.stationary.rawValue)
     }
 
     // MARK: - Negative speed (invalid CLLocation.speed) is clamped

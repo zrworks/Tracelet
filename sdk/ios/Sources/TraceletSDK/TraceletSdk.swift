@@ -238,7 +238,7 @@ public final class TraceletSdk {
             )
         }
 
-        let isSpeedMotionMode = configManager.getMotionDetectionMode() == "speed"
+        let isSpeedMotionMode = configManager.getMotionDetectionMode() == .speed
         if isSpeedMotionMode {
             startSpeedMotionManager()
         } else {
@@ -1622,11 +1622,11 @@ public final class TraceletSdk {
         }
 
         NSLog("[Tracelet] Speed motion mode started (threshold=%.1f, delay=%ds, stationary=%@)",
-              smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode)
+              smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode == .geofences ? "geofences" : "periodic")
 
         // If we're resuming in stationary state, switch immediately
         if smm.state == .stationary {
-            if smm.stationaryTrackingMode == "geofences" {
+            if smm.stationaryTrackingMode == .geofences {
                 locationEngine.switchToStationaryGeofences()
             } else {
                 locationEngine.switchToStationaryPeriodic()

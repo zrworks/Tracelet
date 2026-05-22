@@ -77,6 +77,35 @@ public final class StateManager {
         }
     }
 
+    public var speedMotionState: Int? {
+        get {
+            let key = prefix + "speedMotionState"
+            return defaults.object(forKey: key) as? Int
+        }
+        set {
+            if let val = newValue {
+                defaults.set(val, forKey: prefix + "speedMotionState")
+            } else {
+                defaults.removeObject(forKey: prefix + "speedMotionState")
+            }
+        }
+    }
+
+    public var speedLowCount: Int {
+        get { defaults.integer(forKey: prefix + "speedLowCount") }
+        set { defaults.set(newValue, forKey: prefix + "speedLowCount") }
+    }
+
+    public var speedWakeCount: Int {
+        get { defaults.integer(forKey: prefix + "speedWakeCount") }
+        set { defaults.set(newValue, forKey: prefix + "speedWakeCount") }
+    }
+
+    public var speedLastTransition: Double {
+        get { defaults.double(forKey: prefix + "speedLastTransition") }
+        set { defaults.set(newValue, forKey: prefix + "speedLastTransition") }
+    }
+
     public init() {
         defaults = UserDefaults.standard
     }

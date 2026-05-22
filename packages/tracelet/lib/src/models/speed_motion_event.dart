@@ -102,9 +102,9 @@ class SpeedMotionEvent {
   /// messages into the public Dart model.
   factory SpeedMotionEvent.fromTl(TlSpeedMotionEvent event) {
     return SpeedMotionEvent(
-      state: _parseState(event.state),
-      previousState: _parseState(event.previousState),
-      trackingMode: _parseTrackingMode(event.trackingMode),
+      state: _mapStateFromTl(event.state),
+      previousState: _mapStateFromTl(event.previousState),
+      trackingMode: _mapTrackingModeFromTl(event.trackingMode),
     );
   }
 
@@ -142,6 +142,28 @@ class SpeedMotionEvent {
 
   @override
   int get hashCode => Object.hash(state, previousState, trackingMode);
+
+  static SpeedMotionState _mapStateFromTl(TlSpeedMotionState tlState) {
+    switch (tlState) {
+      case TlSpeedMotionState.moving:
+        return SpeedMotionState.moving;
+      case TlSpeedMotionState.slowing:
+        return SpeedMotionState.slowing;
+      case TlSpeedMotionState.stationary:
+        return SpeedMotionState.stationary;
+    }
+  }
+
+  static SpeedMotionTrackingMode _mapTrackingModeFromTl(TlTrackingMode tlMode) {
+    switch (tlMode) {
+      case TlTrackingMode.location:
+        return SpeedMotionTrackingMode.continuous;
+      case TlTrackingMode.geofences:
+        return SpeedMotionTrackingMode.geofences;
+      case TlTrackingMode.periodic:
+        return SpeedMotionTrackingMode.periodic;
+    }
+  }
 
   /// Parses a state value from either a String name or an int index.
   ///

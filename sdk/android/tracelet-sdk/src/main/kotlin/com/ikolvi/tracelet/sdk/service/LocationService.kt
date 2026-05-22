@@ -515,7 +515,7 @@ class LocationService : Service() {
                 startBootHeartbeat(config, engine, eventSender)
 
                 // Speed-based motion detection: wire up SpeedMotionManager
-                if (config.getMotionDetectionMode() == "speed") {
+                if (config.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
                     val smm = com.ikolvi.tracelet.sdk.motion.SpeedMotionManager(
                         config, state, eventSender,
                         object : com.ikolvi.tracelet.sdk.motion.SpeedMotionManager.SpeedMotionCallback {
@@ -537,9 +537,9 @@ class LocationService : Service() {
 
                     // If persisted state was STATIONARY, immediately switch to
                     // the appropriate stationary tracking mode.
-                    if (state.speedMotionState == "stationary") {
+                    if (state.speedMotionState == com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY) {
                         when (config.getStationaryTrackingMode()) {
-                            "geofences" -> LocationService.switchToStationaryGeofences(engine, state)
+                            com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state)
                             else -> LocationService.switchToStationaryPeriodic(engine, config, state)
                         }
                         Log.d(TAG, "Restored stationary mode from persisted speed state")

@@ -5,6 +5,8 @@ import android.util.Log
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
+import com.ikolvi.tracelet.sdk.model.SpeedMotionState
+import com.ikolvi.tracelet.sdk.model.StationaryTrackingMode
 
 /**
  * Speed-based motion detection state machine.
@@ -33,21 +35,6 @@ class SpeedMotionManager(
     companion object {
         private const val TAG = "SpeedMotion"
     }
-
-    enum class State(val value: String) {
-        MOVING("moving"),
-        SLOWING("slowing"),
-        STATIONARY("stationary");
-
-        companion object {
-            fun fromString(s: String?): State = when (s) {
-                "slowing" -> SLOWING
-                "stationary" -> STATIONARY
-                else -> MOVING
-            }
-        }
-    }
-
     /**
      * Callback interface for mode switching, implemented by the host
      * (LocationService or equivalent).
@@ -59,7 +46,7 @@ class SpeedMotionManager(
     }
 
     // Current state
-    private var currentState: State = State.MOVING
+    private var currentState: SpeedMotionState = SpeedMotionState.MOVING
     private var lowSpeedCount: Int = 0
     private var wakeCount: Int = 0
 
@@ -71,7 +58,7 @@ class SpeedMotionManager(
     // Config values (cached on start)
     private var speedMovingThreshold: Double = 1.5
     private var speedStationaryDelay: Int = 180
-    private var stationaryTrackingMode: String = "periodic"
+    private var stationaryTrackingMode: StationaryTrackingMode = StationaryTrackingMode.PERIODIC
     private var speedWakeConfirmCount: Int = 1
 
     private var started = false
@@ -109,7 +96,7 @@ class SpeedMotionManager(
         }
 
         // Restore persisted state
-        currentState = State.fromString(state.speedMotionState)
+        currentState = state.speedMotionState ?: SpeedMotionState.MOVING
         lowSpeedCount = state.speedLowCount
         wakeCount = state.speedWakeCount
         lastFixTime = state.speedLastTransition
@@ -124,8 +111,8 @@ class SpeedMotionManager(
         Log.d(TAG, "stop()")
     }
 
-    /** Returns the current state value string. */
-    fun getCurrentState(): String = currentState.value
+    /** Returns the current state value string (legacy compatibility). */
+    fun getCurrentState(): String = currentState.name.lowercase()
 
     /**
      * Feed a new location fix's speed into the state machine.
@@ -154,9 +141,9 @@ class SpeedMotionManager(
         lastFixTime = now
 
         when (currentState) {
-            State.MOVING -> onLocationMoving(speedMetersPerSecond)
-            State.SLOWING -> onLocationSlowing(speedMetersPerSecond)
-            State.STATIONARY -> onLocationStationary(speedMetersPerSecond)
+            SpeedMotionState.MOVING -> onLocationMoving(speedMetersPerSecond)
+            SpeedMotionState.SLOWING -> onLocationSlowing(speedMetersPerSecond)
+            SpeedMotionState.STATIONARY -> onLocationStationary(speedMetersPerSecond)
         }
     }
 
@@ -168,7 +155,7 @@ class SpeedMotionManager(
         if (speed < speedMovingThreshold) {
             Log.d(TAG, "MOVING -> SLOWING (speed=${formatSpeed(speed)} < threshold=$speedMovingThreshold)")
             lowSpeedCount = 1
-            transitionTo(State.SLOWING)
+            transitionTo(SpeedMotionState.SLOWING)
         }
     }
 
@@ -176,7 +163,7 @@ class SpeedMotionManager(
         if (speed >= speedMovingThreshold) {
             Log.d(TAG, "SLOWING -> MOVING (speed=${formatSpeed(speed)} >= threshold=$speedMovingThreshold)")
             lowSpeedCount = 0
-            transitionTo(State.MOVING)
+            transitionTo(SpeedMotionState.MOVING)
             return
         }
 
@@ -198,11 +185,11 @@ class SpeedMotionManager(
             Log.d(TAG, "SLOWING -> STATIONARY (elapsed ${elapsedMs}ms >= delay ${delayMs}ms)")
             lowSpeedCount = 0
             wakeCount = 0
-            transitionTo(State.STATIONARY)
+            transitionTo(SpeedMotionState.STATIONARY)
 
             // Switch to stationary tracking mode
             when (stationaryTrackingMode) {
-                "geofences" -> {
+                StationaryTrackingMode.GEOFENCES -> {
                     Log.d(TAG, "Switching to stationary geofences mode")
                     callback.switchToStationaryGeofences()
                 }
@@ -223,7 +210,7 @@ class SpeedMotionManager(
             if (wakeCount >= speedWakeConfirmCount) {
                 Log.d(TAG, "STATIONARY -> MOVING (wakeCount=$wakeCount >= confirm=$speedWakeConfirmCount)")
                 wakeCount = 0
-                transitionTo(State.MOVING)
+                transitionTo(SpeedMotionState.MOVING)
                 callback.switchToContinuous()
             }
         } else {
@@ -240,31 +227,31 @@ class SpeedMotionManager(
     // State transition + persistence + event emission
     // =========================================================================
 
-    private fun transitionTo(newState: State) {
+    private fun transitionTo(newState: SpeedMotionState) {
         val previousState = currentState
         currentState = newState
 
         // Persist to SharedPreferences
-        state.speedMotionState = newState.value
+        state.speedMotionState = newState
         state.speedLowCount = lowSpeedCount
         state.speedWakeCount = wakeCount
         state.speedLastTransition = SystemClock.elapsedRealtime()
 
         // Update isMoving for compatibility with existing consumers
-        state.isMoving = newState != State.STATIONARY
+        state.isMoving = newState != SpeedMotionState.STATIONARY
 
         // Emit speed motion change event
         val eventData = mapOf(
-            "state" to newState.value,
-            "previousState" to previousState.value,
+            "state" to newState.name.lowercase(),
+            "previousState" to previousState.name.lowercase(),
             "trackingMode" to when (newState) {
-                State.STATIONARY -> stationaryTrackingMode
+                SpeedMotionState.STATIONARY -> stationaryTrackingMode.name.lowercase()
                 else -> "continuous"
             },
         )
         events.sendSpeedMotionChange(eventData)
 
-        Log.d(TAG, "State transition: ${previousState.value} -> ${newState.value}")
+        Log.d(TAG, "State transition: ${previousState.name} -> ${newState.name}")
     }
 
     private fun formatSpeed(speed: Double): String = "%.2f m/s".format(speed)

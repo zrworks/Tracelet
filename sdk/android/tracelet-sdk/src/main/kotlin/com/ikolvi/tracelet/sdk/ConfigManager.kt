@@ -551,8 +551,8 @@ class ConfigManager(context: Context) {
 
     // Speed-based motion detection config
 
-    fun getMotionDetectionMode(): String =
-        getString("motionDetectionMode", DEFAULT_MOTION_DETECTION_MODE)
+    fun getMotionDetectionMode(): com.ikolvi.tracelet.sdk.model.MotionDetectionMode =
+        com.ikolvi.tracelet.sdk.model.MotionDetectionMode.fromString(getString("motionDetectionMode", DEFAULT_MOTION_DETECTION_MODE))
 
     fun getSpeedMovingThreshold(): Double =
         getDouble("speedMovingThreshold", DEFAULT_SPEED_MOVING_THRESHOLD)
@@ -560,8 +560,8 @@ class ConfigManager(context: Context) {
     fun getSpeedStationaryDelay(): Int =
         getInt("speedStationaryDelay", DEFAULT_SPEED_STATIONARY_DELAY)
 
-    fun getStationaryTrackingMode(): String =
-        getString("stationaryTrackingMode", DEFAULT_STATIONARY_TRACKING_MODE)
+    fun getStationaryTrackingMode(): com.ikolvi.tracelet.sdk.model.StationaryTrackingMode =
+        com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.fromString(getString("stationaryTrackingMode", DEFAULT_STATIONARY_TRACKING_MODE))
 
     fun getStationaryPeriodicInterval(): Int =
         getInt("stationaryPeriodicInterval", DEFAULT_STATIONARY_PERIODIC_INTERVAL)

@@ -143,6 +143,20 @@ public final class ConfigManager {
     public func getMinimumActivityRecognitionConfidence() -> Int { (cache["minimumActivityRecognitionConfidence"] as? NSNumber)?.intValue ?? 75 }
     public func getStopOnStationary() -> Bool { cache["stopOnStationary"] as? Bool ?? false }
     public func getTriggerActivities() -> String { cache["triggerActivities"] as? String ?? "" }
+    
+    // Speed Motion Config
+    public func getMotionDetectionMode() -> MotionDetectionMode {
+        let val = cache["motionDetectionMode"] as? String ?? "activity"
+        return val == "speed" ? .speed : .activity
+    }
+    public func getSpeedMovingThreshold() -> Double { cache["speedMovingThreshold"] as? Double ?? 1.5 }
+    public func getSpeedStationaryDelay() -> Int { (cache["speedStationaryDelay"] as? NSNumber)?.intValue ?? 180 }
+    public func getStationaryTrackingMode() -> StationaryTrackingMode {
+        let val = cache["stationaryTrackingMode"] as? String ?? "periodic"
+        return val == "geofences" ? .geofences : .periodic
+    }
+    public func getStationaryPeriodicInterval() -> Int { (cache["stationaryPeriodicInterval"] as? NSNumber)?.intValue ?? 120 }
+    public func getSpeedWakeConfirmCount() -> Int { (cache["speedWakeConfirmCount"] as? NSNumber)?.intValue ?? 1 }
 
     /// Shake threshold (gravity-subtracted magnitude).
     ///

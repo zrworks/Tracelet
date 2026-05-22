@@ -599,6 +599,8 @@ class TlHeartbeatEvent {
   final TlLocation location;
 }
 
+enum TlSpeedMotionState { moving, slowing, stationary }
+
 class TlSpeedMotionEvent {
   TlSpeedMotionEvent({
     required this.state,
@@ -606,15 +608,15 @@ class TlSpeedMotionEvent {
     required this.trackingMode,
   });
 
-  /// New state: `"moving"`, `"slowing"`, or `"stationary"`.
-  final String state;
+  /// New state: `moving`, `slowing`, or `stationary`.
+  final TlSpeedMotionState state;
 
   /// Previous state before this transition.
-  final String previousState;
+  final TlSpeedMotionState previousState;
 
-  /// Underlying tracking mode after the transition: `"continuous"`,
-  /// `"periodic"`, or `"geofences"`.
-  final String trackingMode;
+  /// Underlying tracking mode after the transition: `continuous` (location),
+  /// `periodic`, or `geofences`.
+  final TlTrackingMode trackingMode;
 }
 
 class TlAuthorizationEvent {

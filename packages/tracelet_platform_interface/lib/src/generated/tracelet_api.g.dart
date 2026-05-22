@@ -176,6 +176,12 @@ enum TlAuthorizationRequest {
   whenInUse,
 }
 
+enum TlSpeedMotionState {
+  moving,
+  slowing,
+  stationary,
+}
+
 class TlGeoConfig {
   TlGeoConfig({
     required this.desiredAccuracy,
@@ -2136,15 +2142,15 @@ class TlSpeedMotionEvent {
     required this.trackingMode,
   });
 
-  /// New state: `"moving"`, `"slowing"`, or `"stationary"`.
-  String state;
+  /// New state: `moving`, `slowing`, or `stationary`.
+  TlSpeedMotionState state;
 
   /// Previous state before this transition.
-  String previousState;
+  TlSpeedMotionState previousState;
 
-  /// Underlying tracking mode after the transition: `"continuous"`,
-  /// `"periodic"`, or `"geofences"`.
-  String trackingMode;
+  /// Underlying tracking mode after the transition: `continuous` (location),
+  /// `periodic`, or `geofences`.
+  TlTrackingMode trackingMode;
 
   List<Object?> _toList() {
     return <Object?>[
@@ -2160,9 +2166,9 @@ class TlSpeedMotionEvent {
   static TlSpeedMotionEvent decode(Object result) {
     result as List<Object?>;
     return TlSpeedMotionEvent(
-      state: result[0]! as String,
-      previousState: result[1]! as String,
-      trackingMode: result[2]! as String,
+      state: result[0]! as TlSpeedMotionState,
+      previousState: result[1]! as TlSpeedMotionState,
+      trackingMode: result[2]! as TlTrackingMode,
     );
   }
 
@@ -2335,98 +2341,101 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is TlAuthorizationRequest) {
       buffer.putUint8(145);
       writeValue(buffer, value.index);
-    }    else if (value is TlGeoConfig) {
+    }    else if (value is TlSpeedMotionState) {
       buffer.putUint8(146);
-      writeValue(buffer, value.encode());
-    }    else if (value is TlAppConfig) {
+      writeValue(buffer, value.index);
+    }    else if (value is TlGeoConfig) {
       buffer.putUint8(147);
       writeValue(buffer, value.encode());
-    }    else if (value is TlForegroundServiceConfig) {
+    }    else if (value is TlAppConfig) {
       buffer.putUint8(148);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAndroidConfig) {
+    }    else if (value is TlForegroundServiceConfig) {
       buffer.putUint8(149);
       writeValue(buffer, value.encode());
-    }    else if (value is TlIosConfig) {
+    }    else if (value is TlAndroidConfig) {
       buffer.putUint8(150);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHttpConfig) {
+    }    else if (value is TlIosConfig) {
       buffer.putUint8(151);
       writeValue(buffer, value.encode());
-    }    else if (value is TlConfig) {
+    }    else if (value is TlHttpConfig) {
       buffer.putUint8(152);
       writeValue(buffer, value.encode());
-    }    else if (value is TlLoggerConfig) {
+    }    else if (value is TlConfig) {
       buffer.putUint8(153);
       writeValue(buffer, value.encode());
-    }    else if (value is TlMotionConfig) {
+    }    else if (value is TlLoggerConfig) {
       buffer.putUint8(154);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofenceConfig) {
+    }    else if (value is TlMotionConfig) {
       buffer.putUint8(155);
       writeValue(buffer, value.encode());
-    }    else if (value is TlPersistenceConfig) {
+    }    else if (value is TlGeofenceConfig) {
       buffer.putUint8(156);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAuditConfig) {
+    }    else if (value is TlPersistenceConfig) {
       buffer.putUint8(157);
       writeValue(buffer, value.encode());
-    }    else if (value is TlPrivacyZoneConfig) {
+    }    else if (value is TlAuditConfig) {
       buffer.putUint8(158);
       writeValue(buffer, value.encode());
-    }    else if (value is TlSecurityConfig) {
+    }    else if (value is TlPrivacyZoneConfig) {
       buffer.putUint8(159);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAttestationConfig) {
+    }    else if (value is TlSecurityConfig) {
       buffer.putUint8(160);
       writeValue(buffer, value.encode());
-    }    else if (value is TlCoords) {
+    }    else if (value is TlAttestationConfig) {
       buffer.putUint8(161);
       writeValue(buffer, value.encode());
-    }    else if (value is TlBattery) {
+    }    else if (value is TlCoords) {
       buffer.putUint8(162);
       writeValue(buffer, value.encode());
-    }    else if (value is TlLocation) {
+    }    else if (value is TlBattery) {
       buffer.putUint8(163);
       writeValue(buffer, value.encode());
-    }    else if (value is TlActivity) {
+    }    else if (value is TlLocation) {
       buffer.putUint8(164);
       writeValue(buffer, value.encode());
-    }    else if (value is TlState) {
+    }    else if (value is TlActivity) {
       buffer.putUint8(165);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofence) {
+    }    else if (value is TlState) {
       buffer.putUint8(166);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofenceEvent) {
+    }    else if (value is TlGeofence) {
       buffer.putUint8(167);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHttpEvent) {
+    }    else if (value is TlGeofenceEvent) {
       buffer.putUint8(168);
       writeValue(buffer, value.encode());
-    }    else if (value is TlProviderChangeEvent) {
+    }    else if (value is TlHttpEvent) {
       buffer.putUint8(169);
       writeValue(buffer, value.encode());
-    }    else if (value is TlCurrentPositionOptions) {
+    }    else if (value is TlProviderChangeEvent) {
       buffer.putUint8(170);
       writeValue(buffer, value.encode());
-    }    else if (value is TlActivityChangeEvent) {
+    }    else if (value is TlCurrentPositionOptions) {
       buffer.putUint8(171);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofencesChangeEvent) {
+    }    else if (value is TlActivityChangeEvent) {
       buffer.putUint8(172);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHeartbeatEvent) {
+    }    else if (value is TlGeofencesChangeEvent) {
       buffer.putUint8(173);
       writeValue(buffer, value.encode());
-    }    else if (value is TlSpeedMotionEvent) {
+    }    else if (value is TlHeartbeatEvent) {
       buffer.putUint8(174);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAuthorizationEvent) {
+    }    else if (value is TlSpeedMotionEvent) {
       buffer.putUint8(175);
       writeValue(buffer, value.encode());
-    }    else if (value is TlConnectivityChangeEvent) {
+    }    else if (value is TlAuthorizationEvent) {
       buffer.putUint8(176);
+      writeValue(buffer, value.encode());
+    }    else if (value is TlConnectivityChangeEvent) {
+      buffer.putUint8(177);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -2488,66 +2497,69 @@ class _PigeonCodec extends StandardMessageCodec {
         final value = readValue(buffer) as int?;
         return value == null ? null : TlAuthorizationRequest.values[value];
       case 146:
-        return TlGeoConfig.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : TlSpeedMotionState.values[value];
       case 147:
-        return TlAppConfig.decode(readValue(buffer)!);
+        return TlGeoConfig.decode(readValue(buffer)!);
       case 148:
-        return TlForegroundServiceConfig.decode(readValue(buffer)!);
+        return TlAppConfig.decode(readValue(buffer)!);
       case 149:
-        return TlAndroidConfig.decode(readValue(buffer)!);
+        return TlForegroundServiceConfig.decode(readValue(buffer)!);
       case 150:
-        return TlIosConfig.decode(readValue(buffer)!);
+        return TlAndroidConfig.decode(readValue(buffer)!);
       case 151:
-        return TlHttpConfig.decode(readValue(buffer)!);
+        return TlIosConfig.decode(readValue(buffer)!);
       case 152:
-        return TlConfig.decode(readValue(buffer)!);
+        return TlHttpConfig.decode(readValue(buffer)!);
       case 153:
-        return TlLoggerConfig.decode(readValue(buffer)!);
+        return TlConfig.decode(readValue(buffer)!);
       case 154:
-        return TlMotionConfig.decode(readValue(buffer)!);
+        return TlLoggerConfig.decode(readValue(buffer)!);
       case 155:
-        return TlGeofenceConfig.decode(readValue(buffer)!);
+        return TlMotionConfig.decode(readValue(buffer)!);
       case 156:
-        return TlPersistenceConfig.decode(readValue(buffer)!);
+        return TlGeofenceConfig.decode(readValue(buffer)!);
       case 157:
-        return TlAuditConfig.decode(readValue(buffer)!);
+        return TlPersistenceConfig.decode(readValue(buffer)!);
       case 158:
-        return TlPrivacyZoneConfig.decode(readValue(buffer)!);
+        return TlAuditConfig.decode(readValue(buffer)!);
       case 159:
-        return TlSecurityConfig.decode(readValue(buffer)!);
+        return TlPrivacyZoneConfig.decode(readValue(buffer)!);
       case 160:
-        return TlAttestationConfig.decode(readValue(buffer)!);
+        return TlSecurityConfig.decode(readValue(buffer)!);
       case 161:
-        return TlCoords.decode(readValue(buffer)!);
+        return TlAttestationConfig.decode(readValue(buffer)!);
       case 162:
-        return TlBattery.decode(readValue(buffer)!);
+        return TlCoords.decode(readValue(buffer)!);
       case 163:
-        return TlLocation.decode(readValue(buffer)!);
+        return TlBattery.decode(readValue(buffer)!);
       case 164:
-        return TlActivity.decode(readValue(buffer)!);
+        return TlLocation.decode(readValue(buffer)!);
       case 165:
-        return TlState.decode(readValue(buffer)!);
+        return TlActivity.decode(readValue(buffer)!);
       case 166:
-        return TlGeofence.decode(readValue(buffer)!);
+        return TlState.decode(readValue(buffer)!);
       case 167:
-        return TlGeofenceEvent.decode(readValue(buffer)!);
+        return TlGeofence.decode(readValue(buffer)!);
       case 168:
-        return TlHttpEvent.decode(readValue(buffer)!);
+        return TlGeofenceEvent.decode(readValue(buffer)!);
       case 169:
-        return TlProviderChangeEvent.decode(readValue(buffer)!);
+        return TlHttpEvent.decode(readValue(buffer)!);
       case 170:
-        return TlCurrentPositionOptions.decode(readValue(buffer)!);
+        return TlProviderChangeEvent.decode(readValue(buffer)!);
       case 171:
-        return TlActivityChangeEvent.decode(readValue(buffer)!);
+        return TlCurrentPositionOptions.decode(readValue(buffer)!);
       case 172:
-        return TlGeofencesChangeEvent.decode(readValue(buffer)!);
+        return TlActivityChangeEvent.decode(readValue(buffer)!);
       case 173:
-        return TlHeartbeatEvent.decode(readValue(buffer)!);
+        return TlGeofencesChangeEvent.decode(readValue(buffer)!);
       case 174:
-        return TlSpeedMotionEvent.decode(readValue(buffer)!);
+        return TlHeartbeatEvent.decode(readValue(buffer)!);
       case 175:
-        return TlAuthorizationEvent.decode(readValue(buffer)!);
+        return TlSpeedMotionEvent.decode(readValue(buffer)!);
       case 176:
+        return TlAuthorizationEvent.decode(readValue(buffer)!);
+      case 177:
         return TlConnectivityChangeEvent.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);

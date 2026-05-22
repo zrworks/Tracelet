@@ -83,10 +83,16 @@ class StateManager(context: Context) {
     // Speed-based motion detection state
     // ---------------------------------------------------------------------------
 
-    /** Current speed motion state: "moving", "slowing", or "stationary". */
-    var speedMotionState: String?
-        get() = prefs.getString(KEY_SPEED_MOTION_STATE, null)
-        set(value) = prefs.edit().putString(KEY_SPEED_MOTION_STATE, value).apply()
+    /** Current speed motion state. */
+    var speedMotionState: com.ikolvi.tracelet.sdk.model.SpeedMotionState?
+        get() = if (prefs.contains(KEY_SPEED_MOTION_STATE)) {
+            com.ikolvi.tracelet.sdk.model.SpeedMotionState.fromInt(prefs.getInt(KEY_SPEED_MOTION_STATE, 0))
+        } else null
+        set(value) = if (value != null) {
+            prefs.edit().putInt(KEY_SPEED_MOTION_STATE, value.value).apply()
+        } else {
+            prefs.edit().remove(KEY_SPEED_MOTION_STATE).apply()
+        }
 
     /** Consecutive low-speed fix count (SLOWING state). */
     var speedLowCount: Int

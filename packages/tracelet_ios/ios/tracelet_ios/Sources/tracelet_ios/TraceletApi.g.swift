@@ -249,6 +249,12 @@ enum TlAuthorizationRequest: Int {
   case whenInUse = 1
 }
 
+enum TlSpeedMotionState: Int {
+  case moving = 0
+  case slowing = 1
+  case stationary = 2
+}
+
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlGeoConfig: Hashable {
   var desiredAccuracy: TlDesiredAccuracy
@@ -1595,20 +1601,20 @@ struct TlHeartbeatEvent: Hashable {
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlSpeedMotionEvent: Hashable {
-  /// New state: `"moving"`, `"slowing"`, or `"stationary"`.
-  var state: String
+  /// New state: `moving`, `slowing`, or `stationary`.
+  var state: TlSpeedMotionState
   /// Previous state before this transition.
-  var previousState: String
-  /// Underlying tracking mode after the transition: `"continuous"`,
-  /// `"periodic"`, or `"geofences"`.
-  var trackingMode: String
+  var previousState: TlSpeedMotionState
+  /// Underlying tracking mode after the transition: `continuous` (location),
+  /// `periodic`, or `geofences`.
+  var trackingMode: TlTrackingMode
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> TlSpeedMotionEvent? {
-    let state = pigeonVar_list[0] as! String
-    let previousState = pigeonVar_list[1] as! String
-    let trackingMode = pigeonVar_list[2] as! String
+    let state = pigeonVar_list[0] as! TlSpeedMotionState
+    let previousState = pigeonVar_list[1] as! TlSpeedMotionState
+    let trackingMode = pigeonVar_list[2] as! TlTrackingMode
 
     return TlSpeedMotionEvent(
       state: state,
@@ -1794,66 +1800,72 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
       }
       return nil
     case 146:
-      return TlGeoConfig.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return TlSpeedMotionState(rawValue: enumResultAsInt)
+      }
+      return nil
     case 147:
-      return TlAppConfig.fromList(self.readValue() as! [Any?])
+      return TlGeoConfig.fromList(self.readValue() as! [Any?])
     case 148:
-      return TlForegroundServiceConfig.fromList(self.readValue() as! [Any?])
+      return TlAppConfig.fromList(self.readValue() as! [Any?])
     case 149:
-      return TlAndroidConfig.fromList(self.readValue() as! [Any?])
+      return TlForegroundServiceConfig.fromList(self.readValue() as! [Any?])
     case 150:
-      return TlIosConfig.fromList(self.readValue() as! [Any?])
+      return TlAndroidConfig.fromList(self.readValue() as! [Any?])
     case 151:
-      return TlHttpConfig.fromList(self.readValue() as! [Any?])
+      return TlIosConfig.fromList(self.readValue() as! [Any?])
     case 152:
-      return TlConfig.fromList(self.readValue() as! [Any?])
+      return TlHttpConfig.fromList(self.readValue() as! [Any?])
     case 153:
-      return TlLoggerConfig.fromList(self.readValue() as! [Any?])
+      return TlConfig.fromList(self.readValue() as! [Any?])
     case 154:
-      return TlMotionConfig.fromList(self.readValue() as! [Any?])
+      return TlLoggerConfig.fromList(self.readValue() as! [Any?])
     case 155:
-      return TlGeofenceConfig.fromList(self.readValue() as! [Any?])
+      return TlMotionConfig.fromList(self.readValue() as! [Any?])
     case 156:
-      return TlPersistenceConfig.fromList(self.readValue() as! [Any?])
+      return TlGeofenceConfig.fromList(self.readValue() as! [Any?])
     case 157:
-      return TlAuditConfig.fromList(self.readValue() as! [Any?])
+      return TlPersistenceConfig.fromList(self.readValue() as! [Any?])
     case 158:
-      return TlPrivacyZoneConfig.fromList(self.readValue() as! [Any?])
+      return TlAuditConfig.fromList(self.readValue() as! [Any?])
     case 159:
-      return TlSecurityConfig.fromList(self.readValue() as! [Any?])
+      return TlPrivacyZoneConfig.fromList(self.readValue() as! [Any?])
     case 160:
-      return TlAttestationConfig.fromList(self.readValue() as! [Any?])
+      return TlSecurityConfig.fromList(self.readValue() as! [Any?])
     case 161:
-      return TlCoords.fromList(self.readValue() as! [Any?])
+      return TlAttestationConfig.fromList(self.readValue() as! [Any?])
     case 162:
-      return TlBattery.fromList(self.readValue() as! [Any?])
+      return TlCoords.fromList(self.readValue() as! [Any?])
     case 163:
-      return TlLocation.fromList(self.readValue() as! [Any?])
+      return TlBattery.fromList(self.readValue() as! [Any?])
     case 164:
-      return TlActivity.fromList(self.readValue() as! [Any?])
+      return TlLocation.fromList(self.readValue() as! [Any?])
     case 165:
-      return TlState.fromList(self.readValue() as! [Any?])
+      return TlActivity.fromList(self.readValue() as! [Any?])
     case 166:
-      return TlGeofence.fromList(self.readValue() as! [Any?])
+      return TlState.fromList(self.readValue() as! [Any?])
     case 167:
-      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofence.fromList(self.readValue() as! [Any?])
     case 168:
-      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
     case 169:
-      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlHttpEvent.fromList(self.readValue() as! [Any?])
     case 170:
-      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
     case 171:
-      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
     case 172:
-      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
     case 173:
-      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
     case 174:
-      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
+      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
     case 175:
-      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
     case 176:
+      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+    case 177:
       return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1914,98 +1926,101 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlAuthorizationRequest {
       super.writeByte(145)
       super.writeValue(value.rawValue)
-    } else if let value = value as? TlGeoConfig {
+    } else if let value = value as? TlSpeedMotionState {
       super.writeByte(146)
-      super.writeValue(value.toList())
-    } else if let value = value as? TlAppConfig {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? TlGeoConfig {
       super.writeByte(147)
       super.writeValue(value.toList())
-    } else if let value = value as? TlForegroundServiceConfig {
+    } else if let value = value as? TlAppConfig {
       super.writeByte(148)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAndroidConfig {
+    } else if let value = value as? TlForegroundServiceConfig {
       super.writeByte(149)
       super.writeValue(value.toList())
-    } else if let value = value as? TlIosConfig {
+    } else if let value = value as? TlAndroidConfig {
       super.writeByte(150)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpConfig {
+    } else if let value = value as? TlIosConfig {
       super.writeByte(151)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConfig {
+    } else if let value = value as? TlHttpConfig {
       super.writeByte(152)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLoggerConfig {
+    } else if let value = value as? TlConfig {
       super.writeByte(153)
       super.writeValue(value.toList())
-    } else if let value = value as? TlMotionConfig {
+    } else if let value = value as? TlLoggerConfig {
       super.writeByte(154)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceConfig {
+    } else if let value = value as? TlMotionConfig {
       super.writeByte(155)
       super.writeValue(value.toList())
-    } else if let value = value as? TlPersistenceConfig {
+    } else if let value = value as? TlGeofenceConfig {
       super.writeByte(156)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuditConfig {
+    } else if let value = value as? TlPersistenceConfig {
       super.writeByte(157)
       super.writeValue(value.toList())
-    } else if let value = value as? TlPrivacyZoneConfig {
+    } else if let value = value as? TlAuditConfig {
       super.writeByte(158)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSecurityConfig {
+    } else if let value = value as? TlPrivacyZoneConfig {
       super.writeByte(159)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAttestationConfig {
+    } else if let value = value as? TlSecurityConfig {
       super.writeByte(160)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCoords {
+    } else if let value = value as? TlAttestationConfig {
       super.writeByte(161)
       super.writeValue(value.toList())
-    } else if let value = value as? TlBattery {
+    } else if let value = value as? TlCoords {
       super.writeByte(162)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLocation {
+    } else if let value = value as? TlBattery {
       super.writeByte(163)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivity {
+    } else if let value = value as? TlLocation {
       super.writeByte(164)
       super.writeValue(value.toList())
-    } else if let value = value as? TlState {
+    } else if let value = value as? TlActivity {
       super.writeByte(165)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofence {
+    } else if let value = value as? TlState {
       super.writeByte(166)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceEvent {
+    } else if let value = value as? TlGeofence {
       super.writeByte(167)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpEvent {
+    } else if let value = value as? TlGeofenceEvent {
       super.writeByte(168)
       super.writeValue(value.toList())
-    } else if let value = value as? TlProviderChangeEvent {
+    } else if let value = value as? TlHttpEvent {
       super.writeByte(169)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCurrentPositionOptions {
+    } else if let value = value as? TlProviderChangeEvent {
       super.writeByte(170)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivityChangeEvent {
+    } else if let value = value as? TlCurrentPositionOptions {
       super.writeByte(171)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofencesChangeEvent {
+    } else if let value = value as? TlActivityChangeEvent {
       super.writeByte(172)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHeartbeatEvent {
+    } else if let value = value as? TlGeofencesChangeEvent {
       super.writeByte(173)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSpeedMotionEvent {
+    } else if let value = value as? TlHeartbeatEvent {
       super.writeByte(174)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuthorizationEvent {
+    } else if let value = value as? TlSpeedMotionEvent {
       super.writeByte(175)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConnectivityChangeEvent {
+    } else if let value = value as? TlAuthorizationEvent {
       super.writeByte(176)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlConnectivityChangeEvent {
+      super.writeByte(177)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

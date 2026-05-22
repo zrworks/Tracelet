@@ -247,6 +247,7 @@ await tl.Tracelet.start();
 |---|---|
 | [Android Setup](help/INSTALL-ANDROID.md) | Gradle, permissions, and manifest configuration |
 | [iOS Setup](help/INSTALL-IOS.md) | Info.plist, capabilities, and entitlements |
+| [Motion Detection Architecture](help/MOTION-DETECTION.md) | How `STATIONARY`/`MOVING` states and heartbeat actually work |
 | [Permissions](help/PERMISSIONS.md) | Permission flow, status codes, Dart dialog examples |
 | [Background Tracking](help/BACKGROUND-TRACKING.md) | Foreground service, silent mode, runtime switching |
 | [API Reference](help/API.md) | All methods, events, and return types |

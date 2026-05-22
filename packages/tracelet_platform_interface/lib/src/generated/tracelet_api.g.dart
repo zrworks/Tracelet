@@ -401,6 +401,7 @@ class TlForegroundServiceConfig {
     this.notificationLargeIcon,
     required this.notificationPriority,
     required this.notificationOngoing,
+    required this.showNotificationOnPauseOnly,
     required this.actions,
   });
 
@@ -424,6 +425,8 @@ class TlForegroundServiceConfig {
 
   bool notificationOngoing;
 
+  bool showNotificationOnPauseOnly;
+
   List<String?> actions;
 
   List<Object?> _toList() {
@@ -438,6 +441,7 @@ class TlForegroundServiceConfig {
       notificationLargeIcon,
       notificationPriority,
       notificationOngoing,
+      showNotificationOnPauseOnly,
       actions,
     ];
   }
@@ -458,7 +462,8 @@ class TlForegroundServiceConfig {
       notificationLargeIcon: result[7] as String?,
       notificationPriority: result[8]! as TlNotificationPriority,
       notificationOngoing: result[9]! as bool,
-      actions: (result[10]! as List<Object?>).cast<String?>(),
+      showNotificationOnPauseOnly: result[10]! as bool,
+      actions: (result[11]! as List<Object?>).cast<String?>(),
     );
   }
 

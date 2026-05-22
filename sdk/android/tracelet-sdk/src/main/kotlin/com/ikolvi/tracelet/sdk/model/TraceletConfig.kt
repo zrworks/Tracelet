@@ -255,6 +255,7 @@ data class ForegroundServiceConfig(
     val notificationLargeIcon: String? = null,
     val notificationPriority: NotificationPriority = NotificationPriority.DEFAULT,
     val notificationOngoing: Boolean = true,
+    val showNotificationOnPauseOnly: Boolean = false,
     val actions: List<String> = emptyList(),
 ) {
     companion object {
@@ -269,6 +270,7 @@ data class ForegroundServiceConfig(
             notificationLargeIcon = m["notificationLargeIcon"] as? String,
             notificationPriority = NotificationPriority.fromValue((m["notificationPriority"] as? Number)?.toInt() ?: 0),
             notificationOngoing = m["notificationOngoing"] as? Boolean ?: true,
+            showNotificationOnPauseOnly = m["showNotificationOnPauseOnly"] as? Boolean ?: false,
             actions = (m["actions"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
         )
     }
@@ -276,7 +278,7 @@ data class ForegroundServiceConfig(
         "enabled" to enabled, "channelId" to channelId, "channelName" to channelName, "notificationTitle" to notificationTitle,
         "notificationText" to notificationText, "notificationColor" to notificationColor, "notificationSmallIcon" to notificationSmallIcon,
         "notificationLargeIcon" to notificationLargeIcon, "notificationPriority" to notificationPriority.value, "notificationOngoing" to notificationOngoing,
-        "actions" to actions
+        "showNotificationOnPauseOnly" to showNotificationOnPauseOnly, "actions" to actions
     )
 }
 

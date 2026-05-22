@@ -417,6 +417,7 @@ struct TlForegroundServiceConfig: Hashable {
   var notificationLargeIcon: String? = nil
   var notificationPriority: TlNotificationPriority
   var notificationOngoing: Bool
+  var showNotificationOnPauseOnly: Bool
   var actions: [String?]
 
 
@@ -432,7 +433,8 @@ struct TlForegroundServiceConfig: Hashable {
     let notificationLargeIcon: String? = nilOrValue(pigeonVar_list[7])
     let notificationPriority = pigeonVar_list[8] as! TlNotificationPriority
     let notificationOngoing = pigeonVar_list[9] as! Bool
-    let actions = pigeonVar_list[10] as! [String?]
+    let showNotificationOnPauseOnly = pigeonVar_list[10] as! Bool
+    let actions = pigeonVar_list[11] as! [String?]
 
     return TlForegroundServiceConfig(
       enabled: enabled,
@@ -445,6 +447,7 @@ struct TlForegroundServiceConfig: Hashable {
       notificationLargeIcon: notificationLargeIcon,
       notificationPriority: notificationPriority,
       notificationOngoing: notificationOngoing,
+      showNotificationOnPauseOnly: showNotificationOnPauseOnly,
       actions: actions
     )
   }
@@ -460,6 +463,7 @@ struct TlForegroundServiceConfig: Hashable {
       notificationLargeIcon,
       notificationPriority,
       notificationOngoing,
+      showNotificationOnPauseOnly,
       actions,
     ]
   }

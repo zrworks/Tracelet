@@ -66,9 +66,17 @@ public final class TraceletPermissionManager: NSObject, CLLocationManagerDelegat
             pendingResult = result
             locationManager.requestWhenInUseAuthorization()
         case 2: // whenInUse → upgrade to Always
-            statusBeforeRequest = current
-            pendingResult = result
-            locationManager.requestAlwaysAuthorization()
+            let defaults = UserDefaults.standard
+            if defaults.bool(forKey: "TraceletHasRequestedAlways") {
+                // Already asked before. iOS will suppress the prompt.
+                // Return immediately so the Dart side can redirect to Settings.
+                result(current)
+            } else {
+                defaults.set(true, forKey: "TraceletHasRequestedAlways")
+                statusBeforeRequest = current
+                pendingResult = result
+                locationManager.requestAlwaysAuthorization()
+            }
         default:
             // deniedForever (4) or always (3) — no dialog will show
             result(current)

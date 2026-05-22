@@ -199,7 +199,6 @@ class LocationEngine(
 
         try {
             fusedClient.requestLocationUpdates(request, trackingCallback!!, Looper.getMainLooper())
-            state.enabled = true
             startGpsLossTimer()
         } catch (e: SecurityException) {
             trackingCallback = null
@@ -220,7 +219,6 @@ class LocationEngine(
         stopPeriodic()
         deactivateDeadReckoning()
         cancelGpsLossTimer()
-        state.enabled = false
     }
 
     // =========================================================================

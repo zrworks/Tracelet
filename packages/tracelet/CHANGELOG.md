@@ -1,3 +1,7 @@
+## 2.0.8
+
+ - Update a dependency to the latest release.
+
 ## 2.0.7
 
 - **FIX**: Corrected `intToAuthStatus` permission index mappings on Android and iOS — `getLocationAuthorization()` and `requestLocationAuthorization()` now return the correct `AuthorizationStatus` values ([#80](https://github.com/Ikolvi/Tracelet/issues/80)).

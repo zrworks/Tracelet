@@ -1,3 +1,7 @@
+## 2.0.7
+
+- **CHORE**: Version bump for monorepo consistency and package lockstep alignment.
+
 ## 2.0.6
 
 - **CHORE**: Version bump for monorepo consistency and package lockstep alignment.

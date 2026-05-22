@@ -121,9 +121,9 @@ class SpeedMotionEvent {
   /// Serializes to a map for test round-tripping and headless dispatch.
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      'state': state.name,
-      'previousState': previousState.name,
-      'trackingMode': trackingMode.name,
+      'state': state.index,
+      'previousState': previousState.index,
+      'trackingMode': trackingMode.index,
     };
   }
 

@@ -409,20 +409,20 @@ class LocationService : Service(), DefaultLifecycleObserver {
      * aggressive OEM power managers from suspending our process.
      */
     private fun acquireOemWakelock() {
-        if (wakelock?.isHeld == true) return
-        wakelock = OemCompat.acquireOemSafeWakelock(applicationContext)
+        if (wakeLock?.isHeld == true) return
+        wakeLock = OemCompat.acquireOemSafeWakelock(applicationContext)
     }
 
     private fun releaseOemWakelock() {
         try {
-            if (wakelock?.isHeld == true) {
-                wakelock?.release()
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
                 Log.d(TAG, "Released OEM wakelock")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error releasing wakelock: ${e.message}")
         }
-        wakelock = null
+        wakeLock = null
     }
 
     // =========================================================================

@@ -241,13 +241,13 @@ class SpeedMotionManager(
         state.isMoving = newState != SpeedMotionState.STATIONARY
 
         // Emit speed motion change event
-        val eventData = mapOf(
-            "state" to newState.name.lowercase(),
-            "previousState" to previousState.name.lowercase(),
+        val eventData = mapOf<String, Any>(
+            "state" to newState.ordinal,
+            "previousState" to previousState.ordinal,
             "trackingMode" to when (newState) {
-                SpeedMotionState.STATIONARY -> stationaryTrackingMode.name.lowercase()
-                else -> "continuous"
-            },
+                SpeedMotionState.STATIONARY -> if (stationaryTrackingMode == StationaryTrackingMode.GEOFENCES) 2 else 1
+                else -> 0
+            }
         )
         events.sendSpeedMotionChange(eventData)
 

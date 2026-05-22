@@ -90,10 +90,8 @@ class ConfigManager(context: Context) {
         const val DEFAULT_STILL_SAMPLE_COUNT = 25
 
         // Speed-based motion detection defaults
-        const val DEFAULT_MOTION_DETECTION_MODE = "accelerometer"
         const val DEFAULT_SPEED_MOVING_THRESHOLD = 1.5
         const val DEFAULT_SPEED_STATIONARY_DELAY = 180
-        const val DEFAULT_STATIONARY_TRACKING_MODE = "periodic"
         const val DEFAULT_STATIONARY_PERIODIC_INTERVAL = 120
         const val DEFAULT_STATIONARY_PERIODIC_ACCURACY = 0 // DesiredAccuracy.high
         const val DEFAULT_SPEED_WAKE_CONFIRM_COUNT = 1
@@ -556,7 +554,7 @@ class ConfigManager(context: Context) {
     // Speed-based motion detection config
 
     fun getMotionDetectionMode(): com.ikolvi.tracelet.sdk.model.MotionDetectionMode =
-        com.ikolvi.tracelet.sdk.model.MotionDetectionMode.fromString(getString("motionDetectionMode", DEFAULT_MOTION_DETECTION_MODE))
+        com.ikolvi.tracelet.sdk.model.MotionDetectionMode.fromInt(getInt("motionDetectionMode", com.ikolvi.tracelet.sdk.model.MotionDetectionMode.ACCELEROMETER.value))
 
     fun getSpeedMovingThreshold(): Double =
         getDouble("speedMovingThreshold", DEFAULT_SPEED_MOVING_THRESHOLD)
@@ -565,7 +563,7 @@ class ConfigManager(context: Context) {
         getInt("speedStationaryDelay", DEFAULT_SPEED_STATIONARY_DELAY)
 
     fun getStationaryTrackingMode(): com.ikolvi.tracelet.sdk.model.StationaryTrackingMode =
-        com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.fromString(getString("stationaryTrackingMode", DEFAULT_STATIONARY_TRACKING_MODE))
+        com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.fromInt(getInt("stationaryTrackingMode", com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.PERIODIC.value))
 
     fun getStationaryPeriodicInterval(): Int =
         getInt("stationaryPeriodicInterval", DEFAULT_STATIONARY_PERIODIC_INTERVAL)

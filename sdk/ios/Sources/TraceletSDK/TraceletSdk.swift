@@ -1725,12 +1725,11 @@ extension TraceletSdk: SpeedMotionDelegate {
         }
     }
 
-    public func emitSpeedMotionEvent(state: String, previousState: String, trackingMode: String) {
-        let data: [String: Any] = [
+    public func emitSpeedMotionEvent(state: Int, previousState: Int, trackingMode: Int) {
+        eventSender.sendSpeedMotionEvent([
             "state": state,
             "previousState": previousState,
-            "trackingMode": trackingMode,
-        ]
-        eventSender.sendSpeedMotionEvent(data)
+            "trackingMode": trackingMode
+        ])
     }
 }

@@ -67,5 +67,6 @@ private final class NoopEventSender: TraceletEventSending {
     func sendRemoteConfigEvent(_ data: [String: Any]) {}
     func sendTrip(_ data: [String: Any]) {}
     func sendBudgetAdjustment(_ data: [String: Any]) {}
+    func sendSpeedMotionEvent(_ data: [String: Any]) {}
     func hasListener(eventName: String) -> Bool { false }
 }

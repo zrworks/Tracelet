@@ -34,16 +34,21 @@ class MotionDetectorTest {
     @Before
     fun setUp() {
         val context = RuntimeEnvironment.getApplication()
+        
+        // Setup Robolectric ShadowSensorManager
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val shadowSensorManager = shadowOf(sensorManager)
+        val accelerometer = org.robolectric.shadows.ShadowSensor.newInstance(Sensor.TYPE_ACCELEROMETER)
+        shadowSensorManager.addSensor(Sensor.TYPE_ACCELEROMETER, accelerometer)
+        
         config = ConfigManager(context)
         state = StateManager(context)
         events = DummyEventSender()
 
         // Force accelerometer-only mode
         config.setConfig(mapOf(
-            "motion" to mapOf(
-                "disableMotionActivityUpdates" to true,
-                "stopTimeout" to 1 // 1 minute
-            )
+            "disableMotionActivityUpdates" to true,
+            "stopTimeout" to 1 // 1 minute
         ))
         
         state.isMoving = true // Start in moving state
@@ -64,8 +69,10 @@ class MotionDetectorTest {
         assertNull(getStopTimeoutRunnable(), "Timeout should not be started yet")
 
         // 25th sample
+        println("Sending 25th sample...")
         sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f))
         
+        println("Runnable is: ${getStopTimeoutRunnable()}")
         // Timeout should be started
         assertNotNull(getStopTimeoutRunnable(), "Timeout should be started after sustained stillness")
         

@@ -207,7 +207,11 @@ public final class MotionDetector {
     }
 
     private func handleAccelerometerData(_ data: CMAccelerometerData) {
-        let acc = data.acceleration
+        handleAcceleration(data.acceleration)
+    }
+
+    // Internal for testing
+    internal func handleAcceleration(_ acc: CMAcceleration) {
         // Compute magnitude and subtract gravity (~1g)
         let magnitude = sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) - 1.0
 

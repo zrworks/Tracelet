@@ -485,7 +485,7 @@ final class ConfigManagerExtendedTests: XCTestCase {
 
     func testHeartbeatIntervalDefault() {
         let config = ConfigManager()
-        XCTAssertEqual(config.getHeartbeatInterval(), 120)
+        XCTAssertEqual(config.getHeartbeatInterval(), 60)
     }
 
     func testPrivacyZoneDisabledByDefault() {
@@ -1029,6 +1029,7 @@ private class MockSyncEventSender: TraceletEventSending {
     func sendRemoteConfigEvent(_ data: [String: Any]) {}
     func sendTrip(_ data: [String: Any]) {}
     func sendBudgetAdjustment(_ data: [String: Any]) {}
+    func sendSpeedMotionEvent(_ data: [String: Any]) {}
     func hasListener(eventName: String) -> Bool { false }
 }
 
@@ -1055,6 +1056,7 @@ private class MockEventSender: TraceletEventSending {
     func sendRemoteConfigEvent(_ data: [String: Any]) {}
     func sendTrip(_ data: [String: Any]) {}
     func sendBudgetAdjustment(_ data: [String: Any]) {}
+    func sendSpeedMotionEvent(_ data: [String: Any]) {}
     func hasListener(eventName: String) -> Bool { false }
 }
 

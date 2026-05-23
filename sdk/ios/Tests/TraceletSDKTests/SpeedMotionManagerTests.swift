@@ -67,9 +67,9 @@ final class SpeedMotionManagerTests: XCTestCase {
         XCTAssertEqual(manager.state, .slowing)
 
         let event = delegate.speedMotionEvents.last
-        XCTAssertEqual(event?["state"], "slowing")
-        XCTAssertEqual(event?["previousState"], "moving")
-        XCTAssertEqual(event?["trackingMode"], "continuous")
+        XCTAssertEqual(event?["state"], "1")
+        XCTAssertEqual(event?["previousState"], "0")
+        XCTAssertEqual(event?["trackingMode"], "0")
     }
 
     func testSlowingReturnsToMovingWhenSpeedClimbs() {
@@ -108,7 +108,7 @@ final class SpeedMotionManagerTests: XCTestCase {
         XCTAssertEqual(manager.state, .stationary)
         XCTAssertTrue(delegate.switchedToStationaryGeofences)
         XCTAssertFalse(delegate.switchedToStationaryPeriodic)
-        XCTAssertEqual(delegate.speedMotionEvents.last?["trackingMode"], "geofences")
+        XCTAssertEqual(delegate.speedMotionEvents.last?["trackingMode"], "1")
     }
 
     // MARK: - STATIONARY -> MOVING (wake)
@@ -126,9 +126,9 @@ final class SpeedMotionManagerTests: XCTestCase {
         XCTAssertTrue(delegate.switchedToContinuous)
 
         let event = delegate.speedMotionEvents.last
-        XCTAssertEqual(event?["state"], "moving")
-        XCTAssertEqual(event?["previousState"], "stationary")
-        XCTAssertEqual(event?["trackingMode"], "continuous")
+        XCTAssertEqual(event?["state"], "0")
+        XCTAssertEqual(event?["previousState"], "2")
+        XCTAssertEqual(event?["trackingMode"], "0")
     }
 
     func testStationaryLowSpeedResetsWakeCount() {
@@ -181,11 +181,11 @@ final class SpeedMotionManagerTests: XCTestCase {
         func switchToContinuous() { switchedToContinuous = true }
         func switchToStationaryPeriodic() { switchedToStationaryPeriodic = true }
         func switchToStationaryGeofences() { switchedToStationaryGeofences = true }
-        func emitSpeedMotionEvent(state: String, previousState: String, trackingMode: String) {
+        func emitSpeedMotionEvent(state: Int, previousState: Int, trackingMode: Int) {
             speedMotionEvents.append([
-                "state": state,
-                "previousState": previousState,
-                "trackingMode": trackingMode,
+                "state": String(state),
+                "previousState": String(previousState),
+                "trackingMode": String(trackingMode),
             ])
         }
     }

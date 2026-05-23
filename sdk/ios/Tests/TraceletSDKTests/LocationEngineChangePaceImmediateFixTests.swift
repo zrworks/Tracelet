@@ -88,6 +88,14 @@ private final class RecordingLocationManager: CLLocationManager {
         set { _allowsBackground = newValue }
     }
 
+    override var authorizationStatus: CLAuthorizationStatus {
+        if #available(iOS 14.0, *) {
+            return .authorizedAlways
+        } else {
+            return .authorizedAlways
+        }
+    }
+
     override func requestLocation() {
         requestLocationCallCount += 1
         // Do NOT call super — avoids hitting real CoreLocation in unit tests.
@@ -129,5 +137,6 @@ private final class NoopEventSender: TraceletEventSending {
     func sendRemoteConfigEvent(_ data: [String: Any]) {}
     func sendTrip(_ data: [String: Any]) {}
     func sendBudgetAdjustment(_ data: [String: Any]) {}
+    func sendSpeedMotionEvent(_ data: [String: Any]) {}
     func hasListener(eventName: String) -> Bool { false }
 }

@@ -3,6 +3,11 @@ import XCTest
 
 final class TraceletSdkTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        TraceletSdk.shared.reset(nil)
+    }
+
     // MARK: - Singleton
 
     func testSharedInstanceIsSingleton() {

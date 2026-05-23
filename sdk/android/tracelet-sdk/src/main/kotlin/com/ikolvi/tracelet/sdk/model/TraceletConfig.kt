@@ -355,7 +355,7 @@ data class MotionConfig(
             motionDetectionMode = MotionDetectionMode.fromInt((m["motionDetectionMode"] as? Number)?.toInt() ?: 0),
             speedMovingThreshold = (m["speedMovingThreshold"] as? Number)?.toDouble() ?: 1.5,
             speedStationaryDelay = (m["speedStationaryDelay"] as? Number)?.toInt() ?: 180,
-            stationaryTrackingMode = StationaryTrackingMode.fromInt((m["stationaryTrackingMode"] as? Number)?.toInt() ?: 1),
+            stationaryTrackingMode = StationaryTrackingMode.fromInt((m["stationaryTrackingMode"] as? Number)?.toInt() ?: 0),
             stationaryPeriodicInterval = (m["stationaryPeriodicInterval"] as? Number)?.toInt() ?: 900,
             stationaryPeriodicAccuracy = DesiredAccuracy.fromValue((m["stationaryPeriodicAccuracy"] as? Number)?.toInt() ?: 1),
             speedWakeConfirmCount = (m["speedWakeConfirmCount"] as? Number)?.toInt() ?: 1,

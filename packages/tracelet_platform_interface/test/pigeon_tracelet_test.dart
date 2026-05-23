@@ -292,15 +292,17 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<int> getNotificationPermissionStatus() async {
+  Future<TlNotificationAuthorizationStatus>
+  getNotificationPermissionStatus() async {
     _record('getNotificationPermissionStatus');
-    return 3;
+    return TlNotificationAuthorizationStatus.authorized;
   }
 
   @override
-  Future<int> requestNotificationPermission() async {
+  Future<TlNotificationAuthorizationStatus>
+  requestNotificationPermission() async {
     _record('requestNotificationPermission');
-    return 3;
+    return TlNotificationAuthorizationStatus.authorized;
   }
 
   @override
@@ -316,15 +318,15 @@ class FakeHostApi extends TraceletHostApi {
   }
 
   @override
-  Future<int> getMotionPermissionStatus() async {
+  Future<TlMotionAuthorizationStatus> getMotionPermissionStatus() async {
     _record('getMotionPermissionStatus');
-    return 3;
+    return TlMotionAuthorizationStatus.authorized;
   }
 
   @override
-  Future<int> requestMotionPermission() async {
+  Future<TlMotionAuthorizationStatus> requestMotionPermission() async {
     _record('requestMotionPermission');
-    return 3;
+    return TlMotionAuthorizationStatus.authorized;
   }
 
   @override
@@ -567,6 +569,15 @@ void main() {
         deadReckoningActivationDelay: 10,
         deadReckoningMaxDuration: 120,
         batteryBudgetPerHour: 0.0,
+        filter: TlLocationFilter(
+          trackingAccuracyThreshold: 100,
+          maxImpliedSpeed: 50,
+          odometerAccuracyThreshold: 100,
+          policy: TlLocationFilterPolicy.adjust,
+          rejectMockLocations: false,
+          mockDetectionLevel: 0,
+          useKalmanFilter: false,
+        ),
       ),
       app: TlAppConfig(
         stopOnTerminate: true,
@@ -593,6 +604,7 @@ void main() {
           notificationText: 'Tracking active',
           notificationPriority: TlNotificationPriority.defaultPriority,
           notificationOngoing: true,
+          showNotificationOnPauseOnly: false,
           actions: [],
         ),
       ),
@@ -907,22 +919,28 @@ void main() {
   // ===================== Permissions =====================
 
   group('Permissions', () {
-    test('getPermissionStatus() returns index', () async {
-      final status = await pigeon.getPermissionStatus();
-      expect(status, TlAuthorizationStatus.always.index);
+    test('getLocationAuthorization() returns enum', () async {
+      final status = await pigeon.getLocationAuthorization();
+      expect(status, AuthorizationStatus.always);
     });
 
-    test('requestPermission() returns index', () async {
-      final status = await pigeon.requestPermission();
-      expect(status, TlAuthorizationStatus.always.index);
+    test('requestLocationAuthorization() returns enum', () async {
+      final status = await pigeon.requestLocationAuthorization();
+      expect(status, AuthorizationStatus.always);
     });
 
-    test('getNotificationPermissionStatus() returns value', () async {
-      expect(await pigeon.getNotificationPermissionStatus(), 3);
+    test('getNotificationAuthorization() returns enum', () async {
+      expect(
+        await pigeon.getNotificationAuthorization(),
+        NotificationAuthorizationStatus.granted,
+      );
     });
 
-    test('requestNotificationPermission() returns value', () async {
-      expect(await pigeon.requestNotificationPermission(), 3);
+    test('requestNotificationAuthorization() returns enum', () async {
+      expect(
+        await pigeon.requestNotificationAuthorization(),
+        NotificationAuthorizationStatus.granted,
+      );
     });
 
     test('canScheduleExactAlarms() returns bool', () async {
@@ -933,12 +951,18 @@ void main() {
       expect(await pigeon.openExactAlarmSettings(), false);
     });
 
-    test('getMotionPermissionStatus() returns value', () async {
-      expect(await pigeon.getMotionPermissionStatus(), 3);
+    test('getMotionAuthorization() returns enum', () async {
+      expect(
+        await pigeon.getMotionAuthorization(),
+        MotionAuthorizationStatus.granted,
+      );
     });
 
-    test('requestMotionPermission() returns value', () async {
-      expect(await pigeon.requestMotionPermission(), 3);
+    test('requestMotionAuthorization() returns enum', () async {
+      expect(
+        await pigeon.requestMotionAuthorization(),
+        MotionAuthorizationStatus.granted,
+      );
     });
 
     test('requestTemporaryFullAccuracy() delegates', () async {

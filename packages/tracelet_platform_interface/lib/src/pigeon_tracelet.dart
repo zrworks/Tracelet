@@ -303,27 +303,44 @@ class PigeonTracelet extends TraceletPlatform {
   @override
   Future<AuthorizationStatus> getLocationAuthorization() async {
     final status = await _api.getPermissionStatus();
-    return AuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => AuthorizationStatus.notDetermined);
+    return AuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => AuthorizationStatus.notDetermined,
+    );
   }
 
   @override
   Future<AuthorizationStatus> requestLocationAuthorization() async {
     final status = await _api.requestPermission();
-    return AuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => AuthorizationStatus.notDetermined);
+    return AuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => AuthorizationStatus.notDetermined,
+    );
   }
 
   @override
   Future<NotificationAuthorizationStatus> getNotificationAuthorization() async {
     final status = await _api.getNotificationPermissionStatus();
-    if (status == TlNotificationAuthorizationStatus.authorized) return NotificationAuthorizationStatus.granted;
-    return NotificationAuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => NotificationAuthorizationStatus.notDetermined);
+    if (status == TlNotificationAuthorizationStatus.authorized) {
+      return NotificationAuthorizationStatus.granted;
+    }
+    return NotificationAuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => NotificationAuthorizationStatus.notDetermined,
+    );
   }
 
   @override
-  Future<NotificationAuthorizationStatus> requestNotificationAuthorization() async {
+  Future<NotificationAuthorizationStatus>
+  requestNotificationAuthorization() async {
     final status = await _api.requestNotificationPermission();
-    if (status == TlNotificationAuthorizationStatus.authorized) return NotificationAuthorizationStatus.granted;
-    return NotificationAuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => NotificationAuthorizationStatus.notDetermined);
+    if (status == TlNotificationAuthorizationStatus.authorized) {
+      return NotificationAuthorizationStatus.granted;
+    }
+    return NotificationAuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => NotificationAuthorizationStatus.notDetermined,
+    );
   }
 
   @override
@@ -335,15 +352,25 @@ class PigeonTracelet extends TraceletPlatform {
   @override
   Future<MotionAuthorizationStatus> getMotionAuthorization() async {
     final status = await _api.getMotionPermissionStatus();
-    if (status == TlMotionAuthorizationStatus.authorized) return MotionAuthorizationStatus.granted;
-    return MotionAuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => MotionAuthorizationStatus.notDetermined);
+    if (status == TlMotionAuthorizationStatus.authorized) {
+      return MotionAuthorizationStatus.granted;
+    }
+    return MotionAuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => MotionAuthorizationStatus.notDetermined,
+    );
   }
 
   @override
   Future<MotionAuthorizationStatus> requestMotionAuthorization() async {
     final status = await _api.requestMotionPermission();
-    if (status == TlMotionAuthorizationStatus.authorized) return MotionAuthorizationStatus.granted;
-    return MotionAuthorizationStatus.values.firstWhere((e) => e.name == status.name, orElse: () => MotionAuthorizationStatus.notDetermined);
+    if (status == TlMotionAuthorizationStatus.authorized) {
+      return MotionAuthorizationStatus.granted;
+    }
+    return MotionAuthorizationStatus.values.firstWhere(
+      (e) => e.name == status.name,
+      orElse: () => MotionAuthorizationStatus.notDetermined,
+    );
   }
 
   @override

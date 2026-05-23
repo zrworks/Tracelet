@@ -57,7 +57,8 @@ Future<void> singleLocationExample() async {
 
   // Ensure location permission is granted before requesting.
   final authStatus = await tl.Tracelet.requestLocationAuthorization();
-  if (authStatus != tl.AuthorizationStatus.whenInUse && authStatus != tl.AuthorizationStatus.always) {
+  if (authStatus != tl.AuthorizationStatus.whenInUse &&
+      authStatus != tl.AuthorizationStatus.always) {
     print('⚠️ Location permission denied (status=$authStatus)');
     return;
   }
@@ -94,7 +95,8 @@ Future<void> bestOfThreeSamplesExample() async {
 
   // Ensure location permission is granted before requesting.
   final authStatus = await tl.Tracelet.requestLocationAuthorization();
-  if (authStatus != tl.AuthorizationStatus.whenInUse && authStatus != tl.AuthorizationStatus.always) {
+  if (authStatus != tl.AuthorizationStatus.whenInUse &&
+      authStatus != tl.AuthorizationStatus.always) {
     print('⚠️ Location permission denied (status=$authStatus)');
     return;
   }
@@ -131,7 +133,8 @@ Future<void> lastKnownLocationExample() async {
 
   // Ensure location permission is granted before requesting.
   final authStatus = await tl.Tracelet.requestLocationAuthorization();
-  if (authStatus != tl.AuthorizationStatus.whenInUse && authStatus != tl.AuthorizationStatus.always) {
+  if (authStatus != tl.AuthorizationStatus.whenInUse &&
+      authStatus != tl.AuthorizationStatus.always) {
     print('⚠️ Location permission denied (status=$authStatus)');
     return;
   }
@@ -387,7 +390,8 @@ Future<void> permissionFlowExample() async {
   final status = await tl.Tracelet.getLocationAuthorization();
   print('Current permission status: $status');
 
-  if (status == tl.AuthorizationStatus.notDetermined || status == tl.AuthorizationStatus.denied) {
+  if (status == tl.AuthorizationStatus.notDetermined ||
+      status == tl.AuthorizationStatus.denied) {
     // notDetermined or denied (can ask again) → request foreground.
     final result = await tl.Tracelet.requestLocationAuthorization();
     print('After request: $result');

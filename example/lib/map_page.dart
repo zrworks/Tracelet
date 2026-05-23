@@ -1372,9 +1372,13 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             GestureDetector(
               onTap: _cycleMotionDetectionModeFromMap,
               child: _StatusChip(
-                icon: _motionDetectionMode == 'Speed' ? Icons.speed : Icons.vibration,
+                icon: _motionDetectionMode == 'Speed'
+                    ? Icons.speed
+                    : Icons.vibration,
                 label: 'Motion: $_motionDetectionMode',
-                color: _motionDetectionMode == 'Speed' ? Colors.deepPurple : Colors.indigo,
+                color: _motionDetectionMode == 'Speed'
+                    ? Colors.deepPurple
+                    : Colors.indigo,
                 showToggle: true,
               ),
             ),
@@ -1703,7 +1707,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
       await tl.Tracelet.setConfig(
         tl.Config(
-          motion: isCurrentlyAccel 
+          motion: isCurrentlyAccel
               ? const tl.MotionConfig(
                   motionDetectionMode: tl.MotionDetectionMode.speed,
                   speedMovingThreshold: 0.5, // Lowered for mock walking routes
@@ -1720,9 +1724,11 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isCurrentlyAccel
-                ? 'Speed-based motion detection enabled (Hardware accel disabled)'
-                : 'Accelerometer-based motion detection enabled'),
+            content: Text(
+              isCurrentlyAccel
+                  ? 'Speed-based motion detection enabled (Hardware accel disabled)'
+                  : 'Accelerometer-based motion detection enabled',
+            ),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -1840,78 +1846,87 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             children: [
               const Text('Live Map'),
               const SizedBox(width: 6),
-            if (_isMoving)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withAlpha(40),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'MOVING',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
+              if (_isMoving)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(40),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'MOVING',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withAlpha(40),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'STILL',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
                   ),
                 ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withAlpha(40),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'STILL',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+              if (_isMock) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withAlpha(40),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'MOCK',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
-              ),
-            if (_isMock) ...[
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withAlpha(40),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'MOCK',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+              ],
+              if (_adaptiveMode) ...[
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: 'Adaptive sampling active',
+                  child: Icon(
+                    Icons.auto_awesome,
+                    size: 16,
+                    color: Colors.amber.shade600,
                   ),
                 ),
-              ),
-            ],
-            if (_adaptiveMode) ...[
-              const SizedBox(width: 4),
-              Tooltip(
-                message: 'Adaptive sampling active',
-                child: Icon(
-                  Icons.auto_awesome,
-                  size: 16,
-                  color: Colors.amber.shade600,
+              ],
+              if (_kalmanEnabled) ...[
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: 'Kalman filter active',
+                  child: Icon(
+                    Icons.blur_on,
+                    size: 16,
+                    color: Colors.teal.shade400,
+                  ),
                 ),
-              ),
-            ],
-            if (_kalmanEnabled) ...[
-              const SizedBox(width: 4),
-              Tooltip(
-                message: 'Kalman filter active',
-                child: Icon(
-                  Icons.blur_on,
-                  size: 16,
-                  color: Colors.teal.shade400,
-                ),
-              ),
-            ],
+              ],
             ],
           ),
         ),

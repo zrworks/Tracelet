@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+- **CHORE**: Major release synchronized with Tracelet Flutter 2.1.0.
+- **FEAT**: Implemented `SpeedMotionManager` for the new `tl.MotionDetectionMode.speed` tracking mode, exclusively using GPS speed variations for motion state transitions.
+- **FIX**: Prevented a critical logic flaw where the accelerometer was completely shut down during the `stopTimeout` countdown. Motion during the countdown now correctly aborts the stationary transition (#85).
+- **FIX**: Reset `TraceletHasRequestedAlways` flag upon iOS `notDetermined` state to prevent native prompt bypasses after the app is reinstalled.
+- **REFACTOR**: Transitioned all string-based config values to type-safe Enums across the platform bridge.
+
 ## 2.0.7
 
 - **FIX**: Resolved an issue where low-confidence Activity Recognition updates were ignored by the Dart event stream but were still silently updating the internal state machine, causing subsequent high-confidence updates to be dispatched as spurious "changes" even when the activity type hadn't actually changed.
@@ -10,9 +18,6 @@
 - **FIX**: Resolved critical issue where calculated `BatteryBudgetEngine` parameter adjustments (distance filter, accuracy) were not applied to `LocationEngine`.
 - **FEAT**: Added "Charging Bypass" to skip battery budgeting updates while connected to external power.
 - **PERF**: Implemented heartbeat deduplication, saving hundreds of redundant SQLite inserts/hour when stationary by tracking last persisted location timestamps.
-- **FEAT**: Implemented `SpeedMotionManager` for the new `tl.MotionDetectionMode.speed` tracking mode, exclusively using GPS speed variations for motion state transitions.
-- **FIX**: Prevented a critical logic flaw where the accelerometer was completely shut down during the `stopTimeout` countdown. Motion during the countdown now correctly aborts the stationary transition (#85).
-- **FIX**: Reset `TraceletHasRequestedAlways` flag upon iOS `notDetermined` state to prevent native prompt bypasses after the app is reinstalled.
 - **FIX**: Corrected `stillSampleCount` dwell window regression to match the actual 10Hz accelerometer rate (reduced stationary delay from 15s to 5s).
 - **FIX**: Added permission-missing checks and explicit feedback via `providerChange` events on `start()` call.
 

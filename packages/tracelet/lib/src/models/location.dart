@@ -130,17 +130,31 @@ class Location {
   factory Location.fromTl(TlLocation tl) {
     final c = tl.coords;
     final ext = tl.extras ?? const <String, Object?>{};
-    
+
     // Extract metadata injected by EventDispatcher into extras because Pigeon
     // TlLocation doesn't natively support these fields.
-    final Map<String, Object?> synthesizedExtras = Map<String, Object?>.from(ext);
-    final bool isMock = ensureBool(synthesizedExtras.remove('is_mock'), fallback: false);
-    final String locationSource = _ensureLocationSource(synthesizedExtras.remove('locationSource'));
-    final bool reducedAccuracy = ensureBool(synthesizedExtras.remove('reducedAccuracy'), fallback: false);
-    final MockHeuristics? mockHeuristics = _parseMockHeuristics(synthesizedExtras.remove('mockHeuristics'));
+    final Map<String, Object?> synthesizedExtras = Map<String, Object?>.from(
+      ext,
+    );
+    final bool isMock = ensureBool(
+      synthesizedExtras.remove('is_mock'),
+      fallback: false,
+    );
+    final String locationSource = _ensureLocationSource(
+      synthesizedExtras.remove('locationSource'),
+    );
+    final bool reducedAccuracy = ensureBool(
+      synthesizedExtras.remove('reducedAccuracy'),
+      fallback: false,
+    );
+    final MockHeuristics? mockHeuristics = _parseMockHeuristics(
+      synthesizedExtras.remove('mockHeuristics'),
+    );
     final String? auditHash = synthesizedExtras.remove('audit_hash') as String?;
-    final String? auditPreviousHash = synthesizedExtras.remove('audit_previous_hash') as String?;
-    final int? auditChainIndex = (synthesizedExtras.remove('audit_chain_index') as num?)?.toInt();
+    final String? auditPreviousHash =
+        synthesizedExtras.remove('audit_previous_hash') as String?;
+    final int? auditChainIndex =
+        (synthesizedExtras.remove('audit_chain_index') as num?)?.toInt();
 
     return Location(
       coords: Coords(

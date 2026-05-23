@@ -580,11 +580,13 @@ class _DashboardPageState extends State<DashboardPage>
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
                     notificationTitle: '📍 Tracelet Demo Active',
-                    notificationText: 'Smart Notifications — disappears when app is open!',
+                    notificationText:
+                        'Smart Notifications — disappears when app is open!',
                     channelId: 'tracelet_demo_channel',
                     channelName: 'Tracelet Demo Background',
                     notificationPriority: tl.NotificationPriority.high,
-                    showNotificationOnPauseOnly: true, // ✨ New Feature: Smart Visibility
+                    showNotificationOnPauseOnly:
+                        true, // ✨ New Feature: Smart Visibility
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
@@ -879,7 +881,8 @@ class _DashboardPageState extends State<DashboardPage>
               channelId: 'tracelet_demo_channel',
               channelName: 'Tracelet Demo Background',
               notificationPriority: tl.NotificationPriority.high,
-              showNotificationOnPauseOnly: true, // ✨ New Feature: Smart Visibility
+              showNotificationOnPauseOnly:
+                  true, // ✨ New Feature: Smart Visibility
             ),
           ),
         ),
@@ -1856,8 +1859,9 @@ class _DashboardPageState extends State<DashboardPage>
     final status = await tl.Tracelet.getMotionAuthorization();
     _addLog('MOTION', 'current motion permission status=${status.name}');
 
-    if (status == tl.MotionAuthorizationStatus.granted) return true; // Already granted
-
+    if (status == tl.MotionAuthorizationStatus.granted) {
+      return true; // Already granted
+    }
     if (status == tl.MotionAuthorizationStatus.deniedForever) {
       // Permanently denied — show denied dialog
       if (mounted) _showMotionDeniedDialog();

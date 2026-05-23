@@ -473,23 +473,36 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<bool> isPowerSaveMode() async => false;
 
   @override
-  Future<int> getPermissionStatus() {
-    return _permissions.getPermissionStatus();
+  Future<AuthorizationStatus> getLocationAuthorization() async {
+    final status = await _permissions.getPermissionStatus();
+    if (status == 2) return AuthorizationStatus.whenInUse;
+    if (status == 4) return AuthorizationStatus.deniedForever;
+    return AuthorizationStatus.notDetermined;
   }
 
   @override
-  Future<int> requestPermission() {
-    return _permissions.requestPermission();
+  Future<AuthorizationStatus> requestLocationAuthorization() async {
+    final status = await _permissions.requestPermission();
+    if (status == 2) return AuthorizationStatus.whenInUse;
+    if (status == 4) return AuthorizationStatus.deniedForever;
+    return AuthorizationStatus.notDetermined;
   }
 
   @override
-  Future<int> getNotificationPermissionStatus() {
-    return _permissions.getNotificationPermissionStatus();
+  Future<NotificationAuthorizationStatus> getNotificationAuthorization() async {
+    final status = await _permissions.getNotificationPermissionStatus();
+    if (status == 3) return NotificationAuthorizationStatus.granted;
+    if (status == 4) return NotificationAuthorizationStatus.deniedForever;
+    return NotificationAuthorizationStatus.notDetermined;
   }
 
   @override
-  Future<int> requestNotificationPermission() {
-    return _permissions.requestNotificationPermission();
+  Future<NotificationAuthorizationStatus>
+  requestNotificationAuthorization() async {
+    final status = await _permissions.requestNotificationPermission();
+    if (status == 3) return NotificationAuthorizationStatus.granted;
+    if (status == 4) return NotificationAuthorizationStatus.deniedForever;
+    return NotificationAuthorizationStatus.notDetermined;
   }
 
   @override
@@ -499,10 +512,12 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<bool> openExactAlarmSettings() async => false; // no-op on web
 
   @override
-  Future<int> getMotionPermissionStatus() async => 3; // always granted
+  Future<MotionAuthorizationStatus> getMotionAuthorization() async =>
+      MotionAuthorizationStatus.granted; // always granted
 
   @override
-  Future<int> requestMotionPermission() async => 3; // always granted
+  Future<MotionAuthorizationStatus> requestMotionAuthorization() async =>
+      MotionAuthorizationStatus.granted; // always granted
 
   @override
   Future<int> requestTemporaryFullAccuracy(String purpose) async {

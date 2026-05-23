@@ -217,16 +217,17 @@ public final class MotionDetector {
 
             if abs(magnitude) < configManager.getStillThreshold() {
                 consecutiveStillSamples += 1
-                if consecutiveStillSamples >= configManager.getStillSampleCount() {
+                if consecutiveStillSamples == configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
                     NSLog("[Tracelet-Motion] Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
                           consecutiveStillSamples)
-                    motionManager.stopAccelerometerUpdates()
+                    // Do NOT stop accelerometer updates so we can abort if motion resumes!
                     startStopTimeoutCountdown()
                 }
             } else {
-                if consecutiveStillSamples > 0 {
-                    NSLog("[Tracelet-Motion] Accelerometer broke stillness after %d samples", consecutiveStillSamples)
+                if consecutiveStillSamples >= configManager.getStillSampleCount() {
+                    NSLog("[Tracelet-Motion] Accelerometer broke stillness — aborting stop-timeout countdown")
+                    handleMovingDetected()
                 }
                 consecutiveStillSamples = 0
             }

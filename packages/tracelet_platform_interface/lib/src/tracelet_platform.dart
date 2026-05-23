@@ -298,7 +298,9 @@ abstract class TraceletPlatform extends PlatformInterface {
   ///
   /// Does **not** trigger any dialogs.
   Future<AuthorizationStatus> getLocationAuthorization() {
-    throw UnimplementedError('getLocationAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'getLocationAuthorization() has not been implemented.',
+    );
   }
 
   /// Request location permission asynchronously.
@@ -309,15 +311,18 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Escalation: notDetermined → foreground, whenInUse → background.
   /// Terminal states (denied/always) return immediately.
   Future<AuthorizationStatus> requestLocationAuthorization() {
-    throw UnimplementedError('requestLocationAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'requestLocationAuthorization() has not been implemented.',
+    );
   }
-
 
   /// Get notification permission status as a typed [NotificationAuthorizationStatus].
   ///
   /// On Android < 13 and on iOS (when permitted), always returns [NotificationAuthorizationStatus.authorized].
   Future<NotificationAuthorizationStatus> getNotificationAuthorization() {
-    throw UnimplementedError('getNotificationAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'getNotificationAuthorization() has not been implemented.',
+    );
   }
 
   /// Request notification permission and return the result as a typed
@@ -325,9 +330,10 @@ abstract class TraceletPlatform extends PlatformInterface {
   ///
   /// On Android < 13 and on iOS, returns [NotificationAuthorizationStatus.authorized] immediately.
   Future<NotificationAuthorizationStatus> requestNotificationAuthorization() {
-    throw UnimplementedError('requestNotificationAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'requestNotificationAuthorization() has not been implemented.',
+    );
   }
-
 
   /// Check whether the app can schedule exact alarms (Android 12+ / API 31+).
   ///
@@ -364,7 +370,9 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// permission is needed. On iOS, returns the CMMotionActivityManager
   /// authorization status.
   Future<MotionAuthorizationStatus> getMotionAuthorization() {
-    throw UnimplementedError('getMotionAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'getMotionAuthorization() has not been implemented.',
+    );
   }
 
   /// Request motion / activity recognition permission asynchronously.
@@ -372,14 +380,18 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Triggers the OS ACTIVITY_RECOGNITION dialog on Android 10+.
   /// Returns the actual result after user responds.
   Future<MotionAuthorizationStatus> requestMotionAuthorization() {
-    throw UnimplementedError('requestMotionAuthorization() has not been implemented.');
+    throw UnimplementedError(
+      'requestMotionAuthorization() has not been implemented.',
+    );
   }
 
   /// Request temporary full accuracy (iOS 14+).
   ///
   /// Returns raw int: `0` full, `1` reduced.
   /// Prefer [requestTemporaryFullAccuracyAuthorization] for type-safe results.
-  @Deprecated('Use requestTemporaryFullAccuracyAuthorization() which returns FullAccuracyStatus.')
+  @Deprecated(
+    'Use requestTemporaryFullAccuracyAuthorization() which returns FullAccuracyStatus.',
+  )
   Future<int> requestTemporaryFullAccuracy(String purpose) {
     throw UnimplementedError(
       'requestTemporaryFullAccuracy() has not been implemented.',
@@ -399,44 +411,9 @@ abstract class TraceletPlatform extends PlatformInterface {
   }
 
   // ---------------------------------------------------------------------------
-  // Private helpers — raw-int → enum conversion
+  // Provider and Device State
   // ---------------------------------------------------------------------------
-
-  /// Maps the raw platform integer to [NotificationAuthorizationStatus].
-  ///
-  /// Channel contract:
-  ///   0 → notDetermined, 1 → denied, 3 → granted, 4 → deniedForever
-  static NotificationAuthorizationStatus _rawIntToNotificationStatus(int raw) {
-    switch (raw) {
-      case 0:
-        return NotificationAuthorizationStatus.notDetermined;
-      case 1:
-        return NotificationAuthorizationStatus.denied;
-      case 3:
-        return NotificationAuthorizationStatus.granted;
-      case 4:
-        return NotificationAuthorizationStatus.deniedForever;
-      default:
-        return NotificationAuthorizationStatus.notDetermined;
-    }
-  }
-
-  /// Maps the raw platform integer to [MotionAuthorizationStatus].
-  ///
-  /// Channel contract:
-  ///   0 → notDetermined, 3 → granted, 4 → deniedForever
-  static MotionAuthorizationStatus _rawIntToMotionStatus(int raw) {
-    switch (raw) {
-      case 3:
-        return MotionAuthorizationStatus.granted;
-      case 4:
-        return MotionAuthorizationStatus.deniedForever;
-      default:
-        return MotionAuthorizationStatus.notDetermined;
-    }
-  }
-
-  /// Get the current location provider state.
+  /// Get current provider state.
   Future<Map<String, Object?>> getProviderState() {
     throw UnimplementedError('getProviderState() has not been implemented.');
   }
@@ -787,7 +764,8 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Subscribe via [Tracelet.onMotionModeChange] or read the broadcast
   /// stream from [Tracelet.motionModeChangeStream].
   Stream<TlSpeedMotionEvent> get motionModeChangeEvents {
-    throw UnimplementedError('motionModeChangeEvents has not been implemented.');
+    throw UnimplementedError(
+      'motionModeChangeEvents has not been implemented.',
+    );
   }
 }
-

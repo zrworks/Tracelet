@@ -1105,14 +1105,16 @@ class Tracelet {
   /// Get the notification permission status as a typed [NotificationAuthorizationStatus].
   ///
   /// On Android < 13 and on iOS always returns [NotificationAuthorizationStatus.authorized].
-  static Future<NotificationAuthorizationStatus> getNotificationAuthorization() {
+  static Future<NotificationAuthorizationStatus>
+  getNotificationAuthorization() {
     return _platform.getNotificationAuthorization();
   }
 
   /// Request notification permission asynchronously (Android 13+ / API 33+).
   ///
   /// Returns a strongly typed [NotificationAuthorizationStatus].
-  static Future<NotificationAuthorizationStatus> requestNotificationAuthorization() {
+  static Future<NotificationAuthorizationStatus>
+  requestNotificationAuthorization() {
     return _platform.requestNotificationAuthorization();
   }
 

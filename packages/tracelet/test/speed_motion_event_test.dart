@@ -101,10 +101,10 @@ void main() {
         speedWakeConfirmCount: 3,
       );
       final map = config.toMap();
-      expect(map['motionDetectionMode'], 'speed');
+      expect(map['motionDetectionMode'], MotionDetectionMode.speed.index);
       expect(map['speedMovingThreshold'], 2.5);
       expect(map['speedStationaryDelay'], 300);
-      expect(map['stationaryTrackingMode'], 'geofences');
+      expect(map['stationaryTrackingMode'], StationaryTrackingMode.geofences.index);
       expect(map['stationaryPeriodicInterval'], 300);
       expect(map['stationaryPeriodicAccuracy'], DesiredAccuracy.medium.index);
       expect(map['speedWakeConfirmCount'], 3);

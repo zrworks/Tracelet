@@ -15,8 +15,10 @@ class PigeonEventReceiver implements TraceletEventApi {
 
   final _locationCtrl = StreamController<TlLocation>.broadcast();
   final _motionChangeCtrl = StreamController<TlLocation>.broadcast();
+
   /// Controller for speed-mode state machine transitions.
-  final _motionModeChangeCtrl = StreamController<TlSpeedMotionEvent>.broadcast();
+  final _motionModeChangeCtrl =
+      StreamController<TlSpeedMotionEvent>.broadcast();
   final _activityChangeCtrl =
       StreamController<TlActivityChangeEvent>.broadcast();
   final _providerChangeCtrl =

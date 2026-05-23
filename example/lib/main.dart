@@ -596,7 +596,8 @@ class _DashboardPageState extends State<DashboardPage>
             preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
           ),
           motion: const tl.MotionConfig(
-            stopTimeout: 0,
+            stopTimeout: 1, // 1 minute for fast stop-timeout testing
+            disableMotionActivityUpdates: true, // Force raw accelerometer
             motionDetectionMode: tl.MotionDetectionMode.accelerometer,
             speedStationaryDelay: 30, // Make it quicker for demo testing
             stationaryPeriodicInterval: 60, // Quick checks when stationary

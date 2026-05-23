@@ -10,6 +10,9 @@
 - **FIX**: Resolved critical issue where calculated `BatteryBudgetEngine` parameter adjustments (distance filter, accuracy) were not applied to `LocationEngine`.
 - **FEAT**: Added "Charging Bypass" to skip battery budgeting updates while connected to external power.
 - **PERF**: Implemented heartbeat deduplication, saving hundreds of redundant SQLite inserts/hour when stationary by tracking last persisted location timestamps.
+- **FEAT**: Implemented `SpeedMotionManager` for the new `tl.MotionDetectionMode.speed` tracking mode, exclusively using GPS speed variations for motion state transitions.
+- **FIX**: Prevented a critical logic flaw where the accelerometer was completely shut down during the `stopTimeout` countdown. Motion during the countdown now correctly aborts the stationary transition (#85).
+- **FIX**: Reset `TraceletHasRequestedAlways` flag upon iOS `notDetermined` state to prevent native prompt bypasses after the app is reinstalled.
 - **FIX**: Corrected `stillSampleCount` dwell window regression to match the actual 10Hz accelerometer rate (reduced stationary delay from 15s to 5s).
 - **FIX**: Added permission-missing checks and explicit feedback via `providerChange` events on `start()` call.
 

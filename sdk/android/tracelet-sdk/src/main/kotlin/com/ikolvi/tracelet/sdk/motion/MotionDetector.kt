@@ -570,12 +570,16 @@ class MotionDetector(
 
                 if (Math.abs(magnitude) < config.getStillThreshold()) {
                     consecutiveStillSamples++
-                    if (consecutiveStillSamples >= config.getStillSampleCount()) {
+                    if (consecutiveStillSamples == config.getStillSampleCount()) {
                         // Sustained stillness detected — start stop-timeout
-                        stopAccelerometerMonitoring()
+                        // Do NOT stop accelerometer monitoring so we can abort if motion resumes!
                         startStopTimeoutCountdown()
                     }
                 } else {
+                    if (consecutiveStillSamples >= config.getStillSampleCount()) {
+                        // Motion resumed during the stop-timeout countdown — abort the stop!
+                        cancelStopTimeout()
+                    }
                     consecutiveStillSamples = 0
                 }
             }

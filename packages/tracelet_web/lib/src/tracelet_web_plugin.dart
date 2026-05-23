@@ -829,6 +829,184 @@ class TraceletWebPlugin extends TraceletPlatform {
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Event Streams (typed — TraceletPlatform overrides)
+  //
+  // The WebEventDispatcher emits raw Map<String, Object?> events through its
+  // broadcast stream controllers. These getters convert them into the typed
+  // Tl* objects expected by the shared Tracelet class in tracelet.dart.
+  // ---------------------------------------------------------------------------
+
+  /// Convert a raw location map from WebLocationEngine into a [TlLocation].
+  TlLocation _mapToTlLocation(Map<String, Object?> m) {
+    final coordsRaw = m['coords'];
+    final coords = coordsRaw is Map
+        ? Map<String, Object?>.from(coordsRaw)
+        : <String, Object?>{};
+    final batteryRaw = m['battery'];
+    final battery = batteryRaw is Map
+        ? Map<String, Object?>.from(batteryRaw)
+        : <String, Object?>{};
+    final activityRaw = m['activity'];
+    final activityMap = activityRaw is Map
+        ? Map<String, Object?>.from(activityRaw)
+        : null;
+
+    return TlLocation(
+      coords: TlCoords(
+        latitude: (coords['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (coords['longitude'] as num?)?.toDouble() ?? 0.0,
+        accuracy: (coords['accuracy'] as num?)?.toDouble() ?? -1.0,
+        speed: (coords['speed'] as num?)?.toDouble() ?? -1.0,
+        heading: (coords['heading'] as num?)?.toDouble() ?? -1.0,
+        altitude: (coords['altitude'] as num?)?.toDouble() ?? 0.0,
+        altitudeAccuracy:
+            (coords['altitudeAccuracy'] as num?)?.toDouble() ?? -1.0,
+        speedAccuracy: (coords['speedAccuracy'] as num?)?.toDouble() ?? -1.0,
+        headingAccuracy:
+            (coords['headingAccuracy'] as num?)?.toDouble() ?? -1.0,
+        ellipsoidalAltitude: (coords['ellipsoidalAltitude'] as num?)
+            ?.toDouble(),
+        floor: coords['floor'] as int?,
+      ),
+      battery: TlBattery(
+        level: (battery['level'] as num?)?.toDouble() ?? -1.0,
+        isCharging: battery['isCharging'] as bool? ?? false,
+      ),
+      timestamp: m['timestamp'] as String? ?? DateTime.now().toIso8601String(),
+      uuid: m['uuid'] as String? ?? '',
+      isMoving: m['isMoving'] as bool? ?? false,
+      odometer: (m['odometer'] as num?)?.toDouble() ?? 0.0,
+      event: m['event'] as String?,
+      activity: activityMap != null
+          ? TlActivity(
+              type: activityMap['type'] as String? ?? 'unknown',
+              confidence: activityMap['confidence'] is int
+                  ? activityMap['confidence'] as int
+                  : 50,
+            )
+          : null,
+      extras: null,
+    );
+  }
+
+  @override
+  Stream<TlLocation> get locationEvents =>
+      _events.onLocation.map(_mapToTlLocation);
+
+  @override
+  Stream<TlLocation> get motionChangeEvents =>
+      _events.onMotionChange.map(_mapToTlLocation);
+
+  @override
+  Stream<TlLocation> get watchPositionEvents =>
+      _events.onWatchPosition.map(_mapToTlLocation);
+
+  @override
+  Stream<TlActivityChangeEvent> get activityChangeEvents =>
+      _events.onActivityChange.map((m) {
+        return TlActivityChangeEvent(
+          activity: m['activity'] as String? ?? 'unknown',
+          confidence: m['confidence'] as int? ?? 50,
+        );
+      });
+
+  @override
+  Stream<TlProviderChangeEvent> get providerChangeEvents =>
+      _events.onProviderChange.map((m) {
+        return TlProviderChangeEvent(
+          enabled: m['enabled'] as bool? ?? true,
+          gps: m['gps'] as bool? ?? true,
+          network: m['network'] as bool? ?? true,
+          status: m['status'] as int? ?? 2,
+          accuracyAuthorization: m['accuracyAuthorization'] as int?,
+        );
+      });
+
+  @override
+  Stream<TlGeofenceEvent> get geofenceEvents => _events.onGeofence.map((m) {
+    final locationRaw = m['location'];
+    final locationMap = locationRaw is Map
+        ? Map<String, Object?>.from(locationRaw)
+        : <String, Object?>{};
+    return TlGeofenceEvent(
+      identifier: m['identifier'] as String? ?? '',
+      action: TlGeofenceAction
+          .values[m['action'] as int? ?? TlGeofenceAction.enter.index],
+      location: _mapToTlLocation(locationMap),
+    );
+  });
+
+  @override
+  Stream<TlGeofencesChangeEvent> get geofencesChangeEvents =>
+      // The web geofence engine doesn't emit geofencesChange events; return empty.
+      const Stream.empty();
+
+  @override
+  Stream<TlHeartbeatEvent> get heartbeatEvents => _events.onHeartbeat.map((m) {
+    final locationRaw = m['location'];
+    final locationMap = locationRaw is Map
+        ? Map<String, Object?>.from(locationRaw)
+        : m; // heartbeat emits location directly
+    return TlHeartbeatEvent(location: _mapToTlLocation(locationMap));
+  });
+
+  @override
+  Stream<TlHttpEvent> get httpEvents => _events.onHttp.map((m) {
+    return TlHttpEvent(
+      isSuccess: m['isSuccess'] as bool? ?? false,
+      status: m['status'] as int? ?? 0,
+      responseText: m['responseText'] as String? ?? '',
+    );
+  });
+
+  @override
+  Stream<TlState> get scheduleEvents => _events.onSchedule.map((m) {
+    return TlState(
+      enabled: m['enabled'] as bool? ?? false,
+      isMoving: m['isMoving'] as bool? ?? false,
+      trackingMode: TlTrackingMode
+          .values[m['trackingMode'] as int? ?? TlTrackingMode.location.index],
+      schedulerEnabled: m['schedulerEnabled'] as bool? ?? false,
+      odometer: (m['odometer'] as num?)?.toDouble() ?? 0.0,
+      lastLocationTimestamp: m['lastLocationTimestamp'] as String?,
+    );
+  });
+
+  @override
+  Stream<bool> get powerSaveChangeEvents => _events.onPowerSaveChange;
+
+  @override
+  Stream<TlConnectivityChangeEvent> get connectivityChangeEvents =>
+      _events.onConnectivityChange.map((m) {
+        return TlConnectivityChangeEvent(
+          connected: m['connected'] as bool? ?? true,
+        );
+      });
+
+  @override
+  Stream<bool> get enabledChangeEvents => _events.onEnabledChange;
+
+  @override
+  Stream<String> get notificationActionEvents => _events.onNotificationAction;
+
+  @override
+  Stream<TlAuthorizationEvent> get authorizationEvents =>
+      _events.onAuthorization.map((m) {
+        return TlAuthorizationEvent(
+          success: m['success'] as bool? ?? false,
+          status: m['status'] as int? ?? 0,
+          response: m['response'] as String? ?? '',
+        );
+      });
+
+  @override
+  Stream<TlSpeedMotionEvent> get motionModeChangeEvents =>
+      // Speed motion events are emitted via WebLocationEngine via a separate
+      // dedicated controller added to WebEventDispatcher in a future iteration.
+      // For now return empty — the speed motion state is tracked internally.
+      const Stream.empty();
+
   void _assertReady() {
     if (!_isReady) {
       throw StateError(

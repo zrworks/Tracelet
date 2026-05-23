@@ -245,6 +245,7 @@ await tl.Tracelet.start();
 
 | Guide | Description |
 |---|---|
+| [Motion & Notifications](packages/tracelet/docs/motion-and-notifications.md) | Advanced Config: Speed-based Motion Detection & Smart Notifications |
 | [Android Setup](help/INSTALL-ANDROID.md) | Gradle, permissions, and manifest configuration |
 | [iOS Setup](help/INSTALL-IOS.md) | Info.plist, capabilities, and entitlements |
 | [Motion Detection Architecture](help/MOTION-DETECTION.md) | How `STATIONARY`/`MOVING` states and heartbeat actually work |

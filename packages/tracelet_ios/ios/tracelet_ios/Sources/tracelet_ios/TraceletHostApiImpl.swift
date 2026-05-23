@@ -42,6 +42,16 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["deadReckoningActivationDelay"] = c.geo.deadReckoningActivationDelay
         dict["deadReckoningMaxDuration"] = c.geo.deadReckoningMaxDuration
 
+        var filterDict = [String: Any]()
+        filterDict["trackingAccuracyThreshold"] = c.geo.filter.trackingAccuracyThreshold
+        filterDict["maxImpliedSpeed"] = c.geo.filter.maxImpliedSpeed
+        filterDict["odometerAccuracyThreshold"] = c.geo.filter.odometerAccuracyThreshold
+        filterDict["policy"] = c.geo.filter.policy.rawValue
+        filterDict["rejectMockLocations"] = c.geo.filter.rejectMockLocations
+        filterDict["mockDetectionLevel"] = c.geo.filter.mockDetectionLevel
+        filterDict["useKalmanFilter"] = c.geo.filter.useKalmanFilter
+        dict["filter"] = filterDict
+
         // App
         dict["stopOnTerminate"] = c.app.stopOnTerminate
         dict["startOnBoot"] = c.app.startOnBoot
@@ -109,6 +119,13 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["shakeThreshold"] = c.motion.shakeThreshold
         dict["stillThreshold"] = c.motion.stillThreshold
         dict["stillSampleCount"] = c.motion.stillSampleCount
+        dict["motionDetectionMode"] = c.motion.motionDetectionMode.rawValue
+        dict["speedMovingThreshold"] = c.motion.speedMovingThreshold
+        dict["speedStationaryDelay"] = c.motion.speedStationaryDelay
+        dict["stationaryTrackingMode"] = c.motion.stationaryTrackingMode.rawValue
+        dict["stationaryPeriodicInterval"] = c.motion.stationaryPeriodicInterval
+        dict["stationaryPeriodicAccuracy"] = c.motion.stationaryPeriodicAccuracy.rawValue
+        dict["speedWakeConfirmCount"] = c.motion.speedWakeConfirmCount
 
         // Geofence
         dict["geofenceModeHighAccuracy"] = c.geofence.geofenceModeHighAccuracy
@@ -245,7 +262,13 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func intToAuthStatus(_ value: Int) -> TlAuthorizationStatus {
-        return TlAuthorizationStatus(rawValue: value) ?? .notDetermined
+        switch value {
+        case 0: return .notDetermined
+        case 2: return .whenInUse
+        case 3: return .always
+        case 4: return .deniedForever
+        default: return .notDetermined
+        }
     }
 
     // MARK: - Lifecycle
@@ -476,10 +499,11 @@ class TraceletHostApiImpl: TraceletHostApi {
     func requestPermission(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void) {
         NSLog("[Tracelet] requestPermission called")
         DispatchQueue.main.async {
-            self.sdk.permissionManager.requestPermission { status in
-                let s = status as? Int ?? 0
-                let result = self.intToAuthStatus(s)
-                NSLog("[Tracelet] requestPermission result: \(s) -> \(result)")
+            let requestAlways = self.sdk.configManager.getLocationAuthorizationRequest() == "Always"
+            self.sdk.permissionManager.requestPermission(requestAlways: requestAlways) { status in
+                let statusInt = status as? Int ?? 0
+                let result = self.intToAuthStatus(statusInt)
+                NSLog("[Tracelet] requestPermission result: \(statusInt) -> \(result)")
                 completion(.success(result))
             }
         }

@@ -43,7 +43,7 @@ class LocationEngine(
     private val context: Context,
     private val config: ConfigManager,
     private val state: StateManager,
-    private val events: TraceletEventSender,
+    internal val events: TraceletEventSender,
     private val db: TraceletDatabase,
 ) {
     companion object {
@@ -953,10 +953,14 @@ class LocationEngine(
     private fun buildLocationRequest(): TraceletLocationRequest {
         val priority = accuracyToPriority(config.getDesiredAccuracy())
         val deferTime = config.getDeferTime().toLong()
+        
+        val isSpeedMode = config.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED
+        val distanceFilter = if (isSpeedMode) 0f else config.getDistanceFilter().toFloat()
+        
         return TraceletLocationRequest(
             priority = priority,
             intervalMillis = config.getLocationUpdateInterval(),
-            minUpdateDistanceMeters = config.getDistanceFilter().toFloat(),
+            minUpdateDistanceMeters = distanceFilter,
             minUpdateIntervalMillis = config.getFastestLocationUpdateInterval(),
             maxUpdateDelayMillis = if (deferTime > 0) deferTime else 0L
         )
@@ -984,10 +988,13 @@ class LocationEngine(
         }
 
         val deferTime = config.getDeferTime().toLong()
+        val isSpeedMode = config.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED
+        val distanceFilter = if (isSpeedMode) 0f else config.getDistanceFilter().toFloat()
+        
         return TraceletLocationRequest(
             priority = effectivePriority,
             intervalMillis = config.getLocationUpdateInterval(),
-            minUpdateDistanceMeters = config.getDistanceFilter().toFloat(),
+            minUpdateDistanceMeters = distanceFilter,
             minUpdateIntervalMillis = config.getFastestLocationUpdateInterval(),
             maxUpdateDelayMillis = if (deferTime > 0) deferTime else 0L
         )
@@ -1134,45 +1141,50 @@ class LocationEngine(
         } else {
             location.isFromMockProvider
         }
+        
+        Log.d(TAG, "isLocationMock: platformFlag=$platformFlag, level=$level")
+        
         if (platformFlag) return true
         if (level < 2) return false
 
         // Level 2 (heuristic): Additional native-side checks
-
-        // 1. Satellite count: real GPS fixes report 4–30 satellites.
-        //    Mock locations from Fake GPS apps typically report 0.
-        //    Skip this check when GPS hardware is disabled because
-        //    Wi-Fi/cell locations legitimately have 0 satellites.
         val gpsEnabled = isGpsProviderEnabled(context)
         val extras = location.extras
-        if (gpsEnabled && extras != null) {
-            val satellites = extras.getInt("satellites", -1)
-            // Only flag if satellites is explicitly 0 (not missing/-1) and
-            // accuracy suggests an outdoor fix (< 50m).
-            if (satellites == 0 && location.accuracy < 50.0) {
-                return true
-            }
+        val satellites = extras?.getInt("satellites", -1) ?: -1
+        
+        Log.d(TAG, "isLocationMock: heuristic check — satellites=$satellites, gpsEnabled=$gpsEnabled, accuracy=${location.accuracy}")
+
+        if (gpsEnabled && satellites == 0 && location.accuracy < 50.0) {
+            Log.d(TAG, "isLocationMock: detected via 0 satellites")
+            return true
         }
 
-        // 2. Elapsed realtime drift: Compare the location's elapsedRealtimeNanos
-        //    (set by GPS hardware using the monotonic clock) against the current
-        //    SystemClock.elapsedRealtimeNanos().
-        //    We check for manipulation by ensuring the age of the location according to
-        //    the wall clock (location.time) matches the age according to the monotonic clock.
         val locationElapsedNanos = location.elapsedRealtimeNanos
         val currentElapsedNanos = SystemClock.elapsedRealtimeNanos()
+        val driftNanos = currentElapsedNanos - locationElapsedNanos
+        val driftMs = driftNanos / 1_000_000.0
+        
+        Log.d(TAG, "isLocationMock: driftMs=$driftMs ms")
+
+        if (driftMs > 10_000.0) {
+            Log.d(TAG, "isLocationMock: detected via elapsedRealtime drift (>10s)")
+            return true
+        }
+        
+        // 3. Timestamp vs ElapsedRealtime mismatch
         val locationTimeMs = location.time
         val currentTimeMs = System.currentTimeMillis()
-
         val ageByWallClockMs = currentTimeMs - locationTimeMs
-        val ageByMonotonicMs = (currentElapsedNanos - locationElapsedNanos) / 1_000_000
+        val ageByMonotonicMs = driftMs.toLong()
 
         // If the location age according to the monotonic clock differs significantly
         // from the wall clock age (e.g., > 10 seconds), the location was likely replayed
         // or the elapsedRealtime was manipulated (common in mock location apps).
         val discrepancyMs = kotlin.math.abs(ageByWallClockMs - ageByMonotonicMs)
         val maxDriftMs = 10000L + config.getDeferTime()
+        Log.d(TAG, "isLocationMock: discrepancyMs=$discrepancyMs ms, maxDriftMs=$maxDriftMs ms")
         if (discrepancyMs > maxDriftMs) {
+            Log.d(TAG, "isLocationMock: detected via timestamp/elapsed mismatch (>10s)")
             return true
         }
 

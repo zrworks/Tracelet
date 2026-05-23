@@ -552,7 +552,11 @@ class _DashboardPageState extends State<DashboardPage>
             distanceFilter: 10,
             stationaryRadius: 25,
             locationTimeout: 60,
-            filter: const tl.LocationFilter(useKalmanFilter: true),
+            filter: const tl.LocationFilter(
+              useKalmanFilter: true,
+              mockDetectionLevel: 2, // 2 = HEURISTIC
+              rejectMockLocations: false, // Let them show up in UI but tag them
+            ),
             // ── New features ──
             disableElasticity: false,
             elasticityMultiplier: 1.0,
@@ -572,14 +576,15 @@ class _DashboardPageState extends State<DashboardPage>
           // the custom title/text and deferTime should be 60s.
           android: tl.AndroidConfig(
             locationUpdateInterval: 2000, // 2s
-            deferTime: 10000, // 10s — batches ~5 locations every 10s
+            deferTime: 1000, // 10s — batches ~5 locations every 10s
             foregroundService: _isAndroid
                 ? const tl.ForegroundServiceConfig(
-                    notificationTitle: '📍 Issue #74 Fix Verified',
-                    notificationText: 'Custom config working — deferTime=10s',
+                    notificationTitle: '📍 Tracelet Demo Active',
+                    notificationText: 'Smart Notifications — disappears when app is open!',
                     channelId: 'tracelet_demo_channel',
                     channelName: 'Tracelet Demo Background',
                     notificationPriority: tl.NotificationPriority.high,
+                    showNotificationOnPauseOnly: true, // ✨ New Feature: Smart Visibility
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
@@ -590,7 +595,12 @@ class _DashboardPageState extends State<DashboardPage>
                 : tl.LocationActivityType.otherNavigation,
             preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
           ),
-          motion: const tl.MotionConfig(stopTimeout: 0),
+          motion: const tl.MotionConfig(
+            stopTimeout: 0,
+            motionDetectionMode: tl.MotionDetectionMode.accelerometer,
+            speedStationaryDelay: 30, // Make it quicker for demo testing
+            stationaryPeriodicInterval: 60, // Quick checks when stationary
+          ),
           http: const tl.HttpConfig(
             url: 'http://192.168.20.101:8099/locations',
             method: tl.HttpMethod.post,
@@ -621,6 +631,7 @@ class _DashboardPageState extends State<DashboardPage>
       setState(() {
         _isReady = true;
         _isTracking = state.enabled;
+        _isMoving = state.isMoving;
         _pluginState = state;
         _budgetEnabled = true; // batteryBudgetPerHour > 0 in config
         // Restore periodic mode flag from persisted native state
@@ -709,6 +720,7 @@ class _DashboardPageState extends State<DashboardPage>
       final state = await tl.Tracelet.start();
       setState(() {
         _isTracking = state.enabled;
+        _isMoving = state.isMoving;
         _pluginState = state;
       });
       _addLog('START', 'enabled=${state.enabled}');
@@ -734,6 +746,7 @@ class _DashboardPageState extends State<DashboardPage>
       final state = await tl.Tracelet.stop();
       setState(() {
         _isTracking = state.enabled;
+        _isMoving = state.isMoving;
         _isPeriodicMode = false;
         _pluginState = state;
       });
@@ -749,6 +762,7 @@ class _DashboardPageState extends State<DashboardPage>
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
+        _isMoving = state.isMoving;
         _pluginState = state;
       });
       _addLog('GEOFENCES_ONLY', 'started  mode=${state.trackingMode.name}');
@@ -859,11 +873,12 @@ class _DashboardPageState extends State<DashboardPage>
           android: tl.AndroidConfig(
             deferTime: 10000,
             foregroundService: tl.ForegroundServiceConfig(
-              notificationTitle: '📍 Issue #74 Fix Verified',
-              notificationText: 'Background tracking — deferTime=10s',
+              notificationTitle: '📍 Background Tracking',
+              notificationText: 'App paused. Tracking continues...',
               channelId: 'tracelet_demo_channel',
               channelName: 'Tracelet Demo Background',
               notificationPriority: tl.NotificationPriority.high,
+              showNotificationOnPauseOnly: true, // ✨ New Feature: Smart Visibility
             ),
           ),
         ),
@@ -989,6 +1004,7 @@ class _DashboardPageState extends State<DashboardPage>
       final state = await tl.Tracelet.startPeriodic();
       setState(() {
         _isTracking = state.enabled;
+        _isMoving = state.isMoving;
         _isPeriodicMode = true;
         _pluginState = state;
       });
@@ -1673,11 +1689,11 @@ class _DashboardPageState extends State<DashboardPage>
     final status = await tl.Tracelet.getNotificationAuthorization();
     _addLog('NOTIFICATION', 'current notification status=${status.name}');
 
-    if (status == tl.AuthorizationStatus.always) {
+    if (status == tl.NotificationAuthorizationStatus.granted) {
       return true; // Already granted (or pre-13)
     }
 
-    if (status == tl.AuthorizationStatus.deniedForever) {
+    if (status == tl.NotificationAuthorizationStatus.deniedForever) {
       // Permanently denied — show denied dialog
       if (mounted) _showNotificationDeniedDialog();
       return false;
@@ -1694,11 +1710,11 @@ class _DashboardPageState extends State<DashboardPage>
     final result = await tl.Tracelet.requestNotificationAuthorization();
     _addLog('NOTIFICATION', 'notification permission result=${result.name}');
 
-    if (result == tl.AuthorizationStatus.deniedForever && mounted) {
+    if (result == tl.NotificationAuthorizationStatus.deniedForever && mounted) {
       _showNotificationDeniedDialog();
       return false;
     }
-    return result == tl.AuthorizationStatus.always;
+    return result == tl.NotificationAuthorizationStatus.granted;
   }
 
   /// Check and log notification permission status.
@@ -1839,9 +1855,9 @@ class _DashboardPageState extends State<DashboardPage>
     final status = await tl.Tracelet.getMotionAuthorization();
     _addLog('MOTION', 'current motion permission status=${status.name}');
 
-    if (status == tl.AuthorizationStatus.always) return true; // Already granted
+    if (status == tl.MotionAuthorizationStatus.granted) return true; // Already granted
 
-    if (status == tl.AuthorizationStatus.deniedForever) {
+    if (status == tl.MotionAuthorizationStatus.deniedForever) {
       // Permanently denied — show denied dialog
       if (mounted) _showMotionDeniedDialog();
       return false;
@@ -1858,11 +1874,11 @@ class _DashboardPageState extends State<DashboardPage>
     final result = await tl.Tracelet.requestMotionAuthorization();
     _addLog('MOTION', 'motion permission result=${result.name}');
 
-    if (result == tl.AuthorizationStatus.deniedForever && mounted) {
+    if (result == tl.MotionAuthorizationStatus.deniedForever && mounted) {
       _showMotionDeniedDialog();
       return false;
     }
-    return result == tl.AuthorizationStatus.always;
+    return result == tl.MotionAuthorizationStatus.granted;
   }
 
   /// Ensure exact alarm permission for periodic mode with short intervals.

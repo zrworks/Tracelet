@@ -259,6 +259,17 @@ class LocationFilter {
     );
   }
 
+  /// Converts to Pigeon [TlLocationFilter].
+  TlLocationFilter toTlConfig() => TlLocationFilter(
+    trackingAccuracyThreshold: trackingAccuracyThreshold,
+    maxImpliedSpeed: maxImpliedSpeed,
+    odometerAccuracyThreshold: odometerAccuracyThreshold,
+    policy: TlLocationFilterPolicy.values[policy.index],
+    rejectMockLocations: rejectMockLocations,
+    mockDetectionLevel: mockDetectionLevel,
+    useKalmanFilter: useKalmanFilter,
+  );
+
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'trackingAccuracyThreshold': trackingAccuracyThreshold,
@@ -501,6 +512,7 @@ class GeoConfig {
     enableDeadReckoning: enableDeadReckoning,
     deadReckoningActivationDelay: deadReckoningActivationDelay,
     deadReckoningMaxDuration: deadReckoningMaxDuration,
+    filter: filter.toTlConfig(),
   );
 
   Map<String, Object?> toMap() {
@@ -720,8 +732,8 @@ class HttpConfig {
     this.locationsOrderDirection = LocationOrderDirection.ascending,
     this.disableAutoSyncOnCellular = false,
     this.maxRetries = 3,
-    this.retryBackoffBase = 1,
-    this.retryBackoffCap = 60,
+    this.retryBackoffBase = 1000,
+    this.retryBackoffCap = 60000,
     this.enableDeltaCompression = false,
     this.deltaCoordinatePrecision = 5,
     this.sslPinningFingerprints,
@@ -824,8 +836,8 @@ class HttpConfig {
         fallback: false,
       ),
       maxRetries: ensureInt(map['maxRetries'], fallback: 3),
-      retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1),
-      retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 60),
+      retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1000),
+      retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 60000),
       enableDeltaCompression: ensureBool(
         map['enableDeltaCompression'],
         fallback: false,

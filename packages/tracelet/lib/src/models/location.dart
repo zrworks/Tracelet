@@ -129,6 +129,19 @@ class Location {
   /// Creates a [Location] from a Pigeon [TlLocation] without map round-trip.
   factory Location.fromTl(TlLocation tl) {
     final c = tl.coords;
+    final ext = tl.extras ?? const <String, Object?>{};
+    
+    // Extract metadata injected by EventDispatcher into extras because Pigeon
+    // TlLocation doesn't natively support these fields.
+    final Map<String, Object?> synthesizedExtras = Map<String, Object?>.from(ext);
+    final bool isMock = ensureBool(synthesizedExtras.remove('is_mock'), fallback: false);
+    final String locationSource = _ensureLocationSource(synthesizedExtras.remove('locationSource'));
+    final bool reducedAccuracy = ensureBool(synthesizedExtras.remove('reducedAccuracy'), fallback: false);
+    final MockHeuristics? mockHeuristics = _parseMockHeuristics(synthesizedExtras.remove('mockHeuristics'));
+    final String? auditHash = synthesizedExtras.remove('audit_hash') as String?;
+    final String? auditPreviousHash = synthesizedExtras.remove('audit_previous_hash') as String?;
+    final int? auditChainIndex = (synthesizedExtras.remove('audit_chain_index') as num?)?.toInt();
+
     return Location(
       coords: Coords(
         latitude: c.latitude,
@@ -147,6 +160,13 @@ class Location {
       uuid: tl.uuid,
       odometer: tl.odometer,
       event: tl.event,
+      isMock: isMock,
+      locationSource: locationSource,
+      reducedAccuracy: reducedAccuracy,
+      mockHeuristics: mockHeuristics,
+      auditHash: auditHash,
+      auditPreviousHash: auditPreviousHash,
+      auditChainIndex: auditChainIndex,
       activity: tl.activity != null
           ? LocationActivity.fromTl(tl.activity!)
           : const LocationActivity(),
@@ -154,9 +174,7 @@ class Location {
         level: tl.battery.level,
         isCharging: tl.battery.isCharging,
       ),
-      extras: tl.extras != null
-          ? Map<String, Object?>.from(tl.extras!)
-          : const <String, Object?>{},
+      extras: synthesizedExtras,
     );
   }
 
@@ -244,13 +262,17 @@ class Location {
   ///
   /// Used by the Kalman filter to produce a smoothed location without
   /// the overhead of full `toMap()/fromMap()` round-trip serialization.
-  Location copyWithCoords({double? latitude, double? longitude}) {
+  Location copyWithCoords({
+    double? latitude,
+    double? longitude,
+    double? speed,
+  }) {
     return Location(
       coords: Coords(
         latitude: latitude ?? coords.latitude,
         longitude: longitude ?? coords.longitude,
         altitude: coords.altitude,
-        speed: coords.speed,
+        speed: speed ?? coords.speed,
         heading: coords.heading,
         accuracy: coords.accuracy,
         speedAccuracy: coords.speedAccuracy,

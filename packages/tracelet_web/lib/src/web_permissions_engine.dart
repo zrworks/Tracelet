@@ -82,22 +82,27 @@ class WebPermissionsEngine {
   Future<int> requestPermission() async {
     final completer = Completer<int>();
 
-    web.window.navigator.geolocation.getCurrentPosition(
-      (web.GeolocationPosition pos) {
-        // Success means granted.
-        completer.complete(2); // whenInUse
-      }.toJS,
-      (web.GeolocationPositionError err) {
-        if (err.code == 1) {
-          // PERMISSION_DENIED
-          completer.complete(4); // deniedForever
-        } else {
-          // Other error (position unavailable, timeout) — permission might be granted.
-          completer.complete(0); // notDetermined
-        }
-      }.toJS,
-      web.PositionOptions(timeout: 10000),
-    );
+    try {
+      web.window.navigator.geolocation.getCurrentPosition(
+        (web.GeolocationPosition pos) {
+          // Success means granted.
+          if (!completer.isCompleted) completer.complete(2); // whenInUse
+        }.toJS,
+        (web.GeolocationPositionError err) {
+          if (err.code == 1) {
+            // PERMISSION_DENIED
+            if (!completer.isCompleted) completer.complete(4); // deniedForever
+          } else {
+            // Other error (position unavailable, timeout)
+            if (!completer.isCompleted) completer.complete(0); // notDetermined
+          }
+        }.toJS,
+        web.PositionOptions(timeout: 10000),
+      );
+    } catch (e) {
+      _events.log('error', '[Tracelet Web] requestPermission failed: $e');
+      if (!completer.isCompleted) completer.complete(4); // deniedForever
+    }
 
     return completer.future;
   }

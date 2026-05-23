@@ -38,6 +38,20 @@ class ConfigReviewCard extends StatelessWidget {
             value: health.didLaunchInBackground,
           ),
           BoolRow(label: 'Device Rebooted', value: health.didDeviceReboot),
+          const SizedBox(height: 4),
+          BoolRow(
+            label: 'Kalman Filter',
+            value: Tracelet.activeConfig.geo.filter.useKalmanFilter,
+          ),
+          if (health.platform == 'android')
+            BoolRow(
+              label: 'Smart FGS Visibility',
+              value: Tracelet
+                  .activeConfig
+                  .android
+                  .foregroundService
+                  .showNotificationOnPauseOnly,
+            ),
           if (issues.isNotEmpty) ...[
             const SizedBox(height: 10),
             ...issues.map((i) => _IssueRow(issue: i)),

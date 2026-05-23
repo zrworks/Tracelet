@@ -55,7 +55,7 @@ class SpeedMotionManagerTest {
                     "motionDetectionMode" to "speed",
                     "speedMovingThreshold" to movingThreshold,
                     "speedStationaryDelay" to stationaryDelaySeconds,
-                    "stationaryTrackingMode" to stationaryMode,
+                    "stationaryTrackingMode" to if (stationaryMode == "geofences") 1 else 0,
                     "speedWakeConfirmCount" to wakeConfirmCount,
                 )
             )
@@ -96,9 +96,9 @@ class SpeedMotionManagerTest {
         assertEquals("slowing", manager.getCurrentState())
 
         val event = events.speedMotionEvents.last()
-        assertEquals("slowing", event["state"])
-        assertEquals("moving", event["previousState"])
-        assertEquals("continuous", event["trackingMode"])
+        assertEquals(1, event["state"]) // SLOWING
+        assertEquals(0, event["previousState"]) // MOVING
+        assertEquals(0, event["trackingMode"]) // CONTINUOUS
     }
 
     @Test
@@ -125,10 +125,12 @@ class SpeedMotionManagerTest {
 
         manager.onLocation(5.0)
         manager.onLocation(0.1)   // SLOWING (lowCount=1)
-        manager.onLocation(0.1)   // lowCount=2 — but elapsed=2s only after avg is primed
-        manager.onLocation(0.1)
-        manager.onLocation(0.1)
-        manager.onLocation(0.1)   // after several fixes, elapsed should clearly exceed 2s
+        
+        org.robolectric.shadows.ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(1))
+        manager.onLocation(0.1)   // lowCount=2
+        
+        org.robolectric.shadows.ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(2))
+        manager.onLocation(0.1)   // elapsed >= 2s => transitions to STATIONARY
 
         assertEquals("stationary", manager.getCurrentState())
         assertTrue(callback.switchedToStationaryPeriodic)
@@ -141,14 +143,16 @@ class SpeedMotionManagerTest {
         configure(stationaryDelaySeconds = 2, stationaryMode = "geofences")
 
         manager.onLocation(5.0)
-        repeat(10) { manager.onLocation(0.1) }
+        manager.onLocation(0.1)
+        org.robolectric.shadows.ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(3))
+        manager.onLocation(0.1)
 
         assertEquals("stationary", manager.getCurrentState())
         assertTrue(callback.switchedToStationaryGeofences)
         assertFalse(callback.switchedToStationaryPeriodic)
 
         val lastEvent = events.speedMotionEvents.last()
-        assertEquals("geofences", lastEvent["trackingMode"])
+        assertEquals(1, lastEvent["trackingMode"]) // GEOFENCES
     }
 
     // =========================================================================
@@ -169,9 +173,9 @@ class SpeedMotionManagerTest {
         assertTrue(callback.switchedToContinuous)
 
         val lastEvent = events.speedMotionEvents.last()
-        assertEquals("moving", lastEvent["state"])
-        assertEquals("stationary", lastEvent["previousState"])
-        assertEquals("continuous", lastEvent["trackingMode"])
+        assertEquals(0, lastEvent["state"]) // MOVING
+        assertEquals(2, lastEvent["previousState"]) // STATIONARY
+        assertEquals(0, lastEvent["trackingMode"]) // CONTINUOUS
     }
 
     @Test
@@ -201,7 +205,8 @@ class SpeedMotionManagerTest {
         manager.onLocation(0.1)
         assertEquals(com.ikolvi.tracelet.sdk.model.SpeedMotionState.SLOWING, state.speedMotionState)
 
-        repeat(10) { manager.onLocation(0.1) }
+        org.robolectric.shadows.ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(3))
+        manager.onLocation(0.1)
         assertEquals(com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY, state.speedMotionState)
         assertTrue(state.speedLastTransition > 0L)
     }

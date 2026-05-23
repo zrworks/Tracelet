@@ -167,11 +167,7 @@ final class TraceletConfigTests: XCTestCase {
             "motionTriggerDelay": NSNumber(value: 5),
             "activityRecognitionInterval": NSNumber(value: 30),
             "minimumActivityRecognitionConfidence": NSNumber(value: 75),
-            "stopDetectionDelay": NSNumber(value: 120),
-            "stationaryRadius": NSNumber(value: 50),
-            "shakeThreshold": NSNumber(value: 10),
-            "stillThreshold": NSNumber(value: 5),
-            "stillSampleCount": NSNumber(value: 3)
+            "stopDetectionDelay": NSNumber(value: 120)
         ]
         
         let geoConfig = TraceletGeoConfig.fromMap(geoMap)
@@ -200,10 +196,6 @@ final class TraceletConfigTests: XCTestCase {
         XCTAssertEqual(motionConfig.activityRecognitionInterval, 30)
         XCTAssertEqual(motionConfig.minimumActivityRecognitionConfidence, 75)
         XCTAssertEqual(motionConfig.stopDetectionDelay, 120)
-        XCTAssertEqual(motionConfig.stationaryRadius, 50)
-        XCTAssertEqual(motionConfig.shakeThreshold, 10)
-        XCTAssertEqual(motionConfig.stillThreshold, 5)
-        XCTAssertEqual(motionConfig.stillSampleCount, 3)
     }
 }
 

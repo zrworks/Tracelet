@@ -1166,8 +1166,8 @@ class LocationEngine(
         
         Log.d(TAG, "isLocationMock: driftMs=$driftMs ms")
 
-        if (driftMs > 10_000.0) {
-            Log.d(TAG, "isLocationMock: detected via elapsedRealtime drift (>10s)")
+        if (driftMs < -500.0) {
+            Log.d(TAG, "isLocationMock: detected via negative elapsedRealtime drift (location from the future: $driftMs ms)")
             return true
         }
         

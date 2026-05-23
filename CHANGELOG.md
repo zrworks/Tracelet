@@ -3,6 +3,61 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-05-23
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v2.1.0`](#tracelet---v210)
+ - [`tracelet_ios` - `v2.1.0`](#tracelet_ios---v210)
+ - [`tracelet_android` - `v2.1.0`](#tracelet_android---v210)
+ - [`tracelet_platform_interface` - `v2.1.0`](#tracelet_platform_interface---v210)
+ - [`tracelet_doctor` - `v1.0.4`](#tracelet_doctor---v104)
+ - [`tracelet_web` - `v2.0.9`](#tracelet_web---v209)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_doctor` - `v1.0.4`
+ - `tracelet_web` - `v2.0.9`
+
+---
+
+#### `tracelet` - `v2.1.0`
+
+### 🎉 Major Features & Improvements
+- **FEAT**: Smart Foreground Notification Visibility (Android) — Added dynamic foreground service notification management. The notification now intelligently hides itself when the app is in the foreground, and reappears seamlessly when the app enters the background. This significantly reduces notification clutter while maintaining OS-level compliance.
+- **FEAT**: Speed-Based Motion Detection Mode — Introduced a new motion detection mode (`tl.MotionDetectionMode.speed`). In this mode, motion state transitions are driven directly by GPS speed calculations rather than raw accelerometer hardware. This provides enhanced compatibility and reliability on devices with aggressive sensor sleep policies, particularly in vehicular tracking scenarios.
+- **FEAT**: Strongly-Typed Enums Across Bridge — Fully refactored string-based config comparisons to typed enum indices across the Flutter, Pigeon, Android, and iOS layers. This eliminates magic strings and ensures type-safety across the entire plugin bridge.
+
+### 🐛 Bug Fixes
+- **FIX (iOS)**: Resolved Native Permission Prompt Loop — Fixed an issue where reinstalling the app on iOS would bypass the native "Change to Always Allow" permission dialog and incorrectly redirect users to the iOS Settings app. `TraceletHasRequestedAlways` is now properly reset upon `notDetermined` OS state.
+- **FIX (Core)**: Corrected Exponential Retry Backoff Scaling — Fixed a critical unit discrepancy between Dart and Swift for `retryBackoffCap` and `retryBackoffBase`. Time values are now properly cast as milliseconds instead of seconds, resolving a severe bug where HTTP retries fired every 60ms during network failure, causing excessive CPU/network thrashing and a massive 58KB+ log flood.
+- **FIX (Core)**: Resolved Location Stream Dropping Events — Refactored the core `Tracelet.locationStream` pipeline. Replaced the faulty `asyncMap` batch processing with a highly robust `.expand()` implementation. The `Tracelet.locationStream` now correctly parses, type-casts, and guarantees delivery of every individual `Location` object without throwing `type '_Map<Object?, Object?>' is not a subtype of type 'Map<String, dynamic>'` or silently discarding valid coordinates.
+- **FIX (Android)**: Prevent `LocationEngine.stop` from unintentionally overriding the global `stateManager.enabled` flag during speed-based motion transitions.
+- **FIX (Example)**: Updated the example app's initialization config to enforce `MotionDetectionMode.accelerometer` as the default to ensure immediate indoor responsiveness upon installation.
+
+#### `tracelet_ios` - `v2.1.0`
+
+ - **CHORE**: Sync release versions across workspace.
+
+#### `tracelet_android` - `v2.1.0`
+
+ - **CHORE**: Sync release versions across workspace.
+
+#### `tracelet_platform_interface` - `v2.1.0`
+
+ - **CHORE**: Sync release versions across workspace.
+
+
 ## 2026-05-22
 
 ### Changes

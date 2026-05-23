@@ -1,3 +1,7 @@
+## 2.0.9
+
+ - Update a dependency to the latest release.
+
 ## 2.0.8
 
 - **CHORE**: Update `tracelet_platform_interface` constraint to `^2.0.8`.

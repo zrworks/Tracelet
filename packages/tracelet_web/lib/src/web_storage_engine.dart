@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'web_utils.dart';
 
@@ -33,7 +35,15 @@ class WebStorageEngine {
       final lm = Map<String, Object?>.from(logger);
       _maxLogDays = (lm['logMaxDays'] as int?) ?? _maxLogDays;
     }
+    final audit = config['audit'];
+    if (audit is Map) {
+      _auditEnabled = (audit['enabled'] as bool?) ?? _auditEnabled;
+    }
   }
+
+  // Audit properties
+  bool _auditEnabled = false;
+  String _lastHash = '';
 
   // ---------------------------------------------------------------------------
   // Location persistence
@@ -123,6 +133,7 @@ class WebStorageEngine {
 
   Future<bool> destroyLocations() async {
     _locations.clear();
+    _lastHash = '';
     return true;
   }
 
@@ -147,6 +158,16 @@ class WebStorageEngine {
     if (!record.containsKey('timestamp')) {
       record['timestamp'] = DateTime.now().toIso8601String();
     }
+
+    if (_auditEnabled) {
+      final dataStr = jsonEncode(record);
+      final raw = '$_lastHash$dataStr';
+      final newHash = sha256.convert(utf8.encode(raw)).toString();
+      record['_audit_hash'] = newHash;
+      record['_audit_prev_hash'] = _lastHash;
+      _lastHash = newHash;
+    }
+
     _locations.add(record);
 
     // Enforce max records.
@@ -192,5 +213,72 @@ class WebStorageEngine {
   Future<bool> destroyLog() async {
     _logs.clear();
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audit Trail
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, Object?>> verifyAuditTrail() async {
+    if (!_auditEnabled) {
+      return <String, Object?>{
+        'is_valid': false,
+        'total_records': _locations.length,
+        'verified_records': 0,
+      };
+    }
+
+    String currentHash = '';
+    int verifiedCount = 0;
+    for (final loc in _locations) {
+      final prevHash = loc['_audit_prev_hash'] as String? ?? '';
+      final storedHash = loc['_audit_hash'] as String? ?? '';
+
+      if (prevHash != currentHash) {
+        return <String, Object?>{
+          'is_valid': false,
+          'total_records': _locations.length,
+          'verified_records': verifiedCount,
+        };
+      }
+
+      // Re-compute hash (temporarily removing audit fields)
+      final temp = Map<String, Object?>.from(loc);
+      temp.remove('_audit_hash');
+      temp.remove('_audit_prev_hash');
+
+      final dataStr = jsonEncode(temp);
+      final raw = '$currentHash$dataStr';
+      final computed = sha256.convert(utf8.encode(raw)).toString();
+
+      if (computed != storedHash) {
+        return <String, Object?>{
+          'is_valid': false,
+          'total_records': _locations.length,
+          'verified_records': verifiedCount,
+        };
+      }
+
+      currentHash = computed;
+      verifiedCount++;
+    }
+
+    return <String, Object?>{
+      'is_valid': true,
+      'total_records': _locations.length,
+      'verified_records': verifiedCount,
+    };
+  }
+
+  Future<Map<String, Object?>?> getAuditProof(String uuid) async {
+    try {
+      final loc = _locations.firstWhere((element) => element['uuid'] == uuid);
+      final hash = loc['_audit_hash'] as String?;
+      final prev = loc['_audit_prev_hash'] as String?;
+      if (hash != null) {
+        return {'hash': hash, 'previous_hash': prev ?? ''};
+      }
+    } catch (_) {}
+    return null;
   }
 }

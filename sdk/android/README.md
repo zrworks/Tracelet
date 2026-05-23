@@ -528,6 +528,12 @@ sdk.ready(TraceletConfig(
 )) { state -> sdk.startPeriodic() }
 ```
 
+## Documentation
+
+For extensive documentation on advanced features and setup scenarios, refer to the following guides:
+- [Advanced Features Guide](../../docs/motion-and-notifications.md) (Speed-Based Motion, Smart Notifications, Kalman Filter)
+- [Native SDK Architecture](../../help/NATIVE-SDK.md)
+
 ## Tracking Modes
 
 ```kotlin

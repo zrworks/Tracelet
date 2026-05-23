@@ -500,6 +500,12 @@ The SDK automatically uses `CLBackgroundActivitySession` (iOS 17+) and `CLServic
 
 All critical operations (persist, HTTP sync, headless engine boot) are wrapped in `beginBackgroundTask` for safe background execution.
 
+## Documentation
+
+For extensive documentation on advanced features and setup scenarios, refer to the following guides:
+- [Advanced Features Guide](../../docs/motion-and-notifications.md) (Speed-Based Motion, Smart Notifications, Kalman Filter)
+- [Native SDK Architecture](../../help/NATIVE-SDK.md)
+
 ## Tracking Modes
 
 ```swift

@@ -104,7 +104,10 @@ void main() {
       expect(map['motionDetectionMode'], MotionDetectionMode.speed.index);
       expect(map['speedMovingThreshold'], 2.5);
       expect(map['speedStationaryDelay'], 300);
-      expect(map['stationaryTrackingMode'], StationaryTrackingMode.geofences.index);
+      expect(
+        map['stationaryTrackingMode'],
+        StationaryTrackingMode.geofences.index,
+      );
       expect(map['stationaryPeriodicInterval'], 300);
       expect(map['stationaryPeriodicAccuracy'], DesiredAccuracy.medium.index);
       expect(map['speedWakeConfirmCount'], 3);

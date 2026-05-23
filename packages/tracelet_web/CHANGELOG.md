@@ -1,3 +1,13 @@
+## 2.1.0
+
+- **FIX**: Implement all typed event stream getters (`locationEvents`, `motionChangeEvents`, `watchPositionEvents`, `activityChangeEvents`, `providerChangeEvents`, `geofenceEvents`, `heartbeatEvents`, `httpEvents`, `scheduleEvents`, `powerSaveChangeEvents`, `connectivityChangeEvents`, `enabledChangeEvents`, `notificationActionEvents`, `authorizationEvents`) — these were previously unimplemented and threw `UnimplementedError`, preventing `Tracelet.ready()` from completing on web.
+- **FIX**: Geolocation permission request no longer hangs indefinitely — added a `try/catch` around `getCurrentPosition()` to intercept synchronous JS errors thrown on insecure origins or blocked contexts, and added a 15-second Dart-side timeout as a safety net.
+- **FIX**: Geolocation `PositionOptions.timeout` removed to prevent silent timeouts blocking the browser's native permission dialog.
+- **FEAT**: Speed-based motion detection mode — `WebLocationEngine` now respects `MotionConfig.motionDetectionMode = speed`, transitioning `isMoving` state based on GPS speed vs. `speedMovingThreshold` with a configurable `speedStationaryDelay` debounce timer.
+- **FEAT**: Enterprise features — privacy zones (`addPrivacyZone`, `removePrivacyZone`, `getPrivacyZones`), audit trail (`verifyAuditTrail`, `getAuditProof`), carbon estimator (`getCarbonReport`), and database encryption stubs (`isDatabaseEncrypted`, `encryptDatabase`, `getAttestationToken`).
+- **CHORE**: Version bump for monorepo lockstep alignment with `tracelet 2.1.0`.
+- **CHORE**: Update `tracelet_platform_interface` constraint to `^2.1.0`.
+
 ## 2.0.9
 
  - Update a dependency to the latest release.

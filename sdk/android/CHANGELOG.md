@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+
+- **CHORE**: Major release synchronized with Tracelet Flutter 2.1.0.
+- **FEAT**: Smart foreground notification visibility — dynamically manages foreground service UI to hide the notification when the app is foregrounded and show it automatically in the background.
+- **FEAT**: Implemented `SpeedMotionManager` for the new `tl.MotionDetectionMode.speed` tracking mode, bypassing raw accelerometer triggers and exclusively using GPS speed variations for motion state transitions.
+- **FIX**: Corrected `retryBackoffCap` backoff interval parsing from seconds to milliseconds, fixing an issue where HTTP sync retries fired continuously and exhausted CPU/network resources.
+- **FIX**: Prevented `LocationEngine.stop` from unintentionally clobbering the global `stateManager.enabled` flag when transitioning into stationary states in speed mode.
+- **REFACTOR**: Transitioned all string-based config values to type-safe Enums across the platform bridge.
+
 ## 2.0.7
 
 - **FIX**: Resolved `UnsatisfiedLinkError` crash when optional SQLCipher dependency was added by explicitly loading the `sqlcipher` JNI library before creating the encrypted database ([#78](https://github.com/Ikolvi/Tracelet/issues/78)).

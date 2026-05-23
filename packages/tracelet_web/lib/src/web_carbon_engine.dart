@@ -22,7 +22,7 @@ class WebCarbonEngine {
     final locations = await _storage.getLocations(query);
 
     double totalCarbon = 0.0;
-    int totalTrips = 1; // Simplified: 1 trip for the session
+    const int totalTrips = 1; // Simplified: 1 trip for the session
 
     final carbonByMode = <String, double>{
       'walking': 0.0,

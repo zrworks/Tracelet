@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
     show GeoUtils;
 

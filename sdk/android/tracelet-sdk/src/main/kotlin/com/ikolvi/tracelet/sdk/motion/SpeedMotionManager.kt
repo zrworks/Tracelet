@@ -73,7 +73,7 @@ class SpeedMotionManager(
      * Loads persisted state from [StateManager] so the correct mode is
      * resumed after process death / reboot.
      */
-    fun start() {
+    fun start(forceMoving: Boolean = false) {
         if (started) return
         started = true
 
@@ -101,7 +101,25 @@ class SpeedMotionManager(
         wakeCount = state.speedWakeCount
         lastFixTime = state.speedLastTransition
 
-        Log.d(TAG, "start() — restored state=$currentState, lowCount=$lowSpeedCount, wakeCount=$wakeCount")
+        // If explicitly forced, ensure we start in MOVING state.
+        if (forceMoving) {
+            currentState = SpeedMotionState.MOVING
+            lowSpeedCount = 0
+            wakeCount = 0
+            state.speedMotionState = currentState
+            state.speedLowCount = 0
+            state.speedWakeCount = 0
+            state.isMoving = true
+            Log.d(TAG, "start() — forced to MOVING state")
+        } else {
+            Log.d(TAG, "start() — restored state=$currentState, lowCount=$lowSpeedCount, wakeCount=$wakeCount")
+
+            // If we restored a STATIONARY state, explicitly switch the engine to periodic mode.
+            // Otherwise it defaults to continuous.
+            if (currentState == SpeedMotionState.STATIONARY) {
+                switchToStationary()
+            }
+        }
     }
 
     /** Stop speed-based motion detection. */
@@ -109,6 +127,27 @@ class SpeedMotionManager(
         if (!started) return
         started = false
         Log.d(TAG, "stop()")
+    }
+
+    /**
+     * Handle manual pace changes triggered by the caller.
+     */
+    fun onManualPaceChange(isMoving: Boolean) {
+        if (!started) return
+        Log.d(TAG, "onManualPaceChange(isMoving=$isMoving)")
+        if (isMoving) {
+            lowSpeedCount = 0
+            wakeCount = 0
+            stopSlowingTimer()
+            transitionTo(SpeedMotionState.MOVING)
+            callback.switchToContinuous()
+        } else {
+            lowSpeedCount = 0
+            wakeCount = 0
+            stopSlowingTimer()
+            transitionTo(SpeedMotionState.STATIONARY)
+            switchToStationary()
+        }
     }
 
     /** Returns the current state value string (legacy compatibility). */
@@ -155,7 +194,46 @@ class SpeedMotionManager(
         if (speed < speedMovingThreshold) {
             Log.d(TAG, "MOVING -> SLOWING (speed=${formatSpeed(speed)} < threshold=$speedMovingThreshold)")
             lowSpeedCount = 1
+            slowingStartTimeMs = SystemClock.elapsedRealtime()
             transitionTo(SpeedMotionState.SLOWING)
+            startSlowingTimer()
+        }
+    }
+
+    private var slowingStartTimeMs: Long = 0L
+    private var slowingTimerRunnable: java.lang.Runnable? = null
+    private val slowingHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    private fun startSlowingTimer() {
+        stopSlowingTimer()
+        val delayMs = speedStationaryDelay * 1000L
+        slowingTimerRunnable = java.lang.Runnable {
+            if (currentState == SpeedMotionState.SLOWING) {
+                Log.d(TAG, "SLOWING timer expired -> STATIONARY")
+                lowSpeedCount = 0
+                wakeCount = 0
+                transitionTo(SpeedMotionState.STATIONARY)
+                switchToStationary()
+            }
+        }
+        slowingHandler.postDelayed(slowingTimerRunnable!!, delayMs)
+    }
+
+    private fun stopSlowingTimer() {
+        slowingTimerRunnable?.let { slowingHandler.removeCallbacks(it) }
+        slowingTimerRunnable = null
+    }
+
+    private fun switchToStationary() {
+        when (stationaryTrackingMode) {
+            StationaryTrackingMode.GEOFENCES -> {
+                Log.d(TAG, "Switching to stationary geofences mode")
+                callback.switchToStationaryGeofences()
+            }
+            else -> {
+                Log.d(TAG, "Switching to stationary periodic mode")
+                callback.switchToStationaryPeriodic()
+            }
         }
     }
 
@@ -163,6 +241,7 @@ class SpeedMotionManager(
         if (speed >= speedMovingThreshold) {
             Log.d(TAG, "SLOWING -> MOVING (speed=${formatSpeed(speed)} >= threshold=$speedMovingThreshold)")
             lowSpeedCount = 0
+            stopSlowingTimer()
             transitionTo(SpeedMotionState.MOVING)
             return
         }
@@ -170,13 +249,7 @@ class SpeedMotionManager(
         lowSpeedCount++
         state.speedLowCount = lowSpeedCount
 
-        // Check if elapsed time exceeds stationaryDelay
-        val elapsedMs = if (avgIntervalMs > 0) {
-            lowSpeedCount.toLong() * avgIntervalMs
-        } else {
-            // Fallback: assume 1s interval if we have no data yet
-            lowSpeedCount.toLong() * 1000L
-        }
+        val elapsedMs = SystemClock.elapsedRealtime() - slowingStartTimeMs
         val delayMs = speedStationaryDelay * 1000L
 
         Log.d(TAG, "SLOWING: lowCount=$lowSpeedCount, elapsed=${elapsedMs}ms, delay=${delayMs}ms, speed=${formatSpeed(speed)}")
@@ -185,19 +258,9 @@ class SpeedMotionManager(
             Log.d(TAG, "SLOWING -> STATIONARY (elapsed ${elapsedMs}ms >= delay ${delayMs}ms)")
             lowSpeedCount = 0
             wakeCount = 0
+            stopSlowingTimer()
             transitionTo(SpeedMotionState.STATIONARY)
-
-            // Switch to stationary tracking mode
-            when (stationaryTrackingMode) {
-                StationaryTrackingMode.GEOFENCES -> {
-                    Log.d(TAG, "Switching to stationary geofences mode")
-                    callback.switchToStationaryGeofences()
-                }
-                else -> {
-                    Log.d(TAG, "Switching to stationary periodic mode")
-                    callback.switchToStationaryPeriodic()
-                }
-            }
+            switchToStationary()
         }
     }
 
@@ -245,7 +308,7 @@ class SpeedMotionManager(
             "state" to newState.ordinal,
             "previousState" to previousState.ordinal,
             "trackingMode" to when (newState) {
-                SpeedMotionState.STATIONARY -> if (stationaryTrackingMode == StationaryTrackingMode.GEOFENCES) 2 else 1
+                SpeedMotionState.STATIONARY -> if (stationaryTrackingMode == StationaryTrackingMode.GEOFENCES) 1 else 2
                 else -> 0
             }
         )

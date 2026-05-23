@@ -159,24 +159,82 @@ public final class SpeedMotionManager {
 
     // MARK: - State Handlers
 
+    private var slowingTimer: Timer?
+
     private func handleMoving(speed: Double, now: TimeInterval) {
         if speed < speedMovingThreshold {
+            let previousState = state
             state = .slowing
             lowSpeedCount = 1
             wakeCount = 0
             slowingStartTime = now
             NSLog("[SpeedMotion] MOVING -> SLOWING (speed=%.2f < threshold=%.2f)",
                   speed, speedMovingThreshold)
+            startSlowingTimer()
+            
+            if state != previousState {
+                persistState()
+                emitEvent(previous: previousState, current: state)
+            }
+        }
+    }
+
+    private func startSlowingTimer() {
+        stopSlowingTimer()
+        let delay = TimeInterval(speedStationaryDelay)
+        
+        // We use DispatchQueue instead of Timer to ensure it runs even if the runloop is blocked,
+        // but Timer is generally fine.
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.slowingTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+                guard let self = self else { return }
+                if self.state == .slowing {
+                    NSLog("[SpeedMotion] SLOWING timer expired -> STATIONARY")
+                    let previousState = self.state
+                    self.state = .stationary
+                    self.wakeCount = 0
+                    self.lowSpeedCount = 0
+                    self.switchToStationary()
+                    
+                    if self.state != previousState {
+                        self.persistState()
+                        self.emitEvent(previous: previousState, current: self.state)
+                    }
+                }
+            }
+        }
+    }
+
+    private func stopSlowingTimer() {
+        DispatchQueue.main.async { [weak self] in
+            self?.slowingTimer?.invalidate()
+            self?.slowingTimer = nil
+        }
+    }
+
+    private func switchToStationary() {
+        if stationaryTrackingMode == .geofences {
+            delegate?.switchToStationaryGeofences()
+        } else {
+            delegate?.switchToStationaryPeriodic()
         }
     }
 
     private func handleSlowing(speed: Double, now: TimeInterval) {
         if speed >= speedMovingThreshold {
             // Back to moving
+            let previousState = state
             state = .moving
             lowSpeedCount = 0
+            stopSlowingTimer()
             NSLog("[SpeedMotion] SLOWING -> MOVING (speed=%.2f >= threshold=%.2f)",
                   speed, speedMovingThreshold)
+                  
+            if state != previousState {
+                persistState()
+                emitEvent(previous: previousState, current: state)
+            }
             return
         }
 
@@ -184,16 +242,18 @@ public final class SpeedMotionManager {
         lowSpeedCount += 1
         let elapsed = now - slowingStartTime
         if elapsed >= Double(speedStationaryDelay) {
+            let previousState = state
             state = .stationary
             wakeCount = 0
+            stopSlowingTimer()
             NSLog("[SpeedMotion] SLOWING -> STATIONARY (elapsed=%.0fs >= delay=%ds, lowCount=%d)",
                   elapsed, speedStationaryDelay, lowSpeedCount)
 
-            // Switch tracking mode
-            if stationaryTrackingMode == .geofences {
-                delegate?.switchToStationaryGeofences()
-            } else {
-                delegate?.switchToStationaryPeriodic()
+            switchToStationary()
+            
+            if state != previousState {
+                persistState()
+                emitEvent(previous: previousState, current: state)
             }
         }
     }
@@ -233,7 +293,7 @@ public final class SpeedMotionManager {
 
     private func emitEvent(previous: SpeedMotionState, current: SpeedMotionState) {
         let trackingMode: Int = (current == .stationary)
-            ? (stationaryTrackingMode == .geofences ? 2 : 1) // geofences=2, periodic=1
+            ? (stationaryTrackingMode == .geofences ? 1 : 2) // geofences=1, periodic=2
             : 0 // continuous=0
         
         delegate?.emitSpeedMotionEvent(

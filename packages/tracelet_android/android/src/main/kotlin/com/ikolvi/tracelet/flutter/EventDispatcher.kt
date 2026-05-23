@@ -282,6 +282,16 @@ class EventDispatcher : TraceletEventSender {
         val batteryMap = data["battery"] as? Map<String, Any?> ?: emptyMap()
         val activityMap = data["activity"] as? Map<String, Any?>
 
+        val incomingExtras = (data["extras"] as? Map<String?, Any?>) ?: emptyMap()
+        val synthesizedExtras = incomingExtras.toMutableMap()
+        synthesizedExtras["is_mock"] = data["mock"] as? Boolean ?: false
+        synthesizedExtras["locationSource"] = data["locationSource"] as? String ?: "unknown"
+        synthesizedExtras["reducedAccuracy"] = data["reducedAccuracy"] as? Boolean ?: false
+        (data["mockHeuristics"] as? Map<String, Any?>)?.let { synthesizedExtras["mockHeuristics"] = it }
+        (data["audit_hash"] as? String)?.let { synthesizedExtras["audit_hash"] = it }
+        (data["audit_previous_hash"] as? String)?.let { synthesizedExtras["audit_previous_hash"] = it }
+        (data["audit_chain_index"] as? Number)?.let { synthesizedExtras["audit_chain_index"] = it }
+
         return TlLocation(
             coords = TlCoords(
                 latitude = (coordsMap["latitude"] as? Number)?.toDouble() ?: 0.0,
@@ -309,7 +319,7 @@ class EventDispatcher : TraceletEventSender {
                     confidence = (it["confidence"] as? Number)?.toLong() ?: -1L,
                 )
             },
-            extras = data["extras"] as? Map<String?, Any?>,
+            extras = synthesizedExtras,
         )
     }
 

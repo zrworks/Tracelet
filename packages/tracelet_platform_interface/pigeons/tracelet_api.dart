@@ -66,6 +66,28 @@ enum TlNotificationPriority { min, low, defaultPriority, high, max }
 // Configuration Messages
 // =============================================================================
 
+enum TlLocationFilterPolicy { adjust, ignore, discard }
+
+class TlLocationFilter {
+  TlLocationFilter({
+    required this.trackingAccuracyThreshold,
+    required this.maxImpliedSpeed,
+    required this.odometerAccuracyThreshold,
+    required this.policy,
+    required this.rejectMockLocations,
+    required this.mockDetectionLevel,
+    required this.useKalmanFilter,
+  });
+
+  final int trackingAccuracyThreshold;
+  final int maxImpliedSpeed;
+  final int odometerAccuracyThreshold;
+  final TlLocationFilterPolicy policy;
+  final bool rejectMockLocations;
+  final int mockDetectionLevel;
+  final bool useKalmanFilter;
+}
+
 class TlGeoConfig {
   TlGeoConfig({
     required this.desiredAccuracy,
@@ -87,6 +109,7 @@ class TlGeoConfig {
     required this.deadReckoningActivationDelay,
     required this.deadReckoningMaxDuration,
     required this.batteryBudgetPerHour,
+    required this.filter,
   });
 
   final TlDesiredAccuracy desiredAccuracy;
@@ -108,6 +131,7 @@ class TlGeoConfig {
   final int deadReckoningActivationDelay;
   final int deadReckoningMaxDuration;
   final double batteryBudgetPerHour;
+  final TlLocationFilter filter;
 }
 
 class TlAppConfig {

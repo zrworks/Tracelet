@@ -1920,7 +1920,7 @@ class Tracelet {
   static Stream<Location> _getProcessedLocationStream() {
     return _processedLocationStream ??= _platform.locationEvents
         .map(Location.fromTl)
-        .where(_shouldAcceptLocation)
+        .expand(_applyLocationProcessor)
         .map(_applyKalmanFilter)
         .asBroadcastStream();
   }
@@ -2254,20 +2254,18 @@ class Tracelet {
     return sub;
   }
 
-  /// Returns `true` if the location passes all filters (distance, accuracy,
-  /// speed, adaptive sampling). Side-effect: updates adaptive state.
-  ///
-  /// Used with `Stream.where()` to avoid the list allocation overhead of
-  /// `Stream.expand()`.
-  static bool _shouldAcceptLocation(Location location) {
+  /// Returns the location if it passes all filters (distance, accuracy, speed,
+  /// adaptive sampling). The returned location is augmented with the computed
+  /// effective speed. Side-effect: updates adaptive state.
+  static Iterable<Location> _applyLocationProcessor(Location location) {
     // Periodic locations bypass all filters.
-    if (location.event == 'periodic') return true;
+    if (location.event == 'periodic') return [location];
 
     final processor = _locationProcessor;
-    if (processor == null) return true;
+    if (processor == null) return [location];
 
     final ts = DateTime.tryParse(location.timestamp);
-    if (ts == null) return true;
+    if (ts == null) return [location];
 
     AdaptiveContext? adaptiveCtx;
     if (_enableAdaptiveMode) {
@@ -2296,17 +2294,23 @@ class Tracelet {
       );
     }
 
-    return processor
-        .process(
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          accuracy: location.coords.accuracy,
-          speed: location.coords.speed,
-          timestampMs: ts.millisecondsSinceEpoch,
-          isMock: location.isMock,
-          adaptiveContext: adaptiveCtx,
-        )
-        .accepted;
+    final result = processor.process(
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      accuracy: location.coords.accuracy,
+      speed: location.coords.speed,
+      timestampMs: ts.millisecondsSinceEpoch,
+      isMock: location.isMock,
+      adaptiveContext: adaptiveCtx,
+    );
+
+    if (result.accepted) {
+      if (result.effectiveSpeed != location.coords.speed) {
+        return [location.copyWithCoords(speed: result.effectiveSpeed)];
+      }
+      return [location];
+    }
+    return const [];
   }
 
   /// Apply Kalman filter to a [Location] if enabled.

@@ -84,6 +84,8 @@ class TraceletSdk private constructor(private val context: Context) {
         internal set
     lateinit var motionDetector: MotionDetector
         internal set
+    lateinit var speedMotionManager: com.ikolvi.tracelet.sdk.motion.SpeedMotionManager
+        internal set
     lateinit var geofenceManager: GeofenceManager
         internal set
     lateinit var httpSyncManager: HttpSyncManager
@@ -217,6 +219,76 @@ class TraceletSdk private constructor(private val context: Context) {
                 logger.info("stopOnStationary — tracking stopped by motion detector")
             }
         }
+
+        // Speed-based motion detector
+        speedMotionManager = com.ikolvi.tracelet.sdk.motion.SpeedMotionManager(
+            configManager, stateManager, eventSender,
+            object : com.ikolvi.tracelet.sdk.motion.SpeedMotionManager.SpeedMotionCallback {
+                override fun switchToContinuous() {
+                    val useForeground = configManager.isForegroundServiceEnabled()
+                    if (useForeground) {
+                        LocationService.switchToContinuous(locationEngine, stateManager)
+                    } else {
+                        PeriodicLocationWorker.cancel(context)
+                        stateManager.trackingMode = TrackingMode.CONTINUOUS
+                        locationEngine.start()
+                    }
+                    // Dispatch motionchange event so Flutter UI updates _isMoving
+                    stateManager.isMoving = true
+                    val locationMap = locationEngine.getLastLocation()?.let {
+                        locationEngine.enrichLocation(it, "motionchange")
+                    } ?: mapOf("is_moving" to true)
+                    eventSender.sendMotionChange(locationMap)
+                }
+
+                override fun switchToStationaryPeriodic() {
+                    val useForeground = configManager.isForegroundServiceEnabled()
+                    if (useForeground) {
+                        LocationService.switchToStationaryPeriodic(locationEngine, configManager, stateManager)
+                    } else {
+                        locationEngine.stop()
+                        val lastLoc = locationEngine.getLastLocation()
+                        if (lastLoc != null) {
+                            stateManager.lastPeriodicLatitude = lastLoc.latitude
+                            stateManager.lastPeriodicLongitude = lastLoc.longitude
+                            stateManager.lastLocationTime = lastLoc.time
+                        }
+                        stateManager.trackingMode = TrackingMode.PERIODIC
+                        val interval = configManager.getStationaryPeriodicInterval()
+                        
+                        val useExactAlarms = configManager.getPeriodicUseExactAlarms() || interval < 900
+                        if (useExactAlarms) {
+                            PeriodicLocationWorker.scheduleOneTime(context)
+                            PeriodicLocationWorker.scheduleExactAlarm(context, interval)
+                        } else {
+                            PeriodicLocationWorker.schedule(context, interval)
+                        }
+                    }
+                    // Dispatch motionchange event so Flutter UI updates _isMoving
+                    stateManager.isMoving = false
+                    val locationMap = locationEngine.getLastLocation()?.let {
+                        locationEngine.enrichLocation(it, "motionchange")
+                    } ?: mapOf("is_moving" to false)
+                    eventSender.sendMotionChange(locationMap)
+                }
+
+                override fun switchToStationaryGeofences() {
+                    val useForeground = configManager.isForegroundServiceEnabled()
+                    if (useForeground) {
+                        LocationService.switchToStationaryGeofences(locationEngine, stateManager)
+                    } else {
+                        locationEngine.stop()
+                        stateManager.trackingMode = TrackingMode.GEOFENCES
+                    }
+                    // Dispatch motionchange event so Flutter UI updates _isMoving
+                    stateManager.isMoving = false
+                    val locationMap = locationEngine.getLastLocation()?.let {
+                        locationEngine.enrichLocation(it, "motionchange")
+                    } ?: mapOf("is_moving" to false)
+                    eventSender.sendMotionChange(locationMap)
+                }
+            }
+        )
 
         // Geofencing
         geofenceManager = GeofenceManager(
@@ -428,18 +500,31 @@ class TraceletSdk private constructor(private val context: Context) {
             tripManager.onLocationReceived(lat, lng, System.currentTimeMillis().toString())
         }
 
-        // Activity recognition permission + motion detector
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val hasMotion = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACTIVITY_RECOGNITION
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!hasMotion) {
-                permissionManager.requestActivityRecognition(activity)
+        // Start the appropriate motion detector
+        val motionMode = configManager.getMotionDetectionMode()
+        if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
+            speedMotionManager.start(forceMoving = true)
+            locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
+            
+            // Dispatch motionchange event so Flutter UI updates _isMoving synchronously with the forced state
+            val locationMap = locationEngine.getLastLocation()?.let {
+                locationEngine.enrichLocation(it, "motionchange")
+            } ?: mapOf("is_moving" to true)
+            eventSender.sendMotionChange(locationMap)
+        } else {
+            // Activity recognition permission + accelerometer motion detector
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val hasMotion = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!hasMotion) {
+                    permissionManager.requestActivityRecognition(activity)
+                } else {
+                    motionDetector.start()
+                }
             } else {
                 motionDetector.start()
             }
-        } else {
-            motionDetector.start()
         }
 
         startHeartbeat()
@@ -459,7 +544,9 @@ class TraceletSdk private constructor(private val context: Context) {
 
         locationEngine.stop()
         locationEngine.onLocationUpdate = null
+        locationEngine.speedMotionSpeedSink = null
         motionDetector.stop()
+        speedMotionManager.stop()
         stopHeartbeat()
         cancelStopAfterElapsedTimer()
         tripManager.reset()
@@ -686,14 +773,20 @@ class TraceletSdk private constructor(private val context: Context) {
             "enabled" to false, "isMoving" to false,
             "trackingMode" to TrackingMode.CONTINUOUS.value, "schedulerEnabled" to false, "odometer" to 0.0,
         )
-        locationEngine.changePace(isMoving)
-        // Re-sync MotionDetector's sensor state so it can wake the SDK back up
-        // on real motion after a manual changePace(false). Without this, the
-        // accelerometer + significant-motion listeners stay torn down and we
-        // can never recover from the forced-stationary state. (See iOS where
-        // CMMotionActivityManager runs continuously and needs no analog.)
-        if (::motionDetector.isInitialized) {
-            motionDetector.onManualPaceChange(isMoving)
+        
+        if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
+            if (::speedMotionManager.isInitialized) {
+                speedMotionManager.onManualPaceChange(isMoving)
+            }
+        } else {
+            locationEngine.changePace(isMoving)
+            // Re-sync MotionDetector's sensor state so it can wake the SDK back up
+            // on real motion after a manual changePace(false). Without this, the
+            // accelerometer + significant-motion listeners stay torn down and we
+            // can never recover from the forced-stationary state.
+            if (::motionDetector.isInitialized) {
+                motionDetector.onManualPaceChange(isMoving)
+            }
         }
         return stateManager.toMap(configManager.getConfig())
     }

@@ -16,6 +16,7 @@ class _TrackPoint {
     required this.heading,
     required this.accuracy,
     required this.isMoving,
+    required this.isMock,
     required this.timestamp,
     this.activityType = tl.ActivityType.unknown,
     this.event,
@@ -26,6 +27,7 @@ class _TrackPoint {
   final double heading; // degrees
   final double accuracy; // meters
   final bool isMoving;
+  final bool isMock;
   final String timestamp;
   final tl.ActivityType activityType;
   final String? event;
@@ -79,6 +81,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   double _currentHeading = 0;
   double _currentSpeed = 0;
   bool _isMoving = false;
+  bool _isMock = false;
   bool _followMode = true;
 
   // Smooth position animation
@@ -135,6 +138,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   // Privacy Zones
   List<tl.PrivacyZone> _privacyZones = [];
   bool _showPrivacyZones = true;
+  String _motionDetectionMode = 'Accel'; // Accel or Speed
 
   // Dead Reckoning
   Map<String, Object?>? _drState;
@@ -179,6 +183,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       if (loc != null) {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
         setState(() {
+          _isMock = loc.isMock;
           _currentPosition = pos;
           _currentAccuracy = loc.coords.accuracy;
           _currentHeading = loc.coords.heading;
@@ -190,6 +195,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               heading: loc.coords.heading,
               accuracy: loc.coords.accuracy,
               isMoving: loc.isMoving,
+              isMock: loc.isMock,
               timestamp: loc.timestamp,
               activityType: loc.activity.type,
             ),
@@ -219,6 +225,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       tl.Tracelet.onLocation((loc) {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
         setState(() {
+          _isMock = loc.isMock;
           _currentPosition = pos;
           _currentAccuracy = loc.coords.accuracy;
           _currentHeading = loc.coords.heading;
@@ -230,6 +237,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               heading: loc.coords.heading,
               accuracy: loc.coords.accuracy,
               isMoving: loc.isMoving,
+              isMock: loc.isMock,
               timestamp: loc.timestamp,
               activityType: loc.activity.type,
               event: loc.event,
@@ -267,6 +275,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
         setState(() {
           _isMoving = loc.isMoving;
+          _isMock = loc.isMock;
           _currentPosition = pos;
 
           // Track active trip in-progress
@@ -1359,6 +1368,17 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 4),
+            // Motion Detection Mode (Accel vs Speed)
+            GestureDetector(
+              onTap: _cycleMotionDetectionModeFromMap,
+              child: _StatusChip(
+                icon: _motionDetectionMode == 'Speed' ? Icons.speed : Icons.vibration,
+                label: 'Motion: $_motionDetectionMode',
+                color: _motionDetectionMode == 'Speed' ? Colors.deepPurple : Colors.indigo,
+                showToggle: true,
+              ),
+            ),
+            const SizedBox(height: 4),
             // Health check
             GestureDetector(
               onTap: _runHealthCheckFromMap,
@@ -1674,6 +1694,48 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
   }
 
+  // ── Cycle motion detection mode from map ──────────────────────────────
+
+  Future<void> _cycleMotionDetectionModeFromMap() async {
+    try {
+      final isCurrentlyAccel = _motionDetectionMode == 'Accel';
+      final nextMode = isCurrentlyAccel ? 'Speed' : 'Accel';
+
+      await tl.Tracelet.setConfig(
+        tl.Config(
+          motion: isCurrentlyAccel 
+              ? const tl.MotionConfig(
+                  motionDetectionMode: tl.MotionDetectionMode.speed,
+                  speedMovingThreshold: 0.5, // Lowered for mock walking routes
+                  speedStationaryDelay: 60,
+                  stationaryTrackingMode: tl.StationaryTrackingMode.periodic,
+                  stationaryPeriodicInterval: 300,
+                )
+              : const tl.MotionConfig(
+                  motionDetectionMode: tl.MotionDetectionMode.accelerometer,
+                ),
+        ),
+      );
+      setState(() => _motionDetectionMode = nextMode);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isCurrentlyAccel
+                ? 'Speed-based motion detection enabled (Hardware accel disabled)'
+                : 'Accelerometer-based motion detection enabled'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to change motion mode: $e')),
+        );
+      }
+    }
+  }
+
   // ── Toggle Adaptive mode from map ─────────────────────────────────────
 
   Future<void> _toggleAdaptiveFromMap() async {
@@ -1771,11 +1833,13 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Live Map'),
-            const SizedBox(width: 6),
+        title: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Live Map'),
+              const SizedBox(width: 6),
             if (_isMoving)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1808,6 +1872,24 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                   ),
                 ),
               ),
+            if (_isMock) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red.withAlpha(40),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'MOCK',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
             if (_adaptiveMode) ...[
               const SizedBox(width: 4),
               Tooltip(
@@ -1830,7 +1912,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ],
+            ],
+          ),
         ),
         centerTitle: true,
         actions: [

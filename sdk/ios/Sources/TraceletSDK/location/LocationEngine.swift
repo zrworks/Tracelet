@@ -395,7 +395,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         let distanceFilter = configManager.getDistanceFilter()
-        locationManager.distanceFilter = distanceFilter > 0 ? distanceFilter : kCLDistanceFilterNone
+        let isSpeedMode = configManager.getMotionDetectionMode() == .speed
+        locationManager.distanceFilter = (distanceFilter > 0 && !isSpeedMode) ? distanceFilter : kCLDistanceFilterNone
 
         locationManager.activityType = configManager.getActivityType()
     }
@@ -414,7 +415,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             locationManager.distanceFilter = kCLDistanceFilterNone
         } else {
             let distanceFilter = configManager.getDistanceFilter()
-            locationManager.distanceFilter = distanceFilter > 0 ? distanceFilter : kCLDistanceFilterNone
+            let isSpeedMode = configManager.getMotionDetectionMode() == .speed
+            locationManager.distanceFilter = (distanceFilter > 0 && !isSpeedMode) ? distanceFilter : kCLDistanceFilterNone
         }
     }
 
@@ -732,9 +734,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         lastEffectiveSpeed = effectiveSpeed
 
         // Forward speed to SpeedMotionManager when speed-based motion detection
-        // is active. Uses the raw CLLocation.speed (not computed) because
-        // computed speed from distance/time is noisy at low speeds.
-        speedSink?(location.speed)
+        // is active. Use effectiveSpeed to catch speed calculated from distance
+        // during periodic checks where raw speed might be missing or invalid.
+        speedSink?(effectiveSpeed)
 
         lastLocation = location
         if location.horizontalAccuracy > 0 && location.horizontalAccuracy <= 100 {

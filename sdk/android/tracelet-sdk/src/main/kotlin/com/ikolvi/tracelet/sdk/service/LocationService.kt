@@ -102,15 +102,76 @@ class LocationService : Service(), DefaultLifecycleObserver {
             engine.stop()
             state.trackingMode = TrackingMode.PERIODIC
 
-            val intervalMs = config.getStationaryRadius().toLong().coerceAtLeast(1000)
-            val accuracy = config.getDesiredAccuracy()
+            val intervalMs = config.getStationaryPeriodicInterval() * 1000L
+            val accuracy = config.getStationaryPeriodicAccuracy()
 
             val handler = Handler(Looper.getMainLooper())
             stationaryTimerHandler = handler
 
+            val lastLoc = engine.getLastLocation()
+            var lastLat = lastLoc?.latitude ?: Double.NaN
+            var lastLng = lastLoc?.longitude ?: Double.NaN
+            var lastTime = lastLoc?.time ?: 0L
+
             val runnable = object : Runnable {
                 override fun run() {
-                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy)) { }
+                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy)) { locationMap -> 
+                        if (locationMap != null) {
+                            val coords = locationMap["coords"] as? Map<*, *>
+                            var speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
+                            val lat = (coords?.get("latitude") as? Number)?.toDouble()
+                            val lng = (coords?.get("longitude") as? Number)?.toDouble()
+                            
+                            val now = System.currentTimeMillis()
+                            
+                            // If platform speed is 0 or missing, calculate from distance
+                            if (speed <= 0.0 && lat != null && lng != null && !lastLat.isNaN() && !lastLng.isNaN()) {
+                                val results = FloatArray(1)
+                                android.location.Location.distanceBetween(lastLat, lastLng, lat, lng, results)
+                                val distance = results[0].toDouble()
+                                val timeDelta = (now - lastTime) / 1000.0
+                                if (timeDelta > 0) {
+                                    speed = distance / timeDelta
+                                }
+                                
+                                val stationaryRadius = config.getStationaryRadius()
+                                val movingThreshold = config.getSpeedMovingThreshold()
+                                if (distance >= stationaryRadius && speed < movingThreshold) {
+                                    speed = movingThreshold + 0.1
+                                }
+                            }
+                            
+                            if (lat != null && lng != null) {
+                                lastLat = lat
+                                lastLng = lng
+                                lastTime = now
+                                
+                                // Update odometer if accuracy is acceptable
+                                val accuracy = (coords?.get("accuracy") as? Number)?.toDouble() ?: 0.0
+                                val lastPeriodicLat = state.lastPeriodicLatitude
+                                val lastPeriodicLng = state.lastPeriodicLongitude
+                                if (!lastPeriodicLat.isNaN() && !lastPeriodicLng.isNaN()) {
+                                    val results = FloatArray(1)
+                                    android.location.Location.distanceBetween(lastPeriodicLat, lastPeriodicLng, lat, lng, results)
+                                    val dist = results[0].toDouble()
+                                    val threshold = config.getOdometerAccuracyThreshold()
+                                    if (threshold <= 0 || accuracy <= threshold) {
+                                        state.addOdometer(dist)
+                                    }
+                                }
+                                state.lastPeriodicLatitude = lat
+                                state.lastPeriodicLongitude = lng
+                            }
+                            
+                            // Send location to the UI so it updates during STATIONARY mode
+                            val enriched = locationMap.toMutableMap()
+                            enriched["event"] = "periodic"
+                            enriched["odometer"] = state.odometer
+                            engine.events?.sendLocation(enriched)
+                            
+                            engine.speedMotionSpeedSink?.invoke(speed)
+                        }
+                    }
                     handler.postDelayed(this, intervalMs)
                 }
             }

@@ -182,6 +182,51 @@ final class EventDispatcher: NSObject, TraceletEventSending {
         let batteryMap = data["battery"] as? [String: Any] ?? [:]
         let activityMap = data["activity"] as? [String: Any]
 
+        let incomingExtras = data["extras"] as? [String: Any] ?? [:]
+        var synthesizedExtras = incomingExtras
+        synthesizedExtras["is_mock"] = data["is_mock"] as? Bool ?? false
+        synthesizedExtras["locationSource"] = data["locationSource"] as? String ?? "unknown"
+        synthesizedExtras["reducedAccuracy"] = data["reducedAccuracy"] as? Bool ?? false
+        if let mockHeuristics = data["mockHeuristics"] as? [String: Any] {
+            synthesizedExtras["mockHeuristics"] = mockHeuristics
+        }
+        if let auditHash = data["audit_hash"] as? String {
+            synthesizedExtras["audit_hash"] = auditHash
+        }
+        if let auditPreviousHash = data["audit_previous_hash"] as? String {
+            synthesizedExtras["audit_previous_hash"] = auditPreviousHash
+        }
+        if let auditChainIndex = data["audit_chain_index"] as? Int {
+            synthesizedExtras["audit_chain_index"] = auditChainIndex
+        }
+
+        let coords = TlCoords(
+            latitude: (coordsMap["latitude"] as? Double) ?? 0.0,
+            longitude: (coordsMap["longitude"] as? Double) ?? 0.0,
+            accuracy: (coordsMap["accuracy"] as? Double) ?? -1.0,
+            speed: (coordsMap["speed"] as? Double) ?? -1.0,
+            heading: (coordsMap["heading"] as? Double) ?? -1.0,
+            altitude: (coordsMap["altitude"] as? Double) ?? 0.0,
+            altitudeAccuracy: (coordsMap["altitudeAccuracy"] as? Double) ?? -1.0,
+            speedAccuracy: (coordsMap["speed_accuracy"] as? Double) ?? -1.0,
+            headingAccuracy: (coordsMap["heading_accuracy"] as? Double) ?? -1.0,
+            ellipsoidalAltitude: coordsMap["ellipsoidal_altitude"] as? Double,
+            floor: coordsMap["floor"] as? Int64
+        )
+
+        let battery = TlBattery(
+            level: (batteryMap["level"] as? Double) ?? -1.0,
+            isCharging: (batteryMap["is_charging"] as? Bool) ?? false
+        )
+
+        var tlActivity: TlActivity?
+        if let act = activityMap {
+            tlActivity = TlActivity(
+                type: (act["type"] as? String) ?? "unknown",
+                confidence: (act["confidence"] as? Int64) ?? -1
+            )
+        }
+
         return TlLocation(
             coords: TlCoords(
                 latitude: (coordsMap["latitude"] as? NSNumber)?.doubleValue ?? 0,
@@ -209,7 +254,7 @@ final class EventDispatcher: NSObject, TraceletEventSending {
                     confidence: Int64($0["confidence"] as? Int ?? -1)
                 )
             },
-            extras: data["extras"] as? [String?: Any?]
+            extras: synthesizedExtras
         )
     }
 

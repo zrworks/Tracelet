@@ -57,14 +57,21 @@ public final class TraceletPermissionManager: NSObject, CLLocationManagerDelegat
     /// - notDetermined → requests foreground (When In Use)
     /// - whenInUse → requests background (Always)
     /// - denied/always → returns immediately (no dialog)
-    public func requestPermission(result: @escaping PermissionCallback) {
+    public func requestPermission(requestAlways: Bool = false, result: @escaping PermissionCallback) {
         let current = getAuthorizationStatus()
 
         switch current {
         case 0: // notDetermined
-            statusBeforeRequest = nil
+            // If the permission is notDetermined, the app was either just installed or 
+            // permissions were reset in Settings. We must clear the "already asked" flag.
+            UserDefaults.standard.set(false, forKey: "TraceletHasRequestedAlways")
+            statusBeforeRequest = current
             pendingResult = result
-            locationManager.requestWhenInUseAuthorization()
+            if requestAlways {
+                locationManager.requestAlwaysAuthorization()
+            } else {
+                locationManager.requestWhenInUseAuthorization()
+            }
         case 2: // whenInUse → upgrade to Always
             let defaults = UserDefaults.standard
             if defaults.bool(forKey: "TraceletHasRequestedAlways") {
@@ -76,6 +83,16 @@ public final class TraceletPermissionManager: NSObject, CLLocationManagerDelegat
                 statusBeforeRequest = current
                 pendingResult = result
                 locationManager.requestAlwaysAuthorization()
+                
+                // Fallback: If iOS 13+ defers the prompt, locationManagerDidChangeAuthorization
+                // may never fire with a new status. Start a timer to resolve anyway.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    guard let self = self, let pending = self.pendingResult else { return }
+                    // If the callback hasn't resolved after 1.5s, the prompt was deferred or ignored.
+                    self.pendingResult = nil
+                    self.statusBeforeRequest = nil
+                    pending(self.getAuthorizationStatus())
+                }
             }
         default:
             // deniedForever (4) or always (3) — no dialog will show
@@ -105,6 +122,10 @@ public final class TraceletPermissionManager: NSObject, CLLocationManagerDelegat
         // Ignore this spurious callback — only resolve when the status has
         // actually changed from what it was before the request.
         if let before = statusBeforeRequest, newStatus == before {
+            // iOS 13+ may defer the Always prompt entirely and keep the status
+            // as whenInUse. If we just return here, the pendingResult might
+            // hang forever. We'll start a 1-second fallback timer when we 
+            // request the upgrade.
             return
         }
 

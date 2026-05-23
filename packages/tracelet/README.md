@@ -265,6 +265,7 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 
 | Guide | Description |
 |---|---|
+| [Motion & Notifications](docs/motion-and-notifications.md) | Advanced Config: Speed-based Motion Detection & Smart Notifications |
 | [Android Setup](https://github.com/Ikolvi/Tracelet/blob/main/help/INSTALL-ANDROID.md) | Gradle, permissions, and manifest configuration |
 | [iOS Setup](https://github.com/Ikolvi/Tracelet/blob/main/help/INSTALL-IOS.md) | Info.plist, capabilities, and entitlements |
 | [Motion Detection Architecture](https://github.com/Ikolvi/Tracelet/blob/main/help/MOTION-DETECTION.md) | How `STATIONARY`/`MOVING` states and heartbeat actually work |

@@ -224,6 +224,18 @@ enum class TlNotificationPriority(val raw: Int) {
   }
 }
 
+enum class TlLocationFilterPolicy(val raw: Int) {
+  ADJUST(0),
+  IGNORE(1),
+  DISCARD(2);
+
+  companion object {
+    fun ofRaw(raw: Int): TlLocationFilterPolicy? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
 enum class TlLocationOrderDirection(val raw: Int) {
   ASCENDING(0),
   DESCENDING(1);
@@ -313,6 +325,52 @@ enum class TlSpeedMotionState(val raw: Int) {
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
+data class TlLocationFilter (
+  val trackingAccuracyThreshold: Long,
+  val maxImpliedSpeed: Long,
+  val odometerAccuracyThreshold: Long,
+  val policy: TlLocationFilterPolicy,
+  val rejectMockLocations: Boolean,
+  val mockDetectionLevel: Long,
+  val useKalmanFilter: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlLocationFilter {
+      val trackingAccuracyThreshold = pigeonVar_list[0] as Long
+      val maxImpliedSpeed = pigeonVar_list[1] as Long
+      val odometerAccuracyThreshold = pigeonVar_list[2] as Long
+      val policy = pigeonVar_list[3] as TlLocationFilterPolicy
+      val rejectMockLocations = pigeonVar_list[4] as Boolean
+      val mockDetectionLevel = pigeonVar_list[5] as Long
+      val useKalmanFilter = pigeonVar_list[6] as Boolean
+      return TlLocationFilter(trackingAccuracyThreshold, maxImpliedSpeed, odometerAccuracyThreshold, policy, rejectMockLocations, mockDetectionLevel, useKalmanFilter)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      trackingAccuracyThreshold,
+      maxImpliedSpeed,
+      odometerAccuracyThreshold,
+      policy,
+      rejectMockLocations,
+      mockDetectionLevel,
+      useKalmanFilter,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is TlLocationFilter) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return TraceletApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlGeoConfig (
   val desiredAccuracy: TlDesiredAccuracy,
   val distanceFilter: Double,
@@ -332,7 +390,8 @@ data class TlGeoConfig (
   val enableDeadReckoning: Boolean,
   val deadReckoningActivationDelay: Long,
   val deadReckoningMaxDuration: Long,
-  val batteryBudgetPerHour: Double
+  val batteryBudgetPerHour: Double,
+  val filter: TlLocationFilter
 )
  {
   companion object {
@@ -356,7 +415,8 @@ data class TlGeoConfig (
       val deadReckoningActivationDelay = pigeonVar_list[16] as Long
       val deadReckoningMaxDuration = pigeonVar_list[17] as Long
       val batteryBudgetPerHour = pigeonVar_list[18] as Double
-      return TlGeoConfig(desiredAccuracy, distanceFilter, stationaryRadius, locationTimeout, disableElasticity, elasticityMultiplier, stopAfterElapsedMinutes, maxMonitoredGeofences, enableTimestampMeta, enableAdaptiveMode, periodicLocationInterval, periodicDesiredAccuracy, enableSparseUpdates, sparseDistanceThreshold, sparseMaxIdleSeconds, enableDeadReckoning, deadReckoningActivationDelay, deadReckoningMaxDuration, batteryBudgetPerHour)
+      val filter = pigeonVar_list[19] as TlLocationFilter
+      return TlGeoConfig(desiredAccuracy, distanceFilter, stationaryRadius, locationTimeout, disableElasticity, elasticityMultiplier, stopAfterElapsedMinutes, maxMonitoredGeofences, enableTimestampMeta, enableAdaptiveMode, periodicLocationInterval, periodicDesiredAccuracy, enableSparseUpdates, sparseDistanceThreshold, sparseMaxIdleSeconds, enableDeadReckoning, deadReckoningActivationDelay, deadReckoningMaxDuration, batteryBudgetPerHour, filter)
     }
   }
   fun toList(): List<Any?> {
@@ -380,6 +440,7 @@ data class TlGeoConfig (
       deadReckoningActivationDelay,
       deadReckoningMaxDuration,
       batteryBudgetPerHour,
+      filter,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -1743,190 +1804,200 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
       }
       140.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlLocationOrderDirection.ofRaw(it.toInt())
+          TlLocationFilterPolicy.ofRaw(it.toInt())
         }
       }
       141.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlLocationActivityType.ofRaw(it.toInt())
+          TlLocationOrderDirection.ofRaw(it.toInt())
         }
       }
       142.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlLogLevel.ofRaw(it.toInt())
+          TlLocationActivityType.ofRaw(it.toInt())
         }
       }
       143.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlPersistMode.ofRaw(it.toInt())
+          TlLogLevel.ofRaw(it.toInt())
         }
       }
       144.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlHashAlgorithm.ofRaw(it.toInt())
+          TlPersistMode.ofRaw(it.toInt())
         }
       }
       145.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlAuthorizationRequest.ofRaw(it.toInt())
+          TlHashAlgorithm.ofRaw(it.toInt())
         }
       }
       146.toByte() -> {
         return (readValue(buffer) as Long?)?.let {
-          TlSpeedMotionState.ofRaw(it.toInt())
+          TlAuthorizationRequest.ofRaw(it.toInt())
         }
       }
       147.toByte() -> {
-        return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeoConfig.fromList(it)
+        return (readValue(buffer) as Long?)?.let {
+          TlSpeedMotionState.ofRaw(it.toInt())
         }
       }
       148.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAppConfig.fromList(it)
+          TlLocationFilter.fromList(it)
         }
       }
       149.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlForegroundServiceConfig.fromList(it)
+          TlGeoConfig.fromList(it)
         }
       }
       150.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAndroidConfig.fromList(it)
+          TlAppConfig.fromList(it)
         }
       }
       151.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlIosConfig.fromList(it)
+          TlForegroundServiceConfig.fromList(it)
         }
       }
       152.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpConfig.fromList(it)
+          TlAndroidConfig.fromList(it)
         }
       }
       153.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlConfig.fromList(it)
+          TlIosConfig.fromList(it)
         }
       }
       154.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlLoggerConfig.fromList(it)
+          TlHttpConfig.fromList(it)
         }
       }
       155.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlMotionConfig.fromList(it)
+          TlConfig.fromList(it)
         }
       }
       156.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceConfig.fromList(it)
+          TlLoggerConfig.fromList(it)
         }
       }
       157.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlPersistenceConfig.fromList(it)
+          TlMotionConfig.fromList(it)
         }
       }
       158.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuditConfig.fromList(it)
+          TlGeofenceConfig.fromList(it)
         }
       }
       159.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlPrivacyZoneConfig.fromList(it)
+          TlPersistenceConfig.fromList(it)
         }
       }
       160.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlSecurityConfig.fromList(it)
+          TlAuditConfig.fromList(it)
         }
       }
       161.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAttestationConfig.fromList(it)
+          TlPrivacyZoneConfig.fromList(it)
         }
       }
       162.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCoords.fromList(it)
+          TlSecurityConfig.fromList(it)
         }
       }
       163.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlBattery.fromList(it)
+          TlAttestationConfig.fromList(it)
         }
       }
       164.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlLocation.fromList(it)
+          TlCoords.fromList(it)
         }
       }
       165.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivity.fromList(it)
+          TlBattery.fromList(it)
         }
       }
       166.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlState.fromList(it)
+          TlLocation.fromList(it)
         }
       }
       167.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofence.fromList(it)
+          TlActivity.fromList(it)
         }
       }
       168.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceEvent.fromList(it)
+          TlState.fromList(it)
         }
       }
       169.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpEvent.fromList(it)
+          TlGeofence.fromList(it)
         }
       }
       170.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlProviderChangeEvent.fromList(it)
+          TlGeofenceEvent.fromList(it)
         }
       }
       171.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCurrentPositionOptions.fromList(it)
+          TlHttpEvent.fromList(it)
         }
       }
       172.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivityChangeEvent.fromList(it)
+          TlProviderChangeEvent.fromList(it)
         }
       }
       173.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofencesChangeEvent.fromList(it)
+          TlCurrentPositionOptions.fromList(it)
         }
       }
       174.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHeartbeatEvent.fromList(it)
+          TlActivityChangeEvent.fromList(it)
         }
       }
       175.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlSpeedMotionEvent.fromList(it)
+          TlGeofencesChangeEvent.fromList(it)
         }
       }
       176.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuthorizationEvent.fromList(it)
+          TlHeartbeatEvent.fromList(it)
         }
       }
       177.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlSpeedMotionEvent.fromList(it)
+        }
+      }
+      178.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlAuthorizationEvent.fromList(it)
+        }
+      }
+      179.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           TlConnectivityChangeEvent.fromList(it)
         }
@@ -1980,156 +2051,164 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(139)
         writeValue(stream, value.raw.toLong())
       }
-      is TlLocationOrderDirection -> {
+      is TlLocationFilterPolicy -> {
         stream.write(140)
         writeValue(stream, value.raw.toLong())
       }
-      is TlLocationActivityType -> {
+      is TlLocationOrderDirection -> {
         stream.write(141)
         writeValue(stream, value.raw.toLong())
       }
-      is TlLogLevel -> {
+      is TlLocationActivityType -> {
         stream.write(142)
         writeValue(stream, value.raw.toLong())
       }
-      is TlPersistMode -> {
+      is TlLogLevel -> {
         stream.write(143)
         writeValue(stream, value.raw.toLong())
       }
-      is TlHashAlgorithm -> {
+      is TlPersistMode -> {
         stream.write(144)
         writeValue(stream, value.raw.toLong())
       }
-      is TlAuthorizationRequest -> {
+      is TlHashAlgorithm -> {
         stream.write(145)
         writeValue(stream, value.raw.toLong())
       }
-      is TlSpeedMotionState -> {
+      is TlAuthorizationRequest -> {
         stream.write(146)
         writeValue(stream, value.raw.toLong())
       }
-      is TlGeoConfig -> {
+      is TlSpeedMotionState -> {
         stream.write(147)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is TlAppConfig -> {
+      is TlLocationFilter -> {
         stream.write(148)
         writeValue(stream, value.toList())
       }
-      is TlForegroundServiceConfig -> {
+      is TlGeoConfig -> {
         stream.write(149)
         writeValue(stream, value.toList())
       }
-      is TlAndroidConfig -> {
+      is TlAppConfig -> {
         stream.write(150)
         writeValue(stream, value.toList())
       }
-      is TlIosConfig -> {
+      is TlForegroundServiceConfig -> {
         stream.write(151)
         writeValue(stream, value.toList())
       }
-      is TlHttpConfig -> {
+      is TlAndroidConfig -> {
         stream.write(152)
         writeValue(stream, value.toList())
       }
-      is TlConfig -> {
+      is TlIosConfig -> {
         stream.write(153)
         writeValue(stream, value.toList())
       }
-      is TlLoggerConfig -> {
+      is TlHttpConfig -> {
         stream.write(154)
         writeValue(stream, value.toList())
       }
-      is TlMotionConfig -> {
+      is TlConfig -> {
         stream.write(155)
         writeValue(stream, value.toList())
       }
-      is TlGeofenceConfig -> {
+      is TlLoggerConfig -> {
         stream.write(156)
         writeValue(stream, value.toList())
       }
-      is TlPersistenceConfig -> {
+      is TlMotionConfig -> {
         stream.write(157)
         writeValue(stream, value.toList())
       }
-      is TlAuditConfig -> {
+      is TlGeofenceConfig -> {
         stream.write(158)
         writeValue(stream, value.toList())
       }
-      is TlPrivacyZoneConfig -> {
+      is TlPersistenceConfig -> {
         stream.write(159)
         writeValue(stream, value.toList())
       }
-      is TlSecurityConfig -> {
+      is TlAuditConfig -> {
         stream.write(160)
         writeValue(stream, value.toList())
       }
-      is TlAttestationConfig -> {
+      is TlPrivacyZoneConfig -> {
         stream.write(161)
         writeValue(stream, value.toList())
       }
-      is TlCoords -> {
+      is TlSecurityConfig -> {
         stream.write(162)
         writeValue(stream, value.toList())
       }
-      is TlBattery -> {
+      is TlAttestationConfig -> {
         stream.write(163)
         writeValue(stream, value.toList())
       }
-      is TlLocation -> {
+      is TlCoords -> {
         stream.write(164)
         writeValue(stream, value.toList())
       }
-      is TlActivity -> {
+      is TlBattery -> {
         stream.write(165)
         writeValue(stream, value.toList())
       }
-      is TlState -> {
+      is TlLocation -> {
         stream.write(166)
         writeValue(stream, value.toList())
       }
-      is TlGeofence -> {
+      is TlActivity -> {
         stream.write(167)
         writeValue(stream, value.toList())
       }
-      is TlGeofenceEvent -> {
+      is TlState -> {
         stream.write(168)
         writeValue(stream, value.toList())
       }
-      is TlHttpEvent -> {
+      is TlGeofence -> {
         stream.write(169)
         writeValue(stream, value.toList())
       }
-      is TlProviderChangeEvent -> {
+      is TlGeofenceEvent -> {
         stream.write(170)
         writeValue(stream, value.toList())
       }
-      is TlCurrentPositionOptions -> {
+      is TlHttpEvent -> {
         stream.write(171)
         writeValue(stream, value.toList())
       }
-      is TlActivityChangeEvent -> {
+      is TlProviderChangeEvent -> {
         stream.write(172)
         writeValue(stream, value.toList())
       }
-      is TlGeofencesChangeEvent -> {
+      is TlCurrentPositionOptions -> {
         stream.write(173)
         writeValue(stream, value.toList())
       }
-      is TlHeartbeatEvent -> {
+      is TlActivityChangeEvent -> {
         stream.write(174)
         writeValue(stream, value.toList())
       }
-      is TlSpeedMotionEvent -> {
+      is TlGeofencesChangeEvent -> {
         stream.write(175)
         writeValue(stream, value.toList())
       }
-      is TlAuthorizationEvent -> {
+      is TlHeartbeatEvent -> {
         stream.write(176)
         writeValue(stream, value.toList())
       }
-      is TlConnectivityChangeEvent -> {
+      is TlSpeedMotionEvent -> {
         stream.write(177)
+        writeValue(stream, value.toList())
+      }
+      is TlAuthorizationEvent -> {
+        stream.write(178)
+        writeValue(stream, value.toList())
+      }
+      is TlConnectivityChangeEvent -> {
+        stream.write(179)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

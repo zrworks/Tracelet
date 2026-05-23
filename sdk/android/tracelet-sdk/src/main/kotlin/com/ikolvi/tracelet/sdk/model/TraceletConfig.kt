@@ -328,6 +328,13 @@ data class MotionConfig(
     val shakeThreshold: Double = 2.5,
     val stillThreshold: Double = 0.4,
     val stillSampleCount: Int = 25,
+    val motionDetectionMode: MotionDetectionMode = MotionDetectionMode.ACCELEROMETER,
+    val speedMovingThreshold: Double = 1.5,
+    val speedStationaryDelay: Int = 180,
+    val stationaryTrackingMode: StationaryTrackingMode = StationaryTrackingMode.PERIODIC,
+    val stationaryPeriodicInterval: Int = 900,
+    val stationaryPeriodicAccuracy: DesiredAccuracy = DesiredAccuracy.MEDIUM,
+    val speedWakeConfirmCount: Int = 1,
 ) {
     companion object {
         fun fromMap(m: Map<String, Any?>) = MotionConfig(
@@ -345,6 +352,13 @@ data class MotionConfig(
             shakeThreshold = (m["shakeThreshold"] as? Number)?.toDouble() ?: 2.5,
             stillThreshold = (m["stillThreshold"] as? Number)?.toDouble() ?: 0.4,
             stillSampleCount = (m["stillSampleCount"] as? Number)?.toInt() ?: 25,
+            motionDetectionMode = MotionDetectionMode.fromInt((m["motionDetectionMode"] as? Number)?.toInt() ?: 0),
+            speedMovingThreshold = (m["speedMovingThreshold"] as? Number)?.toDouble() ?: 1.5,
+            speedStationaryDelay = (m["speedStationaryDelay"] as? Number)?.toInt() ?: 180,
+            stationaryTrackingMode = StationaryTrackingMode.fromInt((m["stationaryTrackingMode"] as? Number)?.toInt() ?: 1),
+            stationaryPeriodicInterval = (m["stationaryPeriodicInterval"] as? Number)?.toInt() ?: 900,
+            stationaryPeriodicAccuracy = DesiredAccuracy.fromValue((m["stationaryPeriodicAccuracy"] as? Number)?.toInt() ?: 1),
+            speedWakeConfirmCount = (m["speedWakeConfirmCount"] as? Number)?.toInt() ?: 1,
         )
     }
 
@@ -363,6 +377,13 @@ data class MotionConfig(
         "shakeThreshold" to shakeThreshold,
         "stillThreshold" to stillThreshold,
         "stillSampleCount" to stillSampleCount,
+        "motionDetectionMode" to motionDetectionMode.value,
+        "speedMovingThreshold" to speedMovingThreshold,
+        "speedStationaryDelay" to speedStationaryDelay,
+        "stationaryTrackingMode" to stationaryTrackingMode.value,
+        "stationaryPeriodicInterval" to stationaryPeriodicInterval,
+        "stationaryPeriodicAccuracy" to stationaryPeriodicAccuracy.value,
+        "speedWakeConfirmCount" to speedWakeConfirmCount,
     )
 }
 

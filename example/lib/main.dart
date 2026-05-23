@@ -114,6 +114,7 @@ class _DashboardPageState extends State<DashboardPage>
   bool _isTracking = false;
   bool _isMoving = false;
   bool _kalmanEnabled = true;
+  bool _speedMotionEnabled = false;
   bool _adaptiveMode = false;
   bool _isPeriodicMode = false;
   bool _logExpanded = false;
@@ -2036,6 +2037,29 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  /// Toggle Speed-Based Motion Detection at runtime.
+  Future<void> _toggleSpeedMotion() async {
+    try {
+      final newValue = !_speedMotionEnabled;
+      final state = await tl.Tracelet.setConfig(
+        tl.Config(
+          motion: tl.MotionConfig(
+            motionDetectionMode: newValue
+                ? tl.MotionDetectionMode.speed
+                : tl.MotionDetectionMode.accelerometer,
+          ),
+        ),
+      );
+      setState(() {
+        _speedMotionEnabled = newValue;
+        _pluginState = state;
+      });
+      _addLog('MOTION_MODE', newValue ? 'SPEED-BASED' : 'ACCELEROMETER-BASED');
+    } catch (e) {
+      _addLog('ERROR', 'toggleSpeedMotion() failed: $e');
+    }
+  }
+
   // ── Battery Budget ────────────────────────────────────────────────────
 
   Future<void> _toggleBatteryBudget() async {
@@ -3742,6 +3766,15 @@ class _DashboardPageState extends State<DashboardPage>
                         _kalmanEnabled ? 'Kalman: ON' : 'Kalman: OFF',
                         _kalmanEnabled ? Icons.blur_on : Icons.blur_off,
                         _toggleKalmanFilter,
+                      ),
+                      _Chip(
+                        _speedMotionEnabled
+                            ? 'Speed Motion: ON'
+                            : 'Speed Motion: OFF',
+                        _speedMotionEnabled
+                            ? Icons.speed
+                            : Icons.speed_outlined,
+                        _toggleSpeedMotion,
                       ),
                       _Chip(
                         _adaptiveMode ? 'Adaptive: ON' : 'Adaptive: OFF',

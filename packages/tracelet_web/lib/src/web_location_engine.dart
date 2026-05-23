@@ -7,6 +7,7 @@ import 'package:web/web.dart' as web;
 
 import 'web_event_dispatcher.dart';
 import 'web_geofence_engine.dart';
+import 'web_privacy_engine.dart';
 import 'web_utils.dart';
 
 /// Wraps the browser Geolocation API for Tracelet.
@@ -16,10 +17,11 @@ import 'web_utils.dart';
 /// **foreground-only** — the Web Geolocation API does not function in
 /// background tabs or Service Workers.
 class WebLocationEngine {
-  WebLocationEngine(this._events, this._geofenceEngine);
+  WebLocationEngine(this._events, this._geofenceEngine, this._privacyEngine);
 
   final WebEventDispatcher _events;
   final WebGeofenceEngine _geofenceEngine;
+  final WebPrivacyEngine _privacyEngine;
 
   /// Last known location map (cached from most recent fix).
   Map<String, Object?>? _lastLocation;
@@ -53,6 +55,12 @@ class WebLocationEngine {
   /// Timer for detecting stop after no movement.
   Timer? _stopTimer;
 
+  // Speed-based motion configuration
+  int _motionDetectionMode = 0; // 0 = distance-based (accel), 1 = speed-based
+  double _speedMovingThreshold = 2.5;
+  int _speedStationaryDelay = 300;
+  Timer? _speedStationaryTimer;
+
   // ---------------------------------------------------------------------------
   // Configuration
   // ---------------------------------------------------------------------------
@@ -78,7 +86,15 @@ class WebLocationEngine {
     if (motion is Map) {
       final motionMap = Map<String, Object?>.from(motion);
       _stopTimeout = (motionMap['stopTimeout'] as int?) ?? _stopTimeout;
+      _motionDetectionMode =
+          (motionMap['motionDetectionMode'] as int?) ?? _motionDetectionMode;
+      _speedMovingThreshold =
+          (motionMap['speedMovingThreshold'] as num?)?.toDouble() ??
+          _speedMovingThreshold;
+      _speedStationaryDelay =
+          (motionMap['speedStationaryDelay'] as int?) ?? _speedStationaryDelay;
     }
+    _privacyEngine.applyConfig(config);
   }
 
   // ---------------------------------------------------------------------------
@@ -220,6 +236,8 @@ class WebLocationEngine {
     _stopHeartbeat();
     _stopTimer?.cancel();
     _stopTimer = null;
+    _speedStationaryTimer?.cancel();
+    _speedStationaryTimer = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -258,6 +276,8 @@ class WebLocationEngine {
     if (isMoving) {
       _stopTimer?.cancel();
       _stopTimer = null;
+      _speedStationaryTimer?.cancel();
+      _speedStationaryTimer = null;
     }
     if (_lastLocation != null) {
       _events.emitMotionChange(_lastLocation!);
@@ -345,6 +365,14 @@ class WebLocationEngine {
     final curLon =
         (locationMap['coords'] as Map<String, Object?>)['longitude'] as double;
 
+    if (_privacyEngine.isLocationInPrivacyZone(curLat, curLon)) {
+      _events.log(
+        'debug',
+        '[Tracelet Web] Location suppressed by privacy zone.',
+      );
+      return; // Do not emit, geofence, or record
+    }
+
     double distance = 0;
     if (prevLat != null && prevLon != null) {
       distance = GeoUtils.haversine(prevLat, prevLon, curLat, curLon);
@@ -358,23 +386,54 @@ class WebLocationEngine {
 
     _updateLastLocation(locationMap);
 
-    // Motion detection.
-    if (!_isMoving && distance > _stationaryRadius) {
-      _isMoving = true;
-      _events.emitMotionChange(locationMap);
-    }
+    final speed =
+        (locationMap['coords'] as Map<String, Object?>)['speed'] as double? ??
+        0.0;
 
-    // Reset stop timer on movement.
-    if (_isMoving) {
-      _stopTimer?.cancel();
-      _stopTimer = Timer(Duration(minutes: _stopTimeout), () {
-        if (_isMoving) {
-          _isMoving = false;
-          if (_lastLocation != null) {
-            _events.emitMotionChange(_lastLocation!);
-          }
+    // Motion detection.
+    if (_motionDetectionMode == 1) {
+      // Speed-Based
+      if (speed >= _speedMovingThreshold) {
+        _speedStationaryTimer?.cancel();
+        _speedStationaryTimer = null;
+        if (!_isMoving) {
+          _isMoving = true;
+          _events.emitMotionChange(locationMap);
         }
-      });
+      } else if (_isMoving) {
+        if (_speedStationaryTimer == null) {
+          _speedStationaryTimer = Timer(
+            Duration(seconds: _speedStationaryDelay),
+            () {
+              if (_isMoving) {
+                _isMoving = false;
+                if (_lastLocation != null) {
+                  _events.emitMotionChange(_lastLocation!);
+                }
+              }
+            },
+          );
+        }
+      }
+    } else {
+      // Distance-Based (Accelerometer fallback on Web)
+      if (!_isMoving && distance > _stationaryRadius) {
+        _isMoving = true;
+        _events.emitMotionChange(locationMap);
+      }
+
+      // Reset stop timer on movement.
+      if (_isMoving) {
+        _stopTimer?.cancel();
+        _stopTimer = Timer(Duration(minutes: _stopTimeout), () {
+          if (_isMoving) {
+            _isMoving = false;
+            if (_lastLocation != null) {
+              _events.emitMotionChange(_lastLocation!);
+            }
+          }
+        });
+      }
     }
 
     // Emit location event — no distance filtering here; the shared Dart

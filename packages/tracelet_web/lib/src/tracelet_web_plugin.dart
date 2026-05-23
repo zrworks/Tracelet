@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
+import 'web_carbon_engine.dart';
 import 'web_event_dispatcher.dart';
 import 'web_geofence_engine.dart';
 import 'web_http_engine.dart';
 import 'web_location_engine.dart';
 import 'web_permissions_engine.dart';
+import 'web_privacy_engine.dart';
 import 'web_storage_engine.dart';
 
 /// Web implementation of [TraceletPlatform].
@@ -40,11 +42,14 @@ class TraceletWebPlugin extends TraceletPlatform {
 
   late final WebEventDispatcher _events = WebEventDispatcher();
   late final WebGeofenceEngine _geofenceEngine = WebGeofenceEngine(_events);
+  late final WebPrivacyEngine _privacyEngine = WebPrivacyEngine();
   late final WebLocationEngine _locationEngine = WebLocationEngine(
     _events,
     _geofenceEngine,
+    _privacyEngine,
   );
   late final WebStorageEngine _storage = WebStorageEngine();
+  late final WebCarbonEngine _carbonEngine = WebCarbonEngine(_storage);
   late final WebHttpEngine _httpEngine = WebHttpEngine(_events, _storage);
   late final WebPermissionsEngine _permissions = WebPermissionsEngine(_events);
 
@@ -647,41 +652,47 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   // ---------------------------------------------------------------------------
-  // [Enterprise] Audit Trail (not supported on web)
+  // [Enterprise] Audit Trail
   // ---------------------------------------------------------------------------
 
   @override
   Future<Map<String, Object?>> verifyAuditTrail() async {
-    return <String, Object?>{
-      'is_valid': true,
-      'total_records': 0,
-      'verified_records': 0,
-    };
+    return _storage.verifyAuditTrail();
   }
 
   @override
   Future<Map<String, Object?>?> getAuditProof(String uuid) async {
-    return null;
+    return _storage.getAuditProof(uuid);
   }
 
   // ---------------------------------------------------------------------------
-  // [Enterprise] Privacy Zones (not supported on web)
+  // [Enterprise] Privacy Zones
   // ---------------------------------------------------------------------------
 
   @override
-  Future<bool> addPrivacyZone(Map<String, Object?> zone) async => false;
+  Future<bool> addPrivacyZone(Map<String, Object?> zone) async {
+    return _privacyEngine.addPrivacyZone(zone);
+  }
 
   @override
-  Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) async => false;
+  Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) async {
+    return _privacyEngine.addPrivacyZones(zones);
+  }
 
   @override
-  Future<bool> removePrivacyZone(String identifier) async => false;
+  Future<bool> removePrivacyZone(String identifier) async {
+    return _privacyEngine.removePrivacyZone(identifier);
+  }
 
   @override
-  Future<bool> removePrivacyZones() async => false;
+  Future<bool> removePrivacyZones() async {
+    return _privacyEngine.removePrivacyZones();
+  }
 
   @override
-  Future<List<Map<String, Object?>>> getPrivacyZones() async => [];
+  Future<List<Map<String, Object?>>> getPrivacyZones() async {
+    return _privacyEngine.getPrivacyZones();
+  }
 
   // ---------------------------------------------------------------------------
   // [Enterprise] Encrypted Database (no-op on web — in-memory storage)
@@ -715,12 +726,7 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<Map<String, Object?>> getCarbonReport([
     Map<String, Object?>? query,
   ]) async {
-    return <String, Object?>{
-      'totalCarbonGrams': 0.0,
-      'carbonByMode': <String, Object?>{},
-      'distanceByMode': <String, Object?>{},
-      'totalTrips': 0,
-    };
+    return _carbonEngine.getCarbonReport(query);
   }
 
   // ---------------------------------------------------------------------------

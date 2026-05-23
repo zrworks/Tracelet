@@ -524,10 +524,18 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<MotionAuthorizationStatus> requestMotionAuthorization() async =>
       MotionAuthorizationStatus.granted; // always granted
 
+  @Deprecated(
+    'Use requestTemporaryFullAccuracyAuthorization() which returns FullAccuracyStatus.',
+  )
   @override
   Future<int> requestTemporaryFullAccuracy(String purpose) async {
     return 0; // full — browser always provides full accuracy
   }
+
+  @override
+  Future<FullAccuracyStatus> requestTemporaryFullAccuracyAuthorization(
+    String purpose,
+  ) async => FullAccuracyStatus.full; // browsers always provide full accuracy
 
   @override
   Future<Map<String, Object?>> getProviderState() {

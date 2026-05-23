@@ -31,9 +31,17 @@ class TrackingCard extends StatelessWidget {
       trailing: StatusChip(label: stateLabel, color: stateColor),
       child: Column(
         children: [
-          InfoRow(label: 'Mode', value: modeLabel),
+          InfoRow(label: 'Tracking Mode', value: modeLabel),
           InfoRow(
-            label: 'Motion',
+            label: 'Motion Sensor',
+            value:
+                Tracelet.activeConfig.motion.motionDetectionMode ==
+                    MotionDetectionMode.speed
+                ? 'Speed-Based'
+                : 'Accelerometer',
+          ),
+          InfoRow(
+            label: 'Motion State',
             value: health.isMoving ? 'Moving' : 'Stationary',
             valueColor: health.isMoving
                 ? DoctorTheme.accent

@@ -199,6 +199,9 @@ class Tracelet {
   // ---------------------------------------------------------------------------
   static Config _currentConfig = const Config();
 
+  /// Gets the currently active plugin configuration.
+  static Config get activeConfig => _currentConfig;
+
   /// Whether [registerHeadlessTask] has been called in this isolate.
   ///
   /// Used by diagnostic tools (e.g. `tracelet_doctor`) to warn when

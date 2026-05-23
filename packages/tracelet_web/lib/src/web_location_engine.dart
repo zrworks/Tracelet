@@ -401,19 +401,17 @@ class WebLocationEngine {
           _events.emitMotionChange(locationMap);
         }
       } else if (_isMoving) {
-        if (_speedStationaryTimer == null) {
-          _speedStationaryTimer = Timer(
-            Duration(seconds: _speedStationaryDelay),
-            () {
-              if (_isMoving) {
-                _isMoving = false;
-                if (_lastLocation != null) {
-                  _events.emitMotionChange(_lastLocation!);
-                }
+        _speedStationaryTimer ??= Timer(
+          Duration(seconds: _speedStationaryDelay),
+          () {
+            if (_isMoving) {
+              _isMoving = false;
+              if (_lastLocation != null) {
+                _events.emitMotionChange(_lastLocation!);
               }
-            },
-          );
-        }
+            }
+          },
+        );
       }
     } else {
       // Distance-Based (Accelerometer fallback on Web)

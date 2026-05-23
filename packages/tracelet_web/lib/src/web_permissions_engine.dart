@@ -67,10 +67,11 @@ class WebPermissionsEngine {
           <String, String>{'name': 'geolocation'}.jsify() as JSObject;
       final status = await web.window.navigator.permissions
           .query(descriptor)
-          .toDart;
+          .toDart
+          .timeout(const Duration(seconds: 2));
       return _mapPermissionState(status.state);
     } catch (_) {
-      // Permissions API not supported — assume prompt.
+      // Permissions API not supported or timed out (Safari bug) — assume prompt.
       return 0; // notDetermined
     }
   }
@@ -83,12 +84,23 @@ class WebPermissionsEngine {
     final completer = Completer<int>();
 
     try {
+      _events.log(
+        'debug',
+        '[Tracelet Web] Requesting geolocation permission via getCurrentPosition...',
+      );
       web.window.navigator.geolocation.getCurrentPosition(
         (web.GeolocationPosition pos) {
-          // Success means granted.
+          _events.log(
+            'debug',
+            '[Tracelet Web] getCurrentPosition success callback fired',
+          );
           if (!completer.isCompleted) completer.complete(2); // whenInUse
         }.toJS,
         (web.GeolocationPositionError err) {
+          _events.log(
+            'debug',
+            '[Tracelet Web] getCurrentPosition error callback fired: code=${err.code}, message=${err.message}',
+          );
           if (err.code == 1) {
             // PERMISSION_DENIED
             if (!completer.isCompleted) completer.complete(4); // deniedForever
@@ -97,14 +109,29 @@ class WebPermissionsEngine {
             if (!completer.isCompleted) completer.complete(0); // notDetermined
           }
         }.toJS,
-        web.PositionOptions(timeout: 10000),
+        web.PositionOptions(timeout: 15000), // Enforce browser timeout
       );
     } catch (e) {
-      _events.log('error', '[Tracelet Web] requestPermission failed: $e');
+      _events.log(
+        'error',
+        '[Tracelet Web] requestPermission synchronous error: $e',
+      );
       if (!completer.isCompleted) completer.complete(4); // deniedForever
     }
 
-    return completer.future;
+    // Add a Dart-side timeout to prevent indefinite hangs if the browser
+    // silently ignores the request (e.g., due to lost user gesture or iframe policy).
+    return completer.future.timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        _events.log(
+          'error',
+          '[Tracelet Web] requestPermission timed out without browser response.',
+        );
+        if (!completer.isCompleted) completer.complete(0); // notDetermined
+        return 0;
+      },
+    );
   }
 
   // ---------------------------------------------------------------------------

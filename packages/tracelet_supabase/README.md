@@ -140,7 +140,16 @@ $$;
 ```
 
 ### Customizing the Payload
-If you want to inject custom data (like an `order_id` or `trip_id`) into every location point, you can use the `Tracelet.setExtras()` API in Dart. The data you provide will be automatically included in the `extras` JSONB column. Do not reshape the core JSON manually in Dart, as this drains the battery.
+If you want to inject custom data (like an `order_id` or `trip_id`) into every location point dynamically, you can use the `Tracelet.setRouteContext()` API in Dart. For example:
+
+```dart
+await Tracelet.setRouteContext(RouteContext(
+  taskId: 'order_123',
+  custom: {'trip_id': 'trip_456'},
+));
+```
+
+The route context data travels with the location row through the sync queue. Do not reshape the core JSON manually in Dart, as this drains the battery.
 
 ## 2. Edge Function Integration
 

@@ -1,3 +1,7 @@
+## 1.0.2
+
+* chore: optimize package description and metadata.
+
 ## 1.0.0
 
 * Initial release of the Tracelet Supabase Adapter.

@@ -97,10 +97,9 @@ void _headlessTokenRefresh(HeadlessEvent event) async {
       await Tracelet.setDynamicHeaders({'Authorization': 'Bearer $token'});
     }
   } catch (e) {
-    Tracelet.log('error', '[TraceletSupabase] Headless token refresh failed: $e');
+    Tracelet.log(
+      'error',
+      '[TraceletSupabase] Headless token refresh failed: $e',
+    );
   }
 }
-
-
-
-

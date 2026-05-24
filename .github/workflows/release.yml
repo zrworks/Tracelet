@@ -42,6 +42,11 @@ on:
         required: false
         type: boolean
         default: false
+      publish_tracelet_firebase:
+        description: "Publish tracelet_firebase package"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -88,12 +93,14 @@ jobs:
           FLUTTER=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
           FLUTTER_DOCTOR=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
           FLUTTER_SUPABASE=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
+          FLUTTER_FIREBASE=$(grep '^version:' packages/tracelet_firebase/pubspec.yaml | awk '{print $2}')
 
           echo "android_sdk=$ANDROID_SDK" >> "$GITHUB_OUTPUT"
           echo "ios_sdk=$IOS_SDK" >> "$GITHUB_OUTPUT"
           echo "flutter=$FLUTTER" >> "$GITHUB_OUTPUT"
           echo "flutter_doctor=$FLUTTER_DOCTOR" >> "$GITHUB_OUTPUT"
           echo "flutter_supabase=$FLUTTER_SUPABASE" >> "$GITHUB_OUTPUT"
+          echo "flutter_firebase=$FLUTTER_FIREBASE" >> "$GITHUB_OUTPUT"
 
           echo "## Versions to publish" >> "$GITHUB_STEP_SUMMARY"
           echo "| Component | Version |" >> "$GITHUB_STEP_SUMMARY"
@@ -103,6 +110,7 @@ jobs:
           echo "| Flutter core packages | \`$FLUTTER\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter doctor package | \`$FLUTTER_DOCTOR\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter supabase package | \`$FLUTTER_SUPABASE\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter firebase package | \`$FLUTTER_FIREBASE\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Analyze
         run: melos run analyze
@@ -114,6 +122,7 @@ jobs:
             ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
           fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then ORDERED="$ORDERED tracelet_firebase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
@@ -388,6 +397,7 @@ jobs:
             ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
           fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then ORDERED="$ORDERED tracelet_firebase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
 
           for pkg in $ORDERED; do
@@ -438,6 +448,18 @@ jobs:
             fi
           fi
 
+          if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then
+            FIREBASE_VERSION=$(grep '^version:' packages/tracelet_firebase/pubspec.yaml | awk '{print $2}')
+            FIREBASE_TAG="tracelet_firebase-v${FIREBASE_VERSION}"
+            if git rev-parse "$FIREBASE_TAG" >/dev/null 2>&1; then
+              echo "ℹ️ Tag $FIREBASE_TAG already exists — skipping"
+            else
+              git tag "$FIREBASE_TAG" -m "Release tracelet_firebase v${FIREBASE_VERSION}"
+              echo "🏷️ Tagged: $FIREBASE_TAG"
+              CREATED=$((CREATED + 1))
+            fi
+          fi
+
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then
             DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
             DOCTOR_TAG="tracelet_doctor-v${DOCTOR_VERSION}"
@@ -464,6 +486,7 @@ jobs:
             ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
           fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then ORDERED="$ORDERED tracelet_firebase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
@@ -489,6 +512,10 @@ jobs:
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then
             SUPABASE_VERSION=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
             echo "| \`tracelet_supabase\` | $SUPABASE_VERSION |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then
+            FIREBASE_VERSION=$(grep '^version:' packages/tracelet_firebase/pubspec.yaml | awk '{print $2}')
+            echo "| \`tracelet_firebase\` | $FIREBASE_VERSION |" >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then
             DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')

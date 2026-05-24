@@ -787,7 +787,9 @@ void main() {
     for (var i = 0; i < _results.length; i++) {
       final r = _results[i];
       final comma = i < _results.length - 1 ? ',' : '';
-      jsonBuffer.writeln('  "${r.name}": ${r.usPerOp.toStringAsFixed(2)}$comma');
+      jsonBuffer.writeln(
+        '  "${r.name}": ${r.usPerOp.toStringAsFixed(2)}$comma',
+      );
     }
     jsonBuffer.writeln('}');
     final jsonString = jsonBuffer.toString();

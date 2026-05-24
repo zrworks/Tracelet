@@ -8,10 +8,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize Supabase
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   // 2. Configure Token Refresh (Crucial for background tracking)
   await TraceletSupabase.configureTokenRefresh(anonKey: supabaseAnonKey);
@@ -24,19 +21,22 @@ void main() async {
   );
 
   // 4. Initialize Tracelet
-  await Tracelet.ready(Config(
-    geo: const GeoConfig(distanceFilter: 50),
-    http: httpConfig,
-    android: const AndroidConfig(
-      foregroundService: ForegroundServiceConfig(
-        enabled: true, // Required for continuous tracking when terminated
-        showNotificationOnPauseOnly: true, // Hides notification while app is in foreground
-        notificationTitle: 'Tracelet Tracker',
-        notificationText: 'Actively tracking your route',
-        actions: ['Stop Tracking'],
+  await Tracelet.ready(
+    Config(
+      geo: const GeoConfig(distanceFilter: 50),
+      http: httpConfig,
+      android: const AndroidConfig(
+        foregroundService: ForegroundServiceConfig(
+          enabled: true, // Required for continuous tracking when terminated
+          showNotificationOnPauseOnly:
+              true, // Hides notification while app is in foreground
+          notificationTitle: 'Tracelet Tracker',
+          notificationText: 'Actively tracking your route',
+          actions: ['Stop Tracking'],
+        ),
       ),
     ),
-  ));
+  );
 
   // 5. Smart Functionality: Handle action buttons from the notification
   Tracelet.onNotificationAction((action) async {
@@ -61,13 +61,13 @@ class MyApp extends StatelessWidget {
             onPressed: () async {
               // Sign in anonymously for testing
               await Supabase.instance.client.auth.signInAnonymously();
-              
+
               // Request location permissions before starting
               await Tracelet.requestLocationAuthorization();
-              
+
               // Request notification permissions (Required for Android 13+ foreground service)
               await Tracelet.requestNotificationAuthorization();
-              
+
               // Start tracking!
               await Tracelet.start();
             },

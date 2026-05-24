@@ -12,7 +12,7 @@ workspace:
   - packages/tracelet_web
   - packages/tracelet_doctor
   - packages/tracelet_supabase
-  - packages/tracelet_supabase/example
+  - example_supabase
   - example
 
 dev_dependencies:

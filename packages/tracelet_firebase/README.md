@@ -41,6 +41,18 @@ void main() async {
 }
 ```
 
+## Customizing the Payload
+If you want to inject custom data (like an `order_id` or `trip_id`) into every location point dynamically, you can use the `Tracelet.setRouteContext()` API in Dart. For example:
+
+```dart
+await Tracelet.setRouteContext(RouteContext(
+  taskId: 'order_123',
+  custom: {'trip_id': 'trip_456'},
+));
+```
+
+The route context data travels with the location row through the sync queue and will be included in the Firebase RTDB payload. Do not reshape the core JSON manually in Dart, as this drains the battery.
+
 ## Security Rules
 Make sure to secure your RTDB to only allow authenticated users to write to their own location path:
 

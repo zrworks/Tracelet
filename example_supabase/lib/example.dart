@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracelet/tracelet.dart';
 import 'package:tracelet_supabase/tracelet_supabase.dart';
+
 // Replace these with your actual Supabase project credentials
 const supabaseUrl = 'YOUR_SUPABASE_URL';
 const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';

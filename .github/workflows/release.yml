@@ -27,6 +27,16 @@ on:
         required: false
         type: boolean
         default: false
+      publish_tracelet_doctor:
+        description: "Publish tracelet_doctor package"
+        required: false
+        type: boolean
+        default: false
+      publish_tracelet_supabase:
+        description: "Publish tracelet_supabase package"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -51,6 +61,7 @@ jobs:
       ios_sdk_version: ${{ steps.versions.outputs.ios_sdk }}
       flutter_version: ${{ steps.versions.outputs.flutter }}
       flutter_doctor_version: ${{ steps.versions.outputs.flutter_doctor }}
+      flutter_supabase_version: ${{ steps.versions.outputs.flutter_supabase }}
     steps:
       - uses: actions/checkout@v5
 
@@ -71,11 +82,13 @@ jobs:
           IOS_SDK=$(grep "s.version" TraceletSDK.podspec | head -1 | sed "s/.*= '//;s/'//;s/ //g")
           FLUTTER=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
           FLUTTER_DOCTOR=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
+          FLUTTER_SUPABASE=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
 
           echo "android_sdk=$ANDROID_SDK" >> "$GITHUB_OUTPUT"
           echo "ios_sdk=$IOS_SDK" >> "$GITHUB_OUTPUT"
           echo "flutter=$FLUTTER" >> "$GITHUB_OUTPUT"
           echo "flutter_doctor=$FLUTTER_DOCTOR" >> "$GITHUB_OUTPUT"
+          echo "flutter_supabase=$FLUTTER_SUPABASE" >> "$GITHUB_OUTPUT"
 
           echo "## Versions to publish" >> "$GITHUB_STEP_SUMMARY"
           echo "| Component | Version |" >> "$GITHUB_STEP_SUMMARY"
@@ -84,13 +97,16 @@ jobs:
           echo "| iOS SDK | \`$IOS_SDK\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter core packages | \`$FLUTTER\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter doctor package | \`$FLUTTER_DOCTOR\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter supabase package | \`$FLUTTER_SUPABASE\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Analyze
         run: melos run analyze
 
       - name: Dry-run pub publish
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
             cd "packages/${pkg}"
@@ -358,8 +374,10 @@ jobs:
       - name: Publish packages
         if: ${{ !inputs.dry_run }}
         run: |
-          # Publish order: platform_interface → android, ios, web → tracelet → tracelet_doctor
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
+          # Publish order: platform_interface → android, ios, web → tracelet
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
 
           for pkg in $ORDERED; do
             echo "══════════════════════════════════════"
@@ -394,15 +412,28 @@ jobs:
             fi
           done
 
-          # Create independent tag for tracelet_doctor
-          DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
-          DOCTOR_TAG="tracelet_doctor-v${DOCTOR_VERSION}"
-          if git rev-parse "$DOCTOR_TAG" >/dev/null 2>&1; then
-            echo "ℹ️ Tag $DOCTOR_TAG already exists — skipping"
-          else
-            git tag "$DOCTOR_TAG" -m "Release tracelet_doctor v${DOCTOR_VERSION}"
-            echo "🏷️ Tagged: $DOCTOR_TAG"
-            CREATED=$((CREATED + 1))
+          if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then
+            SUPABASE_VERSION=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
+            SUPABASE_TAG="tracelet_supabase-v${SUPABASE_VERSION}"
+            if git rev-parse "$SUPABASE_TAG" >/dev/null 2>&1; then
+              echo "ℹ️ Tag $SUPABASE_TAG already exists — skipping"
+            else
+              git tag "$SUPABASE_TAG" -m "Release tracelet_supabase v${SUPABASE_VERSION}"
+              echo "🏷️ Tagged: $SUPABASE_TAG"
+              CREATED=$((CREATED + 1))
+            fi
+          fi
+
+          if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then
+            DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
+            DOCTOR_TAG="tracelet_doctor-v${DOCTOR_VERSION}"
+            if git rev-parse "$DOCTOR_TAG" >/dev/null 2>&1; then
+              echo "ℹ️ Tag $DOCTOR_TAG already exists — skipping"
+            else
+              git tag "$DOCTOR_TAG" -m "Release tracelet_doctor v${DOCTOR_VERSION}"
+              echo "🏷️ Tagged: $DOCTOR_TAG"
+              CREATED=$((CREATED + 1))
+            fi
           fi
 
           if [ "$CREATED" -gt 0 ]; then
@@ -414,7 +445,9 @@ jobs:
       - name: Dry-run publish
         if: inputs.dry_run
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet tracelet_doctor"
+          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
+          if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
             echo "── Dry-run: $pkg ──"
             cd "packages/${pkg}"
@@ -426,7 +459,6 @@ jobs:
         if: always()
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
           echo "## Flutter Packages" >> "$GITHUB_STEP_SUMMARY"
           echo "| Package | Version |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
@@ -434,7 +466,15 @@ jobs:
           for pkg in $PACKAGES; do
             echo "| \`$pkg\` | $VERSION |" >> "$GITHUB_STEP_SUMMARY"
           done
-          echo "| \`tracelet_doctor\` | $DOCTOR_VERSION |" >> "$GITHUB_STEP_SUMMARY"
+          
+          if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then
+            SUPABASE_VERSION=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
+            echo "| \`tracelet_supabase\` | $SUPABASE_VERSION |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then
+            DOCTOR_VERSION=$(grep '^version:' packages/tracelet_doctor/pubspec.yaml | awk '{print $2}')
+            echo "| \`tracelet_doctor\` | $DOCTOR_VERSION |" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 **Dry run — nothing was published.**" >> "$GITHUB_STEP_SUMMARY"
@@ -465,6 +505,7 @@ jobs:
           echo "| iOS SDK | \`${{ needs.validate.outputs.ios_sdk_version }}\` | ${{ needs.publish-ios-sdk.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter core packages | \`${{ needs.validate.outputs.flutter_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Flutter doctor package | \`${{ needs.validate.outputs.flutter_doctor_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flutter supabase package | \`${{ needs.validate.outputs.flutter_supabase_version }}\` | ${{ needs.publish-flutter.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 **This was a dry run. Nothing was published.**" >> "$GITHUB_STEP_SUMMARY"

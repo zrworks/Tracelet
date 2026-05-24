@@ -1,0 +1,26 @@
+name: tracelet_supabase
+description: >-
+  Official Supabase adapter for Tracelet. Automatically configures Tracelet's 
+  battery-efficient native HTTP sync to push locations directly to Supabase,
+  and automatically refreshes Supabase auth tokens in the background.
+version: 1.0.0
+license: Apache-2.0
+homepage: https://github.com/Ikolvi/Tracelet
+repository: https://github.com/Ikolvi/Tracelet/tree/main/packages/tracelet_supabase
+issue_tracker: https://github.com/Ikolvi/Tracelet/issues
+resolution: workspace
+
+environment:
+  sdk: '>=3.10.3 <4.0.0'
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  tracelet: '2.1.0'
+  supabase_flutter: '2.12.4'
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: '6.0.0'

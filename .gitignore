@@ -130,3 +130,8 @@ packages/*/.github/copilot-instructions.md
 
 # GPG key backups
 gpg-signing-key-*.asc
+
+# Antigravity Skills
+.agents/
+skills-lock.json
+

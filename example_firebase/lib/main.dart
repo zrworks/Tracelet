@@ -13,7 +13,9 @@ void main() async {
 
   final databaseUrl = Firebase.app().options.databaseURL;
   if (databaseUrl == null) {
-    throw Exception('Database URL not found in FirebaseOptions. Please ensure you have created a Realtime Database and run "flutterfire configure" again.');
+    throw Exception(
+      'Database URL not found in FirebaseOptions. Please ensure you have created a Realtime Database and run "flutterfire configure" again.',
+    );
   }
 
   // 2. Configure Token Refresh (Crucial for background tracking)

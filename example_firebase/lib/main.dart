@@ -5,14 +5,16 @@ import 'package:tracelet/tracelet.dart';
 import 'package:tracelet_firebase/tracelet_firebase.dart';
 import 'firebase_options.dart';
 
-// Replace this with your actual Firebase RTDB URL
-const firebaseDatabaseUrl = 'https://ikolvi-default-rtdb.firebaseio.com';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final databaseUrl = Firebase.app().options.databaseURL;
+  if (databaseUrl == null) {
+    throw Exception('Database URL not found in FirebaseOptions. Please ensure you have created a Realtime Database and run "flutterfire configure" again.');
+  }
 
   // 2. Configure Token Refresh (Crucial for background tracking)
   await TraceletFirebase.configureTokenRefresh();
@@ -30,7 +32,7 @@ void main() async {
 
   // 4. Build the Native HTTP Config
   final httpConfig = await TraceletFirebase.buildHttpConfig(
-    databaseUrl: firebaseDatabaseUrl,
+    databaseUrl: databaseUrl,
     path: 'locations/$uid',
   );
 

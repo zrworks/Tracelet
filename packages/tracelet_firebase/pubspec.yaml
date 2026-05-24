@@ -1,8 +1,6 @@
 name: tracelet_firebase
 description: >-
-  Official Firebase adapter for Tracelet. Automatically configures Tracelet's 
-  battery-efficient native HTTP sync to push locations directly to the Firebase 
-  Realtime Database (RTDB), and automatically refreshes Firebase auth tokens in the background.
+  Firebase adapter for Tracelet. Automatically configures native HTTP sync to push locations directly to the Firebase RTDB and manages background auth token refresh.
 version: 1.0.0
 license: Apache-2.0
 homepage: https://github.com/Ikolvi/Tracelet

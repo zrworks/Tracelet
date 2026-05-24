@@ -23,10 +23,15 @@ on:
         type: boolean
         default: false
       skip_flutter:
-        description: "Skip Flutter pub.dev publish (publish only native SDKs)"
+        description: "Skip Flutter pub.dev publish completely"
         required: false
         type: boolean
         default: false
+      publish_core_flutter:
+        description: "Publish core tracelet packages"
+        required: false
+        type: boolean
+        default: true
       publish_tracelet_doctor:
         description: "Publish tracelet_doctor package"
         required: false
@@ -104,7 +109,10 @@ jobs:
 
       - name: Dry-run pub publish
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          ORDERED=""
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
@@ -375,7 +383,10 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: |
           # Publish order: platform_interface → android, ios, web → tracelet
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          ORDERED=""
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
 
@@ -399,18 +410,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
           CREATED=0
-          for pkg in $PACKAGES; do
-            TAG="${pkg}-v${VERSION}"
-            if git rev-parse "$TAG" >/dev/null 2>&1; then
-              echo "ℹ️ Tag $TAG already exists — skipping"
-            else
-              git tag "$TAG" -m "Release ${pkg} v${VERSION}"
-              echo "🏷️ Tagged: $TAG"
-              CREATED=$((CREATED + 1))
-            fi
-          done
+
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+            for pkg in $PACKAGES; do
+              TAG="${pkg}-v${VERSION}"
+              if git rev-parse "$TAG" >/dev/null 2>&1; then
+                echo "ℹ️ Tag $TAG already exists — skipping"
+              else
+                git tag "$TAG" -m "Release ${pkg} v${VERSION}"
+                echo "🏷️ Tagged: $TAG"
+                CREATED=$((CREATED + 1))
+              fi
+            done
+          fi
 
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then
             SUPABASE_VERSION=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')
@@ -445,7 +459,10 @@ jobs:
       - name: Dry-run publish
         if: inputs.dry_run
         run: |
-          ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          ORDERED=""
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            ORDERED="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+          fi
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then ORDERED="$ORDERED tracelet_supabase"; fi
           if [ "${{ inputs.publish_tracelet_doctor }}" = "true" ]; then ORDERED="$ORDERED tracelet_doctor"; fi
           for pkg in $ORDERED; do
@@ -462,10 +479,12 @@ jobs:
           echo "## Flutter Packages" >> "$GITHUB_STEP_SUMMARY"
           echo "| Package | Version |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
-          for pkg in $PACKAGES; do
-            echo "| \`$pkg\` | $VERSION |" >> "$GITHUB_STEP_SUMMARY"
-          done
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+            for pkg in $PACKAGES; do
+              echo "| \`$pkg\` | $VERSION |" >> "$GITHUB_STEP_SUMMARY"
+            done
+          fi
           
           if [ "${{ inputs.publish_tracelet_supabase }}" = "true" ]; then
             SUPABASE_VERSION=$(grep '^version:' packages/tracelet_supabase/pubspec.yaml | awk '{print $2}')

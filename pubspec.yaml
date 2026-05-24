@@ -11,6 +11,8 @@ workspace:
   - packages/tracelet_ios
   - packages/tracelet_web
   - packages/tracelet_doctor
+  - packages/tracelet_supabase
+  - packages/tracelet_supabase/example
   - example
 
 dev_dependencies:

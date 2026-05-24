@@ -14,8 +14,8 @@ dependencies:
   tracelet:
   tracelet_firebase:
 
-  firebase_core: ^3.15.2
-  firebase_auth: ^5.7.0
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
 
 dev_dependencies:
   flutter_test:

@@ -32,15 +32,14 @@ class TraceletFirebase {
     final cleanUrl = databaseUrl.replaceAll(RegExp(r'/$'), '');
     final cleanPath = path.replaceAll(RegExp(r'^/|/$'), '');
 
-    // The .json extension is strictly required for the Firebase RTDB REST API
-    final url = '$cleanUrl/$cleanPath.json';
-
     final user = FirebaseAuth.instance.currentUser;
     final token = user != null ? await user.getIdToken() : null;
 
-    final headers = <String, String>{};
+    // The .json extension is strictly required for the Firebase RTDB REST API
+    // Firebase RTDB requires the client ID token as a query parameter (?auth=), NOT a Bearer header.
+    var url = '$cleanUrl/$cleanPath.json';
     if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
+      url += '?auth=$token';
     }
 
     return HttpConfig(
@@ -49,7 +48,6 @@ class TraceletFirebase {
       autoSync: autoSync,
       batchSync: batchSync,
       maxBatchSize: maxBatchSize,
-      headers: headers,
     );
   }
 
@@ -64,18 +62,39 @@ class TraceletFirebase {
   static Future<void> configureTokenRefresh() async {
     // 1. Foreground token refresh
     Tracelet.setTokenRefreshCallback(() async {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return {};
-
-      // Force refresh the token
-      final token = await user.getIdToken(true);
-      if (token == null) return {};
-
-      return {'Authorization': 'Bearer $token'};
+      await _refreshAndUpdateConfig();
+      return {};
     });
 
     // 2. Headless token refresh (when app is terminated)
     await Tracelet.registerHeadlessHeadersCallback(_headlessTokenRefresh);
+  }
+
+  static Future<void> _refreshAndUpdateConfig() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final token = await user.getIdToken(true);
+    if (token == null) return;
+
+    final currentConfig = Tracelet.activeConfig;
+    final currentUrl = currentConfig.http.url;
+    if (currentUrl == null) return;
+
+    final baseUrl = currentUrl.split('?auth=').first;
+    final newUrl = '$baseUrl?auth=$token';
+
+    final updatedHttp = HttpConfig.fromMap({
+      ...currentConfig.http.toMap(),
+      'url': newUrl,
+    });
+
+    final updatedConfig = Config.fromMap({
+      ...currentConfig.toMap(),
+      'http': updatedHttp.toMap(),
+    });
+
+    await Tracelet.setConfig(updatedConfig);
   }
 }
 
@@ -88,14 +107,7 @@ void _headlessTokenRefresh(HeadlessEvent event) async {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
     }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final token = await user.getIdToken(true);
-      if (token != null) {
-        await Tracelet.setDynamicHeaders({'Authorization': 'Bearer $token'});
-      }
-    }
+    await TraceletFirebase._refreshAndUpdateConfig();
   } catch (e) {
     Tracelet.log(
       'error',

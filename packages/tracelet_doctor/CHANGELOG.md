@@ -1,6 +1,8 @@
 ## 3.0.0
 
 - **CHORE**: bump version to match tracelet 3.0.0 release.
+- **FEAT**: UI now detects and displays the new `Smart` (Hybrid) motion detection mode in the Tracking Card.
+- **FEAT**: Display `Battery Budget` target in the Battery & OEM Card.
 
 ## 1.0.4
 

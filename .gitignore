@@ -152,3 +152,7 @@ sdk/rust-core/out/
 # FRB Generated Files
 packages/tracelet_platform_interface/lib/src/rust/
 sdk/rust-core/src/frb_generated.*
+
+# Benchmark generated files
+benchmark/benchmark_results.json
+benchmark/benchmark_table.md

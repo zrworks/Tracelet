@@ -11,6 +11,7 @@ import android.util.Log
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
+import uniffi.tracelet_core.ScheduleParser
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -38,6 +39,7 @@ class ScheduleManager(
     var onScheduleStop: (() -> Unit)? = null
 
     private var scheduleReceiver: BroadcastReceiver? = null
+    private val parser = ScheduleParser()
 
     /** Start the schedule engine. Reads schedule strings from config. */
     fun start() {
@@ -56,126 +58,33 @@ class ScheduleManager(
         unregisterReceiver()
     }
 
-    /** Parse schedule strings and determine if tracking should be active now. */
     fun isWithinSchedule(): Boolean {
         val schedules = config.getSchedule()
         if (schedules.isEmpty()) return false
 
-        val now = Calendar.getInstance()
-        for (schedule in schedules) {
-            if (matchesSchedule(schedule, now)) return true
-        }
-        return false
+        val nowMs = System.currentTimeMillis()
+        val tzOffsetSeconds = TimeZone.getDefault().getOffset(nowMs) / 1000
+        return parser.isWithinSchedule(schedules, nowMs, tzOffsetSeconds)
     }
 
     // =========================================================================
     // Private
     // =========================================================================
 
-    /**
-     * Parsed representation of a schedule string (A-L4).
-     */
-    private data class ParsedSchedule(
-        val dayStart: Int,
-        val dayEnd: Int,
-        val startHour: Int,
-        val startMinute: Int,
-        val endHour: Int,
-        val endMinute: Int,
-    )
-
-    /**
-     * Parses a schedule string: "dayStart-dayEnd HH:mm-HH:mm"
-     * Day of week: 1=Monday, 7=Sunday (ISO 8601)
-     *
-     * Returns null if the format is invalid.
-     */
-    private fun parseSchedule(schedule: String): ParsedSchedule? {
-        val parts = schedule.trim().split(" ")
-        if (parts.size != 2) return null
-
-        val dayRange = parts[0].split("-")
-        val timeRange = parts[1].split("-")
-        if (dayRange.size != 2 || timeRange.size != 2) return null
-
-        return try {
-            val startParts = timeRange[0].split(":")
-            val endParts = timeRange[1].split(":")
-            ParsedSchedule(
-                dayStart = dayRange[0].toInt(),
-                dayEnd = dayRange[1].toInt(),
-                startHour = startParts[0].toInt(),
-                startMinute = startParts[1].toInt(),
-                endHour = endParts[0].toInt(),
-                endMinute = endParts[1].toInt(),
-            )
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to parse schedule: $schedule - ${e.message}")
-            null
-        }
-    }
-
-    private fun matchesSchedule(schedule: String, now: Calendar): Boolean {
-        val parsed = parseSchedule(schedule) ?: return false
-
-        // Convert Calendar day (1=Sunday) to ISO (1=Monday)
-        var isoDayOfWeek = now.get(Calendar.DAY_OF_WEEK) - 1
-        if (isoDayOfWeek == 0) isoDayOfWeek = 7
-
-        if (isoDayOfWeek !in parsed.dayStart..parsed.dayEnd) return false
-
-        val currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-        val startMinutes = parsed.startHour * 60 + parsed.startMinute
-        val endMinutes = parsed.endHour * 60 + parsed.endMinute
-
-        return currentMinutes in startMinutes until endMinutes
-    }
-
     private fun scheduleNext(schedules: List<String>) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val now = Calendar.getInstance()
+        if (schedules.isEmpty()) return
 
-        // Find the next start and stop time from all schedule entries
-        var nextStartMs = Long.MAX_VALUE
-        var nextStopMs = Long.MAX_VALUE
+        val nowMs = System.currentTimeMillis()
+        val tzOffsetSeconds = TimeZone.getDefault().getOffset(nowMs) / 1000
+        
+        val alarms = parser.calculateNextAlarms(schedules, nowMs, tzOffsetSeconds)
 
-        for (schedule in schedules) {
-            val (startMs, stopMs) = calculateNextAlarms(schedule, now)
-            if (startMs < nextStartMs) nextStartMs = startMs
-            if (stopMs < nextStopMs) nextStopMs = stopMs
+        if (alarms.nextStartMs < Long.MAX_VALUE) {
+            setAlarm(alarmManager, ACTION_SCHEDULE_START, REQUEST_CODE_START, alarms.nextStartMs)
         }
-
-        if (nextStartMs < Long.MAX_VALUE) {
-            setAlarm(alarmManager, ACTION_SCHEDULE_START, REQUEST_CODE_START, nextStartMs)
-        }
-        if (nextStopMs < Long.MAX_VALUE) {
-            setAlarm(alarmManager, ACTION_SCHEDULE_STOP, REQUEST_CODE_STOP, nextStopMs)
-        }
-    }
-
-    private fun calculateNextAlarms(schedule: String, now: Calendar): Pair<Long, Long> {
-        val parsed = parseSchedule(schedule) ?: return Pair(Long.MAX_VALUE, Long.MAX_VALUE)
-
-        try {
-            val start = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, parsed.startHour)
-                set(Calendar.MINUTE, parsed.startMinute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                if (before(now)) add(Calendar.DAY_OF_MONTH, 1)
-            }
-
-            val stop = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, parsed.endHour)
-                set(Calendar.MINUTE, parsed.endMinute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                if (before(now)) add(Calendar.DAY_OF_MONTH, 1)
-            }
-
-            return Pair(start.timeInMillis, stop.timeInMillis)
-        } catch (e: Exception) {
-            return Pair(Long.MAX_VALUE, Long.MAX_VALUE)
+        if (alarms.nextStopMs < Long.MAX_VALUE) {
+            setAlarm(alarmManager, ACTION_SCHEDULE_STOP, REQUEST_CODE_STOP, alarms.nextStopMs)
         }
     }
 

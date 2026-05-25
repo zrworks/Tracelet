@@ -1,32 +1,23 @@
 package com.ikolvi.tracelet.sdk.algorithm
 
+import uniffi.tracelet_core.TripManager as RustTripManager
+
 /**
- * Tracks trips based on motion state transitions.
+ * Tracks trips based on motion state transitions, delegating core logic to Rust.
  *
  * A "trip" starts when the device transitions to moving and ends when it
  * transitions to stationary. Collects start/stop locations, waypoints,
  * total distance (Haversine), and duration.
  */
 class TripManager {
-    companion object {
-        /** Maximum number of waypoints to retain during a trip. */
-        private const val MAX_WAYPOINTS = 5000
-    }
-
     /** Callback invoked when a trip ends with the full trip data map. */
     var onTripEnd: ((Map<String, Any?>) -> Unit)? = null
 
-    /** Whether a trip is currently active. */
-    var isTripActive: Boolean = false
-        private set
+    private val rustTripManager = RustTripManager()
 
-    private var startLat: Double? = null
-    private var startLng: Double? = null
-    private var startTimeMs: Long = 0
-    private var totalDistance: Double = 0.0
-    private var lastWaypointLat: Double? = null
-    private var lastWaypointLng: Double? = null
-    private val waypoints = ArrayDeque<Map<String, Any?>>()
+    /** Whether a trip is currently active. */
+    val isTripActive: Boolean
+        get() = rustTripManager.isTripActive()
 
     /**
      * Called on every motion state change.
@@ -42,10 +33,48 @@ class TripManager {
         longitude: Double? = null,
         timestamp: Any? = null,
     ) {
-        if (isMoving && !isTripActive) {
-            startTrip(latitude, longitude, timestamp)
-        } else if (!isMoving && isTripActive) {
-            endTrip(latitude, longitude, timestamp)
+        val nowMs = System.currentTimeMillis()
+        val timestampMs = (timestamp as? Number)?.toLong() ?: nowMs
+
+        val tripData = rustTripManager.onMotionStateChanged(
+            isMoving,
+            latitude,
+            longitude,
+            timestampMs,
+            nowMs
+        )
+
+        if (tripData != null) {
+            val startMap = mutableMapOf<String, Any?>()
+            tripData.startLocation?.let {
+                startMap["latitude"] = it.latitude
+                startMap["longitude"] = it.longitude
+            }
+
+            val stopMap = mutableMapOf<String, Any?>()
+            tripData.stopLocation?.let {
+                stopMap["latitude"] = it.latitude
+                stopMap["longitude"] = it.longitude
+            }
+
+            val waypointsMapList = tripData.waypoints.map { wp ->
+                mapOf(
+                    "latitude" to wp.latitude,
+                    "longitude" to wp.longitude,
+                    "timestamp" to wp.timestampMs,
+                )
+            }
+
+            val outMap = mapOf<String, Any?>(
+                "isMoving" to false,
+                "distance" to tripData.distanceMeters,
+                "duration" to tripData.durationSeconds,
+                "startLocation" to startMap,
+                "stopLocation" to stopMap,
+                "waypoints" to waypointsMapList,
+            )
+
+            onTripEnd?.invoke(outMap)
         }
     }
 
@@ -61,107 +90,13 @@ class TripManager {
         longitude: Double,
         timestamp: Any? = null,
     ) {
-        if (!isTripActive) return
-
-        // Accumulate distance.
-        val prevLat = lastWaypointLat
-        val prevLng = lastWaypointLng
-        if (prevLat != null && prevLng != null) {
-            totalDistance += GeoUtils.haversine(prevLat, prevLng, latitude, longitude)
-        }
-        lastWaypointLat = latitude
-        lastWaypointLng = longitude
-
-        // Record waypoint. Evict oldest when cap exceeded.
-        if (waypoints.size >= MAX_WAYPOINTS) {
-            waypoints.removeFirst()
-        }
-        waypoints.addLast(mapOf(
-            "latitude" to latitude,
-            "longitude" to longitude,
-            "timestamp" to timestamp,
-        ))
+        val nowMs = System.currentTimeMillis()
+        val timestampMs = (timestamp as? Number)?.toLong() ?: nowMs
+        rustTripManager.onLocationReceived(latitude, longitude, timestampMs)
     }
 
     /** Reset the trip manager state. */
     fun reset() {
-        isTripActive = false
-        startLat = null
-        startLng = null
-        lastWaypointLat = null
-        lastWaypointLng = null
-        startTimeMs = 0
-        totalDistance = 0.0
-        waypoints.clear()
-    }
-
-    // =========================================================================
-    // Private
-    // =========================================================================
-
-    private fun startTrip(lat: Double?, lng: Double?, timestamp: Any?) {
-        isTripActive = true
-        startLat = lat
-        startLng = lng
-        lastWaypointLat = lat
-        lastWaypointLng = lng
-        startTimeMs = System.currentTimeMillis()
-        totalDistance = 0.0
-        waypoints.clear()
-
-        if (lat != null && lng != null) {
-            waypoints.addLast(mapOf(
-                "latitude" to lat,
-                "longitude" to lng,
-                "timestamp" to timestamp,
-            ))
-        }
-    }
-
-    private fun endTrip(lat: Double?, lng: Double?, timestamp: Any?) {
-        isTripActive = false
-
-        // Add final distance segment.
-        val prevLat = lastWaypointLat
-        val prevLng = lastWaypointLng
-        if (lat != null && lng != null && prevLat != null && prevLng != null) {
-            totalDistance += GeoUtils.haversine(prevLat, prevLng, lat, lng)
-            waypoints.addLast(mapOf(
-                "latitude" to lat,
-                "longitude" to lng,
-                "timestamp" to timestamp,
-            ))
-        }
-
-        val durationMs = System.currentTimeMillis() - startTimeMs
-        val durationSeconds = durationMs / 1000.0
-
-        val startMap = mutableMapOf<String, Any?>()
-        startLat?.let { startMap["latitude"] = it }
-        startLng?.let { startMap["longitude"] = it }
-
-        val stopMap = mutableMapOf<String, Any?>()
-        lat?.let { stopMap["latitude"] = it }
-        lng?.let { stopMap["longitude"] = it }
-
-        val tripData = mapOf<String, Any?>(
-            "isMoving" to false,
-            "distance" to totalDistance,
-            "duration" to durationSeconds,
-            "startLocation" to startMap,
-            "stopLocation" to stopMap,
-            "waypoints" to waypoints.toList(),
-        )
-
-        onTripEnd?.invoke(tripData)
-
-        // Clean up.
-        startLat = null
-        startLng = null
-        lastWaypointLat = null
-        lastWaypointLng = null
-        startTimeMs = 0
-        totalDistance = 0.0
-        waypoints.clear()
+        rustTripManager.reset()
     }
 }

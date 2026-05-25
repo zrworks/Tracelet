@@ -89,6 +89,13 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 ## Results History
 
+### 2026-05-25 — Commit 7dc41c9
+
+**Environment:** Dart 3.12.0, ubuntu-latest (CI)
+
+(no table captured)
+
+
 ### 2026-05-25 — Commit 881e96f
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)
@@ -563,71 +570,5 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 | http_config_ssl_toMap | 805668 | 1.24 |
 | http_config_ssl_fromMap | 3355351 | 0.30 |
 | http_config_ssl_roundtrip | 665739 | 1.50 |
-
-
-### 2026-05-24 — Commit 719bb89
-
-**Environment:** Dart 3.12.0, ubuntu-latest (CI)
-
-| Benchmark | ops/sec | µs/op |
-|---|---:|---:|
-| kalman_process_single | 7493126 | 0.13 |
-| kalman_process_100_fixes | 94475 | 10.58 |
-| kalman_process_1k_fixes | 9147 | 109.33 |
-| kalman_reset | 6824668 | 0.15 |
-| haversine_single | 7846250 | 0.13 |
-| haversine_1k_pairs | 13594 | 73.56 |
-| pip_4v | 13040603 | 0.08 |
-| pip_10v | 9706423 | 0.10 |
-| pip_50v | 3753948 | 0.27 |
-| pip_100v | 1980224 | 0.50 |
-| pip_500v | 419974 | 2.38 |
-| geofence_eval_10_circular | 643226 | 1.55 |
-| geofence_eval_100_circular | 70111 | 14.26 |
-| geofence_eval_500_circular | 13385 | 74.71 |
-| geofence_eval_10_polygon_6v | 419923 | 2.38 |
-| geofence_eval_50_polygon_6v | 84149 | 11.88 |
-| processor_1k_fixes | 8967 | 111.52 |
-| processor_1k_adaptive | 8411 | 118.89 |
-| trip_manager_5k_waypoints | 71 | 14059.45 |
-| schedule_parse | 2882960 | 0.35 |
-| schedule_matches | 128207 | 7.80 |
-| schedule_isWithin_5_entries | 120423 | 8.30 |
-| adaptive_compute | 13846557 | 0.07 |
-| location_fromMap | 1712273 | 0.58 |
-| location_toMap | 667384 | 1.50 |
-| location_fromMap_toMap_roundtrip | 492362 | 2.03 |
-| location_copyWithCoords | 12038644 | 0.08 |
-| geofence_fromMap_circular | 4513010 | 0.22 |
-| geofence_fromMap_polygon | 1623385 | 0.62 |
-| delta_encode_10 | 14565 | 68.66 |
-| delta_decode_10 | 90152 | 11.09 |
-| delta_encode_100 | 2512 | 398.12 |
-| delta_decode_100 | 10520 | 95.05 |
-| delta_encode_500 | 519 | 1925.61 |
-| delta_decode_500 | 2253 | 443.88 |
-| delta_roundtrip_100 | 2044 | 489.31 |
-| battery_budget_single_sample | 9226038 | 0.11 |
-| battery_budget_60_samples | 293168 | 3.41 |
-| battery_budget_heavy_drain | 148687 | 6.73 |
-| carbon_trip_100_locations | 86762 | 11.53 |
-| carbon_onLocation | 3997721 | 0.25 |
-| carbon_setActivity | 9690798 | 0.10 |
-| carbon_cumulative_report | 2717591 | 0.37 |
-| persist_decider_location | 20184597 | 0.05 |
-| persist_decider_geofence | 20179514 | 0.05 |
-| config_fromMap | 473191 | 2.11 |
-| config_toMap | 132428 | 7.55 |
-| config_roundtrip | 101682 | 9.83 |
-| state_fromMap | 444201 | 2.25 |
-| state_toMap | 125560 | 7.96 |
-| route_context_toMap | 3059877 | 0.33 |
-| route_context_fromMap | 2395330 | 0.42 |
-| route_context_roundtrip | 1434341 | 0.70 |
-| sync_body_context_toMap_50 | 8557687 | 0.12 |
-| sync_body_context_fromMap_50 | 22928 | 43.62 |
-| http_config_ssl_toMap | 806545 | 1.24 |
-| http_config_ssl_fromMap | 3261620 | 0.31 |
-| http_config_ssl_roundtrip | 664674 | 1.50 |
 
 

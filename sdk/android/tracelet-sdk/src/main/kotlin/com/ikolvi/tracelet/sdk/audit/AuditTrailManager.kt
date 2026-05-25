@@ -48,15 +48,25 @@ class AuditTrailManager(
         MessageDigest.getInstance("SHA-256")
     }
 
+    private val engine = uniffi.tracelet_core.AuditTrailEngine(
+        android.os.Build.FINGERPRINT,
+        prefs.getInt(KEY_CHAIN_INDEX, 0),
+        prefs.getString(KEY_LATEST_HASH, null)
+    )
+
     /** Current chain index (next record will get this index). */
     private var chainIndex: Int
         get() = prefs.getInt(KEY_CHAIN_INDEX, 0)
-        set(value) = prefs.edit().putInt(KEY_CHAIN_INDEX, value).apply()
+        set(value) {
+            prefs.edit().putInt(KEY_CHAIN_INDEX, value).apply()
+        }
 
     /** The latest hash in the chain. */
     private var latestHash: String
-        get() = prefs.getString(KEY_LATEST_HASH, null) ?: computeGenesisHash()
-        set(value) = prefs.edit().putString(KEY_LATEST_HASH, value).apply()
+        get() = prefs.getString(KEY_LATEST_HASH, null) ?: uniffi.tracelet_core.computeGenesisHash(android.os.Build.FINGERPRINT)
+        set(value) {
+            prefs.edit().putString(KEY_LATEST_HASH, value).apply()
+        }
 
     /** Whether audit trail is enabled in the current config. */
     fun isEnabled(): Boolean = configManager.getAuditEnabled()
@@ -65,24 +75,10 @@ class AuditTrailManager(
     // Hash computation
     // =========================================================================
 
-    /**
-     * Computes the genesis hash for this device.
-     *
-     * Uses `android.os.Build.FINGERPRINT` as a device-specific seed, ensuring
-     * the genesis hash is unique per device but reproducible for verification.
-     */
     fun computeGenesisHash(): String {
-        val deviceId = android.os.Build.FINGERPRINT
-        return sha256("tracelet:genesis:$deviceId")
+        return uniffi.tracelet_core.computeGenesisHash(android.os.Build.FINGERPRINT)
     }
 
-    /**
-     * Computes the canonical string for a location record.
-     *
-     * Fixed decimal formatting ensures identical hashes across platforms:
-     * - Coordinates: 6 decimal places (~11cm precision)
-     * - Speed/heading/altitude/accuracy/odometer: 2 decimal places
-     */
     fun buildCanonicalString(
         previousHash: String,
         chainIndex: Int,
@@ -97,46 +93,17 @@ class AuditTrailManager(
         odometer: Double,
         isMoving: Boolean,
     ): String {
-        return buildString {
-            append(previousHash)
-            append(SEPARATOR)
-            append(chainIndex)
-            append('|')
-            append(uuid)
-            append('|')
-            append(String.format(Locale.US, "%.6f", latitude))
-            append('|')
-            append(String.format(Locale.US, "%.6f", longitude))
-            append('|')
-            append(timestamp)
-            append('|')
-            append(String.format(Locale.US, "%.2f", accuracy))
-            append('|')
-            append(String.format(Locale.US, "%.2f", speed))
-            append('|')
-            append(String.format(Locale.US, "%.2f", heading))
-            append('|')
-            append(String.format(Locale.US, "%.2f", altitude))
-            append('|')
-            append(String.format(Locale.US, "%.2f", odometer))
-            append('|')
-            append(if (isMoving) "1" else "0")
-        }
+        return uniffi.tracelet_core.buildCanonicalString(
+            previousHash,
+            chainIndex,
+            uniffi.tracelet_core.LocationRecord(
+                uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, odometer, isMoving
+            )
+        )
     }
 
-    /**
-     * Computes SHA-256 hex digest.
-     */
     fun sha256(input: String): String {
-        val bytes = digestLocal.get()!!.digest(input.toByteArray(Charsets.UTF_8))
-        // Pre-built hex lookup avoids 32 per-byte String.format calls (A-M3).
-        val sb = StringBuilder(bytes.size * 2)
-        for (b in bytes) {
-            val i = b.toInt() and 0xFF
-            sb.append(HEX_CHARS[i ushr 4])
-            sb.append(HEX_CHARS[i and 0x0F])
-        }
-        return sb.toString()
+        return uniffi.tracelet_core.sha256(input)
     }
 
     // =========================================================================
@@ -156,10 +123,6 @@ class AuditTrailManager(
     fun appendToChain(locationMap: Map<String, Any?>): Map<String, Any?>? {
         if (!isEnabled()) return null
 
-        val previousHash = latestHash
-        val index = chainIndex
-
-        // Extract canonical fields from the enriched location map
         val uuid = locationMap["uuid"] as? String ?: return null
         val latitude = (locationMap["latitude"] as? Number)?.toDouble() ?: 0.0
         val longitude = (locationMap["longitude"] as? Number)?.toDouble() ?: 0.0
@@ -171,25 +134,23 @@ class AuditTrailManager(
         val odometer = (locationMap["odometer"] as? Number)?.toDouble() ?: 0.0
         val isMoving = (locationMap["is_moving"] ?: locationMap["isMoving"]) == true
 
-        val canonical = buildCanonicalString(
-            previousHash, index, uuid,
-            latitude, longitude, timestamp,
-            accuracy, speed, heading, altitude,
-            odometer, isMoving,
+        val loc = uniffi.tracelet_core.LocationRecord(
+            uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, odometer, isMoving
         )
-        val hash = sha256(canonical)
+        
+        val result = engine.generateNextHash(loc)
 
         // Store in audit_trail table
-        database.insertAuditRecord(uuid, hash, previousHash, index)
+        database.insertAuditRecord(uuid, result.hash, result.previousHash, result.chainIndex)
 
         // Update chain state
-        latestHash = hash
-        chainIndex = index + 1
+        latestHash = result.hash
+        chainIndex = result.chainIndex + 1
 
         return mapOf(
-            "audit_hash" to hash,
-            "audit_previous_hash" to previousHash,
-            "audit_chain_index" to index,
+            "audit_hash" to result.hash,
+            "audit_previous_hash" to result.previousHash,
+            "audit_chain_index" to result.chainIndex,
         )
     }
 
@@ -209,75 +170,44 @@ class AuditTrailManager(
             )
         }
 
-        var expectedPreviousHash = computeGenesisHash()
-        var verified = 0
-
-        for (record in records) {
-            val storedHash = record["hash"] as? String ?: ""
-            val storedPreviousHash = record["previous_hash"] as? String ?: ""
-            val recordChainIndex = (record["chain_index"] as? Number)?.toInt() ?: -1
-
-            // Verify chain linkage
-            if (storedPreviousHash != expectedPreviousHash) {
-                return mapOf(
-                    "isValid" to false,
-                    "totalRecords" to records.size,
-                    "verifiedRecords" to verified,
-                    "brokenAtIndex" to recordChainIndex,
-                    "brokenAtUuid" to (record["uuid"] as? String),
-                    "error" to "missing link: expected previousHash=$expectedPreviousHash, got=$storedPreviousHash",
-                )
-            }
-
-            // Check location data exists (fetched via JOIN)
+        val rustRecords = records.map { record ->
             val hasLocation = record["has_location"] == true
-            if (!hasLocation) {
-                return mapOf(
-                    "isValid" to false,
-                    "totalRecords" to records.size,
-                    "verifiedRecords" to verified,
-                    "brokenAtIndex" to recordChainIndex,
-                    "brokenAtUuid" to (record["uuid"] as? String),
-                    "error" to "missing location record",
+            val loc = if (hasLocation) {
+                uniffi.tracelet_core.LocationRecord(
+                    uuid = record["uuid"] as? String ?: "",
+                    latitude = (record["latitude"] as? Number)?.toDouble() ?: 0.0,
+                    longitude = (record["longitude"] as? Number)?.toDouble() ?: 0.0,
+                    timestamp = record["timestamp"]?.toString() ?: "",
+                    accuracy = (record["accuracy"] as? Number)?.toDouble() ?: 0.0,
+                    speed = (record["speed"] as? Number)?.toDouble() ?: 0.0,
+                    heading = (record["heading"] as? Number)?.toDouble() ?: 0.0,
+                    altitude = (record["altitude"] as? Number)?.toDouble() ?: 0.0,
+                    odometer = (record["odometer"] as? Number)?.toDouble() ?: 0.0,
+                    isMoving = record["is_moving"] == true || record["isMoving"] == true
                 )
-            }
+            } else null
 
-            val canonical = buildCanonicalString(
-                storedPreviousHash,
-                recordChainIndex,
-                record["uuid"] as? String ?: "",
-                (record["latitude"] as? Number)?.toDouble() ?: 0.0,
-                (record["longitude"] as? Number)?.toDouble() ?: 0.0,
-                record["timestamp"]?.toString() ?: "",
-                (record["accuracy"] as? Number)?.toDouble() ?: 0.0,
-                (record["speed"] as? Number)?.toDouble() ?: 0.0,
-                (record["heading"] as? Number)?.toDouble() ?: 0.0,
-                (record["altitude"] as? Number)?.toDouble() ?: 0.0,
-                (record["odometer"] as? Number)?.toDouble() ?: 0.0,
-                record["is_moving"] == true || record["isMoving"] == true,
+            uniffi.tracelet_core.AuditRecordWithLocation(
+                hash = record["hash"] as? String ?: "",
+                previousHash = record["previous_hash"] as? String ?: "",
+                chainIndex = (record["chain_index"] as? Number)?.toInt() ?: -1,
+                hasLocation = hasLocation,
+                location = loc
             )
-            val computedHash = sha256(canonical)
-
-            if (computedHash != storedHash) {
-                return mapOf(
-                    "isValid" to false,
-                    "totalRecords" to records.size,
-                    "verifiedRecords" to verified,
-                    "brokenAtIndex" to recordChainIndex,
-                    "brokenAtUuid" to (record["uuid"] as? String),
-                    "error" to "hash mismatch: expected=$computedHash, stored=$storedHash",
-                )
-            }
-
-            expectedPreviousHash = storedHash
-            verified++
         }
 
-        return mapOf(
-            "isValid" to true,
-            "totalRecords" to records.size,
-            "verifiedRecords" to verified,
+        val result = engine.verifyChain(rustRecords)
+
+        val map = mutableMapOf<String, Any?>(
+            "isValid" to result.isValid,
+            "totalRecords" to result.totalRecords,
+            "verifiedRecords" to result.verifiedRecords,
         )
+        result.brokenAtIndex?.let { map["brokenAtIndex"] = it }
+        result.brokenAtUuid?.let { map["brokenAtUuid"] = it }
+        result.error?.let { map["error"] = it }
+
+        return map
     }
 
     /**
@@ -295,5 +225,6 @@ class AuditTrailManager(
      */
     fun reset() {
         prefs.edit().clear().apply()
+        engine.resetState()
     }
 }

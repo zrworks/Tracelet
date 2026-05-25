@@ -181,6 +181,15 @@ jobs:
             echo "📦 Version $VERSION not found on Maven Central — will publish"
           fi
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+      - name: Build Android Rust Core
+        run: ./sdk/rust-core/build-android.sh
+
       - name: Build release AAR
         working-directory: sdk/android
         run: ./gradlew :tracelet-sdk:assembleRelease
@@ -276,6 +285,13 @@ jobs:
             echo "📦 TraceletSDK $VERSION not found on CocoaPods — will publish"
           fi
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
+      - name: Build iOS Rust Core
+        run: ./sdk/rust-core/build-ios.sh
+
       - name: Build SDK (SPM)
         working-directory: sdk/ios
         run: |
@@ -291,8 +307,10 @@ jobs:
       - name: Lint podspec
         run: pod lib lint TraceletSDK.podspec --allow-warnings --verbose
 
-      - name: Create tag
+      - name: Create tag and Release
         if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           TAG="sdk-ios-v${VERSION}"
@@ -303,6 +321,14 @@ jobs:
           else
             git tag "$TAG" -m "iOS SDK v${VERSION}"
             git push origin "$TAG"
+            
+            echo "Creating XCFramework zip..."
+            cd sdk/rust-core/out
+            zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
+            cd ../../..
+            
+            echo "Uploading release asset..."
+            gh release create "$TAG" sdk/rust-core/out/TraceletCore.xcframework.zip --title "iOS SDK v${VERSION}" --notes "Pre-compiled Rust Core for iOS SDK v${VERSION}."
           fi
 
       - name: Publish to CocoaPods

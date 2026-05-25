@@ -33,16 +33,33 @@ jobs:
       - name: Bootstrap
         run: melos bootstrap
 
-      - name: Install benchmark dependencies
-        working-directory: benchmark
-        run: flutter pub get
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
 
       - name: Run benchmarks
         id: bench
         working-directory: benchmark
         run: |
-          # Run benchmark and let it generate the files directly
+          # Run Dart benchmarks
           flutter test test/tracelet_benchmark_test.dart --reporter expanded 2>&1 | tee benchmark_output.txt
+          mv benchmark_results.json dart_results.json
+          
+          # Run Rust benchmarks
+          cd ../sdk/rust-core
+          cargo run --release --bin benchmark
+          mv benchmark_results.json ../../benchmark/rust_results.json
+          cd ../../benchmark
+          
+          # Merge results
+          python3 -c "
+          import json
+          with open('dart_results.json') as f: dart = json.load(f)
+          with open('rust_results.json') as f: rust = json.load(f)
+          dart.update(rust)
+          with open('benchmark_results.json', 'w') as f: json.dump(dart, f, indent=2)
+          "
 
       - name: Update BENCHMARK.md
         working-directory: benchmark

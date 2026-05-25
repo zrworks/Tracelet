@@ -13,3 +13,4 @@ export 'src/pigeon_event_receiver.dart';
 export 'src/event_channel_names.dart';
 export 'src/generated/tracelet_api.g.dart';
 export 'src/types/types.dart';
+export 'src/rust_loader/rust_loader.dart';

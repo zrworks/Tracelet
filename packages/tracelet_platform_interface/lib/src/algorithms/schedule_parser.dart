@@ -13,7 +13,7 @@ class ScheduleParser {
     now ??= DateTime.now();
     return _inner.isWithinSchedule(
       schedules: schedules,
-      timestampMs: now.millisecondsSinceEpoch,
+      timestampMs: BigInt.from(now.millisecondsSinceEpoch),
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
   }
@@ -31,15 +31,15 @@ class ScheduleParser {
     now ??= DateTime.now();
     final alarms = _inner.calculateNextAlarms(
       schedules: [schedule],
-      timestampMs: now.millisecondsSinceEpoch,
+      timestampMs: BigInt.from(now.millisecondsSinceEpoch),
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
     return (
-      start: alarms.nextStartMs > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs)
+      start: alarms.nextStartMs.toInt() > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs.toInt())
           : null,
-      stop: alarms.nextStopMs > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs)
+      stop: alarms.nextStopMs.toInt() > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs.toInt())
           : null,
     );
   }

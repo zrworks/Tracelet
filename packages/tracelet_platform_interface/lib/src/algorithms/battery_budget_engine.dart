@@ -29,14 +29,16 @@ class BatteryBudgetEngine {
     return _inner.processSample(
       level: batteryLevel,
       isCharging: isCharging,
-      timestampMs: _clock().millisecondsSinceEpoch,
+      timestampMs: BigInt.from(_clock().millisecondsSinceEpoch),
     );
   }
 
   int getRecommendedIntervalMs(int defaultIntervalMs) {
-    return _inner.getRecommendedIntervalMs(
-      defaultIntervalMs: defaultIntervalMs,
-    );
+    return _inner
+        .getRecommendedIntervalMs(
+          defaultIntervalMs: BigInt.from(defaultIntervalMs),
+        )
+        .toInt();
   }
 
   bool shouldThrottleLocation() {

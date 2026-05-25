@@ -17,11 +17,13 @@ struct KalmanState {
     is_initialized: bool,
 }
 
+/// Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
 #[derive(uniffi::Object)]
 pub struct KalmanLocationFilter {
     state: Mutex<KalmanState>,
 }
 
+/// A simple geographical point used for the smoothed output of the Kalman filter.
 #[derive(uniffi::Record)]
 pub struct LatLng {
     pub latitude: f64,
@@ -30,6 +32,7 @@ pub struct LatLng {
 
 #[uniffi::export]
 impl KalmanLocationFilter {
+    /// Initializes a new KalmanLocationFilter state.
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self {
@@ -49,15 +52,18 @@ impl KalmanLocationFilter {
         }
     }
 
+    /// Returns true if the filter has been seeded with an initial location.
     pub fn is_initialized(&self) -> bool {
         self.state.lock().unwrap().is_initialized
     }
 
+    /// Returns the currently estimated speed (in meters per second) from the filter's state.
     pub fn estimated_speed(&self) -> f64 {
         let state = self.state.lock().unwrap();
         (state.vx * state.vx + state.vy * state.vy).sqrt()
     }
 
+    /// Processes a new location measurement and returns the smoothed coordinates.
     pub fn process(
         &self,
         latitude: f64,
@@ -91,6 +97,7 @@ impl KalmanLocationFilter {
         Self::to_lat_lng(&state)
     }
 
+    /// Resets the internal state of the filter, clearing the history.
     pub fn reset(&self) {
         let mut state = self.state.lock().unwrap();
         state.is_initialized = false;

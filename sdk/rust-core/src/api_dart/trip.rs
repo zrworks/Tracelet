@@ -1,5 +1,6 @@
 use crate::algorithms::trip_manager::{TripManager as NativeTripManager, TripData as NativeTripData, TripLocation as NativeLocation, TripWaypoint as NativeWaypoint};
 
+/// Represents a single waypoint along a tracked trip.
 pub struct TripWaypointDart {
     pub latitude: f64,
     pub longitude: f64,
@@ -16,6 +17,7 @@ impl From<NativeWaypoint> for TripWaypointDart {
     }
 }
 
+/// Represents a geographical location (start or stop) of a trip.
 pub struct TripLocationDart {
     pub latitude: f64,
     pub longitude: f64,
@@ -30,6 +32,7 @@ impl From<NativeLocation> for TripLocationDart {
     }
 }
 
+/// Contains the comprehensive data for a completed trip.
 pub struct TripDataDart {
     pub distance_meters: f64,
     pub duration_seconds: f64,
@@ -50,12 +53,13 @@ impl From<NativeTripData> for TripDataDart {
     }
 }
 
+/// Manages trip state and boundary detection based on motion transitions.
 pub struct TripManagerDart {
     inner: NativeTripManager,
 }
 
 impl TripManagerDart {
-    #[flutter_rust_bridge::frb(sync)]
+    /// Initializes a new TripManager.
     #[flutter_rust_bridge::frb(sync)]
     pub fn new() -> Self {
         Self {
@@ -63,13 +67,13 @@ impl TripManagerDart {
         }
     }
 
-    #[flutter_rust_bridge::frb(sync)]
+    /// Returns true if a trip is actively being recorded.
     #[flutter_rust_bridge::frb(sync)]
     pub fn is_trip_active(&self) -> bool {
         self.inner.is_trip_active()
     }
 
-    #[flutter_rust_bridge::frb(sync)]
+    /// Updates the motion state and returns trip data if a trip has just ended.
     #[flutter_rust_bridge::frb(sync)]
     pub fn on_motion_state_changed(
         &self,
@@ -82,7 +86,7 @@ impl TripManagerDart {
         self.inner.on_motion_state_changed(is_moving, latitude, longitude, timestamp_ms, now_ms).map(|d| d.into())
     }
 
-    #[flutter_rust_bridge::frb(sync)]
+    /// Feeds a new location point to the trip manager.
     #[flutter_rust_bridge::frb(sync)]
     pub fn on_location_received(
         &self,
@@ -93,7 +97,7 @@ impl TripManagerDart {
         self.inner.on_location_received(latitude, longitude, timestamp_ms);
     }
 
-    #[flutter_rust_bridge::frb(sync)]
+    /// Resets the trip manager, discarding any active trip.
     #[flutter_rust_bridge::frb(sync)]
     pub fn reset(&self) {
         self.inner.reset();

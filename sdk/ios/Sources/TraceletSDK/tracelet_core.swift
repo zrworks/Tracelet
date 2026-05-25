@@ -3740,6 +3740,10 @@ public func sha256(input: String) -> String  {
     )
 })
 }
+/**
+ * Encodes a batch of JSON location data into a Google Polyline style delta string for efficient transmission.
+ * `precision` specifies the multiplier (e.g. 1e5 for 5 decimal places).
+ */
 public func encodeDeltas(batchJson: String, precision: Int32) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_encode_deltas(
@@ -3779,7 +3783,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_func_sha256() != 62639) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_encode_deltas() != 49460) {
+    if (uniffi_tracelet_core_checksum_func_encode_deltas() != 25656) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 60857) {

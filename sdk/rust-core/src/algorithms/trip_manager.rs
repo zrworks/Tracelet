@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 const MAX_WAYPOINTS: usize = 5000;
 
+/// A geographical point recorded as part of a trip's path.
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct TripWaypoint {
     pub latitude: f64,
@@ -11,12 +12,14 @@ pub struct TripWaypoint {
     pub timestamp_ms: i64,
 }
 
+/// Represents the start or end geographical location of a trip.
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct TripLocation {
     pub latitude: f64,
     pub longitude: f64,
 }
 
+/// Summarized data for a tracked trip, including distance, duration, and path.
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct TripData {
     pub distance_meters: f64,
@@ -37,6 +40,7 @@ struct TripManagerState {
     waypoints: VecDeque<TripWaypoint>,
 }
 
+/// Core logic for determining trip boundaries (start/stop) based on location and motion changes.
 #[derive(uniffi::Object)]
 pub struct TripManager {
     state: Mutex<TripManagerState>,
@@ -44,6 +48,7 @@ pub struct TripManager {
 
 #[uniffi::export]
 impl TripManager {
+    /// Initializes a new TripManager state machine.
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self {
@@ -60,11 +65,14 @@ impl TripManager {
         }
     }
 
+    /// Returns true if a trip is currently being tracked.
     pub fn is_trip_active(&self) -> bool {
         let state = self.state.lock().unwrap();
         state.is_trip_active
     }
 
+    /// Evaluates a motion state transition to determine if a trip has started or ended.
+    /// If a trip ended, it returns the accumulated `TripData`.
     pub fn on_motion_state_changed(
         &self,
         is_moving: bool,
@@ -84,6 +92,7 @@ impl TripManager {
         }
     }
 
+    /// Feeds a new location sample into the active trip to update its path and distance.
     pub fn on_location_received(
         &self,
         latitude: f64,
@@ -112,6 +121,7 @@ impl TripManager {
         });
     }
 
+    /// Resets the trip manager, discarding any active trip and path data.
     pub fn reset(&self) {
         let mut state = self.state.lock().unwrap();
         state.is_trip_active = false;

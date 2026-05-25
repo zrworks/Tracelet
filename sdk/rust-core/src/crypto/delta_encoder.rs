@@ -1,6 +1,8 @@
 use serde_json::{json, Value};
 
 #[uniffi::export]
+/// Encodes a batch of JSON location data into a Google Polyline style delta string for efficient transmission.
+/// `precision` specifies the multiplier (e.g. 1e5 for 5 decimal places).
 pub fn encode_deltas(batch_json: String, precision: i32) -> String {
     let locations: Vec<Value> = match serde_json::from_str(&batch_json) {
         Ok(locs) => locs,

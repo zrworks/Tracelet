@@ -1,5 +1,6 @@
 import '../rust/api_dart/battery_budget.dart';
 import '../rust/state/battery_budget.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Rust-powered battery budget engine.
 class BatteryBudgetEngine {
@@ -29,14 +30,14 @@ class BatteryBudgetEngine {
     return _inner.processSample(
       level: batteryLevel,
       isCharging: isCharging,
-      timestampMs: BigInt.from(_clock().millisecondsSinceEpoch),
+      timestampMs: PlatformInt64Util.from(_clock().millisecondsSinceEpoch),
     );
   }
 
   int getRecommendedIntervalMs(int defaultIntervalMs) {
     return _inner
         .getRecommendedIntervalMs(
-          defaultIntervalMs: BigInt.from(defaultIntervalMs),
+          defaultIntervalMs: PlatformInt64Util.from(defaultIntervalMs),
         )
         .toInt();
   }

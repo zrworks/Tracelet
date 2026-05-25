@@ -1,4 +1,5 @@
 import '../rust/api_dart/trip.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Rust-powered TripManager.
 class TripManager {
@@ -30,8 +31,8 @@ class TripManager {
       isMoving: isMoving,
       latitude: latitude,
       longitude: longitude,
-      timestampMs: BigInt.from(timestampMs),
-      nowMs: BigInt.from(nowMs),
+      timestampMs: PlatformInt64Util.from(timestampMs),
+      nowMs: PlatformInt64Util.from(nowMs),
     );
 
     if (tripData != null && onTripEnd != null) {
@@ -84,7 +85,7 @@ class TripManager {
     _inner.onLocationReceived(
       latitude: latitude,
       longitude: longitude,
-      timestampMs: BigInt.from(timestampMs),
+      timestampMs: PlatformInt64Util.from(timestampMs),
     );
   }
 

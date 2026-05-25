@@ -1,4 +1,5 @@
 import '../rust/api_dart/schedule.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Rust-powered schedule parsing and matching.
 class ScheduleParser {
@@ -13,7 +14,7 @@ class ScheduleParser {
     now ??= DateTime.now();
     return _inner.isWithinSchedule(
       schedules: schedules,
-      timestampMs: BigInt.from(now.millisecondsSinceEpoch),
+      timestampMs: PlatformInt64Util.from(now.millisecondsSinceEpoch),
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
   }
@@ -31,7 +32,7 @@ class ScheduleParser {
     now ??= DateTime.now();
     final alarms = _inner.calculateNextAlarms(
       schedules: [schedule],
-      timestampMs: BigInt.from(now.millisecondsSinceEpoch),
+      timestampMs: PlatformInt64Util.from(now.millisecondsSinceEpoch),
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
     return (

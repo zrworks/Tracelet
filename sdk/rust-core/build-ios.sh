@@ -35,13 +35,18 @@ cp target/aarch64-apple-ios/release/libtracelet_core.a "$OUT_DIR/libtracelet_cor
 # Generate Swift bindings if they don't exist
 cargo run --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_core.a --language swift --out-dir "$OUT_DIR"
 
+# Move headers to a clean directory
+mkdir -p "$OUT_DIR/Headers"
+cp "$OUT_DIR/tracelet_coreFFI.h" "$OUT_DIR/Headers/"
+cp "$OUT_DIR/tracelet_coreFFI.modulemap" "$OUT_DIR/Headers/module.modulemap"
+
 # Remove old XCFramework
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
 
 # Build new XCFramework
 xcodebuild -create-xcframework \
-    -library "$OUT_DIR/libtracelet_core_ios.a" -headers "$OUT_DIR" \
-    -library "$OUT_DIR/libtracelet_core_sim.a" -headers "$OUT_DIR" \
+    -library "$OUT_DIR/libtracelet_core_ios.a" -headers "$OUT_DIR/Headers" \
+    -library "$OUT_DIR/libtracelet_core_sim.a" -headers "$OUT_DIR/Headers" \
     -output "$OUT_DIR/TraceletCore.xcframework"
 
 echo "✅ iOS build complete. XCFramework placed in $OUT_DIR/TraceletCore.xcframework"

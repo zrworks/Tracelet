@@ -89,6 +89,47 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 ## Results History
 
+### 2026-05-25 — Commit 0639185
+
+**Environment:** Dart 3.12.0, ubuntu-latest (CI)
+
+| Benchmark | ops/sec | µs/op |
+|---|---:|---:|
+| schedule_parse | 2702702 | 0.37 |
+| schedule_matches | 97943 | 10.21 |
+| schedule_isWithin_5_entries | 91074 | 10.98 |
+| location_fromMap | 1724137 | 0.58 |
+| location_toMap | 653594 | 1.53 |
+| location_fromMap_toMap_roundtrip | 467289 | 2.14 |
+| location_copyWithCoords | 11111111 | 0.09 |
+| geofence_fromMap_circular | 4761904 | 0.21 |
+| geofence_fromMap_polygon | 1538461 | 0.65 |
+| carbon_trip_100_locations | 93545 | 10.69 |
+| carbon_onLocation | 4166666 | 0.24 |
+| carbon_setActivity | 9090909 | 0.11 |
+| carbon_cumulative_report | 2631578 | 0.38 |
+| persist_decider_location | 20000000 | 0.05 |
+| persist_decider_geofence | 20000000 | 0.05 |
+| config_fromMap | 469483 | 2.13 |
+| config_toMap | 127551 | 7.84 |
+| config_roundtrip | 100000 | 10.00 |
+| state_fromMap | 436681 | 2.29 |
+| state_toMap | 123456 | 8.10 |
+| route_context_toMap | 3030303 | 0.33 |
+| route_context_fromMap | 2272727 | 0.44 |
+| route_context_roundtrip | 1315789 | 0.76 |
+| sync_body_context_toMap_50 | 8333333 | 0.12 |
+| sync_body_context_fromMap_50 | 22588 | 44.27 |
+| http_config_ssl_toMap | 793650 | 1.26 |
+| http_config_ssl_fromMap | 3333333 | 0.30 |
+| http_config_ssl_roundtrip | 636942 | 1.57 |
+| battery_budget_60_samples | 1735379 | 0.58 |
+| battery_budget_heavy_drain | 891982 | 1.12 |
+| smart_motion_speed_change | 25713299 | 0.04 |
+| smart_motion_accel_change | 25879260 | 0.04 |
+| battery_budget_single_sample | 24141037 | 0.04 |
+
+
 ### 2026-05-25 — Commit e33c551
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)
@@ -398,13 +439,6 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 
 ### 2026-05-25 — Commit 7dc41c9
-
-**Environment:** Dart 3.12.0, ubuntu-latest (CI)
-
-(no table captured)
-
-
-### 2026-05-25 — Commit 881e96f
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)
 

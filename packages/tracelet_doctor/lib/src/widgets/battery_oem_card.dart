@@ -44,6 +44,12 @@ class BatteryOemCard extends StatelessWidget {
             label: 'Battery Opt Exempt',
             value: health.isIgnoringBatteryOptimizations,
           ),
+          InfoRow(
+            label: 'Battery Budget',
+            value: Tracelet.activeConfig.geo.batteryBudgetPerHour > 0
+                ? '${Tracelet.activeConfig.geo.batteryBudgetPerHour}% / hour'
+                : 'Disabled',
+          ),
           if (health.isAggressiveOem) ...[
             const SizedBox(height: 8),
             _AggressionMeter(rating: health.aggressionRating),

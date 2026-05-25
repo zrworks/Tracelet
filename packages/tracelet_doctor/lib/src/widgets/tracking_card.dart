@@ -34,11 +34,11 @@ class TrackingCard extends StatelessWidget {
           InfoRow(label: 'Tracking Mode', value: modeLabel),
           InfoRow(
             label: 'Motion Sensor',
-            value:
-                Tracelet.activeConfig.motion.motionDetectionMode ==
-                    MotionDetectionMode.speed
-                ? 'Speed-Based'
-                : 'Accelerometer',
+            value: switch (Tracelet.activeConfig.motion.motionDetectionMode) {
+              MotionDetectionMode.speed => 'Speed-Based',
+              MotionDetectionMode.smart => 'Smart (Hybrid)',
+              _ => 'Accelerometer',
+            },
           ),
           InfoRow(
             label: 'Motion State',

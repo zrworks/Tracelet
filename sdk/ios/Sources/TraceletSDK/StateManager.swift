@@ -11,8 +11,8 @@ public final class StateManager {
     }
 
     /// The current tracking mode (continuous, geofences, periodic).
-    public var trackingMode: TrackingMode {
-        get { TrackingMode.fromInt(defaults.integer(forKey: prefix + "trackingMode")) }
+    public var trackingMode: TraceletTrackingMode {
+        get { TraceletTrackingMode.fromInt(defaults.integer(forKey: prefix + "trackingMode")) }
         set { defaults.set(newValue.rawValue, forKey: prefix + "trackingMode") }
     }
 

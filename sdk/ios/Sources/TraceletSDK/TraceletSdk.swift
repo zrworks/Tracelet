@@ -54,7 +54,7 @@ public final class TraceletSdk {
     public private(set) var motionDetector: MotionDetector!
     public private(set) var speedMotionManager: SpeedMotionManager?
     public private(set) var geofenceManager: GeofenceManager!
-    public private(set) var smartMotionCoordinator: SmartMotionCoordinator!
+    public private(set) var smartMotionCoordinator: TraceletSmartMotionCoordinator!
     public private(set) var httpSyncManager: HttpSyncManager!
     public private(set) var scheduleManager: ScheduleManager!
     public private(set) var logger: TraceletLogger!
@@ -76,7 +76,7 @@ public final class TraceletSdk {
 
     // Algorithms
     public private(set) var tripManager: TripManager!
-    private var batteryBudgetEngine: BatteryBudgetEngine?
+    private var batteryBudgetEngine: TraceletBatteryBudgetEngine?
     private var batteryBudgetTimer: Timer?
 
     /// Battery budget sampling interval: 5 minutes.
@@ -196,7 +196,7 @@ public final class TraceletSdk {
         // Initialize battery budget engine from config
         let budgetPerHour = configManager.getBatteryBudgetPerHour()
         if budgetPerHour > 0 {
-            batteryBudgetEngine = BatteryBudgetEngine(
+            batteryBudgetEngine = TraceletBatteryBudgetEngine(
                 targetBudgetPerHour: budgetPerHour,
                 initialDistanceFilter: configManager.getDistanceFilter(),
                 initialAccuracyIndex: configManager.getDesiredAccuracy()
@@ -423,7 +423,7 @@ public final class TraceletSdk {
     ///   ``ready(config:)`` has not been called yet.
     public func getState() -> [String: Any] {
         guard isReady else {
-            return ["enabled": false, "isMoving": false, "trackingMode": TrackingMode.continuous.rawValue,
+            return ["enabled": false, "isMoving": false, "trackingMode": TraceletTrackingMode.continuous.rawValue,
                     "schedulerEnabled": false, "odometer": 0.0]
         }
         return stateManager.toMap(configManager.getConfig())
@@ -1136,7 +1136,7 @@ public final class TraceletSdk {
         )
         
         // Smart motion coordinator
-        smartMotionCoordinator = SmartMotionCoordinator(sdk: self)
+        smartMotionCoordinator = TraceletSmartMotionCoordinator(sdk: self)
 
         // HTTP sync
         httpSyncManager = HttpSyncManager(

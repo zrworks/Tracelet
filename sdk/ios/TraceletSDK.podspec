@@ -11,5 +11,6 @@ Pod::Spec.new do |s|
   s.source_files     = 'Sources/TraceletSDK/**/*.swift', 'Sources/TraceletSDK/*.swift', 'Sources/TraceletSDK/**/*.h', 'Sources/TraceletSDK/*.h'
   s.public_header_files = 'Sources/TraceletSDK/**/*.h', 'Sources/TraceletSDK/*.h'
   s.frameworks       = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks', 'AVFoundation', 'AudioToolbox', 'Network', 'DeviceCheck'
+  s.vendored_frameworks = '../rust-core/out/TraceletCore.xcframework'
   s.libraries        = 'sqlite3'
 end

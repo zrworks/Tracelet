@@ -1,7 +1,7 @@
 import Foundation
 
 /// Event emitted when the battery budget engine adjusts tracking parameters.
-public struct BudgetAdjustmentEvent {
+public struct TraceletBudgetAdjustmentEvent {
     /// Estimated current battery drain in %/hr.
     public let currentBatteryDrain: Double
     /// Configured budget target in %/hr.
@@ -22,9 +22,9 @@ public struct BudgetAdjustmentEvent {
 ///
 /// Accuracy levels (ordered by battery cost, index 0 = highest):
 /// `high (0) → medium (1) → low (2) → veryLow (3) → passive (4)`
-public class BatteryBudgetEngine {
+public class TraceletBatteryBudgetEngine {
     
-    private let coreEngine: BatteryBudgetEngineCore
+    private let coreEngine: BatteryBudgetEngine
 
     /// Target maximum battery drain per hour (% points).
     public var targetBudgetPerHour: Double {
@@ -41,7 +41,7 @@ public class BatteryBudgetEngine {
     public var accuracyIndex: Int { Int(coreEngine.accuracyIndex()) }
 
     /// Current adjusted periodic interval (nil if not periodic).
-    public var periodicInterval: Int? { coreEngine.periodicInterval().map { Int(truncating: $0) } }
+    public var periodicInterval: Int? { coreEngine.periodicInterval().map { Int($0) } }
 
     public init(
         targetBudgetPerHour: Double,
@@ -50,11 +50,11 @@ public class BatteryBudgetEngine {
         initialPeriodicInterval: Int? = nil
     ) {
         self._targetBudgetPerHour = targetBudgetPerHour
-        self.coreEngine = BatteryBudgetEngineCore(
+        self.coreEngine = BatteryBudgetEngine(
             targetBudgetPerHour: targetBudgetPerHour,
             initialDistanceFilter: initialDistanceFilter,
             initialAccuracyIndex: Int32(initialAccuracyIndex),
-            initialPeriodicInterval: initialPeriodicInterval.map { NSNumber(value: $0) }
+            initialPeriodicInterval: initialPeriodicInterval.map { Int32($0) }
         )
     }
 
@@ -64,19 +64,19 @@ public class BatteryBudgetEngine {
     ///
     /// - Parameter batteryLevel: 0.0–1.0 (percentage as fraction)
     /// - Returns: adjustment event if parameters changed, nil otherwise
-    public func processSample(_ batteryLevel: Double) -> BudgetAdjustmentEvent? {
+    public func processSample(_ batteryLevel: Double) -> TraceletBudgetAdjustmentEvent? {
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         
         guard let event = coreEngine.processSample(batteryLevel: batteryLevel, nowMs: nowMs) else {
             return nil
         }
         
-        return BudgetAdjustmentEvent(
+        return TraceletBudgetAdjustmentEvent(
             currentBatteryDrain: event.currentBatteryDrain,
             targetBudget: event.targetBudget,
             newDistanceFilter: event.newDistanceFilter,
             newDesiredAccuracy: Int(event.newDesiredAccuracy),
-            newPeriodicInterval: event.newPeriodicInterval.map { Int(truncating: $0) }
+            newPeriodicInterval: event.newPeriodicInterval.map { Int($0) }
         )
     }
 

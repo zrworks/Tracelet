@@ -313,7 +313,7 @@ public struct TraceletGeofence {
 // MARK: - TrackingMode
 
 /// Tracking modes supported by the SDK.
-@objc public enum TrackingMode: Int {
+@objc public enum TraceletTrackingMode: Int {
     /// Continuous location tracking with motion detection.
     case continuous = 0
     /// Passive geofence-only monitoring (saves maximum battery).
@@ -322,8 +322,8 @@ public struct TraceletGeofence {
     case periodic = 2
 
     /// Returns a variant from an integer value, defaulting to `.continuous` on unknown values.
-    public static func fromInt(_ value: Int) -> TrackingMode {
-        return TrackingMode(rawValue: value) ?? .continuous
+    public static func fromInt(_ value: Int) -> TraceletTrackingMode {
+        return TraceletTrackingMode(rawValue: value) ?? .continuous
     }
 }
 
@@ -345,7 +345,7 @@ public struct TraceletGeofence {
 /// Current state of the Tracelet SDK.
 public struct TraceletState {
     public let enabled: Bool
-    public let trackingMode: TrackingMode
+    public let trackingMode: TraceletTrackingMode
     public let isMoving: Bool
     public let schedulerEnabled: Bool
     public let odometer: Double
@@ -354,7 +354,7 @@ public struct TraceletState {
 
     public init(
         enabled: Bool,
-        trackingMode: TrackingMode = .continuous,
+        trackingMode: TraceletTrackingMode = .continuous,
         isMoving: Bool = false,
         schedulerEnabled: Bool = false,
         odometer: Double = 0,
@@ -374,7 +374,7 @@ public struct TraceletState {
         let modeInt = (map["trackingMode"] as? NSNumber)?.intValue ?? 0
         return TraceletState(
             enabled: map["enabled"] as? Bool ?? false,
-            trackingMode: TrackingMode.fromInt(modeInt),
+            trackingMode: TraceletTrackingMode.fromInt(modeInt),
             isMoving: (map["isMoving"] ?? map["is_moving"]) as? Bool ?? false,
             schedulerEnabled: map["schedulerEnabled"] as? Bool ?? false,
             odometer: (map["odometer"] as? NSNumber)?.doubleValue ?? 0,

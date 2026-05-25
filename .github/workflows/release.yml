@@ -217,6 +217,10 @@ jobs:
         working-directory: sdk/android
         run: ./gradlew :tracelet-sdk:assembleRelease
 
+      - name: Build Host Rust Library for Tests
+        working-directory: sdk/rust-core
+        run: cargo build
+
       - name: Run unit tests
         working-directory: sdk/android
         run: ./gradlew :tracelet-sdk:testReleaseUnitTest

@@ -19,6 +19,12 @@ import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
 import com.ikolvi.tracelet.sdk.privacy.PrivacyZoneManager
 import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
+import uniffi.tracelet_core.LocationProcessor as RustLocationProcessor
+import uniffi.tracelet_core.KalmanLocationFilter as RustKalmanFilter
+import uniffi.tracelet_core.LocationProcessorResult
+import uniffi.tracelet_core.AdaptiveContext
+import uniffi.tracelet_core.ActivityType as RustActivityType
+import uniffi.tracelet_core.ActivityConfidence as RustActivityConfidence
 import android.os.SystemClock
 import android.os.Handler
 import java.text.SimpleDateFormat
@@ -98,6 +104,47 @@ class LocationEngine(
 
     /** Counter for throttling DB retention pruning — runs every N inserts. */
     private var insertCountSincePrune = 0
+
+    // =========================================================================
+    // Rust-powered location processing (LocationProcessor + Kalman)
+    // =========================================================================
+
+    /** Rust-backed location processor for distance/accuracy/speed/mock filtering.
+     *  Lazily created from config on first use, recreated on config changes. */
+    private var locationProcessor: RustLocationProcessor? = null
+
+    /** Rust-backed Kalman filter for smoothing lat/lng. */
+    private var kalmanFilter: RustKalmanFilter? = null
+
+    /** Build (or rebuild) the Rust LocationProcessor from current config. */
+    fun rebuildProcessor() {
+        locationProcessor?.destroy()
+        locationProcessor = RustLocationProcessor(
+            distanceFilter = config.getDistanceFilter(),
+            disableElasticity = config.getDisableElasticity(),
+            elasticityMultiplier = config.getElasticityMultiplier(),
+            enableAdaptiveMode = config.getEnableAdaptiveMode(),
+            trackingAccuracyThreshold = config.getTrackingAccuracyThreshold(),
+            filterPolicy = config.getFilterPolicy(),
+            maxImpliedSpeed = config.getMaxImpliedSpeed(),
+            odometerAccuracyThreshold = config.getOdometerAccuracyThreshold(),
+            rejectMockLocations = config.getRejectMockLocations(),
+            mockDetectionLevel = config.getMockDetectionLevel(),
+            enableSparseUpdates = config.getEnableSparseUpdates(),
+            sparseDistanceThreshold = config.getSparseDistanceThreshold(),
+            sparseMaxIdleSeconds = config.getSparseMaxIdleSeconds(),
+        )
+        kalmanFilter?.destroy()
+        kalmanFilter = if (config.getEnableKalmanFilter()) RustKalmanFilter() else null
+    }
+
+    /** Returns the processor, building it if needed. */
+    private fun getProcessor(): RustLocationProcessor {
+        return locationProcessor ?: run {
+            rebuildProcessor()
+            locationProcessor!!
+        }
+    }
 
     /** Last computed effective speed (m/s) from tracking location updates.
      *  Used by the plugin for motionchange events since the cached Location.speed
@@ -655,6 +702,10 @@ class LocationEngine(
     fun destroy() {
         stop()
         stopAllWatchers()
+        locationProcessor?.destroy()
+        locationProcessor = null
+        kalmanFilter?.destroy()
+        kalmanFilter = null
     }
 
     // =========================================================================
@@ -707,25 +758,65 @@ class LocationEngine(
             computedSpeed
         }
 
-        // --- Filtering (elasticity, accuracy, speed) is now in shared Dart ---
-        // LocationProcessor in tracelet_platform_interface handles all filtering.
-        // Native sends ALL locations; Dart filters before delivering to user.
-
-        // Odometer accuracy check: only add to odometer if accurate enough
-        val odometerAccuracyThreshold = config.getOdometerAccuracyThreshold()
-        val addToOdometer = odometerAccuracyThreshold <= 0 || location.accuracy <= odometerAccuracyThreshold
-        if (addToOdometer) {
-            state.addOdometer(distance)
+        // --- Rust-powered filtering (distance, accuracy, speed, mock, sparse) ---
+        val mock = isLocationMock(location)
+        val processor = getProcessor()
+        val battery = BatteryUtils.getBatteryInfo(context)
+        val batteryLevel = (battery["level"] as? Number)?.toDouble() ?: -1.0
+        val isCharging = (battery["is_charging"] as? Boolean) ?: false
+        val adaptiveCtx = AdaptiveContext(
+            batteryLevel = batteryLevel,
+            isCharging = isCharging,
+            activityType = mapActivityType(currentActivityType),
+            activityConfidence = mapActivityConfidence(currentActivityConfidence),
+            speed = effectiveSpeed,
+        )
+        val result = processor.process(
+            latitude = location.latitude,
+            longitude = location.longitude,
+            accuracy = location.accuracy.toDouble(),
+            speed = effectiveSpeed,
+            timestampMs = location.time,
+            isMock = mock,
+            adaptiveContext = adaptiveCtx,
+        )
+        if (!result.accepted) {
+            Log.d(TAG, "Location filtered by Rust processor: ${result.reason}")
+            // Still update odometer if the processor computed a delta
+            if (result.odometerDelta > 0) {
+                state.addOdometer(result.odometerDelta)
+            }
+            return
         }
+
+        // Odometer update from processor's computed delta
+        if (result.odometerDelta > 0) {
+            state.addOdometer(result.odometerDelta)
+        }
+
+        // --- Kalman smoothing (optional) ---
+        var smoothedLat = location.latitude
+        var smoothedLng = location.longitude
+        kalmanFilter?.let { kalman ->
+            val smoothed = kalman.process(
+                latitude = location.latitude,
+                longitude = location.longitude,
+                accuracy = location.accuracy.toDouble(),
+                timestampMs = location.time,
+            )
+            smoothedLat = smoothed.latitude
+            smoothedLng = smoothed.longitude
+        }
+
         lastLocation = location
         if (location.accuracy > 0 && location.accuracy <= 100) {
             lastGpsLocation = location
         }
-        lastEffectiveSpeed = effectiveSpeed
-        speedMotionSpeedSink?.invoke(effectiveSpeed)
+        lastEffectiveSpeed = result.effectiveSpeed
+        speedMotionSpeedSink?.invoke(result.effectiveSpeed)
         state.lastLocationTime = location.time
 
-        val enriched = enrichLocation(location, event, effectiveSpeed)
+        val enriched = enrichLocation(location, event, result.effectiveSpeed, smoothedLat, smoothedLng)
 
         // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
         // Evaluates whether the location falls inside a registered privacy zone
@@ -784,13 +875,19 @@ class LocationEngine(
     /**
      * Enriches a raw [Location] into a full map ready for Dart/DB.
      *
-     * @param location   The raw platform location.
-     * @param event      The event name (e.g. "motionchange").
-     * @param speed      Pre-computed effective speed (m/s). Uses platform speed
-     *                   if available, otherwise distance/time from consecutive
-     *                   locations. Pass `null` to fall back to platform speed.
+     * @param location      The raw platform location.
+     * @param event         The event name (e.g. "motionchange").
+     * @param speed         Pre-computed effective speed (m/s).
+     * @param smoothedLat   Kalman-smoothed latitude (null = use raw).
+     * @param smoothedLng   Kalman-smoothed longitude (null = use raw).
      */
-    fun enrichLocation(location: Location, event: String, speed: Double? = null): Map<String, Any?> {
+    fun enrichLocation(
+        location: Location,
+        event: String,
+        speed: Double? = null,
+        smoothedLat: Double? = null,
+        smoothedLng: Double? = null,
+    ): Map<String, Any?> {
         val battery = BatteryUtils.getBatteryInfo(context)
         val timestamp = isoFormatter.format(Date(location.time))
 
@@ -831,8 +928,8 @@ class LocationEngine(
             "mock" to mock,
             "mockHeuristics" to mockHeuristics,
             "coords" to mapOf(
-                "latitude" to location.latitude,
-                "longitude" to location.longitude,
+                "latitude" to (smoothedLat ?: location.latitude),
+                "longitude" to (smoothedLng ?: location.longitude),
                 "altitude" to location.altitude,
                 "speed" to effectiveSpeed,
                 "heading" to location.bearing.toDouble(),
@@ -1310,5 +1407,29 @@ class LocationEngine(
         // Persist and dispatch
         persistLocationIfAllowed(enriched, "dead_reckoning")
         events.sendLocation(enriched)
+    }
+
+    // =========================================================================
+    // Activity type mapping helpers (Android string → Rust enum)
+    // =========================================================================
+
+    private fun mapActivityType(type: String): RustActivityType {
+        return when (type.lowercase()) {
+            "still" -> RustActivityType.STILL
+            "walking" -> RustActivityType.WALKING
+            "running" -> RustActivityType.RUNNING
+            "on_foot" -> RustActivityType.ON_FOOT
+            "in_vehicle" -> RustActivityType.IN_VEHICLE
+            "on_bicycle" -> RustActivityType.ON_BICYCLE
+            else -> RustActivityType.UNKNOWN
+        }
+    }
+
+    private fun mapActivityConfidence(confidence: Int): RustActivityConfidence {
+        return when {
+            confidence >= 75 -> RustActivityConfidence.HIGH
+            confidence >= 50 -> RustActivityConfidence.MEDIUM
+            else -> RustActivityConfidence.LOW
+        }
     }
 }

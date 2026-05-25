@@ -1,4 +1,4 @@
-## 2.1.0
+## 3.0.0
 
 ### 🎉 Major Features & Improvements
 - **FEAT**: Smart Foreground Notification Visibility (Android) — Added dynamic foreground service notification management. The notification now intelligently hides itself when the app is in the foreground, and reappears seamlessly when the app enters the background. This significantly reduces notification clutter while maintaining OS-level compliance.

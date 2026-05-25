@@ -20,7 +20,7 @@ platforms:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: '^2.1.0'
+  tracelet: '^3.0.0'
   supabase_flutter: '^2.12.4'
 
 dev_dependencies:

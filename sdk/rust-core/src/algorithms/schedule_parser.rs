@@ -1,6 +1,6 @@
 use chrono::{DateTime, Datelike, LocalResult, TimeZone, Timelike, Utc, FixedOffset};
 
-#[derive(Debug, Clone)]
+/// Represents a parsed tracking schedule containing day and time bounds.
 pub struct ParsedSchedule {
     pub day_start: u32,
     pub day_end: u32,
@@ -10,22 +10,26 @@ pub struct ParsedSchedule {
     pub end_minute: u32,
 }
 
+/// Contains the next absolute start and stop timestamps (in milliseconds) calculated from a schedule.
 #[derive(uniffi::Record)]
 pub struct ScheduleAlarms {
     pub next_start_ms: i64,
     pub next_stop_ms: i64,
 }
 
+/// Parses and evaluates tracking schedules to determine whether tracking should be active.
 #[derive(uniffi::Object)]
 pub struct ScheduleParser {}
 
 #[uniffi::export]
 impl ScheduleParser {
+    /// Initializes a new instance of the ScheduleParser.
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self {}
     }
 
+    /// Determines whether the provided timestamp falls within any of the defined schedules.
     pub fn is_within_schedule(&self, schedules: Vec<String>, timestamp_ms: i64, tz_offset_seconds: i32) -> bool {
         if schedules.is_empty() {
             return false;
@@ -47,6 +51,7 @@ impl ScheduleParser {
         false
     }
 
+    /// Computes the next scheduled start and stop times, evaluating all provided schedules.
     pub fn calculate_next_alarms(&self, schedules: Vec<String>, timestamp_ms: i64, tz_offset_seconds: i32) -> ScheduleAlarms {
         let mut next_start_ms = i64::MAX;
         let mut next_stop_ms = i64::MAX;

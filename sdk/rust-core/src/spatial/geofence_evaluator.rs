@@ -4,6 +4,7 @@ use crate::algorithms::geo_utils::{haversine, is_point_in_polygon, Coordinate};
 use crate::spatial::rtree::RTree;
 
 #[derive(uniffi::Record, Clone, Debug)]
+/// Defines a geofence with a spatial polygon or circular radius for evaluation.
 pub struct CoreGeofence {
     pub identifier: String,
     pub latitude: f64,
@@ -13,12 +14,14 @@ pub struct CoreGeofence {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
+/// Represents a crossing event when a user enters or exits a geofence.
 pub struct GeofenceTransition {
     pub identifier: String,
     pub action: String,
 }
 
 #[derive(uniffi::Object)]
+/// Evaluates location updates against active geofences to detect boundary crossings.
 pub struct GeofenceEvaluator {
     inside_geofence_ids: std::sync::RwLock<HashSet<String>>,
     rtree: std::sync::RwLock<Option<RTree<CoreGeofence>>>,
@@ -28,6 +31,7 @@ pub struct GeofenceEvaluator {
 #[uniffi::export]
 impl GeofenceEvaluator {
     #[uniffi::constructor]
+    /// Initializes a new GeofenceEvaluator.
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             inside_geofence_ids: std::sync::RwLock::new(HashSet::new()),
@@ -36,6 +40,7 @@ impl GeofenceEvaluator {
         })
     }
 
+    /// Indexes a collection of geofences for efficient spatial querying.
     pub fn index_geofences(&self, geofences: Vec<CoreGeofence>) {
         let mut tree = RTree::new(8);
         let mut lookup = HashMap::new();
@@ -50,11 +55,13 @@ impl GeofenceEvaluator {
         *self.indexed_geofences.write().unwrap() = Some(lookup);
     }
 
+    /// Clears the current spatial index.
     pub fn clear_index(&self) {
         *self.rtree.write().unwrap() = None;
         *self.indexed_geofences.write().unwrap() = None;
     }
 
+    /// Evaluates a location update and returns a list of triggered geofence transitions.
     pub fn evaluate_proximity(&self, latitude: f64, longitude: f64, geofences: Vec<CoreGeofence>) -> Vec<GeofenceTransition> {
         let effective_geofences = self.resolve_geofences(latitude, longitude, geofences);
         let mut transitions = Vec::new();

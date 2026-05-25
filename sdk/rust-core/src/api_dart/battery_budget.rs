@@ -1,5 +1,6 @@
 use crate::state::battery_budget::{BatteryBudgetEngine as NativeEngine, BudgetAdjustmentEvent};
 
+/// Engine responsible for auto-adjusting tracking parameters to meet battery constraints.
 pub struct BatteryBudgetEngineDart {
     inner: std::sync::Mutex<NativeEngine>,
     interval_ms: std::sync::Mutex<i64>,
@@ -8,6 +9,7 @@ pub struct BatteryBudgetEngineDart {
 }
 
 impl BatteryBudgetEngineDart {
+    /// Creates a new BatteryBudgetEngine.
     #[flutter_rust_bridge::frb(sync)]
     pub fn new(
         target_budget_per_hour: f64,
@@ -28,6 +30,7 @@ impl BatteryBudgetEngineDart {
         }
     }
 
+    /// Feeds a new battery sample into the engine and returns an adjustment event if parameters changed.
     #[flutter_rust_bridge::frb(sync)]
     pub fn process_sample(&self, level: f64, is_charging: bool, timestamp_ms: i64) -> Option<BudgetAdjustmentEvent> {
         let inner = self.inner.lock().unwrap();
@@ -44,6 +47,7 @@ impl BatteryBudgetEngineDart {
         adjustment
     }
 
+    /// Resets the engine, dropping historical battery samples.
     #[flutter_rust_bridge::frb(sync)]
     pub fn reset(&self) {
         let inner = self.inner.lock().unwrap();
@@ -53,6 +57,7 @@ impl BatteryBudgetEngineDart {
         // but resetting the engine drops the baseline.
     }
 
+    /// Returns the recommended tracking interval based on the latest battery adjustments.
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_recommended_interval_ms(&self, default_interval_ms: i64) -> i64 {
         let interval = *self.interval_ms.lock().unwrap();
@@ -63,28 +68,33 @@ impl BatteryBudgetEngineDart {
         }
     }
 
+    /// Returns true if location tracking should be heavily throttled due to low battery budget.
     #[flutter_rust_bridge::frb(sync)]
     pub fn should_throttle_location(&self) -> bool {
         *self.throttled.lock().unwrap()
     }
 
+    /// Returns true if the device is currently charging.
     #[flutter_rust_bridge::frb(sync)]
     pub fn is_charging(&self) -> bool {
         *self.is_charging.lock().unwrap()
     }
 
+    /// Returns the active distance filter (in meters) calculated by the engine.
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_distance_filter(&self) -> f64 {
         let inner = self.inner.lock().unwrap();
         inner.distance_filter()
     }
 
+    /// Returns the active accuracy index (0 = highest) calculated by the engine.
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_accuracy_index(&self) -> i32 {
         let inner = self.inner.lock().unwrap();
         inner.accuracy_index()
     }
 
+    /// Returns the current periodic interval (if any) recommended by the engine.
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_periodic_interval(&self) -> Option<i32> {
         let inner = self.inner.lock().unwrap();

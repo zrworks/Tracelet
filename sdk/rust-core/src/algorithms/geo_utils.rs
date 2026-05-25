@@ -1,5 +1,6 @@
 use std::f64::consts::PI;
 
+/// Represents a 2D geographical coordinate using latitude and longitude.
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct Coordinate {
     pub lat: f64,
@@ -7,6 +8,7 @@ pub struct Coordinate {
 }
 
 #[uniffi::export]
+/// Uses the ray-casting algorithm to determine if a point is strictly inside a polygon.
 pub fn is_point_in_polygon(lat: f64, lng: f64, vertices: Vec<Coordinate>) -> bool {
     let n = vertices.len();
     if n < 3 {
@@ -32,6 +34,8 @@ pub fn is_point_in_polygon(lat: f64, lng: f64, vertices: Vec<Coordinate>) -> boo
 }
 
 #[uniffi::export]
+/// Calculates the great-circle distance between two points on the Earth's surface using the Haversine formula.
+/// Returns the distance in meters.
 pub fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     let r = 6371000.0;
     let d_lat = (lat2 - lat1) * (PI / 180.0);

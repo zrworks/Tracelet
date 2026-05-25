@@ -1,6 +1,7 @@
 use sha2::{Sha256, Digest};
 use std::sync::Mutex;
 
+/// Represents a raw location sample with all its properties formatted for hashing.
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct LocationRecord {
     pub uuid: String,
@@ -15,6 +16,7 @@ pub struct LocationRecord {
     pub is_moving: bool,
 }
 
+/// Represents an audited location entry securely chained to the previous record.
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct AuditRecordWithLocation {
     pub hash: String,
@@ -24,6 +26,7 @@ pub struct AuditRecordWithLocation {
     pub location: Option<LocationRecord>,
 }
 
+/// Contains the outcome of a blockchain verification process on the audit trail.
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct AuditVerificationResult {
     pub is_valid: bool,
@@ -34,6 +37,7 @@ pub struct AuditVerificationResult {
     pub error: Option<String>,
 }
 
+/// Contains the resulting hashes and chain index after appending a new record to the audit trail.
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct AuditAppendResult {
     pub hash: String,
@@ -47,6 +51,7 @@ struct EngineState {
     device_id: String,
 }
 
+/// Core engine responsible for maintaining a cryptographic chain of custody for location records.
 #[derive(uniffi::Object)]
 pub struct AuditTrailEngine {
     state: Mutex<EngineState>,
@@ -56,11 +61,13 @@ pub struct AuditTrailEngine {
 impl AuditTrailEngine {
 }
 
+/// Computes the genesis hash for a new device, seeding the audit chain.
 #[uniffi::export]
 pub fn compute_genesis_hash(device_id: String) -> String {
     sha256(format!("tracelet:genesis:{}", device_id))
 }
 
+/// Builds a deterministic canonical string from a location record and its preceding chain hash.
 #[uniffi::export]
 pub fn build_canonical_string(
     previous_hash: String,
@@ -84,6 +91,7 @@ pub fn build_canonical_string(
     )
 }
 
+/// Computes the SHA-256 hash of a given input string and returns the hex representation.
 #[uniffi::export]
 pub fn sha256(input: String) -> String {
     let mut hasher = Sha256::new();
@@ -94,6 +102,7 @@ pub fn sha256(input: String) -> String {
 
 #[uniffi::export]
 impl AuditTrailEngine {
+    /// Initializes a new AuditTrailEngine with the device identifier and initial state.
     #[uniffi::constructor]
     pub fn new(device_id: String, initial_chain_index: i32, initial_latest_hash: Option<String>) -> Self {
         let latest_hash = initial_latest_hash.unwrap_or_else(|| {
@@ -108,6 +117,7 @@ impl AuditTrailEngine {
             }),
         }
     }
+    /// Generates the next hash in the chain for a new location record.
     pub fn generate_next_hash(&self, loc: LocationRecord) -> AuditAppendResult {
         let mut state = self.state.lock().unwrap();
         
@@ -127,6 +137,7 @@ impl AuditTrailEngine {
         }
     }
 
+    /// Verifies the cryptographic integrity of a sequence of location records.
     pub fn verify_chain(
         &self,
         records: Vec<AuditRecordWithLocation>,
@@ -208,6 +219,7 @@ impl AuditTrailEngine {
         }
     }
 
+    /// Resets the engine state back to the genesis block.
     pub fn reset_state(&self) {
         let mut state = self.state.lock().unwrap();
         state.chain_index = 0;

@@ -1,6 +1,7 @@
 use std::f64;
 
 #[derive(Clone, Debug)]
+/// A basic axis-aligned bounding box used for spatial index checks.
 pub struct RTreeBBox {
     pub min_lat: f64,
     pub min_lng: f64,
@@ -45,6 +46,7 @@ impl RTreeBBox {
 }
 
 #[derive(Clone)]
+/// A leaf entry in the R-Tree storing an item's bounding box and its payload.
 pub struct RTreeEntry<T> {
     pub lat: f64,
     pub lng: f64,
@@ -67,6 +69,7 @@ impl<T> RTreeEntry<T> {
     }
 }
 
+/// A node in the R-Tree containing child nodes or leaf entries.
 pub struct RTreeNode<T> {
     pub is_leaf: bool,
     pub children: Vec<Box<RTreeNode<T>>>,
@@ -289,6 +292,7 @@ impl<T> RTreeNode<T> {
     }
 }
 
+/// A memory-efficient generic R-Tree for spatial querying (e.g. Geofence evaluation).
 pub struct RTree<T> {
     max_entries: usize,
     root: Option<Box<RTreeNode<T>>>,

@@ -6,6 +6,7 @@ const MAX_DISTANCE_FILTER: f64 = 5000.0;
 const THROTTLE_FACTOR: f64 = 1.5;
 const BOOST_FACTOR: f64 = 0.8;
 
+/// An event generated when the battery budget engine decides to throttle or modify tracking parameters.
 #[derive(uniffi::Record, Debug, Clone, Copy)]
 pub struct BudgetAdjustmentEvent {
     pub current_battery_drain: f64,
@@ -23,6 +24,7 @@ struct EngineState {
     prev_sample_time_ms: Option<i64>,
 }
 
+/// Engine that calculates optimal distance filters and sampling rates to preserve battery while maintaining tracking quality.
 #[derive(uniffi::Object)]
 pub struct BatteryBudgetEngine {
     target_budget_per_hour: f64,
@@ -31,6 +33,7 @@ pub struct BatteryBudgetEngine {
 
 #[uniffi::export]
 impl BatteryBudgetEngine {
+    /// Initializes the battery budget engine with the desired target budget and initial parameters.
     #[uniffi::constructor]
     pub fn new(
         target_budget_per_hour: f64,
@@ -52,11 +55,8 @@ impl BatteryBudgetEngine {
 
 
 
-    pub fn process_sample(
-        &self,
-        battery_level: f64,
-        now_ms: i64,
-    ) -> Option<BudgetAdjustmentEvent> {
+    /// Processes a new battery sample, updating the internal baseline and returning parameter adjustments if necessary.
+    pub fn process_sample(&self, battery_level: f64, now_ms: i64) -> Option<BudgetAdjustmentEvent> {
         let mut state = self.state.lock().unwrap();
         
         let (prev_level, prev_time) = match (state.prev_battery_level, state.prev_sample_time_ms) {
@@ -126,20 +126,24 @@ impl BatteryBudgetEngine {
         })
     }
 
+    /// Discards all historical battery samples and resets the baseline for budget calculations.
     pub fn reset(&self) {
         let mut state = self.state.lock().unwrap();
         state.prev_battery_level = None;
         state.prev_sample_time_ms = None;
     }
 
+    /// Returns the currently enforced distance filter (in meters).
     pub fn distance_filter(&self) -> f64 {
         self.state.lock().unwrap().distance_filter
     }
 
+    /// Returns the currently enforced accuracy index (0 = highest).
     pub fn accuracy_index(&self) -> i32 {
         self.state.lock().unwrap().accuracy_index
     }
 
+    /// Returns the currently enforced periodic interval (if any).
     pub fn periodic_interval(&self) -> Option<i32> {
         self.state.lock().unwrap().periodic_interval
     }

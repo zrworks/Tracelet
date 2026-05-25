@@ -1,6 +1,7 @@
 use crate::algorithms::geo_utils::haversine;
 use std::sync::Mutex;
 
+/// Represents the interpreted physical activity state of the device.
 #[derive(uniffi::Enum, Clone, Copy, PartialEq)]
 pub enum ActivityType {
     Still,
@@ -12,6 +13,7 @@ pub enum ActivityType {
     Unknown,
 }
 
+/// Confidence level of the associated physical activity.
 #[derive(uniffi::Enum, Clone, Copy, PartialEq)]
 pub enum ActivityConfidence {
     Low,
@@ -19,6 +21,7 @@ pub enum ActivityConfidence {
     High,
 }
 
+/// Environmental context used to adapt location sampling frequency.
 #[derive(uniffi::Record)]
 pub struct AdaptiveContext {
     pub battery_level: f64,
@@ -40,6 +43,7 @@ impl Default for AdaptiveContext {
     }
 }
 
+/// The primary factor driving the current adaptive sampling rate.
 #[derive(uniffi::Enum, Clone, Copy, PartialEq)]
 pub enum AdaptiveSource {
     Activity,
@@ -47,6 +51,7 @@ pub enum AdaptiveSource {
     Static,
 }
 
+/// Results from evaluating the current context to determine the optimal sampling parameters.
 #[derive(uniffi::Record)]
 pub struct AdaptiveSamplingResult {
     pub effective_distance_filter: f64,
@@ -57,6 +62,7 @@ pub struct AdaptiveSamplingResult {
     pub source: AdaptiveSource,
 }
 
+/// Core logic engine for dynamically adjusting distance filters based on context.
 #[derive(uniffi::Object)]
 pub struct AdaptiveSamplingEngine {
     base_distance_filter: f64,
@@ -153,6 +159,7 @@ impl AdaptiveSamplingEngine {
     }
 }
 
+/// Represents the outcome of filtering and processing a single location update.
 #[derive(uniffi::Record)]
 pub struct LocationProcessorResult {
     pub accepted: bool,
@@ -212,6 +219,7 @@ struct LocationProcessorState {
     last_effective_speed: f64,
 }
 
+/// Core location processing engine that handles filtering out inaccurate or redundant points.
 #[derive(uniffi::Object)]
 pub struct LocationProcessor {
     distance_filter: f64,

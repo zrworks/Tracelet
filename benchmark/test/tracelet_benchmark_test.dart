@@ -17,6 +17,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 import 'package:tracelet/tracelet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -424,7 +425,8 @@ void _benchHttpConfigSsl() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 void main() {
-  test('Tracelet Performance Benchmark', () {
+  test('Tracelet Performance Benchmark', () async {
+    await RustLib.init();
     print('Tracelet Performance Benchmark');
     print('Dart ${Platform.version.split(' ').first}');
     print(

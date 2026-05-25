@@ -147,3 +147,4 @@ skills-lock.json
 *.h
 **/jniLibs/
 sdk/rust-core/out/
+*.zip

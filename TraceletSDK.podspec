@@ -29,10 +29,17 @@ Pod::Spec.new do |s|
   s.vendored_frameworks = 'sdk/rust-core/out/TraceletCore.xcframework'
   
   s.prepare_command = <<-CMD
-    mkdir -p sdk/rust-core/out
-    curl -L "https://github.com/Ikolvi/Tracelet/releases/download/sdk-ios-v#{s.version}/TraceletCore.xcframework.zip" -o TraceletCore.xcframework.zip
-    unzip -o TraceletCore.xcframework.zip -d sdk/rust-core/out/
-    rm TraceletCore.xcframework.zip
+    if [ ! -d "sdk/rust-core/out/TraceletCore.xcframework" ]; then
+      echo "Downloading precompiled TraceletCore.xcframework..."
+      mkdir -p sdk/rust-core/out
+      curl -fL "https://github.com/Ikolvi/Tracelet/releases/download/sdk-ios-v#{s.version}/TraceletCore.xcframework.zip" -o TraceletCore.xcframework.zip || true
+      if [ -f TraceletCore.xcframework.zip ]; then
+        unzip -o TraceletCore.xcframework.zip -d sdk/rust-core/out/ || true
+        rm TraceletCore.xcframework.zip
+      fi
+    else
+      echo "Local TraceletCore.xcframework found. Skipping download."
+    fi
   CMD
 
   s.pod_target_xcconfig = {

@@ -8,9 +8,9 @@ import CoreLocation
 /// If EITHER sensor detects motion, the app stays in continuous tracking mode.
 /// If BOTH sensors detect stationary, the app stops continuous tracking and relies
 /// on Geofences/periodic wakeups to save battery.
-public class SmartMotionCoordinator {
+public class TraceletSmartMotionCoordinator {
     
-    private var coreCoordinator: SmartMotionCoordinatorCore?
+    private var coreCoordinator: SmartMotionCoordinator?
     
     public var isAccelMoving: Bool { coreCoordinator?.isAccelMoving() ?? false }
     public var isSpeedMoving: Bool { coreCoordinator?.isSpeedMoving() ?? true }
@@ -21,7 +21,7 @@ public class SmartMotionCoordinator {
         self.sdk = sdk
         
         let useGeofences = sdk.configManager?.getStationaryTrackingMode() == .geofences
-        self.coreCoordinator = SmartMotionCoordinatorCore(useGeofencesWhenStationary: useGeofences)
+        self.coreCoordinator = SmartMotionCoordinator(useGeofencesWhenStationary: useGeofences)
     }
     
     /// Synchronize the Rust core mode with the native StateManager on startup or mode change.

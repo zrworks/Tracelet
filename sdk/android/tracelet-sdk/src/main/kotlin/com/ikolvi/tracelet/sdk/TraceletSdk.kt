@@ -349,9 +349,28 @@ class TraceletSdk private constructor(private val context: Context) {
      *
      * ```kotlin
      * sdk.ready(TraceletConfig(
-     *     geo = GeoConfig(desiredAccuracy = DesiredAccuracy.HIGH, distanceFilter = 10.0),
      *     app = AppConfig(stopOnTerminate = false, startOnBoot = true),
      * )) { state -> /* ready */ }
+     * ```
+     */
+    fun requestStateFlush() {
+        val providerState = locationEngine.buildProviderState().toMutableMap()
+        providerState["event"] = "providerchange"
+        eventSender.sendProviderChange(providerState)
+        
+        val isMoving = stateManager.isMoving
+        val locationMap = locationEngine.getLastGpsLocation()?.let { 
+            val map = locationEngine.enrichLocation(it, "motionchange").toMutableMap()
+            map["is_moving"] = isMoving
+            map
+        } ?: mutableMapOf<String, Any?>("is_moving" to isMoving)
+        eventSender.sendMotionChange(locationMap)
+    }
+
+    /**
+     * Initializes configuration and completes SDK startup.
+     *
+     * Example:
      * ```
      *
      * @param config Typed configuration.
@@ -1485,7 +1504,9 @@ class TraceletSdk private constructor(private val context: Context) {
                     android.util.Log.d("Tracelet",
                         "Heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, accuracy=${cached.accuracy}m")
                 } else {
-                    android.util.Log.d("Tracelet", "Heartbeat: no cached location, skipping")
+                    if (configManager.isDebug()) {
+                        android.util.Log.d("Tracelet", "Heartbeat: no cached location, skipping")
+                    }
                 }
                 mainHandler.postDelayed(this, intervalSeconds * 1000L)
             }

@@ -666,6 +666,18 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_locationprocessor_reset(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_tripmanager_on_location_received(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_tripmanager_reset(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_audittrailengine_reset_state(
@@ -692,6 +704,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_reset(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving(
@@ -709,6 +723,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_locationprocessor_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_scheduleparser_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_tripmanager_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_audittrailengine_new(
     ): Short
@@ -772,6 +790,30 @@ external fun uniffi_tracelet_core_fn_method_locationprocessor_process(`ptr`: Lon
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_locationprocessor_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_tracelet_core_fn_clone_scheduleparser(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_scheduleparser(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_scheduleparser_new(uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_scheduleparser_calculate_next_alarms(`ptr`: Long,`schedules`: RustBuffer.ByValue,`timestampMs`: Long,`tzOffsetSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_scheduleparser_is_within_schedule(`ptr`: Long,`schedules`: RustBuffer.ByValue,`timestampMs`: Long,`tzOffsetSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
+external fun uniffi_tracelet_core_fn_clone_tripmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_tripmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_tripmanager_new(uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_tripmanager_is_trip_active(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
+external fun uniffi_tracelet_core_fn_method_tripmanager_on_location_received(`ptr`: Long,`latitude`: Double,`longitude`: Double,`timestampMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_tripmanager_on_motion_state_changed(`ptr`: Long,`isMoving`: Byte,`latitude`: RustBuffer.ByValue,`longitude`: RustBuffer.ByValue,`timestampMs`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_tripmanager_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
 external fun uniffi_tracelet_core_fn_clone_audittrailengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_free_audittrailengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -822,6 +864,8 @@ external fun uniffi_tracelet_core_fn_free_smartmotioncoordinator(`handle`: Long,
 ): Unit
 external fun uniffi_tracelet_core_fn_constructor_smartmotioncoordinator_new(`useGeofencesWhenStationary`: Byte,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
+external fun uniffi_tracelet_core_fn_method_smartmotioncoordinator_evaluate_configuration_change(`ptr`: Long,`useGeofences`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_accel_moving(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
 external fun uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_speed_moving(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -965,34 +1009,34 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_tracelet_core_checksum_func_haversine() != 50519.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_haversine() != 15996.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 57508.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 16595.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_func_build_canonical_string() != 22658.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_build_canonical_string() != 7071.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_func_compute_genesis_hash() != 9298.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_compute_genesis_hash() != 52889.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_func_sha256() != 62639.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_sha256() != 14625.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_func_encode_deltas() != 49460.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_func_encode_deltas() != 25656.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 60857.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 64160.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized() != 40389.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized() != 41347.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process() != 5966.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process() != 7091.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset() != 3495.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset() != 57673.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_adaptivesamplingengine_compute() != 3823.toShort()) {
@@ -1010,64 +1054,85 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_locationprocessor_reset() != 105.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 11657.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms() != 37817.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_reset_state() != 35890.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 16562.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 18303.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 47274.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_tripmanager_on_location_received() != 23895.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed() != 58332.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_tripmanager_reset() != 31344.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 5395.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_reset_state() != 41935.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 38541.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index() != 13907.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index() != 37834.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity() != 35353.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity() != 38287.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences() != 8803.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences() != 2949.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 28291.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 65350.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter() != 9862.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter() != 53495.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval() != 18140.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval() != 39961.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample() != 42298.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample() != 13825.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 27366.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 51841.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving() != 19521.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change() != 42508.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving() != 15267.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving() != 61939.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change() != 21639.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving() != 50415.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change() != 45645.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change() != 22813.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode() != 33542.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change() != 53539.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode() != 43105.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 58796.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 44956.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new() != 3978.toShort()) {
@@ -1076,16 +1141,22 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_constructor_locationprocessor_new() != 1269.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 28924.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 36401.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 56699.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 53892.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 9629.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 16361.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 29624.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 27221.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 13932.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1490,6 +1561,9 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 //
 
 
+/**
+ * Core logic engine for dynamically adjusting distance filters based on context.
+ */
 public interface AdaptiveSamplingEngineInterface {
     
     fun `compute`(`context`: AdaptiveContext): AdaptiveSamplingResult
@@ -1497,6 +1571,9 @@ public interface AdaptiveSamplingEngineInterface {
     companion object
 }
 
+/**
+ * Core logic engine for dynamically adjusting distance filters based on context.
+ */
 open class AdaptiveSamplingEngine: Disposable, AutoCloseable, AdaptiveSamplingEngineInterface
 {
 
@@ -1748,17 +1825,32 @@ public object FfiConverterTypeAdaptiveSamplingEngine: FfiConverter<AdaptiveSampl
 //
 
 
+/**
+ * Core engine responsible for maintaining a cryptographic chain of custody for location records.
+ */
 public interface AuditTrailEngineInterface {
     
+    /**
+     * Generates the next hash in the chain for a new location record.
+     */
     fun `generateNextHash`(`loc`: LocationRecord): AuditAppendResult
     
+    /**
+     * Resets the engine state back to the genesis block.
+     */
     fun `resetState`()
     
+    /**
+     * Verifies the cryptographic integrity of a sequence of location records.
+     */
     fun `verifyChain`(`records`: List<AuditRecordWithLocation>): AuditVerificationResult
     
     companion object
 }
 
+/**
+ * Core engine responsible for maintaining a cryptographic chain of custody for location records.
+ */
 open class AuditTrailEngine: Disposable, AutoCloseable, AuditTrailEngineInterface
 {
 
@@ -1783,6 +1875,9 @@ open class AuditTrailEngine: Disposable, AutoCloseable, AuditTrailEngineInterfac
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * Initializes a new AuditTrailEngine with the device identifier and initial state.
+     */
     constructor(`deviceId`: kotlin.String, `initialChainIndex`: kotlin.Int, `initialLatestHash`: kotlin.String?) :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -1863,7 +1958,10 @@ open class AuditTrailEngine: Disposable, AutoCloseable, AuditTrailEngineInterfac
         }
     }
 
-    override fun `generateNextHash`(`loc`: LocationRecord): AuditAppendResult {
+    
+    /**
+     * Generates the next hash in the chain for a new location record.
+     */override fun `generateNextHash`(`loc`: LocationRecord): AuditAppendResult {
             return FfiConverterTypeAuditAppendResult.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1876,7 +1974,10 @@ open class AuditTrailEngine: Disposable, AutoCloseable, AuditTrailEngineInterfac
     }
     
 
-    override fun `resetState`()
+    
+    /**
+     * Resets the engine state back to the genesis block.
+     */override fun `resetState`()
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1888,7 +1989,10 @@ open class AuditTrailEngine: Disposable, AutoCloseable, AuditTrailEngineInterfac
     
     
 
-    override fun `verifyChain`(`records`: List<AuditRecordWithLocation>): AuditVerificationResult {
+    
+    /**
+     * Verifies the cryptographic integrity of a sequence of location records.
+     */override fun `verifyChain`(`records`: List<AuditRecordWithLocation>): AuditVerificationResult {
             return FfiConverterTypeAuditVerificationResult.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2035,21 +2139,42 @@ public object FfiConverterTypeAuditTrailEngine: FfiConverter<AuditTrailEngine, L
 //
 
 
+/**
+ * Engine that calculates optimal distance filters and sampling rates to preserve battery while maintaining tracking quality.
+ */
 public interface BatteryBudgetEngineInterface {
     
+    /**
+     * Returns the currently enforced accuracy index (0 = highest).
+     */
     fun `accuracyIndex`(): kotlin.Int
     
+    /**
+     * Returns the currently enforced distance filter (in meters).
+     */
     fun `distanceFilter`(): kotlin.Double
     
+    /**
+     * Returns the currently enforced periodic interval (if any).
+     */
     fun `periodicInterval`(): kotlin.Int?
     
+    /**
+     * Processes a new battery sample, updating the internal baseline and returning parameter adjustments if necessary.
+     */
     fun `processSample`(`batteryLevel`: kotlin.Double, `nowMs`: kotlin.Long): BudgetAdjustmentEvent?
     
+    /**
+     * Discards all historical battery samples and resets the baseline for budget calculations.
+     */
     fun `reset`()
     
     companion object
 }
 
+/**
+ * Engine that calculates optimal distance filters and sampling rates to preserve battery while maintaining tracking quality.
+ */
 open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineInterface
 {
 
@@ -2074,6 +2199,9 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * Initializes the battery budget engine with the desired target budget and initial parameters.
+     */
     constructor(`targetBudgetPerHour`: kotlin.Double, `initialDistanceFilter`: kotlin.Double, `initialAccuracyIndex`: kotlin.Int, `initialPeriodicInterval`: kotlin.Int?) :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -2154,7 +2282,10 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
         }
     }
 
-    override fun `accuracyIndex`(): kotlin.Int {
+    
+    /**
+     * Returns the currently enforced accuracy index (0 = highest).
+     */override fun `accuracyIndex`(): kotlin.Int {
             return FfiConverterInt.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2167,7 +2298,10 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
     }
     
 
-    override fun `distanceFilter`(): kotlin.Double {
+    
+    /**
+     * Returns the currently enforced distance filter (in meters).
+     */override fun `distanceFilter`(): kotlin.Double {
             return FfiConverterDouble.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2180,7 +2314,10 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
     }
     
 
-    override fun `periodicInterval`(): kotlin.Int? {
+    
+    /**
+     * Returns the currently enforced periodic interval (if any).
+     */override fun `periodicInterval`(): kotlin.Int? {
             return FfiConverterOptionalInt.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2193,7 +2330,10 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
     }
     
 
-    override fun `processSample`(`batteryLevel`: kotlin.Double, `nowMs`: kotlin.Long): BudgetAdjustmentEvent? {
+    
+    /**
+     * Processes a new battery sample, updating the internal baseline and returning parameter adjustments if necessary.
+     */override fun `processSample`(`batteryLevel`: kotlin.Double, `nowMs`: kotlin.Long): BudgetAdjustmentEvent? {
             return FfiConverterOptionalTypeBudgetAdjustmentEvent.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2206,7 +2346,10 @@ open class BatteryBudgetEngine: Disposable, AutoCloseable, BatteryBudgetEngineIn
     }
     
 
-    override fun `reset`()
+    
+    /**
+     * Discards all historical battery samples and resets the baseline for budget calculations.
+     */override fun `reset`()
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2352,14 +2495,26 @@ public object FfiConverterTypeBatteryBudgetEngine: FfiConverter<BatteryBudgetEng
 //
 
 
+/**
+ * Evaluates location updates against active geofences to detect boundary crossings.
+ */
 public interface GeofenceEvaluatorInterface {
     
     fun `clear`()
     
+    /**
+     * Clears the current spatial index.
+     */
     fun `clearIndex`()
     
+    /**
+     * Evaluates a location update and returns a list of triggered geofence transitions.
+     */
     fun `evaluateProximity`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `geofences`: List<CoreGeofence>): List<GeofenceTransition>
     
+    /**
+     * Indexes a collection of geofences for efficient spatial querying.
+     */
     fun `indexGeofences`(`geofences`: List<CoreGeofence>)
     
     fun `removeGeofence`(`identifier`: kotlin.String)
@@ -2367,6 +2522,9 @@ public interface GeofenceEvaluatorInterface {
     companion object
 }
 
+/**
+ * Evaluates location updates against active geofences to detect boundary crossings.
+ */
 open class GeofenceEvaluator: Disposable, AutoCloseable, GeofenceEvaluatorInterface
 {
 
@@ -2391,6 +2549,9 @@ open class GeofenceEvaluator: Disposable, AutoCloseable, GeofenceEvaluatorInterf
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * Initializes a new GeofenceEvaluator.
+     */
     constructor() :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -2483,7 +2644,10 @@ open class GeofenceEvaluator: Disposable, AutoCloseable, GeofenceEvaluatorInterf
     
     
 
-    override fun `clearIndex`()
+    
+    /**
+     * Clears the current spatial index.
+     */override fun `clearIndex`()
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2495,7 +2659,10 @@ open class GeofenceEvaluator: Disposable, AutoCloseable, GeofenceEvaluatorInterf
     
     
 
-    override fun `evaluateProximity`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `geofences`: List<CoreGeofence>): List<GeofenceTransition> {
+    
+    /**
+     * Evaluates a location update and returns a list of triggered geofence transitions.
+     */override fun `evaluateProximity`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `geofences`: List<CoreGeofence>): List<GeofenceTransition> {
             return FfiConverterSequenceTypeGeofenceTransition.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2508,7 +2675,10 @@ open class GeofenceEvaluator: Disposable, AutoCloseable, GeofenceEvaluatorInterf
     }
     
 
-    override fun `indexGeofences`(`geofences`: List<CoreGeofence>)
+    
+    /**
+     * Indexes a collection of geofences for efficient spatial querying.
+     */override fun `indexGeofences`(`geofences`: List<CoreGeofence>)
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2666,19 +2836,37 @@ public object FfiConverterTypeGeofenceEvaluator: FfiConverter<GeofenceEvaluator,
 //
 
 
+/**
+ * Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
+ */
 public interface KalmanLocationFilterInterface {
     
+    /**
+     * Returns the currently estimated speed (in meters per second) from the filter's state.
+     */
     fun `estimatedSpeed`(): kotlin.Double
     
+    /**
+     * Returns true if the filter has been seeded with an initial location.
+     */
     fun `isInitialized`(): kotlin.Boolean
     
+    /**
+     * Processes a new location measurement and returns the smoothed coordinates.
+     */
     fun `process`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `accuracy`: kotlin.Double, `timestampMs`: kotlin.Long): LatLng
     
+    /**
+     * Resets the internal state of the filter, clearing the history.
+     */
     fun `reset`()
     
     companion object
 }
 
+/**
+ * Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
+ */
 open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilterInterface
 {
 
@@ -2703,6 +2891,9 @@ open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilter
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * Initializes a new KalmanLocationFilter state.
+     */
     constructor() :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -2783,7 +2974,10 @@ open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilter
         }
     }
 
-    override fun `estimatedSpeed`(): kotlin.Double {
+    
+    /**
+     * Returns the currently estimated speed (in meters per second) from the filter's state.
+     */override fun `estimatedSpeed`(): kotlin.Double {
             return FfiConverterDouble.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2796,7 +2990,10 @@ open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilter
     }
     
 
-    override fun `isInitialized`(): kotlin.Boolean {
+    
+    /**
+     * Returns true if the filter has been seeded with an initial location.
+     */override fun `isInitialized`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2809,7 +3006,10 @@ open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilter
     }
     
 
-    override fun `process`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `accuracy`: kotlin.Double, `timestampMs`: kotlin.Long): LatLng {
+    
+    /**
+     * Processes a new location measurement and returns the smoothed coordinates.
+     */override fun `process`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `accuracy`: kotlin.Double, `timestampMs`: kotlin.Long): LatLng {
             return FfiConverterTypeLatLng.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2822,7 +3022,10 @@ open class KalmanLocationFilter: Disposable, AutoCloseable, KalmanLocationFilter
     }
     
 
-    override fun `reset`()
+    
+    /**
+     * Resets the internal state of the filter, clearing the history.
+     */override fun `reset`()
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -2968,6 +3171,9 @@ public object FfiConverterTypeKalmanLocationFilter: FfiConverter<KalmanLocationF
 //
 
 
+/**
+ * Core location processing engine that handles filtering out inaccurate or redundant points.
+ */
 public interface LocationProcessorInterface {
     
     fun `hasLastLocation`(): kotlin.Boolean
@@ -2981,6 +3187,9 @@ public interface LocationProcessorInterface {
     companion object
 }
 
+/**
+ * Core location processing engine that handles filtering out inaccurate or redundant points.
+ */
 open class LocationProcessor: Disposable, AutoCloseable, LocationProcessorInterface
 {
 
@@ -3270,16 +3479,334 @@ public object FfiConverterTypeLocationProcessor: FfiConverter<LocationProcessor,
 //
 
 
+/**
+ * Parses and evaluates tracking schedules to determine whether tracking should be active.
+ */
+public interface ScheduleParserInterface {
+    
+    /**
+     * Computes the next scheduled start and stop times, evaluating all provided schedules.
+     */
+    fun `calculateNextAlarms`(`schedules`: List<kotlin.String>, `timestampMs`: kotlin.Long, `tzOffsetSeconds`: kotlin.Int): ScheduleAlarms
+    
+    /**
+     * Determines whether the provided timestamp falls within any of the defined schedules.
+     */
+    fun `isWithinSchedule`(`schedules`: List<kotlin.String>, `timestampMs`: kotlin.Long, `tzOffsetSeconds`: kotlin.Int): kotlin.Boolean
+    
+    companion object
+}
+
+/**
+ * Parses and evaluates tracking schedules to determine whether tracking should be active.
+ */
+open class ScheduleParser: Disposable, AutoCloseable, ScheduleParserInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Initializes a new instance of the ScheduleParser.
+     */
+    constructor() :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_scheduleparser_new(
+    
+        _status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_scheduleparser(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_scheduleparser(handle, status)
+        }
+    }
+
+    
+    /**
+     * Computes the next scheduled start and stop times, evaluating all provided schedules.
+     */override fun `calculateNextAlarms`(`schedules`: List<kotlin.String>, `timestampMs`: kotlin.Long, `tzOffsetSeconds`: kotlin.Int): ScheduleAlarms {
+            return FfiConverterTypeScheduleAlarms.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_scheduleparser_calculate_next_alarms(
+        it,
+        FfiConverterSequenceString.lower(`schedules`),FfiConverterLong.lower(`timestampMs`),FfiConverterInt.lower(`tzOffsetSeconds`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Determines whether the provided timestamp falls within any of the defined schedules.
+     */override fun `isWithinSchedule`(`schedules`: List<kotlin.String>, `timestampMs`: kotlin.Long, `tzOffsetSeconds`: kotlin.Int): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_scheduleparser_is_within_schedule(
+        it,
+        FfiConverterSequenceString.lower(`schedules`),FfiConverterLong.lower(`timestampMs`),FfiConverterInt.lower(`tzOffsetSeconds`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeScheduleParser: FfiConverter<ScheduleParser, Long> {
+    override fun lower(value: ScheduleParser): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): ScheduleParser {
+        return ScheduleParser(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): ScheduleParser {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: ScheduleParser) = 8UL
+
+    override fun write(value: ScheduleParser, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * Orchestrates the transition between different tracking modes based on sensor motion data.
+ */
 public interface SmartMotionCoordinatorInterface {
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     * Re-evaluates the tracking mode whenever the underlying configuration (e.g. geofence usage) changes.
+     */
+    fun `evaluateConfigurationChange`(`useGeofences`: kotlin.Boolean): CoordinatorAction
+    
+    /**
+     * Returns true if accelerometer data currently indicates motion.
+     */
     fun `isAccelMoving`(): kotlin.Boolean
     
+    /**
+     * Returns true if GPS speed currently indicates motion.
+     */
     fun `isSpeedMoving`(): kotlin.Boolean
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     */
     fun `onAccelStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction
     
+    /**
+     * Evaluates changes in the GPS-speed-based motion state.
+     */
     fun `onSpeedStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction
     
+    /**
+     * Forces the tracking mode to a specific state, ignoring internal motion flags.
+     */
     fun `setCurrentMode`(`mode`: TrackingMode)
     
     fun `setUseGeofencesWhenStationary`(`useGeofences`: kotlin.Boolean)
@@ -3287,6 +3814,9 @@ public interface SmartMotionCoordinatorInterface {
     companion object
 }
 
+/**
+ * Orchestrates the transition between different tracking modes based on sensor motion data.
+ */
 open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordinatorInterface
 {
 
@@ -3311,6 +3841,9 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * Initializes a new motion coordinator with the specified geofence usage preference.
+     */
     constructor(`useGeofencesWhenStationary`: kotlin.Boolean) :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -3391,7 +3924,27 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
         }
     }
 
-    override fun `isAccelMoving`(): kotlin.Boolean {
+    
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     * Re-evaluates the tracking mode whenever the underlying configuration (e.g. geofence usage) changes.
+     */override fun `evaluateConfigurationChange`(`useGeofences`: kotlin.Boolean): CoordinatorAction {
+            return FfiConverterTypeCoordinatorAction.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_smartmotioncoordinator_evaluate_configuration_change(
+        it,
+        FfiConverterBoolean.lower(`useGeofences`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Returns true if accelerometer data currently indicates motion.
+     */override fun `isAccelMoving`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -3404,7 +3957,10 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
     }
     
 
-    override fun `isSpeedMoving`(): kotlin.Boolean {
+    
+    /**
+     * Returns true if GPS speed currently indicates motion.
+     */override fun `isSpeedMoving`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -3417,7 +3973,10 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
     }
     
 
-    override fun `onAccelStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction {
+    
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     */override fun `onAccelStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction {
             return FfiConverterTypeCoordinatorAction.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -3430,7 +3989,10 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
     }
     
 
-    override fun `onSpeedStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction {
+    
+    /**
+     * Evaluates changes in the GPS-speed-based motion state.
+     */override fun `onSpeedStateChange`(`isMoving`: kotlin.Boolean): CoordinatorAction {
             return FfiConverterTypeCoordinatorAction.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -3443,7 +4005,10 @@ open class SmartMotionCoordinator: Disposable, AutoCloseable, SmartMotionCoordin
     }
     
 
-    override fun `setCurrentMode`(`mode`: TrackingMode)
+    
+    /**
+     * Forces the tracking mode to a specific state, ignoring internal motion flags.
+     */override fun `setCurrentMode`(`mode`: TrackingMode)
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -3506,7 +4071,346 @@ public object FfiConverterTypeSmartMotionCoordinator: FfiConverter<SmartMotionCo
 }
 
 
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
 
+
+/**
+ * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
+ */
+public interface TripManagerInterface {
+    
+    /**
+     * Returns true if a trip is currently being tracked.
+     */
+    fun `isTripActive`(): kotlin.Boolean
+    
+    /**
+     * Feeds a new location sample into the active trip to update its path and distance.
+     */
+    fun `onLocationReceived`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `timestampMs`: kotlin.Long)
+    
+    /**
+     * Evaluates a motion state transition to determine if a trip has started or ended.
+     * If a trip ended, it returns the accumulated `TripData`.
+     */
+    fun `onMotionStateChanged`(`isMoving`: kotlin.Boolean, `latitude`: kotlin.Double?, `longitude`: kotlin.Double?, `timestampMs`: kotlin.Long, `nowMs`: kotlin.Long): TripData?
+    
+    /**
+     * Resets the trip manager, discarding any active trip and path data.
+     */
+    fun `reset`()
+    
+    companion object
+}
+
+/**
+ * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
+ */
+open class TripManager: Disposable, AutoCloseable, TripManagerInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Initializes a new TripManager state machine.
+     */
+    constructor() :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_tripmanager_new(
+    
+        _status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_tripmanager(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_tripmanager(handle, status)
+        }
+    }
+
+    
+    /**
+     * Returns true if a trip is currently being tracked.
+     */override fun `isTripActive`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_tripmanager_is_trip_active(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Feeds a new location sample into the active trip to update its path and distance.
+     */override fun `onLocationReceived`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `timestampMs`: kotlin.Long)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_tripmanager_on_location_received(
+        it,
+        FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterLong.lower(`timestampMs`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Evaluates a motion state transition to determine if a trip has started or ended.
+     * If a trip ended, it returns the accumulated `TripData`.
+     */override fun `onMotionStateChanged`(`isMoving`: kotlin.Boolean, `latitude`: kotlin.Double?, `longitude`: kotlin.Double?, `timestampMs`: kotlin.Long, `nowMs`: kotlin.Long): TripData? {
+            return FfiConverterOptionalTypeTripData.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_tripmanager_on_motion_state_changed(
+        it,
+        FfiConverterBoolean.lower(`isMoving`),FfiConverterOptionalDouble.lower(`latitude`),FfiConverterOptionalDouble.lower(`longitude`),FfiConverterLong.lower(`timestampMs`),FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Resets the trip manager, discarding any active trip and path data.
+     */override fun `reset`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_tripmanager_reset(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTripManager: FfiConverter<TripManager, Long> {
+    override fun lower(value: TripManager): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): TripManager {
+        return TripManager(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): TripManager {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: TripManager) = 8UL
+
+    override fun write(value: TripManager, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+
+/**
+ * Environmental context used to adapt location sampling frequency.
+ */
 data class AdaptiveContext (
     var `batteryLevel`: kotlin.Double
     , 
@@ -3560,6 +4464,9 @@ public object FfiConverterTypeAdaptiveContext: FfiConverterRustBuffer<AdaptiveCo
 
 
 
+/**
+ * Results from evaluating the current context to determine the optimal sampling parameters.
+ */
 data class AdaptiveSamplingResult (
     var `effectiveDistanceFilter`: kotlin.Double
     , 
@@ -3618,6 +4525,9 @@ public object FfiConverterTypeAdaptiveSamplingResult: FfiConverterRustBuffer<Ada
 
 
 
+/**
+ * Contains the resulting hashes and chain index after appending a new record to the audit trail.
+ */
 data class AuditAppendResult (
     var `hash`: kotlin.String
     , 
@@ -3661,6 +4571,9 @@ public object FfiConverterTypeAuditAppendResult: FfiConverterRustBuffer<AuditApp
 
 
 
+/**
+ * Represents an audited location entry securely chained to the previous record.
+ */
 data class AuditRecordWithLocation (
     var `hash`: kotlin.String
     , 
@@ -3714,6 +4627,9 @@ public object FfiConverterTypeAuditRecordWithLocation: FfiConverterRustBuffer<Au
 
 
 
+/**
+ * Contains the outcome of a blockchain verification process on the audit trail.
+ */
 data class AuditVerificationResult (
     var `isValid`: kotlin.Boolean
     , 
@@ -3772,6 +4688,9 @@ public object FfiConverterTypeAuditVerificationResult: FfiConverterRustBuffer<Au
 
 
 
+/**
+ * An event generated when the battery budget engine decides to throttle or modify tracking parameters.
+ */
 data class BudgetAdjustmentEvent (
     var `currentBatteryDrain`: kotlin.Double
     , 
@@ -3825,6 +4744,9 @@ public object FfiConverterTypeBudgetAdjustmentEvent: FfiConverterRustBuffer<Budg
 
 
 
+/**
+ * Represents a 2D geographical coordinate using latitude and longitude.
+ */
 data class Coordinate (
     var `lat`: kotlin.Double
     , 
@@ -3863,6 +4785,9 @@ public object FfiConverterTypeCoordinate: FfiConverterRustBuffer<Coordinate> {
 
 
 
+/**
+ * Defines a geofence with a spatial polygon or circular radius for evaluation.
+ */
 data class CoreGeofence (
     var `identifier`: kotlin.String
     , 
@@ -3916,6 +4841,9 @@ public object FfiConverterTypeCoreGeofence: FfiConverterRustBuffer<CoreGeofence>
 
 
 
+/**
+ * Represents a crossing event when a user enters or exits a geofence.
+ */
 data class GeofenceTransition (
     var `identifier`: kotlin.String
     , 
@@ -3954,6 +4882,9 @@ public object FfiConverterTypeGeofenceTransition: FfiConverterRustBuffer<Geofenc
 
 
 
+/**
+ * A simple geographical point used for the smoothed output of the Kalman filter.
+ */
 data class LatLng (
     var `latitude`: kotlin.Double
     , 
@@ -3992,6 +4923,9 @@ public object FfiConverterTypeLatLng: FfiConverterRustBuffer<LatLng> {
 
 
 
+/**
+ * Represents the outcome of filtering and processing a single location update.
+ */
 data class LocationProcessorResult (
     var `accepted`: kotlin.Boolean
     , 
@@ -4055,6 +4989,9 @@ public object FfiConverterTypeLocationProcessorResult: FfiConverterRustBuffer<Lo
 
 
 
+/**
+ * Represents a raw location sample with all its properties formatted for hashing.
+ */
 data class LocationRecord (
     var `uuid`: kotlin.String
     , 
@@ -4133,6 +5070,193 @@ public object FfiConverterTypeLocationRecord: FfiConverterRustBuffer<LocationRec
 
 
 
+/**
+ * Contains the next absolute start and stop timestamps (in milliseconds) calculated from a schedule.
+ */
+data class ScheduleAlarms (
+    var `nextStartMs`: kotlin.Long
+    , 
+    var `nextStopMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeScheduleAlarms: FfiConverterRustBuffer<ScheduleAlarms> {
+    override fun read(buf: ByteBuffer): ScheduleAlarms {
+        return ScheduleAlarms(
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ScheduleAlarms) = (
+            FfiConverterLong.allocationSize(value.`nextStartMs`) +
+            FfiConverterLong.allocationSize(value.`nextStopMs`)
+    )
+
+    override fun write(value: ScheduleAlarms, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`nextStartMs`, buf)
+            FfiConverterLong.write(value.`nextStopMs`, buf)
+    }
+}
+
+
+
+/**
+ * Summarized data for a tracked trip, including distance, duration, and path.
+ */
+data class TripData (
+    var `distanceMeters`: kotlin.Double
+    , 
+    var `durationSeconds`: kotlin.Double
+    , 
+    var `startLocation`: TripLocation?
+    , 
+    var `stopLocation`: TripLocation?
+    , 
+    var `waypoints`: List<TripWaypoint>
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTripData: FfiConverterRustBuffer<TripData> {
+    override fun read(buf: ByteBuffer): TripData {
+        return TripData(
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterOptionalTypeTripLocation.read(buf),
+            FfiConverterOptionalTypeTripLocation.read(buf),
+            FfiConverterSequenceTypeTripWaypoint.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: TripData) = (
+            FfiConverterDouble.allocationSize(value.`distanceMeters`) +
+            FfiConverterDouble.allocationSize(value.`durationSeconds`) +
+            FfiConverterOptionalTypeTripLocation.allocationSize(value.`startLocation`) +
+            FfiConverterOptionalTypeTripLocation.allocationSize(value.`stopLocation`) +
+            FfiConverterSequenceTypeTripWaypoint.allocationSize(value.`waypoints`)
+    )
+
+    override fun write(value: TripData, buf: ByteBuffer) {
+            FfiConverterDouble.write(value.`distanceMeters`, buf)
+            FfiConverterDouble.write(value.`durationSeconds`, buf)
+            FfiConverterOptionalTypeTripLocation.write(value.`startLocation`, buf)
+            FfiConverterOptionalTypeTripLocation.write(value.`stopLocation`, buf)
+            FfiConverterSequenceTypeTripWaypoint.write(value.`waypoints`, buf)
+    }
+}
+
+
+
+/**
+ * Represents the start or end geographical location of a trip.
+ */
+data class TripLocation (
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTripLocation: FfiConverterRustBuffer<TripLocation> {
+    override fun read(buf: ByteBuffer): TripLocation {
+        return TripLocation(
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: TripLocation) = (
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`)
+    )
+
+    override fun write(value: TripLocation, buf: ByteBuffer) {
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+    }
+}
+
+
+
+/**
+ * A geographical point recorded as part of a trip's path.
+ */
+data class TripWaypoint (
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `timestampMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTripWaypoint: FfiConverterRustBuffer<TripWaypoint> {
+    override fun read(buf: ByteBuffer): TripWaypoint {
+        return TripWaypoint(
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: TripWaypoint) = (
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterLong.allocationSize(value.`timestampMs`)
+    )
+
+    override fun write(value: TripWaypoint, buf: ByteBuffer) {
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterLong.write(value.`timestampMs`, buf)
+    }
+}
+
+
+
+/**
+ * Confidence level of the associated physical activity.
+ */
 
 enum class ActivityConfidence {
     
@@ -4168,6 +5292,9 @@ public object FfiConverterTypeActivityConfidence: FfiConverterRustBuffer<Activit
 
 
 
+/**
+ * Represents the interpreted physical activity state of the device.
+ */
 
 enum class ActivityType {
     
@@ -4207,6 +5334,9 @@ public object FfiConverterTypeActivityType: FfiConverterRustBuffer<ActivityType>
 
 
 
+/**
+ * The primary factor driving the current adaptive sampling rate.
+ */
 
 enum class AdaptiveSource {
     
@@ -4242,6 +5372,9 @@ public object FfiConverterTypeAdaptiveSource: FfiConverterRustBuffer<AdaptiveSou
 
 
 
+/**
+ * Represents an actionable state transition proposed by the coordinator.
+ */
 
 enum class CoordinatorAction {
     
@@ -4278,6 +5411,9 @@ public object FfiConverterTypeCoordinatorAction: FfiConverterRustBuffer<Coordina
 
 
 
+/**
+ * Represents the high-level operational tracking mode of the background service.
+ */
 
 enum class TrackingMode {
     
@@ -4339,6 +5475,38 @@ public object FfiConverterOptionalInt: FfiConverterRustBuffer<kotlin.Int?> {
         } else {
             buf.put(1)
             FfiConverterInt.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalDouble: FfiConverterRustBuffer<kotlin.Double?> {
+    override fun read(buf: ByteBuffer): kotlin.Double? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterDouble.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Double?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterDouble.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Double?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterDouble.write(value, buf)
         }
     }
 }
@@ -4477,6 +5645,98 @@ public object FfiConverterOptionalTypeLocationRecord: FfiConverterRustBuffer<Loc
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeTripData: FfiConverterRustBuffer<TripData?> {
+    override fun read(buf: ByteBuffer): TripData? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeTripData.read(buf)
+    }
+
+    override fun allocationSize(value: TripData?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeTripData.allocationSize(value)
+        }
+    }
+
+    override fun write(value: TripData?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeTripData.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeTripLocation: FfiConverterRustBuffer<TripLocation?> {
+    override fun read(buf: ByteBuffer): TripLocation? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeTripLocation.read(buf)
+    }
+
+    override fun allocationSize(value: TripLocation?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeTripLocation.allocationSize(value)
+        }
+    }
+
+    override fun write(value: TripLocation?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeTripLocation.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
+    override fun read(buf: ByteBuffer): List<kotlin.String> {
+        val len = buf.getInt()
+        return List<kotlin.String>(len) {
+            FfiConverterString.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.String>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterString.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.String>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterString.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeAuditRecordWithLocation: FfiConverterRustBuffer<List<AuditRecordWithLocation>> {
     override fun read(buf: ByteBuffer): List<AuditRecordWithLocation> {
         val len = buf.getInt()
@@ -4581,7 +5841,39 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
             FfiConverterTypeGeofenceTransition.write(it, buf)
         }
     }
-} fun `haversine`(`lat1`: kotlin.Double, `lon1`: kotlin.Double, `lat2`: kotlin.Double, `lon2`: kotlin.Double): kotlin.Double {
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer<List<TripWaypoint>> {
+    override fun read(buf: ByteBuffer): List<TripWaypoint> {
+        val len = buf.getInt()
+        return List<TripWaypoint>(len) {
+            FfiConverterTypeTripWaypoint.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<TripWaypoint>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeTripWaypoint.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<TripWaypoint>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeTripWaypoint.write(it, buf)
+        }
+    }
+}
+        /**
+         * Calculates the great-circle distance between two points on the Earth's surface using the Haversine formula.
+         * Returns the distance in meters.
+         */ fun `haversine`(`lat1`: kotlin.Double, `lon1`: kotlin.Double, `lat2`: kotlin.Double, `lon2`: kotlin.Double): kotlin.Double {
             return FfiConverterDouble.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_haversine(
@@ -4591,7 +5883,10 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
     )
     }
     
- fun `isPointInPolygon`(`lat`: kotlin.Double, `lng`: kotlin.Double, `vertices`: List<Coordinate>): kotlin.Boolean {
+
+        /**
+         * Uses the ray-casting algorithm to determine if a point is strictly inside a polygon.
+         */ fun `isPointInPolygon`(`lat`: kotlin.Double, `lng`: kotlin.Double, `vertices`: List<Coordinate>): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_is_point_in_polygon(
@@ -4601,7 +5896,10 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
     )
     }
     
- fun `buildCanonicalString`(`previousHash`: kotlin.String, `chainIndex`: kotlin.Int, `loc`: LocationRecord): kotlin.String {
+
+        /**
+         * Builds a deterministic canonical string from a location record and its preceding chain hash.
+         */ fun `buildCanonicalString`(`previousHash`: kotlin.String, `chainIndex`: kotlin.Int, `loc`: LocationRecord): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_build_canonical_string(
@@ -4611,7 +5909,10 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
     )
     }
     
- fun `computeGenesisHash`(`deviceId`: kotlin.String): kotlin.String {
+
+        /**
+         * Computes the genesis hash for a new device, seeding the audit chain.
+         */ fun `computeGenesisHash`(`deviceId`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_compute_genesis_hash(
@@ -4621,7 +5922,10 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
     )
     }
     
- fun `sha256`(`input`: kotlin.String): kotlin.String {
+
+        /**
+         * Computes the SHA-256 hash of a given input string and returns the hex representation.
+         */ fun `sha256`(`input`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_sha256(
@@ -4631,7 +5935,11 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
     )
     }
     
- fun `encodeDeltas`(`batchJson`: kotlin.String, `precision`: kotlin.Int): kotlin.String {
+
+        /**
+         * Encodes a batch of JSON location data into a Google Polyline style delta string for efficient transmission.
+         * `precision` specifies the multiplier (e.g. 1e5 for 5 decimal places).
+         */ fun `encodeDeltas`(`batchJson`: kotlin.String, `precision`: kotlin.Int): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_func_encode_deltas(

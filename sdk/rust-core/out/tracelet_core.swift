@@ -532,11 +532,17 @@ fileprivate struct FfiConverterString: FfiConverter {
 
 
 
+/**
+ * Core logic engine for dynamically adjusting distance filters based on context.
+ */
 public protocol AdaptiveSamplingEngineProtocol: AnyObject, Sendable {
     
     func compute(context: AdaptiveContext)  -> AdaptiveSamplingResult
     
 }
+/**
+ * Core logic engine for dynamically adjusting distance filters based on context.
+ */
 open class AdaptiveSamplingEngine: AdaptiveSamplingEngineProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -658,15 +664,30 @@ public func FfiConverterTypeAdaptiveSamplingEngine_lower(_ value: AdaptiveSampli
 
 
 
+/**
+ * Core engine responsible for maintaining a cryptographic chain of custody for location records.
+ */
 public protocol AuditTrailEngineProtocol: AnyObject, Sendable {
     
+    /**
+     * Generates the next hash in the chain for a new location record.
+     */
     func generateNextHash(loc: LocationRecord)  -> AuditAppendResult
     
+    /**
+     * Resets the engine state back to the genesis block.
+     */
     func resetState() 
     
+    /**
+     * Verifies the cryptographic integrity of a sequence of location records.
+     */
     func verifyChain(records: [AuditRecordWithLocation])  -> AuditVerificationResult
     
 }
+/**
+ * Core engine responsible for maintaining a cryptographic chain of custody for location records.
+ */
 open class AuditTrailEngine: AuditTrailEngineProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -706,6 +727,9 @@ open class AuditTrailEngine: AuditTrailEngineProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_audittrailengine(self.handle, $0) }
     }
+    /**
+     * Initializes a new AuditTrailEngine with the device identifier and initial state.
+     */
 public convenience init(deviceId: String, initialChainIndex: Int32, initialLatestHash: String?) {
     let handle =
         try! rustCall() {
@@ -730,6 +754,9 @@ public convenience init(deviceId: String, initialChainIndex: Int32, initialLates
     
 
     
+    /**
+     * Generates the next hash in the chain for a new location record.
+     */
 open func generateNextHash(loc: LocationRecord) -> AuditAppendResult  {
     return try!  FfiConverterTypeAuditAppendResult_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_audittrailengine_generate_next_hash(
@@ -739,6 +766,9 @@ open func generateNextHash(loc: LocationRecord) -> AuditAppendResult  {
 })
 }
     
+    /**
+     * Resets the engine state back to the genesis block.
+     */
 open func resetState()  {try! rustCall() {
     uniffi_tracelet_core_fn_method_audittrailengine_reset_state(
             self.uniffiCloneHandle(),$0
@@ -746,6 +776,9 @@ open func resetState()  {try! rustCall() {
 }
 }
     
+    /**
+     * Verifies the cryptographic integrity of a sequence of location records.
+     */
 open func verifyChain(records: [AuditRecordWithLocation]) -> AuditVerificationResult  {
     return try!  FfiConverterTypeAuditVerificationResult_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_audittrailengine_verify_chain(
@@ -805,19 +838,40 @@ public func FfiConverterTypeAuditTrailEngine_lower(_ value: AuditTrailEngine) ->
 
 
 
+/**
+ * Engine that calculates optimal distance filters and sampling rates to preserve battery while maintaining tracking quality.
+ */
 public protocol BatteryBudgetEngineProtocol: AnyObject, Sendable {
     
+    /**
+     * Returns the currently enforced accuracy index (0 = highest).
+     */
     func accuracyIndex()  -> Int32
     
+    /**
+     * Returns the currently enforced distance filter (in meters).
+     */
     func distanceFilter()  -> Double
     
+    /**
+     * Returns the currently enforced periodic interval (if any).
+     */
     func periodicInterval()  -> Int32?
     
+    /**
+     * Processes a new battery sample, updating the internal baseline and returning parameter adjustments if necessary.
+     */
     func processSample(batteryLevel: Double, nowMs: Int64)  -> BudgetAdjustmentEvent?
     
+    /**
+     * Discards all historical battery samples and resets the baseline for budget calculations.
+     */
     func reset() 
     
 }
+/**
+ * Engine that calculates optimal distance filters and sampling rates to preserve battery while maintaining tracking quality.
+ */
 open class BatteryBudgetEngine: BatteryBudgetEngineProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -857,6 +911,9 @@ open class BatteryBudgetEngine: BatteryBudgetEngineProtocol, @unchecked Sendable
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_batterybudgetengine(self.handle, $0) }
     }
+    /**
+     * Initializes the battery budget engine with the desired target budget and initial parameters.
+     */
 public convenience init(targetBudgetPerHour: Double, initialDistanceFilter: Double, initialAccuracyIndex: Int32, initialPeriodicInterval: Int32?) {
     let handle =
         try! rustCall() {
@@ -882,6 +939,9 @@ public convenience init(targetBudgetPerHour: Double, initialDistanceFilter: Doub
     
 
     
+    /**
+     * Returns the currently enforced accuracy index (0 = highest).
+     */
 open func accuracyIndex() -> Int32  {
     return try!  FfiConverterInt32.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_batterybudgetengine_accuracy_index(
@@ -890,6 +950,9 @@ open func accuracyIndex() -> Int32  {
 })
 }
     
+    /**
+     * Returns the currently enforced distance filter (in meters).
+     */
 open func distanceFilter() -> Double  {
     return try!  FfiConverterDouble.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_batterybudgetengine_distance_filter(
@@ -898,6 +961,9 @@ open func distanceFilter() -> Double  {
 })
 }
     
+    /**
+     * Returns the currently enforced periodic interval (if any).
+     */
 open func periodicInterval() -> Int32?  {
     return try!  FfiConverterOptionInt32.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_batterybudgetengine_periodic_interval(
@@ -906,6 +972,9 @@ open func periodicInterval() -> Int32?  {
 })
 }
     
+    /**
+     * Processes a new battery sample, updating the internal baseline and returning parameter adjustments if necessary.
+     */
 open func processSample(batteryLevel: Double, nowMs: Int64) -> BudgetAdjustmentEvent?  {
     return try!  FfiConverterOptionTypeBudgetAdjustmentEvent.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_batterybudgetengine_process_sample(
@@ -916,6 +985,9 @@ open func processSample(batteryLevel: Double, nowMs: Int64) -> BudgetAdjustmentE
 })
 }
     
+    /**
+     * Discards all historical battery samples and resets the baseline for budget calculations.
+     */
 open func reset()  {try! rustCall() {
     uniffi_tracelet_core_fn_method_batterybudgetengine_reset(
             self.uniffiCloneHandle(),$0
@@ -973,19 +1045,34 @@ public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngi
 
 
 
+/**
+ * Evaluates location updates against active geofences to detect boundary crossings.
+ */
 public protocol GeofenceEvaluatorProtocol: AnyObject, Sendable {
     
     func clear() 
     
+    /**
+     * Clears the current spatial index.
+     */
     func clearIndex() 
     
+    /**
+     * Evaluates a location update and returns a list of triggered geofence transitions.
+     */
     func evaluateProximity(latitude: Double, longitude: Double, geofences: [CoreGeofence])  -> [GeofenceTransition]
     
+    /**
+     * Indexes a collection of geofences for efficient spatial querying.
+     */
     func indexGeofences(geofences: [CoreGeofence]) 
     
     func removeGeofence(identifier: String) 
     
 }
+/**
+ * Evaluates location updates against active geofences to detect boundary crossings.
+ */
 open class GeofenceEvaluator: GeofenceEvaluatorProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1025,6 +1112,9 @@ open class GeofenceEvaluator: GeofenceEvaluatorProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_geofenceevaluator(self.handle, $0) }
     }
+    /**
+     * Initializes a new GeofenceEvaluator.
+     */
 public convenience init() {
     let handle =
         try! rustCall() {
@@ -1053,6 +1143,9 @@ open func clear()  {try! rustCall() {
 }
 }
     
+    /**
+     * Clears the current spatial index.
+     */
 open func clearIndex()  {try! rustCall() {
     uniffi_tracelet_core_fn_method_geofenceevaluator_clear_index(
             self.uniffiCloneHandle(),$0
@@ -1060,6 +1153,9 @@ open func clearIndex()  {try! rustCall() {
 }
 }
     
+    /**
+     * Evaluates a location update and returns a list of triggered geofence transitions.
+     */
 open func evaluateProximity(latitude: Double, longitude: Double, geofences: [CoreGeofence]) -> [GeofenceTransition]  {
     return try!  FfiConverterSequenceTypeGeofenceTransition.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_geofenceevaluator_evaluate_proximity(
@@ -1071,6 +1167,9 @@ open func evaluateProximity(latitude: Double, longitude: Double, geofences: [Cor
 })
 }
     
+    /**
+     * Indexes a collection of geofences for efficient spatial querying.
+     */
 open func indexGeofences(geofences: [CoreGeofence])  {try! rustCall() {
     uniffi_tracelet_core_fn_method_geofenceevaluator_index_geofences(
             self.uniffiCloneHandle(),
@@ -1137,17 +1236,35 @@ public func FfiConverterTypeGeofenceEvaluator_lower(_ value: GeofenceEvaluator) 
 
 
 
+/**
+ * Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
+ */
 public protocol KalmanLocationFilterProtocol: AnyObject, Sendable {
     
+    /**
+     * Returns the currently estimated speed (in meters per second) from the filter's state.
+     */
     func estimatedSpeed()  -> Double
     
+    /**
+     * Returns true if the filter has been seeded with an initial location.
+     */
     func isInitialized()  -> Bool
     
+    /**
+     * Processes a new location measurement and returns the smoothed coordinates.
+     */
     func process(latitude: Double, longitude: Double, accuracy: Double, timestampMs: Int64)  -> LatLng
     
+    /**
+     * Resets the internal state of the filter, clearing the history.
+     */
     func reset() 
     
 }
+/**
+ * Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
+ */
 open class KalmanLocationFilter: KalmanLocationFilterProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1187,6 +1304,9 @@ open class KalmanLocationFilter: KalmanLocationFilterProtocol, @unchecked Sendab
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_kalmanlocationfilter(self.handle, $0) }
     }
+    /**
+     * Initializes a new KalmanLocationFilter state.
+     */
 public convenience init() {
     let handle =
         try! rustCall() {
@@ -1208,6 +1328,9 @@ public convenience init() {
     
 
     
+    /**
+     * Returns the currently estimated speed (in meters per second) from the filter's state.
+     */
 open func estimatedSpeed() -> Double  {
     return try!  FfiConverterDouble.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_kalmanlocationfilter_estimated_speed(
@@ -1216,6 +1339,9 @@ open func estimatedSpeed() -> Double  {
 })
 }
     
+    /**
+     * Returns true if the filter has been seeded with an initial location.
+     */
 open func isInitialized() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_kalmanlocationfilter_is_initialized(
@@ -1224,6 +1350,9 @@ open func isInitialized() -> Bool  {
 })
 }
     
+    /**
+     * Processes a new location measurement and returns the smoothed coordinates.
+     */
 open func process(latitude: Double, longitude: Double, accuracy: Double, timestampMs: Int64) -> LatLng  {
     return try!  FfiConverterTypeLatLng_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_kalmanlocationfilter_process(
@@ -1236,6 +1365,9 @@ open func process(latitude: Double, longitude: Double, accuracy: Double, timesta
 })
 }
     
+    /**
+     * Resets the internal state of the filter, clearing the history.
+     */
 open func reset()  {try! rustCall() {
     uniffi_tracelet_core_fn_method_kalmanlocationfilter_reset(
             self.uniffiCloneHandle(),$0
@@ -1293,6 +1425,9 @@ public func FfiConverterTypeKalmanLocationFilter_lower(_ value: KalmanLocationFi
 
 
 
+/**
+ * Core location processing engine that handles filtering out inaccurate or redundant points.
+ */
 public protocol LocationProcessorProtocol: AnyObject, Sendable {
     
     func hasLastLocation()  -> Bool
@@ -1304,6 +1439,9 @@ public protocol LocationProcessorProtocol: AnyObject, Sendable {
     func reset() 
     
 }
+/**
+ * Core location processing engine that handles filtering out inaccurate or redundant points.
+ */
 open class LocationProcessor: LocationProcessorProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1465,13 +1603,25 @@ public func FfiConverterTypeLocationProcessor_lower(_ value: LocationProcessor) 
 
 
 
+/**
+ * Parses and evaluates tracking schedules to determine whether tracking should be active.
+ */
 public protocol ScheduleParserProtocol: AnyObject, Sendable {
     
+    /**
+     * Computes the next scheduled start and stop times, evaluating all provided schedules.
+     */
     func calculateNextAlarms(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32)  -> ScheduleAlarms
     
+    /**
+     * Determines whether the provided timestamp falls within any of the defined schedules.
+     */
     func isWithinSchedule(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32)  -> Bool
     
 }
+/**
+ * Parses and evaluates tracking schedules to determine whether tracking should be active.
+ */
 open class ScheduleParser: ScheduleParserProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1511,6 +1661,9 @@ open class ScheduleParser: ScheduleParserProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_scheduleparser(self.handle, $0) }
     }
+    /**
+     * Initializes a new instance of the ScheduleParser.
+     */
 public convenience init() {
     let handle =
         try! rustCall() {
@@ -1532,6 +1685,9 @@ public convenience init() {
     
 
     
+    /**
+     * Computes the next scheduled start and stop times, evaluating all provided schedules.
+     */
 open func calculateNextAlarms(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32) -> ScheduleAlarms  {
     return try!  FfiConverterTypeScheduleAlarms_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_scheduleparser_calculate_next_alarms(
@@ -1543,6 +1699,9 @@ open func calculateNextAlarms(schedules: [String], timestampMs: Int64, tzOffsetS
 })
 }
     
+    /**
+     * Determines whether the provided timestamp falls within any of the defined schedules.
+     */
 open func isWithinSchedule(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_scheduleparser_is_within_schedule(
@@ -1604,21 +1763,48 @@ public func FfiConverterTypeScheduleParser_lower(_ value: ScheduleParser) -> UIn
 
 
 
+/**
+ * Orchestrates the transition between different tracking modes based on sensor motion data.
+ */
 public protocol SmartMotionCoordinatorProtocol: AnyObject, Sendable {
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     * Re-evaluates the tracking mode whenever the underlying configuration (e.g. geofence usage) changes.
+     */
+    func evaluateConfigurationChange(useGeofences: Bool)  -> CoordinatorAction
+    
+    /**
+     * Returns true if accelerometer data currently indicates motion.
+     */
     func isAccelMoving()  -> Bool
     
+    /**
+     * Returns true if GPS speed currently indicates motion.
+     */
     func isSpeedMoving()  -> Bool
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     */
     func onAccelStateChange(isMoving: Bool)  -> CoordinatorAction
     
+    /**
+     * Evaluates changes in the GPS-speed-based motion state.
+     */
     func onSpeedStateChange(isMoving: Bool)  -> CoordinatorAction
     
+    /**
+     * Forces the tracking mode to a specific state, ignoring internal motion flags.
+     */
     func setCurrentMode(mode: TrackingMode) 
     
     func setUseGeofencesWhenStationary(useGeofences: Bool) 
     
 }
+/**
+ * Orchestrates the transition between different tracking modes based on sensor motion data.
+ */
 open class SmartMotionCoordinator: SmartMotionCoordinatorProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1658,6 +1844,9 @@ open class SmartMotionCoordinator: SmartMotionCoordinatorProtocol, @unchecked Se
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_smartmotioncoordinator(self.handle, $0) }
     }
+    /**
+     * Initializes a new motion coordinator with the specified geofence usage preference.
+     */
 public convenience init(useGeofencesWhenStationary: Bool) {
     let handle =
         try! rustCall() {
@@ -1680,6 +1869,22 @@ public convenience init(useGeofencesWhenStationary: Bool) {
     
 
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     * Re-evaluates the tracking mode whenever the underlying configuration (e.g. geofence usage) changes.
+     */
+open func evaluateConfigurationChange(useGeofences: Bool) -> CoordinatorAction  {
+    return try!  FfiConverterTypeCoordinatorAction_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_evaluate_configuration_change(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(useGeofences),$0
+    )
+})
+}
+    
+    /**
+     * Returns true if accelerometer data currently indicates motion.
+     */
 open func isAccelMoving() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_accel_moving(
@@ -1688,6 +1893,9 @@ open func isAccelMoving() -> Bool  {
 })
 }
     
+    /**
+     * Returns true if GPS speed currently indicates motion.
+     */
 open func isSpeedMoving() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_speed_moving(
@@ -1696,6 +1904,9 @@ open func isSpeedMoving() -> Bool  {
 })
 }
     
+    /**
+     * Evaluates changes in the accelerometer-based motion state.
+     */
 open func onAccelStateChange(isMoving: Bool) -> CoordinatorAction  {
     return try!  FfiConverterTypeCoordinatorAction_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_smartmotioncoordinator_on_accel_state_change(
@@ -1705,6 +1916,9 @@ open func onAccelStateChange(isMoving: Bool) -> CoordinatorAction  {
 })
 }
     
+    /**
+     * Evaluates changes in the GPS-speed-based motion state.
+     */
 open func onSpeedStateChange(isMoving: Bool) -> CoordinatorAction  {
     return try!  FfiConverterTypeCoordinatorAction_lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_smartmotioncoordinator_on_speed_state_change(
@@ -1714,6 +1928,9 @@ open func onSpeedStateChange(isMoving: Bool) -> CoordinatorAction  {
 })
 }
     
+    /**
+     * Forces the tracking mode to a specific state, ignoring internal motion flags.
+     */
 open func setCurrentMode(mode: TrackingMode)  {try! rustCall() {
     uniffi_tracelet_core_fn_method_smartmotioncoordinator_set_current_mode(
             self.uniffiCloneHandle(),
@@ -1780,17 +1997,36 @@ public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoo
 
 
 
+/**
+ * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
+ */
 public protocol TripManagerProtocol: AnyObject, Sendable {
     
+    /**
+     * Returns true if a trip is currently being tracked.
+     */
     func isTripActive()  -> Bool
     
+    /**
+     * Feeds a new location sample into the active trip to update its path and distance.
+     */
     func onLocationReceived(latitude: Double, longitude: Double, timestampMs: Int64) 
     
+    /**
+     * Evaluates a motion state transition to determine if a trip has started or ended.
+     * If a trip ended, it returns the accumulated `TripData`.
+     */
     func onMotionStateChanged(isMoving: Bool, latitude: Double?, longitude: Double?, timestampMs: Int64, nowMs: Int64)  -> TripData?
     
+    /**
+     * Resets the trip manager, discarding any active trip and path data.
+     */
     func reset() 
     
 }
+/**
+ * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
+ */
 open class TripManager: TripManagerProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -1830,6 +2066,9 @@ open class TripManager: TripManagerProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_tripmanager(self.handle, $0) }
     }
+    /**
+     * Initializes a new TripManager state machine.
+     */
 public convenience init() {
     let handle =
         try! rustCall() {
@@ -1851,6 +2090,9 @@ public convenience init() {
     
 
     
+    /**
+     * Returns true if a trip is currently being tracked.
+     */
 open func isTripActive() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_tripmanager_is_trip_active(
@@ -1859,6 +2101,9 @@ open func isTripActive() -> Bool  {
 })
 }
     
+    /**
+     * Feeds a new location sample into the active trip to update its path and distance.
+     */
 open func onLocationReceived(latitude: Double, longitude: Double, timestampMs: Int64)  {try! rustCall() {
     uniffi_tracelet_core_fn_method_tripmanager_on_location_received(
             self.uniffiCloneHandle(),
@@ -1869,6 +2114,10 @@ open func onLocationReceived(latitude: Double, longitude: Double, timestampMs: I
 }
 }
     
+    /**
+     * Evaluates a motion state transition to determine if a trip has started or ended.
+     * If a trip ended, it returns the accumulated `TripData`.
+     */
 open func onMotionStateChanged(isMoving: Bool, latitude: Double?, longitude: Double?, timestampMs: Int64, nowMs: Int64) -> TripData?  {
     return try!  FfiConverterOptionTypeTripData.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_tripmanager_on_motion_state_changed(
@@ -1882,6 +2131,9 @@ open func onMotionStateChanged(isMoving: Bool, latitude: Double?, longitude: Dou
 })
 }
     
+    /**
+     * Resets the trip manager, discarding any active trip and path data.
+     */
 open func reset()  {try! rustCall() {
     uniffi_tracelet_core_fn_method_tripmanager_reset(
             self.uniffiCloneHandle(),$0
@@ -1937,6 +2189,9 @@ public func FfiConverterTypeTripManager_lower(_ value: TripManager) -> UInt64 {
 
 
 
+/**
+ * Environmental context used to adapt location sampling frequency.
+ */
 public struct AdaptiveContext: Equatable, Hashable {
     public var batteryLevel: Double
     public var isCharging: Bool
@@ -2003,6 +2258,9 @@ public func FfiConverterTypeAdaptiveContext_lower(_ value: AdaptiveContext) -> R
 }
 
 
+/**
+ * Results from evaluating the current context to determine the optimal sampling parameters.
+ */
 public struct AdaptiveSamplingResult: Equatable, Hashable {
     public var effectiveDistanceFilter: Double
     public var baseDistanceFilter: Double
@@ -2073,6 +2331,9 @@ public func FfiConverterTypeAdaptiveSamplingResult_lower(_ value: AdaptiveSampli
 }
 
 
+/**
+ * Contains the resulting hashes and chain index after appending a new record to the audit trail.
+ */
 public struct AuditAppendResult: Equatable, Hashable {
     public var hash: String
     public var previousHash: String
@@ -2131,6 +2392,9 @@ public func FfiConverterTypeAuditAppendResult_lower(_ value: AuditAppendResult) 
 }
 
 
+/**
+ * Represents an audited location entry securely chained to the previous record.
+ */
 public struct AuditRecordWithLocation: Equatable, Hashable {
     public var hash: String
     public var previousHash: String
@@ -2197,6 +2461,9 @@ public func FfiConverterTypeAuditRecordWithLocation_lower(_ value: AuditRecordWi
 }
 
 
+/**
+ * Contains the outcome of a blockchain verification process on the audit trail.
+ */
 public struct AuditVerificationResult: Equatable, Hashable {
     public var isValid: Bool
     public var totalRecords: Int32
@@ -2267,6 +2534,9 @@ public func FfiConverterTypeAuditVerificationResult_lower(_ value: AuditVerifica
 }
 
 
+/**
+ * An event generated when the battery budget engine decides to throttle or modify tracking parameters.
+ */
 public struct BudgetAdjustmentEvent: Equatable, Hashable {
     public var currentBatteryDrain: Double
     public var targetBudget: Double
@@ -2333,6 +2603,9 @@ public func FfiConverterTypeBudgetAdjustmentEvent_lower(_ value: BudgetAdjustmen
 }
 
 
+/**
+ * Represents a 2D geographical coordinate using latitude and longitude.
+ */
 public struct Coordinate: Equatable, Hashable {
     public var lat: Double
     public var lng: Double
@@ -2387,6 +2660,9 @@ public func FfiConverterTypeCoordinate_lower(_ value: Coordinate) -> RustBuffer 
 }
 
 
+/**
+ * Defines a geofence with a spatial polygon or circular radius for evaluation.
+ */
 public struct CoreGeofence: Equatable, Hashable {
     public var identifier: String
     public var latitude: Double
@@ -2453,6 +2729,9 @@ public func FfiConverterTypeCoreGeofence_lower(_ value: CoreGeofence) -> RustBuf
 }
 
 
+/**
+ * Represents a crossing event when a user enters or exits a geofence.
+ */
 public struct GeofenceTransition: Equatable, Hashable {
     public var identifier: String
     public var action: String
@@ -2507,6 +2786,9 @@ public func FfiConverterTypeGeofenceTransition_lower(_ value: GeofenceTransition
 }
 
 
+/**
+ * A simple geographical point used for the smoothed output of the Kalman filter.
+ */
 public struct LatLng: Equatable, Hashable {
     public var latitude: Double
     public var longitude: Double
@@ -2561,6 +2843,9 @@ public func FfiConverterTypeLatLng_lower(_ value: LatLng) -> RustBuffer {
 }
 
 
+/**
+ * Represents the outcome of filtering and processing a single location update.
+ */
 public struct LocationProcessorResult: Equatable, Hashable {
     public var accepted: Bool
     public var effectiveSpeed: Double
@@ -2635,6 +2920,9 @@ public func FfiConverterTypeLocationProcessorResult_lower(_ value: LocationProce
 }
 
 
+/**
+ * Represents a raw location sample with all its properties formatted for hashing.
+ */
 public struct LocationRecord: Equatable, Hashable {
     public var uuid: String
     public var latitude: Double
@@ -2721,6 +3009,9 @@ public func FfiConverterTypeLocationRecord_lower(_ value: LocationRecord) -> Rus
 }
 
 
+/**
+ * Contains the next absolute start and stop timestamps (in milliseconds) calculated from a schedule.
+ */
 public struct ScheduleAlarms: Equatable, Hashable {
     public var nextStartMs: Int64
     public var nextStopMs: Int64
@@ -2775,6 +3066,9 @@ public func FfiConverterTypeScheduleAlarms_lower(_ value: ScheduleAlarms) -> Rus
 }
 
 
+/**
+ * Summarized data for a tracked trip, including distance, duration, and path.
+ */
 public struct TripData: Equatable, Hashable {
     public var distanceMeters: Double
     public var durationSeconds: Double
@@ -2841,6 +3135,9 @@ public func FfiConverterTypeTripData_lower(_ value: TripData) -> RustBuffer {
 }
 
 
+/**
+ * Represents the start or end geographical location of a trip.
+ */
 public struct TripLocation: Equatable, Hashable {
     public var latitude: Double
     public var longitude: Double
@@ -2895,6 +3192,9 @@ public func FfiConverterTypeTripLocation_lower(_ value: TripLocation) -> RustBuf
 }
 
 
+/**
+ * A geographical point recorded as part of a trip's path.
+ */
 public struct TripWaypoint: Equatable, Hashable {
     public var latitude: Double
     public var longitude: Double
@@ -2954,6 +3254,9 @@ public func FfiConverterTypeTripWaypoint_lower(_ value: TripWaypoint) -> RustBuf
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Confidence level of the associated physical activity.
+ */
 
 public enum ActivityConfidence: Equatable, Hashable {
     
@@ -3028,6 +3331,9 @@ public func FfiConverterTypeActivityConfidence_lower(_ value: ActivityConfidence
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Represents the interpreted physical activity state of the device.
+ */
 
 public enum ActivityType: Equatable, Hashable {
     
@@ -3130,6 +3436,9 @@ public func FfiConverterTypeActivityType_lower(_ value: ActivityType) -> RustBuf
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * The primary factor driving the current adaptive sampling rate.
+ */
 
 public enum AdaptiveSource: Equatable, Hashable {
     
@@ -3204,6 +3513,9 @@ public func FfiConverterTypeAdaptiveSource_lower(_ value: AdaptiveSource) -> Rus
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Represents an actionable state transition proposed by the coordinator.
+ */
 
 public enum CoordinatorAction: Equatable, Hashable {
     
@@ -3285,6 +3597,9 @@ public func FfiConverterTypeCoordinatorAction_lower(_ value: CoordinatorAction) 
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Represents the high-level operational tracking mode of the background service.
+ */
 
 public enum TrackingMode: Equatable, Hashable {
     
@@ -3698,6 +4013,10 @@ fileprivate struct FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer 
         return seq
     }
 }
+/**
+ * Calculates the great-circle distance between two points on the Earth's surface using the Haversine formula.
+ * Returns the distance in meters.
+ */
 public func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double  {
     return try!  FfiConverterDouble.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_haversine(
@@ -3708,6 +4027,9 @@ public func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double) ->
     )
 })
 }
+/**
+ * Uses the ray-casting algorithm to determine if a point is strictly inside a polygon.
+ */
 public func isPointInPolygon(lat: Double, lng: Double, vertices: [Coordinate]) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_is_point_in_polygon(
@@ -3717,6 +4039,9 @@ public func isPointInPolygon(lat: Double, lng: Double, vertices: [Coordinate]) -
     )
 })
 }
+/**
+ * Builds a deterministic canonical string from a location record and its preceding chain hash.
+ */
 public func buildCanonicalString(previousHash: String, chainIndex: Int32, loc: LocationRecord) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_build_canonical_string(
@@ -3726,6 +4051,9 @@ public func buildCanonicalString(previousHash: String, chainIndex: Int32, loc: L
     )
 })
 }
+/**
+ * Computes the genesis hash for a new device, seeding the audit chain.
+ */
 public func computeGenesisHash(deviceId: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_compute_genesis_hash(
@@ -3733,6 +4061,9 @@ public func computeGenesisHash(deviceId: String) -> String  {
     )
 })
 }
+/**
+ * Computes the SHA-256 hash of a given input string and returns the hex representation.
+ */
 public func sha256(input: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_sha256(
@@ -3768,34 +4099,34 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_haversine() != 50519) {
+    if (uniffi_tracelet_core_checksum_func_haversine() != 15996) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 57508) {
+    if (uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 16595) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_build_canonical_string() != 22658) {
+    if (uniffi_tracelet_core_checksum_func_build_canonical_string() != 7071) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_compute_genesis_hash() != 9298) {
+    if (uniffi_tracelet_core_checksum_func_compute_genesis_hash() != 52889) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_func_sha256() != 62639) {
+    if (uniffi_tracelet_core_checksum_func_sha256() != 14625) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_func_encode_deltas() != 25656) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 60857) {
+    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 64160) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized() != 40389) {
+    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized() != 41347) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process() != 5966) {
+    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process() != 7091) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset() != 3495) {
+    if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset() != 57673) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_adaptivesamplingengine_compute() != 3823) {
@@ -3813,82 +4144,85 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_locationprocessor_reset() != 105) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms() != 22681) {
+    if (uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms() != 37817) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 33514) {
+    if (uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 16562) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 42159) {
+    if (uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 47274) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_tripmanager_on_location_received() != 59373) {
+    if (uniffi_tracelet_core_checksum_method_tripmanager_on_location_received() != 23895) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed() != 30102) {
+    if (uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed() != 58332) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_tripmanager_reset() != 62563) {
+    if (uniffi_tracelet_core_checksum_method_tripmanager_reset() != 31344) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 11657) {
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 5395) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_audittrailengine_reset_state() != 35890) {
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_reset_state() != 41935) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 18303) {
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 38541) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index() != 13907) {
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index() != 37834) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity() != 35353) {
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity() != 38287) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences() != 8803) {
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences() != 2949) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 28291) {
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 65350) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter() != 9862) {
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter() != 53495) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval() != 18140) {
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval() != 39961) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample() != 42298) {
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample() != 13825) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 27366) {
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 51841) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving() != 19521) {
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change() != 42508) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving() != 15267) {
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving() != 61939) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change() != 21639) {
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving() != 50415) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change() != 45645) {
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change() != 22813) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode() != 33542) {
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change() != 53539) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode() != 43105) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 58796) {
+    if (uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 44956) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new() != 3978) {
@@ -3897,22 +4231,22 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_constructor_locationprocessor_new() != 1269) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 30746) {
+    if (uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 36401) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 4111) {
+    if (uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 53892) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 28924) {
+    if (uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 16361) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 56699) {
+    if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 9629) {
+    if (uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 27221) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 29624) {
+    if (uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 13932) {
         return InitializationResult.apiChecksumMismatch
     }
 

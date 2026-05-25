@@ -52,13 +52,21 @@ jobs:
           mv benchmark_results.json ../../benchmark/rust_results.json
           cd ../../benchmark
           
-          # Merge results
+          # Merge results and regenerate table
           python3 -c "
           import json
           with open('dart_results.json') as f: dart = json.load(f)
           with open('rust_results.json') as f: rust = json.load(f)
-          dart.update(rust)
-          with open('benchmark_results.json', 'w') as f: json.dump(dart, f, indent=2)
+          merged = dart.copy()
+          merged.update(rust)
+          with open('benchmark_results.json', 'w') as f: json.dump(merged, f, indent=2)
+          
+          with open('benchmark_table.md', 'w') as f:
+              f.write('| Benchmark | ops/sec | µs/op |\n')
+              f.write('|---|---:|---:|\n')
+              for name, us_per_op in merged.items():
+                  ops_per_sec = int(1_000_000 / us_per_op) if us_per_op > 0 else 0
+                  f.write(f'| {name} | {ops_per_sec} | {us_per_op:.2f} |\n')
           "
 
       - name: Update BENCHMARK.md

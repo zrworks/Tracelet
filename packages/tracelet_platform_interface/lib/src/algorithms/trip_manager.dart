@@ -30,8 +30,8 @@ class TripManager {
       isMoving: isMoving,
       latitude: latitude,
       longitude: longitude,
-      timestampMs: timestampMs,
-      nowMs: nowMs,
+      timestampMs: BigInt.from(timestampMs),
+      nowMs: BigInt.from(nowMs),
     );
 
     if (tripData != null && onTripEnd != null) {
@@ -51,7 +51,9 @@ class TripManager {
         return <String, Object?>{
           'latitude': w.latitude,
           'longitude': w.longitude,
-          'timestamp': w.timestampMs,
+          'timestamp': w.timestampMs is BigInt
+              ? (w.timestampMs as dynamic).toInt()
+              : w.timestampMs,
         };
       }).toList();
 
@@ -82,7 +84,7 @@ class TripManager {
     _inner.onLocationReceived(
       latitude: latitude,
       longitude: longitude,
-      timestampMs: timestampMs,
+      timestampMs: BigInt.from(timestampMs),
     );
   }
 

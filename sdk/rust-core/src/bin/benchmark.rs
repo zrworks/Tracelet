@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use tracelet_core::state::battery_budget::BatteryBudgetEngine;
-use tracelet_core::state::smart_motion_coordinator::{SmartMotionCoordinator, TrackingMode};
+use tracelet_core::state::smart_motion_coordinator::SmartMotionCoordinator;
 
 struct BenchResult {
     name: String,

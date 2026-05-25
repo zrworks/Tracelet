@@ -41,6 +41,9 @@ mkdir -p "$OUT_DIR/Headers"
 cp "$OUT_DIR/tracelet_coreFFI.h" "$OUT_DIR/Headers/"
 cp "$OUT_DIR/tracelet_coreFFI.modulemap" "$OUT_DIR/Headers/module.modulemap"
 
+# Copy generated Swift bindings to the iOS SDK sources
+cp "$OUT_DIR/tracelet_core.swift" "../../sdk/ios/Sources/TraceletSDK/"
+
 # Remove old XCFramework
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
 

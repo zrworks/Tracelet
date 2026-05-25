@@ -50,6 +50,8 @@ impl BatteryBudgetEngine {
         }
     }
 
+
+
     pub fn process_sample(
         &self,
         battery_level: f64,

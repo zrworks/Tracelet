@@ -1,6 +1,5 @@
 import BackgroundTasks
 import Foundation
-import TraceletCore
 
 /// Schedule manager using BGTaskScheduler (iOS 13+).
 ///

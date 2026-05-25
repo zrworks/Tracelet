@@ -1,208 +1,93 @@
-import 'dart:collection';
+import '../rust/frb_generated.dart';
+import '../rust/api_dart/trip.dart';
 
-import 'geo_utils.dart';
-
-/// Tracks trips based on motion state transitions.
-///
-/// A "trip" starts when the device transitions to moving (`isMoving = true`)
-/// and ends when it transitions to stationary (`isMoving = false`).
-///
-/// Collects:
-/// - Start/stop location coordinates
-/// - Waypoints (every accepted location during the trip)
-/// - Total distance in meters (Haversine)
-/// - Duration in seconds
-///
-/// Dispatches a trip event map when the trip ends via the [onTripEnd] callback.
-///
-/// **This is a pure Dart implementation** — no native code required. It runs
-/// identically on Android, iOS, web, macOS, Linux, and Windows.
-///
-/// ```dart
-/// final trip = TripManager();
-/// trip.onTripEnd = (tripData) {
-///   print('Trip ended: ${tripData["distance"]}m');
-/// };
-/// ```
+/// Rust-powered TripManager.
 class TripManager {
-  /// Maximum number of waypoints to retain during a trip.
-  /// Older waypoints are discarded when this limit is reached.
-  static const int _maxWaypoints = 5000;
-
-  /// Callback invoked when a trip ends with the full trip data map.
-  ///
-  /// The map contains:
-  /// - `isMoving` (`bool`): Always `false` when trip ends.
-  /// - `distance` (`double`): Total distance in meters.
-  /// - `duration` (`double`): Duration in seconds.
-  /// - `startLocation` (`Map`): `{latitude, longitude}` of trip start.
-  /// - `stopLocation` (`Map`): `{latitude, longitude}` of trip end.
-  /// - `waypoints` (`List<Map>`): Each `{latitude, longitude, timestamp}`.
+  late final TripManagerDart _inner;
   void Function(Map<String, Object?>)? onTripEnd;
 
-  bool _tripActive = false;
-  double? _startLat;
-  double? _startLng;
-  int _startTimeMs = 0;
-  double _totalDistance = 0;
-  double? _lastWaypointLat;
-  double? _lastWaypointLng;
-  final Queue<Map<String, Object?>> _waypoints = Queue<Map<String, Object?>>();
+  TripManager() {
+    _inner = TripManagerDart();
+  }
 
-  /// Whether a trip is currently active.
-  bool get isTripActive => _tripActive;
+  bool get isTripActive => _inner.isTripActive();
 
-  /// Called on every motion state change.
-  ///
-  /// - [isMoving]: Whether the device is now moving.
-  /// - [latitude]: Current latitude (if available).
-  /// - [longitude]: Current longitude (if available).
-  /// - [timestamp]: Current timestamp string or null.
   void onMotionStateChanged({
     required bool isMoving,
     double? latitude,
     double? longitude,
     Object? timestamp,
   }) {
-    if (isMoving && !_tripActive) {
-      _startTrip(latitude, longitude, timestamp);
-    } else if (!isMoving && _tripActive) {
-      _endTrip(latitude, longitude, timestamp);
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    int timestampMs = nowMs;
+    if (timestamp is int) {
+      timestampMs = timestamp;
+    } else if (timestamp is String) {
+      timestampMs =
+          DateTime.tryParse(timestamp)?.millisecondsSinceEpoch ?? nowMs;
+    }
+
+    final tripData = _inner.onMotionStateChanged(
+      isMoving: isMoving,
+      latitude: latitude,
+      longitude: longitude,
+      timestampMs: timestampMs,
+      nowMs: nowMs,
+    );
+
+    if (tripData != null && onTripEnd != null) {
+      final startMap = <String, Object?>{};
+      if (tripData.startLocation != null) {
+        startMap['latitude'] = tripData.startLocation!.latitude;
+        startMap['longitude'] = tripData.startLocation!.longitude;
+      }
+
+      final stopMap = <String, Object?>{};
+      if (tripData.stopLocation != null) {
+        stopMap['latitude'] = tripData.stopLocation!.latitude;
+        stopMap['longitude'] = tripData.stopLocation!.longitude;
+      }
+
+      final waypoints = tripData.waypoints.map((w) {
+        return <String, Object?>{
+          'latitude': w.latitude,
+          'longitude': w.longitude,
+          'timestamp': w.timestampMs,
+        };
+      }).toList();
+
+      onTripEnd!({
+        'isMoving': false,
+        'distance': tripData.distanceMeters,
+        'duration': tripData.durationSeconds,
+        'startLocation': startMap,
+        'stopLocation': stopMap,
+        'waypoints': waypoints,
+      });
     }
   }
 
-  /// Called on every accepted tracking location to record waypoints.
-  ///
-  /// - [latitude]: Location latitude.
-  /// - [longitude]: Location longitude.
-  /// - [timestamp]: Location timestamp (String or int).
   void onLocationReceived({
     required double latitude,
     required double longitude,
     Object? timestamp,
   }) {
-    if (!_tripActive) return;
-
-    // Accumulate distance.
-    if (_lastWaypointLat != null && _lastWaypointLng != null) {
-      _totalDistance += GeoUtils.haversine(
-        _lastWaypointLat!,
-        _lastWaypointLng!,
-        latitude,
-        longitude,
-      );
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    int timestampMs = nowMs;
+    if (timestamp is int) {
+      timestampMs = timestamp;
+    } else if (timestamp is String) {
+      timestampMs =
+          DateTime.tryParse(timestamp)?.millisecondsSinceEpoch ?? nowMs;
     }
-    _lastWaypointLat = latitude;
-    _lastWaypointLng = longitude;
-
-    // Record waypoint (lightweight: coords + timestamp only).
-    // Bound the list to prevent unbounded memory growth on long trips
-    // (e.g. 14,400 waypoints in a 4-hour trip at 1fix/sec). Keep latest
-    // waypoints, discarding oldest when the cap is exceeded.
-    // Use Queue.removeFirst() for O(1) eviction instead of List.removeAt(0)
-    // which is O(n) due to element shifting (D-L2).
-    if (_waypoints.length >= _maxWaypoints) {
-      _waypoints.removeFirst();
-    }
-    _waypoints.add(<String, Object?>{
-      'latitude': latitude,
-      'longitude': longitude,
-      'timestamp': timestamp,
-    });
+    _inner.onLocationReceived(
+      latitude: latitude,
+      longitude: longitude,
+      timestampMs: timestampMs,
+    );
   }
 
-  /// Reset the trip manager state.
   void reset() {
-    _tripActive = false;
-    _startLat = null;
-    _startLng = null;
-    _lastWaypointLat = null;
-    _lastWaypointLng = null;
-    _startTimeMs = 0;
-    _totalDistance = 0;
-    _waypoints.clear();
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Private
-  // ─────────────────────────────────────────────────────────────────────────
-
-  void _startTrip(double? lat, double? lng, Object? timestamp) {
-    _tripActive = true;
-    _startLat = lat;
-    _startLng = lng;
-    _lastWaypointLat = lat;
-    _lastWaypointLng = lng;
-    _startTimeMs = DateTime.now().millisecondsSinceEpoch;
-    _totalDistance = 0;
-    _waypoints.clear();
-
-    // Record start as first waypoint.
-    if (lat != null && lng != null) {
-      _waypoints.add(<String, Object?>{
-        'latitude': lat,
-        'longitude': lng,
-        'timestamp': timestamp,
-      });
-    }
-  }
-
-  void _endTrip(double? lat, double? lng, Object? timestamp) {
-    _tripActive = false;
-
-    // Add final distance segment.
-    if (lat != null &&
-        lng != null &&
-        _lastWaypointLat != null &&
-        _lastWaypointLng != null) {
-      _totalDistance += GeoUtils.haversine(
-        _lastWaypointLat!,
-        _lastWaypointLng!,
-        lat,
-        lng,
-      );
-      _waypoints.add(<String, Object?>{
-        'latitude': lat,
-        'longitude': lng,
-        'timestamp': timestamp,
-      });
-    }
-
-    final durationMs = DateTime.now().millisecondsSinceEpoch - _startTimeMs;
-    final durationSeconds = durationMs / 1000.0;
-
-    final startMap = <String, Object?>{
-      // ignore: use_null_aware_elements
-      if (_startLat != null) 'latitude': _startLat,
-      // ignore: use_null_aware_elements
-      if (_startLng != null) 'longitude': _startLng,
-    };
-
-    final stopMap = <String, Object?>{
-      // ignore: use_null_aware_elements
-      if (lat != null) 'latitude': lat,
-      // ignore: use_null_aware_elements
-      if (lng != null) 'longitude': lng,
-    };
-
-    final tripData = <String, Object?>{
-      'isMoving': false,
-      'distance': _totalDistance,
-      'duration': durationSeconds,
-      'startLocation': startMap,
-      'stopLocation': stopMap,
-      'waypoints': List<Map<String, Object?>>.of(_waypoints),
-    };
-
-    onTripEnd?.call(tripData);
-
-    // Clean up.
-    _startLat = null;
-    _startLng = null;
-    _lastWaypointLat = null;
-    _lastWaypointLng = null;
-    _startTimeMs = 0;
-    _totalDistance = 0;
-    _waypoints.clear();
+    _inner.reset();
   }
 }

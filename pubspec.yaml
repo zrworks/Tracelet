@@ -40,13 +40,13 @@ melos:
 
     format:
       description: Check formatting across all packages
-      run: dart format --set-exit-if-changed .
+      run: find . -maxdepth 1 -type d \( -name lib -o -name test -o -name example -o -name integration_test -o -name bin \) -print0 | xargs -0 dart format --set-exit-if-changed
       exec:
         concurrency: 4
 
     format:fix:
       description: Fix formatting across all packages
-      run: dart format .
+      run: find . -maxdepth 1 -type d \( -name lib -o -name test -o -name example -o -name integration_test -o -name bin \) -print0 | xargs -0 dart format
       exec:
         concurrency: 4
 

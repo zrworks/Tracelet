@@ -30,13 +30,28 @@ jobs:
       - name: Install Melos
         run: dart pub global activate melos
 
-      - name: Bootstrap
-        run: melos bootstrap
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y flutter_rust_bridge_codegen
+
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+
+      - name: Build Host Rust Library
+        working-directory: sdk/rust-core
+        run: cargo build --release
+
+      - name: Setup LD_LIBRARY_PATH for benchmarks
+        run: echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/sdk/rust-core/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Bootstrap
+        run: melos bootstrap
 
       - name: Run benchmarks
         id: bench

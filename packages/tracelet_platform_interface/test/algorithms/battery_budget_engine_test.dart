@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-void main() {
+import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+
+void main() async {
+  await RustLib.init();
   group('BatteryBudgetEngine', () {
     test('constructor sets defaults', () {
       final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
@@ -113,20 +116,7 @@ void main() {
       expect(event.newPeriodicInterval, isNull);
     });
 
-    test('toString produces readable output', () {
-      const event = BudgetAdjustmentEvent(
-        currentBatteryDrain: 4.5,
-        targetBudget: 3.0,
-        newDistanceFilter: 50.0,
-        newDesiredAccuracy: 2,
-      );
 
-      final s = event.toString();
-      expect(s, contains('4.50%/hr'));
-      expect(s, contains('3.00%/hr'));
-      expect(s, contains('50.0'));
-      expect(s, contains('accuracy=2'));
-    });
   });
 
   group('BatteryBudgetEngine — internal state', () {

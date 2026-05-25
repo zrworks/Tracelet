@@ -1,4 +1,3 @@
-import '../rust/frb_generated.dart';
 import '../rust/api_dart/trip.dart';
 
 /// Rust-powered TripManager.

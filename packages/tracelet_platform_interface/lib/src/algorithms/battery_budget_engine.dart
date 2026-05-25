@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-import '../rust/frb_generated.dart';
 import '../rust/api_dart/battery_budget.dart';
 import '../rust/state/battery_budget.dart';
 

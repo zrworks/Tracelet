@@ -1,4 +1,3 @@
-import '../rust/frb_generated.dart';
 import '../rust/api_dart/schedule.dart';
 
 /// Rust-powered schedule parsing and matching.

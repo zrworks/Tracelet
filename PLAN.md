@@ -738,18 +738,17 @@
 - [x] Limited feature set (basic location, geofencing) *(v0.5.0)*
 - [x] Location filtering and Kalman smoothing now work on web via shared Dart *(v0.6.0)*
 
-### 7.5 Shared Dart Algorithm Migration (v0.6.0)
-- [x] `KalmanLocationFilter` — shared Dart GPS smoothing (moved from native Kotlin/Swift)
-- [x] `TripManager` — shared Dart trip detection (moved from native Kotlin/Swift)
-- [x] `GeoUtils` — shared Dart haversine + point-in-polygon (moved from native)
-- [x] `LocationProcessor` — shared Dart distance/elasticity/accuracy/speed filtering (NEW)
-- [x] `GeofenceEvaluator` — shared Dart geofence proximity evaluation (NEW)
-- [x] `ScheduleParser` — shared Dart schedule parsing (NEW)
-- [x] `PersistDecider` — shared Dart persistence decision logic (NEW)
-- [x] Remove duplicate native filtering code from Kotlin `LocationEngine` / `GeofenceManager`
-- [x] Remove duplicate native filtering code from Swift `LocationEngine` / `GeofenceManager`
-- [x] Fix broadcast stream bug — cached `.asBroadcastStream()` for stateful transformations
-- [x] 86 algorithm unit tests (46 new + 40 existing)
+### 7.5 Shared Rust Core Migration (v0.6.0)
+- [x] Create `sdk/rust-core` crate using `uniffi` for FFI bindings
+- [x] `KalmanLocationFilter` — shared Rust GPS smoothing (moved from native Kotlin/Swift)
+- [x] `TripManager` — shared Rust trip detection
+- [x] `GeoUtils` — shared Rust haversine + point-in-polygon
+- [x] `LocationProcessor` — shared Rust distance/elasticity/accuracy/speed filtering
+- [x] `GeofenceEvaluator` — shared Rust geofence proximity evaluation (RTree)
+- [x] `SmartMotionCoordinator` and `BatteryBudgetEngine` — shared Rust state machine logic
+- [x] `AuditTrailEngine` and `DeltaEncoder` — shared Rust crypto and sync logic
+- [x] Wire Rust generated bindings into `tracelet_android` and `tracelet_ios` plugins
+- [x] Ensure 100% test coverage matching previous implementations
 
 ### 7.7 Mock Location Detection & Prevention
 - [x] `Location.isMock` field + serialization (all platforms)

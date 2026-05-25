@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 import 'models/activity_change_event.dart';
 import 'models/attestation_config.dart';
@@ -181,6 +180,7 @@ class Tracelet {
       await initializeRustLib();
     } catch (e) {
       // Ignored if already initialized, otherwise print error
+      // ignore: avoid_print
       print('Tracelet: initializeRustLib warning: $e');
     }
     _currentConfig = config;

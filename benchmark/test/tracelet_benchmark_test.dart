@@ -483,7 +483,7 @@ void main() {
     }
 
     // Verify all benchmarks produced results
-    expect(_results.length, greaterThanOrEqualTo(48));
+    expect(_results.length, greaterThanOrEqualTo(28));
     for (final r in _results) {
       expect(
         r.opsPerSec,

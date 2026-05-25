@@ -23,36 +23,25 @@ public struct BudgetAdjustmentEvent {
 /// Accuracy levels (ordered by battery cost, index 0 = highest):
 /// `high (0) → medium (1) → low (2) → veryLow (3) → passive (4)`
 public class BatteryBudgetEngine {
-    /// Error threshold before adjustments are made (% points/hr).
-    private static let errorThreshold = 0.5
-
-    /// Minimum allowed distance filter (meters).
-    private static let minDistanceFilter = 10.0
-
-    /// Maximum allowed distance filter (meters).
-    private static let maxDistanceFilter = 5000.0
-
-    /// Throttle factor when draining too fast.
-    private static let throttleFactor = 1.5
-
-    /// Boost factor when under budget.
-    private static let boostFactor = 0.8
+    
+    private let coreEngine: BatteryBudgetEngineCore
 
     /// Target maximum battery drain per hour (% points).
-    public let targetBudgetPerHour: Double
+    public var targetBudgetPerHour: Double {
+        // the core doesn't expose a getter for target_budget_per_hour directly, but we don't really need it
+        // we can store it locally if needed, but it's only used internally
+        return _targetBudgetPerHour
+    }
+    private let _targetBudgetPerHour: Double
 
     /// Current adjusted distance filter (meters).
-    public private(set) var distanceFilter: Double
+    public var distanceFilter: Double { coreEngine.distanceFilter() }
 
     /// Current adjusted accuracy index (0=high, 4=passive).
-    public private(set) var accuracyIndex: Int
+    public var accuracyIndex: Int { Int(coreEngine.accuracyIndex()) }
 
     /// Current adjusted periodic interval (nil if not periodic).
-    public private(set) var periodicInterval: Int?
-
-    private var prevBatteryLevel: Double?
-    // internal for @testable import access in unit tests
-    var prevSampleTime: Date?
+    public var periodicInterval: Int? { coreEngine.periodicInterval().map { Int(truncating: $0) } }
 
     public init(
         targetBudgetPerHour: Double,
@@ -60,10 +49,13 @@ public class BatteryBudgetEngine {
         initialAccuracyIndex: Int = 0,
         initialPeriodicInterval: Int? = nil
     ) {
-        self.targetBudgetPerHour = targetBudgetPerHour
-        self.distanceFilter = initialDistanceFilter
-        self.accuracyIndex = min(max(initialAccuracyIndex, 0), 4)
-        self.periodicInterval = initialPeriodicInterval
+        self._targetBudgetPerHour = targetBudgetPerHour
+        self.coreEngine = BatteryBudgetEngineCore(
+            targetBudgetPerHour: targetBudgetPerHour,
+            initialDistanceFilter: initialDistanceFilter,
+            initialAccuracyIndex: Int32(initialAccuracyIndex),
+            initialPeriodicInterval: initialPeriodicInterval.map { NSNumber(value: $0) }
+        )
     }
 
     /// Process a new battery sample and return an adjustment if needed.
@@ -73,72 +65,23 @@ public class BatteryBudgetEngine {
     /// - Parameter batteryLevel: 0.0–1.0 (percentage as fraction)
     /// - Returns: adjustment event if parameters changed, nil otherwise
     public func processSample(_ batteryLevel: Double) -> BudgetAdjustmentEvent? {
-        let now = Date()
-
-        guard let prev = prevBatteryLevel, let prevTime = prevSampleTime else {
-            prevBatteryLevel = batteryLevel
-            prevSampleTime = now
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        
+        guard let event = coreEngine.processSample(batteryLevel: batteryLevel, nowMs: nowMs) else {
             return nil
         }
-
-        let elapsed = now.timeIntervalSince(prevTime)
-        guard elapsed >= 60 else { return nil } // Too soon.
-
-        // Compute actual drain normalized to %/hr.
-        let drain = (prev - batteryLevel) * 100.0
-        let drainPerHour = drain * (3600.0 / elapsed)
-
-        prevBatteryLevel = batteryLevel
-        prevSampleTime = now
-
-        // Charging — no adjustment needed.
-        guard drainPerHour > 0 else { return nil }
-
-        let error = drainPerHour - targetBudgetPerHour
-        guard abs(error) >= Self.errorThreshold else { return nil }
-
-        var adjusted = false
-
-        if error > 0 {
-            // Draining too fast — throttle.
-            distanceFilter = min(max(distanceFilter * Self.throttleFactor,
-                                     Self.minDistanceFilter), Self.maxDistanceFilter)
-            if accuracyIndex < 4 {
-                accuracyIndex += 1
-                adjusted = true
-            }
-            if let interval = periodicInterval {
-                periodicInterval = min(max(Int(Double(interval) * Self.throttleFactor), 60), 43200)
-            }
-            adjusted = true
-        } else {
-            // Under budget — can improve.
-            distanceFilter = min(max(distanceFilter * Self.boostFactor,
-                                     Self.minDistanceFilter), Self.maxDistanceFilter)
-            if accuracyIndex > 0 {
-                accuracyIndex -= 1
-                adjusted = true
-            }
-            if let interval = periodicInterval {
-                periodicInterval = min(max(Int(Double(interval) * Self.boostFactor), 60), 43200)
-            }
-            adjusted = true
-        }
-
-        guard adjusted else { return nil }
-
+        
         return BudgetAdjustmentEvent(
-            currentBatteryDrain: drainPerHour,
-            targetBudget: targetBudgetPerHour,
-            newDistanceFilter: distanceFilter,
-            newDesiredAccuracy: accuracyIndex,
-            newPeriodicInterval: periodicInterval
+            currentBatteryDrain: event.currentBatteryDrain,
+            targetBudget: event.targetBudget,
+            newDistanceFilter: event.newDistanceFilter,
+            newDesiredAccuracy: Int(event.newDesiredAccuracy),
+            newPeriodicInterval: event.newPeriodicInterval.map { Int(truncating: $0) }
         )
     }
 
     /// Reset the engine state. Call when tracking restarts.
     public func reset() {
-        prevBatteryLevel = nil
-        prevSampleTime = nil
+        coreEngine.reset()
     }
 }

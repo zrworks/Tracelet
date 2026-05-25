@@ -24,37 +24,25 @@ class BatteryBudgetEngine(
     initialAccuracyIndex: Int = 0,
     initialPeriodicInterval: Int? = null,
 ) {
-    companion object {
-        /** Error threshold before adjustments are made (% points/hr). */
-        private const val ERROR_THRESHOLD = 0.5
 
-        /** Minimum allowed distance filter (meters). */
-        private const val MIN_DISTANCE_FILTER = 10.0
-
-        /** Maximum allowed distance filter (meters). */
-        private const val MAX_DISTANCE_FILTER = 5000.0
-
-        /** Throttle factor when draining too fast. */
-        private const val THROTTLE_FACTOR = 1.5
-
-        /** Boost factor when under budget. */
-        private const val BOOST_FACTOR = 0.8
-    }
+    private val coreEngine = uniffi.tracelet_core.BatteryBudgetEngine(
+        targetBudgetPerHour,
+        initialDistanceFilter,
+        initialAccuracyIndex,
+        initialPeriodicInterval
+    )
 
     /** Current adjusted distance filter (meters). */
-    var distanceFilter: Double = initialDistanceFilter
-        private set
+    val distanceFilter: Double
+        get() = coreEngine.distanceFilter()
 
     /** Current adjusted accuracy index (0=high, 4=passive). */
-    var accuracyIndex: Int = initialAccuracyIndex.coerceIn(0, 4)
-        private set
+    val accuracyIndex: Int
+        get() = coreEngine.accuracyIndex()
 
     /** Current adjusted periodic interval (null if not periodic). */
-    var periodicInterval: Int? = initialPeriodicInterval
-        private set
-
-    private var prevBatteryLevel: Double? = null
-    private var prevSampleTimeMs: Long? = null
+    val periodicInterval: Int?
+        get() = coreEngine.periodicInterval()
 
     /**
      * Process a new battery sample and return an adjustment if needed.
@@ -64,77 +52,22 @@ class BatteryBudgetEngine(
      * @param batteryLevel 0.0–1.0 (percentage as fraction)
      * @return adjustment event if parameters changed, null otherwise
      */
-    fun processSample(batteryLevel: Double): BudgetAdjustmentEvent? {
-        val nowMs = System.currentTimeMillis()
-
-        if (prevBatteryLevel == null || prevSampleTimeMs == null) {
-            prevBatteryLevel = batteryLevel
-            prevSampleTimeMs = nowMs
-            return null
-        }
-
-        val elapsedSec = (nowMs - prevSampleTimeMs!!) / 1000.0
-        if (elapsedSec < 60) return null // Too soon for meaningful measurement.
-
-        // Compute actual drain normalized to %/hr.
-        val drain = (prevBatteryLevel!! - batteryLevel) * 100.0
-        val drainPerHour = drain * (3600.0 / elapsedSec)
-
-        prevBatteryLevel = batteryLevel
-        prevSampleTimeMs = nowMs
-
-        // Charging — no adjustment needed.
-        if (drainPerHour <= 0) return null
-
-        val error = drainPerHour - targetBudgetPerHour
-
-        if (kotlin.math.abs(error) < ERROR_THRESHOLD) return null
-
-        var adjusted = false
-
-        if (error > 0) {
-            // Draining too fast — throttle.
-            distanceFilter = (distanceFilter * THROTTLE_FACTOR)
-                .coerceIn(MIN_DISTANCE_FILTER, MAX_DISTANCE_FILTER)
-            if (accuracyIndex < 4) {
-                accuracyIndex++
-                adjusted = true
-            }
-            periodicInterval?.let { interval ->
-                periodicInterval = (interval * THROTTLE_FACTOR).toInt()
-                    .coerceIn(60, 43200)
-            }
-            adjusted = true
-        } else {
-            // Under budget — can improve.
-            distanceFilter = (distanceFilter * BOOST_FACTOR)
-                .coerceIn(MIN_DISTANCE_FILTER, MAX_DISTANCE_FILTER)
-            if (accuracyIndex > 0) {
-                accuracyIndex--
-                adjusted = true
-            }
-            periodicInterval?.let { interval ->
-                periodicInterval = (interval * BOOST_FACTOR).toInt()
-                    .coerceIn(60, 43200)
-            }
-            adjusted = true
-        }
-
-        if (!adjusted) return null
+    fun processSample(batteryLevel: Double, nowMs: Long = System.currentTimeMillis()): BudgetAdjustmentEvent? {
+        val event = coreEngine.processSample(batteryLevel, nowMs)
+        if (event == null) return null
 
         return BudgetAdjustmentEvent(
-            currentBatteryDrain = drainPerHour,
-            targetBudget = targetBudgetPerHour,
-            newDistanceFilter = distanceFilter,
-            newDesiredAccuracy = accuracyIndex,
-            newPeriodicInterval = periodicInterval,
+            currentBatteryDrain = event.currentBatteryDrain,
+            targetBudget = event.targetBudget,
+            newDistanceFilter = event.newDistanceFilter,
+            newDesiredAccuracy = event.newDesiredAccuracy,
+            newPeriodicInterval = event.newPeriodicInterval,
         )
     }
 
     /** Reset the engine state. Call when tracking restarts. */
     fun reset() {
-        prevBatteryLevel = null
-        prevSampleTimeMs = null
+        coreEngine.reset()
     }
 }
 

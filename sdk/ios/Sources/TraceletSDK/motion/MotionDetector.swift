@@ -33,7 +33,7 @@ public final class MotionDetector {
 
     private var isRunning = false
     private var isFullModeStarted = false
-    private var stopTimer: Timer?
+    private var stopTimerWorkItem: DispatchWorkItem?
     private var currentActivity: String = "unknown"
     private var currentConfidence: Int = -1
 
@@ -121,9 +121,9 @@ public final class MotionDetector {
         motionManager.stopAccelerometerUpdates()
 
         // Shared cleanup
-        if stopTimer != nil {
-            stopTimer?.invalidate()
-            stopTimer = nil
+        if stopTimerWorkItem != nil {
+            stopTimerWorkItem?.cancel()
+            stopTimerWorkItem = nil
             onStopTimeoutCancelled?()
         }
         consecutiveStillSamples = 0
@@ -374,10 +374,10 @@ public final class MotionDetector {
     }
 
     private func handleMovingDetected() {
-        if stopTimer != nil {
-            NSLog("[Tracelet-Motion] handleMovingDetected: Invalidating stopTimer due to movement")
-            stopTimer?.invalidate()
-            stopTimer = nil
+        if stopTimerWorkItem != nil {
+            NSLog("[Tracelet-Motion] handleMovingDetected: Cancelling stopTimerWorkItem due to movement")
+            stopTimerWorkItem?.cancel()
+            stopTimerWorkItem = nil
             onStopTimeoutCancelled?()
         }
 
@@ -427,7 +427,7 @@ public final class MotionDetector {
     private func startStopTimeoutCountdown() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            if self.stopTimer != nil {
+            if self.stopTimerWorkItem != nil {
                 NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Timer is already running")
                 return
             }
@@ -444,15 +444,14 @@ public final class MotionDetector {
             NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Starting timer for \(totalDelay) seconds")
             self.onStopTimeoutStarted?()
 
-            // Only create a new timer if one isn't already running
-            self.stopTimer = Timer.scheduledTimer(
-                withTimeInterval: totalDelay,
-                repeats: false
-            ) { [weak self] _ in
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
                 NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Timer FIRED! Transitioning to STATIONARY")
-                self?.onStopTimeoutCancelled?()
-                self?.triggerMotionChange(isMoving: false)
+                self.onStopTimeoutCancelled?()
+                self.triggerMotionChange(isMoving: false)
             }
+            self.stopTimerWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + totalDelay, execute: workItem)
         }
     }
 
@@ -493,6 +492,38 @@ public final class MotionDetector {
                 self.motionManager.stopAccelerometerUpdates()
             }
         }
+        }
+    }
+
+    /// Re-syncs MotionDetector's sensor state when the tracking mode is manually
+    /// changed (e.g. from changePace or SmartMotionCoordinator).
+    public func onManualPaceChange(_ isMoving: Bool) {
+        if isMoving {
+            if stopTimerWorkItem != nil {
+                NSLog("[Tracelet-Motion] onManualPaceChange(true): Cancelling stopTimerWorkItem")
+                stopTimerWorkItem?.cancel()
+                stopTimerWorkItem = nil
+                onStopTimeoutCancelled?()
+            }
+            consecutiveStillSamples = 0
+        }
+        
+        if isRunning {
+            if isAccelerometerOnlyMode || isMoving {
+                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+                consecutiveStillSamples = 0
+                if motionManager.isAccelerometerAvailable {
+                    let accelQueue = OperationQueue()
+                    accelQueue.name = "com.tracelet.accelerometer.fallback"
+                    accelQueue.qualityOfService = .utility
+                    motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                        guard let self = self, let data = data, error == nil else { return }
+                        self.handleAccelerometerData(data)
+                    }
+                }
+            } else {
+                motionManager.stopAccelerometerUpdates()
+            }
         }
     }
 }

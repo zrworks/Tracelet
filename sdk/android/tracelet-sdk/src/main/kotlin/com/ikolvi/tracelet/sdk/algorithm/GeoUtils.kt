@@ -10,7 +10,7 @@ object GeoUtils {
      * using the Haversine formula. Returns the distance in meters.
      */
     fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        return haversine(lat1, lon1, lat2, lon2)
+        return uniffi.tracelet_core.haversine(lat1, lon1, lat2, lon2)
     }
 
     /**
@@ -18,6 +18,6 @@ object GeoUtils {
      */
     fun isPointInPolygon(latitude: Double, longitude: Double, polygon: List<List<Double>>): Boolean {
         val coords = polygon.map { Coordinate(it[0], it[1]) }
-        return isPointInPolygon(latitude, longitude, coords)
+        return uniffi.tracelet_core.isPointInPolygon(latitude, longitude, coords)
     }
 }

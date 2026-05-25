@@ -191,15 +191,11 @@ class BatteryBudgetEngineTest {
         elapsedMs: Long,
         engine: BatteryBudgetEngine = this.engine,
     ): BudgetAdjustmentEvent? {
-        // First sample (baseline)
-        engine.processSample(startLevel)
-
-        // Manipulate prevSampleTimeMs to simulate elapsed time
-        val prevTimeField = BatteryBudgetEngine::class.java.getDeclaredField("prevSampleTimeMs")
-        prevTimeField.isAccessible = true
         val now = System.currentTimeMillis()
-        prevTimeField.set(engine, now - elapsedMs)
+        // First sample (baseline)
+        engine.processSample(startLevel, now - elapsedMs)
 
-        return engine.processSample(endLevel)
+        // Second sample with elapsed time
+        return engine.processSample(endLevel, now)
     }
 }

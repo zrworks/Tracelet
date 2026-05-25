@@ -158,23 +158,22 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         let allGeofences = getCachedGeofences()
         if allGeofences.isEmpty { return }
 
+        let coreGeofences = allGeofences.map { mapToCoreGeofence($0) }
         let transitions = geofenceEvaluator.evaluateProximity(
             latitude: latitude,
             longitude: longitude,
-            geofences: allGeofences
+            geofences: coreGeofences
         )
         if transitions.isEmpty { return }
 
         var on: [[String: Any]] = []
         var off: [[String: Any]] = []
+        let geofenceMapById = Dictionary(uniqueKeysWithValues: allGeofences.compactMap {
+            if let id = $0["identifier"] as? String { return (id, $0) } else { return nil }
+        })
 
         for t in transitions {
-            // Convert [String: Any?] to [String: Any] for dispatch
-            var gfMap: [String: Any] = [:]
-            for (k, v) in t.geofence {
-                if let v = v { gfMap[k] = v }
-            }
-
+            let gfMap = geofenceMapById[t.identifier]
             let eventData: [String: Any] = [
                 "identifier": t.identifier,
                 "action": t.action,
@@ -184,18 +183,18 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
                         "longitude": longitude,
                     ],
                 ],
-                "extras": gfMap["extras"] ?? [:] as [String: Any],
+                "extras": gfMap?["extras"] ?? [:] as [String: Any],
             ]
             eventDispatcher.sendGeofence(eventData)
 
             switch t.action {
             case "ENTER":
-                on.append(gfMap)
+                if let g = gfMap { on.append(g) }
             case "EXIT":
-                off.append(gfMap)
+                if let g = gfMap { off.append(g) }
                 if configManager.getGeofenceModeKnockOut() {
                     let _ = removeGeofence(t.identifier)
-                    geofenceEvaluator.removeGeofence(t.identifier)
+                    geofenceEvaluator.removeGeofence(identifier: t.identifier)
                 }
             default:
                 break
@@ -416,5 +415,21 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private func resolveMaxMonitored() -> Int {
         let configured = configManager.getMaxMonitoredGeofences()
         return configured > 0 ? min(configured, GeofenceManager.maxRegions) : GeofenceManager.maxRegions
+    }
+
+    private func mapToCoreGeofence(_ gf: [String: Any]) -> CoreGeofence {
+        let identifier = gf["identifier"] as? String ?? ""
+        let latitude = gf["latitude"] as? Double ?? 0.0
+        let longitude = gf["longitude"] as? Double ?? 0.0
+        let radius = gf["radius"] as? Double ?? 0.0
+        var vertices: [Coordinate] = []
+        if let verticesRaw = gf["vertices"] as? [[Double]] {
+            for v in verticesRaw {
+                if v.count >= 2 {
+                    vertices.append(Coordinate(lat: v[0], lng: v[1]))
+                }
+            }
+        }
+        return CoreGeofence(identifier: identifier, latitude: latitude, longitude: longitude, radius: radius, vertices: vertices)
     }
 }

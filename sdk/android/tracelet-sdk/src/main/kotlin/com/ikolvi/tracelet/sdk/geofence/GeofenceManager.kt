@@ -9,7 +9,9 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
-import com.ikolvi.tracelet.sdk.algorithm.GeofenceEvaluator
+import uniffi.tracelet_core.GeofenceEvaluator
+import uniffi.tracelet_core.CoreGeofence
+import uniffi.tracelet_core.Coordinate
 import com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver
 import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofence
@@ -240,17 +242,20 @@ class GeofenceManager(
         val allGeofences = getCachedGeofences()
         if (allGeofences.isEmpty()) return
 
+        val coreGeofences = allGeofences.map { mapToCoreGeofence(it) }
         val transitions = geofenceEvaluator.evaluateProximity(
             latitude = latitude,
             longitude = longitude,
-            geofences = allGeofences,
+            geofences = coreGeofences,
         )
         if (transitions.isEmpty()) return
 
         val on = mutableListOf<Map<String, Any?>>()
         val off = mutableListOf<Map<String, Any?>>()
+        val geofenceMapById = allGeofences.associateBy { it["identifier"] as? String }
 
         for (t in transitions) {
+            val gfMap = geofenceMapById[t.identifier]
             val eventData = mapOf(
                 "identifier" to t.identifier,
                 "action" to t.action,
@@ -260,14 +265,14 @@ class GeofenceManager(
                         "longitude" to longitude,
                     )
                 ),
-                "extras" to t.geofence["extras"],
+                "extras" to gfMap?.get("extras"),
             )
             events.sendGeofence(eventData)
 
             when (t.action) {
-                "ENTER" -> on.add(t.geofence)
+                "ENTER" -> gfMap?.let { on.add(it) }
                 "EXIT" -> {
-                    off.add(t.geofence)
+                    gfMap?.let { off.add(it) }
                     if (config.getGeofenceModeKnockOut()) {
                         removeGeofence(t.identifier)
                         geofenceEvaluator.removeGeofence(t.identifier)
@@ -514,5 +519,26 @@ class GeofenceManager(
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return r * c
+    }
+
+    private fun mapToCoreGeofence(gf: Map<String, Any?>): CoreGeofence {
+        val identifier = gf["identifier"] as? String ?: ""
+        val latitude = (gf["latitude"] as? Number)?.toDouble() ?: 0.0
+        val longitude = (gf["longitude"] as? Number)?.toDouble() ?: 0.0
+        val radius = (gf["radius"] as? Number)?.toDouble() ?: 0.0
+        val verticesRaw = gf["vertices"]
+        val vertices = mutableListOf<Coordinate>()
+        if (verticesRaw is List<*>) {
+            for (v in verticesRaw) {
+                if (v is List<*> && v.size >= 2) {
+                    val lat = (v[0] as? Number)?.toDouble()
+                    val lng = (v[1] as? Number)?.toDouble()
+                    if (lat != null && lng != null) {
+                        vertices.add(Coordinate(lat, lng))
+                    }
+                }
+            }
+        }
+        return CoreGeofence(identifier, latitude, longitude, radius, vertices)
     }
 }

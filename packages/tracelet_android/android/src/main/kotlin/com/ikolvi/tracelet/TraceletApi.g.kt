@@ -109,7 +109,8 @@ enum class TlTrackingMode(val raw: Int) {
 
 enum class TlMotionDetectionMode(val raw: Int) {
   ACCELEROMETER(0),
-  SPEED(1);
+  SPEED(1),
+  SMART(2);
 
   companion object {
     fun ofRaw(raw: Int): TlMotionDetectionMode? {

@@ -114,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage>
   bool _isTracking = false;
   bool _isMoving = false;
   bool _kalmanEnabled = true;
-  bool _speedMotionEnabled = false;
+  tl.MotionDetectionMode _motionMode = tl.MotionDetectionMode.smart;
   bool _adaptiveMode = false;
   bool _isPeriodicMode = false;
   bool _logExpanded = false;
@@ -600,8 +600,9 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           motion: const tl.MotionConfig(
             stopTimeout: 1, // 1 minute for fast stop-timeout testing
-            disableMotionActivityUpdates: true, // Force raw accelerometer
-            motionDetectionMode: tl.MotionDetectionMode.accelerometer,
+            disableMotionActivityUpdates: false, // Use ActivityRecognition for instant walk detection
+            motionDetectionMode: tl.MotionDetectionMode.smart,
+            shakeThreshold: 0.5, // 🚀 NEW: Ultra-sensitive for indoor testing!
             speedStationaryDelay: 30, // Make it quicker for demo testing
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
@@ -2037,26 +2038,35 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
-  /// Toggle Speed-Based Motion Detection at runtime.
-  Future<void> _toggleSpeedMotion() async {
+  /// Cycle through Motion Detection Modes at runtime.
+  Future<void> _cycleMotionMode() async {
     try {
-      final newValue = !_speedMotionEnabled;
+      tl.MotionDetectionMode nextMode;
+      switch (_motionMode) {
+        case tl.MotionDetectionMode.accelerometer:
+          nextMode = tl.MotionDetectionMode.speed;
+          break;
+        case tl.MotionDetectionMode.speed:
+          nextMode = tl.MotionDetectionMode.smart;
+          break;
+        case tl.MotionDetectionMode.smart:
+          nextMode = tl.MotionDetectionMode.accelerometer;
+          break;
+      }
       final state = await tl.Tracelet.setConfig(
         tl.Config(
           motion: tl.MotionConfig(
-            motionDetectionMode: newValue
-                ? tl.MotionDetectionMode.speed
-                : tl.MotionDetectionMode.accelerometer,
+            motionDetectionMode: nextMode,
           ),
         ),
       );
       setState(() {
-        _speedMotionEnabled = newValue;
+        _motionMode = nextMode;
         _pluginState = state;
       });
-      _addLog('MOTION_MODE', newValue ? 'SPEED-BASED' : 'ACCELEROMETER-BASED');
+      _addLog('MOTION_MODE', nextMode.name.toUpperCase());
     } catch (e) {
-      _addLog('ERROR', 'toggleSpeedMotion() failed: $e');
+      _addLog('ERROR', 'cycleMotionMode() failed: $e');
     }
   }
 
@@ -3768,13 +3778,13 @@ class _DashboardPageState extends State<DashboardPage>
                         _toggleKalmanFilter,
                       ),
                       _Chip(
-                        _speedMotionEnabled
-                            ? 'Speed Motion: ON'
-                            : 'Speed Motion: OFF',
-                        _speedMotionEnabled
-                            ? Icons.speed
-                            : Icons.speed_outlined,
-                        _toggleSpeedMotion,
+                        'Motion: ${_motionMode.name.toUpperCase()}',
+                        _motionMode == tl.MotionDetectionMode.accelerometer
+                            ? Icons.directions_walk
+                            : _motionMode == tl.MotionDetectionMode.speed
+                                ? Icons.speed
+                                : Icons.smart_button,
+                        _cycleMotionMode,
                       ),
                       _Chip(
                         _adaptiveMode ? 'Adaptive: ON' : 'Adaptive: OFF',

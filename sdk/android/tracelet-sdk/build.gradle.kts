@@ -44,6 +44,13 @@ android {
             withJavadocJar()
         }
     }
+
+    testOptions {
+        unitTests.all {
+            val rustDir = project.rootDir.parentFile.resolve("rust-core/target/debug")
+            it.systemProperty("jna.library.path", rustDir.absolutePath)
+        }
+    }
 }
 
 dependencies {
@@ -103,6 +110,9 @@ dependencies {
     // included so SqlCipherMigratorTest can verify the "unavailable" code path.
     testImplementation("androidx.security:security-crypto:1.1.0")
     testImplementation("com.google.android.play:integrity:1.6.0")
+
+    // JNA JAR for running local JVM tests on Mac/Linux/Windows
+    testImplementation("net.java.dev.jna:jna:5.18.1")
 }
 
 afterEvaluate {

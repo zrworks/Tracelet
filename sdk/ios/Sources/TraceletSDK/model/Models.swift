@@ -337,6 +337,7 @@ public struct TraceletGeofence {
 @objc public enum MotionDetectionMode: Int {
     case activity = 0
     case speed = 1
+    case smart = 2
 }
 
 // MARK: - TraceletState

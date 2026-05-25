@@ -149,6 +149,7 @@ enum TlTrackingMode: Int {
 enum TlMotionDetectionMode: Int {
   case accelerometer = 0
   case speed = 1
+  case smart = 2
 }
 
 enum TlStationaryTrackingMode: Int {

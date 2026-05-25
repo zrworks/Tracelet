@@ -653,6 +653,174 @@ public func FfiConverterTypeAdaptiveSamplingEngine_lower(_ value: AdaptiveSampli
 
 
 
+public protocol BatteryBudgetEngineProtocol: AnyObject, Sendable {
+    
+    func accuracyIndex()  -> Int32
+    
+    func distanceFilter()  -> Double
+    
+    func periodicInterval()  -> Int32?
+    
+    func processSample(batteryLevel: Double, nowMs: Int64)  -> BudgetAdjustmentEvent?
+    
+    func reset() 
+    
+}
+open class BatteryBudgetEngine: BatteryBudgetEngineProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_batterybudgetengine(self.handle, $0) }
+    }
+public convenience init(targetBudgetPerHour: Double, initialDistanceFilter: Double, initialAccuracyIndex: Int32, initialPeriodicInterval: Int32?) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_batterybudgetengine_new(
+        FfiConverterDouble.lower(targetBudgetPerHour),
+        FfiConverterDouble.lower(initialDistanceFilter),
+        FfiConverterInt32.lower(initialAccuracyIndex),
+        FfiConverterOptionInt32.lower(initialPeriodicInterval),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_batterybudgetengine(handle, $0) }
+    }
+
+    
+
+    
+open func accuracyIndex() -> Int32  {
+    return try!  FfiConverterInt32.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_batterybudgetengine_accuracy_index(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func distanceFilter() -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_batterybudgetengine_distance_filter(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func periodicInterval() -> Int32?  {
+    return try!  FfiConverterOptionInt32.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_batterybudgetengine_periodic_interval(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func processSample(batteryLevel: Double, nowMs: Int64) -> BudgetAdjustmentEvent?  {
+    return try!  FfiConverterOptionTypeBudgetAdjustmentEvent.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_batterybudgetengine_process_sample(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(batteryLevel),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+open func reset()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_batterybudgetengine_reset(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBatteryBudgetEngine: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = BatteryBudgetEngine
+
+    public static func lift(_ handle: UInt64) throws -> BatteryBudgetEngine {
+        return BatteryBudgetEngine(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: BatteryBudgetEngine) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BatteryBudgetEngine {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: BatteryBudgetEngine, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBatteryBudgetEngine_lift(_ handle: UInt64) throws -> BatteryBudgetEngine {
+    return try FfiConverterTypeBatteryBudgetEngine.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngine) -> UInt64 {
+    return FfiConverterTypeBatteryBudgetEngine.lower(value)
+}
+
+
+
+
+
+
 public protocol GeofenceEvaluatorProtocol: AnyObject, Sendable {
     
     func clear() 
@@ -1143,6 +1311,182 @@ public func FfiConverterTypeLocationProcessor_lower(_ value: LocationProcessor) 
 
 
 
+
+
+public protocol SmartMotionCoordinatorProtocol: AnyObject, Sendable {
+    
+    func isAccelMoving()  -> Bool
+    
+    func isSpeedMoving()  -> Bool
+    
+    func onAccelStateChange(isMoving: Bool)  -> CoordinatorAction
+    
+    func onSpeedStateChange(isMoving: Bool)  -> CoordinatorAction
+    
+    func setCurrentMode(mode: TrackingMode) 
+    
+    func setUseGeofencesWhenStationary(useGeofences: Bool) 
+    
+}
+open class SmartMotionCoordinator: SmartMotionCoordinatorProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_smartmotioncoordinator(self.handle, $0) }
+    }
+public convenience init(useGeofencesWhenStationary: Bool) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_smartmotioncoordinator_new(
+        FfiConverterBool.lower(useGeofencesWhenStationary),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_smartmotioncoordinator(handle, $0) }
+    }
+
+    
+
+    
+open func isAccelMoving() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_accel_moving(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func isSpeedMoving() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_is_speed_moving(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func onAccelStateChange(isMoving: Bool) -> CoordinatorAction  {
+    return try!  FfiConverterTypeCoordinatorAction_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_on_accel_state_change(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(isMoving),$0
+    )
+})
+}
+    
+open func onSpeedStateChange(isMoving: Bool) -> CoordinatorAction  {
+    return try!  FfiConverterTypeCoordinatorAction_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_on_speed_state_change(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(isMoving),$0
+    )
+})
+}
+    
+open func setCurrentMode(mode: TrackingMode)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_set_current_mode(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeTrackingMode_lower(mode),$0
+    )
+}
+}
+    
+open func setUseGeofencesWhenStationary(useGeofences: Bool)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_smartmotioncoordinator_set_use_geofences_when_stationary(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(useGeofences),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSmartMotionCoordinator: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = SmartMotionCoordinator
+
+    public static func lift(_ handle: UInt64) throws -> SmartMotionCoordinator {
+        return SmartMotionCoordinator(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: SmartMotionCoordinator) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SmartMotionCoordinator {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: SmartMotionCoordinator, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSmartMotionCoordinator_lift(_ handle: UInt64) throws -> SmartMotionCoordinator {
+    return try FfiConverterTypeSmartMotionCoordinator.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoordinator) -> UInt64 {
+    return FfiConverterTypeSmartMotionCoordinator.lower(value)
+}
+
+
+
+
 public struct AdaptiveContext: Equatable, Hashable {
     public var batteryLevel: Double
     public var isCharging: Bool
@@ -1276,6 +1620,72 @@ public func FfiConverterTypeAdaptiveSamplingResult_lift(_ buf: RustBuffer) throw
 #endif
 public func FfiConverterTypeAdaptiveSamplingResult_lower(_ value: AdaptiveSamplingResult) -> RustBuffer {
     return FfiConverterTypeAdaptiveSamplingResult.lower(value)
+}
+
+
+public struct BudgetAdjustmentEvent: Equatable, Hashable {
+    public var currentBatteryDrain: Double
+    public var targetBudget: Double
+    public var newDistanceFilter: Double
+    public var newDesiredAccuracy: Int32
+    public var newPeriodicInterval: Int32?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(currentBatteryDrain: Double, targetBudget: Double, newDistanceFilter: Double, newDesiredAccuracy: Int32, newPeriodicInterval: Int32?) {
+        self.currentBatteryDrain = currentBatteryDrain
+        self.targetBudget = targetBudget
+        self.newDistanceFilter = newDistanceFilter
+        self.newDesiredAccuracy = newDesiredAccuracy
+        self.newPeriodicInterval = newPeriodicInterval
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension BudgetAdjustmentEvent: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBudgetAdjustmentEvent: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BudgetAdjustmentEvent {
+        return
+            try BudgetAdjustmentEvent(
+                currentBatteryDrain: FfiConverterDouble.read(from: &buf), 
+                targetBudget: FfiConverterDouble.read(from: &buf), 
+                newDistanceFilter: FfiConverterDouble.read(from: &buf), 
+                newDesiredAccuracy: FfiConverterInt32.read(from: &buf), 
+                newPeriodicInterval: FfiConverterOptionInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BudgetAdjustmentEvent, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.currentBatteryDrain, into: &buf)
+        FfiConverterDouble.write(value.targetBudget, into: &buf)
+        FfiConverterDouble.write(value.newDistanceFilter, into: &buf)
+        FfiConverterInt32.write(value.newDesiredAccuracy, into: &buf)
+        FfiConverterOptionInt32.write(value.newPeriodicInterval, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBudgetAdjustmentEvent_lift(_ buf: RustBuffer) throws -> BudgetAdjustmentEvent {
+    return try FfiConverterTypeBudgetAdjustmentEvent.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBudgetAdjustmentEvent_lower(_ value: BudgetAdjustmentEvent) -> RustBuffer {
+    return FfiConverterTypeBudgetAdjustmentEvent.lower(value)
 }
 
 
@@ -1830,6 +2240,185 @@ public func FfiConverterTypeAdaptiveSource_lower(_ value: AdaptiveSource) -> Rus
 }
 
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum CoordinatorAction: Equatable, Hashable {
+    
+    case none
+    case switchToContinuous
+    case switchToStationaryGeofences
+    case switchToStationaryPeriodic
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension CoordinatorAction: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoordinatorAction: FfiConverterRustBuffer {
+    typealias SwiftType = CoordinatorAction
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoordinatorAction {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .none
+        
+        case 2: return .switchToContinuous
+        
+        case 3: return .switchToStationaryGeofences
+        
+        case 4: return .switchToStationaryPeriodic
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CoordinatorAction, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .none:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .switchToContinuous:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .switchToStationaryGeofences:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .switchToStationaryPeriodic:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoordinatorAction_lift(_ buf: RustBuffer) throws -> CoordinatorAction {
+    return try FfiConverterTypeCoordinatorAction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoordinatorAction_lower(_ value: CoordinatorAction) -> RustBuffer {
+    return FfiConverterTypeCoordinatorAction.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum TrackingMode: Equatable, Hashable {
+    
+    case continuous
+    case stationaryGeofences
+    case stationaryPeriodic
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension TrackingMode: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTrackingMode: FfiConverterRustBuffer {
+    typealias SwiftType = TrackingMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TrackingMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .continuous
+        
+        case 2: return .stationaryGeofences
+        
+        case 3: return .stationaryPeriodic
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TrackingMode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .continuous:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .stationaryGeofences:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .stationaryPeriodic:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTrackingMode_lift(_ buf: RustBuffer) throws -> TrackingMode {
+    return try FfiConverterTypeTrackingMode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTrackingMode_lower(_ value: TrackingMode) -> RustBuffer {
+    return FfiConverterTypeTrackingMode.lower(value)
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionInt32: FfiConverterRustBuffer {
+    typealias SwiftType = Int32?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterInt32.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
@@ -1873,6 +2462,30 @@ fileprivate struct FfiConverterOptionTypeAdaptiveContext: FfiConverterRustBuffer
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeAdaptiveContext.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeBudgetAdjustmentEvent: FfiConverterRustBuffer {
+    typealias SwiftType = BudgetAdjustmentEvent?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBudgetAdjustmentEvent.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBudgetAdjustmentEvent.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2035,6 +2648,39 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 28291) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter() != 9862) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval() != 18140) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample() != 42298) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 27366) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving() != 19521) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving() != 15267) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change() != 21639) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change() != 45645) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode() != 33542) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 58796) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -2045,6 +2691,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 56699) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 9629) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 29624) {
         return InitializationResult.apiChecksumMismatch
     }
 

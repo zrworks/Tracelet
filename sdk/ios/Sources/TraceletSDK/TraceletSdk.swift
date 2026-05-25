@@ -54,6 +54,7 @@ public final class TraceletSdk {
     public private(set) var motionDetector: MotionDetector!
     public private(set) var speedMotionManager: SpeedMotionManager?
     public private(set) var geofenceManager: GeofenceManager!
+    public private(set) var smartMotionCoordinator: SmartMotionCoordinator!
     public private(set) var httpSyncManager: HttpSyncManager!
     public private(set) var scheduleManager: ScheduleManager!
     public private(set) var logger: TraceletLogger!
@@ -238,9 +239,12 @@ public final class TraceletSdk {
             )
         }
 
-        let isSpeedMotionMode = configManager.getMotionDetectionMode() == .speed
-        if isSpeedMotionMode {
-            startSpeedMotionManager()
+        let motionMode = configManager.getMotionDetectionMode()
+        if motionMode == .speed {
+            startSpeedMotionManager(forceMoving: true)
+        } else if motionMode == .smart {
+            startSpeedMotionManager(forceMoving: true)
+            motionDetector.start()
         } else {
             motionDetector.start()
         }
@@ -572,7 +576,16 @@ public final class TraceletSdk {
     @discardableResult
     public func changePace(_ isMoving: Bool) -> Bool {
         guard isReady else { return false }
-        return locationEngine.changePace(isMoving)
+        
+        let motionMode = configManager.getMotionDetectionMode()
+        if motionMode == .speed {
+            speedMotionManager?.onManualPaceChange(isMoving: isMoving)
+            return true
+        } else {
+            let result = locationEngine.changePace(isMoving)
+            motionDetector.onManualPaceChange(isMoving)
+            return result
+        }
     }
 
     /// Get the current odometer value in meters.
@@ -1121,6 +1134,9 @@ public final class TraceletSdk {
             eventDispatcher: eventSender,
             database: database
         )
+        
+        // Smart motion coordinator
+        smartMotionCoordinator = SmartMotionCoordinator(sdk: self)
 
         // HTTP sync
         httpSyncManager = HttpSyncManager(
@@ -1162,6 +1178,12 @@ public final class TraceletSdk {
     // MARK: - Private: Motion State
 
     private func handleMotionStateChange(_ isMoving: Bool) {
+        if configManager.getMotionDetectionMode() == .smart {
+            smartMotionCoordinator.onAccelStateChange(isMoving: isMoving)
+            return
+        }
+
+        NSLog("[Tracelet] Motion state changed: isMoving=\(isMoving)")
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.stateManager.isMoving = isMoving
@@ -1605,7 +1627,7 @@ public final class TraceletSdk {
         }
     }
 
-    private func startSpeedMotionManager() {
+    private func startSpeedMotionManager(forceMoving: Bool = false) {
         let smm = SpeedMotionManager(stateManager: stateManager)
         smm.speedMovingThreshold = configManager.getSpeedMovingThreshold()
         smm.speedStationaryDelay = configManager.getSpeedStationaryDelay()
@@ -1613,13 +1635,16 @@ public final class TraceletSdk {
         smm.stationaryPeriodicInterval = configManager.getStationaryPeriodicInterval()
         smm.speedWakeConfirmCount = configManager.getSpeedWakeConfirmCount()
         smm.delegate = self
-        smm.start()
+        smm.start(forceMoving: forceMoving)
         speedMotionManager = smm
 
         // Feed CLLocation.speed to the state machine on every fix
         locationEngine.speedSink = { [weak smm] speed in
             smm?.onLocation(speed: speed)
         }
+
+        // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
+        smm.onLocation(speed: locationEngine.lastEffectiveSpeed)
 
         NSLog("[Tracelet] Speed motion mode started (threshold=%.1f, delay=%ds, stationary=%@)",
               smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode == .geofences ? "geofences" : "periodic")
@@ -1640,8 +1665,17 @@ public final class TraceletSdk {
 extension TraceletSdk: SpeedMotionDelegate {
 
     public func switchToContinuous() {
+        if configManager.getMotionDetectionMode() == .smart {
+            smartMotionCoordinator.onSpeedStateChange(isMoving: true)
+            return
+        }
+        switchToContinuousForce()
+    }
+
+    public func switchToContinuousForce() {
         BackgroundTaskHelper.shared.run("speedSwitchContinuous") { [self] in
             stateManager.isMoving = true
+            stateManager.trackingMode = .continuous
             locationEngine.switchToContinuous()
 
             // Emit motionchange event for backward compatibility
@@ -1665,8 +1699,17 @@ extension TraceletSdk: SpeedMotionDelegate {
     }
 
     public func switchToStationaryPeriodic() {
+        if configManager.getMotionDetectionMode() == .smart {
+            smartMotionCoordinator.onSpeedStateChange(isMoving: false)
+            return
+        }
+        switchToStationaryPeriodicForce()
+    }
+
+    public func switchToStationaryPeriodicForce() {
         BackgroundTaskHelper.shared.run("speedSwitchStationary") { [self] in
             stateManager.isMoving = false
+            stateManager.trackingMode = .periodic
             locationEngine.switchToStationaryPeriodic()
 
             // Emit motionchange event for backward compatibility
@@ -1695,8 +1738,17 @@ extension TraceletSdk: SpeedMotionDelegate {
     }
 
     public func switchToStationaryGeofences() {
+        if configManager.getMotionDetectionMode() == .smart {
+            smartMotionCoordinator.onSpeedStateChange(isMoving: false)
+            return
+        }
+        switchToStationaryGeofencesForce()
+    }
+
+    public func switchToStationaryGeofencesForce() {
         BackgroundTaskHelper.shared.run("speedSwitchGeofences") { [self] in
             stateManager.isMoving = false
+            stateManager.trackingMode = .geofences
             locationEngine.switchToStationaryGeofences()
             geofenceManager.reRegisterAll()
 

@@ -52,6 +52,43 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private var insertCountSincePrune = 0
     private static let pruneEveryNInserts = 100
 
+    // MARK: - Rust-powered location processing
+
+    /// Rust-backed location processor for distance/accuracy/speed/mock filtering.
+    private var locationProcessor: LocationProcessor?
+
+    /// Rust-backed Kalman filter for smoothing lat/lng.
+    private var kalmanFilter: KalmanLocationFilter?
+
+    /// Build (or rebuild) the Rust LocationProcessor from current config.
+    public func rebuildProcessor() {
+        locationProcessor?.destroy()
+        locationProcessor = LocationProcessor(
+            distanceFilter: configManager.getDistanceFilter(),
+            disableElasticity: configManager.getDisableElasticity(),
+            elasticityMultiplier: configManager.getElasticityMultiplier(),
+            enableAdaptiveMode: configManager.getEnableAdaptiveMode(),
+            trackingAccuracyThreshold: Int32(configManager.getTrackingAccuracyThreshold()),
+            filterPolicy: Int32(configManager.getFilterPolicy()),
+            maxImpliedSpeed: Int32(configManager.getMaxImpliedSpeed()),
+            odometerAccuracyThreshold: Int32(configManager.getOdometerAccuracyThreshold()),
+            rejectMockLocations: configManager.getRejectMockLocations(),
+            mockDetectionLevel: Int32(configManager.getMockDetectionLevel()),
+            enableSparseUpdates: configManager.getEnableSparseUpdates(),
+            sparseDistanceThreshold: configManager.getSparseDistanceThreshold(),
+            sparseMaxIdleSeconds: Int32(configManager.getSparseMaxIdleSeconds())
+        )
+        kalmanFilter?.destroy()
+        kalmanFilter = configManager.getEnableKalmanFilter() ? KalmanLocationFilter() : nil
+    }
+
+    /// Returns the processor, building it if needed.
+    private func getProcessor() -> LocationProcessor {
+        if let p = locationProcessor { return p }
+        rebuildProcessor()
+        return locationProcessor!
+    }
+
     /// Maximum accuracy (meters) to consider a fix as GPS-sourced.
     static let gpsAccuracyThreshold: Double = 50.0
 
@@ -369,6 +406,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         lastGpsLocation = nil
         oneShots.removeAll()
         stopAllWatchers()
+        locationProcessor?.destroy()
+        locationProcessor = nil
+        kalmanFilter?.destroy()
+        kalmanFilter = nil
     }
 
     /// Stops all active watch-position subscriptions.
@@ -689,21 +730,12 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         // --- Compute speed from distance/time as fallback ---
         var computedSpeed: Double = 0.0
+        var distance: Double = 0.0
 
-        // --- Filtering (elasticity, accuracy, speed) is now in shared Dart ---
-        // LocationProcessor in tracelet_platform_interface handles all filtering.
-        // Native sends ALL locations; Dart filters before delivering to user.
         if let last = lastLocation {
-            let distance = location.distance(from: last)
+            distance = location.distance(from: last)
             let timeDelta = location.timestamp.timeIntervalSince(last.timestamp)
             computedSpeed = (distance > 0 && timeDelta > 0) ? distance / timeDelta : 0.0
-
-            // Odometer accuracy check
-            let odometerAccuracyThreshold = configManager.getOdometerAccuracyThreshold()
-            let addToOdometer = odometerAccuracyThreshold <= 0 || location.horizontalAccuracy <= Double(odometerAccuracyThreshold)
-            if addToOdometer {
-                stateManager.addOdometer(distance: distance)
-            }
         } else if isPeriodicTracking {
             // Fallback: when the app was killed and relaunched by
             // BGAppRefreshTask, lastLocation is nil. Use persisted periodic
@@ -712,14 +744,68 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             let lastLng = stateManager.lastPeriodicLongitude
             if !lastLat.isNaN && !lastLng.isNaN {
                 let lastCL = CLLocation(latitude: lastLat, longitude: lastLng)
-                let distance = location.distance(from: lastCL)
-                let odometerAccuracyThreshold = configManager.getOdometerAccuracyThreshold()
-                let addToOdometer = odometerAccuracyThreshold <= 0 || location.horizontalAccuracy <= Double(odometerAccuracyThreshold)
-                if addToOdometer {
-                    stateManager.addOdometer(distance: distance)
-                }
+                distance = location.distance(from: lastCL)
             }
         }
+
+        // Resolve effective speed: platform speed if available, otherwise computed
+        let effectiveSpeed = (location.speed > 0) ? location.speed : computedSpeed
+
+        // --- Rust-powered filtering (distance, accuracy, speed, mock, sparse) ---
+        let mock = isLocationMock(location)
+        let processor = getProcessor()
+        let batteryInfo = BatteryUtils.getBatteryInfo()
+        let batteryLevel = (batteryInfo["level"] as? NSNumber)?.doubleValue ?? -1.0
+        let isCharging = batteryInfo["is_charging"] as? Bool ?? false
+
+        let adaptiveCtx = AdaptiveContext(
+            batteryLevel: batteryLevel,
+            isCharging: isCharging,
+            activityType: mapActivityType(currentActivityType),
+            activityConfidence: mapActivityConfidence(-1),
+            speed: effectiveSpeed
+        )
+        let result = processor.process(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            accuracy: location.horizontalAccuracy,
+            speed: effectiveSpeed,
+            timestampMs: Int64(location.timestamp.timeIntervalSince1970 * 1000),
+            isMock: mock,
+            adaptiveContext: adaptiveCtx
+        )
+        if !result.accepted {
+            NSLog("[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown")
+            if result.odometerDelta > 0 {
+                stateManager.addOdometer(distance: result.odometerDelta)
+            }
+            return
+        }
+
+        // Odometer update from processor's computed delta
+        if result.odometerDelta > 0 {
+            stateManager.addOdometer(distance: result.odometerDelta)
+        }
+
+        // --- Kalman smoothing (optional) ---
+        var smoothedLat = location.coordinate.latitude
+        var smoothedLng = location.coordinate.longitude
+        if let kalman = kalmanFilter {
+            let smoothed = kalman.process(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                accuracy: location.horizontalAccuracy,
+                timestampMs: Int64(location.timestamp.timeIntervalSince1970 * 1000)
+            )
+            smoothedLat = smoothed.latitude
+            smoothedLng = smoothed.longitude
+        }
+
+        lastEffectiveSpeed = result.effectiveSpeed
+
+        // Forward speed to SpeedMotionManager when speed-based motion detection
+        // is active.
+        speedSink?(result.effectiveSpeed)
 
         // Persist last periodic coordinates for cross-restart odometer
         if isPeriodicTracking {
@@ -727,24 +813,13 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             stateManager.lastPeriodicLongitude = location.coordinate.longitude
         }
 
-        // Kalman filter is now applied in Dart — send raw location
-
-        // Resolve effective speed: platform speed if available, otherwise computed
-        let effectiveSpeed = (location.speed > 0) ? location.speed : computedSpeed
-        lastEffectiveSpeed = effectiveSpeed
-
-        // Forward speed to SpeedMotionManager when speed-based motion detection
-        // is active. Use effectiveSpeed to catch speed calculated from distance
-        // during periodic checks where raw speed might be missing or invalid.
-        speedSink?(effectiveSpeed)
-
         lastLocation = location
         if location.horizontalAccuracy > 0 && location.horizontalAccuracy <= 100 {
             lastGpsLocation = location
         }
         stateManager.lastLocationTime = Date().timeIntervalSince1970 * 1000
 
-        let locationMap = buildLocationMap(location, speed: effectiveSpeed)
+        let locationMap = buildLocationMap(location, speed: result.effectiveSpeed, smoothedLat: smoothedLat, smoothedLng: smoothedLng)
 
         // Fire one-shot callbacks
         fireOneShots(location)
@@ -1018,16 +1093,16 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     ///
     /// - Parameters:
     ///   - location: The raw CLLocation.
-    ///   - speed: Pre-computed effective speed (m/s). Uses platform speed if
-    ///            available, otherwise distance/time from consecutive locations.
-    ///            Pass `nil` to fall back to platform speed.
-    public func buildLocationMap(_ location: CLLocation, speed: Double? = nil) -> [String: Any] {
+    ///   - speed: Pre-computed effective speed (m/s).
+    ///   - smoothedLat: Kalman-smoothed latitude (nil = use raw).
+    ///   - smoothedLng: Kalman-smoothed longitude (nil = use raw).
+    public func buildLocationMap(_ location: CLLocation, speed: Double? = nil, smoothedLat: Double? = nil, smoothedLng: Double? = nil) -> [String: Any] {
         // Use provided effective speed, or fall back to platform speed.
         let effectiveSpeed = speed ?? max(location.speed, -1)
 
         var coords: [String: Any] = [
-            "latitude": location.coordinate.latitude,
-            "longitude": location.coordinate.longitude,
+            "latitude": smoothedLat ?? location.coordinate.latitude,
+            "longitude": smoothedLng ?? location.coordinate.longitude,
             "altitude": location.altitude,
             "speed": effectiveSpeed,
             "heading": max(location.course, -1),
@@ -1313,5 +1388,25 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         persistLocationIfAllowed(enriched, event: "dead_reckoning")
         eventDispatcher.sendLocation(enriched)
+    }
+
+    // MARK: - Activity type mapping helpers (iOS string → Rust enum)
+
+    private func mapActivityType(_ type: String) -> ActivityType {
+        switch type.lowercased() {
+        case "still": return .still
+        case "walking": return .walking
+        case "running": return .running
+        case "on_foot": return .onFoot
+        case "in_vehicle", "automotive": return .inVehicle
+        case "on_bicycle", "cycling": return .onBicycle
+        default: return .unknown
+        }
+    }
+
+    private func mapActivityConfidence(_ confidence: Int) -> ActivityConfidence {
+        if confidence >= 75 { return .high }
+        if confidence >= 50 { return .medium }
+        return .low
     }
 }

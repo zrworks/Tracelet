@@ -117,6 +117,16 @@ public final class ConfigManager {
     public func getOdometerAccuracyThreshold() -> Int { (cache["odometerAccuracyThreshold"] as? NSNumber)?.intValue ?? 0 }
     public func getRejectMockLocations() -> Bool { cache["rejectMockLocations"] as? Bool ?? false }
     public func getMockDetectionLevel() -> Int { (cache["mockDetectionLevel"] as? NSNumber)?.intValue ?? 1 }
+    public func getDisableElasticity() -> Bool { cache["disableElasticity"] as? Bool ?? false }
+    public func getElasticityMultiplier() -> Double { (cache["elasticityMultiplier"] as? NSNumber)?.doubleValue ?? 1.0 }
+    public func getEnableAdaptiveMode() -> Bool { cache["enableAdaptiveMode"] as? Bool ?? false }
+    public func getTrackingAccuracyThreshold() -> Int { (cache["trackingAccuracyThreshold"] as? NSNumber)?.intValue ?? 100 }
+    public func getFilterPolicy() -> Int { (cache["filterPolicy"] as? NSNumber)?.intValue ?? 0 }
+    public func getMaxImpliedSpeed() -> Int { (cache["maxImpliedSpeed"] as? NSNumber)?.intValue ?? 80 }
+    public func getEnableSparseUpdates() -> Bool { cache["enableSparseUpdates"] as? Bool ?? false }
+    public func getSparseDistanceThreshold() -> Double { (cache["sparseDistanceThreshold"] as? NSNumber)?.doubleValue ?? 50.0 }
+    public func getSparseMaxIdleSeconds() -> Int { (cache["sparseMaxIdleSeconds"] as? NSNumber)?.intValue ?? 0 }
+    public func getEnableKalmanFilter() -> Bool { cache["enableKalmanFilter"] as? Bool ?? false }
 
     // Dead Reckoning
     public func getEnableDeadReckoning() -> Bool { cache["enableDeadReckoning"] as? Bool ?? false }

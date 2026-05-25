@@ -295,11 +295,13 @@ enum class StationaryTrackingMode(val value: Int) {
  */
 enum class MotionDetectionMode(val value: Int) {
     ACCELEROMETER(0),
-    SPEED(1);
+    SPEED(1),
+    SMART(2);
 
     companion object {
         fun fromInt(value: Int): MotionDetectionMode = when (value) {
             SPEED.value -> SPEED
+            SMART.value -> SMART
             else -> ACCELEROMETER
         }
     }

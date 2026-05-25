@@ -88,7 +88,7 @@ public final class SpeedMotionManager {
     // MARK: - Lifecycle
 
     /// Start the speed motion manager. Loads persisted state from StateManager.
-    public func start() {
+    public func start(forceMoving: Bool = false) {
         guard !isRunning else { return }
         isRunning = true
 
@@ -115,8 +115,23 @@ public final class SpeedMotionManager {
         wakeCount = stateManager.speedWakeCount
         slowingStartTime = stateManager.speedLastTransition
 
-        NSLog("[SpeedMotion] start: restored state=%d, lowSpeedCount=%d, wakeCount=%d",
-              state.rawValue, lowSpeedCount, wakeCount)
+        if forceMoving {
+            state = .moving
+            lowSpeedCount = 0
+            wakeCount = 0
+            stateManager.speedMotionState = state.rawValue
+            stateManager.speedLowCount = 0
+            stateManager.speedWakeCount = 0
+            stateManager.isMoving = true
+            NSLog("[SpeedMotion] start() — forced to MOVING state")
+        } else {
+            NSLog("[SpeedMotion] start: restored state=%d, lowSpeedCount=%d, wakeCount=%d",
+                  state.rawValue, lowSpeedCount, wakeCount)
+            
+            if state == .stationary {
+                switchToStationary()
+            }
+        }
     }
 
     /// Stop the speed motion manager and reset runtime counters.
@@ -124,6 +139,37 @@ public final class SpeedMotionManager {
         guard isRunning else { return }
         isRunning = false
         NSLog("[SpeedMotion] stop")
+    }
+
+    /// Handle manual pace changes triggered by the caller.
+    public func onManualPaceChange(isMoving: Bool) {
+        guard isRunning else { return }
+        NSLog("[SpeedMotion] onManualPaceChange(isMoving=\(isMoving))")
+        if isMoving {
+            lowSpeedCount = 0
+            wakeCount = 0
+            stopSlowingTimer()
+            let previousState = state
+            state = .moving
+            
+            if state != previousState {
+                persistState()
+                emitEvent(previous: previousState, current: state)
+            }
+            delegate?.switchToContinuous()
+        } else {
+            lowSpeedCount = 0
+            wakeCount = 0
+            stopSlowingTimer()
+            let previousState = state
+            state = .stationary
+            
+            if state != previousState {
+                persistState()
+                emitEvent(previous: previousState, current: state)
+            }
+            switchToStationary()
+        }
     }
 
     // MARK: - Location Feed
@@ -159,7 +205,7 @@ public final class SpeedMotionManager {
 
     // MARK: - State Handlers
 
-    private var slowingTimer: Timer?
+    private var slowingTimerWorkItem: DispatchWorkItem?
 
     private func handleMoving(speed: Double, now: TimeInterval) {
         if speed < speedMovingThreshold {
@@ -183,11 +229,9 @@ public final class SpeedMotionManager {
         stopSlowingTimer()
         let delay = TimeInterval(speedStationaryDelay)
         
-        // We use DispatchQueue instead of Timer to ensure it runs even if the runloop is blocked,
-        // but Timer is generally fine.
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.slowingTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            let workItem = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
                 if self.state == .slowing {
                     NSLog("[SpeedMotion] SLOWING timer expired -> STATIONARY")
@@ -203,13 +247,15 @@ public final class SpeedMotionManager {
                     }
                 }
             }
+            self.slowingTimerWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
     }
 
     private func stopSlowingTimer() {
         DispatchQueue.main.async { [weak self] in
-            self?.slowingTimer?.invalidate()
-            self?.slowingTimer = nil
+            self?.slowingTimerWorkItem?.cancel()
+            self?.slowingTimerWorkItem = nil
         }
     }
 

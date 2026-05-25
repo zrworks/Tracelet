@@ -88,6 +88,8 @@ class TraceletSdk private constructor(private val context: Context) {
         internal set
     lateinit var geofenceManager: GeofenceManager
         internal set
+    lateinit var smartMotionCoordinator: com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator
+        internal set
     lateinit var httpSyncManager: HttpSyncManager
         internal set
     lateinit var scheduleManager: ScheduleManager
@@ -225,6 +227,10 @@ class TraceletSdk private constructor(private val context: Context) {
             configManager, stateManager, eventSender,
             object : com.ikolvi.tracelet.sdk.motion.SpeedMotionManager.SpeedMotionCallback {
                 override fun switchToContinuous() {
+                    if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+                        smartMotionCoordinator.onSpeedStateChange(true)
+                        return
+                    }
                     val useForeground = configManager.isForegroundServiceEnabled()
                     if (useForeground) {
                         LocationService.switchToContinuous(locationEngine, stateManager)
@@ -242,6 +248,10 @@ class TraceletSdk private constructor(private val context: Context) {
                 }
 
                 override fun switchToStationaryPeriodic() {
+                    if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+                        smartMotionCoordinator.onSpeedStateChange(false)
+                        return
+                    }
                     val useForeground = configManager.isForegroundServiceEnabled()
                     if (useForeground) {
                         LocationService.switchToStationaryPeriodic(locationEngine, configManager, stateManager)
@@ -273,6 +283,10 @@ class TraceletSdk private constructor(private val context: Context) {
                 }
 
                 override fun switchToStationaryGeofences() {
+                    if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+                        smartMotionCoordinator.onSpeedStateChange(false)
+                        return
+                    }
                     val useForeground = configManager.isForegroundServiceEnabled()
                     if (useForeground) {
                         LocationService.switchToStationaryGeofences(locationEngine, stateManager)
@@ -288,6 +302,10 @@ class TraceletSdk private constructor(private val context: Context) {
                     eventSender.sendMotionChange(locationMap)
                 }
             }
+        )
+        
+        smartMotionCoordinator = com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator(
+            context, configManager, stateManager, eventSender, locationEngine, motionDetector
         )
 
         // Geofencing
@@ -511,6 +529,28 @@ class TraceletSdk private constructor(private val context: Context) {
                 locationEngine.enrichLocation(it, "motionchange")
             } ?: mapOf("is_moving" to true)
             eventSender.sendMotionChange(locationMap)
+        } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+            speedMotionManager.start(forceMoving = true)
+            locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
+            
+            // Dispatch motionchange event
+            val locationMap = locationEngine.getLastLocation()?.let {
+                locationEngine.enrichLocation(it, "motionchange")
+            } ?: mapOf("is_moving" to true)
+            eventSender.sendMotionChange(locationMap)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val hasMotion = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!hasMotion) {
+                    permissionManager.requestActivityRecognition(activity)
+                } else {
+                    motionDetector.start()
+                }
+            } else {
+                motionDetector.start()
+            }
         } else {
             // Activity recognition permission + accelerometer motion detector
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1349,6 +1389,11 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     private fun handleMotionStateChange(isMoving: Boolean) {
+        if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+            smartMotionCoordinator.onAccelStateChange(isMoving)
+            return
+        }
+
         logger.debug("Motion state changed: isMoving=$isMoving")
         stateManager.isMoving = isMoving
 

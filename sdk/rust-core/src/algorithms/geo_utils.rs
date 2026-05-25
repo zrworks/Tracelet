@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-#[derive(uniffi::Record)]
+#[derive(uniffi::Record, Clone, Debug)]
 pub struct Coordinate {
     pub lat: f64,
     pub lng: f64,

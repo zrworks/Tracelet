@@ -95,6 +95,16 @@ jobs:
         working-directory: packages/tracelet_platform_interface
         run: flutter_rust_bridge_codegen generate
 
+      - name: Check for uncommitted generated files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "❌ Generated files are out of date!"
+            echo "Please run 'flutter_rust_bridge_codegen generate' locally and commit the changes."
+            git diff
+            exit 1
+          fi
+          echo "✅ Generated files are up to date."
+
       - name: Bootstrap
         run: melos bootstrap
 

@@ -1,12 +1,11 @@
 import Foundation
-import TraceletCore
 
 /// Tracks trips based on motion state transitions, delegating core logic to Rust.
-public class TripManager {
+public class TraceletTripManager {
     /// Callback invoked when a trip ends with the full trip data map.
     public var onTripEnd: (([String: Any?]) -> Void)?
 
-    private let rustTripManager = TraceletCore.TripManager()
+    private let rustTripManager = TripManager()
 
     /// Whether a trip is currently active.
     public var isTripActive: Bool {

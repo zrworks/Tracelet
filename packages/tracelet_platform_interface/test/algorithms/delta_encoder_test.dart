@@ -28,7 +28,10 @@ Map<String, Object?> _location({
   'activity': <String, Object?>{'type': 'unknown', 'confidence': 100},
 };
 
-void main() {
+import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+
+void main() async {
+  await RustLib.init();
   group('DeltaEncoder — encode', () {
     test('empty list returns empty', () {
       expect(DeltaEncoder.encode([]), isEmpty);

@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-void main() {
+import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+
+void main() async {
+  await RustLib.init();
   group('TripManager', () {
     late TripManager tripManager;
     late List<Map<String, Object?>> tripEvents;

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 import 'models/activity_change_event.dart';
 import 'models/attestation_config.dart';
@@ -126,7 +127,8 @@ class Tracelet {
   ///
   /// Returns `true` if [ready] or [setConfig] was called with
   /// `LocationFilter(useKalmanFilter: true)`.
-  static bool get isKalmanFilterEnabled => activeConfig.geo.filter.useKalmanFilter;
+  static bool get isKalmanFilterEnabled =>
+      activeConfig.geo.filter.useKalmanFilter;
 
   /// Initialize or tear down the [BatteryBudgetEngine] based on [config].
   static void _initBatteryBudget(Config config) {
@@ -175,6 +177,11 @@ class Tracelet {
   /// print('Enabled: ${state.enabled}');
   /// ```
   static Future<State> ready(Config config) async {
+    try {
+      await RustLib.init();
+    } catch (_) {
+      // Ignored if already initialized
+    }
     _currentConfig = config;
 
     _geofenceEvaluator.clear();
@@ -2166,7 +2173,6 @@ class Tracelet {
     _stopTripDetection();
 
     // Stop adaptive activity tracking subscription (D-H7).
-
   }
 
   // ---------------------------------------------------------------------------

@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-void main() {
+import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+
+void main() async {
+  await RustLib.init();
   group('GeoUtils.isPointInPolygon', () {
     // A square polygon: 37.42–37.43 lat, -122.085–-122.083 lng
     final square = <List<double>>[

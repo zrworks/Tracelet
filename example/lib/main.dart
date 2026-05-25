@@ -600,7 +600,8 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           motion: const tl.MotionConfig(
             stopTimeout: 1, // 1 minute for fast stop-timeout testing
-            disableMotionActivityUpdates: false, // Use ActivityRecognition for instant walk detection
+            disableMotionActivityUpdates:
+                false, // Use ActivityRecognition for instant walk detection
             motionDetectionMode: tl.MotionDetectionMode.smart,
             shakeThreshold: 0.5, // 🚀 NEW: Ultra-sensitive for indoor testing!
             speedStationaryDelay: 30, // Make it quicker for demo testing
@@ -2054,11 +2055,7 @@ class _DashboardPageState extends State<DashboardPage>
           break;
       }
       final state = await tl.Tracelet.setConfig(
-        tl.Config(
-          motion: tl.MotionConfig(
-            motionDetectionMode: nextMode,
-          ),
-        ),
+        tl.Config(motion: tl.MotionConfig(motionDetectionMode: nextMode)),
       );
       setState(() {
         _motionMode = nextMode;
@@ -3782,8 +3779,8 @@ class _DashboardPageState extends State<DashboardPage>
                         _motionMode == tl.MotionDetectionMode.accelerometer
                             ? Icons.directions_walk
                             : _motionMode == tl.MotionDetectionMode.speed
-                                ? Icons.speed
-                                : Icons.smart_button,
+                            ? Icons.speed
+                            : Icons.smart_button,
                         _cycleMotionMode,
                       ),
                       _Chip(

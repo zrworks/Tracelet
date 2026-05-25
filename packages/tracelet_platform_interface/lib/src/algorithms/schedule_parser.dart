@@ -1,59 +1,52 @@
-/// Pure-Dart schedule parsing and matching.
-///
-/// Replaces the schedule-matching logic previously duplicated in native
-/// Kotlin (`ScheduleManager.matchesSchedule`) and Swift
-/// (`ScheduleManager.isWithinSchedule` / `parseScheduleEntry`).
-///
-/// Schedule strings use the format `"dayStart-dayEnd HH:mm-HH:mm"` where
-/// days are ISO 8601 day-of-week numbers (1 = Monday, 7 = Sunday).
-///
-/// **This is a pure Dart implementation** — no native code required. It runs
-/// identically on Android, iOS, web, macOS, Linux, and Windows.
-///
-/// ```dart
-/// final active = ScheduleParser.isWithinSchedule(['1-5 09:00-17:00']);
-/// print('Should track: $active');
-/// ```
+import '../rust/frb_generated.dart';
+import '../rust/api_dart/schedule.dart';
+
+/// Rust-powered schedule parsing and matching.
 class ScheduleParser {
   ScheduleParser._(); // Prevent instantiation.
 
+  static late final ScheduleParserDart _inner = ScheduleParserDart();
+
   /// Check whether [now] (or the current time) falls within any of the
   /// given [schedules].
-  ///
-  /// Each schedule string must be in `"dayStart-dayEnd HH:mm-HH:mm"` format.
-  /// Returns `true` if **any** entry matches.
   static bool isWithinSchedule(List<String> schedules, [DateTime? now]) {
     if (schedules.isEmpty) return false;
     now ??= DateTime.now();
-
-    for (final schedule in schedules) {
-      if (matchesSchedule(schedule, now)) return true;
-    }
-    return false;
+    return _inner.isWithinSchedule(
+      schedules: schedules,
+      timestampMs: now.millisecondsSinceEpoch,
+      tzOffsetSeconds: now.timeZoneOffset.inSeconds,
+    );
   }
 
   /// Check whether a single [schedule] string matches the given [now] time.
-  ///
-  /// Format: `"dayStart-dayEnd HH:mm-HH:mm"`
-  ///
-  /// - Days are ISO 8601: 1 = Monday, 7 = Sunday.
-  /// - The time range is inclusive of start, exclusive of end.
-  ///
-  /// Returns `false` for malformed strings.
-  // Delegates to [parse()] to avoid duplicating the parsing logic (D-L3).
   static bool matchesSchedule(String schedule, DateTime now) {
-    final w = parse(schedule);
-    if (w == null) return false;
-    final day = now.weekday;
-    if (day < w.dayStart || day > w.dayEnd) return false;
-    final mins = now.hour * 60 + now.minute;
-    return mins >= w.startMinutes && mins < w.endMinutes;
+    return isWithinSchedule([schedule], now);
+  }
+
+  /// Calculate the next start and stop timestamps from a schedule string.
+  static ({DateTime? start, DateTime? stop}) calculateNextAlarms(
+    String schedule, [
+    DateTime? now,
+  ]) {
+    now ??= DateTime.now();
+    final alarms = _inner.calculateNextAlarms(
+      schedules: [schedule],
+      timestampMs: now.millisecondsSinceEpoch,
+      tzOffsetSeconds: now.timeZoneOffset.inSeconds,
+    );
+    return (
+      start: alarms.nextStartMs > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs)
+          : null,
+      stop: alarms.nextStopMs > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs)
+          : null,
+    );
   }
 
   /// Parse a schedule string into a [ScheduleWindow], or `null` if
   /// the format is invalid.
-  ///
-  /// Useful for UI display or calculating next alarm times.
   static ScheduleWindow? parse(String schedule) {
     final parts = schedule.trim().split(' ');
     if (parts.length != 2) return null;
@@ -80,54 +73,17 @@ class ScheduleParser {
     }
   }
 
-  /// Calculate the next start and stop timestamps from a schedule string.
-  ///
-  /// Returns a record with nullable [DateTime] values. Either may be `null`
-  /// if the schedule string is malformed.
-  static ({DateTime? start, DateTime? stop}) calculateNextAlarms(
-    String schedule, [
-    DateTime? now,
-  ]) {
-    now ??= DateTime.now();
-    final window = parse(schedule);
-    if (window == null) return (start: null, stop: null);
-
-    final startHour = window.startMinutes ~/ 60;
-    final startMinute = window.startMinutes % 60;
-    final endHour = window.endMinutes ~/ 60;
-    final endMinute = window.endMinutes % 60;
-
-    var start = DateTime(now.year, now.month, now.day, startHour, startMinute);
-    if (start.isBefore(now)) {
-      start = start.add(const Duration(days: 1));
-    }
-
-    var stop = DateTime(now.year, now.month, now.day, endHour, endMinute);
-    if (stop.isBefore(now)) {
-      stop = stop.add(const Duration(days: 1));
-    }
-
-    return (start: start, stop: stop);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Private
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /// Parse `"HH:mm"` to minutes since midnight.
-  static int? _parseTime(String str) {
-    final parts = str.split(':');
+  static int? _parseTime(String time) {
+    final parts = time.split(':');
     if (parts.length != 2) return null;
-    final hours = int.tryParse(parts[0]);
-    final minutes = int.tryParse(parts[1]);
-    if (hours == null || minutes == null) return null;
-    return hours * 60 + minutes;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    return hour * 60 + minute;
   }
 }
 
-/// A parsed schedule window.
-///
-/// Represents the day-range and time-range extracted from a schedule string.
+/// A parsed schedule window representing active days and times.
 class ScheduleWindow {
   const ScheduleWindow({
     required this.dayStart,
@@ -136,29 +92,19 @@ class ScheduleWindow {
     required this.endMinutes,
   });
 
-  /// Start day of week (ISO 8601: 1 = Monday).
+  /// 1 (Monday) to 7 (Sunday).
   final int dayStart;
-
-  /// End day of week (ISO 8601: 7 = Sunday).
   final int dayEnd;
 
-  /// Start time as minutes since midnight.
+  /// Minutes since midnight.
   final int startMinutes;
-
-  /// End time as minutes since midnight.
   final int endMinutes;
 
-  /// Start time formatted as `"HH:mm"`.
-  String get startTime =>
-      '${(startMinutes ~/ 60).toString().padLeft(2, '0')}:'
-      '${(startMinutes % 60).toString().padLeft(2, '0')}';
-
-  /// End time formatted as `"HH:mm"`.
-  String get endTime =>
-      '${(endMinutes ~/ 60).toString().padLeft(2, '0')}:'
-      '${(endMinutes % 60).toString().padLeft(2, '0')}';
+  String get startTime => '${(startMinutes ~/ 60).toString().padLeft(2, '0')}:${(startMinutes % 60).toString().padLeft(2, '0')}';
+  String get endTime => '${(endMinutes ~/ 60).toString().padLeft(2, '0')}:${(endMinutes % 60).toString().padLeft(2, '0')}';
 
   @override
-  String toString() =>
-      'ScheduleWindow(days=$dayStart-$dayEnd, time=$startTime-$endTime)';
+  String toString() {
+    return 'ScheduleWindow(days=$dayStart-$dayEnd, time=$startTime-$endTime)';
+  }
 }

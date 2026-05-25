@@ -75,7 +75,7 @@ public final class TraceletSdk {
     private var isReady = false
 
     // Algorithms
-    public private(set) var tripManager: TripManager!
+    public private(set) var tripManager: TraceletTripManager!
     private var batteryBudgetEngine: TraceletBatteryBudgetEngine?
     private var batteryBudgetTimer: Timer?
 
@@ -1104,7 +1104,7 @@ public final class TraceletSdk {
         }
 
         // Trip manager
-        tripManager = TripManager()
+        tripManager = TraceletTripManager()
         tripManager.onTripEnd = { [weak self] data in
             self?.eventSender.sendTrip(data)
         }

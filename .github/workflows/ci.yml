@@ -21,6 +21,15 @@ jobs:
           channel: stable
       - name: Install Melos
         run: dart pub global activate melos
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y flutter_rust_bridge_codegen
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
       - name: Bootstrap
         run: melos bootstrap
       - name: Check formatting
@@ -49,6 +58,20 @@ jobs:
           channel: stable
       - name: Install Melos
         run: dart pub global activate melos
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y flutter_rust_bridge_codegen
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+      - name: Build Host Rust Library
+        working-directory: sdk/rust-core
+        run: cargo build --release
+      - name: Setup LD_LIBRARY_PATH for tests
+        run: echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/sdk/rust-core/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
       - name: Bootstrap
         run: melos bootstrap
       - name: Run tests
@@ -77,14 +100,22 @@ jobs:
           channel: stable
       - name: Install Melos
         run: dart pub global activate melos
-      - name: Bootstrap
-        run: melos bootstrap
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen & cargo-ndk
+        run: |
+          cargo binstall -y flutter_rust_bridge_codegen
+          cargo binstall -y cargo-ndk
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+      - name: Bootstrap
+        run: melos bootstrap
+
       - name: Build Android Rust Core
         run: ./sdk/rust-core/build-android.sh
 
@@ -103,12 +134,20 @@ jobs:
           channel: stable
       - name: Install Melos
         run: dart pub global activate melos
-      - name: Bootstrap
-        run: melos bootstrap
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y flutter_rust_bridge_codegen
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+      - name: Bootstrap
+        run: melos bootstrap
+
       - name: Build iOS Rust Core
         run: ./sdk/rust-core/build-ios.sh
 
@@ -127,6 +166,17 @@ jobs:
           channel: stable
       - name: Install Melos
         run: dart pub global activate melos
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y flutter_rust_bridge_codegen
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
       - name: Bootstrap
         run: melos bootstrap
       - name: Build example Web

@@ -24,7 +24,7 @@ enum TlDesiredAccuracy { high, medium, low, veryLow, passive }
 
 enum TlTrackingMode { location, geofences, periodic }
 
-enum TlMotionDetectionMode { accelerometer, speed }
+enum TlMotionDetectionMode { accelerometer, speed, smart }
 
 enum TlStationaryTrackingMode { periodic, geofences }
 

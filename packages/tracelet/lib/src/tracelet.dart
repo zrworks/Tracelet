@@ -80,9 +80,6 @@ class Tracelet {
   // Shared Dart algorithms
   // ---------------------------------------------------------------------------
 
-  /// Kalman filter instance for GPS smoothing (runs in Dart, not native).
-  static final KalmanLocationFilter _kalmanFilter = KalmanLocationFilter();
-
   /// Trip manager instance for trip detection (runs in Dart, not native).
   static final TripManager _tripManager = TripManager();
 
@@ -104,31 +101,6 @@ class Tracelet {
   /// Subscription that feeds location battery levels to the budget engine.
   static StreamSubscription<Location>? _budgetLocationSub;
 
-  /// Whether the Kalman filter is enabled (set from config).
-  static bool _useKalmanFilter = false;
-
-  /// Whether adaptive sampling mode is enabled (set from config).
-  static bool _enableAdaptiveMode = false;
-
-  /// Last known activity type for adaptive sampling.
-  static ActivityType _lastActivityType = ActivityType.unknown;
-
-  /// Last known activity confidence for adaptive sampling.
-  static ActivityConfidence _lastActivityConfidence = ActivityConfidence.low;
-
-  /// Last known battery level (0.0–1.0) for adaptive sampling.
-  static double _lastBatteryLevel = -1.0;
-
-  /// Last known charging state for adaptive sampling.
-  static bool _lastIsCharging = false;
-
-  /// Subscription that feeds activity changes to adaptive sampling state.
-  static StreamSubscription<ActivityChangeEvent>? _adaptiveActivitySub;
-
-  /// Location processor for distance/accuracy/speed filtering
-  /// (runs in Dart, not native).
-  static LocationProcessor? _locationProcessor;
-
   /// Geofence evaluator for high-accuracy proximity checks
   /// (runs in Dart, not native).
   static final GeofenceEvaluator _geofenceEvaluator = GeofenceEvaluator();
@@ -136,10 +108,7 @@ class Tracelet {
   /// Cached processed location broadcast stream.
   ///
   /// Filtering and Kalman smoothing are applied ONCE here, then shared
-  /// across all `onLocation` subscribers. Without this, each listener
-  /// would independently call `_filterLocation` on the same stateful
-  /// [LocationProcessor], causing the second listener to see distance=0
-  /// and incorrectly filter the location.
+  /// across all `onLocation` subscribers.
   static Stream<Location>? _processedLocationStream;
 
   // Cached broadcast streams for public stream getters.
@@ -157,26 +126,7 @@ class Tracelet {
   ///
   /// Returns `true` if [ready] or [setConfig] was called with
   /// `LocationFilter(useKalmanFilter: true)`.
-  static bool get isKalmanFilterEnabled => _useKalmanFilter;
-
-  /// Create a [LocationProcessor] from the geo settings in [config].
-  static LocationProcessor _processorFromConfig(Config config) {
-    return LocationProcessor(
-      distanceFilter: config.geo.distanceFilter,
-      disableElasticity: config.geo.disableElasticity,
-      elasticityMultiplier: config.geo.elasticityMultiplier,
-      enableAdaptiveMode: config.geo.enableAdaptiveMode,
-      trackingAccuracyThreshold: config.geo.filter.trackingAccuracyThreshold,
-      filterPolicy: config.geo.filter.policy.index,
-      maxImpliedSpeed: config.geo.filter.maxImpliedSpeed,
-      odometerAccuracyThreshold: config.geo.filter.odometerAccuracyThreshold,
-      rejectMockLocations: config.geo.filter.rejectMockLocations,
-      mockDetectionLevel: config.geo.filter.mockDetectionLevel,
-      enableSparseUpdates: config.geo.enableSparseUpdates,
-      sparseDistanceThreshold: config.geo.sparseDistanceThreshold,
-      sparseMaxIdleSeconds: config.geo.sparseMaxIdleSeconds,
-    );
-  }
+  static bool get isKalmanFilterEnabled => activeConfig.geo.filter.useKalmanFilter;
 
   /// Initialize or tear down the [BatteryBudgetEngine] based on [config].
   static void _initBatteryBudget(Config config) {
@@ -227,15 +177,6 @@ class Tracelet {
   static Future<State> ready(Config config) async {
     _currentConfig = config;
 
-    // Capture Kalman filter setting.
-    _useKalmanFilter = config.geo.filter.useKalmanFilter;
-    _kalmanFilter.reset();
-
-    // Capture adaptive sampling setting from config.
-    _enableAdaptiveMode = config.geo.enableAdaptiveMode;
-
-    // Initialize location processor from config.
-    _locationProcessor = _processorFromConfig(config);
     _geofenceEvaluator.clear();
 
     // Initialize battery budget engine from config.
@@ -259,9 +200,6 @@ class Tracelet {
     // Start internal trip detection subscriptions.
     _startTripDetection();
 
-    // Start adaptive sampling activity tracking if enabled.
-    _startAdaptiveActivityTracking();
-
     // Start battery budget tracking if enabled.
     _startBatteryBudgetTracking();
 
@@ -277,10 +215,7 @@ class Tracelet {
     // Stop trip detection and reset.
     _stopTripDetection();
     _tripManager.reset();
-    _kalmanFilter.reset();
-    _locationProcessor?.reset();
     _geofenceEvaluator.clear();
-    _stopAdaptiveActivityTracking();
     _stopBatteryBudgetTracking();
     _batteryBudgetEngine?.reset();
 
@@ -387,17 +322,6 @@ class Tracelet {
   /// Returns the updated [State].
   static Future<State> setConfig(Config config) async {
     _currentConfig = config;
-
-    // Update Kalman filter setting.
-    _useKalmanFilter = config.geo.filter.useKalmanFilter;
-
-    // Update adaptive sampling setting.
-    _enableAdaptiveMode = config.geo.enableAdaptiveMode;
-
-    // Update location processor, preserving internal state.
-    final newProcessor = _processorFromConfig(config);
-    _locationProcessor?.transferStateTo(newProcessor);
-    _locationProcessor = newProcessor;
 
     // Update battery budget engine from config.
     _initBatteryBudget(config);
@@ -1734,7 +1658,7 @@ class Tracelet {
       locationPermissionStatus: locationPerm,
       motionPermissionStatus: motionPerm,
       sparseUpdatesEnabled: geoMap?['enableSparseUpdates'] as bool? ?? false,
-      kalmanFilterEnabled: _useKalmanFilter,
+      kalmanFilterEnabled: activeConfig.geo.filter.useKalmanFilter,
       deltaCompressionEnabled:
           httpMap?['enableDeltaCompression'] as bool? ?? false,
       trackingEnabled: state.enabled,
@@ -1748,7 +1672,7 @@ class Tracelet {
 
   /// A broadcast stream of processed location updates.
   ///
-  /// Locations are filtered by [LocationProcessor] (distance, accuracy, speed)
+  /// Locations are filtered natively by the Rust LocationProcessor.
   /// and smoothed by [KalmanLocationFilter] (if enabled). The stream is shared
   /// across all listeners — stateful transformations are applied once per event.
   ///
@@ -1916,17 +1840,13 @@ class Tracelet {
     return _tracked(_getProcessedLocationStream().listen(callback));
   }
 
-  /// Returns a shared broadcast stream of locations that have been filtered
-  /// by [LocationProcessor] and smoothed by [KalmanLocationFilter].
+  /// Returns a shared broadcast stream of locations.
   ///
   /// The stream is created lazily on first access and cached so that
-  /// stateful transformations (distance filter state, Kalman state) are
-  /// applied exactly once per event regardless of subscriber count.
+  /// all subscribers share the same broadcast stream.
   static Stream<Location> _getProcessedLocationStream() {
     return _processedLocationStream ??= _platform.locationEvents
         .map(Location.fromTl)
-        .expand(_applyLocationProcessor)
-        .map(_applyKalmanFilter)
         .asBroadcastStream();
   }
 
@@ -2246,7 +2166,7 @@ class Tracelet {
     _stopTripDetection();
 
     // Stop adaptive activity tracking subscription (D-H7).
-    _stopAdaptiveActivityTracking();
+
   }
 
   // ---------------------------------------------------------------------------
@@ -2257,87 +2177,6 @@ class Tracelet {
   static StreamSubscription<T> _tracked<T>(StreamSubscription<T> sub) {
     _onSubscriptions.add(sub);
     return sub;
-  }
-
-  /// Returns the location if it passes all filters (distance, accuracy, speed,
-  /// adaptive sampling). The returned location is augmented with the computed
-  /// effective speed. Side-effect: updates adaptive state.
-  static Iterable<Location> _applyLocationProcessor(Location location) {
-    // Periodic locations bypass all filters.
-    if (location.event == 'periodic') return [location];
-
-    final processor = _locationProcessor;
-    if (processor == null) return [location];
-
-    final ts = DateTime.tryParse(location.timestamp);
-    if (ts == null) return [location];
-
-    AdaptiveContext? adaptiveCtx;
-    if (_enableAdaptiveMode) {
-      final locActivity = location.activity.type;
-      final activityType = locActivity != ActivityType.unknown
-          ? locActivity
-          : _lastActivityType;
-      final activityConf = locActivity != ActivityType.unknown
-          ? location.activity.confidence
-          : _lastActivityConfidence;
-
-      final batteryLevel = location.battery.level >= 0
-          ? location.battery.level
-          : _lastBatteryLevel;
-      final isCharging = location.battery.isCharging || _lastIsCharging;
-
-      _lastBatteryLevel = batteryLevel;
-      _lastIsCharging = isCharging;
-
-      adaptiveCtx = AdaptiveContext(
-        batteryLevel: batteryLevel,
-        isCharging: isCharging,
-        activityType: activityType,
-        activityConfidence: activityConf,
-        speed: location.coords.speed,
-      );
-    }
-
-    final result = processor.process(
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      accuracy: location.coords.accuracy,
-      speed: location.coords.speed,
-      timestampMs: ts.millisecondsSinceEpoch,
-      isMock: location.isMock,
-      adaptiveContext: adaptiveCtx,
-    );
-
-    if (result.accepted) {
-      if (result.effectiveSpeed != location.coords.speed) {
-        return [location.copyWithCoords(speed: result.effectiveSpeed)];
-      }
-      return [location];
-    }
-    return const [];
-  }
-
-  /// Apply Kalman filter to a [Location] if enabled.
-  static Location _applyKalmanFilter(Location location) {
-    if (!_useKalmanFilter) return location;
-
-    // Parse timestamp safely — skip filtering if timestamp is invalid.
-    final ts = DateTime.tryParse(location.timestamp);
-    if (ts == null) return location;
-
-    final result = _kalmanFilter.process(
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      accuracy: location.coords.accuracy,
-      timestampMs: ts.millisecondsSinceEpoch,
-    );
-
-    // Return a new Location with smoothed coordinates but original metadata.
-    return location.copyWithCoords(
-      latitude: result.latitude,
-      longitude: result.longitude,
-    );
   }
 
   /// Start internal subscriptions that feed the TripManager.
@@ -2378,39 +2217,6 @@ class Tracelet {
   }
 
   // ---------------------------------------------------------------------------
-  // Adaptive Sampling — activity & battery tracking
-  // ---------------------------------------------------------------------------
-
-  /// Start listening to activity change events so the adaptive sampling
-  /// engine always has fresh motion context.
-  static void _startAdaptiveActivityTracking() {
-    if (!_enableAdaptiveMode) return;
-    _stopAdaptiveActivityTracking();
-
-    _adaptiveActivitySub = _platform.activityChangeEvents
-        .map(
-          (e) => ActivityChangeEvent.fromMap({
-            'activity': e.activity,
-            'confidence': e.confidence,
-          }),
-        )
-        .listen((event) {
-          _lastActivityType = event.activity;
-          _lastActivityConfidence = event.confidence;
-        });
-  }
-
-  /// Stop the adaptive activity tracking subscription.
-  static void _stopAdaptiveActivityTracking() {
-    _adaptiveActivitySub?.cancel();
-    _adaptiveActivitySub = null;
-    // Reset adaptive state to defaults.
-    _lastActivityType = ActivityType.unknown;
-    _lastActivityConfidence = ActivityConfidence.low;
-    _lastBatteryLevel = -1.0;
-    _lastIsCharging = false;
-  }
-
   // ---------------------------------------------------------------------------
   // Battery Budget — auto-adjust tracking params to stay within budget
   // ---------------------------------------------------------------------------
@@ -2455,28 +2261,6 @@ class Tracelet {
 
     map['geo'] = geoMap;
     _currentConfig = Config.fromMap(map);
-
-    // Update the Dart-side location processor to match.
-    final processor = _locationProcessor;
-    if (processor != null) {
-      final updated = LocationProcessor(
-        distanceFilter: adjustment.newDistanceFilter,
-        disableElasticity: processor.disableElasticity,
-        elasticityMultiplier: processor.elasticityMultiplier,
-        enableAdaptiveMode: processor.enableAdaptiveMode,
-        trackingAccuracyThreshold: processor.trackingAccuracyThreshold,
-        filterPolicy: processor.filterPolicy,
-        maxImpliedSpeed: processor.maxImpliedSpeed,
-        odometerAccuracyThreshold: processor.odometerAccuracyThreshold,
-        rejectMockLocations: processor.rejectMockLocations,
-        mockDetectionLevel: processor.mockDetectionLevel,
-        enableSparseUpdates: processor.enableSparseUpdates,
-        sparseDistanceThreshold: processor.sparseDistanceThreshold,
-        sparseMaxIdleSeconds: processor.sparseMaxIdleSeconds,
-      );
-      processor.transferStateTo(updated);
-      _locationProcessor = updated;
-    }
 
     // Send to native (fire-and-forget — the native side merges & restarts).
     _platform.setConfig(_currentConfig.toTlConfig());

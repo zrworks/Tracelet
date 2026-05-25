@@ -2,7 +2,7 @@ use std::time::Instant;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use tracelet_core::math::haversine;
+use tracelet_core::algorithms::geo_utils::haversine;
 
 struct BenchResult {
     name: String,

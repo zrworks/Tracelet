@@ -6,8 +6,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 Future<void> initializeRustLib() async {
   ExternalLibrary? lib;
   if (Platform.isIOS) {
-    // In iOS, TraceletCore is bundled statically via the cocoapods xcframework, 
-    // so we resolve symbols directly from the process instead of trying to open 
+    // In iOS, TraceletCore is bundled statically via the cocoapods xcframework,
+    // so we resolve symbols directly from the process instead of trying to open
     // 'tracelet_core.framework/tracelet_core'.
     lib = ExternalLibrary.process(iKnowHowToUseIt: true);
   } else if (Platform.isMacOS) {
@@ -18,7 +18,9 @@ Future<void> initializeRustLib() async {
     } else if (rootDir.endsWith('/packages/tracelet_platform_interface')) {
       rootDir = Directory.current.parent.parent.path;
     }
-    lib = ExternalLibrary.open('$rootDir/sdk/rust-core/target/release/libtracelet_core.dylib');
+    lib = ExternalLibrary.open(
+      '$rootDir/sdk/rust-core/target/release/libtracelet_core.dylib',
+    );
   }
   await RustLib.init(externalLibrary: lib);
 }

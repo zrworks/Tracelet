@@ -29,7 +29,6 @@ Map<String, Object?> _location({
   'activity': <String, Object?>{'type': 'unknown', 'confidence': 100},
 };
 
-
 void main() async {
   await RustLib.init();
   group('DeltaEncoder — encode', () {

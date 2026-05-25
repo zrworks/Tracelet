@@ -115,8 +115,6 @@ void main() async {
 
       expect(event.newPeriodicInterval, isNull);
     });
-
-
   });
 
   group('BatteryBudgetEngine — internal state', () {

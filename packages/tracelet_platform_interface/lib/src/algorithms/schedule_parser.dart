@@ -99,8 +99,10 @@ class ScheduleWindow {
   final int startMinutes;
   final int endMinutes;
 
-  String get startTime => '${(startMinutes ~/ 60).toString().padLeft(2, '0')}:${(startMinutes % 60).toString().padLeft(2, '0')}';
-  String get endTime => '${(endMinutes ~/ 60).toString().padLeft(2, '0')}:${(endMinutes % 60).toString().padLeft(2, '0')}';
+  String get startTime =>
+      '${(startMinutes ~/ 60).toString().padLeft(2, '0')}:${(startMinutes % 60).toString().padLeft(2, '0')}';
+  String get endTime =>
+      '${(endMinutes ~/ 60).toString().padLeft(2, '0')}:${(endMinutes % 60).toString().padLeft(2, '0')}';
 
   @override
   String toString() {

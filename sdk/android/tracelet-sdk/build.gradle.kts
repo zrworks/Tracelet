@@ -47,6 +47,9 @@ android {
 }
 
 dependencies {
+    // JNA for Uniffi Rust bindings
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
+
     // Play Services Location (FusedLocationProvider, ActivityRecognition, Geofencing)
     // compileOnly: not bundled in the AAR. Apps that need GMS must add
     // implementation("com.google.android.gms:play-services-location:21.3.0") to their build.gradle.

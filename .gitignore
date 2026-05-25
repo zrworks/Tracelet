@@ -135,3 +135,6 @@ gpg-signing-key-*.asc
 .agents/
 skills-lock.json
 
+
+# Rust
+**/target/

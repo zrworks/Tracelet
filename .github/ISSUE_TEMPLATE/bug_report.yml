@@ -1,0 +1,86 @@
+name: Bug Report
+description: File a bug report to help us improve Tracelet.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        Please provide as much detail as possible to help us reproduce the issue.
+        **Tip:** If your issue is a crash or tracking failure, using the `TraceletDoctor` overlay can provide a lot of the context we need!
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package Name
+      description: Which package in the Tracelet monorepo is this bug related to?
+      options:
+        - tracelet (Core Plugin)
+        - tracelet_doctor
+        - tracelet_supabase
+        - tracelet_firebase
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform(s) did you experience the issue on?
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device & OS Version
+      description: What device and OS version did you test on? (e.g., iPhone 15 Pro iOS 17.4, Pixel 7 Android 14)
+      placeholder: e.g. iPhone 15 Pro, iOS 17.4
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description / Scenario
+      description: What happened? What did you expect to happen? Please describe the scenario.
+      placeholder: I started background tracking but it stopped after 10 minutes...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce / Code Snippet
+      description: How can we reproduce this? Please provide a code snippet, or link to a minimal reproducible example (MRE) repository.
+      placeholder: |
+        1. Call `Tracelet.start(...)` with this configuration...
+        2. Put app in background...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Tracelet Doctor Output
+      description: Please paste any relevant console logs, stack traces, or the JSON output from `TraceletDoctor`.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Check before submitting
+      options:
+        - label: I have read the Tracelet documentation and FAQs.
+          required: true
+        - label: I have searched for existing issues.
+          required: true

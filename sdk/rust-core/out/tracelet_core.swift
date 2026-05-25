@@ -658,6 +658,153 @@ public func FfiConverterTypeAdaptiveSamplingEngine_lower(_ value: AdaptiveSampli
 
 
 
+public protocol AuditTrailEngineProtocol: AnyObject, Sendable {
+    
+    func generateNextHash(loc: LocationRecord)  -> AuditAppendResult
+    
+    func resetState() 
+    
+    func verifyChain(records: [AuditRecordWithLocation])  -> AuditVerificationResult
+    
+}
+open class AuditTrailEngine: AuditTrailEngineProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_audittrailengine(self.handle, $0) }
+    }
+public convenience init(deviceId: String, initialChainIndex: Int32, initialLatestHash: String?) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_audittrailengine_new(
+        FfiConverterString.lower(deviceId),
+        FfiConverterInt32.lower(initialChainIndex),
+        FfiConverterOptionString.lower(initialLatestHash),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_audittrailengine(handle, $0) }
+    }
+
+    
+
+    
+open func generateNextHash(loc: LocationRecord) -> AuditAppendResult  {
+    return try!  FfiConverterTypeAuditAppendResult_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_audittrailengine_generate_next_hash(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeLocationRecord_lower(loc),$0
+    )
+})
+}
+    
+open func resetState()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_audittrailengine_reset_state(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func verifyChain(records: [AuditRecordWithLocation]) -> AuditVerificationResult  {
+    return try!  FfiConverterTypeAuditVerificationResult_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_audittrailengine_verify_chain(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceTypeAuditRecordWithLocation.lower(records),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuditTrailEngine: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = AuditTrailEngine
+
+    public static func lift(_ handle: UInt64) throws -> AuditTrailEngine {
+        return AuditTrailEngine(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: AuditTrailEngine) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuditTrailEngine {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: AuditTrailEngine, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditTrailEngine_lift(_ handle: UInt64) throws -> AuditTrailEngine {
+    return try FfiConverterTypeAuditTrailEngine.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditTrailEngine_lower(_ value: AuditTrailEngine) -> UInt64 {
+    return FfiConverterTypeAuditTrailEngine.lower(value)
+}
+
+
+
+
+
+
 public protocol BatteryBudgetEngineProtocol: AnyObject, Sendable {
     
     func accuracyIndex()  -> Int32
@@ -1628,6 +1775,200 @@ public func FfiConverterTypeAdaptiveSamplingResult_lower(_ value: AdaptiveSampli
 }
 
 
+public struct AuditAppendResult: Equatable, Hashable {
+    public var hash: String
+    public var previousHash: String
+    public var chainIndex: Int32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(hash: String, previousHash: String, chainIndex: Int32) {
+        self.hash = hash
+        self.previousHash = previousHash
+        self.chainIndex = chainIndex
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AuditAppendResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuditAppendResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuditAppendResult {
+        return
+            try AuditAppendResult(
+                hash: FfiConverterString.read(from: &buf), 
+                previousHash: FfiConverterString.read(from: &buf), 
+                chainIndex: FfiConverterInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AuditAppendResult, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.hash, into: &buf)
+        FfiConverterString.write(value.previousHash, into: &buf)
+        FfiConverterInt32.write(value.chainIndex, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditAppendResult_lift(_ buf: RustBuffer) throws -> AuditAppendResult {
+    return try FfiConverterTypeAuditAppendResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditAppendResult_lower(_ value: AuditAppendResult) -> RustBuffer {
+    return FfiConverterTypeAuditAppendResult.lower(value)
+}
+
+
+public struct AuditRecordWithLocation: Equatable, Hashable {
+    public var hash: String
+    public var previousHash: String
+    public var chainIndex: Int32
+    public var hasLocation: Bool
+    public var location: LocationRecord?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(hash: String, previousHash: String, chainIndex: Int32, hasLocation: Bool, location: LocationRecord?) {
+        self.hash = hash
+        self.previousHash = previousHash
+        self.chainIndex = chainIndex
+        self.hasLocation = hasLocation
+        self.location = location
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AuditRecordWithLocation: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuditRecordWithLocation: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuditRecordWithLocation {
+        return
+            try AuditRecordWithLocation(
+                hash: FfiConverterString.read(from: &buf), 
+                previousHash: FfiConverterString.read(from: &buf), 
+                chainIndex: FfiConverterInt32.read(from: &buf), 
+                hasLocation: FfiConverterBool.read(from: &buf), 
+                location: FfiConverterOptionTypeLocationRecord.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AuditRecordWithLocation, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.hash, into: &buf)
+        FfiConverterString.write(value.previousHash, into: &buf)
+        FfiConverterInt32.write(value.chainIndex, into: &buf)
+        FfiConverterBool.write(value.hasLocation, into: &buf)
+        FfiConverterOptionTypeLocationRecord.write(value.location, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditRecordWithLocation_lift(_ buf: RustBuffer) throws -> AuditRecordWithLocation {
+    return try FfiConverterTypeAuditRecordWithLocation.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditRecordWithLocation_lower(_ value: AuditRecordWithLocation) -> RustBuffer {
+    return FfiConverterTypeAuditRecordWithLocation.lower(value)
+}
+
+
+public struct AuditVerificationResult: Equatable, Hashable {
+    public var isValid: Bool
+    public var totalRecords: Int32
+    public var verifiedRecords: Int32
+    public var brokenAtIndex: Int32?
+    public var brokenAtUuid: String?
+    public var error: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(isValid: Bool, totalRecords: Int32, verifiedRecords: Int32, brokenAtIndex: Int32?, brokenAtUuid: String?, error: String?) {
+        self.isValid = isValid
+        self.totalRecords = totalRecords
+        self.verifiedRecords = verifiedRecords
+        self.brokenAtIndex = brokenAtIndex
+        self.brokenAtUuid = brokenAtUuid
+        self.error = error
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AuditVerificationResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuditVerificationResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuditVerificationResult {
+        return
+            try AuditVerificationResult(
+                isValid: FfiConverterBool.read(from: &buf), 
+                totalRecords: FfiConverterInt32.read(from: &buf), 
+                verifiedRecords: FfiConverterInt32.read(from: &buf), 
+                brokenAtIndex: FfiConverterOptionInt32.read(from: &buf), 
+                brokenAtUuid: FfiConverterOptionString.read(from: &buf), 
+                error: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AuditVerificationResult, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.isValid, into: &buf)
+        FfiConverterInt32.write(value.totalRecords, into: &buf)
+        FfiConverterInt32.write(value.verifiedRecords, into: &buf)
+        FfiConverterOptionInt32.write(value.brokenAtIndex, into: &buf)
+        FfiConverterOptionString.write(value.brokenAtUuid, into: &buf)
+        FfiConverterOptionString.write(value.error, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditVerificationResult_lift(_ buf: RustBuffer) throws -> AuditVerificationResult {
+    return try FfiConverterTypeAuditVerificationResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditVerificationResult_lower(_ value: AuditVerificationResult) -> RustBuffer {
+    return FfiConverterTypeAuditVerificationResult.lower(value)
+}
+
+
 public struct BudgetAdjustmentEvent: Equatable, Hashable {
     public var currentBatteryDrain: Double
     public var targetBudget: Double
@@ -1993,6 +2334,92 @@ public func FfiConverterTypeLocationProcessorResult_lift(_ buf: RustBuffer) thro
 #endif
 public func FfiConverterTypeLocationProcessorResult_lower(_ value: LocationProcessorResult) -> RustBuffer {
     return FfiConverterTypeLocationProcessorResult.lower(value)
+}
+
+
+public struct LocationRecord: Equatable, Hashable {
+    public var uuid: String
+    public var latitude: Double
+    public var longitude: Double
+    public var timestamp: String
+    public var accuracy: Double
+    public var speed: Double
+    public var heading: Double
+    public var altitude: Double
+    public var odometer: Double
+    public var isMoving: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(uuid: String, latitude: Double, longitude: Double, timestamp: String, accuracy: Double, speed: Double, heading: Double, altitude: Double, odometer: Double, isMoving: Bool) {
+        self.uuid = uuid
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = timestamp
+        self.accuracy = accuracy
+        self.speed = speed
+        self.heading = heading
+        self.altitude = altitude
+        self.odometer = odometer
+        self.isMoving = isMoving
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LocationRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLocationRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LocationRecord {
+        return
+            try LocationRecord(
+                uuid: FfiConverterString.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                accuracy: FfiConverterDouble.read(from: &buf), 
+                speed: FfiConverterDouble.read(from: &buf), 
+                heading: FfiConverterDouble.read(from: &buf), 
+                altitude: FfiConverterDouble.read(from: &buf), 
+                odometer: FfiConverterDouble.read(from: &buf), 
+                isMoving: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LocationRecord, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.uuid, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterDouble.write(value.accuracy, into: &buf)
+        FfiConverterDouble.write(value.speed, into: &buf)
+        FfiConverterDouble.write(value.heading, into: &buf)
+        FfiConverterDouble.write(value.altitude, into: &buf)
+        FfiConverterDouble.write(value.odometer, into: &buf)
+        FfiConverterBool.write(value.isMoving, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocationRecord_lift(_ buf: RustBuffer) throws -> LocationRecord {
+    return try FfiConverterTypeLocationRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocationRecord_lower(_ value: LocationRecord) -> RustBuffer {
+    return FfiConverterTypeLocationRecord.lower(value)
 }
 
 // Note that we don't yet support `indirect` for enums.
@@ -2499,6 +2926,55 @@ fileprivate struct FfiConverterOptionTypeBudgetAdjustmentEvent: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeLocationRecord: FfiConverterRustBuffer {
+    typealias SwiftType = LocationRecord?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLocationRecord.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLocationRecord.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeAuditRecordWithLocation: FfiConverterRustBuffer {
+    typealias SwiftType = [AuditRecordWithLocation]
+
+    public static func write(_ value: [AuditRecordWithLocation], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeAuditRecordWithLocation.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuditRecordWithLocation] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [AuditRecordWithLocation]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeAuditRecordWithLocation.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeCoordinate: FfiConverterRustBuffer {
     typealias SwiftType = [Coordinate]
 
@@ -2589,6 +3065,37 @@ public func isPointInPolygon(lat: Double, lng: Double, vertices: [Coordinate]) -
     )
 })
 }
+public func buildCanonicalString(previousHash: String, chainIndex: Int32, loc: LocationRecord) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_func_build_canonical_string(
+        FfiConverterString.lower(previousHash),
+        FfiConverterInt32.lower(chainIndex),
+        FfiConverterTypeLocationRecord_lower(loc),$0
+    )
+})
+}
+public func computeGenesisHash(deviceId: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_func_compute_genesis_hash(
+        FfiConverterString.lower(deviceId),$0
+    )
+})
+}
+public func sha256(input: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_func_sha256(
+        FfiConverterString.lower(input),$0
+    )
+})
+}
+public func encodeDeltas(batchJson: String, precision: Int32) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_func_encode_deltas(
+        FfiConverterString.lower(batchJson),
+        FfiConverterInt32.lower(precision),$0
+    )
+})
+}
 
 private enum InitializationResult {
     case ok
@@ -2609,6 +3116,18 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 57508) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_func_build_canonical_string() != 22658) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_func_compute_genesis_hash() != 9298) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_func_sha256() != 62639) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_func_encode_deltas() != 49460) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 60857) {
@@ -2636,6 +3155,15 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_locationprocessor_reset() != 105) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 11657) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_reset_state() != 35890) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 18303) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
@@ -2693,6 +3221,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_locationprocessor_new() != 1269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 28924) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 56699) {

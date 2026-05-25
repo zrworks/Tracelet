@@ -34,107 +34,48 @@ internal object DeltaEncoder {
             return listOf(HashMap<String, Any?>(locations.first()).apply { put("ref", true) })
         }
 
-        val factor = 10.0.pow(precision).toLong()
+        // Convert List<Map> to JSON string for Rust
+        val jsonString = org.json.JSONArray(locations).toString()
+        
+        // Call Rust core
+        val resultString = uniffi.tracelet_core.encodeDeltas(jsonString, precision)
+        
+        // Parse Rust JSON string back to List<Map>
+        val resultJson = org.json.JSONArray(resultString)
         val result = mutableListOf<Map<String, Any?>>()
-
-        // First location: full reference.
-        result.add(HashMap<String, Any?>(locations.first()).apply { put("ref", true) })
-
-        var prev = locations.first()
-        for (i in 1 until locations.size) {
-            val curr = locations[i]
-            val delta = encodeDelta(prev, curr, factor)
-            result.add(mapOf("d" to delta))
-            prev = curr
+        for (i in 0 until resultJson.length()) {
+            val obj = resultJson.optJSONObject(i) ?: continue
+            result.add(jsonToMap(obj))
         }
 
         return result
     }
 
-    private fun encodeDelta(
-        prev: Map<String, Any?>,
-        curr: Map<String, Any?>,
-        factor: Long
-    ): Map<String, Any?> {
-        val delta = mutableMapOf<String, Any?>()
-
-        // UUID — always full.
-        delta["u"] = curr["uuid"]
-
-        // Δ timestamp (seconds).
-        val prevTs = parseTimestamp(prev["timestamp"])
-        val currTs = parseTimestamp(curr["timestamp"])
-        if (prevTs != null && currTs != null) {
-            delta["t"] = ChronoUnit.SECONDS.between(prevTs, currTs)
-        }
-
-        // Coordinates.
-        val prevCoords = asMap(prev["coords"])
-        val currCoords = asMap(curr["coords"])
-        if (prevCoords != null && currCoords != null) {
-            val prevLat = toDouble(prevCoords["latitude"])
-            val currLat = toDouble(currCoords["latitude"])
-            delta["la"] = ((currLat - prevLat) * factor).roundToLong()
-
-            val prevLng = toDouble(prevCoords["longitude"])
-            val currLng = toDouble(currCoords["longitude"])
-            delta["lo"] = ((currLng - prevLng) * factor).roundToLong()
-
-            delta["s"] = round(toDouble(currCoords["speed"]) - toDouble(prevCoords["speed"]), 2)
-            delta["h"] = round(
-                shortestArc(toDouble(prevCoords["heading"]), toDouble(currCoords["heading"])), 2
-            )
-            delta["a"] = round(toDouble(currCoords["accuracy"]) - toDouble(prevCoords["accuracy"]), 2)
-            delta["al"] = round(toDouble(currCoords["altitude"]) - toDouble(prevCoords["altitude"]), 2)
-        }
-
-        // Battery delta.
-        val prevBattery = asMap(prev["battery"])
-        val currBattery = asMap(curr["battery"])
-        if (prevBattery != null && currBattery != null) {
-            delta["b"] = round(toDouble(currBattery["level"]) - toDouble(prevBattery["level"]), 4)
-        }
-
-        return delta
-    }
-
-    private fun parseTimestamp(value: Any?): Instant? {
-        if (value is String) {
-            return try {
-                Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(value))
-            } catch (_: Exception) {
-                null
+    private fun jsonToMap(json: org.json.JSONObject): Map<String, Any?> {
+        val map = mutableMapOf<String, Any?>()
+        for (key in json.keys()) {
+            val value = json.opt(key)
+            map[key] = when (value) {
+                is org.json.JSONObject -> jsonToMap(value)
+                is org.json.JSONArray -> jsonArrayToList(value)
+                org.json.JSONObject.NULL -> null
+                else -> value
             }
         }
-        return null
+        return map
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun asMap(value: Any?): Map<String, Any?>? {
-        return value as? Map<String, Any?>
-    }
-
-    private fun toDouble(value: Any?): Double {
-        return when (value) {
-            is Double -> value
-            is Int -> value.toDouble()
-            is Long -> value.toDouble()
-            is Float -> value.toDouble()
-            is Number -> value.toDouble()
-            else -> 0.0
+    private fun jsonArrayToList(array: org.json.JSONArray): List<Any?> {
+        val list = mutableListOf<Any?>()
+        for (i in 0 until array.length()) {
+            val value = array.opt(i)
+            list.add(when (value) {
+                is org.json.JSONObject -> jsonToMap(value)
+                is org.json.JSONArray -> jsonArrayToList(value)
+                org.json.JSONObject.NULL -> null
+                else -> value
+            })
         }
-    }
-
-    private fun round(value: Double, places: Int): Double {
-        val f = 10.0.pow(places)
-        return (value * f).roundToLong() / f
-    }
-
-    /** Shortest arc between two headings (0–360°). Returns value in [-180, 180]. */
-    private fun shortestArc(from: Double, to: Double): Double {
-        var diff = to - from
-        while (diff > 180) diff -= 360
-        while (diff < -180) diff += 360
-        return diff
+        return list
     }
 }

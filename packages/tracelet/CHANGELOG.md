@@ -1,6 +1,14 @@
 ## 3.0.0
 
 ### 🎉 Major Features & Improvements
+- **FEAT**: Massive Architecture Rewrite — Core algorithms (Location Filtering, Kalman Filter, Trip Management, Battery Budgeting, Schedule Parsing, Delta Encoding, Audit Trail) are now powered by a high-performance **Rust Core** using `flutter_rust_bridge` and `UniFFI`. This brings identically deterministic behavior and extreme battery efficiency across Android, iOS, and Dart.
+- **FEAT**: Smart Motion Mode — Introduced `MotionDetectionMode.smart`. This intelligent hybrid detection mode optimizes battery consumption dynamically by delegating evaluation to the Rust battery budget engine.
+- **FEAT**: Event bridge overhaul — Migrated all platform event channels to use strongly-typed Pigeon bridges, eliminating JSON serialization overhead completely.
+- **FEAT**: New Ecosystem Adapters — Introduced the official `tracelet_supabase` (Supabase Postgres background syncing & Auth) and `tracelet_firebase` (Firebase RTDB live location broadcasting) plugins.
+
+## 2.1.0
+
+### 🎉 Major Features & Improvements
 - **FEAT**: Smart Foreground Notification Visibility (Android) — Added dynamic foreground service notification management. The notification now intelligently hides itself when the app is in the foreground, and reappears seamlessly when the app enters the background. This significantly reduces notification clutter while maintaining OS-level compliance.
 - **FEAT**: Speed-Based Motion Detection Mode — Introduced a new motion detection mode (`tl.MotionDetectionMode.speed`). In this mode, motion state transitions are driven directly by GPS speed calculations rather than raw accelerometer hardware. This provides enhanced compatibility and reliability on devices with aggressive sensor sleep policies, particularly in vehicular tracking scenarios.
 - **FEAT**: Strongly-Typed Enums Across Bridge — Fully refactored string-based config comparisons to typed enum indices across the Flutter, Pigeon, Android, and iOS layers. This eliminates magic strings and ensures type-safety across the entire plugin bridge.

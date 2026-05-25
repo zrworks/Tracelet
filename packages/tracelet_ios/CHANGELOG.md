@@ -1,5 +1,11 @@
 ## 3.0.0
 
+- **FEAT**: Massive Architecture Rewrite — Core algorithms are now powered by a high-performance **Rust Core** using `flutter_rust_bridge`.
+- **FEAT**: Smart Motion Mode — Introduced `MotionDetectionMode.smart` powered by the Rust battery budget engine.
+- **FEAT**: Migrated all platform event channels to use strongly-typed Pigeon bridges.
+
+## 2.1.0
+
  - **FIX**: resolve background tracking loops, location stream drops, and permission issues. ([8abc7d41](https://github.com/Ikolvi/Tracelet/commit/8abc7d415b742a1aee7da50e16763babd83f9e53))
  - **FIX**: refactor string comparisons to enum indexing across all layers. ([b591b246](https://github.com/Ikolvi/Tracelet/commit/b591b246cca9d46a4fda32634e4b01d7c774ed05))
  - **FIX**: refactor speed motion strings to typed enums across Flutter, Pigeon, Android, and iOS SDKs. ([e974b728](https://github.com/Ikolvi/Tracelet/commit/e974b728142eb7b31b887a3b795cd527da6cbae1))

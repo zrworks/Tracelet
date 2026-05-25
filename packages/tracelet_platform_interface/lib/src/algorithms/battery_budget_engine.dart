@@ -22,7 +22,10 @@ class BatteryBudgetEngine {
     );
   }
 
-  BudgetAdjustmentEvent? processSample(double batteryLevel, {bool isCharging = false}) {
+  BudgetAdjustmentEvent? processSample(
+    double batteryLevel, {
+    bool isCharging = false,
+  }) {
     return _inner.processSample(
       level: batteryLevel,
       isCharging: isCharging,
@@ -50,6 +53,7 @@ class BatteryBudgetEngine {
     // Wait, the tests check engine.targetBudgetPerHour! Let's store it.
     return _targetBudgetPerHour; // We need to add this field.
   }
+
   late final double _targetBudgetPerHour;
 
   double get distanceFilter => _inner.getDistanceFilter();

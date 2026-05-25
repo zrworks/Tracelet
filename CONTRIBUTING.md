@@ -97,7 +97,11 @@ test(dart): add Config serialization round-trip tests
 
 ## Rust Core Code Generation
 
-Tracelet relies on a shared Rust Core (`sdk/rust-core`) via `flutter_rust_bridge` for Dart and `UniFFI` for iOS/Android native code. When you modify files in `sdk/rust-core`:
+Tracelet relies on a shared Rust Core (`sdk/rust-core`) via `flutter_rust_bridge` for Dart and `UniFFI` for iOS/Android native code. 
+
+**Note for Native SDK Contributors:** Because all generated bindings are checked into version control, you **do not** need to install Flutter or run the codegen tools if you are only working on the Android (Kotlin) or iOS (Swift) sides of the codebase! 
+
+If you *do* modify files in `sdk/rust-core`, you must regenerate the bindings:
 
 1. **Dart Bindings**:
    ```bash

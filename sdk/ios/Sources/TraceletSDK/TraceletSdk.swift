@@ -157,6 +157,18 @@ public final class TraceletSdk {
     ///
     /// - Parameter config: Configuration dictionary matching Dart `Config.toMap()` format.
     /// - Returns: Current state as a dictionary.
+    public func requestStateFlush() {
+        var providerState = locationEngine.buildProviderState()
+        providerState["event"] = "providerchange"
+        eventSender.sendProviderChange(providerState)
+        
+        let isMoving = stateManager.isMoving
+        let locationMap = locationEngine.getLastGpsLocation().map { locationEngine.buildLocationMap($0) }
+        var motionMap = locationMap ?? [:]
+        motionMap["isMoving"] = isMoving
+        eventSender.sendMotionChange(motionMap)
+    }
+
     @discardableResult
     public func ready(config: [String: Any]) -> [String: Any] {
         initialize()  // no-op if already initialized
@@ -1234,7 +1246,9 @@ public final class TraceletSdk {
                 guard let self = self else { return }
                 NSLog("[Tracelet] Heartbeat fired")
                 guard let location = self.locationEngine.getLastGpsLocation() else {
-                    NSLog("[Tracelet] Heartbeat: no cached location, skipping")
+                    if self.configManager.isDebug() {
+                        NSLog("[Tracelet] Heartbeat: no cached location, skipping")
+                    }
                     return
                 }
                 // Build a fully enriched location map with UUID, battery, etc.

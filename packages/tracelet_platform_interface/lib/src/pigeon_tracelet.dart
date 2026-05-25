@@ -24,6 +24,7 @@ class PigeonTracelet extends TraceletPlatform {
     if (!_eventsRegistered) {
       _eventsRegistered = true;
       TraceletEventApi.setUp(_events);
+      _api.requestStateFlush();
     }
   }
 

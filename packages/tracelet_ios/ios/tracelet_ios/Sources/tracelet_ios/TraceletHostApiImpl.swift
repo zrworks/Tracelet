@@ -273,6 +273,10 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Lifecycle
 
+    func requestStateFlush() throws {
+        sdk.requestStateFlush()
+    }
+
     func ready(config: TlConfig, completion: @escaping (Result<TlState, Error>) -> Void) {
         let state = sdk.ready(config: tlConfigToDict(config))
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))

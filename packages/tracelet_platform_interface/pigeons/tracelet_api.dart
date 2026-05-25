@@ -668,6 +668,8 @@ class TlConnectivityChangeEvent {
 
 @HostApi()
 abstract class TraceletHostApi {
+  void requestStateFlush();
+
   @async
   TlState ready(TlConfig config);
 

@@ -286,6 +286,10 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     @Suppress("UNCHECKED_CAST")
+    override fun requestStateFlush() {
+        sdk.requestStateFlush()
+    }
+
     override fun ready(config: TlConfig, callback: (Result<TlState>) -> Unit) {
         try {
             sdk.ready(tlConfigToSdkMap(config)) { state ->

@@ -4,12 +4,7 @@
 // swiftlint:disable all
 import Foundation
 
-// Depending on the consumer's build setup, the low-level FFI code
-// might be in a separate module, or it might be compiled inline into
-// this module. This is a bit of light hackery to work with both.
-#if canImport(tracelet_coreFFI)
-import tracelet_coreFFI
-#endif
+// No need to import tracelet_coreFFI, it's bundled in the TraceletSDK module.
 
 fileprivate extension RustBuffer {
     // Allocate a new buffer, copying the contents of a `UInt8` array.
@@ -658,6 +653,170 @@ public func FfiConverterTypeAdaptiveSamplingEngine_lower(_ value: AdaptiveSampli
 
 
 
+public protocol GeofenceEvaluatorProtocol: AnyObject, Sendable {
+    
+    func clear() 
+    
+    func clearIndex() 
+    
+    func evaluateProximity(latitude: Double, longitude: Double, geofences: [CoreGeofence])  -> [GeofenceTransition]
+    
+    func indexGeofences(geofences: [CoreGeofence]) 
+    
+    func removeGeofence(identifier: String) 
+    
+}
+open class GeofenceEvaluator: GeofenceEvaluatorProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_geofenceevaluator(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_geofenceevaluator_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_geofenceevaluator(handle, $0) }
+    }
+
+    
+
+    
+open func clear()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_geofenceevaluator_clear(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func clearIndex()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_geofenceevaluator_clear_index(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func evaluateProximity(latitude: Double, longitude: Double, geofences: [CoreGeofence]) -> [GeofenceTransition]  {
+    return try!  FfiConverterSequenceTypeGeofenceTransition.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_geofenceevaluator_evaluate_proximity(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),
+        FfiConverterSequenceTypeCoreGeofence.lower(geofences),$0
+    )
+})
+}
+    
+open func indexGeofences(geofences: [CoreGeofence])  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_geofenceevaluator_index_geofences(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceTypeCoreGeofence.lower(geofences),$0
+    )
+}
+}
+    
+open func removeGeofence(identifier: String)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_geofenceevaluator_remove_geofence(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeofenceEvaluator: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = GeofenceEvaluator
+
+    public static func lift(_ handle: UInt64) throws -> GeofenceEvaluator {
+        return GeofenceEvaluator(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: GeofenceEvaluator) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeofenceEvaluator {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: GeofenceEvaluator, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceEvaluator_lift(_ handle: UInt64) throws -> GeofenceEvaluator {
+    return try FfiConverterTypeGeofenceEvaluator.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceEvaluator_lower(_ value: GeofenceEvaluator) -> UInt64 {
+    return FfiConverterTypeGeofenceEvaluator.lower(value)
+}
+
+
+
+
+
+
 public protocol KalmanLocationFilterProtocol: AnyObject, Sendable {
     
     func estimatedSpeed()  -> Double
@@ -1174,6 +1333,126 @@ public func FfiConverterTypeCoordinate_lower(_ value: Coordinate) -> RustBuffer 
 }
 
 
+public struct CoreGeofence: Equatable, Hashable {
+    public var identifier: String
+    public var latitude: Double
+    public var longitude: Double
+    public var radius: Double
+    public var vertices: [Coordinate]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(identifier: String, latitude: Double, longitude: Double, radius: Double, vertices: [Coordinate]) {
+        self.identifier = identifier
+        self.latitude = latitude
+        self.longitude = longitude
+        self.radius = radius
+        self.vertices = vertices
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoreGeofence: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreGeofence: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreGeofence {
+        return
+            try CoreGeofence(
+                identifier: FfiConverterString.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                radius: FfiConverterDouble.read(from: &buf), 
+                vertices: FfiConverterSequenceTypeCoordinate.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoreGeofence, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.identifier, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterDouble.write(value.radius, into: &buf)
+        FfiConverterSequenceTypeCoordinate.write(value.vertices, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreGeofence_lift(_ buf: RustBuffer) throws -> CoreGeofence {
+    return try FfiConverterTypeCoreGeofence.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreGeofence_lower(_ value: CoreGeofence) -> RustBuffer {
+    return FfiConverterTypeCoreGeofence.lower(value)
+}
+
+
+public struct GeofenceTransition: Equatable, Hashable {
+    public var identifier: String
+    public var action: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(identifier: String, action: String) {
+        self.identifier = identifier
+        self.action = action
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GeofenceTransition: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeofenceTransition: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeofenceTransition {
+        return
+            try GeofenceTransition(
+                identifier: FfiConverterString.read(from: &buf), 
+                action: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GeofenceTransition, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.identifier, into: &buf)
+        FfiConverterString.write(value.action, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceTransition_lift(_ buf: RustBuffer) throws -> GeofenceTransition {
+    return try FfiConverterTypeGeofenceTransition.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceTransition_lower(_ value: GeofenceTransition) -> RustBuffer {
+    return FfiConverterTypeGeofenceTransition.lower(value)
+}
+
+
 public struct LatLng: Equatable, Hashable {
     public var latitude: Double
     public var longitude: Double
@@ -1623,6 +1902,56 @@ fileprivate struct FfiConverterSequenceTypeCoordinate: FfiConverterRustBuffer {
         return seq
     }
 }
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCoreGeofence: FfiConverterRustBuffer {
+    typealias SwiftType = [CoreGeofence]
+
+    public static func write(_ value: [CoreGeofence], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCoreGeofence.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CoreGeofence] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CoreGeofence]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCoreGeofence.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer {
+    typealias SwiftType = [GeofenceTransition]
+
+    public static func write(_ value: [GeofenceTransition], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeGeofenceTransition.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [GeofenceTransition] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [GeofenceTransition]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeGeofenceTransition.read(from: &buf))
+        }
+        return seq
+    }
+}
 public func haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double  {
     return try!  FfiConverterDouble.lift(try! rustCall() {
     uniffi_tracelet_core_fn_func_haversine(
@@ -1691,6 +2020,21 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_locationprocessor_reset() != 105) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index() != 13907) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity() != 35353) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences() != 8803) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 58796) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1698,6 +2042,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_locationprocessor_new() != 1269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 56699) {
         return InitializationResult.apiChecksumMismatch
     }
 

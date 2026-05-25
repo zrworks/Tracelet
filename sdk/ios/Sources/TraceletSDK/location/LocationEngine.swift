@@ -62,7 +62,6 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     /// Build (or rebuild) the Rust LocationProcessor from current config.
     public func rebuildProcessor() {
-        locationProcessor?.destroy()
         locationProcessor = LocationProcessor(
             distanceFilter: configManager.getDistanceFilter(),
             disableElasticity: configManager.getDisableElasticity(),
@@ -78,7 +77,6 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             sparseDistanceThreshold: configManager.getSparseDistanceThreshold(),
             sparseMaxIdleSeconds: Int32(configManager.getSparseMaxIdleSeconds())
         )
-        kalmanFilter?.destroy()
         kalmanFilter = configManager.getEnableKalmanFilter() ? KalmanLocationFilter() : nil
     }
 
@@ -406,9 +404,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         lastGpsLocation = nil
         oneShots.removeAll()
         stopAllWatchers()
-        locationProcessor?.destroy()
         locationProcessor = nil
-        kalmanFilter?.destroy()
         kalmanFilter = nil
     }
 

@@ -1,6 +1,7 @@
 ## 3.0.0
 
 - **CHORE**: bump version to match tracelet 3.0.0 release.
+- **FEAT**: upgraded `tracelet` core dependency to `^3.0.0` which includes the new high-performance Rust Engine rewrite for improved battery efficiency and tracking reliability.
 
 ## 1.0.1
 

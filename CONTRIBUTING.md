@@ -15,6 +15,9 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 - Melos (`dart pub global activate melos`)
 - Android Studio (for Android development)
 - Xcode 15+ (for iOS development, macOS only)
+- Rust Toolchain (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
+- Cargo NDK for Android (`cargo install cargo-ndk`)
+- Flutter Rust Bridge Codegen (`cargo install flutter_rust_bridge_codegen`)
 
 ### Setup
 
@@ -25,6 +28,15 @@ cd tracelet
 
 # Bootstrap all packages
 melos bootstrap
+
+# Build the Rust Core bindings for native platforms
+./sdk/rust-core/build-ios.sh
+./sdk/rust-core/build-android.sh
+
+# Generate Flutter/Dart bindings from Rust Core
+cd packages/tracelet_platform_interface
+flutter_rust_bridge_codegen generate
+cd ../..
 
 # Run all tests
 melos run test
@@ -82,6 +94,25 @@ test(dart): add Config serialization round-trip tests
 - Fill out the PR template
 - Ensure CI passes
 - Request review from maintainers
+
+## Rust Core Code Generation
+
+Tracelet relies on a shared Rust Core (`sdk/rust-core`) via `flutter_rust_bridge` for Dart and `UniFFI` for iOS/Android native code. When you modify files in `sdk/rust-core`:
+
+1. **Dart Bindings**:
+   ```bash
+   cd packages/tracelet_platform_interface
+   flutter_rust_bridge_codegen generate
+   cd ../..
+   ```
+2. **iOS Bindings** (Swift via UniFFI):
+   ```bash
+   ./sdk/rust-core/build-ios.sh
+   ```
+3. **Android Bindings** (Kotlin via UniFFI):
+   ```bash
+   ./sdk/rust-core/build-android.sh
+   ```
 
 ## Pigeon Code Generation
 

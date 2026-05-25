@@ -15,7 +15,8 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '14.0'
   s.swift_version = '5.9'
 
-  s.source_files = 'sdk/ios/Sources/TraceletSDK/**/*.swift'
+  s.source_files = 'sdk/ios/Sources/TraceletSDK/**/*.swift', 'sdk/ios/Sources/TraceletSDK/*.swift', 'sdk/ios/Sources/TraceletSDK/**/*.h', 'sdk/ios/Sources/TraceletSDK/*.h'
+  s.public_header_files = 'sdk/ios/Sources/TraceletSDK/**/*.h', 'sdk/ios/Sources/TraceletSDK/*.h'
 
   # Apple frameworks
   s.frameworks = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks',
@@ -23,6 +24,9 @@ Pod::Spec.new do |s|
 
   # System libraries
   s.libraries = 'sqlite3'
+  
+  # Rust Core
+  s.vendored_frameworks = 'sdk/rust-core/out/TraceletCore.xcframework'
 
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

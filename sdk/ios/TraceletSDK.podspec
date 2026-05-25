@@ -8,7 +8,8 @@ Pod::Spec.new do |s|
   s.source           = { :path => '.' }
   s.ios.deployment_target = '14.0'
   s.swift_version    = '5.9'
-  s.source_files     = 'Sources/TraceletSDK/**/*.swift'
+  s.source_files     = 'Sources/TraceletSDK/**/*.swift', 'Sources/TraceletSDK/*.swift', 'Sources/TraceletSDK/**/*.h', 'Sources/TraceletSDK/*.h'
+  s.public_header_files = 'Sources/TraceletSDK/**/*.h', 'Sources/TraceletSDK/*.h'
   s.frameworks       = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks', 'AVFoundation', 'AudioToolbox', 'Network', 'DeviceCheck'
   s.libraries        = 'sqlite3'
 end

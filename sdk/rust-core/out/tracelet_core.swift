@@ -1465,6 +1465,145 @@ public func FfiConverterTypeLocationProcessor_lower(_ value: LocationProcessor) 
 
 
 
+public protocol ScheduleParserProtocol: AnyObject, Sendable {
+    
+    func calculateNextAlarms(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32)  -> ScheduleAlarms
+    
+    func isWithinSchedule(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32)  -> Bool
+    
+}
+open class ScheduleParser: ScheduleParserProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_scheduleparser(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_scheduleparser_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_scheduleparser(handle, $0) }
+    }
+
+    
+
+    
+open func calculateNextAlarms(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32) -> ScheduleAlarms  {
+    return try!  FfiConverterTypeScheduleAlarms_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_scheduleparser_calculate_next_alarms(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(schedules),
+        FfiConverterInt64.lower(timestampMs),
+        FfiConverterInt32.lower(tzOffsetSeconds),$0
+    )
+})
+}
+    
+open func isWithinSchedule(schedules: [String], timestampMs: Int64, tzOffsetSeconds: Int32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_scheduleparser_is_within_schedule(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(schedules),
+        FfiConverterInt64.lower(timestampMs),
+        FfiConverterInt32.lower(tzOffsetSeconds),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeScheduleParser: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = ScheduleParser
+
+    public static func lift(_ handle: UInt64) throws -> ScheduleParser {
+        return ScheduleParser(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: ScheduleParser) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ScheduleParser {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: ScheduleParser, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleParser_lift(_ handle: UInt64) throws -> ScheduleParser {
+    return try FfiConverterTypeScheduleParser.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleParser_lower(_ value: ScheduleParser) -> UInt64 {
+    return FfiConverterTypeScheduleParser.lower(value)
+}
+
+
+
+
+
+
 public protocol SmartMotionCoordinatorProtocol: AnyObject, Sendable {
     
     func isAccelMoving()  -> Bool
@@ -1634,6 +1773,165 @@ public func FfiConverterTypeSmartMotionCoordinator_lift(_ handle: UInt64) throws
 #endif
 public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoordinator) -> UInt64 {
     return FfiConverterTypeSmartMotionCoordinator.lower(value)
+}
+
+
+
+
+
+
+public protocol TripManagerProtocol: AnyObject, Sendable {
+    
+    func isTripActive()  -> Bool
+    
+    func onLocationReceived(latitude: Double, longitude: Double, timestampMs: Int64) 
+    
+    func onMotionStateChanged(isMoving: Bool, latitude: Double?, longitude: Double?, timestampMs: Int64, nowMs: Int64)  -> TripData?
+    
+    func reset() 
+    
+}
+open class TripManager: TripManagerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_tripmanager(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_tripmanager_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_tripmanager(handle, $0) }
+    }
+
+    
+
+    
+open func isTripActive() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_tripmanager_is_trip_active(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+open func onLocationReceived(latitude: Double, longitude: Double, timestampMs: Int64)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_tripmanager_on_location_received(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),
+        FfiConverterInt64.lower(timestampMs),$0
+    )
+}
+}
+    
+open func onMotionStateChanged(isMoving: Bool, latitude: Double?, longitude: Double?, timestampMs: Int64, nowMs: Int64) -> TripData?  {
+    return try!  FfiConverterOptionTypeTripData.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_tripmanager_on_motion_state_changed(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(isMoving),
+        FfiConverterOptionDouble.lower(latitude),
+        FfiConverterOptionDouble.lower(longitude),
+        FfiConverterInt64.lower(timestampMs),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+open func reset()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_tripmanager_reset(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTripManager: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = TripManager
+
+    public static func lift(_ handle: UInt64) throws -> TripManager {
+        return TripManager(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: TripManager) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TripManager {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: TripManager, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripManager_lift(_ handle: UInt64) throws -> TripManager {
+    return try FfiConverterTypeTripManager.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripManager_lower(_ value: TripManager) -> UInt64 {
+    return FfiConverterTypeTripManager.lower(value)
 }
 
 
@@ -2422,6 +2720,238 @@ public func FfiConverterTypeLocationRecord_lower(_ value: LocationRecord) -> Rus
     return FfiConverterTypeLocationRecord.lower(value)
 }
 
+
+public struct ScheduleAlarms: Equatable, Hashable {
+    public var nextStartMs: Int64
+    public var nextStopMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(nextStartMs: Int64, nextStopMs: Int64) {
+        self.nextStartMs = nextStartMs
+        self.nextStopMs = nextStopMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ScheduleAlarms: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeScheduleAlarms: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ScheduleAlarms {
+        return
+            try ScheduleAlarms(
+                nextStartMs: FfiConverterInt64.read(from: &buf), 
+                nextStopMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ScheduleAlarms, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.nextStartMs, into: &buf)
+        FfiConverterInt64.write(value.nextStopMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleAlarms_lift(_ buf: RustBuffer) throws -> ScheduleAlarms {
+    return try FfiConverterTypeScheduleAlarms.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScheduleAlarms_lower(_ value: ScheduleAlarms) -> RustBuffer {
+    return FfiConverterTypeScheduleAlarms.lower(value)
+}
+
+
+public struct TripData: Equatable, Hashable {
+    public var distanceMeters: Double
+    public var durationSeconds: Double
+    public var startLocation: TripLocation?
+    public var stopLocation: TripLocation?
+    public var waypoints: [TripWaypoint]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(distanceMeters: Double, durationSeconds: Double, startLocation: TripLocation?, stopLocation: TripLocation?, waypoints: [TripWaypoint]) {
+        self.distanceMeters = distanceMeters
+        self.durationSeconds = durationSeconds
+        self.startLocation = startLocation
+        self.stopLocation = stopLocation
+        self.waypoints = waypoints
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension TripData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTripData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TripData {
+        return
+            try TripData(
+                distanceMeters: FfiConverterDouble.read(from: &buf), 
+                durationSeconds: FfiConverterDouble.read(from: &buf), 
+                startLocation: FfiConverterOptionTypeTripLocation.read(from: &buf), 
+                stopLocation: FfiConverterOptionTypeTripLocation.read(from: &buf), 
+                waypoints: FfiConverterSequenceTypeTripWaypoint.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TripData, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.distanceMeters, into: &buf)
+        FfiConverterDouble.write(value.durationSeconds, into: &buf)
+        FfiConverterOptionTypeTripLocation.write(value.startLocation, into: &buf)
+        FfiConverterOptionTypeTripLocation.write(value.stopLocation, into: &buf)
+        FfiConverterSequenceTypeTripWaypoint.write(value.waypoints, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripData_lift(_ buf: RustBuffer) throws -> TripData {
+    return try FfiConverterTypeTripData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripData_lower(_ value: TripData) -> RustBuffer {
+    return FfiConverterTypeTripData.lower(value)
+}
+
+
+public struct TripLocation: Equatable, Hashable {
+    public var latitude: Double
+    public var longitude: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(latitude: Double, longitude: Double) {
+        self.latitude = latitude
+        self.longitude = longitude
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension TripLocation: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTripLocation: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TripLocation {
+        return
+            try TripLocation(
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TripLocation, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripLocation_lift(_ buf: RustBuffer) throws -> TripLocation {
+    return try FfiConverterTypeTripLocation.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripLocation_lower(_ value: TripLocation) -> RustBuffer {
+    return FfiConverterTypeTripLocation.lower(value)
+}
+
+
+public struct TripWaypoint: Equatable, Hashable {
+    public var latitude: Double
+    public var longitude: Double
+    public var timestampMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(latitude: Double, longitude: Double, timestampMs: Int64) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestampMs = timestampMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension TripWaypoint: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTripWaypoint: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TripWaypoint {
+        return
+            try TripWaypoint(
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestampMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TripWaypoint, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterInt64.write(value.timestampMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripWaypoint_lift(_ buf: RustBuffer) throws -> TripWaypoint {
+    return try FfiConverterTypeTripWaypoint.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTripWaypoint_lower(_ value: TripWaypoint) -> RustBuffer {
+    return FfiConverterTypeTripWaypoint.lower(value)
+}
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
@@ -2854,6 +3384,30 @@ fileprivate struct FfiConverterOptionInt32: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
+    typealias SwiftType = Double?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterDouble.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterDouble.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -2944,6 +3498,79 @@ fileprivate struct FfiConverterOptionTypeLocationRecord: FfiConverterRustBuffer 
         case 1: return try FfiConverterTypeLocationRecord.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeTripData: FfiConverterRustBuffer {
+    typealias SwiftType = TripData?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeTripData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeTripData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeTripLocation: FfiConverterRustBuffer {
+    typealias SwiftType = TripLocation?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeTripLocation.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeTripLocation.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]
+
+    public static func write(_ value: [String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterString.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [String]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterString.read(from: &buf))
+        }
+        return seq
     }
 }
 
@@ -3042,6 +3669,31 @@ fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustB
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeGeofenceTransition.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer {
+    typealias SwiftType = [TripWaypoint]
+
+    public static func write(_ value: [TripWaypoint], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeTripWaypoint.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [TripWaypoint] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [TripWaypoint]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeTripWaypoint.read(from: &buf))
         }
         return seq
     }
@@ -3157,6 +3809,24 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_locationprocessor_reset() != 105) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms() != 22681) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 33514) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 42159) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_tripmanager_on_location_received() != 59373) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed() != 30102) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_tripmanager_reset() != 62563) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash() != 11657) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -3221,6 +3891,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_locationprocessor_new() != 1269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 30746) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 4111) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 28924) {

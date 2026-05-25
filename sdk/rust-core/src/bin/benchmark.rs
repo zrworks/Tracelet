@@ -2,7 +2,8 @@ use std::time::Instant;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use tracelet_core::algorithms::geo_utils::haversine;
+use tracelet_core::state::battery_budget::BatteryBudgetEngine;
+use tracelet_core::state::smart_motion_coordinator::{SmartMotionCoordinator, TrackingMode};
 
 struct BenchResult {
     name: String,
@@ -42,41 +43,35 @@ fn main() {
     
     let mut results = Vec::new();
     
-    // kalman_process_single
-    results.push(bench("kalman_process_single", || {
-        // dummy: kalman filter simulation (since it's stateful, we just do some math)
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
-    }));
-    
-    // haversine_single
-    results.push(bench("haversine_single", || {
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
-    }));
-    
-    // pip_4v
-    results.push(bench("pip_4v", || {
-        // Mock PIP computation
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
-    }));
-    
-    // adaptive_compute
-    results.push(bench("adaptive_compute", || {
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
-    }));
-    
-    // battery_budget_single_sample
     results.push(bench("battery_budget_single_sample", || {
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
+        let engine = BatteryBudgetEngine::new(5.0, 10.0, 1, None);
+        engine.process_sample(0.75, 1000);
     }));
-    
-    // delta_encode_100
-    results.push(bench("delta_encode_100", || {
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
+
+    results.push(bench("battery_budget_60_samples", || {
+        let engine = BatteryBudgetEngine::new(5.0, 10.0, 1, None);
+        for i in 0..60 {
+            engine.process_sample(1.0 - (i as f64) * 0.01, (i as i64) * 60_000);
+        }
     }));
-    
-    // delta_decode_100
-    results.push(bench("delta_decode_100", || {
-        let _ = haversine(37.422, -122.084, 37.423, -122.083);
+
+    results.push(bench("battery_budget_heavy_drain", || {
+        let engine = BatteryBudgetEngine::new(3.0, 10.0, 1, None);
+        for i in 0..120 {
+            engine.process_sample(1.0 - (i as f64) * 0.005, (i as i64) * 60_000);
+        }
+    }));
+
+    results.push(bench("smart_motion_accel_change", || {
+        let coordinator = SmartMotionCoordinator::new(false);
+        coordinator.on_accel_state_change(true);
+        coordinator.on_accel_state_change(false);
+    }));
+
+    results.push(bench("smart_motion_speed_change", || {
+        let coordinator = SmartMotionCoordinator::new(false);
+        coordinator.on_speed_state_change(false);
+        coordinator.on_speed_state_change(true);
     }));
     
     // output table

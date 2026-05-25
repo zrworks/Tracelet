@@ -22,6 +22,13 @@ enum MotionDetectionMode {
   /// machine switches between continuous tracking and low-power periodic
   /// fixes automatically based on [MotionConfig.speedMovingThreshold].
   speed,
+
+  /// Hybrid motion detection mode.
+  ///
+  /// Combines the accelerometer's instant wake-up capabilities with the
+  /// GPS-speed state machine to prevent false stops on smooth roads
+  /// (e.g. driving on a highway with the phone flat on the dashboard).
+  smart,
 }
 
 /// Tracking mode to use when the speed-based state machine enters the

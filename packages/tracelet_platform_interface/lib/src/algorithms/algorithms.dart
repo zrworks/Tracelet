@@ -10,8 +10,6 @@ export 'carbon_estimator.dart';
 export 'delta_encoder.dart';
 export 'geo_utils.dart';
 export 'geofence_evaluator.dart';
-export 'kalman_filter.dart';
-export 'location_processor.dart';
 export 'persist_decider.dart';
 export 'rtree.dart';
 export 'schedule_parser.dart';

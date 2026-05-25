@@ -1110,6 +1110,10 @@ class MotionConfig {
   ///   machine switches the native location engine between continuous
   ///   tracking and low-power periodic fixes automatically. All `speed*`
   ///   and `stationary*` fields below apply to this mode.
+  /// - [MotionDetectionMode.smart]: a hybrid mode that evaluates both the
+  ///   accelerometer and the GPS speed. Prevents false stops on smooth
+  ///   highways by cross-checking speed, and uses Geofences for zero-battery
+  ///   monitoring when fully stationary.
   ///
   /// When `speed` is selected, the accelerometer and Activity Recognition
   /// detection paths are disabled entirely.

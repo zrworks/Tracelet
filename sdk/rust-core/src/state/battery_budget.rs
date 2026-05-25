@@ -89,13 +89,10 @@ impl BatteryBudgetEngine {
             return None;
         }
 
-        let mut adjusted = false;
-
         if error > 0.0 {
             // Draining too fast — throttle.
             state.distance_filter = (state.distance_filter * THROTTLE_FACTOR)
                 .clamp(MIN_DISTANCE_FILTER, MAX_DISTANCE_FILTER);
-            adjusted = true;
             if state.accuracy_index < 4 {
                 state.accuracy_index += 1;
             }
@@ -108,7 +105,6 @@ impl BatteryBudgetEngine {
             // Under budget — can improve.
             state.distance_filter = (state.distance_filter * BOOST_FACTOR)
                 .clamp(MIN_DISTANCE_FILTER, MAX_DISTANCE_FILTER);
-            adjusted = true;
             if state.accuracy_index > 0 {
                 state.accuracy_index -= 1;
             }
@@ -117,10 +113,6 @@ impl BatteryBudgetEngine {
                     ((interval as f64 * BOOST_FACTOR) as i32).clamp(60, 43200),
                 );
             }
-        }
-
-        if !adjusted {
-            return None;
         }
 
         Some(BudgetAdjustmentEvent {

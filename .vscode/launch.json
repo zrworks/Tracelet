@@ -8,10 +8,6 @@
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}/example",
       "flutterMode": "debug",
-      "args": [
-        "-d",
-        "ios"
-      ],
       "preLaunchTask": "Build Rust Core (iOS)"
     },
     {
@@ -21,10 +17,6 @@
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}/example",
       "flutterMode": "debug",
-      "args": [
-        "-d",
-        "android"
-      ],
       "preLaunchTask": "Build Rust Core (Android)"
     },
     {

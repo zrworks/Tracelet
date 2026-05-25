@@ -4,7 +4,7 @@ import '../rust/api_dart/schedule.dart';
 class ScheduleParser {
   ScheduleParser._(); // Prevent instantiation.
 
-  static late final ScheduleParserDart _inner = ScheduleParserDart();
+  static final ScheduleParserDart _inner = ScheduleParserDart();
 
   /// Check whether [now] (or the current time) falls within any of the
   /// given [schedules].

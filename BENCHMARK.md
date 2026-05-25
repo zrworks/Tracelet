@@ -89,6 +89,47 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 ## Results History
 
+### 2026-05-25 — Commit b94ae85
+
+**Environment:** Dart 3.12.0, ubuntu-latest (CI)
+
+| Benchmark | ops/sec | µs/op |
+|---|---:|---:|
+| schedule_parse | 2564102 | 0.39 |
+| schedule_matches | 94428 | 10.59 |
+| schedule_isWithin_5_entries | 87032 | 11.49 |
+| location_fromMap | 1666666 | 0.60 |
+| location_toMap | 645161 | 1.55 |
+| location_fromMap_toMap_roundtrip | 471698 | 2.12 |
+| location_copyWithCoords | 11111111 | 0.09 |
+| geofence_fromMap_circular | 4545454 | 0.22 |
+| geofence_fromMap_polygon | 1562500 | 0.64 |
+| carbon_trip_100_locations | 90415 | 11.06 |
+| carbon_onLocation | 4000000 | 0.25 |
+| carbon_setActivity | 9090909 | 0.11 |
+| carbon_cumulative_report | 2564102 | 0.39 |
+| persist_decider_location | 20000000 | 0.05 |
+| persist_decider_geofence | 20000000 | 0.05 |
+| config_fromMap | 452488 | 2.21 |
+| config_toMap | 123456 | 8.10 |
+| config_roundtrip | 96899 | 10.32 |
+| state_fromMap | 429184 | 2.33 |
+| state_toMap | 121212 | 8.25 |
+| route_context_toMap | 2941176 | 0.34 |
+| route_context_fromMap | 2272727 | 0.44 |
+| route_context_roundtrip | 1351351 | 0.74 |
+| sync_body_context_toMap_50 | 7692307 | 0.13 |
+| sync_body_context_fromMap_50 | 21791 | 45.89 |
+| http_config_ssl_toMap | 763358 | 1.31 |
+| http_config_ssl_fromMap | 3333333 | 0.30 |
+| http_config_ssl_roundtrip | 625000 | 1.60 |
+| battery_budget_60_samples | 1767590 | 0.57 |
+| smart_motion_speed_change | 25691165 | 0.04 |
+| smart_motion_accel_change | 25846884 | 0.04 |
+| battery_budget_single_sample | 23934618 | 0.04 |
+| battery_budget_heavy_drain | 911841 | 1.10 |
+
+
 ### 2026-05-25 — Commit 0639185
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)
@@ -436,12 +477,5 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 | http_config_ssl_toMap | 786035 | 1.27 |
 | http_config_ssl_fromMap | 3252982 | 0.31 |
 | http_config_ssl_roundtrip | 647125 | 1.55 |
-
-
-### 2026-05-25 — Commit 7dc41c9
-
-**Environment:** Dart 3.12.0, ubuntu-latest (CI)
-
-(no table captured)
 
 

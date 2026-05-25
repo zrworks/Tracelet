@@ -1,5 +1,4 @@
 use serde_json::{json, Value};
-use std::time::Duration;
 
 #[uniffi::export]
 pub fn encode_deltas(batch_json: String, precision: i32) -> String {

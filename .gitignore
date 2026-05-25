@@ -141,3 +141,9 @@ skills-lock.json
 **/target/
 *.a
 *.xcframework
+*.so
+*.dylib
+*.dll
+*.h
+**/jniLibs/
+sdk/rust-core/out/

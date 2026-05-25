@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Example (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "debug",
+      "preLaunchTask": "Build Rust Core (All Platforms)"
+    },
+    {
+      "name": "Example (Profile)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "Example (Release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "release"
+    },
+    {
+      "name": "Integration Tests",
+      "type": "dart",
+      "request": "launch",
+      "program": "integration_test/plugin_integration_test.dart",
+      "cwd": "${workspaceFolder}/example",
+    },
+    {
+      "name": "Supabase Adapter Example",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example_supabase",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "Firebase Adapter Example",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example_firebase",
+      "flutterMode": "debug"
+    }
+  ]
+}

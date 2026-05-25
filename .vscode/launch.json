@@ -2,13 +2,30 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Example (Debug)",
+      "name": "Example (Debug iOS)",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}/example",
       "flutterMode": "debug",
-      "preLaunchTask": "Build Rust Core (All Platforms)"
+      "args": [
+        "-d",
+        "ios"
+      ],
+      "preLaunchTask": "Build Rust Core (iOS)"
+    },
+    {
+      "name": "Example (Debug Android)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "debug",
+      "args": [
+        "-d",
+        "android"
+      ],
+      "preLaunchTask": "Build Rust Core (Android)"
     },
     {
       "name": "Example (Profile)",

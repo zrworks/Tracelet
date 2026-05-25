@@ -79,6 +79,15 @@ jobs:
         run: dart pub global activate melos
       - name: Bootstrap
         run: melos bootstrap
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+      - name: Build Android Rust Core
+        run: ./sdk/rust-core/build-android.sh
+
       - name: Build example APK
         working-directory: example
         run: flutter build apk --debug
@@ -96,6 +105,13 @@ jobs:
         run: dart pub global activate melos
       - name: Bootstrap
         run: melos bootstrap
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
+      - name: Build iOS Rust Core
+        run: ./sdk/rust-core/build-ios.sh
+
       - name: Build example iOS
         working-directory: example
         run: flutter build ios --no-codesign --debug

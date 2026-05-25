@@ -125,220 +125,9 @@ Map<String, Object?> _generateLocationMap() {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Kalman Filter
-// ─────────────────────────────────────────────────────────────────────────────
 
-void _benchKalmanFilter() {
-  final track = _generateTrack(100);
 
-  // Single process() call
-  _bench('kalman_process_single', () {
-    final kf = KalmanLocationFilter();
-    kf.process(
-      latitude: track[0].lat,
-      longitude: track[0].lng,
-      accuracy: track[0].acc,
-      timestampMs: track[0].ts,
-    );
-  });
 
-  // Process 100 sequential fixes
-  _bench('kalman_process_100_fixes', () {
-    final kf = KalmanLocationFilter();
-    for (final p in track) {
-      kf.process(
-        latitude: p.lat,
-        longitude: p.lng,
-        accuracy: p.acc,
-        timestampMs: p.ts,
-      );
-    }
-  });
-
-  // Process 1000 sequential fixes
-  final track1k = _generateTrack(1000);
-  _bench('kalman_process_1k_fixes', () {
-    final kf = KalmanLocationFilter();
-    for (final p in track1k) {
-      kf.process(
-        latitude: p.lat,
-        longitude: p.lng,
-        accuracy: p.acc,
-        timestampMs: p.ts,
-      );
-    }
-  });
-
-  // Reset
-  _bench('kalman_reset', () {
-    final kf = KalmanLocationFilter();
-    kf.process(
-      latitude: 37.422,
-      longitude: -122.084,
-      accuracy: 16.0,
-      timestampMs: 1700000000000,
-    );
-    kf.reset();
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Haversine
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchHaversine() {
-  _bench('haversine_single', () {
-    GeoUtils.haversine(37.422, -122.084, 37.423, -122.083);
-  });
-
-  // 1000 sequential distance calls
-  final track = _generateTrack(1001);
-  _bench('haversine_1k_pairs', () {
-    for (var i = 0; i < 1000; i++) {
-      GeoUtils.haversine(
-        track[i].lat,
-        track[i].lng,
-        track[i + 1].lat,
-        track[i + 1].lng,
-      );
-    }
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Point-in-Polygon
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchPointInPolygon() {
-  for (final vertexCount in [4, 10, 50, 100, 500]) {
-    final poly = _generatePolygon(vertexCount);
-    _bench('pip_${vertexCount}v', () {
-      GeoUtils.isPointInPolygon(lat: 37.422, lng: -122.084, vertices: poly);
-    });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Geofence Evaluator
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchGeofenceEvaluator() {
-  // Circular geofences
-  for (final count in [10, 100, 500]) {
-    final geofences = <Map<String, Object?>>[];
-    for (var i = 0; i < count; i++) {
-      geofences.add({
-        'identifier': 'geo_$i',
-        'latitude': 37.422 + _rng.nextDouble() * 0.01,
-        'longitude': -122.084 + _rng.nextDouble() * 0.01,
-        'radius': 100.0 + _rng.nextDouble() * 500,
-      });
-    }
-    _bench('geofence_eval_${count}_circular', () {
-      final eval = GeofenceEvaluator();
-      eval.evaluateProximity(
-        latitude: 37.4225,
-        longitude: -122.0835,
-        geofences: geofences,
-      );
-    });
-  }
-
-  // Polygon geofences
-  for (final count in [10, 50]) {
-    final geofences = <Map<String, Object?>>[];
-    for (var i = 0; i < count; i++) {
-      final lat = 37.422 + _rng.nextDouble() * 0.01;
-      final lng = -122.084 + _rng.nextDouble() * 0.01;
-      geofences.add({
-        'identifier': 'poly_$i',
-        'latitude': lat,
-        'longitude': lng,
-        'radius': 0,
-        'vertices': _generatePolygon(6, centerLat: lat, centerLng: lng),
-      });
-    }
-    _bench('geofence_eval_${count}_polygon_6v', () {
-      final eval = GeofenceEvaluator();
-      eval.evaluateProximity(
-        latitude: 37.4225,
-        longitude: -122.0835,
-        geofences: geofences,
-      );
-    });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Location Processor
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchLocationProcessor() {
-  final track = _generateTrack(1000);
-
-  // Full pipeline, 1000 fixes
-  _bench('processor_1k_fixes', () {
-    final proc = LocationProcessor(distanceFilter: 10);
-    for (final p in track) {
-      proc.process(
-        latitude: p.lat,
-        longitude: p.lng,
-        accuracy: p.acc,
-        speed: 1.5,
-        timestampMs: p.ts,
-      );
-    }
-  });
-
-  // With adaptive mode
-  _bench('processor_1k_adaptive', () {
-    final proc = LocationProcessor(
-      distanceFilter: 10,
-      enableAdaptiveMode: true,
-    );
-    for (final p in track) {
-      proc.process(
-        latitude: p.lat,
-        longitude: p.lng,
-        accuracy: p.acc,
-        speed: 1.5,
-        timestampMs: p.ts,
-        adaptiveContext: const AdaptiveContext(
-          batteryLevel: 0.75,
-          activityType: ActivityType.walking,
-          activityConfidence: ActivityConfidence.high,
-          speed: 1.5,
-        ),
-      );
-    }
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Trip Manager
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchTripManager() {
-  final track = _generateTrack(5000);
-
-  _bench('trip_manager_5k_waypoints', () {
-    final tm = TripManager();
-    tm.onMotionStateChanged(
-      isMoving: true,
-      latitude: track[0].lat,
-      longitude: track[0].lng,
-      timestamp: DateTime.fromMillisecondsSinceEpoch(track[0].ts),
-    );
-    for (final p in track) {
-      tm.onLocationReceived(
-        latitude: p.lat,
-        longitude: p.lng,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(p.ts),
-      );
-    }
-  });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Schedule Parser
@@ -367,27 +156,7 @@ void _benchScheduleParser() {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Adaptive Sampling Engine
-// ─────────────────────────────────────────────────────────────────────────────
 
-void _benchAdaptiveSampling() {
-  final engine = AdaptiveSamplingEngine(
-    baseDistanceFilter: 10,
-    elasticityMultiplier: 1.0,
-  );
-
-  _bench('adaptive_compute', () {
-    engine.compute(
-      const AdaptiveContext(
-        batteryLevel: 0.5,
-        activityType: ActivityType.inVehicle,
-        activityConfidence: ActivityConfidence.high,
-        speed: 20.0,
-      ),
-    );
-  });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Location Serialization
@@ -453,87 +222,7 @@ void _benchGeofenceSerialization() {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Delta Encoder
-// ─────────────────────────────────────────────────────────────────────────────
 
-void _benchDeltaEncoder() {
-  // Generate realistic location batches
-  List<Map<String, Object?>> generateBatch(int n) {
-    final batch = <Map<String, Object?>>[];
-    var lat = 37.4220;
-    var lng = -122.0841;
-    for (var i = 0; i < n; i++) {
-      lat += (_rng.nextDouble() - 0.5) * 0.0002;
-      lng += (_rng.nextDouble() - 0.5) * 0.0002;
-      batch.add(<String, Object?>{
-        'coords': <String, Object?>{
-          'latitude': lat,
-          'longitude': lng,
-          'accuracy': 10.0 + _rng.nextDouble() * 20,
-          'speed': 1.0 + _rng.nextDouble() * 5,
-          'heading': _rng.nextDouble() * 360,
-          'altitude': 30.0 + _rng.nextDouble() * 5,
-          'speed_accuracy': 0.5,
-          'heading_accuracy': 5.0,
-          'altitude_accuracy': 10.0,
-        },
-        'timestamp': '2024-11-01T12:34:${(56 + i) % 60}.000Z',
-        'battery': <String, Object?>{'level': 0.75, 'is_charging': false},
-      });
-    }
-    return batch;
-  }
-
-  for (final size in [10, 100, 500]) {
-    final batch = generateBatch(size);
-    _bench('delta_encode_$size', () {
-      DeltaEncoder.encode(batch);
-    });
-
-    final encoded = DeltaEncoder.encode(batch);
-    _bench('delta_decode_$size', () {
-      DeltaEncoder.decode(encoded);
-    });
-  }
-
-  // Round-trip
-  final batch100 = generateBatch(100);
-  _bench('delta_roundtrip_100', () {
-    DeltaEncoder.decode(DeltaEncoder.encode(batch100));
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Benchmark: Battery Budget Engine
-// ─────────────────────────────────────────────────────────────────────────────
-
-void _benchBatteryBudget() {
-  // Single sample processing
-  _bench('battery_budget_single_sample', () {
-    final engine = BatteryBudgetEngine(targetBudgetPerHour: 5.0);
-    engine.processSample(0.75);
-  });
-
-  // Simulate 1-hour drain: 60 samples (1 per minute) with decreasing battery
-  _bench('battery_budget_60_samples', () {
-    final engine = BatteryBudgetEngine(targetBudgetPerHour: 5.0);
-    for (var i = 0; i < 60; i++) {
-      engine.processSample(1.0 - i * 0.01);
-    }
-  });
-
-  // Heavy drain scenario — engine must adjust aggressively
-  _bench('battery_budget_heavy_drain', () {
-    final engine = BatteryBudgetEngine(
-      targetBudgetPerHour: 3.0,
-      initialDistanceFilter: 10.0,
-    );
-    for (var i = 0; i < 120; i++) {
-      engine.processSample(1.0 - i * 0.005);
-    }
-  });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Carbon Estimator
@@ -743,18 +432,9 @@ void main() {
     );
     print('');
 
-    _benchKalmanFilter();
-    _benchHaversine();
-    _benchPointInPolygon();
-    _benchGeofenceEvaluator();
-    _benchLocationProcessor();
-    _benchTripManager();
     _benchScheduleParser();
-    _benchAdaptiveSampling();
     _benchLocationSerialization();
     _benchGeofenceSerialization();
-    _benchDeltaEncoder();
-    _benchBatteryBudget();
     _benchCarbonEstimator();
     _benchPersistDecider();
     _benchConfigSerialization();

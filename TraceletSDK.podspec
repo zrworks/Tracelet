@@ -27,6 +27,13 @@ Pod::Spec.new do |s|
   
   # Rust Core
   s.vendored_frameworks = 'sdk/rust-core/out/TraceletCore.xcframework'
+  
+  s.prepare_command = <<-CMD
+    mkdir -p sdk/rust-core/out
+    curl -L "https://github.com/Ikolvi/Tracelet/releases/download/sdk-ios-v#{s.version}/TraceletCore.xcframework.zip" -o TraceletCore.xcframework.zip
+    unzip -o TraceletCore.xcframework.zip -d sdk/rust-core/out/
+    rm TraceletCore.xcframework.zip
+  CMD
 
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

@@ -138,3 +138,5 @@ skills-lock.json
 
 # Rust
 **/target/
+*.a
+*.xcframework

@@ -1,4 +1,4 @@
-## 2.1.0
+## 3.0.0
 
 - **FIX**: Implement all typed event stream getters (`locationEvents`, `motionChangeEvents`, `watchPositionEvents`, `activityChangeEvents`, `providerChangeEvents`, `geofenceEvents`, `heartbeatEvents`, `httpEvents`, `scheduleEvents`, `powerSaveChangeEvents`, `connectivityChangeEvents`, `enabledChangeEvents`, `notificationActionEvents`, `authorizationEvents`) — these were previously unimplemented and threw `UnimplementedError`, preventing `Tracelet.ready()` from completing on web.
 - **FIX**: Geolocation permission request no longer hangs indefinitely — added a `try/catch` around `getCurrentPosition()` to intercept synchronous JS errors thrown on insecure origins or blocked contexts, and added a 15-second Dart-side timeout as a safety net.

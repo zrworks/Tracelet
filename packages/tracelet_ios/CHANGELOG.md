@@ -1,4 +1,4 @@
-## 2.1.0
+## 3.0.0
 
  - **FIX**: resolve background tracking loops, location stream drops, and permission issues. ([8abc7d41](https://github.com/Ikolvi/Tracelet/commit/8abc7d415b742a1aee7da50e16763babd83f9e53))
  - **FIX**: refactor string comparisons to enum indexing across all layers. ([b591b246](https://github.com/Ikolvi/Tracelet/commit/b591b246cca9d46a4fda32634e4b01d7c774ed05))

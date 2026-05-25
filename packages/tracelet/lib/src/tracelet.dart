@@ -178,9 +178,10 @@ class Tracelet {
   /// ```
   static Future<State> ready(Config config) async {
     try {
-      await RustLib.init();
-    } catch (_) {
-      // Ignored if already initialized
+      await initializeRustLib();
+    } catch (e) {
+      // Ignored if already initialized, otherwise print error
+      print('Tracelet: initializeRustLib warning: $e');
     }
     _currentConfig = config;
 

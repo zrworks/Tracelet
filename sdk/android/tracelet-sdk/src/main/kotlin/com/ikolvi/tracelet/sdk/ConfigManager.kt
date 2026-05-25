@@ -123,9 +123,19 @@ class ConfigManager(context: Context) {
         const val DEFAULT_MAX_RECORDS_TO_PERSIST = -1
         const val DEFAULT_DISABLE_PROVIDER_CHANGE_RECORD = false
 
-        // LocationFilter defaults
+        // LocationFilter / Processor defaults
         const val DEFAULT_ODOMETER_ACCURACY_THRESHOLD = 0
         const val DEFAULT_REJECT_MOCK_LOCATIONS = false
+        const val DEFAULT_DISABLE_ELASTICITY = false
+        const val DEFAULT_ELASTICITY_MULTIPLIER = 1.0
+        const val DEFAULT_ENABLE_ADAPTIVE_MODE = false
+        const val DEFAULT_TRACKING_ACCURACY_THRESHOLD = 100
+        const val DEFAULT_FILTER_POLICY = 0
+        const val DEFAULT_MAX_IMPLIED_SPEED = 80
+        const val DEFAULT_ENABLE_SPARSE_UPDATES = false
+        const val DEFAULT_SPARSE_DISTANCE_THRESHOLD = 50.0
+        const val DEFAULT_SPARSE_MAX_IDLE_SECONDS = 0
+        const val DEFAULT_ENABLE_KALMAN_FILTER = false
 
         // AuditConfig defaults
         const val DEFAULT_AUDIT_ENABLED = false
@@ -303,6 +313,36 @@ class ConfigManager(context: Context) {
 
     fun getMockDetectionLevel(): Int =
         getInt("mockDetectionLevel", 1)
+
+    fun getDisableElasticity(): Boolean =
+        getBool("disableElasticity", DEFAULT_DISABLE_ELASTICITY)
+
+    fun getElasticityMultiplier(): Double =
+        getDouble("elasticityMultiplier", DEFAULT_ELASTICITY_MULTIPLIER)
+
+    fun getEnableAdaptiveMode(): Boolean =
+        getBool("enableAdaptiveMode", DEFAULT_ENABLE_ADAPTIVE_MODE)
+
+    fun getTrackingAccuracyThreshold(): Int =
+        getInt("trackingAccuracyThreshold", DEFAULT_TRACKING_ACCURACY_THRESHOLD)
+
+    fun getFilterPolicy(): Int =
+        getInt("filterPolicy", DEFAULT_FILTER_POLICY)
+
+    fun getMaxImpliedSpeed(): Int =
+        getInt("maxImpliedSpeed", DEFAULT_MAX_IMPLIED_SPEED)
+
+    fun getEnableSparseUpdates(): Boolean =
+        getBool("enableSparseUpdates", DEFAULT_ENABLE_SPARSE_UPDATES)
+
+    fun getSparseDistanceThreshold(): Double =
+        getDouble("sparseDistanceThreshold", DEFAULT_SPARSE_DISTANCE_THRESHOLD)
+
+    fun getSparseMaxIdleSeconds(): Int =
+        getInt("sparseMaxIdleSeconds", DEFAULT_SPARSE_MAX_IDLE_SECONDS)
+
+    fun getEnableKalmanFilter(): Boolean =
+        getBool("enableKalmanFilter", DEFAULT_ENABLE_KALMAN_FILTER)
 
     // Dead Reckoning config
     fun getEnableDeadReckoning(): Boolean =

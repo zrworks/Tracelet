@@ -278,7 +278,7 @@ jobs:
           echo "| **Dry Run** | ${{ inputs.dry_run }} |" >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────
-  # Job 3: Publish iOS SDK to CocoaPods
+  # Job 3: Publish iOS SDK (SPM & GitHub Release)
   # ─────────────────────────────────────────────────────────────
   publish-ios-sdk:
     name: Publish iOS SDK
@@ -298,20 +298,6 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 iOS SDK version: $VERSION"
 
-      - name: Check if already published
-        id: check_published
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Check CocoaPods trunk API for existing version
-          # Use `-- "- ${VERSION}"` to prevent grep from treating leading `-` as an option flag.
-          if pod trunk info TraceletSDK 2>/dev/null | grep -qF -- "- ${VERSION} "; then
-            echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ TraceletSDK $VERSION already exists on CocoaPods — skipping publish"
-          else
-            echo "already_published=false" >> "$GITHUB_OUTPUT"
-            echo "📦 TraceletSDK $VERSION not found on CocoaPods — will publish"
-          fi
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -320,19 +306,61 @@ jobs:
         run: ./sdk/rust-core/build-ios.sh
 
       - name: Build SDK (SPM)
-        working-directory: sdk/ios
         run: |
           swift build -Xswiftc -suppress-warnings 2>&1 || true
           echo "ℹ️ SPM build check complete"
 
       - name: Run SDK tests
-        working-directory: sdk/ios
         run: |
           swift test 2>&1 || true
           echo "ℹ️ SDK tests complete"
 
-      - name: Lint podspec
-        run: pod lib lint TraceletSDK.podspec --allow-warnings --verbose
+      - name: Build and Zip XCFramework
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo "Creating XCFramework zip..."
+          cd sdk/rust-core/out
+          zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
+          cd ../../..
+
+      - name: Calculate SPM Checksum
+        if: ${{ !inputs.dry_run }}
+        id: checksum
+        run: |
+          CHECKSUM=$(swift package compute-checksum sdk/rust-core/out/TraceletCore.xcframework.zip)
+          echo "hash=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          echo "📦 Calculated checksum: $CHECKSUM"
+
+      - name: Update Package.swifts
+        if: ${{ !inputs.dry_run }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="sdk-ios-v${VERSION}"
+          CHECKSUM="${{ steps.checksum.outputs.hash }}"
+          
+          echo "Updating root Package.swift..."
+          sed -i '' "s|url: \".*/TraceletCore.xcframework.zip\"|url: \"https://github.com/Ikolvi/Tracelet/releases/download/$TAG/TraceletCore.xcframework.zip\"|g" Package.swift
+          sed -i '' "s|checksum: \".*\"|checksum: \"${CHECKSUM}\"|g" Package.swift
+          
+          echo "Updating Flutter plugin Package.swift revision..."
+          sed -i '' "s|revision: \".*\"|revision: \"$TAG\"|g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+
+      - name: Commit Package.swift Updates
+        if: ${{ !inputs.dry_run }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="sdk-ios-v${VERSION}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status --porcelain Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift) ]]; then
+            git add Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift
+            git commit -m "chore: Update SPM checksum and revision for $TAG [skip ci]"
+            git push origin HEAD
+          else
+            echo "Package.swifts are already up to date."
+          fi
 
       - name: Create tag and Release
         if: ${{ !inputs.dry_run }}
@@ -341,44 +369,19 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           TAG="sdk-ios-v${VERSION}"
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "ℹ️ Tag $TAG already exists — skipping"
+            echo "ℹ️ Tag $TAG already exists — skipping release creation"
           else
             git tag "$TAG" -m "iOS SDK v${VERSION}"
             git push origin "$TAG"
             
-            echo "Creating XCFramework zip..."
-            cd sdk/rust-core/out
-            zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
-            cd ../../..
-            
             echo "Uploading release asset..."
             gh release create "$TAG" sdk/rust-core/out/TraceletCore.xcframework.zip --title "iOS SDK v${VERSION}" --notes "Pre-compiled Rust Core for iOS SDK v${VERSION}."
           fi
-
-      - name: Publish to CocoaPods
-        if: ${{ !inputs.dry_run && steps.check_published.outputs.already_published == 'false' }}
-        env:
-          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: |
-          MAX_RETRIES=3
-          RETRY_DELAY=30
-          for attempt in $(seq 1 $MAX_RETRIES); do
-            echo "🚀 Attempt $attempt of $MAX_RETRIES..."
-            if pod trunk push TraceletSDK.podspec --allow-warnings --verbose 2>&1; then
-              echo "✅ Published successfully on attempt $attempt"
-              exit 0
-            fi
-            if [ "$attempt" -lt "$MAX_RETRIES" ]; then
-              echo "⚠️ Attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
-              sleep $RETRY_DELAY
-              RETRY_DELAY=$((RETRY_DELAY * 2))
-            fi
-          done
-          echo "❌ All $MAX_RETRIES attempts failed"
-          exit 1
 
       - name: Summary
         if: always()
@@ -387,8 +390,9 @@ jobs:
           echo "## iOS SDK" >> "$GITHUB_STEP_SUMMARY"
           echo "| Property | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| **Pod** | \`TraceletSDK ${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **SPM Tag** | \`sdk-ios-v${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Dry Run** | ${{ inputs.dry_run }} |" >> "$GITHUB_STEP_SUMMARY"
+
 
   # ─────────────────────────────────────────────────────────────
   # Job 4: Publish Flutter packages to pub.dev (dependency order)

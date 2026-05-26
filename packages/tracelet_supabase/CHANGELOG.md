@@ -1,3 +1,7 @@
+## 3.0.1
+
+- **FIX**(ios): Add missing `FlutterFramework` dependency to SPM plugin configuration to resolve compilation failures and `PlatformException`s.
+
 ## 3.0.0
 
 - **CHORE**: bump version to match tracelet 3.0.0 release.

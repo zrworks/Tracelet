@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.1
+
+- **CHORE**: Version bump for monorepo consistency with Flutter plugins (resolves SPM FlutterFramework missing dependency in wrapper).
+
+## 3.0.0
+
+- **FEAT**: Massive Architecture Rewrite — Core algorithms are now powered by a high-performance **Rust Core** using `flutter_rust_bridge`.
+- **FEAT**: Smart Motion Mode — Introduced `MotionDetectionMode.smart` powered by the Rust battery budget engine.
+
 ## 2.1.0
 
 - **CHORE**: Major release synchronized with Tracelet Flutter 2.1.0.

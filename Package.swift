@@ -23,7 +23,7 @@ let package = Package(
         ),
         .binaryTarget(
             name: "TraceletCore",
-            url: "https://github.com/Ikolvi/Tracelet/releases/download/sdk-ios-v3.0.0/TraceletCore.xcframework.zip",
+            url: "https://github.com/Ikolvi/Tracelet/releases/download/sdk-ios-v3.0.1/TraceletCore.xcframework.zip",
             checksum: "1e89b22321da388186c30f63c5490f99163642c1f272666439e287ec436b578d"
         ),
         .testTarget(

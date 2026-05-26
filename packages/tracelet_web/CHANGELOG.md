@@ -1,7 +1,3 @@
-## 3.0.1
-
-- **CHORE**: Migrate iOS SDK to Swift Package Manager (SPM).
-
 ## 3.0.0
 
 - **FEAT**: Smart Motion Mode — Introduced `MotionDetectionMode.smart` mode interface mapping for web platform.

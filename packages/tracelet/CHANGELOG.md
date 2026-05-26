@@ -1,3 +1,7 @@
+## 3.0.1
+
+- **CHORE**: Migrate iOS SDK to Swift Package Manager (SPM).
+
 ## 3.0.0
 
 ### 🎉 Major Features & Improvements

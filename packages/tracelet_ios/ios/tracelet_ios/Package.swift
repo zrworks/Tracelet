@@ -12,16 +12,15 @@ let package = Package(
         .library(name: "tracelet-ios", targets: ["tracelet_ios"])
     ],
     dependencies: [
-        // Local path for SPM-based development in the monorepo.
-        // When consumed via pub.dev, CocoaPods resolves TraceletSDK from trunk
-        // (declared in tracelet_ios.podspec: s.dependency 'TraceletSDK').
-        .package(name: "TraceletSDK", path: "../../../../sdk/ios"),
+        // Consumed via Swift Package Manager when imported as a Flutter plugin.
+        // It points to the root of the Tracelet monorepo where the SPM configuration resides.
+        .package(url: "https://github.com/Ikolvi/Tracelet.git", revision: "sdk-ios-v3.0.1"),
     ],
     targets: [
         .target(
             name: "tracelet_ios",
             dependencies: [
-                .product(name: "TraceletSDK", package: "TraceletSDK"),
+                .product(name: "TraceletSDK", package: "Tracelet"),
             ],
             path: "Sources/tracelet_ios",
             resources: [

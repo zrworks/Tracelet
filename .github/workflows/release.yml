@@ -357,7 +357,8 @@ jobs:
           if [[ -n $(git status --porcelain Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift) ]]; then
             git add Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift
             git commit -m "chore: Update SPM checksum and revision for $TAG [skip ci]"
-            git push origin HEAD
+            git pull --rebase origin main
+            git push origin HEAD:main
           else
             echo "Package.swifts are already up to date."
           fi

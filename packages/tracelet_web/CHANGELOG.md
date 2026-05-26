@@ -1,3 +1,7 @@
+## 3.0.1
+
+- **FIX**(ios): Add missing `FlutterFramework` dependency to SPM plugin configuration to resolve compilation failures and `PlatformException`s.
+
 ## 3.0.0
 
 - **FEAT**: Smart Motion Mode — Introduced `MotionDetectionMode.smart` mode interface mapping for web platform.

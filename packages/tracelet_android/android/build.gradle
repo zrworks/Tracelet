@@ -1,5 +1,5 @@
 group = "com.ikolvi.tracelet.flutter"
-version = "3.0.1"
+version = "3.0.0"
 
 
 
@@ -38,7 +38,7 @@ android {
         // Tracelet SDK — standalone geolocation engine
         // Resolved from Maven Central when published, substituted with local
         // module via includeBuild during development.
-        implementation("com.ikolvi:tracelet-sdk:3.0.1")
+        implementation("com.ikolvi:tracelet-sdk:3.0.0")
 
         // Testing
         testImplementation("org.jetbrains.kotlin:kotlin-test")

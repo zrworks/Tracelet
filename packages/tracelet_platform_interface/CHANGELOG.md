@@ -1,7 +1,3 @@
-## 3.0.1
-
-- **CHORE**: Migrate iOS SDK to Swift Package Manager (SPM).
-
 ## 3.0.0
 
 - **FEAT**: Massive Architecture Rewrite — Core algorithms are now powered by a high-performance **Rust Core** using `flutter_rust_bridge`.

@@ -291,6 +291,8 @@ jobs:
     needs: validate
     if: ${{ !inputs.skip_native_sdks }}
     runs-on: macos-latest
+    outputs:
+      already_published: ${{ steps.check_published.outputs.already_published }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -304,25 +306,42 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 iOS SDK version: $VERSION"
 
+      - name: Check if already published
+        id: check_published
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/api/packages/tracelet_ios/versions/${VERSION}")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ Version $VERSION of tracelet_ios already exists on pub.dev — skipping iOS SDK build"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Version $VERSION not found on pub.dev — will build"
+          fi
+
       - name: Setup Rust
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
       - name: Build iOS Rust Core
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: ./sdk/rust-core/build-ios.sh
 
       - name: Build SDK (SPM)
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: |
           swift build -Xswiftc -suppress-warnings 2>&1 || true
           echo "ℹ️ SPM build check complete"
 
       - name: Run SDK tests
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: |
           swift test 2>&1 || true
           echo "ℹ️ SDK tests complete"
 
       - name: Build and Zip XCFramework
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && steps.check_published.outputs.already_published == 'false' }}
         run: |
           echo "Creating XCFramework zip..."
           cd sdk/rust-core/out
@@ -330,6 +349,7 @@ jobs:
           cd ../../..
 
       - name: Upload iOS SDK Artifacts
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         uses: actions/upload-artifact@v4
         with:
           name: ios-sdk-artifacts
@@ -411,14 +431,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download iOS SDK Artifacts
-        if: ${{ !inputs.skip_native_sdks }}
+        if: ${{ !inputs.skip_native_sdks && needs.publish-ios-sdk.outputs.already_published == 'false' }}
         uses: actions/download-artifact@v4
         with:
           name: ios-sdk-artifacts
           path: tracelet-ios-temp
 
       - name: Bundle iOS SDK into tracelet_ios
-        if: ${{ !inputs.skip_native_sdks }}
+        if: ${{ !inputs.skip_native_sdks && needs.publish-ios-sdk.outputs.already_published == 'false' }}
         run: |
           echo "Bundling iOS SDK into tracelet_ios plugin..."
           mkdir -p packages/tracelet_ios/ios/Frameworks
@@ -456,6 +476,14 @@ jobs:
             echo "══════════════════════════════════════"
             echo "📤 Publishing $pkg..."
             echo "══════════════════════════════════════"
+            
+            PKG_VERSION=$(grep '^version:' "packages/${pkg}/pubspec.yaml" | awk '{print $2}')
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/api/packages/${pkg}/versions/${PKG_VERSION}")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "ℹ️ $pkg v$PKG_VERSION is already published on pub.dev! Skipping..."
+              continue
+            fi
+            
             cd "packages/${pkg}"
             dart pub publish --force
             cd "${{ github.workspace }}"

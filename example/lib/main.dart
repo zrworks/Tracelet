@@ -1430,7 +1430,7 @@ class _DashboardPageState extends State<DashboardPage>
 
       if (status == tl.AuthorizationStatus.whenInUse) {
         // Foreground granted → offer background upgrade
-        if (mounted) {
+        if (!_isWeb && mounted) {
           final shouldUpgrade = await _showBackgroundRationaleDialog();
           if (shouldUpgrade) {
             await _upgradeToAlways();
@@ -1445,7 +1445,7 @@ class _DashboardPageState extends State<DashboardPage>
 
       if (result == tl.AuthorizationStatus.deniedForever && mounted) {
         _showPermissionDeniedDialog();
-      } else if (result == tl.AuthorizationStatus.whenInUse && mounted) {
+      } else if (result == tl.AuthorizationStatus.whenInUse && !_isWeb && mounted) {
         // Foreground granted → offer background upgrade
         final shouldUpgrade = await _showBackgroundRationaleDialog();
         if (shouldUpgrade) {
@@ -1820,6 +1820,8 @@ class _DashboardPageState extends State<DashboardPage>
   /// attempts to upgrade. Always returns `true` so tracking proceeds
   /// regardless — but logs a warning about killed-state limitations.
   Future<bool> _ensureBackgroundPermission() async {
+    if (_isWeb) return true; // Web doesn't have background location
+
     if (await tl.Tracelet.hasBackgroundPermission) {
       _addLog(
         'PERMISSION',

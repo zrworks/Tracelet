@@ -93,7 +93,7 @@ class Geofence {
 
     final verticesList = <List<double>>[];
     if (verticesRaw is List) {
-      for (final v in verticesRaw) {
+      for (final Object? v in verticesRaw) {
         if (v is List) {
           verticesList.add(
             v.map((e) => ensureDouble(e, fallback: 0.0)).toList(),

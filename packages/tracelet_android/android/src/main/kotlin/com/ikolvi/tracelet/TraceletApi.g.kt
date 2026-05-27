@@ -1740,7 +1740,7 @@ data class TlGeofence (
   val notifyOnDwell: Boolean,
   val loiteringDelay: Long,
   val extras: Map<String?, Any?>? = null,
-  val vertices: List<List<Double?>?>? = null
+  val vertices: List<Any?>? = null
 )
  {
   companion object {
@@ -1754,7 +1754,7 @@ data class TlGeofence (
       val notifyOnDwell = pigeonVar_list[6] as Boolean
       val loiteringDelay = pigeonVar_list[7] as Long
       val extras = pigeonVar_list[8] as Map<String?, Any?>?
-      val vertices = pigeonVar_list[9] as List<List<Double?>?>?
+      val vertices = pigeonVar_list[9] as List<Any?>?
       return TlGeofence(identifier, latitude, longitude, radius, notifyOnEntry, notifyOnExit, notifyOnDwell, loiteringDelay, extras, vertices)
     }
   }

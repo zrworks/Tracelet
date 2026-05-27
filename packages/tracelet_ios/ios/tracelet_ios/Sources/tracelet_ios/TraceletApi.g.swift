@@ -1690,7 +1690,7 @@ struct TlGeofence: Hashable {
   var notifyOnDwell: Bool
   var loiteringDelay: Int64
   var extras: [String?: Any?]? = nil
-  var vertices: [[Double?]?]? = nil
+  var vertices: [Any?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1704,7 +1704,7 @@ struct TlGeofence: Hashable {
     let notifyOnDwell = pigeonVar_list[6] as! Bool
     let loiteringDelay = pigeonVar_list[7] as! Int64
     let extras: [String?: Any?]? = nilOrValue(pigeonVar_list[8])
-    let vertices: [[Double?]?]? = nilOrValue(pigeonVar_list[9])
+    let vertices: [Any?]? = nilOrValue(pigeonVar_list[9])
 
     return TlGeofence(
       identifier: identifier,

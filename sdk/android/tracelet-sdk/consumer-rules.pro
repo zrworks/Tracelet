@@ -35,3 +35,11 @@
 
 # WorkManager (needs keep for reflection-based initialization)
 -keep class * extends androidx.work.ListenableWorker { *; }
+
+# Keep JNA classes (required by uniffi-rs bindings)
+-keep class com.sun.jna.** { *; }
+-keepclassmembers class * extends com.sun.jna.** { *; }
+-keep class uniffi.tracelet_core.** { *; }
+
+-dontwarn java.awt.**
+-dontwarn com.sun.jna.**

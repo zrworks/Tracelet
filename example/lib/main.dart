@@ -160,6 +160,34 @@ class _DashboardPageState extends State<DashboardPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _restoreStateIfTracking();
+  }
+
+  /// Checks if Tracelet is already tracking in the background and restores the UI.
+  Future<void> _restoreStateIfTracking() async {
+    try {
+      final state = await tl.Tracelet.getState();
+      if (state.enabled) {
+        // We're already tracking, bypass initialization and hook up the UI
+        _subscribeEvents();
+        setState(() {
+          _isReady = true;
+          _isTracking = state.enabled;
+          _isMoving = state.isMoving;
+          _isPeriodicMode = state.trackingMode == tl.TrackingMode.periodic;
+          _pluginState = state;
+        });
+        _addLog('RESTORE', 'Restored active tracking state from background');
+        
+        // Grab the most recent location to populate the map/UI immediately
+        final locs = await tl.Tracelet.getLocations();
+        if (locs.isNotEmpty) {
+          setState(() => _lastLocation = locs.last);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to restore tracking state: $e');
+    }
   }
 
   @override

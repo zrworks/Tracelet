@@ -29,7 +29,7 @@
 -keep class com.ikolvi.tracelet.sdk.TraceletListener$DefaultImpls { *; }
 
 # Keep Pigeon-generated API classes (Flutter ↔ Native bridge)
--keep class com.ikolvi.tracelet.TraceletApi$* { *; }
+-keep class com.ikolvi.tracelet.** { *; }
 -keep class com.ikolvi.tracelet.flutter.TraceletHostApiImpl { *; }
 
 # Keep model classes used in Pigeon serialization
@@ -47,3 +47,22 @@
 
 # Keep Kotlin metadata for interfaces used via reflection
 -keepattributes *Annotation*
+
+# Explicitly keep Pigeon interfaces, codecs, and generated objects
+-keep interface com.ikolvi.tracelet.TraceletHostApi { *; }
+-keep interface com.ikolvi.tracelet.TraceletEventApi { *; }
+-keep class com.ikolvi.tracelet.TraceletHostApi$* { *; }
+-keep class com.ikolvi.tracelet.TraceletEventApi$* { *; }
+-keep class com.ikolvi.tracelet.TraceletApiPigeonCodec { *; }
+-keep class com.ikolvi.tracelet.TraceletApi_gKt { *; }
+-keep class com.ikolvi.tracelet.TraceletApiKt { *; }
+-keep class com.ikolvi.tracelet.Tl** { *; }
+
+
+# Keep JNA classes (required by uniffi-rs bindings)
+-keep class com.sun.jna.** { *; }
+-keepclassmembers class * extends com.sun.jna.** { *; }
+-keep class uniffi.tracelet_core.** { *; }
+
+-dontwarn java.awt.**
+-dontwarn com.sun.jna.**

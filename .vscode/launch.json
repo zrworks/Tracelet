@@ -28,12 +28,22 @@
       "flutterMode": "profile"
     },
     {
-      "name": "Example (Release)",
+      "name": "Example (Release iOS)",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}/example",
-      "flutterMode": "release"
+      "flutterMode": "release",
+      "preLaunchTask": "Build Rust Core (iOS)"
+    },
+    {
+      "name": "Example (Release Android)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "release",
+      "preLaunchTask": "Build Rust Core (Android)"
     },
     {
       "name": "Integration Tests",

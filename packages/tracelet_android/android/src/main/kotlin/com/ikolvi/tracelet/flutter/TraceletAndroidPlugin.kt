@@ -17,6 +17,44 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.CopyOnWriteArrayList
+
+/**
+ * Broadcasts events to multiple EventDispatchers.
+ */
+class MultiEventSender : com.ikolvi.tracelet.sdk.TraceletEventSender {
+    private val dispatchers = CopyOnWriteArrayList<EventDispatcher>()
+
+    fun add(dispatcher: EventDispatcher) = dispatchers.addIfAbsent(dispatcher)
+    fun remove(dispatcher: EventDispatcher) = dispatchers.remove(dispatcher)
+    
+    // Fallback getter - uses first available dispatcher for hasListener checks
+    private val first: EventDispatcher? get() = dispatchers.firstOrNull()
+
+    override fun sendLocation(data: Map<String, Any?>) { dispatchers.forEach { it.sendLocation(data) } }
+    override fun sendMotionChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendMotionChange(data) } }
+    override fun sendSpeedMotionChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendSpeedMotionChange(data) } }
+    override fun sendActivityChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendActivityChange(data) } }
+    override fun sendProviderChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendProviderChange(data) } }
+    override fun sendGeofence(data: Map<String, Any?>) { dispatchers.forEach { it.sendGeofence(data) } }
+    override fun sendGeofencesChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendGeofencesChange(data) } }
+    override fun sendHeartbeat(data: Map<String, Any?>) { dispatchers.forEach { it.sendHeartbeat(data) } }
+    override fun sendHttp(data: Map<String, Any?>) { dispatchers.forEach { it.sendHttp(data) } }
+    override fun sendSchedule(data: Map<String, Any?>) { dispatchers.forEach { it.sendSchedule(data) } }
+    override fun sendPowerSaveChange(isPowerSaveMode: Boolean) { dispatchers.forEach { it.sendPowerSaveChange(isPowerSaveMode) } }
+    override fun sendConnectivityChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendConnectivityChange(data) } }
+    override fun sendEnabledChange(enabled: Boolean) { dispatchers.forEach { it.sendEnabledChange(enabled) } }
+    override fun sendNotificationAction(action: String) { dispatchers.forEach { it.sendNotificationAction(action) } }
+    override fun sendAuthorization(data: Map<String, Any?>) { dispatchers.forEach { it.sendAuthorization(data) } }
+    override fun sendWatchPosition(data: Map<String, Any?>) { dispatchers.forEach { it.sendWatchPosition(data) } }
+    
+    override fun sendRemoteConfigEvent(data: Map<String, Any?>) { dispatchers.forEach { it.sendRemoteConfigEvent(data) } }
+    override fun sendTrip(data: Map<String, Any?>) { dispatchers.forEach { it.sendTrip(data) } }
+    override fun sendBudgetAdjustment(data: Map<String, Any?>) { dispatchers.forEach { it.sendBudgetAdjustment(data) } }
+
+    override fun hasListener(eventName: String): Boolean = dispatchers.any { it.hasListener(eventName) }
+}
+
 
 /**
  * TraceletAndroidPlugin — Robust Flutter bridge for Tracelet.
@@ -34,6 +72,7 @@ class TraceletAndroidPlugin :
         private var primaryInstance: TraceletAndroidPlugin? = null
         
         private val attachedEngineCount = AtomicInteger(0)
+        private val globalEventSender = MultiEventSender()
 
         @JvmField
         internal var isMainThread: () -> Boolean = {
@@ -67,8 +106,9 @@ class TraceletAndroidPlugin :
 
             eventDispatcher = EventDispatcher()
             eventDispatcher.register(binding.binaryMessenger)
+            globalEventSender.add(eventDispatcher)
 
-            sdk.setEventSender(eventDispatcher)
+            sdk.setEventSender(globalEventSender)
             
             // Only initialize the SDK if it's the very first engine. 
             // If the SDK was already initialized (e.g. by a previous engine that detached),
@@ -103,11 +143,9 @@ class TraceletAndroidPlugin :
             // We still need an EventDispatcher for this engine if it wants to receive events in the foreground
             eventDispatcher = EventDispatcher()
             eventDispatcher.register(binding.binaryMessenger)
+            globalEventSender.add(eventDispatcher)
             
-            // If this is a secondary UI engine, we might want to route events to it.
-            // For now, the SDK only sends to ONE event sender. 
-            // We should ideally have a MultiEventSender in the SDK.
-            // But at least we ensure that events fall back to headless if this engine is not the primary.
+            // At least we ensure that events fall back to headless if this engine is not the primary.
             primaryInstance?.headlessService?.let { hs ->
                 eventDispatcher.headlessFallback = { name, data ->
                     if (hs.isRegistered()) hs.dispatchEvent(name, data)
@@ -137,6 +175,7 @@ class TraceletAndroidPlugin :
             
             // If this was the last engine, destroy the SDK.
             // Otherwise, we must NOT destroy the SDK because secondary engines might still be using it!
+            globalEventSender.remove(eventDispatcher)
             if (count == 0) {
                 Log.d(TAG, "onDetachedFromEngine: last engine detached, destroying SDK")
                 eventDispatcher.unregister()
@@ -147,6 +186,7 @@ class TraceletAndroidPlugin :
                 // But for Tracelet, the first one is usually the main one.
             }
         } else {
+            globalEventSender.remove(eventDispatcher)
             eventDispatcher.unregister()
             if (count == 0) {
                 Log.d(TAG, "onDetachedFromEngine: secondary engine was last, destroying SDK")

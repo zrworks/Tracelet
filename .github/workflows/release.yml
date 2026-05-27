@@ -205,28 +205,34 @@ jobs:
           fi
 
       - name: Setup Rust
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
       - name: Install cargo-ndk
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: cargo install cargo-ndk
       - name: Build Android Rust Core
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: ./sdk/rust-core/build-android.sh
 
       - name: Build release AAR
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
         run: ./gradlew :tracelet-sdk:assembleRelease
 
       - name: Build Host Rust Library for Tests
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/rust-core
         run: cargo build
 
       - name: Run unit tests
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
         run: ./gradlew :tracelet-sdk:testReleaseUnitTest
 
       - name: Publish to local Maven (dry run)
-        if: inputs.dry_run
+        if: ${{ inputs.dry_run && steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
         run: |
           ./gradlew :tracelet-sdk:publishReleasePublicationToMavenLocal

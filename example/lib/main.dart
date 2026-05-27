@@ -1562,6 +1562,7 @@ class _DashboardPageState extends State<DashboardPage>
   /// Explains WHY background access is needed so the user understands the
   /// OS prompt. Returns `true` if the user wants to proceed.
   Future<bool> _showBackgroundRationaleDialog() async {
+    if (_isWeb) return false;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

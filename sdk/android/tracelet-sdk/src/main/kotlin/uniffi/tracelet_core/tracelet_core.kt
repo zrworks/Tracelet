@@ -756,7 +756,11 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_enginestate_get_health(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_get_route_context(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_set_route_context(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_enginestate_set_tracking(
     ): Short
@@ -956,7 +960,7 @@ external fun uniffi_tracelet_core_fn_free_syncmanager(`handle`: Long,uniffi_out_
 ): Unit
 external fun uniffi_tracelet_core_fn_constructor_syncmanager_new(uniffi_out_err: UniffiRustCallStatus, 
 ): Long
-external fun uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
 external fun uniffi_tracelet_core_fn_clone_geofenceevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1010,7 +1014,11 @@ external fun uniffi_tracelet_core_fn_method_enginestate_get_config(`ptr`: Long,u
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_enginestate_get_health(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_enginestate_get_route_context(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(`ptr`: Long,`headers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_enginestate_set_route_context(`ptr`: Long,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_enginestate_set_tracking(`ptr`: Long,`tracking`: Byte,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -1304,7 +1312,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 29728.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402.toShort()) {
@@ -1349,7 +1357,13 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_enginestate_get_health() != 44119.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_get_route_context() != 59517.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers() != 9455.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_set_route_context() != 24909.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_enginestate_set_tracking() != 2515.toShort()) {
@@ -3471,9 +3485,19 @@ public interface EngineStateInterface {
     fun `getHealth`(): HealthState
     
     /**
+     * Retrieves the current route context JSON string, if any.
+     */
+    fun `getRouteContext`(): kotlin.String?
+    
+    /**
      * Updates the dynamic HTTP headers in the configuration.
      */
     fun `setDynamicHeaders`(`headers`: Map<kotlin.String, kotlin.String>)
+    
+    /**
+     * Updates the active route context (custom JSON payload) for upcoming locations.
+     */
+    fun `setRouteContext`(`json`: kotlin.String?)
     
     /**
      * Updates the global tracking status.
@@ -3638,6 +3662,22 @@ open class EngineState: Disposable, AutoCloseable, EngineStateInterface
 
     
     /**
+     * Retrieves the current route context JSON string, if any.
+     */override fun `getRouteContext`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_get_route_context(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Updates the dynamic HTTP headers in the configuration.
      */override fun `setDynamicHeaders`(`headers`: Map<kotlin.String, kotlin.String>)
         = 
@@ -3646,6 +3686,21 @@ open class EngineState: Disposable, AutoCloseable, EngineStateInterface
     UniffiLib.uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(
         it,
         FfiConverterMapStringString.lower(`headers`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Updates the active route context (custom JSON payload) for upcoming locations.
+     */override fun `setRouteContext`(`json`: kotlin.String?)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_set_route_context(
+        it,
+        FfiConverterOptionalString.lower(`json`),_status)
 }
     }
     
@@ -6047,7 +6102,7 @@ public interface SyncManagerInterface {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int
+    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>, `routeContext`: kotlin.String?): kotlin.Int
     
     companion object
 }
@@ -6161,13 +6216,13 @@ open class SyncManager: Disposable, AutoCloseable, SyncManagerInterface
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int {
+    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>, `routeContext`: kotlin.String?): kotlin.Int {
             return FfiConverterInt.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
         it,
-        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),_status)
+        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),FfiConverterOptionalString.lower(`routeContext`),_status)
 }
     }
     )

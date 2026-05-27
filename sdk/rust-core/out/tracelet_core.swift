@@ -1539,9 +1539,19 @@ public protocol EngineStateProtocol: AnyObject, Sendable {
     func getHealth()  -> HealthState
     
     /**
+     * Retrieves the current route context JSON string, if any.
+     */
+    func getRouteContext()  -> String?
+    
+    /**
      * Updates the dynamic HTTP headers in the configuration.
      */
     func setDynamicHeaders(headers: [String: String]) 
+    
+    /**
+     * Updates the active route context (custom JSON payload) for upcoming locations.
+     */
+    func setRouteContext(json: String?) 
     
     /**
      * Updates the global tracking status.
@@ -1649,12 +1659,34 @@ open func getHealth() -> HealthState  {
 }
     
     /**
+     * Retrieves the current route context JSON string, if any.
+     */
+open func getRouteContext() -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_get_route_context(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
      * Updates the dynamic HTTP headers in the configuration.
      */
 open func setDynamicHeaders(headers: [String: String])  {try! rustCall() {
     uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(
             self.uniffiCloneHandle(),
         FfiConverterDictionaryStringString.lower(headers),$0
+    )
+}
+}
+    
+    /**
+     * Updates the active route context (custom JSON payload) for upcoming locations.
+     */
+open func setRouteContext(json: String?)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_set_route_context(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(json),$0
     )
 }
 }
@@ -2980,7 +3012,7 @@ public protocol SyncManagerProtocol: AnyObject, Sendable {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws  -> Int32
+    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord], routeContext: String?) throws  -> Int32
     
 }
 open class SyncManager: SyncManagerProtocol, @unchecked Sendable {
@@ -3047,12 +3079,13 @@ public convenience init() {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord])throws  -> Int32  {
+open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord], routeContext: String?)throws  -> Int32  {
     return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
             self.uniffiCloneHandle(),
         FfiConverterTypeHttpConfig_lower(config),
-        FfiConverterSequenceTypeDbLocationRecord.lower(records),$0
+        FfiConverterSequenceTypeDbLocationRecord.lower(records),
+        FfiConverterOptionString.lower(routeContext),$0
     )
 })
 }
@@ -6812,7 +6845,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631) {
+    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 29728) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
@@ -6857,7 +6890,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_enginestate_get_health() != 44119) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_enginestate_get_route_context() != 59517) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers() != 9455) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_set_route_context() != 24909) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_enginestate_set_tracking() != 2515) {

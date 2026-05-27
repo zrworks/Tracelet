@@ -1063,7 +1063,8 @@ class TraceletSdk private constructor(private val context: Context) {
                     return@Thread
                 }
                 
-                val syncedCount = sync.syncBatchBlocking(config.http, records)
+                val routeContextJson = state.getRouteContext()
+                val syncedCount = sync.syncBatchBlocking(config.http, records, routeContextJson)
                 if (syncedCount > 0) {
                     val lastRecord = records.take(syncedCount).lastOrNull()
                     if (lastRecord != null) {
@@ -1111,11 +1112,18 @@ class TraceletSdk private constructor(private val context: Context) {
     fun setRouteContext(ctx: Map<String, Any?>) {
         if (!isReady) return
         configManager.setRouteContext(ctx)
+        try {
+            val json = org.json.JSONObject(ctx).toString()
+            rustEngineState?.setRouteContext(json)
+        } catch (e: Exception) {
+            logger.error("Failed to serialize routeContext: ${e.message}")
+        }
     }
 
     fun clearRouteContext() {
         if (!isReady) return
         configManager.clearRouteContext()
+        rustEngineState?.setRouteContext(null)
     }
 
     // =========================================================================

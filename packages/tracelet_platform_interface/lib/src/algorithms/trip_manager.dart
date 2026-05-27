@@ -1,16 +1,19 @@
 import '../rust/api_dart/trip.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Rust-powered TripManager.
 class TripManager {
-  late final TripManagerDart _inner;
+  TripManagerDart? _inner;
   void Function(Map<String, Object?>)? onTripEnd;
 
   TripManager() {
-    _inner = TripManagerDart();
+    if (!kIsWeb) {
+      _inner = TripManagerDart();
+    }
   }
 
-  bool get isTripActive => _inner.isTripActive();
+  bool get isTripActive => _inner?.isTripActive() ?? false;
 
   void onMotionStateChanged({
     required bool isMoving,
@@ -27,7 +30,9 @@ class TripManager {
           DateTime.tryParse(timestamp)?.millisecondsSinceEpoch ?? nowMs;
     }
 
-    final tripData = _inner.onMotionStateChanged(
+    if (_inner == null) return;
+
+    final tripData = _inner!.onMotionStateChanged(
       isMoving: isMoving,
       latitude: latitude,
       longitude: longitude,
@@ -82,7 +87,10 @@ class TripManager {
       timestampMs =
           DateTime.tryParse(timestamp)?.millisecondsSinceEpoch ?? nowMs;
     }
-    _inner.onLocationReceived(
+
+    if (_inner == null) return;
+
+    _inner!.onLocationReceived(
       latitude: latitude,
       longitude: longitude,
       timestampMs: PlatformInt64Util.from(timestampMs),
@@ -90,6 +98,6 @@ class TripManager {
   }
 
   void reset() {
-    _inner.reset();
+    _inner?.reset();
   }
 }

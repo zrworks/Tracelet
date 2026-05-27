@@ -724,8 +724,23 @@ class _DashboardPageState extends State<DashboardPage>
       if (_isPeriodicMode && state.enabled) {
         await _syncMissedPeriodicLocations();
       }
-    } catch (e) {
+    } catch (e, stack) {
       _addLog('ERROR', 'ready() failed: $e');
+      if (mounted) {
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Initialization Failed'),
+            content: SingleChildScrollView(child: Text('$e\n\n$stack')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 

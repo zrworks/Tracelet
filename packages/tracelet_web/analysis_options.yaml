@@ -12,3 +12,7 @@ linter:
     annotate_overrides: true
     avoid_empty_else: true
     prefer_single_quotes: true
+
+analyzer:
+  exclude:
+    - "build/**"

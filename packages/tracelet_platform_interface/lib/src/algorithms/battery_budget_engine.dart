@@ -1,10 +1,11 @@
 import '../rust/api_dart/battery_budget.dart';
 import '../rust/state/battery_budget.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Rust-powered battery budget engine.
 class BatteryBudgetEngine {
-  late final BatteryBudgetEngineDart _inner;
+  BatteryBudgetEngineDart? _inner;
   final DateTime Function() _clock;
 
   BatteryBudgetEngine({
@@ -15,19 +16,22 @@ class BatteryBudgetEngine {
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        _targetBudgetPerHour = targetBudgetPerHour {
-    _inner = BatteryBudgetEngineDart(
-      targetBudgetPerHour: targetBudgetPerHour,
-      initialDistanceFilter: initialDistanceFilter,
-      initialAccuracyIndex: initialAccuracyIndex,
-      initialPeriodicInterval: initialPeriodicInterval,
-    );
+    if (!kIsWeb) {
+      _inner = BatteryBudgetEngineDart(
+        targetBudgetPerHour: targetBudgetPerHour,
+        initialDistanceFilter: initialDistanceFilter,
+        initialAccuracyIndex: initialAccuracyIndex,
+        initialPeriodicInterval: initialPeriodicInterval,
+      );
+    }
   }
 
   BudgetAdjustmentEvent? processSample(
     double batteryLevel, {
     bool isCharging = false,
   }) {
-    return _inner.processSample(
+    if (_inner == null) return null;
+    return _inner!.processSample(
       level: batteryLevel,
       isCharging: isCharging,
       timestampMs: PlatformInt64Util.from(_clock().millisecondsSinceEpoch),
@@ -35,7 +39,8 @@ class BatteryBudgetEngine {
   }
 
   int getRecommendedIntervalMs(int defaultIntervalMs) {
-    return _inner
+    if (_inner == null) return defaultIntervalMs;
+    return _inner!
         .getRecommendedIntervalMs(
           defaultIntervalMs: PlatformInt64Util.from(defaultIntervalMs),
         )
@@ -43,11 +48,11 @@ class BatteryBudgetEngine {
   }
 
   bool shouldThrottleLocation() {
-    return _inner.shouldThrottleLocation();
+    return _inner?.shouldThrottleLocation() ?? false;
   }
 
   bool isCharging() {
-    return _inner.isCharging();
+    return _inner?.isCharging() ?? false;
   }
 
   double get targetBudgetPerHour {
@@ -59,11 +64,11 @@ class BatteryBudgetEngine {
 
   late final double _targetBudgetPerHour;
 
-  double get distanceFilter => _inner.getDistanceFilter();
-  int get accuracyIndex => _inner.getAccuracyIndex();
-  int? get periodicInterval => _inner.getPeriodicInterval();
+  double get distanceFilter => _inner?.getDistanceFilter() ?? 10.0;
+  int get accuracyIndex => _inner?.getAccuracyIndex() ?? 0;
+  int? get periodicInterval => _inner?.getPeriodicInterval();
 
   void reset() {
-    _inner.reset();
+    _inner?.reset();
   }
 }

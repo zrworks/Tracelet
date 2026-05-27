@@ -1,5 +1,7 @@
 import '../rust/frb_generated.dart';
 
 Future<void> initializeRustLib() async {
-  await RustLib.init();
+  // Web does not use the Rust core natively, it uses the Dart-based TraceletWebPlugin.
+  // Returning immediately prevents flutter_rust_bridge from trying to load missing .js/.wasm files.
+  return;
 }

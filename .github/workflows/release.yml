@@ -36,17 +36,17 @@ on:
         description: "Publish tracelet_doctor package"
         required: false
         type: boolean
-        default: false
+        default: true
       publish_tracelet_supabase:
         description: "Publish tracelet_supabase package"
         required: false
         type: boolean
-        default: false
+        default: true
       publish_tracelet_firebase:
         description: "Publish tracelet_firebase package"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write

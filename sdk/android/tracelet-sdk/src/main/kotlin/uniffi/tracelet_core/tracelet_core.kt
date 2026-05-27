@@ -938,7 +938,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`action`: Int,`degradedAccuracy`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -960,7 +960,7 @@ external fun uniffi_tracelet_core_fn_free_syncmanager(`handle`: Long,uniffi_out_
 ): Unit
 external fun uniffi_tracelet_core_fn_constructor_syncmanager_new(uniffi_out_err: UniffiRustCallStatus, 
 ): Long
-external fun uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
 external fun uniffi_tracelet_core_fn_clone_geofenceevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1297,7 +1297,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26250.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263.toShort()) {
@@ -1312,7 +1312,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 29728.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402.toShort()) {
@@ -2869,7 +2869,7 @@ public interface DatabaseManagerInterface {
     /**
      * Inserts a new location record into the database.
      */
-    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String)
+    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?)
     
     /**
      * Inserts or replaces a privacy zone record in the database.
@@ -3263,13 +3263,13 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     /**
      * Inserts a new location record into the database.
      */
-    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String)
+    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?)
         = 
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
         it,
-        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),_status)
+        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),_status)
 }
     }
     
@@ -6102,7 +6102,7 @@ public interface SyncManagerInterface {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>, `routeContext`: kotlin.String?): kotlin.Int
+    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int
     
     companion object
 }
@@ -6216,13 +6216,13 @@ open class SyncManager: Disposable, AutoCloseable, SyncManagerInterface
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>, `routeContext`: kotlin.String?): kotlin.Int {
+    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int {
             return FfiConverterInt.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
         it,
-        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),FfiConverterOptionalString.lower(`routeContext`),_status)
+        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),_status)
 }
     }
     )
@@ -7269,6 +7269,8 @@ data class DbLocationRecord (
     var `isMock`: kotlin.Boolean
     , 
     var `activity`: kotlin.String
+    , 
+    var `routeContext`: kotlin.String?
     
 ){
     
@@ -7295,6 +7297,7 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -7308,7 +7311,8 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.allocationSize(value.`heading`) +
             FfiConverterDouble.allocationSize(value.`altitude`) +
             FfiConverterBoolean.allocationSize(value.`isMock`) +
-            FfiConverterString.allocationSize(value.`activity`)
+            FfiConverterString.allocationSize(value.`activity`) +
+            FfiConverterOptionalString.allocationSize(value.`routeContext`)
     )
 
     override fun write(value: DbLocationRecord, buf: ByteBuffer) {
@@ -7322,6 +7326,7 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.write(value.`altitude`, buf)
             FfiConverterBoolean.write(value.`isMock`, buf)
             FfiConverterString.write(value.`activity`, buf)
+            FfiConverterOptionalString.write(value.`routeContext`, buf)
     }
 }
 

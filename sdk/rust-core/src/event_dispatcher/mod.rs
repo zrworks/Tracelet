@@ -38,9 +38,10 @@ impl EventDispatcher {
         }
 
         let activity = self.state.get_health().current_activity;
+        let route_context = self.state.get_route_context();
 
         // 2. Persist to Database
-        if let Err(e) = self.db.insert_location(lat, lng, accuracy, speed, heading, altitude, is_mock, &activity) {
+        if let Err(e) = self.db.insert_location(lat, lng, accuracy, speed, heading, altitude, is_mock, &activity, route_context) {
             crate::logger::error(&format!("[Rust Core] ❌ Failed to insert location into database: {}", e));
             return false;
         }
@@ -50,7 +51,6 @@ impl EventDispatcher {
         if config.http.auto_sync {
             let db_clone = Arc::clone(&self.db);
             let sync_clone = Arc::clone(&self.sync);
-            let state_clone = Arc::clone(&self.state);
             
             crate::logger::info("[Rust Core] 🔄 Triggering HTTP auto-sync batch request.");
             // Spawn background task using the dedicated tokio runtime
@@ -59,8 +59,7 @@ impl EventDispatcher {
                     Ok(records) => {
                         if !records.is_empty() {
                             crate::logger::info(&format!("[Rust Core] 🔄 Batch sync dispatcher loaded {} pending locations.", records.len()));
-                            let route_context = state_clone.get_route_context();
-                            match sync_clone.sync_batch(&config.http, &records, route_context).await {
+                            match sync_clone.sync_batch(&config.http, &records).await {
                                 Ok(count) => {
                                     if count > 0 {
                                         if let Some(last) = records.last() {

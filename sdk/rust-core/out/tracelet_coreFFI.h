@@ -523,7 +523,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
-void uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustCallStatus *_Nonnull out_status
+void uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_PRIVACY_ZONE
@@ -579,7 +579,7 @@ uint64_t uniffi_tracelet_core_fn_constructor_syncmanager_new(RustCallStatus *_No
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
-int32_t uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(uint64_t ptr, RustBuffer config, RustBuffer records, RustBuffer route_context, RustCallStatus *_Nonnull out_status
+int32_t uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(uint64_t ptr, RustBuffer config, RustBuffer records, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_GEOFENCEEVALUATOR

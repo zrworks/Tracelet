@@ -1,4 +1,4 @@
-## 3.1.2
+## 3.1.3
 
 **FEAT**: Major architectural upgrade: Unified Rust Core.
 - The heavy lifting for Geofences, Privacy Zones, Audit Trail, and SQLite persistence has been moved to a shared Rust core (`tracelet_core`).

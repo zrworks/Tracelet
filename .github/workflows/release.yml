@@ -302,9 +302,9 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          VERSION=$(grep "s.version" TraceletSDK.podspec | head -1 | sed "s/.*= '//;s/'//;s/ //g")
+          VERSION=$(grep '^version:' packages/tracelet_ios/pubspec.yaml | awk '{print $2}')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "📦 iOS SDK version: $VERSION"
+          echo "📦 iOS Flutter Plugin version: $VERSION"
 
       - name: Check if already published
         id: check_published

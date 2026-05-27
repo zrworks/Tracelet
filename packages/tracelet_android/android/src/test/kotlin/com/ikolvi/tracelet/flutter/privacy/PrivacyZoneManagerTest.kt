@@ -300,4 +300,5 @@ internal class PrivacyZoneManagerTest {
         val distance = haversineDistanceMetres(37.7749, -122.4194, snappedLat, snappedLng)
         assertTrue(distance < 15, "10 m degradation should keep point within ~10 m, got $distance")
     }
+    */
 }

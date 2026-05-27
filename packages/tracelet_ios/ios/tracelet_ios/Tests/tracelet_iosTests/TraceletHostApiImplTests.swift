@@ -21,4 +21,42 @@ final class TraceletHostApiImplTests: XCTestCase {
         XCTAssertEqual(hostApi.intToAuthStatus(3), .always)
         XCTAssertEqual(hostApi.intToAuthStatus(4), .deniedForever)
     }
+
+    func testRegisterHeadlessHeadersCallback_delegatesToService() {
+        let headlessRunner = HeadlessRunner()
+        let hostApi = TraceletHostApiImpl(headlessRunner: headlessRunner)
+        
+        let defaults = UserDefaults.standard
+        defaults.set(0, forKey: HeadlessRunner.CallbackType.headers.regKey)
+        defaults.set(0, forKey: HeadlessRunner.CallbackType.headers.dispatchKey)
+        
+        let expectation = XCTestExpectation(description: "completion")
+        hostApi.registerHeadlessHeadersCallback(callbackIds: [100, 200]) { _ in
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 1.0)
+        
+        XCTAssertEqual(defaults.integer(forKey: HeadlessRunner.CallbackType.headers.regKey), 100)
+        XCTAssertEqual(defaults.integer(forKey: HeadlessRunner.CallbackType.headers.dispatchKey), 200)
+    }
+
+    func testRegisterHeadlessSyncBodyBuilder_delegatesToService() {
+        let headlessRunner = HeadlessRunner()
+        let hostApi = TraceletHostApiImpl(headlessRunner: headlessRunner)
+        
+        let defaults = UserDefaults.standard
+        defaults.set(0, forKey: HeadlessRunner.CallbackType.syncBody.regKey)
+        defaults.set(0, forKey: HeadlessRunner.CallbackType.syncBody.dispatchKey)
+        
+        let expectation = XCTestExpectation(description: "completion")
+        hostApi.registerHeadlessSyncBodyBuilder(callbackIds: [300, 400]) { _ in
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 1.0)
+        
+        XCTAssertEqual(defaults.integer(forKey: HeadlessRunner.CallbackType.syncBody.regKey), 300)
+        XCTAssertEqual(defaults.integer(forKey: HeadlessRunner.CallbackType.syncBody.dispatchKey), 400)
+    }
 }

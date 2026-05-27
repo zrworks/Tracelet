@@ -7,8 +7,27 @@ import TraceletSDK
 /// Stores callback IDs in UserDefaults. Creates a FlutterEngine on demand
 /// and invokes the registered Dart callback.
 final class HeadlessRunner: HeadlessDispatching {
-    private static let registrationKey = "com.tracelet.headless.registrationId"
-    private static let dispatchKey = "com.tracelet.headless.dispatchId"
+    enum CallbackType {
+        case main
+        case headers
+        case syncBody
+        
+        var regKey: String {
+            switch self {
+            case .main: return "com.tracelet.headless.registrationId"
+            case .headers: return "com.tracelet.headless.headlessHeaders_registrationId"
+            case .syncBody: return "com.tracelet.headless.headlessSyncBody_registrationId"
+            }
+        }
+        var dispatchKey: String {
+            switch self {
+            case .main: return "com.tracelet.headless.dispatchId"
+            case .headers: return "com.tracelet.headless.headlessHeaders_dispatchId"
+            case .syncBody: return "com.tracelet.headless.headlessSyncBody_dispatchId"
+            }
+        }
+    }
+
     private static let channelName = "com.tracelet/headless"
     private static let methodsChannelName = "com.tracelet/methods"
 
@@ -32,22 +51,22 @@ final class HeadlessRunner: HeadlessDispatching {
     /// Custom sync body JSON returned by headless Dart callback.
     private var syncBodyResponse: String?
 
-    func registerCallbacks(_ registrationId: Int64, _ dispatchId: Int64) {
+    func registerCallbacks(type: CallbackType, _ registrationId: Int64, _ dispatchId: Int64) {
         let defaults = UserDefaults.standard
-        defaults.set(registrationId, forKey: HeadlessRunner.registrationKey)
-        defaults.set(dispatchId, forKey: HeadlessRunner.dispatchKey)
+        defaults.set(registrationId, forKey: type.regKey)
+        defaults.set(dispatchId, forKey: type.dispatchKey)
     }
 
     func isRegistered() -> Bool {
         let defaults = UserDefaults.standard
-        return defaults.integer(forKey: HeadlessRunner.registrationKey) != 0
+        return defaults.integer(forKey: CallbackType.main.regKey) != 0
     }
 
     func dispatchEvent(_ event: [String: Any]) {
         // Include the dispatch callback ID so the Dart-side dispatcher
         // can look up the user's headless callback.
         let defaults = UserDefaults.standard
-        let dispatchId = defaults.integer(forKey: HeadlessRunner.dispatchKey)
+        let dispatchId = defaults.integer(forKey: CallbackType.main.dispatchKey)
         var enrichedEvent = event
         enrichedEvent["dispatchId"] = dispatchId
 
@@ -188,11 +207,15 @@ final class HeadlessRunner: HeadlessDispatching {
         guard engine == nil else { return }
 
         let defaults = UserDefaults.standard
-        // Try main headless callback first, fall back to headlessHeaders callback
-        var registrationId = defaults.integer(forKey: HeadlessRunner.registrationKey)
+        // Try main headless callback first, fall back to headers, then sync body
+        var registrationId = defaults.integer(forKey: CallbackType.main.regKey)
         if registrationId == 0 {
-            registrationId = defaults.integer(forKey: "com.tracelet.headless.headlessHeaders_registrationId")
+            registrationId = defaults.integer(forKey: CallbackType.headers.regKey)
         }
+        if registrationId == 0 {
+            registrationId = defaults.integer(forKey: CallbackType.syncBody.regKey)
+        }
+        
         guard registrationId != 0 else {
             NSLog("[Tracelet] No headless callback registered")
             return

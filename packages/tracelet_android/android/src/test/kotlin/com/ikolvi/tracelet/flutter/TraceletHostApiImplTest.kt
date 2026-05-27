@@ -27,4 +27,34 @@ class TraceletHostApiImplTest {
         
         assertEquals(TlAuthorizationStatus.DENIED_FOREVER, method.invoke(hostApi, 4))
     }
+
+    @Test
+    fun testRegisterHeadlessHeadersCallback_delegatesToService() {
+        val context = mock(Context::class.java)
+        val headlessService = mock(HeadlessTaskService::class.java)
+        val hostApi = TraceletHostApiImpl(context, headlessService)
+
+        hostApi.registerHeadlessHeadersCallback(listOf(100L, 200L)) {}
+
+        org.mockito.Mockito.verify(headlessService).registerCallbacks(
+            HeadlessTaskService.CallbackType.HEADERS,
+            100L,
+            200L
+        )
+    }
+
+    @Test
+    fun testRegisterHeadlessSyncBodyBuilder_delegatesToService() {
+        val context = mock(Context::class.java)
+        val headlessService = mock(HeadlessTaskService::class.java)
+        val hostApi = TraceletHostApiImpl(context, headlessService)
+
+        hostApi.registerHeadlessSyncBodyBuilder(listOf(300L, 400L)) {}
+
+        org.mockito.Mockito.verify(headlessService).registerCallbacks(
+            HeadlessTaskService.CallbackType.SYNC_BODY,
+            300L,
+            400L
+        )
+    }
 }

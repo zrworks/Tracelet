@@ -421,6 +421,8 @@ jobs:
           sed -i '/frb_generated/d' .gitignore
           sed -i '/lib\/src\/rust/d' .gitignore
           sed -i '/\*\.xcframework/d' .gitignore
+          sed -i '/\*\.a/d' .gitignore
+          sed -i '/\*\.h/d' .gitignore
 
       - name: Bootstrap
         run: melos bootstrap

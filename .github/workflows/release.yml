@@ -341,7 +341,7 @@ jobs:
           echo "ℹ️ SDK tests complete"
 
       - name: Build and Zip XCFramework
-        if: ${{ !inputs.dry_run && steps.check_published.outputs.already_published == 'false' }}
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: |
           echo "Creating XCFramework zip..."
           cd sdk/rust-core/out

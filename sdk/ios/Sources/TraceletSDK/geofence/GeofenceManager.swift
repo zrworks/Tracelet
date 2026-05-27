@@ -28,23 +28,31 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private var lastLatitude: Double?
     private var lastLongitude: Double?
 
-    /// In-memory cache of geofences — avoids DB query on every proximity update (I-M8).
+    /// In-memory cache of active geofences to avoid querying the SQLite database on every GPS location update.
     private var cachedGeofences: [[String: Any]]?
+    private let rustDatabase: DatabaseManager?
 
-    /// Returns geofences from cache, refreshing from DB only when invalidated.
+    /// Returns the cached geofences. If the cache is invalidated, it queries the shared Rust Core database,
+    /// parses the geofences, and maps them to Swift dictionaries.
     private func getCachedGeofences() -> [[String: Any]] {
-        if let cached = cachedGeofences { return cached }
-        let geofences = database.getGeofences()
-        cachedGeofences = geofences
-        return geofences
+        if let cached = cachedGeofences {
+            return cached
+        }
+        // Retrieve geofences from the shared Rust Core SQLite engine
+        let loaded = (try? rustDatabase?.getGeofences()) ?? []
+        let mapped = loaded.map { mapFromCoreGeofence($0) }
+        cachedGeofences = mapped
+        return mapped
     }
 
     public init(configManager: ConfigManager,
          eventDispatcher: TraceletEventSending,
-         database: TraceletDatabase) {
+         database: TraceletDatabase,
+         rustDatabase: DatabaseManager? = nil) {
         self.configManager = configManager
         self.eventDispatcher = eventDispatcher
         self.database = database
+        self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
         self.locationManager = CLLocationManager()
         super.init()
         locationManager.delegate = self
@@ -52,9 +60,26 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Add / Remove geofences
 
+    /// Registers a single geofence. Persists to both the native Swift database (for background OS region monitoring)
+    /// and the Rust Core SQLite engine, and evaluates local proximity.
     public func addGeofence(_ data: [String: Any]) -> Bool {
+        // Double persist: Write to native iOS DB (keeps CLLocationManager background monitoring active)
         let _ = database.insertGeofence(data)
+        
+        // Write to the shared Rust Core SQLite engine
+        if let identifier = data["identifier"] as? String {
+            let lat = data["latitude"] as? Double ?? 0.0
+            let lng = data["longitude"] as? Double ?? 0.0
+            let radius = data["radius"] as? Double ?? 100.0
+            do {
+                try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius)
+            } catch {
+                NSLog("GeofenceManager: Failed to write geofence to Rust Core DB: \(error)")
+            }
+        }
+
         cachedGeofences = nil
+
         // Polygon geofences are evaluated in Dart — no system registration needed
         let vertices = data["vertices"] as? [[Double]]
         if vertices != nil && (vertices?.count ?? 0) >= 3 { return true }
@@ -69,10 +94,27 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         return true
     }
 
+    /// Registers multiple geofences in a single batch transaction.
     public func addGeofences(_ geofences: [[String: Any]]) -> Bool {
-        // Use batch insert with a single transaction (I-H3).
+        // Write to native iOS DB in a single SQLite transaction
         let _ = database.insertGeofencesBatch(geofences)
+        
+        // Write to the shared Rust Core SQLite engine
+        for g in geofences {
+            if let identifier = g["identifier"] as? String {
+                let lat = g["latitude"] as? Double ?? 0.0
+                let lng = g["longitude"] as? Double ?? 0.0
+                let radius = g["radius"] as? Double ?? 100.0
+                do {
+                    try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius)
+                } catch {
+                    NSLog("GeofenceManager: Failed to write batch geofence to Rust Core DB: \(error)")
+                }
+            }
+        }
+
         cachedGeofences = nil
+
         // Re-evaluate proximity for all geofences at once
         if let lat = lastLatitude, let lng = lastLongitude {
             updateProximity(latitude: lat, longitude: lng)
@@ -88,9 +130,18 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         return true
     }
 
+    /// Deletes a specific geofence from both native iOS and shared Rust databases,
+    /// and stops monitoring the active region.
     public func removeGeofence(_ identifier: String) -> Bool {
         let _ = database.deleteGeofence(identifier)
+        do {
+            try rustDatabase?.deleteGeofence(identifier: identifier)
+        } catch {
+            NSLog("GeofenceManager: Failed to delete geofence from Rust Core DB: \(error)")
+        }
+
         cachedGeofences = nil
+
         // Find the actual monitored region by identifier instead of creating
         // a dummy region with fake coordinates (I-M5).
         if let region = locationManager.monitoredRegions.first(where: { $0.identifier == identifier }) {
@@ -99,8 +150,15 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         return true
     }
 
+    /// Deletes all registered geofences.
     public func removeGeofences() -> Bool {
         let _ = database.deleteAllGeofences()
+        do {
+            try rustDatabase?.clearGeofences()
+        } catch {
+            NSLog("GeofenceManager: Failed to clear geofences from Rust Core DB: \(error)")
+        }
+
         cachedGeofences = nil
         for region in locationManager.monitoredRegions {
             locationManager.stopMonitoring(for: region)
@@ -108,16 +166,31 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         return true
     }
 
+    /// Retrieves all active geofences from the cached Rust database entries.
     public func getGeofences() -> [[String: Any]] {
-        return database.getGeofences()
+        return getCachedGeofences()
     }
 
+    /// Retrieves details for a specific geofence by its identifier.
     public func getGeofence(_ identifier: String) -> [String: Any]? {
-        return database.getGeofence(identifier)
+        return getCachedGeofences().first(where: { $0["identifier"] as? String == identifier })
     }
 
+    /// Checks if a specific geofence exists.
     public func geofenceExists(_ identifier: String) -> Bool {
-        return database.geofenceExists(identifier)
+        return getGeofence(identifier) != nil
+    }
+
+    /// Maps a Rust `CoreGeofence` structure into a bridge-compatible Swift dictionary.
+    private func mapFromCoreGeofence(_ gf: CoreGeofence) -> [String: Any] {
+        let verticesArray = gf.vertices.map { [$0.lat, $0.lng] }
+        return [
+            "identifier": gf.identifier,
+            "latitude": gf.latitude,
+            "longitude": gf.longitude,
+            "radius": gf.radius,
+            "vertices": verticesArray
+        ]
     }
 
     // MARK: - Re-register all (on boot or restart)
@@ -226,19 +299,19 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
         // Use cached geofences to avoid DB query on every proximity update (I-M8).
         let allGeofences = getCachedGeofences()
-        let candidates: [(geofence: [String: Any], distance: Double)] = allGeofences
-            .filter { gf in
-                let vertices = gf["vertices"] as? [[Double]]
-                return vertices == nil || (vertices?.count ?? 0) < 3
-            }
-            .filter { gf in
-                let radius = gf["radius"] as? Double ?? 0
-                return radius > 0
-            }
-            .map { gf in
+        // Break up expression for Swift type-checker
+        let circularGeofences = allGeofences.filter { gf in
+            let vertices = gf["vertices"] as? [[Double]]
+            return vertices == nil || (vertices?.count ?? 0) < 3
+        }.filter { gf in
+            let radius = gf["radius"] as? Double ?? 0
+            return radius > 0
+        }
+        let candidates: [(geofence: [String: Any], distance: Double)] = circularGeofences
+            .map { gf -> (geofence: [String: Any], distance: Double) in
                 let lat = gf["latitude"] as? Double ?? 0
                 let lng = gf["longitude"] as? Double ?? 0
-                let distance = haversineDistanceMetres(lat1: latitude, lng1: longitude, lat2: lat, lng2: lng)
+                let distance = haversine(lat1: latitude, lon1: longitude, lat2: lat, lon2: lng)
                 return (geofence: gf, distance: distance)
             }
             .filter { $0.distance <= proximityRadius }

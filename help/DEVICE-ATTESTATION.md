@@ -23,7 +23,7 @@ generate cryptographic attestation tokens that your server can verify.
 import 'package:tracelet/tracelet.dart' as tl;
 
 // 1. Enable attestation in config
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   attestation: tl.AttestationConfig(
     enabled: true,
     refreshInterval: 3600,  // refresh every hour

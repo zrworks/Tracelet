@@ -1,5 +1,20 @@
 package com.ikolvi.tracelet.sdk.model
 
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** Standard configuration profiles for Tracelet. */
+enum class TraceletProfile {
+    /** Turn-by-Turn, precise tracking without adaptive degradation. */
+    HIGH_ACCURACY,
+    
+    /** Standard tracking balancing battery and accuracy. Uses smart motion detection and adaptive mode. */
+    BALANCED,
+    
+    /** Background-only, battery-sensitive tracking with sparse updates and cellular/wifi locations. */
+    LOW_POWER
+}
+
 /**
  * Typed configuration for the Tracelet SDK.
  */
@@ -19,6 +34,50 @@ data class TraceletConfig(
     val attestation: AttestationConfig = AttestationConfig(),
 ) {
     companion object {
+        private val profilesJson = mapOf(
+            TraceletProfile.HIGH_ACCURACY to """{"geo":{"desiredAccuracy":0,"distanceFilter":5.0,"stationaryRadius":25.0,"enableAdaptiveMode":false,"disableElasticity":true,"enableDeadReckoning":true,"filter":{"useKalmanFilter":true,"rejectMockLocations":true}},"motion":{"motionDetectionMode":0,"stationaryTrackingMode":0,"stopTimeout":3},"android":{"geofenceModeHighAccuracy":true,"locationUpdateInterval":1000,"fastestLocationUpdateInterval":500}}""",
+            TraceletProfile.BALANCED to """{"geo":{"desiredAccuracy":1,"distanceFilter":20.0,"stationaryRadius":50.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":1.0,"filter":{"useKalmanFilter":false}},"motion":{"motionDetectionMode":2,"stationaryTrackingMode":1,"stopTimeout":5},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":5000}}""",
+            TraceletProfile.LOW_POWER to """{"geo":{"desiredAccuracy":2,"distanceFilter":50.0,"stationaryRadius":100.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":2.0,"enableSparseUpdates":true,"sparseDistanceThreshold":100.0},"motion":{"motionDetectionMode":1,"stationaryTrackingMode":1,"stopTimeout":2},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":10000}}"""
+        )
+
+        private fun jsonToMap(json: JSONObject): Map<String, Any?> {
+            val map = mutableMapOf<String, Any?>()
+            val keys = json.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val value = json.get(key)
+                map[key] = when (value) {
+                    JSONObject.NULL -> null
+                    is JSONObject -> jsonToMap(value)
+                    is JSONArray -> {
+                        val list = mutableListOf<Any?>()
+                        for (i in 0 until value.length()) {
+                            val item = value.get(i)
+                            list.add(if (item is JSONObject) jsonToMap(item) else item)
+                        }
+                        list
+                    }
+                    else -> value
+                }
+            }
+            return map
+        }
+
+        private fun fromProfile(profile: TraceletProfile): TraceletConfig {
+            val jsonStr = profilesJson[profile] ?: throw IllegalArgumentException("Unknown profile")
+            val baseMap = jsonToMap(JSONObject(jsonStr))
+            return fromMap(baseMap)
+        }
+
+        /** High Accuracy profile tailored for turn-by-turn navigation or precise tracking. */
+        fun highAccuracy() = fromProfile(TraceletProfile.HIGH_ACCURACY)
+        
+        /** Balanced profile tailored for standard social/fleet apps, balancing accuracy and battery. */
+        fun balanced() = fromProfile(TraceletProfile.BALANCED)
+        
+        /** Low Power profile tailored for background-only coarse tracking to maximize battery life. */
+        fun lowPower() = fromProfile(TraceletProfile.LOW_POWER)
+
         @Suppress("UNCHECKED_CAST")
         fun fromMap(map: Map<String, Any?>): TraceletConfig = TraceletConfig(
             geo = (map["geo"] as? Map<String, Any?>)?.let { GeoConfig.fromMap(it) } ?: GeoConfig.fromMap(map),

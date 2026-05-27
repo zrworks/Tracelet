@@ -56,7 +56,7 @@ processed through the filter, and converted back to lat/lng for output.
 Add `useKalmanFilter: true` to the `LocationFilter` in your config:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     distanceFilter: 10.0,
     filter: LocationFilter(

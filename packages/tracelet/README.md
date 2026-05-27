@@ -20,7 +20,7 @@
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
 > [!IMPORTANT]
-> **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Migration Guide](../../MIGRATION_2.0.md) for details.
+> **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Native SDK Guide](../../help/NATIVE-SDK.md) and the new [Rust Core Architecture](../../help/RUST-CORE.md) for installation and internal details.
 
 ---
 
@@ -97,7 +97,7 @@ tl.Tracelet.onMotionChange((tl.Location location) {
 
 // 2. Initialize
 // 2. Configure & ready
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     desiredAccuracy: tl.DesiredAccuracy.high,
     distanceFilter: 10.0,
@@ -170,7 +170,7 @@ Tracelet declares all permissions it *can* use in its `AndroidManifest.xml`. If 
 When removing `ACTIVITY_RECOGNITION`, set `disableMotionActivityUpdates: true` in your config so the motion permission API returns `3` (granted) immediately instead of trying to prompt:
 
 ```dart
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   motion: tl.MotionConfig(
     disableMotionActivityUpdates: true, // Accelerometer-only, no permission needed
   ),
@@ -217,7 +217,7 @@ iOS permissions are declared in `Info.plist`, not merged from plugin manifests. 
 Enable the Extended Kalman Filter to smooth GPS coordinates, eliminate jitter, and produce cleaner tracks:
 
 ```dart
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     filter: tl.LocationFilter(
       useKalmanFilter: true, // Enable Kalman smoothing

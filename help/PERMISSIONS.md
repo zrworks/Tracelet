@@ -102,7 +102,7 @@ Future<void> initializeWithPermissions(BuildContext context) async {
   }
 
   // 3. Now safe to initialize and start
-  await tl.Tracelet.ready(tl.Config(/* ... */));
+  await tl.Tracelet.ready(tl.Config.balanced().copyWith(/* ... */));
   await tl.Tracelet.start();
 }
 ```

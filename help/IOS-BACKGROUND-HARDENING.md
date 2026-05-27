@@ -78,7 +78,7 @@ When `AppConfig.preventSuspend: true` is set, Tracelet plays an inaudible audio 
 - Use only when continuous background execution is critical — increases battery usage slightly
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   app: AppConfig(
     preventSuspend: true,  // Enable silent audio keep-alive
   ),
@@ -133,7 +133,7 @@ No additional Info.plist keys or capabilities are needed beyond the standard loc
 Enable verbose logging to see background task activity:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   logger: LoggerConfig(
     debug: true,
     logLevel: LogLevel.verbose,

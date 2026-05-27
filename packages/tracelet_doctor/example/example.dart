@@ -6,14 +6,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize core Tracelet configuration
+  final baseConfig = await tl.Config.highAccuracy();
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10.0,
+    baseConfig.copyWith(
+      app: baseConfig.app.copyWith(stopOnTerminate: false, startOnBoot: true),
+      logger: baseConfig.logger.copyWith(
+        debug: true,
+        logLevel: tl.LogLevel.verbose,
       ),
-      app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
-      logger: tl.LoggerConfig(debug: true, logLevel: tl.LogLevel.verbose),
     ),
   );
 

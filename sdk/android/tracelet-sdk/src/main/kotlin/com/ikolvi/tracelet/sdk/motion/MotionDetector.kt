@@ -205,16 +205,12 @@ class MotionDetector(
             stopAccelerometerMonitoring()
             cancelSignificantMotionListener()
             cancelStopTimeout()
-            if (isAccelerometerOnlyMode) {
-                startAccelerometerStillnessMonitoring()
-            }
+            startAccelerometerStillnessMonitoring()
         } else {
             // Caller forced us into stationary state — re-engage the wake-up
             // sensors so the next real motion can re-trigger tracking.
             startAccelerometerMonitoring()
-            if (isAccelerometerOnlyMode) {
-                startSignificantMotionListener()
-            }
+            startSignificantMotionListener()
         }
     }
 
@@ -289,8 +285,8 @@ class MotionDetector(
         )
 
         val request = TraceletActivityTransitionRequest(transitions)
-        val intent = Intent(ACTION_ACTIVITY_TRANSITION).apply {
-            setPackage(context.packageName)
+        val intent = Intent(context, com.ikolvi.tracelet.sdk.receiver.ActivityTransitionReceiver::class.java).apply {
+            action = ACTION_ACTIVITY_TRANSITION
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         transitionPendingIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
@@ -300,7 +296,7 @@ class MotionDetector(
                 request = request,
                 pendingIntent = transitionPendingIntent!!,
                 onSuccess = {
-                    Log.d(TAG, "Activity transition updates registered")
+                    Log.d(TAG, "Activity transition updates registered with static receiver")
                 },
                 onFailure = { e ->
                     Log.w(TAG, "Failed to register activity transitions: ${e.message}")
@@ -316,14 +312,6 @@ class MotionDetector(
             // Graceful degradation: use accelerometer instead
             startAccelerometerOnlyMode()
         }
-
-        // Register broadcast receiver for transition events
-        val filter = IntentFilter(ACTION_ACTIVITY_TRANSITION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(transitionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            context.registerReceiver(transitionReceiver, filter)
-        }
     }
 
     private fun unregisterActivityTransitions() {
@@ -337,24 +325,20 @@ class MotionDetector(
             )
         }
         transitionPendingIntent = null
-
-        try {
-            context.unregisterReceiver(transitionReceiver)
-        } catch (_: Exception) {
-            // Receiver was not registered — safe to ignore
-        }
     }
 
-    private val transitionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(ctx: Context?, intent: Intent?) {
-            if (intent == null) return
-            val result = extractor.extractActivityTransitionResult(intent) ?: return
-            for (event in result.transitionEvents) {
-                handleTransitionEvent(
-                    activityType = event.activityType,
-                    transitionType = event.transitionType
-                )
-            }
+    /**
+     * Public callback called by the static ActivityTransitionReceiver to pass
+     * incoming broadcast events back to the active MotionDetector instance.
+     */
+    fun handleTransitionIntent(intent: Intent) {
+        if (!isRunning) return
+        val result = extractor.extractActivityTransitionResult(intent) ?: return
+        for (event in result.transitionEvents) {
+            handleTransitionEvent(
+                activityType = event.activityType,
+                transitionType = event.transitionType
+            )
         }
     }
 
@@ -443,9 +427,7 @@ class MotionDetector(
 
         // Begin monitoring to detect next movement
         startAccelerometerMonitoring()
-        if (isAccelerometerOnlyMode) {
-            startSignificantMotionListener()
-        }
+        startSignificantMotionListener()
     }
 
     private fun declareMoving() {
@@ -615,6 +597,7 @@ class MotionDetector(
      * No permissions required — this is a hardware sensor API.
      */
     private fun startSignificantMotionListener() {
+        if (significantMotionListener != null) return // Already listening!
         val sm = obtainSensorManager() ?: return
         val sigMotionSensor = sm.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION) ?: return
 
@@ -626,7 +609,8 @@ class MotionDetector(
             }
         }
 
-        sm.requestTriggerSensor(significantMotionListener, sigMotionSensor)
+        val success = sm.requestTriggerSensor(significantMotionListener, sigMotionSensor)
+        Log.d(TAG, "Significant motion sensor registered: success=$success")
     }
 
     private fun cancelSignificantMotionListener() {

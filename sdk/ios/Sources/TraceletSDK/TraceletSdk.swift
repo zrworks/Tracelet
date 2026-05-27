@@ -55,7 +55,6 @@ public final class TraceletSdk {
     public private(set) var speedMotionManager: SpeedMotionManager?
     public private(set) var geofenceManager: GeofenceManager!
     public private(set) var smartMotionCoordinator: TraceletSmartMotionCoordinator!
-    public private(set) var httpSyncManager: HttpSyncManager!
     public private(set) var scheduleManager: ScheduleManager!
     public private(set) var logger: TraceletLogger!
     public private(set) var soundManager: SoundManager!
@@ -67,6 +66,12 @@ public final class TraceletSdk {
     public private(set) var backgroundActivitySessionManager: BackgroundActivitySessionManager!
     public private(set) var serviceSessionManager: ServiceSessionManager!
     public private(set) var periodicRefreshScheduler: PeriodicRefreshScheduler!
+
+    // MARK: - Rust Core subsystems
+    public private(set) var rustDatabase: DatabaseManager?
+    public private(set) var rustSyncManager: SyncManager?
+    public private(set) var rustEngineState: EngineState?
+    public private(set) var rustEventDispatcher: EventDispatcher?
 
     private let delegateEventSender = DelegateEventSender()
     private var eventSender: TraceletEventSending
@@ -169,6 +174,11 @@ public final class TraceletSdk {
         eventSender.sendMotionChange(motionMap)
     }
 
+    @objc private func handleWillEnterForeground() {
+        NSLog("Tracelet: App moving to FOREGROUND — requesting state flush to Dart")
+        requestStateFlush()
+    }
+
     @discardableResult
     public func ready(config: [String: Any]) -> [String: Any] {
         initialize()  // no-op if already initialized
@@ -176,12 +186,27 @@ public final class TraceletSdk {
         let merged = configManager.setConfig(config)
 
         if configManager.isDebug() { soundManager.start() }
-        httpSyncManager.start()
         logger.pruneOldLogs()
 
         // [Enterprise] Auto-encrypt database if configured.
-        if configManager.getEncryptDatabase() && !database.isDatabaseEncrypted() {
-            let _ = database.encryptDatabase()
+        if configManager.getEncryptDatabase(), let state = rustEngineState {
+            do {
+                let currentConfig = state.getConfig()
+                let newSecurity = SecurityConfig(encryptDatabase: true)
+                let newConfig = EngineConfig(
+                    geo: currentConfig.geo,
+                    motion: currentConfig.motion,
+                    http: currentConfig.http,
+                    geofence: currentConfig.geofence,
+                    persistence: currentConfig.persistence,
+                    audit: currentConfig.audit,
+                    security: newSecurity,
+                    attestation: currentConfig.attestation
+                )
+                try state.updateConfig(newConfig: newConfig)
+            } catch {
+                NSLog("Auto-encrypt database failed: \(error)")
+            }
         }
 
         // [Enterprise] Start attestation refresh if configured.
@@ -190,19 +215,9 @@ public final class TraceletSdk {
         }
 
         // [Enterprise] Fetch remote config if configured.
+        // TODO: Port fetchRemoteConfig to Rust Core or standalone networking
         if let remoteUrl = configManager.getRemoteConfigUrl() {
-            httpSyncManager.fetchRemoteConfig(
-                url: remoteUrl,
-                headers: configManager.getRemoteConfigHeaders(),
-                timeoutMs: configManager.getRemoteConfigTimeout()
-            ) { [weak self] remoteConfig in
-                if let config = remoteConfig {
-                    self?.eventSender.sendRemoteConfigEvent([
-                        "config": config,
-                        "source": "remote",
-                    ])
-                }
-            }
+            // Port to Rust Networking
         }
 
         // Initialize battery budget engine from config
@@ -218,6 +233,22 @@ public final class TraceletSdk {
         }
 
         isReady = true
+        syncConfigToRustFlat()
+
+        if stateManager.enabled {
+            switch stateManager.trackingMode {
+            case .continuous:
+                NSLog("[Tracelet] ready: Resuming continuous tracking")
+                start()
+            case .periodic:
+                NSLog("[Tracelet] ready: Resuming periodic tracking")
+                startPeriodic()
+            case .geofences:
+                NSLog("[Tracelet] ready: Resuming geofence tracking")
+                startGeofences()
+            }
+        }
+
         return stateManager.toMap(merged)
     }
 
@@ -469,6 +500,13 @@ public final class TraceletSdk {
         guard isReady else { return getState() }
         let wasPreventing = configManager.getPreventSuspend()
         configManager.setConfig(config)
+        
+        if config["encryptDatabase"] as? Bool == true {
+            let key = config["encryptionKey"] as? String ?? ""
+            rustDatabase?.setEncryptionKey(key: key)
+        } else {
+            rustDatabase?.setEncryptionKey(key: "")
+        }
 
         if stateManager.enabled {
             if stateManager.trackingMode == .periodic {
@@ -493,6 +531,7 @@ public final class TraceletSdk {
             }
         }
 
+        syncConfigToRustFlat()
         return stateManager.toMap(configManager.getConfig())
     }
 
@@ -713,13 +752,36 @@ public final class TraceletSdk {
     /// - Returns: Array of location dictionaries.
     public func getLocations(query: [String: Any]? = nil) -> [[String: Any]] {
         guard isReady else { return [] }
-        let limit = (query?["limit"] as? NSNumber)?.intValue ?? -1
-        let offset = (query?["offset"] as? NSNumber)?.intValue ?? 0
-        let orderAsc = ((query?["order"] as? NSNumber)?.intValue ?? 0) == 0
-        let start = query?["start"] as? Int64
-        let end = query?["end"] as? Int64
-        return database.getLocations(limit: limit, offset: offset, orderAsc: orderAsc,
-                                     startTime: start, endTime: end)
+        guard let db = rustDatabase else { return [] }
+        let limit = (query?["limit"] as? NSNumber)?.int32Value ?? 1000
+        do {
+            let records = try db.getLocationsBatch(limit: limit)
+            return records.map { record in
+                return [
+                    "uuid": String(record.id),
+                    "timestamp": record.timestamp,
+                    "is_moving": stateManager.isMoving,
+                    "odometer": locationEngine.getOdometer(),
+                    "event": "location",
+                    "mock": record.isMock,
+                    "coords": [
+                        "latitude": record.latitude,
+                        "longitude": record.longitude,
+                        "altitude": record.altitude,
+                        "speed": record.speed,
+                        "heading": record.heading,
+                        "accuracy": record.accuracy
+                    ],
+                    "activity": [
+                        "type": record.activity,
+                        "confidence": 100
+                    ]
+                ]
+            }
+        } catch {
+            NSLog("getLocations failed: \(error)")
+            return []
+        }
     }
 
     /// Get the count of stored locations.
@@ -728,9 +790,14 @@ public final class TraceletSdk {
     /// - Returns: Number of locations.
     public func getCount(query: [String: Any]? = nil) -> Int {
         guard isReady else { return 0 }
-        let start = query?["start"] as? Int64
-        let end = query?["end"] as? Int64
-        return database.getLocationCount(startTime: start, endTime: end)
+        guard let db = rustDatabase else { return 0 }
+        do {
+            let count = try db.getLocationsCount()
+            return Int(count)
+        } catch {
+            NSLog("getCount failed: \(error)")
+            return 0
+        }
     }
 
     /// Destroy all stored locations.
@@ -739,7 +806,14 @@ public final class TraceletSdk {
     @discardableResult
     public func destroyLocations() -> Bool {
         guard isReady else { return false }
-        return database.deleteAllLocations()
+        guard let db = rustDatabase else { return false }
+        do {
+            try db.destroyLocations()
+            return true
+        } catch {
+            NSLog("destroyLocations failed: \(error)")
+            return false
+        }
     }
 
     /// Destroy only locations that have been successfully synced.
@@ -747,8 +821,8 @@ public final class TraceletSdk {
     /// - Returns: Number of synced locations deleted.
     @discardableResult
     public func destroySyncedLocations() -> Int {
-        guard isReady else { return 0 }
-        return database.deleteSyncedLocations()
+        // Centralized Rust Core auto-sync immediately prunes synced locations.
+        return 0
     }
 
     /// Destroy a single location by UUID.
@@ -758,7 +832,15 @@ public final class TraceletSdk {
     @discardableResult
     public func destroyLocation(_ uuid: String) -> Bool {
         guard isReady else { return false }
-        return database.deleteLocation(uuid)
+        guard let db = rustDatabase else { return false }
+        guard let id = Int64(uuid) else { return false }
+        do {
+            try db.destroyLocation(id: id)
+            return true
+        } catch {
+            NSLog("destroyLocation failed: \(error)")
+            return false
+        }
     }
 
     /// Insert a custom location into the store.
@@ -767,9 +849,34 @@ public final class TraceletSdk {
     /// - Returns: The UUID of the inserted location.
     public func insertLocation(_ params: [String: Any]) -> String {
         guard isReady else { return "" }
-        let uuid = database.insertLocation(params)
-        httpSyncManager.onLocationInserted()
-        return uuid
+        guard let db = rustDatabase else { return "" }
+        let coords = params["coords"] as? [String: Any] ?? params
+        let lat = coords["latitude"] as? Double ?? 0.0
+        let lng = coords["longitude"] as? Double ?? 0.0
+        let acc = coords["accuracy"] as? Double ?? 0.0
+        let speed = coords["speed"] as? Double ?? 0.0
+        let heading = coords["heading"] as? Double ?? 0.0
+        let altitude = coords["altitude"] as? Double ?? 0.0
+        let isMock = params["mock"] as? Bool ?? params["is_mock"] as? Bool ?? false
+        let activityMap = params["activity"] as? [String: Any]
+        let activity = activityMap?["type"] as? String ?? "unknown"
+        
+        do {
+            try db.insertLocation(
+                lat: lat,
+                lng: lng,
+                acc: acc,
+                speed: speed,
+                heading: heading,
+                altitude: altitude,
+                isMock: isMock,
+                activity: activity
+            )
+            return "success"
+        } catch {
+            NSLog("insertLocation failed: \(error)")
+            return ""
+        }
     }
 
     // =========================================================================
@@ -781,7 +888,57 @@ public final class TraceletSdk {
     /// - Parameter completion: Called with the list of synced location dictionaries.
     public func sync(completion: (([[String: Any]]) -> Void)? = nil) {
         guard isReady else { completion?([]); return }
-        httpSyncManager.sync(completion: completion)
+        guard let db = rustDatabase,
+              let sync = rustSyncManager,
+              let state = rustEngineState else {
+            completion?([])
+            return
+        }
+        
+        DispatchQueue.global(qos: .utility).async { [self] in
+            do {
+                let config = state.getConfig()
+                let batchSize = config.http.maxBatchSize
+                let records = try db.getLocationsBatch(limit: batchSize)
+                if records.isEmpty {
+                    DispatchQueue.main.async { completion?([]) }
+                    return
+                }
+                
+                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records)
+                if syncedCount > 0 {
+                    let successfullySynced = Array(records.prefix(Int(syncedCount)))
+                    if let lastRecord = successfullySynced.last {
+                        try db.clearLocationsUpTo(maxId: lastRecord.id)
+                    }
+                    let mapped = successfullySynced.map { record -> [String: Any] in
+                        return [
+                            "uuid": String(record.id),
+                            "timestamp": record.timestamp,
+                            "is_moving": stateManager.isMoving,
+                            "coords": [
+                                "latitude": record.latitude,
+                                "longitude": record.longitude,
+                                "altitude": record.altitude,
+                                "speed": record.speed,
+                                "heading": record.heading,
+                                "accuracy": record.accuracy
+                            ],
+                            "activity": [
+                                "type": record.activity,
+                                "confidence": 100
+                            ]
+                        ]
+                    }
+                    DispatchQueue.main.async { completion?(mapped) }
+                } else {
+                    DispatchQueue.main.async { completion?([]) }
+                }
+            } catch {
+                NSLog("Sync failed: \(error)")
+                DispatchQueue.main.async { completion?([]) }
+            }
+        }
     }
 
     /// Update dynamic HTTP headers on the native side.
@@ -793,6 +950,7 @@ public final class TraceletSdk {
     public func setDynamicHeaders(_ headers: [String: String]) {
         guard isReady else { return }
         configManager.setDynamicHeaders(headers)
+        rustEngineState?.setDynamicHeaders(headers: headers)
     }
 
     // =========================================================================
@@ -1084,6 +1242,13 @@ public final class TraceletSdk {
             self?.getEventSender() ?? DelegateEventSender()
         }
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+
         // Persistence
         // Note: iOS does not need a separate DatabaseEncryptionManager.
         // Android uses SQLCipher (application-level AES-256 encryption)
@@ -1094,12 +1259,44 @@ public final class TraceletSdk {
         stateManager = StateManager()
         database = TraceletDatabase.shared
 
+        // ── Rust Core bootstrap ──
+        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        let documentsDirectory = paths[0]
+        let dbDir = documentsDirectory + "/tracelet"
+        if !FileManager.default.fileExists(atPath: dbDir) {
+            try? FileManager.default.createDirectory(atPath: dbDir, withIntermediateDirectories: true, attributes: nil)
+        }
+        let dbPath = dbDir + "/tracelet.db"
+        do {
+            let db = try DatabaseManager(dbPath: dbPath)
+            
+            let savedConfig = configManager.getConfig()
+            if savedConfig["encryptDatabase"] as? Bool == true {
+                let key = savedConfig["encryptionKey"] as? String ?? ""
+                db.setEncryptionKey(key: key)
+            } else {
+                db.setEncryptionKey(key: "")
+            }
+            
+            let sync = SyncManager()
+            let state = EngineState()
+            let dispatcher = EventDispatcher(db: db, sync: sync, state: state)
+            self.rustDatabase = db
+            self.rustSyncManager = sync
+            self.rustEngineState = state
+            self.rustEventDispatcher = dispatcher
+            syncConfigToRustFlat()
+            NSLog("Tracelet: Rust Core initialized at \(dbPath)")
+        } catch {
+            NSLog("Tracelet: Failed to initialize Rust Core: \(error)")
+        }
+
         // Logger
         logger = TraceletLogger(configManager: configManager, database: database)
 
         // Enterprise features
-        auditTrailManager = AuditTrailManager(database: database, configManager: configManager)
-        privacyZoneManager = PrivacyZoneManager(database: database, configManager: configManager)
+        auditTrailManager = AuditTrailManager(database: database, configManager: configManager, rustDatabase: rustDatabase)
+        privacyZoneManager = PrivacyZoneManager(database: database, configManager: configManager, rustDatabase: rustDatabase)
         deviceAttestor = DeviceAttestor()
 
         // Location engine
@@ -1109,10 +1306,11 @@ public final class TraceletSdk {
             eventDispatcher: eventSender,
             database: database
         )
+        locationEngine.rustEventDispatcher = rustEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager
         locationEngine.onLocationPersisted = { [weak self] in
-            self?.httpSyncManager.onLocationInserted()
+            // Location persistence handled by Rust
         }
 
         // Trip manager
@@ -1144,18 +1342,15 @@ public final class TraceletSdk {
         geofenceManager = GeofenceManager(
             configManager: configManager,
             eventDispatcher: eventSender,
-            database: database
+            database: database,
+            rustDatabase: rustDatabase
         )
         
         // Smart motion coordinator
         smartMotionCoordinator = TraceletSmartMotionCoordinator(sdk: self)
 
-        // HTTP sync
-        httpSyncManager = HttpSyncManager(
-            configManager: configManager,
-            eventDispatcher: eventSender,
-            database: database
-        )
+        // HTTP sync is handled natively by Rust Core via EventDispatcher
+
 
         // Scheduling
         scheduleManager = ScheduleManager(
@@ -1191,7 +1386,17 @@ public final class TraceletSdk {
 
     private func handleMotionStateChange(_ isMoving: Bool) {
         if configManager.getMotionDetectionMode() == .smart {
-            smartMotionCoordinator.onAccelStateChange(isMoving: isMoving)
+            // In SMART mode, route the accel event through the coordinator first.
+            // Only reset the speed state machine when the coordinator actually
+            // decides to SWITCH_TO_CONTINUOUS (a genuine wake-up from stationary).
+            // This prevents micro-vibrations from the significant motion sensor
+            // from force-resetting the speed SM on every fire (infinite loop),
+            // while still allowing the system to wake from stationary when the
+            // coordinator determines real movement has begun.
+            let action = smartMotionCoordinator.onAccelStateChange(isMoving: isMoving)
+            if action == .switchToContinuous {
+                speedMotionManager?.onManualPaceChange(isMoving: true)
+            }
             return
         }
 
@@ -1466,14 +1671,13 @@ public final class TraceletSdk {
         let trackingMode = stateManager.trackingMode
         NSLog("[Tracelet] autoResumeTracking: trackingMode=\(trackingMode), resuming")
 
-        // Start HTTP sync so killed-state locations are synced to server
-        httpSyncManager.start()
-        NSLog("[Tracelet] autoResumeTracking: httpSyncManager started")
+        // HTTP Sync is auto-started by Rust Core Config
+        NSLog("[Tracelet] autoResumeTracking: Rust SyncManager active")
 
         // Wire onLocationPersisted so persisted locations trigger HTTP auto-sync.
         // Without this, locations accumulate in SQLite but never sync.
-        locationEngine.onLocationPersisted = { [weak self] in
-            self?.httpSyncManager.onLocationInserted()
+        locationEngine.onLocationPersisted = {
+            // Location persistence handled by Rust
         }
 
         switch trackingMode {
@@ -1490,7 +1694,15 @@ public final class TraceletSdk {
                     timestamp: ISO8601DateFormatter().string(from: Date())
                 )
             }
-            motionDetector.start()
+            let motionMode = configManager.getMotionDetectionMode()
+            if motionMode == .speed {
+                startSpeedMotionManager(forceMoving: true)
+            } else if motionMode == .smart {
+                startSpeedMotionManager(forceMoving: true)
+                motionDetector.start()
+            } else {
+                motionDetector.start()
+            }
             startHeartbeat()
             preventSuspendManager.start()
             backgroundActivitySessionManager.start()
@@ -1622,7 +1834,7 @@ public final class TraceletSdk {
 
         // Subsystems that should only survive if we are in a background-active mode.
         if !keepAlive {
-            httpSyncManager.stop()
+            // TODO: Stop Rust SyncManager if necessary
             scheduleManager.stop()
             stopHeartbeat()
             preventSuspendManager.stop()
@@ -1797,5 +2009,73 @@ extension TraceletSdk: SpeedMotionDelegate {
             "previousState": previousState,
             "trackingMode": trackingMode
         ])
+    }
+
+    /// Synchronizes the active platform configuration stored in ``configManager`` 
+    /// to the underlying Rust Core ``rustEngineState`` instance.
+    ///
+    /// This method maps every individual geolocation, motion, network, geofencing,
+    /// persistence, audit, database encryption, and device attestation property 
+    /// from the native iOS ConfigManager directly into a UniFFI-exported 
+    /// ``EngineConfig`` record, ensuring the Rust core engine maintains perfect 
+    /// configuration parity with the platform layer.
+    private func syncConfigToRustFlat() {
+        guard let state = rustEngineState else { return }
+        do {
+            let newConfig = EngineConfig(
+                geo: GeoConfig(
+                    desiredAccuracy: Int32(configManager.getDesiredAccuracy()),
+                    distanceFilter: configManager.getDistanceFilter(),
+                    stationaryRadius: configManager.getStationaryRadius(),
+                    locationTimeout: Int32(configManager.getLocationTimeout()),
+                    disableElasticity: configManager.getDisableElasticity(),
+                    elasticityMultiplier: configManager.getElasticityMultiplier(),
+                    enableAdaptiveMode: configManager.getEnableAdaptiveMode(),
+                    enableTimestampMeta: configManager.getEnableTimestampMeta(),
+                    enableSparseUpdates: configManager.getEnableSparseUpdates(),
+                    sparseDistanceThreshold: configManager.getSparseDistanceThreshold()
+                ),
+                motion: MotionConfig(
+                    stopTimeout: Int32(configManager.getStopTimeout()),
+                    motionTriggerDelay: Int32(configManager.getMotionTriggerDelay()),
+                    disableMotionActivityUpdates: configManager.getDisableMotionActivityUpdates(),
+                    disableStopDetection: configManager.getDisableStopDetection(),
+                    shakeThreshold: configManager.getShakeThreshold()
+                ),
+                http: HttpConfig(
+                    url: configManager.getUrl().isEmpty ? nil : configManager.getUrl(),
+                    method: configManager.getHttpMethod().uppercased() == "PUT" ? 1 : 0,
+                    headers: configManager.getMergedHttpHeaders(),
+                    batchSync: configManager.getBatchSync(),
+                    maxBatchSize: Int32(configManager.getMaxBatchSize()),
+                    autoSync: configManager.getAutoSync(),
+                    maxRetries: Int32(configManager.getMaxRetries()),
+                    retryBackoffBase: Int32(configManager.getRetryBackoffBase()),
+                    retryBackoffCap: Int32(configManager.getRetryBackoffCap()),
+                    sslPinningCertificates: configManager.getSslPinningCertificates().isEmpty ? nil : configManager.getSslPinningCertificates()
+                ),
+                geofence: GeofenceConfig(
+                    geofenceInitialTriggerEntry: configManager.getGeofenceInitialTriggerEntry(),
+                    geofenceProximityRadius: Int32(configManager.getGeofenceProximityRadius())
+                ),
+                persistence: PersistenceConfig(
+                    maxDaysToPersist: Int32(configManager.getMaxDaysToPersist()),
+                    maxRecordsToPersist: Int32(configManager.getMaxRecordsToPersist())
+                ),
+                audit: AuditConfig(
+                    enabled: configManager.getAuditEnabled()
+                ),
+                security: SecurityConfig(
+                    encryptDatabase: configManager.getEncryptDatabase()
+                ),
+                attestation: AttestationConfig(
+                    enabled: configManager.getAttestationEnabled()
+                )
+            )
+            try state.updateConfig(newConfig: newConfig)
+            NSLog("Tracelet: Successfully synchronized ConfigManager state to Rust Core.")
+        } catch {
+            NSLog("Tracelet: Failed to sync config to Rust Core: \(error)")
+        }
     }
 }

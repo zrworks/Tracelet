@@ -9,7 +9,7 @@ connectivity monitoring, and offline queuing — all configurable from Dart.
 ## Quick Start
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   http: HttpConfig(
     url: 'https://api.example.com/locations',
     method: HttpMethod.post,

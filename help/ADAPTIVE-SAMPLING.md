@@ -11,7 +11,7 @@ battery when it doesn't.
 ## Quick Start
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     distanceFilter: 10.0,          // Base distance filter
     enableAdaptiveMode: true,      // Enable adaptive sampling

@@ -60,6 +60,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Rust-backed Kalman filter for smoothing lat/lng.
     private var kalmanFilter: KalmanLocationFilter?
 
+    /// Rust-backed EventDispatcher for DB persistence + auto HTTP sync
+    public var rustEventDispatcher: EventDispatcher?
+
     /// Build (or rebuild) the Rust LocationProcessor from current config.
     public func rebuildProcessor() {
         locationProcessor = LocationProcessor(
@@ -1218,22 +1221,30 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Skip provider change records if disabled
         if event == "providerchange" && configManager.getDisableProviderChangeRecord() { return }
 
-        let _ = database.insertLocation(location)
+        // Route through Rust EventDispatcher for DB persistence + auto HTTP sync
+        if let dispatcher = rustEventDispatcher {
+            let coords = location["coords"] as? [String: Any]
+            let lat = coords?["latitude"] as? Double ?? 0.0
+            let lng = coords?["longitude"] as? Double ?? 0.0
+            let accuracy = coords?["accuracy"] as? Double ?? 0.0
+            let speed = coords?["speed"] as? Double ?? 0.0
+            let heading = coords?["heading"] as? Double ?? 0.0
+            let altitude = coords?["altitude"] as? Double ?? 0.0
+            let isMock = location["mock"] as? Bool ?? location["is_mock"] as? Bool ?? false
+            
+            _ = dispatcher.onLocationUpdate(
+                lat: lat,
+                lng: lng,
+                accuracy: accuracy,
+                speed: speed,
+                heading: heading,
+                altitude: altitude,
+                isMock: isMock
+            )
+        }
 
         // Notify HTTP sync manager (if wired) so auto-sync can fire.
         onLocationPersisted?()
-
-        // Throttle retention pruning — only run every N inserts instead of on
-        // each insert. This avoids a COUNT query + potential DELETE on every
-        // single location fix (I-H6, I-H4).
-        insertCountSincePrune += 1
-        if insertCountSincePrune >= LocationEngine.pruneEveryNInserts {
-            insertCountSincePrune = 0
-            let maxDays = configManager.getMaxDaysToPersist()
-            if maxDays > 0 { database.pruneOldLocations(maxDays: maxDays) }
-            let maxRecords = configManager.getMaxRecordsToPersist()
-            if maxRecords > 0 { database.enforceMaxRecords(maxRecords: maxRecords) }
-        }
     }
 
     /// Detects whether a CLLocation was produced by a simulated/mock provider.

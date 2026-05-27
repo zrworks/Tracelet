@@ -20,6 +20,37 @@ class AndroidConfig {
     this.foregroundService = const ForegroundServiceConfig(),
   });
 
+  AndroidConfig copyWith({
+    int? locationUpdateInterval,
+    int? fastestLocationUpdateInterval,
+    int? deferTime,
+    bool? allowIdenticalLocations,
+    bool? geofenceModeHighAccuracy,
+    bool? periodicUseForegroundService,
+    bool? periodicUseExactAlarms,
+    bool? scheduleUseAlarmManager,
+    ForegroundServiceConfig? foregroundService,
+  }) {
+    return AndroidConfig(
+      locationUpdateInterval:
+          locationUpdateInterval ?? this.locationUpdateInterval,
+      fastestLocationUpdateInterval:
+          fastestLocationUpdateInterval ?? this.fastestLocationUpdateInterval,
+      deferTime: deferTime ?? this.deferTime,
+      allowIdenticalLocations:
+          allowIdenticalLocations ?? this.allowIdenticalLocations,
+      geofenceModeHighAccuracy:
+          geofenceModeHighAccuracy ?? this.geofenceModeHighAccuracy,
+      periodicUseForegroundService:
+          periodicUseForegroundService ?? this.periodicUseForegroundService,
+      periodicUseExactAlarms:
+          periodicUseExactAlarms ?? this.periodicUseExactAlarms,
+      scheduleUseAlarmManager:
+          scheduleUseAlarmManager ?? this.scheduleUseAlarmManager,
+      foregroundService: foregroundService ?? this.foregroundService,
+    );
+  }
+
   /// The desired interval (in milliseconds) between location updates.
   /// Defaults to `1000`.
   final int locationUpdateInterval;
@@ -173,6 +204,39 @@ class ForegroundServiceConfig {
     this.showNotificationOnPauseOnly = false,
     this.actions = const <String>[],
   });
+
+  ForegroundServiceConfig copyWith({
+    bool? enabled,
+    String? channelId,
+    String? channelName,
+    String? notificationTitle,
+    String? notificationText,
+    String? notificationColor,
+    String? notificationSmallIcon,
+    String? notificationLargeIcon,
+    NotificationPriority? notificationPriority,
+    bool? notificationOngoing,
+    bool? showNotificationOnPauseOnly,
+    List<String>? actions,
+  }) {
+    return ForegroundServiceConfig(
+      enabled: enabled ?? this.enabled,
+      channelId: channelId ?? this.channelId,
+      channelName: channelName ?? this.channelName,
+      notificationTitle: notificationTitle ?? this.notificationTitle,
+      notificationText: notificationText ?? this.notificationText,
+      notificationColor: notificationColor ?? this.notificationColor,
+      notificationSmallIcon:
+          notificationSmallIcon ?? this.notificationSmallIcon,
+      notificationLargeIcon:
+          notificationLargeIcon ?? this.notificationLargeIcon,
+      notificationPriority: notificationPriority ?? this.notificationPriority,
+      notificationOngoing: notificationOngoing ?? this.notificationOngoing,
+      showNotificationOnPauseOnly:
+          showNotificationOnPauseOnly ?? this.showNotificationOnPauseOnly,
+      actions: actions ?? this.actions,
+    );
+  }
 
   /// Whether the foreground service notification is enabled.
   /// Defaults to `true`.

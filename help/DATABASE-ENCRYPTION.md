@@ -49,7 +49,7 @@ dependencies {
 import 'package:tracelet/tracelet.dart' as tl;
 
 // Option 1: Enable encryption in config (auto-encrypts on first start)
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   security: tl.SecurityConfig(
     encryptDatabase: true,
   ),

@@ -27,7 +27,7 @@ Polygon geofences are evaluated in-app (not by the OS), so you need
 `geofenceModeHighAccuracy: true` for the enter/exit transitions to fire:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     geofenceModeHighAccuracy: true,  // ← required for polygon geofences
   ),

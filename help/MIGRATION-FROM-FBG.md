@@ -39,7 +39,7 @@ import 'package:tracelet/tracelet.dart' as tl;
 bg.BackgroundGeolocation.ready(bg.Config(...));
 
 // After
-tl.Tracelet.ready(tl.Config(...));
+tl.Tracelet.ready(tl.Config.balanced().copyWith(...));
 ```
 
 **That's literally it.** Every method, every event, every callback — 1:1 compatible. The rest of this guide is just the cheat sheet for the details.

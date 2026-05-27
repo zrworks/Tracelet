@@ -8,7 +8,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -28,7 +27,6 @@ class LocationEngineMockDetectionTest {
     private lateinit var configManager: ConfigManager
     private lateinit var stateManager: StateManager
     private lateinit var events: TraceletEventSender
-    private lateinit var database: TraceletDatabase
     private lateinit var engine: LocationEngine
 
     @Before
@@ -37,7 +35,6 @@ class LocationEngineMockDetectionTest {
         configManager = mock()
         stateManager = mock()
         events = mock()
-        database = mock()
 
         // Default mock detection level to heuristics (2)
         whenever(configManager.getMockDetectionLevel()).doReturn(2)
@@ -47,7 +44,7 @@ class LocationEngineMockDetectionTest {
         whenever(configManager.getDesiredAccuracy()).doReturn(0)
         whenever(configManager.getDistanceFilter()).doReturn(0.0)
 
-        engine = LocationEngine(context, configManager, stateManager, events, database)
+        engine = LocationEngine(context, configManager, stateManager, events)
     }
 
     @Test

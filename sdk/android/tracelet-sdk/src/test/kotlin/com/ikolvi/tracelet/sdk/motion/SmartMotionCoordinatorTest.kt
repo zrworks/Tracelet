@@ -89,18 +89,18 @@ class SmartMotionCoordinatorTest {
     }
     
     @Test
-    fun `one sensor true prevents STATIONARY switch`() {
+    fun `speed stationary overrides accel moving (hand tremor failsafe)`() {
         state.trackingMode = TrackingMode.CONTINUOUS
         state.isMoving = true
         coordinator.syncCurrentMode()
         
-        // Accel is true, Speed becomes false
+        // Accel is true (hand tremor), Speed becomes false (GPS confirms still)
         coordinator.onAccelStateChange(true)
         coordinator.onSpeedStateChange(false)
         
-        // Should stay in CONTINUOUS
-        assertEquals(TrackingMode.CONTINUOUS, state.trackingMode)
-        assertTrue(state.isMoving)
+        // GPS speed takes priority: should switch to STATIONARY because the
+        // speed failsafe overrides accel jitter when GPS confirms stationary.
+        assertFalse(state.isMoving)
     }
 
     @Test

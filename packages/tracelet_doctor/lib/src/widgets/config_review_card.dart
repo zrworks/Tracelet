@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
 import '../doctor_theme.dart';
@@ -56,6 +58,45 @@ class ConfigReviewCard extends StatelessWidget {
             const SizedBox(height: 10),
             ...issues.map((i) => _IssueRow(issue: i)),
           ],
+          const SizedBox(height: 16),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final combinedMap = {
+                  'config': Tracelet.activeConfig.toMap(),
+                  'health': health.toMap(),
+                };
+                final json = const JsonEncoder.withIndent(
+                  '  ',
+                ).convert(combinedMap);
+                await Clipboard.setData(ClipboardData(text: json));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Full Setup JSON copied to clipboard for issue tracking',
+                      ),
+                      backgroundColor: DoctorTheme.accent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy_all_rounded, size: 16),
+              label: const Text('Copy Full Setup JSON'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: DoctorTheme.accent,
+                side: const BorderSide(color: DoctorTheme.accent, width: 0.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

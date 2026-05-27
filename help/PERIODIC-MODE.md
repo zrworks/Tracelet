@@ -12,7 +12,7 @@ continuous mode.
 ```dart
 import 'package:tracelet/tracelet.dart' as tl;
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     periodicLocationInterval: 900,             // Fix every 15 minutes
     periodicDesiredAccuracy: tl.DesiredAccuracy.medium,  // WiFi/cell accuracy

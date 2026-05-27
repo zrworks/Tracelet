@@ -11,7 +11,7 @@ distance threshold from the last recorded point.
 ```dart
 import 'package:tracelet/tracelet.dart' as tl;
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     enableSparseUpdates: true,
     sparseDistanceThreshold: 50.0,   // Record only when 50m+ from last point

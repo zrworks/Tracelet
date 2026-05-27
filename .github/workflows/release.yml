@@ -323,66 +323,14 @@ jobs:
           zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
           cd ../../..
 
-      - name: Calculate SPM Checksum
-        if: ${{ !inputs.dry_run }}
-        id: checksum
-        run: |
-          CHECKSUM=$(swift package compute-checksum sdk/rust-core/out/TraceletCore.xcframework.zip)
-          echo "hash=$CHECKSUM" >> "$GITHUB_OUTPUT"
-          echo "📦 Calculated checksum: $CHECKSUM"
-
-      - name: Update Package.swifts
-        if: ${{ !inputs.dry_run }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          TAG="sdk-ios-v${VERSION}"
-          CHECKSUM="${{ steps.checksum.outputs.hash }}"
-          
-          echo "Updating root Package.swift..."
-          sed -i '' "s|url: \".*/TraceletCore.xcframework.zip\"|url: \"https://github.com/Ikolvi/Tracelet/releases/download/$TAG/TraceletCore.xcframework.zip\"|g" Package.swift
-          sed -i '' "s|checksum: \".*\"|checksum: \"${CHECKSUM}\"|g" Package.swift
-          
-          echo "Updating Flutter plugin Package.swift revision..."
-          sed -i '' "s|revision: \".*\"|revision: \"$TAG\"|g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
-
-      - name: Commit Package.swift Updates
-        if: ${{ !inputs.dry_run }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          TAG="sdk-ios-v${VERSION}"
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if [[ -n $(git status --porcelain Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift) ]]; then
-            git add Package.swift packages/tracelet_ios/ios/tracelet_ios/Package.swift
-            git commit -m "chore: Update SPM checksum and revision for $TAG [skip ci]"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          else
-            echo "Package.swifts are already up to date."
-          fi
-
-      - name: Create tag and Release
-        if: ${{ !inputs.dry_run }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          TAG="sdk-ios-v${VERSION}"
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "ℹ️ Tag $TAG already exists — skipping release creation"
-          else
-            git tag "$TAG" -m "iOS SDK v${VERSION}"
-            git push origin "$TAG"
-            
-            echo "Uploading release asset..."
-            gh release create "$TAG" sdk/rust-core/out/TraceletCore.xcframework.zip --title "iOS SDK v${VERSION}" --notes "Pre-compiled Rust Core for iOS SDK v${VERSION}."
-          fi
+      - name: Upload iOS SDK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-sdk-artifacts
+          path: |
+            sdk/rust-core/out/TraceletCore.xcframework.zip
+            sdk/ios/Sources/TraceletSDK/
+          retention-days: 1
 
       - name: Summary
         if: always()
@@ -391,7 +339,7 @@ jobs:
           echo "## iOS SDK" >> "$GITHUB_STEP_SUMMARY"
           echo "| Property | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| **SPM Tag** | \`sdk-ios-v${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Status** | \`Bundled for pub.dev\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Dry Run** | ${{ inputs.dry_run }} |" >> "$GITHUB_STEP_SUMMARY"
 
 
@@ -455,6 +403,28 @@ jobs:
         run: |
           VERSION=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download iOS SDK Artifacts
+        if: ${{ !inputs.skip_native_sdks }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-sdk-artifacts
+          path: tracelet-ios-temp
+
+      - name: Bundle iOS SDK into tracelet_ios
+        if: ${{ !inputs.skip_native_sdks }}
+        run: |
+          echo "Bundling iOS SDK into tracelet_ios plugin..."
+          mkdir -p packages/tracelet_ios/ios/Frameworks
+          unzip -q tracelet-ios-temp/sdk/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/Frameworks/
+          
+          mkdir -p packages/tracelet_ios/ios/Classes/TraceletSDK
+          cp -r tracelet-ios-temp/sdk/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/Classes/TraceletSDK/
+          
+          echo "Patching tracelet_ios.podspec..."
+          sed -i "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec
+          
+          echo "✅ iOS Bundle complete. tracelet_ios now contains pre-compiled Rust Core."
 
       # ── Setup pub.dev credentials ──
       - name: Setup pub.dev credentials

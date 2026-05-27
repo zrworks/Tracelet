@@ -684,6 +684,50 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_location(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_geofences(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_location(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_is_empty(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index(
@@ -694,6 +738,10 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_degrade_coordinates(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_evaluate(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter(
@@ -703,6 +751,18 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_reset(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_get_config(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_get_health(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_set_tracking(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_update_config(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change(
     ): Short
@@ -730,9 +790,19 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_audittrailengine_new(
     ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_databasemanager_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_eventdispatcher_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_syncmanager_new(
+    ): Short
     external fun uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new(
     ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_privacyzoneevaluator_new(
+    ): Short
     external fun uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_enginestate_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new(
     ): Short
@@ -826,6 +896,68 @@ external fun uniffi_tracelet_core_fn_method_audittrailengine_reset_state(`ptr`: 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_audittrailengine_verify_chain(`ptr`: Long,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_clone_databasemanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_databasemanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_databasemanager_new(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(`ptr`: Long,`maxId`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(`ptr`: Long,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_delete_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_delete_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_destroy_location(`ptr`: Long,`id`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_destroy_locations(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_encrypt_payload(`ptr`: Long,`plaintext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_geofences(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Int
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`ptr`: Long,`uuid`: RustBuffer.ByValue,`hash`: RustBuffer.ByValue,`prevHash`: RustBuffer.ByValue,`index`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`action`: Int,`degradedAccuracy`: Double,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_is_empty(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
+external fun uniffi_tracelet_core_fn_method_databasemanager_set_encryption_key(`ptr`: Long,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_clone_eventdispatcher(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_eventdispatcher(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_eventdispatcher_new(`db`: Long,`sync`: Long,`state`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(`ptr`: Long,`lat`: Double,`lng`: Double,`accuracy`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
+external fun uniffi_tracelet_core_fn_clone_syncmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_syncmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_syncmanager_new(uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Int
 external fun uniffi_tracelet_core_fn_clone_geofenceevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_free_geofenceevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -842,6 +974,16 @@ external fun uniffi_tracelet_core_fn_method_geofenceevaluator_index_geofences(`p
 ): Unit
 external fun uniffi_tracelet_core_fn_method_geofenceevaluator_remove_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_tracelet_core_fn_clone_privacyzoneevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_privacyzoneevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_privacyzoneevaluator_new(uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_privacyzoneevaluator_degrade_coordinates(`ptr`: Long,`lat`: Double,`lng`: Double,`accuracyMeters`: Double,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_privacyzoneevaluator_evaluate(`ptr`: Long,`latitude`: Double,`longitude`: Double,`zones`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_clone_batterybudgetengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_free_batterybudgetengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -857,6 +999,24 @@ external fun uniffi_tracelet_core_fn_method_batterybudgetengine_periodic_interva
 external fun uniffi_tracelet_core_fn_method_batterybudgetengine_process_sample(`ptr`: Long,`batteryLevel`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_batterybudgetengine_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_clone_enginestate(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_enginestate(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_enginestate_new(uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_enginestate_get_config(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_enginestate_get_health(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(`ptr`: Long,`headers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_enginestate_set_tracking(`ptr`: Long,`tracking`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_enginestate_update_config(`ptr`: Long,`newConfig`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_enginestate_update_config_from_json(`ptr`: Long,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_clone_smartmotioncoordinator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1081,6 +1241,72 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 38541.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences() != 43540.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to() != 905.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence() != 14855.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone() != 13424.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_destroy_location() != 60156.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations() != 41972.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload() != 52269.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail() != 59184.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 44952.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26250.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1096,6 +1322,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_privacyzoneevaluator_degrade_coordinates() != 39485.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_privacyzoneevaluator_evaluate() != 16097.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 65350.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1109,6 +1341,24 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 51841.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_get_config() != 36547.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_get_health() != 44119.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers() != 9455.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_set_tracking() != 2515.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_update_config() != 7370.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json() != 16970.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change() != 42508.toShort()) {
@@ -1150,10 +1400,25 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 16361.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_constructor_databasemanager_new() != 64846.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_eventdispatcher_new() != 12254.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_syncmanager_new() != 29825.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_constructor_privacyzoneevaluator_new() != 8853.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 27221.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_enginestate_new() != 17691.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 13932.toShort()) {
@@ -1462,6 +1727,25 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
         val byteBuf = toUtf8(value)
         buf.putInt(byteBuf.limit())
         buf.put(byteBuf)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
+    override fun read(buf: ByteBuffer): ByteArray {
+        val len = buf.getInt()
+        val byteArr = ByteArray(len)
+        buf.get(byteArr)
+        return byteArr
+    }
+    override fun allocationSize(value: ByteArray): ULong {
+        return 4UL + value.size.toULong()
+    }
+    override fun write(value: ByteArray, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        buf.put(value)
     }
 }
 
@@ -2395,6 +2679,1324 @@ public object FfiConverterTypeBatteryBudgetEngine: FfiConverter<BatteryBudgetEng
     override fun allocationSize(value: BatteryBudgetEngine) = 8UL
 
     override fun write(value: BatteryBudgetEngine, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+public interface DatabaseManagerInterface {
+    
+    fun `clearGeofences`()
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+    fun `clearLocationsUpTo`(`maxId`: kotlin.Long)
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+    fun `clearPrivacyZones`()
+    
+    fun `decryptPayload`(`payload`: kotlin.ByteArray): kotlin.ByteArray?
+    
+    fun `deleteGeofence`(`identifier`: kotlin.String)
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+    fun `deletePrivacyZone`(`identifier`: kotlin.String)
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+    fun `destroyLocation`(`id`: kotlin.Long)
+    
+    /**
+     * Deletes all location records in the database.
+     */
+    fun `destroyLocations`()
+    
+    fun `encryptPayload`(`plaintext`: kotlin.ByteArray): kotlin.ByteArray?
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+    fun `getAuditTrail`(): List<DbAuditRecord>
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+    fun `getGeofences`(): List<CoreGeofence>
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+    fun `getLocationsBatch`(`limit`: kotlin.Int): List<DbLocationRecord>
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    fun `getLocationsCount`(): kotlin.Int
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+    fun `getPrivacyZones`(): List<CorePrivacyZone>
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+    fun `insertAuditTrail`(`uuid`: kotlin.String, `hash`: kotlin.String, `prevHash`: kotlin.String, `index`: kotlin.Int)
+    
+    fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double)
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String)
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+    fun `insertPrivacyZone`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double, `action`: kotlin.Int, `degradedAccuracy`: kotlin.Double)
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    fun `isEmpty`(): kotlin.Boolean
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */
+    fun `setEncryptionKey`(`key`: kotlin.String)
+    
+    companion object
+}
+
+/**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Initializes a new database connection and creates tables if they don't exist.
+     */
+    constructor(`dbPath`: kotlin.String) :
+        this(UniffiWithHandle, 
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_databasemanager_new(
+    
+        FfiConverterString.lower(`dbPath`),_status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_databasemanager(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_databasemanager(handle, status)
+        }
+    }
+
+    
+    @Throws(TraceletException::class)override fun `clearGeofences`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+    @Throws(TraceletException::class)override fun `clearLocationsUpTo`(`maxId`: kotlin.Long)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(
+        it,
+        FfiConverterLong.lower(`maxId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+    @Throws(TraceletException::class)override fun `clearPrivacyZones`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    override fun `decryptPayload`(`payload`: kotlin.ByteArray): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(
+        it,
+        FfiConverterByteArray.lower(`payload`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(TraceletException::class)override fun `deleteGeofence`(`identifier`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_delete_geofence(
+        it,
+        FfiConverterString.lower(`identifier`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+    @Throws(TraceletException::class)override fun `deletePrivacyZone`(`identifier`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_delete_privacy_zone(
+        it,
+        FfiConverterString.lower(`identifier`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+    @Throws(TraceletException::class)override fun `destroyLocation`(`id`: kotlin.Long)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_destroy_location(
+        it,
+        FfiConverterLong.lower(`id`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Deletes all location records in the database.
+     */
+    @Throws(TraceletException::class)override fun `destroyLocations`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_destroy_locations(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    override fun `encryptPayload`(`plaintext`: kotlin.ByteArray): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_encrypt_payload(
+        it,
+        FfiConverterByteArray.lower(`plaintext`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+    @Throws(TraceletException::class)override fun `getAuditTrail`(): List<DbAuditRecord> {
+            return FfiConverterSequenceTypeDbAuditRecord.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+    @Throws(TraceletException::class)override fun `getGeofences`(): List<CoreGeofence> {
+            return FfiConverterSequenceTypeCoreGeofence.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_geofences(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+    @Throws(TraceletException::class)override fun `getLocationsBatch`(`limit`: kotlin.Int): List<DbLocationRecord> {
+            return FfiConverterSequenceTypeDbLocationRecord.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
+        it,
+        FfiConverterInt.lower(`limit`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    @Throws(TraceletException::class)override fun `getLocationsCount`(): kotlin.Int {
+            return FfiConverterInt.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+    @Throws(TraceletException::class)override fun `getPrivacyZones`(): List<CorePrivacyZone> {
+            return FfiConverterSequenceTypeCorePrivacyZone.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+    @Throws(TraceletException::class)override fun `insertAuditTrail`(`uuid`: kotlin.String, `hash`: kotlin.String, `prevHash`: kotlin.String, `index`: kotlin.Int)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(
+        it,
+        FfiConverterString.lower(`uuid`),FfiConverterString.lower(`hash`),FfiConverterString.lower(`prevHash`),FfiConverterInt.lower(`index`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(TraceletException::class)override fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(
+        it,
+        FfiConverterString.lower(`identifier`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`radius`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
+        it,
+        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+    @Throws(TraceletException::class)override fun `insertPrivacyZone`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double, `action`: kotlin.Int, `degradedAccuracy`: kotlin.Double)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(
+        it,
+        FfiConverterString.lower(`identifier`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`radius`),FfiConverterInt.lower(`action`),FfiConverterDouble.lower(`degradedAccuracy`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    @Throws(TraceletException::class)override fun `isEmpty`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_is_empty(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */override fun `setEncryptionKey`(`key`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_set_encryption_key(
+        it,
+        FfiConverterString.lower(`key`),_status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDatabaseManager: FfiConverter<DatabaseManager, Long> {
+    override fun lower(value: DatabaseManager): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): DatabaseManager {
+        return DatabaseManager(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): DatabaseManager {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: DatabaseManager) = 8UL
+
+    override fun write(value: DatabaseManager, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * The centralized Engine State that holds the active configuration and current health.
+ * This acts as the single source of truth for the entire SDK across platforms.
+ */
+public interface EngineStateInterface {
+    
+    /**
+     * Retrieves a cloned snapshot of the current active configuration.
+     */
+    fun `getConfig`(): EngineConfig
+    
+    /**
+     * Retrieves a cloned snapshot of the current health state.
+     */
+    fun `getHealth`(): HealthState
+    
+    /**
+     * Updates the dynamic HTTP headers in the configuration.
+     */
+    fun `setDynamicHeaders`(`headers`: Map<kotlin.String, kotlin.String>)
+    
+    /**
+     * Updates the global tracking status.
+     */
+    fun `setTracking`(`tracking`: kotlin.Boolean)
+    
+    /**
+     * Updates the global engine configuration.
+     */
+    fun `updateConfig`(`newConfig`: EngineConfig)
+    
+    /**
+     * Updates the global engine configuration from a JSON string.
+     */
+    fun `updateConfigFromJson`(`json`: kotlin.String)
+    
+    companion object
+}
+
+/**
+ * The centralized Engine State that holds the active configuration and current health.
+ * This acts as the single source of truth for the entire SDK across platforms.
+ */
+open class EngineState: Disposable, AutoCloseable, EngineStateInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Initializes a new EngineState with default configuration and health.
+     */
+    constructor() :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_enginestate_new(
+    
+        _status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_enginestate(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_enginestate(handle, status)
+        }
+    }
+
+    
+    /**
+     * Retrieves a cloned snapshot of the current active configuration.
+     */override fun `getConfig`(): EngineConfig {
+            return FfiConverterTypeEngineConfig.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_get_config(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Retrieves a cloned snapshot of the current health state.
+     */override fun `getHealth`(): HealthState {
+            return FfiConverterTypeHealthState.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_get_health(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Updates the dynamic HTTP headers in the configuration.
+     */override fun `setDynamicHeaders`(`headers`: Map<kotlin.String, kotlin.String>)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(
+        it,
+        FfiConverterMapStringString.lower(`headers`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Updates the global tracking status.
+     */override fun `setTracking`(`tracking`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_set_tracking(
+        it,
+        FfiConverterBoolean.lower(`tracking`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Updates the global engine configuration.
+     */override fun `updateConfig`(`newConfig`: EngineConfig)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_update_config(
+        it,
+        FfiConverterTypeEngineConfig.lower(`newConfig`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Updates the global engine configuration from a JSON string.
+     */
+    @Throws(TraceletException::class)override fun `updateConfigFromJson`(`json`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_enginestate_update_config_from_json(
+        it,
+        FfiConverterString.lower(`json`),_status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeEngineState: FfiConverter<EngineState, Long> {
+    override fun lower(value: EngineState): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): EngineState {
+        return EngineState(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): EngineState {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: EngineState) = 8UL
+
+    override fun write(value: EngineState, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+public interface EventDispatcherInterface {
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */
+    fun `onLocationUpdate`(`lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean): kotlin.Boolean
+    
+    companion object
+}
+
+open class EventDispatcher: Disposable, AutoCloseable, EventDispatcherInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    constructor(`db`: DatabaseManager, `sync`: SyncManager, `state`: EngineState) :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_eventdispatcher_new(
+    
+        FfiConverterTypeDatabaseManager.lower(`db`),FfiConverterTypeSyncManager.lower(`sync`),FfiConverterTypeEngineState.lower(`state`),_status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_eventdispatcher(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_eventdispatcher(handle, status)
+        }
+    }
+
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */override fun `onLocationUpdate`(`lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(
+        it,
+        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`accuracy`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeEventDispatcher: FfiConverter<EventDispatcher, Long> {
+    override fun lower(value: EventDispatcher): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): EventDispatcher {
+        return EventDispatcher(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): EventDispatcher {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: EventDispatcher) = 8UL
+
+    override fun write(value: EventDispatcher, buf: ByteBuffer) {
         buf.putLong(lower(value))
     }
 }
@@ -3479,6 +5081,279 @@ public object FfiConverterTypeLocationProcessor: FfiConverter<LocationProcessor,
 //
 
 
+public interface PrivacyZoneEvaluatorInterface {
+    
+    fun `degradeCoordinates`(`lat`: kotlin.Double, `lng`: kotlin.Double, `accuracyMeters`: kotlin.Double): Coordinate
+    
+    fun `evaluate`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `zones`: List<CorePrivacyZone>): PrivacyEvaluationResult
+    
+    companion object
+}
+
+open class PrivacyZoneEvaluator: Disposable, AutoCloseable, PrivacyZoneEvaluatorInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    constructor() :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_privacyzoneevaluator_new(
+    
+        _status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_privacyzoneevaluator(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_privacyzoneevaluator(handle, status)
+        }
+    }
+
+    override fun `degradeCoordinates`(`lat`: kotlin.Double, `lng`: kotlin.Double, `accuracyMeters`: kotlin.Double): Coordinate {
+            return FfiConverterTypeCoordinate.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_privacyzoneevaluator_degrade_coordinates(
+        it,
+        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`accuracyMeters`),_status)
+}
+    }
+    )
+    }
+    
+
+    override fun `evaluate`(`latitude`: kotlin.Double, `longitude`: kotlin.Double, `zones`: List<CorePrivacyZone>): PrivacyEvaluationResult {
+            return FfiConverterTypePrivacyEvaluationResult.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_privacyzoneevaluator_evaluate(
+        it,
+        FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterSequenceTypeCorePrivacyZone.lower(`zones`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePrivacyZoneEvaluator: FfiConverter<PrivacyZoneEvaluator, Long> {
+    override fun lower(value: PrivacyZoneEvaluator): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): PrivacyZoneEvaluator {
+        return PrivacyZoneEvaluator(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): PrivacyZoneEvaluator {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: PrivacyZoneEvaluator) = 8UL
+
+    override fun write(value: PrivacyZoneEvaluator, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
 /**
  * Parses and evaluates tracking schedules to determine whether tracking should be active.
  */
@@ -4166,6 +6041,273 @@ public object FfiConverterTypeSmartMotionCoordinator: FfiConverter<SmartMotionCo
 //
 
 
+public interface SyncManagerInterface {
+    
+    /**
+     * Performs a synchronous/blocking sync of a batch of location records.
+     * Returns the number of successfully synced records.
+     */
+    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int
+    
+    companion object
+}
+
+open class SyncManager: Disposable, AutoCloseable, SyncManagerInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    constructor() :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_syncmanager_new(
+    
+        _status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_syncmanager(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_syncmanager(handle, status)
+        }
+    }
+
+    
+    /**
+     * Performs a synchronous/blocking sync of a batch of location records.
+     * Returns the number of successfully synced records.
+     */
+    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int {
+            return FfiConverterInt.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
+        it,
+        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncManager: FfiConverter<SyncManager, Long> {
+    override fun lower(value: SyncManager): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): SyncManager {
+        return SyncManager(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): SyncManager {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: SyncManager) = 8UL
+
+    override fun write(value: SyncManager, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
 /**
  * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
  */
@@ -4526,6 +6668,45 @@ public object FfiConverterTypeAdaptiveSamplingResult: FfiConverterRustBuffer<Ada
 
 
 /**
+ * Anti-spoofing and device validation configuration.
+ */
+data class AttestationConfig (
+    /**
+     * If true, attestation tokens (Play Integrity/DeviceCheck) are gathered.
+     */
+    var `enabled`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAttestationConfig: FfiConverterRustBuffer<AttestationConfig> {
+    override fun read(buf: ByteBuffer): AttestationConfig {
+        return AttestationConfig(
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: AttestationConfig) = (
+            FfiConverterBoolean.allocationSize(value.`enabled`)
+    )
+
+    override fun write(value: AttestationConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`enabled`, buf)
+    }
+}
+
+
+
+/**
  * Contains the resulting hashes and chain index after appending a new record to the audit trail.
  */
 data class AuditAppendResult (
@@ -4566,6 +6747,45 @@ public object FfiConverterTypeAuditAppendResult: FfiConverterRustBuffer<AuditApp
             FfiConverterString.write(value.`hash`, buf)
             FfiConverterString.write(value.`previousHash`, buf)
             FfiConverterInt.write(value.`chainIndex`, buf)
+    }
+}
+
+
+
+/**
+ * Security feature configuration for generating tamper-evident cryptographic trails.
+ */
+data class AuditConfig (
+    /**
+     * If true, location events are hashed to provide an audit trail.
+     */
+    var `enabled`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAuditConfig: FfiConverterRustBuffer<AuditConfig> {
+    override fun read(buf: ByteBuffer): AuditConfig {
+        return AuditConfig(
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: AuditConfig) = (
+            FfiConverterBoolean.allocationSize(value.`enabled`)
+    )
+
+    override fun write(value: AuditConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`enabled`, buf)
     }
 }
 
@@ -4841,6 +7061,472 @@ public object FfiConverterTypeCoreGeofence: FfiConverterRustBuffer<CoreGeofence>
 
 
 
+data class CorePrivacyZone (
+    var `identifier`: kotlin.String
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `radius`: kotlin.Double
+    , 
+    var `action`: kotlin.Int
+    , 
+    var `degradedAccuracyMeters`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCorePrivacyZone: FfiConverterRustBuffer<CorePrivacyZone> {
+    override fun read(buf: ByteBuffer): CorePrivacyZone {
+        return CorePrivacyZone(
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: CorePrivacyZone) = (
+            FfiConverterString.allocationSize(value.`identifier`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterDouble.allocationSize(value.`radius`) +
+            FfiConverterInt.allocationSize(value.`action`) +
+            FfiConverterDouble.allocationSize(value.`degradedAccuracyMeters`)
+    )
+
+    override fun write(value: CorePrivacyZone, buf: ByteBuffer) {
+            FfiConverterString.write(value.`identifier`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterDouble.write(value.`radius`, buf)
+            FfiConverterInt.write(value.`action`, buf)
+            FfiConverterDouble.write(value.`degradedAccuracyMeters`, buf)
+    }
+}
+
+
+
+/**
+ * Represents a validated tamper-proof cryptographic audit trail record.
+ * Used to verify chain integrity across native and core database sync layers.
+ */
+data class DbAuditRecord (
+    /**
+     * Unique identifier (UUID string) for this specific audit entry.
+     */
+    var `uuid`: kotlin.String
+    , 
+    /**
+     * Cryptographic SHA-256 hash of the block's content.
+     */
+    var `auditHash`: kotlin.String
+    , 
+    /**
+     * The SHA-256 hash of the immediate previous block in the blockchain.
+     */
+    var `auditPreviousHash`: kotlin.String
+    , 
+    /**
+     * Ordered index representing position in the sequential audit ledger.
+     */
+    var `auditChainIndex`: kotlin.Int
+    , 
+    /**
+     * Unix timestamp in milliseconds when this audit entry was created.
+     */
+    var `auditCreatedAt`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDbAuditRecord: FfiConverterRustBuffer<DbAuditRecord> {
+    override fun read(buf: ByteBuffer): DbAuditRecord {
+        return DbAuditRecord(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DbAuditRecord) = (
+            FfiConverterString.allocationSize(value.`uuid`) +
+            FfiConverterString.allocationSize(value.`auditHash`) +
+            FfiConverterString.allocationSize(value.`auditPreviousHash`) +
+            FfiConverterInt.allocationSize(value.`auditChainIndex`) +
+            FfiConverterLong.allocationSize(value.`auditCreatedAt`)
+    )
+
+    override fun write(value: DbAuditRecord, buf: ByteBuffer) {
+            FfiConverterString.write(value.`uuid`, buf)
+            FfiConverterString.write(value.`auditHash`, buf)
+            FfiConverterString.write(value.`auditPreviousHash`, buf)
+            FfiConverterInt.write(value.`auditChainIndex`, buf)
+            FfiConverterLong.write(value.`auditCreatedAt`, buf)
+    }
+}
+
+
+
+/**
+ * Represents a serialized historical location record fetched from database.
+ */
+data class DbLocationRecord (
+    var `id`: kotlin.Long
+    , 
+    var `timestamp`: kotlin.String
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `accuracy`: kotlin.Double
+    , 
+    var `speed`: kotlin.Double
+    , 
+    var `heading`: kotlin.Double
+    , 
+    var `altitude`: kotlin.Double
+    , 
+    var `isMock`: kotlin.Boolean
+    , 
+    var `activity`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocationRecord> {
+    override fun read(buf: ByteBuffer): DbLocationRecord {
+        return DbLocationRecord(
+            FfiConverterLong.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DbLocationRecord) = (
+            FfiConverterLong.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`timestamp`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterDouble.allocationSize(value.`accuracy`) +
+            FfiConverterDouble.allocationSize(value.`speed`) +
+            FfiConverterDouble.allocationSize(value.`heading`) +
+            FfiConverterDouble.allocationSize(value.`altitude`) +
+            FfiConverterBoolean.allocationSize(value.`isMock`) +
+            FfiConverterString.allocationSize(value.`activity`)
+    )
+
+    override fun write(value: DbLocationRecord, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`id`, buf)
+            FfiConverterString.write(value.`timestamp`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterDouble.write(value.`accuracy`, buf)
+            FfiConverterDouble.write(value.`speed`, buf)
+            FfiConverterDouble.write(value.`heading`, buf)
+            FfiConverterDouble.write(value.`altitude`, buf)
+            FfiConverterBoolean.write(value.`isMock`, buf)
+            FfiConverterString.write(value.`activity`, buf)
+    }
+}
+
+
+
+/**
+ * The central configuration struct for the Tracelet Engine.
+ * This struct holds all tracking, network, and persistence parameters.
+ * It acts as the single source of truth for the SDK's behavior across platforms.
+ */
+data class EngineConfig (
+    /**
+     * Geolocation tracking parameters (accuracy, filters, intervals).
+     */
+    var `geo`: GeoConfig
+    , 
+    /**
+     * Motion detection and activity recognition parameters.
+     */
+    var `motion`: MotionConfig
+    , 
+    /**
+     * HTTP synchronization and batching parameters for server communication.
+     */
+    var `http`: HttpConfig
+    , 
+    /**
+     * Geofencing parameters for proximity alerts and tracking boundaries.
+     */
+    var `geofence`: GeofenceConfig
+    , 
+    /**
+     * Local database persistence parameters for locations and events.
+     */
+    var `persistence`: PersistenceConfig
+    , 
+    /**
+     * Security audit trail parameters for tracking data integrity.
+     */
+    var `audit`: AuditConfig
+    , 
+    /**
+     * Core security parameters (e.g., database encryption).
+     */
+    var `security`: SecurityConfig
+    , 
+    /**
+     * Device attestation and anti-spoofing parameters.
+     */
+    var `attestation`: AttestationConfig
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeEngineConfig: FfiConverterRustBuffer<EngineConfig> {
+    override fun read(buf: ByteBuffer): EngineConfig {
+        return EngineConfig(
+            FfiConverterTypeGeoConfig.read(buf),
+            FfiConverterTypeMotionConfig.read(buf),
+            FfiConverterTypeHttpConfig.read(buf),
+            FfiConverterTypeGeofenceConfig.read(buf),
+            FfiConverterTypePersistenceConfig.read(buf),
+            FfiConverterTypeAuditConfig.read(buf),
+            FfiConverterTypeSecurityConfig.read(buf),
+            FfiConverterTypeAttestationConfig.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: EngineConfig) = (
+            FfiConverterTypeGeoConfig.allocationSize(value.`geo`) +
+            FfiConverterTypeMotionConfig.allocationSize(value.`motion`) +
+            FfiConverterTypeHttpConfig.allocationSize(value.`http`) +
+            FfiConverterTypeGeofenceConfig.allocationSize(value.`geofence`) +
+            FfiConverterTypePersistenceConfig.allocationSize(value.`persistence`) +
+            FfiConverterTypeAuditConfig.allocationSize(value.`audit`) +
+            FfiConverterTypeSecurityConfig.allocationSize(value.`security`) +
+            FfiConverterTypeAttestationConfig.allocationSize(value.`attestation`)
+    )
+
+    override fun write(value: EngineConfig, buf: ByteBuffer) {
+            FfiConverterTypeGeoConfig.write(value.`geo`, buf)
+            FfiConverterTypeMotionConfig.write(value.`motion`, buf)
+            FfiConverterTypeHttpConfig.write(value.`http`, buf)
+            FfiConverterTypeGeofenceConfig.write(value.`geofence`, buf)
+            FfiConverterTypePersistenceConfig.write(value.`persistence`, buf)
+            FfiConverterTypeAuditConfig.write(value.`audit`, buf)
+            FfiConverterTypeSecurityConfig.write(value.`security`, buf)
+            FfiConverterTypeAttestationConfig.write(value.`attestation`, buf)
+    }
+}
+
+
+
+/**
+ * Configuration for geolocation tracking behavior.
+ */
+data class GeoConfig (
+    /**
+     * Desired accuracy for tracking (e.g., 0 = High, 1 = Medium).
+     */
+    var `desiredAccuracy`: kotlin.Int
+    , 
+    /**
+     * Minimum distance (in meters) the device must move before a location update is generated.
+     */
+    var `distanceFilter`: kotlin.Double
+    , 
+    /**
+     * Radius (in meters) around the stationary location to detect when movement resumes.
+     */
+    var `stationaryRadius`: kotlin.Double
+    , 
+    /**
+     * Maximum time (in seconds) to wait for a location fix before falling back.
+     */
+    var `locationTimeout`: kotlin.Int
+    , 
+    /**
+     * If true, disables the dynamic adjustment of the distance filter based on speed.
+     */
+    var `disableElasticity`: kotlin.Boolean
+    , 
+    /**
+     * Multiplier applied to speed to calculate the elastic distance filter.
+     */
+    var `elasticityMultiplier`: kotlin.Double
+    , 
+    /**
+     * If true, enables battery-saving modes that dynamically degrade accuracy based on battery state.
+     */
+    var `enableAdaptiveMode`: kotlin.Boolean
+    , 
+    /**
+     * If true, includes OS-level timestamps as meta fields in location events.
+     */
+    var `enableTimestampMeta`: kotlin.Boolean
+    , 
+    /**
+     * If true, locations that do not meet the distance threshold are still recorded if time elapsed exceeds max idle.
+     */
+    var `enableSparseUpdates`: kotlin.Boolean
+    , 
+    /**
+     * Distance threshold (in meters) used to calculate sparse update eligibility.
+     */
+    var `sparseDistanceThreshold`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeGeoConfig: FfiConverterRustBuffer<GeoConfig> {
+    override fun read(buf: ByteBuffer): GeoConfig {
+        return GeoConfig(
+            FfiConverterInt.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: GeoConfig) = (
+            FfiConverterInt.allocationSize(value.`desiredAccuracy`) +
+            FfiConverterDouble.allocationSize(value.`distanceFilter`) +
+            FfiConverterDouble.allocationSize(value.`stationaryRadius`) +
+            FfiConverterInt.allocationSize(value.`locationTimeout`) +
+            FfiConverterBoolean.allocationSize(value.`disableElasticity`) +
+            FfiConverterDouble.allocationSize(value.`elasticityMultiplier`) +
+            FfiConverterBoolean.allocationSize(value.`enableAdaptiveMode`) +
+            FfiConverterBoolean.allocationSize(value.`enableTimestampMeta`) +
+            FfiConverterBoolean.allocationSize(value.`enableSparseUpdates`) +
+            FfiConverterDouble.allocationSize(value.`sparseDistanceThreshold`)
+    )
+
+    override fun write(value: GeoConfig, buf: ByteBuffer) {
+            FfiConverterInt.write(value.`desiredAccuracy`, buf)
+            FfiConverterDouble.write(value.`distanceFilter`, buf)
+            FfiConverterDouble.write(value.`stationaryRadius`, buf)
+            FfiConverterInt.write(value.`locationTimeout`, buf)
+            FfiConverterBoolean.write(value.`disableElasticity`, buf)
+            FfiConverterDouble.write(value.`elasticityMultiplier`, buf)
+            FfiConverterBoolean.write(value.`enableAdaptiveMode`, buf)
+            FfiConverterBoolean.write(value.`enableTimestampMeta`, buf)
+            FfiConverterBoolean.write(value.`enableSparseUpdates`, buf)
+            FfiConverterDouble.write(value.`sparseDistanceThreshold`, buf)
+    }
+}
+
+
+
+/**
+ * Configuration for monitoring geographic boundaries.
+ */
+data class GeofenceConfig (
+    /**
+     * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
+     */
+    var `geofenceInitialTriggerEntry`: kotlin.Boolean
+    , 
+    /**
+     * The radius (in meters) for loading geofences from the database into the active monitoring queue.
+     */
+    var `geofenceProximityRadius`: kotlin.Int
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeGeofenceConfig: FfiConverterRustBuffer<GeofenceConfig> {
+    override fun read(buf: ByteBuffer): GeofenceConfig {
+        return GeofenceConfig(
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: GeofenceConfig) = (
+            FfiConverterBoolean.allocationSize(value.`geofenceInitialTriggerEntry`) +
+            FfiConverterInt.allocationSize(value.`geofenceProximityRadius`)
+    )
+
+    override fun write(value: GeofenceConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`geofenceInitialTriggerEntry`, buf)
+            FfiConverterInt.write(value.`geofenceProximityRadius`, buf)
+    }
+}
+
+
+
 /**
  * Represents a crossing event when a user enters or exits a geofence.
  */
@@ -4877,6 +7563,168 @@ public object FfiConverterTypeGeofenceTransition: FfiConverterRustBuffer<Geofenc
     override fun write(value: GeofenceTransition, buf: ByteBuffer) {
             FfiConverterString.write(value.`identifier`, buf)
             FfiConverterString.write(value.`action`, buf)
+    }
+}
+
+
+
+/**
+ * Represents the global health and status of the Tracelet Engine.
+ */
+data class HealthState (
+    var `isTracking`: kotlin.Boolean
+    , 
+    var `isMoving`: kotlin.Boolean
+    , 
+    var `currentActivity`: kotlin.String
+    , 
+    var `batteryLevel`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeHealthState: FfiConverterRustBuffer<HealthState> {
+    override fun read(buf: ByteBuffer): HealthState {
+        return HealthState(
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: HealthState) = (
+            FfiConverterBoolean.allocationSize(value.`isTracking`) +
+            FfiConverterBoolean.allocationSize(value.`isMoving`) +
+            FfiConverterString.allocationSize(value.`currentActivity`) +
+            FfiConverterDouble.allocationSize(value.`batteryLevel`)
+    )
+
+    override fun write(value: HealthState, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`isTracking`, buf)
+            FfiConverterBoolean.write(value.`isMoving`, buf)
+            FfiConverterString.write(value.`currentActivity`, buf)
+            FfiConverterDouble.write(value.`batteryLevel`, buf)
+    }
+}
+
+
+
+/**
+ * Configuration for syncing location and event data to a remote server.
+ */
+data class HttpConfig (
+    /**
+     * Remote URL endpoint for HTTP sync. If None, auto-sync is disabled.
+     */
+    var `url`: kotlin.String?
+    , 
+    /**
+     * HTTP Method (0 = POST, 1 = PUT).
+     */
+    var `method`: kotlin.Int
+    , 
+    /**
+     * Custom HTTP headers attached to synchronization requests.
+     */
+    var `headers`: Map<kotlin.String, kotlin.String>
+    , 
+    /**
+     * If true, sends locations in a JSON array rather than individually.
+     */
+    var `batchSync`: kotlin.Boolean
+    , 
+    /**
+     * Maximum number of records to send in a single batch.
+     */
+    var `maxBatchSize`: kotlin.Int
+    , 
+    /**
+     * If true, automatically triggers HTTP sync operations based on internal thresholds.
+     */
+    var `autoSync`: kotlin.Boolean
+    , 
+    /**
+     * Maximum number of retries for a failed sync request.
+     */
+    var `maxRetries`: kotlin.Int
+    , 
+    /**
+     * Base backoff time in milliseconds for exponential retry.
+     */
+    var `retryBackoffBase`: kotlin.Int
+    , 
+    /**
+     * Maximum backoff time in milliseconds for exponential retry.
+     */
+    var `retryBackoffCap`: kotlin.Int
+    , 
+    /**
+     * Optional list of PEM or DER encoded certificates for SSL pinning.
+     */
+    var `sslPinningCertificates`: List<kotlin.String>?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
+    override fun read(buf: ByteBuffer): HttpConfig {
+        return HttpConfig(
+            FfiConverterOptionalString.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterMapStringString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterOptionalSequenceString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: HttpConfig) = (
+            FfiConverterOptionalString.allocationSize(value.`url`) +
+            FfiConverterInt.allocationSize(value.`method`) +
+            FfiConverterMapStringString.allocationSize(value.`headers`) +
+            FfiConverterBoolean.allocationSize(value.`batchSync`) +
+            FfiConverterInt.allocationSize(value.`maxBatchSize`) +
+            FfiConverterBoolean.allocationSize(value.`autoSync`) +
+            FfiConverterInt.allocationSize(value.`maxRetries`) +
+            FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
+            FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`)
+    )
+
+    override fun write(value: HttpConfig, buf: ByteBuffer) {
+            FfiConverterOptionalString.write(value.`url`, buf)
+            FfiConverterInt.write(value.`method`, buf)
+            FfiConverterMapStringString.write(value.`headers`, buf)
+            FfiConverterBoolean.write(value.`batchSync`, buf)
+            FfiConverterInt.write(value.`maxBatchSize`, buf)
+            FfiConverterBoolean.write(value.`autoSync`, buf)
+            FfiConverterInt.write(value.`maxRetries`, buf)
+            FfiConverterInt.write(value.`retryBackoffBase`, buf)
+            FfiConverterInt.write(value.`retryBackoffCap`, buf)
+            FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
     }
 }
 
@@ -5071,6 +7919,167 @@ public object FfiConverterTypeLocationRecord: FfiConverterRustBuffer<LocationRec
 
 
 /**
+ * Configuration for motion and activity detection.
+ */
+data class MotionConfig (
+    /**
+     * Number of consecutive minutes a device must remain still to trigger a stationary event.
+     */
+    var `stopTimeout`: kotlin.Int
+    , 
+    /**
+     * Delay (in seconds) before a motion event is officially registered.
+     */
+    var `motionTriggerDelay`: kotlin.Int
+    , 
+    /**
+     * If true, stops the OS activity recognition updates to save battery (relies only on speed/geofences).
+     */
+    var `disableMotionActivityUpdates`: kotlin.Boolean
+    , 
+    /**
+     * If true, bypasses stop detection completely (device is considered always moving).
+     */
+    var `disableStopDetection`: kotlin.Boolean
+    , 
+    /**
+     * Accelerometer threshold (G-force) required to wake the device from a stationary state.
+     */
+    var `shakeThreshold`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeMotionConfig: FfiConverterRustBuffer<MotionConfig> {
+    override fun read(buf: ByteBuffer): MotionConfig {
+        return MotionConfig(
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: MotionConfig) = (
+            FfiConverterInt.allocationSize(value.`stopTimeout`) +
+            FfiConverterInt.allocationSize(value.`motionTriggerDelay`) +
+            FfiConverterBoolean.allocationSize(value.`disableMotionActivityUpdates`) +
+            FfiConverterBoolean.allocationSize(value.`disableStopDetection`) +
+            FfiConverterDouble.allocationSize(value.`shakeThreshold`)
+    )
+
+    override fun write(value: MotionConfig, buf: ByteBuffer) {
+            FfiConverterInt.write(value.`stopTimeout`, buf)
+            FfiConverterInt.write(value.`motionTriggerDelay`, buf)
+            FfiConverterBoolean.write(value.`disableMotionActivityUpdates`, buf)
+            FfiConverterBoolean.write(value.`disableStopDetection`, buf)
+            FfiConverterDouble.write(value.`shakeThreshold`, buf)
+    }
+}
+
+
+
+/**
+ * Configuration for local SQLite database retention policies.
+ */
+data class PersistenceConfig (
+    /**
+     * Maximum number of days to retain tracking records before pruning. (-1 for infinite)
+     */
+    var `maxDaysToPersist`: kotlin.Int
+    , 
+    /**
+     * Maximum number of absolute location records to keep. (-1 for infinite)
+     */
+    var `maxRecordsToPersist`: kotlin.Int
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePersistenceConfig: FfiConverterRustBuffer<PersistenceConfig> {
+    override fun read(buf: ByteBuffer): PersistenceConfig {
+        return PersistenceConfig(
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PersistenceConfig) = (
+            FfiConverterInt.allocationSize(value.`maxDaysToPersist`) +
+            FfiConverterInt.allocationSize(value.`maxRecordsToPersist`)
+    )
+
+    override fun write(value: PersistenceConfig, buf: ByteBuffer) {
+            FfiConverterInt.write(value.`maxDaysToPersist`, buf)
+            FfiConverterInt.write(value.`maxRecordsToPersist`, buf)
+    }
+}
+
+
+
+data class PrivacyEvaluationResult (
+    var `action`: kotlin.Int?
+    , 
+    var `matchedZoneId`: kotlin.String?
+    , 
+    var `degradedAccuracyMeters`: kotlin.Double?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypePrivacyEvaluationResult: FfiConverterRustBuffer<PrivacyEvaluationResult> {
+    override fun read(buf: ByteBuffer): PrivacyEvaluationResult {
+        return PrivacyEvaluationResult(
+            FfiConverterOptionalInt.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: PrivacyEvaluationResult) = (
+            FfiConverterOptionalInt.allocationSize(value.`action`) +
+            FfiConverterOptionalString.allocationSize(value.`matchedZoneId`) +
+            FfiConverterOptionalDouble.allocationSize(value.`degradedAccuracyMeters`)
+    )
+
+    override fun write(value: PrivacyEvaluationResult, buf: ByteBuffer) {
+            FfiConverterOptionalInt.write(value.`action`, buf)
+            FfiConverterOptionalString.write(value.`matchedZoneId`, buf)
+            FfiConverterOptionalDouble.write(value.`degradedAccuracyMeters`, buf)
+    }
+}
+
+
+
+/**
  * Contains the next absolute start and stop timestamps (in milliseconds) calculated from a schedule.
  */
 data class ScheduleAlarms (
@@ -5106,6 +8115,45 @@ public object FfiConverterTypeScheduleAlarms: FfiConverterRustBuffer<ScheduleAla
     override fun write(value: ScheduleAlarms, buf: ByteBuffer) {
             FfiConverterLong.write(value.`nextStartMs`, buf)
             FfiConverterLong.write(value.`nextStopMs`, buf)
+    }
+}
+
+
+
+/**
+ * Core security and encryption configuration.
+ */
+data class SecurityConfig (
+    /**
+     * If true, local SQLite databases are encrypted at rest (e.g., using SQLCipher).
+     */
+    var `encryptDatabase`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSecurityConfig: FfiConverterRustBuffer<SecurityConfig> {
+    override fun read(buf: ByteBuffer): SecurityConfig {
+        return SecurityConfig(
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SecurityConfig) = (
+            FfiConverterBoolean.allocationSize(value.`encryptDatabase`)
+    )
+
+    override fun write(value: SecurityConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`encryptDatabase`, buf)
     }
 }
 
@@ -5411,6 +8459,110 @@ public object FfiConverterTypeCoordinatorAction: FfiConverterRustBuffer<Coordina
 
 
 
+
+
+sealed class TraceletException: kotlin.Exception() {
+    
+    class Database(
+        
+        val v1: kotlin.String
+        ) : TraceletException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class Network(
+        
+        val v1: kotlin.String
+        ) : TraceletException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class Config(
+        
+        val v1: kotlin.String
+        ) : TraceletException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+
+    
+
+
+    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<TraceletException> {
+        override fun lift(error_buf: RustBuffer.ByValue): TraceletException = FfiConverterTypeTraceletError.lift(error_buf)
+    }
+
+    
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTraceletError : FfiConverterRustBuffer<TraceletException> {
+    override fun read(buf: ByteBuffer): TraceletException {
+        
+
+        return when(buf.getInt()) {
+            1 -> TraceletException.Database(
+                FfiConverterString.read(buf),
+                )
+            2 -> TraceletException.Network(
+                FfiConverterString.read(buf),
+                )
+            3 -> TraceletException.Config(
+                FfiConverterString.read(buf),
+                )
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: TraceletException): ULong {
+        return when(value) {
+            is TraceletException.Database -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is TraceletException.Network -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is TraceletException.Config -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+        }
+    }
+
+    override fun write(value: TraceletException, buf: ByteBuffer) {
+        when(value) {
+            is TraceletException.Database -> {
+                buf.putInt(1)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+            is TraceletException.Network -> {
+                buf.putInt(2)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+            is TraceletException.Config -> {
+                buf.putInt(3)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
 /**
  * Represents the high-level operational tracking mode of the background service.
  */
@@ -5539,6 +8691,38 @@ public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?>
         } else {
             buf.put(1)
             FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteArray?> {
+    override fun read(buf: ByteBuffer): kotlin.ByteArray? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterByteArray.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.ByteArray?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterByteArray.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.ByteArray?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterByteArray.write(value, buf)
         }
     }
 }
@@ -5709,6 +8893,38 @@ public object FfiConverterOptionalTypeTripLocation: FfiConverterRustBuffer<TripL
 /**
  * @suppress
  */
+public object FfiConverterOptionalSequenceString: FfiConverterRustBuffer<List<kotlin.String>?> {
+    override fun read(buf: ByteBuffer): List<kotlin.String>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceString.read(buf)
+    }
+
+    override fun allocationSize(value: List<kotlin.String>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<kotlin.String>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
     override fun read(buf: ByteBuffer): List<kotlin.String> {
         val len = buf.getInt()
@@ -5821,6 +9037,90 @@ public object FfiConverterSequenceTypeCoreGeofence: FfiConverterRustBuffer<List<
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeCorePrivacyZone: FfiConverterRustBuffer<List<CorePrivacyZone>> {
+    override fun read(buf: ByteBuffer): List<CorePrivacyZone> {
+        val len = buf.getInt()
+        return List<CorePrivacyZone>(len) {
+            FfiConverterTypeCorePrivacyZone.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<CorePrivacyZone>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeCorePrivacyZone.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<CorePrivacyZone>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeCorePrivacyZone.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeDbAuditRecord: FfiConverterRustBuffer<List<DbAuditRecord>> {
+    override fun read(buf: ByteBuffer): List<DbAuditRecord> {
+        val len = buf.getInt()
+        return List<DbAuditRecord>(len) {
+            FfiConverterTypeDbAuditRecord.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<DbAuditRecord>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeDbAuditRecord.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<DbAuditRecord>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeDbAuditRecord.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer<List<DbLocationRecord>> {
+    override fun read(buf: ByteBuffer): List<DbLocationRecord> {
+        val len = buf.getInt()
+        return List<DbLocationRecord>(len) {
+            FfiConverterTypeDbLocationRecord.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<DbLocationRecord>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeDbLocationRecord.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<DbLocationRecord>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeDbLocationRecord.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer<List<GeofenceTransition>> {
     override fun read(buf: ByteBuffer): List<GeofenceTransition> {
         val len = buf.getInt()
@@ -5867,6 +9167,45 @@ public object FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer<List<
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeTripWaypoint.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<kotlin.String, kotlin.String>> {
+    override fun read(buf: ByteBuffer): Map<kotlin.String, kotlin.String> {
+        val len = buf.getInt()
+        return buildMap<kotlin.String, kotlin.String>(len) {
+            repeat(len) {
+                val k = FfiConverterString.read(buf)
+                val v = FfiConverterString.read(buf)
+                this[k] = v
+            }
+        }
+    }
+
+    override fun allocationSize(value: Map<kotlin.String, kotlin.String>): ULong {
+        val spaceForMapSize = 4UL
+        val spaceForChildren = value.map { (k, v) ->
+            FfiConverterString.allocationSize(k) +
+            FfiConverterString.allocationSize(v)
+        }.sum()
+        return spaceForMapSize + spaceForChildren
+    }
+
+    override fun write(value: Map<kotlin.String, kotlin.String>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        // The parens on `(k, v)` here ensure we're calling the right method,
+        // which is important for compatibility with older android devices.
+        // Ref https://blog.danlew.net/2017/03/16/kotlin-puzzler-whose-line-is-it-anyways/
+        value.forEach { (k, v) ->
+            FfiConverterString.write(k, buf)
+            FfiConverterString.write(v, buf)
         }
     }
 }

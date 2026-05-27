@@ -14,7 +14,7 @@ runs on-device before network transmission.
 ```dart
 import 'package:tracelet/tracelet.dart' as tl;
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   http: tl.HttpConfig(
     url: 'https://api.example.com/locations',
     batchSync: true,                // Required — delta encoding needs batches

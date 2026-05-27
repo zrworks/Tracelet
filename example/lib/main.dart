@@ -550,7 +550,7 @@ class _DashboardPageState extends State<DashboardPage>
         tl.Config(
           geo: tl.GeoConfig(
             desiredAccuracy: tl.DesiredAccuracy.high,
-            distanceFilter: 10,
+            distanceFilter: 0.0,
             stationaryRadius: 25,
             locationTimeout: 60,
             filter: const tl.LocationFilter(
@@ -608,7 +608,7 @@ class _DashboardPageState extends State<DashboardPage>
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
           http: const tl.HttpConfig(
-            url: 'http://192.168.20.101:8099/locations',
+            url: 'http://192.168.20.100:8099/locations',
             method: tl.HttpMethod.post,
             // ── New features ──
             // (HTTP config goes here)

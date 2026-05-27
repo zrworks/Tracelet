@@ -69,15 +69,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("com.squareup.okhttp3:okhttp-tls:5.3.2")
 
-    // SQLCipher for database encryption (Enterprise, optional)
-    // compileOnly: not bundled in the AAR. Apps that need encryption must add
-    // implementation("net.zetetic:sqlcipher-android:4.6.1@aar") to their build.gradle.
-    compileOnly("net.zetetic:sqlcipher-android:4.6.1@aar")
-    implementation("androidx.sqlite:sqlite:2.6.2")
 
-    // EncryptedSharedPreferences for key management (Enterprise, optional)
-    // Only needed when database encryption (SQLCipher) is used.
-    compileOnly("androidx.security:security-crypto:1.1.0")
 
     // Play Integrity for device attestation (Enterprise, optional)
     // compileOnly: not bundled in the AAR. Apps that need attestation must add

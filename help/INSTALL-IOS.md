@@ -215,7 +215,7 @@ iOS does not have a "boot completed" event like Android. However, Tracelet uses 
 > **Important:** Killed-state auto-resume requires **"Always" location permission**. With "While In Use" permission, tracking works while the app is in the foreground or briefly after backgrounding, but cannot survive termination.
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   app: AppConfig(
     stopOnTerminate: false,  // Resume tracking after app kill
   ),

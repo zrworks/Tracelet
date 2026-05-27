@@ -7,7 +7,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.ListenerEventSender
 import com.ikolvi.tracelet.sdk.StateManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.wrapper.*
 import org.junit.After
 import org.junit.Before
@@ -40,7 +39,6 @@ class LocationEngineGetCurrentPositionTest {
     private lateinit var context: Application
     private lateinit var config: ConfigManager
     private lateinit var state: StateManager
-    private lateinit var db: TraceletDatabase
     private lateinit var engine: LocationEngine
     private lateinit var mockLocationClient: TraceletLocationClient
 
@@ -53,7 +51,6 @@ class LocationEngineGetCurrentPositionTest {
 
         config = ConfigManager.getInstance(context)
         state = StateManager(context)
-        db = TraceletDatabase.getInstance(context)
 
         mockLocationClient = mock()
         
@@ -66,7 +63,7 @@ class LocationEngineGetCurrentPositionTest {
         }
         TraceletServices.setProvider(mockProvider)
 
-        engine = LocationEngine(context, config, state, ListenerEventSender(), db)
+        engine = LocationEngine(context, config, state, ListenerEventSender())
     }
 
     @After

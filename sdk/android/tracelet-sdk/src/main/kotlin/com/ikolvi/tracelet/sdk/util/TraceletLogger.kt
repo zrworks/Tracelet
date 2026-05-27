@@ -3,17 +3,15 @@ package com.ikolvi.tracelet.sdk.util
 import android.content.Context
 import android.util.Log
 import com.ikolvi.tracelet.sdk.ConfigManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 
 /**
- * Logger that writes to both Android logcat and the SQLite log table.
+ * Logger that writes to Android logcat.
  *
  * Log levels: OFF(0), ERROR(1), WARNING(2), INFO(3), DEBUG(4), VERBOSE(5)
  */
 class TraceletLogger(
     private val context: Context,
     private val config: ConfigManager,
-    private val db: TraceletDatabase,
 ) {
     companion object {
         private const val TAG = "Tracelet"
@@ -78,21 +76,18 @@ class TraceletLogger(
 
     /** Get the log as a string (optionally filtered). */
     fun getLog(query: Map<String, Any?>?): String {
-        val start = (query?.get("start") as? Number)?.toLong()
-        val end = (query?.get("end") as? Number)?.toLong()
-        val level = query?.get("level") as? String
-        return db.getLog(start, end, level)
+        return "Not implemented (SQLite removed)"
     }
 
     /** Delete all log entries. */
-    fun destroyLog(): Boolean = db.deleteAllLogs()
+    fun destroyLog(): Boolean = true
 
     /** Email the log (returns intent data; actual email launch is done by caller). */
-    fun getLogForEmail(): String = db.getLog()
+    fun getLogForEmail(): String = "Not implemented (SQLite removed)"
 
     /** Prune old logs based on config. */
     fun pruneOldLogs() {
-        db.pruneLogs(config.getLogMaxDays())
+        // Not implemented
     }
 
     // =========================================================================
@@ -111,8 +106,6 @@ class TraceletLogger(
             LEVEL_DEBUG -> Log.d(tag, message)
             LEVEL_VERBOSE -> Log.v(tag, message)
         }
-
-        // Write to SQLite
-        db.insertLog(levelToString(level), message, tag)
     }
 }
+

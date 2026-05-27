@@ -9,7 +9,7 @@ Tracelet ships **three independent distribution channels**:
 | Channel | Artifact | Registry | Current Version |
 |---------|----------|----------|-----------------|
 | Android SDK | `com.ikolvi:tracelet-sdk` | Maven Central | See `sdk/android/gradle.properties` |
-| iOS SDK | `TraceletSDK` | CocoaPods / SPM | See `TraceletSDK.podspec` |
+| iOS SDK | `TraceletSDK` | GitHub Release (Bundled in Flutter) | See `TraceletSDK.podspec` |
 | Flutter | 6 federated packages | pub.dev | See `packages/tracelet/pubspec.yaml` |
 
 The native SDKs (Android + iOS) version independently from Flutter packages. Flutter packages are always version-locked together (including the `tracelet_doctor` diagnostics package).
@@ -22,7 +22,7 @@ The native SDKs (Android + iOS) version independently from Flutter packages. Flu
 ┌──────────────────────────────────────────────────────────┐
 │  1. Native SDKs (independent, can publish in parallel)   │
 │     ├── Android SDK → Maven Central                      │
-│     └── iOS SDK     → CocoaPods                          │
+│     └── iOS SDK     → Pre-compiled & Bundled             │
 ├──────────────────────────────────────────────────────────┤
 │  2. Flutter packages (strict sequential order)           │
 │     ├── tracelet_platform_interface  (no Tracelet deps)  │
@@ -110,10 +110,11 @@ The GitHub Actions workflow at `.github/workflows/release.yml` handles the full 
    - `./gradlew :tracelet-sdk:testReleaseUnitTest`
    - `./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository`
    - Creates git tag: `sdk-android-vX.Y.Z`
-3. **Publish iOS SDK** → CocoaPods (parallel with Android)
+3. **Publish iOS SDK** → GitHub Releases (Bundled via pub.dev)
    - `swift build` + `swift test`
-   - `pod lib lint TraceletSDK.podspec --allow-warnings`
-   - `pod trunk push TraceletSDK.podspec --allow-warnings` (with 3-retry backoff)
+   - `./sdk/rust-core/build-ios.sh`
+   - Bundled as `TraceletCore.xcframework.zip`
+   - Injected into `packages/tracelet_ios/ios/Frameworks/`
    - Creates git tag: `sdk-ios-vX.Y.Z`
 4. **Publish Flutter** → pub.dev (sequential, after native SDKs)
    - `dart pub publish --force` for each package in dependency order
@@ -160,28 +161,27 @@ git tag sdk-android-vX.Y.Z && git push origin sdk-android-vX.Y.Z
 
 **Maven coordinates:** `com.ikolvi:tracelet-sdk:X.Y.Z`
 
-### iOS SDK → CocoaPods
+### iOS SDK → GitHub Release (Pre-compiled)
 
 ```bash
-# 1. Build + test
+# 1. Build Rust Core & test
 cd sdk/ios
 swift build -Xswiftc -suppress-warnings
 swift test
 
-# 2. Lint podspec
-cd /path/to/Tracelet   # repo root
-pod lib lint TraceletSDK.podspec --allow-warnings --verbose
+# 2. Build iOS SDK
+cd ../rust-core
+./build-ios.sh
 
-# 3. Publish
-export COCOAPODS_TRUNK_TOKEN="..."
-pod trunk push TraceletSDK.podspec --allow-warnings --verbose
+# 3. Zip Framework
+cd out
+zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
 
 # 4. Tag
 git tag sdk-ios-vX.Y.Z && git push origin sdk-ios-vX.Y.Z
-```
 
-**Pod name:** `TraceletSDK`
-**SPM URL:** `https://github.com/Ikolvi/Tracelet.git` (tag-based)
+# Note: The zip must be uploaded to the GitHub release manually, or use CI.
+```
 
 ### Flutter → pub.dev
 

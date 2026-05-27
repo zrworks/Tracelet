@@ -24,9 +24,7 @@ import com.ikolvi.tracelet.sdk.ListenerEventSender
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
-import com.ikolvi.tracelet.sdk.http.HttpSyncManager
 import com.ikolvi.tracelet.sdk.location.LocationEngine
 import com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker
 import com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver
@@ -67,13 +65,18 @@ class LocationService : Service(), DefaultLifecycleObserver {
         var bootLocationEngine: LocationEngine? = null
             private set
 
-        // Boot-mode HTTP sync manager — auto-syncs locations when app is killed.
-        @Volatile
-        var bootHttpSyncManager: HttpSyncManager? = null
-            private set
+
 
         @Volatile
         var bootSpeedMotionManager: com.ikolvi.tracelet.sdk.motion.SpeedMotionManager? = null
+            private set
+
+        @Volatile
+        var bootMotionDetector: com.ikolvi.tracelet.sdk.motion.MotionDetector? = null
+            private set
+
+        @Volatile
+        var bootSmartMotionCoordinator: com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator? = null
             private set
 
         // Boot-mode heartbeat timer state.
@@ -257,20 +260,9 @@ class LocationService : Service(), DefaultLifecycleObserver {
          */
         fun stopBootTracking() {
             stopBootHeartbeat()
-            stopBootHttpSync()
             bootLocationEngine?.destroy()
             bootLocationEngine = null
             Log.d(TAG, "Boot-mode native tracking stopped — ready() taking over")
-        }
-
-        private fun stopBootHttpSync() {
-            val manager = bootHttpSyncManager ?: return
-            // Clear periodic worker reference if it was using our boot manager
-            if (PeriodicLocationWorker.httpSyncManager === manager) {
-                PeriodicLocationWorker.httpSyncManager = null
-            }
-            manager.stop()
-            bootHttpSyncManager = null
         }
 
         private fun stopBootHeartbeat() {
@@ -305,6 +297,15 @@ class LocationService : Service(), DefaultLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) {
         Log.d(TAG, "App moved to FOREGROUND — checking notification visibility")
         updateNotificationVisibility()
+        try {
+            val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
+            if (sdk.isReady) {
+                Log.d(TAG, "App moved to FOREGROUND — requesting state flush to Dart")
+                sdk.requestStateFlush()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error flushing state on foreground transition: ${e.message}")
+        }
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -408,17 +409,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 // Ensure WorkManager/AlarmManager is scheduled (may already be)
                 PeriodicLocationWorker.eventSender = null // No UI
 
-                // Create a boot-mode HttpSyncManager so periodic locations
-                // are auto-synced even though the service is about to stop.
-                val database = TraceletDatabase.getInstance(applicationContext)
-                val bootEventSender = TraceletBootstrap.eventSenderFactory?.invoke(applicationContext)
-                if (bootEventSender != null) {
-                    val httpSync = HttpSyncManager(applicationContext, configManager, bootEventSender, database)
-                    httpSync.start()
-                    bootHttpSyncManager = httpSync
-                    PeriodicLocationWorker.httpSyncManager = httpSync
-                    Log.d(TAG, "Boot-mode HTTP sync manager started for periodic worker")
-                }
+                // HTTP sync is handled natively by Rust Core now
 
                 if (configManager.getPeriodicUseExactAlarms()) {
                     PeriodicLocationWorker.scheduleOneTime(applicationContext)
@@ -524,7 +515,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
         val config = ConfigManager.getInstance(ctx)
         val state = StateManager(ctx)
-        val database = TraceletDatabase.getInstance(ctx)
+
         val eventSender = TraceletBootstrap.eventSenderFactory?.invoke(ctx)
             ?: run {
                 // Fallback: use a no-op ListenerEventSender so native tracking
@@ -540,18 +531,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
         // eventSenderFactory (e.g. TraceletAndroidPlugin).
         val headless = TraceletBootstrap.headlessDispatcherFactory?.invoke(ctx)
 
-        // Create HTTP sync manager for boot-mode auto-sync.
-        // This ensures locations are synced to the server even when the
-        // Flutter engine is not running (app killed / device rebooted).
-        val httpSync = HttpSyncManager(ctx, config, eventSender, database)
-
-        // 401 authorization, custom body, and fresh headers are handled
-        // by the static callbacks on HttpSyncManager (set by the plugin).
-        // Boot-mode instances share those static callbacks automatically.
-
-        httpSync.start()
-        bootHttpSyncManager = httpSync
-        Log.d(TAG, "Boot-mode HTTP sync manager started")
+        // HTTP sync is handled natively by Rust Core now
 
         val trackingMode = state.trackingMode
         Log.d(TAG, "Bootstrapping native tracking after boot/task-removal (trackingMode=$trackingMode)")
@@ -561,12 +541,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 // Periodic mode — restart the correct scheduling strategy.
                 // Wire the shared event sender so WorkManager workers can dispatch.
                 PeriodicLocationWorker.eventSender = eventSender
-                PeriodicLocationWorker.httpSyncManager = httpSync
 
                 if (config.getPeriodicUseForegroundService()) {
                     // Foreground service + timer strategy — needs a LocationEngine
-                    val engine = LocationEngine(ctx, config, state, eventSender, database)
-                    engine.onLocationPersisted = { httpSync.onLocationInserted() }
+                    val engine = LocationEngine(ctx, config, state, eventSender)
                     engine.startPeriodic()
                     bootLocationEngine = engine
                     Log.d(TAG, "Periodic mode restored with foreground-service timer")
@@ -595,15 +573,15 @@ class LocationService : Service(), DefaultLifecycleObserver {
             }
             else -> {
                 // Continuous (0) or geofences (1) — start full LocationEngine
-                val engine = LocationEngine(ctx, config, state, eventSender, database)
-                engine.onLocationPersisted = { httpSync.onLocationInserted() }
+                val engine = LocationEngine(ctx, config, state, eventSender)
                 engine.start()
                 bootLocationEngine = engine
                 Log.d(TAG, "Boot-mode native tracking started (trackingMode=$trackingMode)")
                 startBootHeartbeat(config, engine, eventSender)
 
-                // Speed-based motion detection: wire up SpeedMotionManager
-                if (config.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
+                // Speed, Accelerometer, or Smart motion detection setup
+                val motionMode = config.getMotionDetectionMode()
+                if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
                     val smm = com.ikolvi.tracelet.sdk.motion.SpeedMotionManager(
                         config, state, eventSender,
                         object : com.ikolvi.tracelet.sdk.motion.SpeedMotionManager.SpeedMotionCallback {
@@ -632,13 +610,93 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         }
                         Log.d(TAG, "Restored stationary mode from persisted speed state")
                     }
+                } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+                    val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
+                        ctx, config, state, eventSender
+                    )
+                    bootMotionDetector = detector
+
+                    val smm = com.ikolvi.tracelet.sdk.motion.SpeedMotionManager(
+                        config, state, eventSender,
+                        object : com.ikolvi.tracelet.sdk.motion.SpeedMotionManager.SpeedMotionCallback {
+                            override fun switchToContinuous() {
+                                bootSmartMotionCoordinator?.onSpeedStateChange(true)
+                            }
+                            override fun switchToStationaryPeriodic() {
+                                bootSmartMotionCoordinator?.onSpeedStateChange(false)
+                            }
+                            override fun switchToStationaryGeofences() {
+                                bootSmartMotionCoordinator?.onSpeedStateChange(false)
+                            }
+                        }
+                    )
+                    smm.start()
+                    bootSpeedMotionManager = smm
+                    engine.speedMotionSpeedSink = { speed -> smm.onLocation(speed) }
+
+                    val coordinator = com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator(
+                        ctx, config, state, eventSender, engine, detector
+                    )
+                    bootSmartMotionCoordinator = coordinator
+                    coordinator.syncCurrentMode()
+
+                    detector.onMotionStateChanged = { isMoving ->
+                        bootSpeedMotionManager?.onManualPaceChange(isMoving)
+                        coordinator.onAccelStateChange(isMoving)
+                    }
+                    detector.onStopRequested = {}
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val hasMotion = ContextCompat.checkSelfPermission(
+                            ctx, Manifest.permission.ACTIVITY_RECOGNITION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (hasMotion) {
+                            detector.start()
+                        } else {
+                            Log.w(TAG, "ACTIVITY_RECOGNITION not granted in boot mode")
+                        }
+                    } else {
+                        detector.start()
+                    }
+                    Log.d(TAG, "Smart-based motion detection started (boot mode)")
+                } else {
+                    // Accelerometer / Activity Recognition only
+                    val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
+                        ctx, config, state, eventSender
+                    )
+                    bootMotionDetector = detector
+                    detector.onMotionStateChanged = { isMoving ->
+                        if (isMoving) {
+                            LocationService.switchToContinuous(engine, state)
+                        } else {
+                            when (config.getStationaryTrackingMode()) {
+                                com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state)
+                                else -> LocationService.switchToStationaryPeriodic(engine, config, state)
+                            }
+                        }
+                    }
+                    detector.onStopRequested = {}
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val hasMotion = ContextCompat.checkSelfPermission(
+                            ctx, Manifest.permission.ACTIVITY_RECOGNITION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (hasMotion) {
+                            detector.start()
+                        } else {
+                            Log.w(TAG, "ACTIVITY_RECOGNITION not granted in boot mode")
+                        }
+                    } else {
+                        detector.start()
+                    }
+                    Log.d(TAG, "Accelerometer-based motion detection started (boot mode)")
                 }
 
                 // Geofence mode: re-register persisted geofences with Play Services
                 // and restore the static BroadcastReceiver reference so transition
                 // events are not silently dropped after process death.
                 if (trackingMode == TrackingMode.GEOFENCES) {
-                    val geoManager = GeofenceManager(ctx, config, eventSender, database)
+                    val geoManager = GeofenceManager(ctx, config, eventSender)
                     geoManager.reRegisterAll()
                     GeofenceBroadcastReceiver.geofenceManager = geoManager
                     Log.d(TAG, "Geofence registrations restored after boot/task-removal")
@@ -672,10 +730,6 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 val cached = engine.getLastGpsLocation()
                 if (cached != null) {
                     val locationData = engine.enrichLocation(cached, "heartbeat").toMutableMap()
-                    // Persist to database so it syncs via HTTP automatically.
-                    val db = TraceletDatabase.getInstance(applicationContext)
-                    db.insertLocationAsync(locationData)
-                    engine.onLocationPersisted?.invoke()
                     dispatcher.sendHeartbeat(mapOf("location" to locationData))
                     Log.d(TAG, "Boot heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, acc=${cached.accuracy}m")
                 } else {
@@ -694,8 +748,9 @@ class LocationService : Service(), DefaultLifecycleObserver {
         LocationService.stopStationaryTimer()
         bootSpeedMotionManager?.stop()
         bootSpeedMotionManager = null
-        bootHttpSyncManager?.stop()
-        bootHttpSyncManager = null
+        bootMotionDetector?.stop()
+        bootMotionDetector = null
+        bootSmartMotionCoordinator = null
         bootLocationEngine?.speedMotionSpeedSink = null
         bootLocationEngine?.destroy()
         bootLocationEngine = null

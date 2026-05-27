@@ -79,7 +79,7 @@ The plugin requests permissions at runtime when you call `Tracelet.requestLocati
 When background tracking is active, Android requires a persistent notification. Configure it in your `Config`:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   app: AppConfig(
     foregroundService: ForegroundServiceConfig(
       channelId: 'tracelet_channel',
@@ -187,7 +187,7 @@ dependencies {
 To resume tracking after a device reboot:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   app: AppConfig(
     stopOnTerminate: false,  // Keep tracking when app is killed
     startOnBoot: true,       // Resume after reboot

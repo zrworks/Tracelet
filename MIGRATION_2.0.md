@@ -81,7 +81,7 @@ Many types have been renamed to follow the `Tl` prefix convention in the platfor
 
 1.  **Update `pubspec.yaml`**: Bump `tracelet` to `^2.0.0`.
 2.  **Android Dependencies**: Add required GMS/Enterprise dependencies to `android/app/build.gradle.kts`.
-3.  **Refactor Config**: Update your `Tracelet.ready(Config(...))` call to use the new nested `GeoConfig`, `AppConfig`, etc.
+3.  **Refactor Config**: Update your `Tracelet.ready(Config.balanced().copyWith(...))` call to use the new nested `GeoConfig`, `AppConfig`, etc.
 4.  **Check JSON Payloads**: If you use `toDictionary()` or `toMap()` on locations for your own logic, ensure you account for the move to camelCase for fields like `isMoving` and `isCharging`.
 
 ## 📦 ProGuard / R8

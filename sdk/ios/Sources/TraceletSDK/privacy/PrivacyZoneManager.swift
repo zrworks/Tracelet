@@ -1,19 +1,15 @@
 import CoreLocation
 import Foundation
 
-/// **[Enterprise]** Privacy zone manager.
+/// **[Enterprise]** Privacy Zone Manager.
 ///
-/// Evaluates incoming locations against registered privacy zones and applies
-/// the configured action:
+/// This subsystem coordinates geographic compliance and privacy zones on iOS.
+/// It intercepts GPS location events, evaluates them against registered geographic
+/// zones, and determines whether to pass, drop, degrade, or trigger event-only dispatch.
 ///
-/// - **Exclude** (`action = 0`): Location is dropped entirely — not persisted,
-///   not dispatched, not audited.
-/// - **Degrade** (`action = 1`): Coordinates are degraded to a configurable
-///   accuracy radius (default 1 000 m) by snapping to a grid.
-/// - **Event-only** (`action = 2`): Location is dispatched to Flutter
-///   listeners but **not** persisted to the database.
-///
-/// Uses the Haversine formula for distance checks.
+/// Under the hood, this manager delegates its math and overlapping zone priority resolution
+/// (Exclude > EventOnly > Degrade) entirely to the shared Rust Core's `PrivacyZoneEvaluator`
+/// to guarantee mathematical and behavioral parity across platforms.
 public final class PrivacyZoneManager {
 
     // Action constants — must match Dart `PrivacyZoneAction` enum indices
@@ -21,122 +17,159 @@ public final class PrivacyZoneManager {
     public static let actionDegrade  = 1
     public static let actionEventOnly = 2
 
-    /// Earth's mean radius in metres.
-    private static let earthRadiusM: Double = 6_371_000.0
-
     private let database: TraceletDatabase
     private let configManager: ConfigManager
+    private let rustDatabase: DatabaseManager?
 
-    /// In-memory cache of privacy zones — avoids DB query on every location (I-M7).
-    private var cachedZones: [[String: Any]]?
+    /// In-memory cache of active privacy zones to prevent database queries per location update.
+    private var cachedZones: [CorePrivacyZone]?
 
-    public init(database: TraceletDatabase, configManager: ConfigManager) {
+    public init(database: TraceletDatabase, configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
         self.database = database
         self.configManager = configManager
+        self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
     }
 
-    /// Whether privacy zones are enabled in the configuration.
+    /// Checks whether privacy zone enforcement is active in configuration.
     public func isEnabled() -> Bool {
         return configManager.getPrivacyZoneEnabled()
     }
 
+    // MARK: - Zone Cache
+
+    /// Returns privacy zones from cache, refreshing from the Rust DB when invalidated.
+    private func getCachedZones() -> [CorePrivacyZone] {
+        if let cached = cachedZones {
+            return cached
+        }
+        let loaded = (try? rustDatabase?.getPrivacyZones()) ?? []
+        cachedZones = loaded
+        return loaded
+    }
+
+    /// Invalidates the cache, forcing a database query on the next evaluation.
+    private func invalidateCache() {
+        cachedZones = nil
+    }
+
     // MARK: - Zone CRUD
 
+    /// Registers a new geographic privacy zone in the Rust core SQLite database.
     public func addZone(_ zone: [String: Any]) -> Bool {
-        cachedZones = nil
-        return database.insertPrivacyZone(zone)
-    }
+        guard let identifier = zone["identifier"] as? String else { return false }
+        let lat = (zone["latitude"] as? NSNumber)?.doubleValue ?? 0.0
+        let lng = (zone["longitude"] as? NSNumber)?.doubleValue ?? 0.0
+        let radius = (zone["radius"] as? NSNumber)?.doubleValue ?? 200.0
+        let action = (zone["action"] as? NSNumber)?.intValue ?? PrivacyZoneManager.actionExclude
+        let degradedAccuracy = (zone["degradedAccuracyMeters"] as? NSNumber)?.doubleValue ?? 1000.0
 
-    public func addZones(_ zones: [[String: Any]]) -> Bool {
-        for zone in zones {
-            _ = database.insertPrivacyZone(zone)
+        invalidateCache()
+        do {
+            try rustDatabase?.insertPrivacyZone(
+                identifier: identifier,
+                lat: lat,
+                lng: lng,
+                radius: radius,
+                action: Int32(action),
+                degradedAccuracy: degradedAccuracy
+            )
+            return true
+        } catch {
+            return false
         }
-        cachedZones = nil
-        return true
     }
 
+    /// Registers multiple privacy zones in a single sweep.
+    public func addZones(_ zones: [[String: Any]]) -> Bool {
+        var allSuccess = true
+        for zone in zones {
+            if !addZone(zone) {
+                allSuccess = false
+            }
+        }
+        return allSuccess
+    }
+
+    /// Removes a specific privacy zone from the database by its identifier.
     public func removeZone(_ identifier: String) -> Bool {
-        cachedZones = nil
-        return database.deletePrivacyZone(identifier)
+        invalidateCache()
+        do {
+            try rustDatabase?.deletePrivacyZone(identifier: identifier)
+            return true
+        } catch {
+            return false
+        }
     }
 
+    /// Removes all registered privacy zones.
     public func removeAllZones() -> Bool {
-        cachedZones = nil
-        return database.deleteAllPrivacyZones()
+        invalidateCache()
+        do {
+            try rustDatabase?.clearPrivacyZones()
+            return true
+        } catch {
+            return false
+        }
     }
 
+    /// Returns a generic array representation of privacy zones to maintain compatibility with Dart channel bridges.
     public func getZones() -> [[String: Any]] {
-        return database.getPrivacyZones()
+        return getCachedZones().map { mapFromCorePrivacyZone($0) }
     }
 
-    // MARK: - Location evaluation
+    // MARK: - Location Evaluation
 
-    /// The result of evaluating a location against all privacy zones.
+    /// Encapsulates evaluation outcomes against privacy zones.
     public struct EvaluationResult {
-        let action: Int?
-        let zone: [String: Any]?
+        public let action: Int?
+        public let zone: [String: Any]?
     }
 
-    /// Evaluates whether a location falls inside any registered privacy zone.
-    ///
-    /// When multiple zones overlap the **most restrictive** action wins:
-    /// exclude > eventOnly > degrade.
+    /// Evaluates a location coordinate against active privacy zones.
+    /// Employs Rust `PrivacyZoneEvaluator` to resolve overlapping priorities.
     public func evaluate(latitude: Double, longitude: Double) -> EvaluationResult {
         guard isEnabled() else {
             return EvaluationResult(action: nil, zone: nil)
         }
-        let zones = cachedZones ?? {
-            let loaded = database.getPrivacyZones()
-            cachedZones = loaded
-            return loaded
-        }()
+        let zones = getCachedZones()
         guard !zones.isEmpty else {
             return EvaluationResult(action: nil, zone: nil)
         }
 
-        var matchedAction: Int?
-        var matchedZone: [String: Any]?
+        // Instantiate the Rust spatial evaluator
+        let evaluator = PrivacyZoneEvaluator()
+        let result = evaluator.evaluate(latitude: latitude, longitude: longitude, zones: zones)
 
-        for zone in zones {
-            guard let zLat = zone["latitude"] as? Double,
-                  let zLng = zone["longitude"] as? Double,
-                  let zRadius = zone["radius"] as? Double else { continue }
-
-            let distance = haversineDistance(
-                lat1: latitude, lng1: longitude,
-                lat2: zLat, lng2: zLng
-            )
-
-            if distance <= zRadius {
-                let action = (zone["action"] as? NSNumber)?.intValue ?? PrivacyZoneManager.actionExclude
-                if matchedAction == nil || isActionMoreRestrictive(action, than: matchedAction!) {
-                    matchedAction = action
-                    matchedZone = zone
-                }
-            }
+        guard let action = result.action else {
+            return EvaluationResult(action: nil, zone: nil)
         }
-        return EvaluationResult(action: matchedAction, zone: matchedZone)
+
+        // Match the winner zone to build the bridge-compatible map representation
+        let matchedZone = zones.first(where: { $0.identifier == result.matchedZoneId })
+        let matchedZoneMap = matchedZone.map { mapFromCorePrivacyZone($0) }
+
+        return EvaluationResult(action: Int(action), zone: matchedZoneMap)
     }
 
-    // MARK: - Processed location
+    // MARK: - Processed Location
 
     public enum ProcessedAction {
-        /// No privacy zone matched — pass through normally.
+        /// No privacy zone matches — location passes unchanged.
         case passThrough
-        /// Location inside exclusion zone — drop entirely.
+        /// Location falls in an exclusion zone — drops completely.
         case drop
-        /// Dispatch to Flutter but do NOT persist.
+        /// Keep event-only — dispatch to framework listeners but do not persist.
         case eventOnly
-        /// Coordinates degraded — persist and dispatch the degraded version.
+        /// Coordinate degraded — persists and dispatches coordinates snapped to the coarse grid.
         case degraded
     }
 
     public struct ProcessedLocation {
-        let action: ProcessedAction
-        let location: [String: Any]?
+        public let action: ProcessedAction
+        public let location: [String: Any]?
     }
 
-    /// Processes a location map against all privacy zones.
+    /// Processes a location structure against geographic privacy rules.
     public func processLocation(_ locationMap: [String: Any]) -> ProcessedLocation {
         guard let coords = locationMap["coords"] as? [String: Any],
               let lat = coords["latitude"] as? Double,
@@ -168,81 +201,39 @@ public final class PrivacyZoneManager {
 
     // MARK: - Internals
 
-    /// Degrades location precision by snapping coordinates to a grid.
+    /// Snaps coordinates to a coarse precision grid utilizing the Rust core evaluator.
     private func degradeLocation(
         _ location: [String: Any],
         lat: Double,
         lng: Double,
         accuracyMeters: Double
     ) -> [String: Any] {
-        let (snappedLat, snappedLng) = degradeCoordinates(
-            lat: lat, lng: lng, accuracyMeters: accuracyMeters
-        )
+        let evaluator = PrivacyZoneEvaluator()
+        let snapped = evaluator.degradeCoordinates(lat: lat, lng: lng, accuracyMeters: accuracyMeters)
 
         var modified = location
         if var coords = modified["coords"] as? [String: Any] {
-            coords["latitude"] = snappedLat
-            coords["longitude"] = snappedLng
+            coords["latitude"] = snapped.lat
+            coords["longitude"] = snapped.lng
             coords["accuracy"] = accuracyMeters
             modified["coords"] = coords
         }
-        // Also set top-level keys used by some code paths
-        modified["latitude"] = snappedLat
-        modified["longitude"] = snappedLng
+        // Sync top-level keys
+        modified["latitude"] = snapped.lat
+        modified["longitude"] = snapped.lng
         modified["accuracy"] = accuracyMeters
         return modified
     }
 
-    /// Haversine great-circle distance between two points in metres.
-    private func haversineDistance(
-        lat1: Double, lng1: Double,
-        lat2: Double, lng2: Double
-    ) -> Double {
-        return haversineDistanceMetres(lat1: lat1, lng1: lng1, lat2: lat2, lng2: lng2)
+    /// Transforms a Rust `CorePrivacyZone` record into a dictionary compatible with platform channels.
+    private func mapFromCorePrivacyZone(_ zone: CorePrivacyZone) -> [String: Any] {
+        return [
+            "identifier": zone.identifier,
+            "latitude": zone.latitude,
+            "longitude": zone.longitude,
+            "radius": zone.radius,
+            "action": Int(zone.action),
+            "degradedAccuracyMeters": zone.degradedAccuracyMeters
+        ]
     }
-}
-
-// MARK: - Module-level pure functions (extracted for unit testing)
-
-/// Earth's mean radius in metres.
-private let kEarthRadiusM: Double = 6_371_000.0
-
-/// Haversine great-circle distance between two points in metres.
-public func haversineDistanceMetres(
-    lat1: Double, lng1: Double,
-    lat2: Double, lng2: Double
-) -> Double {
-    let dLat = (lat2 - lat1) * .pi / 180.0
-    let dLng = (lng2 - lng1) * .pi / 180.0
-    let a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(lat1 * .pi / 180.0) * cos(lat2 * .pi / 180.0) *
-            sin(dLng / 2) * sin(dLng / 2)
-    let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return kEarthRadiusM * c
-}
-
-/// Returns `true` if action `a` is more restrictive than action `b`.
-///
-/// Priority: exclude(0)=3 > eventOnly(2)=2 > degrade(1)=1.
-public func isActionMoreRestrictive(_ a: Int, than b: Int) -> Bool {
-    let priority: [Int: Int] = [
-        PrivacyZoneManager.actionExclude: 3,
-        PrivacyZoneManager.actionEventOnly: 2,
-        PrivacyZoneManager.actionDegrade: 1,
-    ]
-    return (priority[a] ?? 0) > (priority[b] ?? 0)
-}
-
-/// Degrades coordinates by snapping to a grid of `accuracyMeters` resolution.
-///
-/// Returns a tuple of `(snappedLat, snappedLng)`.
-public func degradeCoordinates(
-    lat: Double,
-    lng: Double,
-    accuracyMeters: Double
-) -> (Double, Double) {
-    let gridDeg = accuracyMeters / 111_320.0
-    let snappedLat = (lat / gridDeg).rounded() * gridDeg
-    let snappedLng = (lng / gridDeg).rounded() * gridDeg
-    return (snappedLat, snappedLng)
 }

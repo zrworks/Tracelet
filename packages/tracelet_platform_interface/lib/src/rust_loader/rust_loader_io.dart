@@ -15,8 +15,8 @@ Future<void> initializeRustLib() async {
     String rootDir = Directory.current.path;
     if (rootDir.endsWith('/benchmark')) {
       rootDir = Directory.current.parent.path;
-    } else if (rootDir.endsWith('/packages/tracelet_platform_interface')) {
-      rootDir = Directory.current.parent.parent.path;
+    } else if (rootDir.contains('/packages/')) {
+      rootDir = rootDir.split('/packages/').first;
     }
     lib = ExternalLibrary.open(
       '$rootDir/sdk/rust-core/target/release/libtracelet_core.dylib',

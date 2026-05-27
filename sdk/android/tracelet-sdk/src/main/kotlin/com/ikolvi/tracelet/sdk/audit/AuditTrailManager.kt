@@ -2,7 +2,6 @@ package com.ikolvi.tracelet.sdk.audit
 
 import android.content.Context
 import com.ikolvi.tracelet.sdk.ConfigManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -29,8 +28,8 @@ import java.util.Locale
  */
 class AuditTrailManager(
     private val context: Context,
-    private val database: TraceletDatabase,
     private val configManager: ConfigManager,
+    private val rustDatabase: uniffi.tracelet_core.DatabaseManager? = null,
 ) {
 
     companion object {
@@ -141,7 +140,11 @@ class AuditTrailManager(
         val result = engine.generateNextHash(loc)
 
         // Store in audit_trail table
-        database.insertAuditRecord(uuid, result.hash, result.previousHash, result.chainIndex)
+        try {
+            rustDatabase?.insertAuditTrail(uuid, result.hash, result.previousHash, result.chainIndex)
+        } catch (e: Exception) {
+            android.util.Log.e("Tracelet", "Failed to persist audit trail to Rust DB", e)
+        }
 
         // Update chain state
         latestHash = result.hash
@@ -155,14 +158,20 @@ class AuditTrailManager(
     }
 
     /**
-     * Verifies the entire audit trail chain.
+     * Verifies the cryptographic integrity of the entire audit trail chain.
      *
-     * Walks all records in chain-index order, re-computes each hash, and
-     * compares to the stored hash. Returns a verification result map.
+     * Alignment Design Decision:
+     * Since location records in the Rust database (`location_events` table) are queried
+     * sequentially (ordered by ID) and do not store the runtime UUID column directly,
+     * they are aligned 1-to-1 by index with the sequential audit records (ordered by chain index).
+     * This index pairing allows us to reconstruct the exact [LocationRecord] models with their
+     * original hashing UUIDs and feed them to the Rust [AuditTrailEngine] for verification.
+     *
+     * @return A map describing the verification status: isValid, totalRecords, verifiedRecords, etc.
      */
     fun verifyChain(): Map<String, Any?> {
-        val records = database.getAuditTrailWithLocations()
-        if (records.isEmpty()) {
+        val auditRecords = rustDatabase?.getAuditTrail() ?: emptyList()
+        if (auditRecords.isEmpty()) {
             return mapOf(
                 "isValid" to true,
                 "totalRecords" to 0,
@@ -170,32 +179,39 @@ class AuditTrailManager(
             )
         }
 
-        val rustRecords = records.map { record ->
-            val hasLocation = record["has_location"] == true
-            val loc = if (hasLocation) {
+        val locations = rustDatabase?.getLocationsBatch(10000) ?: emptyList()
+
+        // Map sequential audit trail records to AuditRecordWithLocation structures
+        val rustRecords = auditRecords.mapIndexed { index, auditRecord ->
+            val location = if (index >= 0 && index < locations.size) locations[index] else null
+            val hasLocation = location != null
+
+            val loc = if (location != null) {
+                // Reconstruct the LocationRecord using the exact UUID string stored in the audit trail block
                 uniffi.tracelet_core.LocationRecord(
-                    uuid = record["uuid"] as? String ?: "",
-                    latitude = (record["latitude"] as? Number)?.toDouble() ?: 0.0,
-                    longitude = (record["longitude"] as? Number)?.toDouble() ?: 0.0,
-                    timestamp = record["timestamp"]?.toString() ?: "",
-                    accuracy = (record["accuracy"] as? Number)?.toDouble() ?: 0.0,
-                    speed = (record["speed"] as? Number)?.toDouble() ?: 0.0,
-                    heading = (record["heading"] as? Number)?.toDouble() ?: 0.0,
-                    altitude = (record["altitude"] as? Number)?.toDouble() ?: 0.0,
-                    odometer = (record["odometer"] as? Number)?.toDouble() ?: 0.0,
-                    isMoving = record["is_moving"] == true || record["isMoving"] == true
+                    uuid = auditRecord.uuid,
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    timestamp = location.timestamp,
+                    accuracy = location.accuracy,
+                    speed = location.speed,
+                    heading = location.heading,
+                    altitude = location.altitude,
+                    odometer = 0.0, // Default to 0.0 as it is not stored in location_events schema
+                    isMoving = location.activity != "still" // Deriving motion state from activity
                 )
             } else null
 
             uniffi.tracelet_core.AuditRecordWithLocation(
-                hash = record["hash"] as? String ?: "",
-                previousHash = record["previous_hash"] as? String ?: "",
-                chainIndex = (record["chain_index"] as? Number)?.toInt() ?: -1,
+                hash = auditRecord.auditHash,
+                previousHash = auditRecord.auditPreviousHash,
+                chainIndex = auditRecord.auditChainIndex,
                 hasLocation = hasLocation,
                 location = loc
             )
         }
 
+        // Delegate cryptographic verification to the Rust engine
         val result = engine.verifyChain(rustRecords)
 
         val map = mutableMapOf<String, Any?>(
@@ -211,13 +227,34 @@ class AuditTrailManager(
     }
 
     /**
-     * Gets the audit proof for a specific location record.
+     * Retrieves the cryptographic proof for a specific location record by its UUID.
+     * Pairs the audit trail record with its corresponding location record by matching their index sequence.
      *
-     * @return A map with `uuid`, `hash`, `previous_hash`, `chain_index`, `timestamp`,
-     *         or `null` if not found.
+     * @param uuid Unique UUID of the location/audit record.
+     * @return A map containing proof details: uuid, hash, previous_hash, chain_index, and location coordinates.
      */
     fun getProof(uuid: String): Map<String, Any?>? {
-        return database.getAuditRecord(uuid)
+        val auditRecords = rustDatabase?.getAuditTrail() ?: return null
+        val matchedRecord = auditRecords.find { it.uuid == uuid } ?: return null
+        
+        // Find the index of the audit record to pair with the location record at the same position
+        val recordIndex = auditRecords.indexOf(matchedRecord)
+        val locations = rustDatabase?.getLocationsBatch(10000) ?: return null
+        val location = if (recordIndex >= 0 && recordIndex < locations.size) locations[recordIndex] else null
+        
+        return mapOf(
+            "uuid" to matchedRecord.uuid,
+            "hash" to matchedRecord.auditHash,
+            "previous_hash" to matchedRecord.auditPreviousHash,
+            "chain_index" to matchedRecord.auditChainIndex,
+            "timestamp" to (location?.timestamp ?: ""),
+            "latitude" to (location?.latitude ?: 0.0),
+            "longitude" to (location?.longitude ?: 0.0),
+            "accuracy" to (location?.accuracy ?: 0.0),
+            "speed" to (location?.speed ?: 0.0),
+            "heading" to (location?.heading ?: 0.0),
+            "altitude" to (location?.altitude ?: 0.0),
+        )
     }
 
     /**

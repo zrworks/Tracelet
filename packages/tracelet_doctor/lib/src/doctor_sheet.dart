@@ -326,8 +326,8 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
                   Text('QUICK FIX', style: DoctorTheme.sectionStyle),
                   const SizedBox(height: 8),
                   Text(
-                    'await Tracelet.ready(Config(\n'
-                    '  geo: GeoConfig(...),\n'
+                    'await Tracelet.ready(Config.balanced(\n'
+                    '  overrides: {\'geo\': ...}\n'
                     '));\n\n'
                     '// Then open the Doctor:\n'
                     'TraceletDoctor.show(context);',

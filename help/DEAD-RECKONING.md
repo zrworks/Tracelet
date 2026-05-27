@@ -12,7 +12,7 @@ indoor transitions, and urban canyons.
 ```dart
 import 'package:tracelet/tracelet.dart' as tl;
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     enableDeadReckoning: true,
     deadReckoningActivationDelay: 10,   // seconds without GPS before activating

@@ -49,7 +49,6 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                         ?: ListenerEventSender()
                     sdk.setEventSender(sender)
                     sdk.initialize()
-                    sdk.httpSyncManager.start()
                     sdk.geofenceManager
                 }
             } catch (e: Exception) {

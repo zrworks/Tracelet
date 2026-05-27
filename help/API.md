@@ -431,7 +431,7 @@ Starts **periodic interval tracking**. Instead of continuously streaming GPS coo
 
 ```dart
 // 1. Configure (optional — defaults to 15-min interval, medium accuracy)
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     periodicLocationInterval: 1800,        // 30 minutes
     periodicDesiredAccuracy: DesiredAccuracy.medium,

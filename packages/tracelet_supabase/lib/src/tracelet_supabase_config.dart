@@ -16,10 +16,9 @@ class TraceletSupabase {
   ///   rpcFunction: 'insert_tracelet_locations',
   /// );
   ///
-  /// await Tracelet.ready(Config(
-  ///   geo: GeoConfig(distanceFilter: 50),
-  ///   http: httpConfig,
-  /// ));
+  /// await Tracelet.ready(Config.balanced(overrides: {
+  ///   'http': httpConfig.toMap(),
+  /// }));
   /// ```
   static HttpConfig buildHttpConfig({
     required String supabaseUrl,

@@ -17,10 +17,11 @@ import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
 import com.ikolvi.tracelet.sdk.privacy.PrivacyZoneManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
+
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import uniffi.tracelet_core.LocationProcessor as RustLocationProcessor
 import uniffi.tracelet_core.KalmanLocationFilter as RustKalmanFilter
+import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 import uniffi.tracelet_core.LocationProcessorResult
 import uniffi.tracelet_core.AdaptiveContext
 import uniffi.tracelet_core.ActivityType as RustActivityType
@@ -50,7 +51,6 @@ class LocationEngine(
     private val config: ConfigManager,
     private val state: StateManager,
     internal val events: TraceletEventSender,
-    private val db: TraceletDatabase,
 ) {
     companion object {
         private const val TAG = "LocationEngine"
@@ -104,6 +104,10 @@ class LocationEngine(
 
     /** Counter for throttling DB retention pruning — runs every N inserts. */
     private var insertCountSincePrune = 0
+
+    /** Rust EventDispatcher — set by TraceletSdk after initialization.
+     *  Routes each location through Rust Core for DB persistence + auto HTTP sync. */
+    var rustEventDispatcher: RustEventDispatcher? = null
 
     // =========================================================================
     // Rust-powered location processing (LocationProcessor + Kalman)
@@ -419,7 +423,6 @@ class LocationEngine(
                     val enriched = enrichLocation(cached, "getCurrentPosition").toMutableMap()
                     if (extras.isNotEmpty()) enriched["extras"] = extras
                     if (persist) {
-                        db.insertLocationAsync(enriched)
                         onLocationPersisted?.invoke()
                     }
                     callback(enriched)
@@ -463,7 +466,6 @@ class LocationEngine(
             val enriched = enrichLocation(cached, "getLastKnownLocation").toMutableMap()
             if (extras.isNotEmpty()) enriched["extras"] = extras
             if (persist) {
-                db.insertLocationAsync(enriched)
                 onLocationPersisted?.invoke()
             }
             callback(enriched)
@@ -478,7 +480,6 @@ class LocationEngine(
                     val enriched = enrichLocation(location, "getLastKnownLocation").toMutableMap()
                     if (extras.isNotEmpty()) enriched["extras"] = extras
                     if (persist) {
-                        db.insertLocationAsync(enriched)
                         onLocationPersisted?.invoke()
                     }
                     callback(enriched)
@@ -491,7 +492,6 @@ class LocationEngine(
                         val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
                         if (extras.isNotEmpty()) enriched["extras"] = extras
                         if (persist) {
-                            db.insertLocationAsync(enriched)
                             onLocationPersisted?.invoke()
                         }
                         callback(enriched)
@@ -507,7 +507,6 @@ class LocationEngine(
                     val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
                     if (extras.isNotEmpty()) enriched["extras"] = extras
                     if (persist) {
-                        db.insertLocationAsync(enriched)
                         onLocationPersisted?.invoke()
                     }
                     callback(enriched)
@@ -1041,7 +1040,6 @@ class LocationEngine(
         val enriched = enrichLocation(best, "getCurrentPosition").toMutableMap()
         if (extras.isNotEmpty()) enriched["extras"] = extras
         if (persist) {
-            db.insertLocationAsync(enriched)
             onLocationPersisted?.invoke()
         }
         callback(enriched)
@@ -1196,22 +1194,26 @@ class LocationEngine(
         // Skip provider change records if disabled
         if (event == "providerchange" && config.getDisableProviderChangeRecord()) return
 
-        db.insertLocationAsync(location)
-
-        // Notify HTTP sync manager (if wired) so auto-sync can fire.
-        onLocationPersisted?.invoke()
-
-        // Throttle retention pruning — only run every N inserts instead of on
-        // each insert. This avoids a COUNT query + potential DELETE on every
-        // single location fix (A-H2, A-H3).
-        insertCountSincePrune++
-        if (insertCountSincePrune >= PRUNE_EVERY_N_INSERTS) {
-            insertCountSincePrune = 0
-            val maxDays = config.getMaxDaysToPersist()
-            if (maxDays > 0) db.pruneOldLocations(maxDays)
-            val maxRecords = config.getMaxRecordsToPersist()
-            if (maxRecords > 0) db.enforceMaxRecords(maxRecords)
+        // Route through Rust EventDispatcher for DB persistence + auto HTTP sync
+        val dispatcher = rustEventDispatcher
+        if (dispatcher != null) {
+            val coords = location["coords"] as? Map<*, *>
+            val lat = (coords?.get("latitude") as? Number)?.toDouble() ?: 0.0
+            val lng = (coords?.get("longitude") as? Number)?.toDouble() ?: 0.0
+            val accuracy = (coords?.get("accuracy") as? Number)?.toDouble() ?: 0.0
+            val speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
+            val heading = (coords?.get("heading") as? Number)?.toDouble() ?: 0.0
+            val altitude = (coords?.get("altitude") as? Number)?.toDouble() ?: 0.0
+            val isMock = location["mock"] == true || location["is_mock"] == true
+            try {
+                dispatcher.onLocationUpdate(lat, lng, accuracy, speed, heading, altitude, isMock)
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Rust EventDispatcher.onLocationUpdate failed: ${e.message}")
+            }
         }
+
+        // Notify callback so auto-sync can fire
+        onLocationPersisted?.invoke()
     }
 
     /**

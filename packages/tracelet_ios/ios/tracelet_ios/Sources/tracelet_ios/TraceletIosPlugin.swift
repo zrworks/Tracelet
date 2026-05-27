@@ -100,91 +100,6 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
                 runner.dispatchEvent(["name": eventName, "event": eventData])
             }
 
-            // Wire custom sync body builder → Dart MethodChannel (foreground)
-            // Falls back to headless runner when UI engine is not available.
-            //
-            // NOTE: Uses raw MethodChannel instead of Pigeon because this requires
-            // a synchronous native→Dart→native round-trip with a return value.
-            // Pigeon's FlutterApi is fire-and-forget and doesn't support return
-            // values. See: .github/copilot-instructions.md Golden Rule #2 exception.
-            let syncBodyChannel = FlutterMethodChannel(
-                name: "com.tracelet/sync_body",
-                binaryMessenger: registrar.messenger()
-            )
-            HttpSyncManager.onBuildCustomSyncBody = { [weak instance] locations in
-                // Try foreground engine first
-                if !Thread.isMainThread {
-                    let semaphore = DispatchSemaphore(value: 0)
-                    var result: String? = nil
-
-                    DispatchQueue.main.async {
-                        syncBodyChannel.invokeMethod("buildSyncBody", arguments: locations) { response in
-                            result = response as? String
-                            semaphore.signal()
-                        }
-                    }
-
-                    let timeout = semaphore.wait(timeout: .now() + dartCallbackTimeout)
-                    if timeout == .timedOut {
-                        NSLog("[Tracelet] buildSyncBody timed out waiting for Dart response")
-                    }
-                    if result != nil { return result }
-                }
-
-                // Fallback to headless runner
-                return instance?.headlessRunner.requestCustomSyncBody(locations, timeout: dartCallbackTimeout)
-            }
-
-            // Wire fresh-headers request → foreground MethodChannel, headless fallback
-            HttpSyncManager.onRequestFreshHeaders = { [weak instance] in
-                // Try foreground engine first
-                if !Thread.isMainThread {
-                    let semaphore = DispatchSemaphore(value: 0)
-                    var refreshed = false
-
-                    DispatchQueue.main.async {
-                        syncBodyChannel.invokeMethod("requestFreshHeaders", arguments: nil) { response in
-                            refreshed = (response as? Bool) ?? false
-                            semaphore.signal()
-                        }
-                    }
-
-                    let timeout = semaphore.wait(timeout: .now() + dartCallbackTimeout)
-                    if timeout == .timedOut {
-                        NSLog("[Tracelet] requestFreshHeaders timed out waiting for Dart response")
-                    }
-                    if refreshed { return }
-                }
-
-                // Fallback to headless runner
-                _ = instance?.headlessRunner.requestHeadersRefresh(timeout: dartCallbackTimeout)
-            }
-
-            // Wire 401 auth refresh → foreground token refresh, headless fallback
-            HttpSyncManager.onAuthorizationRequired = { [weak instance] in
-                // Try foreground engine first
-                if !Thread.isMainThread {
-                    let semaphore = DispatchSemaphore(value: 0)
-                    var refreshed = false
-
-                    DispatchQueue.main.async {
-                        syncBodyChannel.invokeMethod("requestTokenRefresh", arguments: nil) { response in
-                            refreshed = (response as? Bool) ?? false
-                            semaphore.signal()
-                        }
-                    }
-
-                    let timeout = semaphore.wait(timeout: .now() + dartCallbackTimeout)
-                    if timeout == .timedOut {
-                        NSLog("[Tracelet] requestTokenRefresh timed out waiting for Dart response")
-                    }
-                    if refreshed { return true }
-                }
-
-                // Fallback to headless runner
-                return instance?.headlessRunner.requestHeadersRefresh(timeout: dartCallbackTimeout) ?? false
-            }
-
             registrar.addApplicationDelegate(instance)
 
             NSLog("[Tracelet] register: primary instance — SDK initialized, callbacks wired")
@@ -206,13 +121,8 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         if TraceletIosPlugin.primaryInstance === self {
             TraceletIosPlugin.primaryInstance = nil
 
-            // Clear SDK callbacks that reference this engine's MethodChannel
-            HttpSyncManager.onAuthorizationRequired = nil
-            HttpSyncManager.onRequestFreshHeaders = nil
-            HttpSyncManager.onBuildCustomSyncBody = nil
-
             sdk.destroyAll()
-            NSLog("[Tracelet] detachFromEngine: primary instance — SDK callbacks cleared, destroyAll() called")
+            NSLog("[Tracelet] detachFromEngine: primary instance — destroyAll() called")
         } else {
             NSLog("[Tracelet] detachFromEngine: secondary instance — skipping SDK destroy")
         }

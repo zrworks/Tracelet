@@ -25,7 +25,7 @@ if (Platform.isAndroid) {
 }
 
 // 2. Configure and start
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
@@ -81,7 +81,7 @@ one-shot location fetches, or foreground-only use. The OS may kill the app
 in the background at any time.
 
 ```dart
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
     foregroundService: tl.ForegroundServiceConfig(enabled: false),
@@ -98,7 +98,7 @@ You can switch between modes at runtime using `setConfig()`:
 
 ```dart
 // Switch to background tracking with notification
-await tl.Tracelet.setConfig(tl.Config(
+await tl.Tracelet.setConfig(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
@@ -111,7 +111,7 @@ await tl.Tracelet.setConfig(tl.Config(
 await tl.Tracelet.start();
 
 // Switch to no-notification mode
-await tl.Tracelet.setConfig(tl.Config(
+await tl.Tracelet.setConfig(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
     foregroundService: tl.ForegroundServiceConfig(enabled: false),
@@ -135,7 +135,7 @@ Unlike continuous tracking, periodic mode:
 ### Quick Start
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     periodicLocationInterval: 900,                // 15 minutes
     periodicDesiredAccuracy: DesiredAccuracy.medium,
@@ -198,7 +198,7 @@ The plugin **automatically falls back** to inexact `AlarmManager.set()` if `canS
 
 **Example configuration:**
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     periodicLocationInterval: 600,         // 10 minutes
     periodicDesiredAccuracy: DesiredAccuracy.medium,
@@ -226,7 +226,7 @@ Tracelet's `BootReceiver` and `LocationService` are **tracking-mode-aware**. Aft
 To enable reboot recovery, configure:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   app: AppConfig(
     stopOnTerminate: false,  // Resume after app kill
     startOnBoot: true,       // Resume after device reboot

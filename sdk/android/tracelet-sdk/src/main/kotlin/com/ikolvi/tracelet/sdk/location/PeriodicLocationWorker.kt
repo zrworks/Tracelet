@@ -13,14 +13,11 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.work.*
 import com.ikolvi.tracelet.sdk.ConfigManager
-import com.ikolvi.tracelet.sdk.ListenerEventSender
-import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.model.TrackingMode
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
-import com.ikolvi.tracelet.sdk.http.HttpSyncManager
 import com.ikolvi.tracelet.sdk.receiver.PeriodicAlarmReceiver
+import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationPriority
 import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
@@ -50,9 +47,6 @@ class PeriodicLocationWorker(
 
         @Volatile
         var eventSender: TraceletEventSender? = null
-
-        @Volatile
-        var httpSyncManager: HttpSyncManager? = null
 
         fun schedule(context: Context, intervalSeconds: Int) {
             val interval = intervalSeconds.toLong().coerceAtLeast(900L)
@@ -179,83 +173,10 @@ class PeriodicLocationWorker(
             val location = fetchLocation(config)
 
             if (location != null) {
-                val db = TraceletDatabase.getInstance(applicationContext)
-
-                val lastLat = state.lastPeriodicLatitude
-                val lastLng = state.lastPeriodicLongitude
-                var distance = 0.0
                 var effectiveSpeed = location.speed.toDouble()
-                if (!lastLat.isNaN() && !lastLng.isNaN()) {
-                    val results = FloatArray(1)
-                    android.location.Location.distanceBetween(
-                        lastLat, lastLng,
-                        location.latitude, location.longitude,
-                        results,
-                    )
-                    distance = results[0].toDouble()
-                    val threshold = config.getOdometerAccuracyThreshold()
-                    if (threshold <= 0 || location.accuracy <= threshold) {
-                        state.addOdometer(distance)
-                    }
-                    // If platform speed is 0 or missing, calculate from distance
-                    if (effectiveSpeed <= 0.0) {
-                        val lastTime = state.lastLocationTime
-                        if (lastTime > 0) {
-                            val timeDelta = (location.time - lastTime) / 1000.0
-                            if (timeDelta > 0) {
-                                effectiveSpeed = distance / timeDelta
-                            }
-                        }
-                    }
-                    
-                    val stationaryRadius = config.getStationaryRadius()
-                    val movingThreshold = config.getSpeedMovingThreshold()
-                    if (distance >= stationaryRadius && effectiveSpeed < movingThreshold) {
-                        effectiveSpeed = movingThreshold + 0.1
-                    }
-                }
-                state.lastPeriodicLatitude = location.latitude
-                state.lastPeriodicLongitude = location.longitude
-                state.lastLocationTime = location.time
-
-                // Replace the raw speed with the effective speed in the location object
-                // before building the map, so it gets saved properly.
-                location.speed = effectiveSpeed.toFloat()
-
                 val locationMap = buildLocationMap(location, config, state)
-                db.insertLocation(locationMap)
-                
-                // Feed speed back to SpeedMotionManager to allow transitioning out of STATIONARY
-                if (config.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
-                    try {
-                        com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
-                            .speedMotionManager.onLocation(effectiveSpeed)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to feed speed to SpeedMotionManager", e)
-                    }
-                }
-
-                val sharedSync = httpSyncManager
-                val syncManager = sharedSync ?: run {
-                    val sender = TraceletBootstrap.eventSenderFactory
-                        ?.invoke(applicationContext)
-                        ?: ListenerEventSender()
-                    val localSync = HttpSyncManager(applicationContext, config, sender, db)
-                    localSync.start()
-                    localSync
-                }
-                try {
-                    if (sharedSync != null) {
-                        syncManager.onLocationInserted()
-                    } else {
-                        syncManager.syncBlocking()
-                    }
-                } finally {
-                    if (sharedSync == null) {
-                        syncManager.stop()
-                    }
-                }
-
+                // In the Rust architecture, periodic mode will be handled mostly natively,
+                // but for now we just dispatch to the event sender which will route to Rust EventDispatcher.
                 dispatchLocation(locationMap)
                 Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
             }

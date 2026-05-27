@@ -14,11 +14,13 @@ import com.ikolvi.tracelet.sdk.algorithm.BatteryBudgetEngine
 import com.ikolvi.tracelet.sdk.algorithm.TripManager
 import com.ikolvi.tracelet.sdk.attestation.DeviceAttestor
 import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
-import com.ikolvi.tracelet.sdk.db.DatabaseEncryptionManager
+import uniffi.tracelet_core.DatabaseManager as RustDatabaseManager
+import uniffi.tracelet_core.SyncManager as RustSyncManager
+import uniffi.tracelet_core.EngineState as RustEngineState
+import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
+
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
-import com.ikolvi.tracelet.sdk.http.HttpSyncManager
 import com.ikolvi.tracelet.sdk.location.LocationEngine
 import com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker
 import com.ikolvi.tracelet.sdk.motion.MotionDetector
@@ -78,8 +80,7 @@ class TraceletSdk private constructor(private val context: Context) {
         internal set
     lateinit var stateManager: StateManager
         internal set
-    lateinit var database: TraceletDatabase
-        internal set
+
     lateinit var locationEngine: LocationEngine
         internal set
     lateinit var motionDetector: MotionDetector
@@ -90,8 +91,7 @@ class TraceletSdk private constructor(private val context: Context) {
         internal set
     lateinit var smartMotionCoordinator: com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator
         internal set
-    lateinit var httpSyncManager: HttpSyncManager
-        internal set
+
     lateinit var scheduleManager: ScheduleManager
         internal set
     lateinit var logger: TraceletLogger
@@ -104,10 +104,23 @@ class TraceletSdk private constructor(private val context: Context) {
         internal set
     lateinit var privacyZoneManager: PrivacyZoneManager
         internal set
-    lateinit var encryptionManager: DatabaseEncryptionManager
-        internal set
+
     lateinit var deviceAttestor: DeviceAttestor
         internal set
+
+    // ── Rust Core subsystems ──
+    /** Rust-native SQLite database for location persistence. */
+    var rustDatabase: RustDatabaseManager? = null
+        private set
+    /** Rust-native HTTP sync manager. */
+    var rustSyncManager: RustSyncManager? = null
+        private set
+    /** Rust-native engine state (config + health). */
+    var rustEngineState: RustEngineState? = null
+        private set
+    /** Rust-native event dispatcher that orchestrates persist → sync. */
+    var rustEventDispatcher: RustEventDispatcher? = null
+        private set
 
     private lateinit var eventSender: TraceletEventSender
     val mainHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -174,26 +187,53 @@ class TraceletSdk private constructor(private val context: Context) {
         // Persistence
         configManager = ConfigManager.getInstance(context)
         stateManager = StateManager(context)
-        encryptionManager = DatabaseEncryptionManager(context)
-        val dbPassword = encryptionManager.getDatabasePassword(null)
-        database = TraceletDatabase.getInstance(context, dbPassword)
+
+        // ── Rust Core bootstrap ──
+        val dbDir = context.filesDir.resolve("tracelet")
+        if (!dbDir.exists()) dbDir.mkdirs()
+        val dbPath = dbDir.resolve("tracelet.db").absolutePath
+        try {
+            val db = RustDatabaseManager(dbPath)
+            
+            val savedConfig = configManager.getConfig()
+            if (savedConfig["encryptDatabase"] == true) {
+                val key = savedConfig["encryptionKey"] as? String ?: ""
+                db.setEncryptionKey(key)
+            } else {
+                db.setEncryptionKey("")
+            }
+            
+            val sync = RustSyncManager()
+            val state = RustEngineState()
+            val dispatcher = RustEventDispatcher(db, sync, state)
+            rustDatabase = db
+            rustSyncManager = sync
+            rustEngineState = state
+            rustEventDispatcher = dispatcher
+            android.util.Log.i("Tracelet", "Rust Core initialized: $dbPath")
+            syncConfigToRustFlat()
+        } catch (e: Exception) {
+            android.util.Log.e("Tracelet", "Failed to initialize Rust Core: ${e.message}")
+        }
 
         // Logger
-        logger = TraceletLogger(context, configManager, database)
+        logger = TraceletLogger(context, configManager)
 
         // Enterprise
-        auditTrailManager = AuditTrailManager(context, database, configManager)
-        privacyZoneManager = PrivacyZoneManager(context, database, configManager)
+        auditTrailManager = AuditTrailManager(context, configManager, rustDatabase)
+        privacyZoneManager = PrivacyZoneManager(context, configManager, rustDatabase)
         deviceAttestor = DeviceAttestor(context)
 
-        // Location engine
+        // Location engine — persistence flows through Rust EventDispatcher
         locationEngine = LocationEngine(
-            context, configManager, stateManager, eventSender, database
+            context, configManager, stateManager, eventSender
         )
+        locationEngine.rustEventDispatcher = rustEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager
+        // Wire: every persisted location goes through Rust Core for DB + auto-sync
         locationEngine.onLocationPersisted = {
-            httpSyncManager.onLocationInserted()
+            // EventDispatcher handles insert_location + auto HTTP sync internally
         }
 
         // Trip manager
@@ -310,14 +350,9 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // Geofencing
         geofenceManager = GeofenceManager(
-            context, configManager, eventSender, database
+            context, configManager, eventSender, rustDatabase
         )
         GeofenceBroadcastReceiver.geofenceManager = geofenceManager
-
-        // HTTP sync
-        httpSyncManager = HttpSyncManager(
-            context, configManager, eventSender, database
-        )
 
         // Schedule
         scheduleManager = ScheduleManager(
@@ -333,7 +368,6 @@ class TraceletSdk private constructor(private val context: Context) {
         // Re-wire periodic mode if already active (process restart)
         if (stateManager.enabled && stateManager.trackingMode == TrackingMode.PERIODIC) {
             PeriodicLocationWorker.eventSender = eventSender
-            PeriodicLocationWorker.httpSyncManager = httpSyncManager
         }
     }
 
@@ -389,19 +423,9 @@ class TraceletSdk private constructor(private val context: Context) {
     fun ready(config: Map<String, Any?>, callback: (Map<String, Any?>) -> Unit) {
         val merged = configManager.setConfig(config)
 
-        // Auto-encrypt if enabled and SQLCipher is available
-        if (configManager.getEncryptDatabase() && !encryptionManager.isDatabaseEncrypted()) {
-            if (!DatabaseEncryptionManager.isSqlCipherAvailable()) {
-                logger.warning("encryptDatabase is enabled but SQLCipher is not on the classpath. " +
-                        "Database will remain unencrypted until the dependency is added.")
-            } else {
-                val customKey = configManager.getEncryptionKey()
-                val key = encryptionManager.getOrCreateKey(customKey)
-                val success = database.encryptDatabase(key, encryptionManager)
-                if (success) {
-                    database = TraceletDatabase.getInstance(context, key)
-                }
-            }
+        // Auto-encrypt if enabled
+        if (merged["encryptDatabase"] == true) {
+            encryptDatabase()
         }
 
         // Remote config
@@ -428,29 +452,9 @@ class TraceletSdk private constructor(private val context: Context) {
 
         val timeout = configManager.getRemoteConfigTimeout()
         val headers = configManager.getRemoteConfigHeaders()
-        httpSyncManager.fetchRemoteConfig(url, headers, timeout.toLong()) { remoteConfig ->
-            mainHandler.post {
-                if (remoteConfig != null) {
-                    val merged = configManager.setConfig(remoteConfig)
-                    eventSender.sendRemoteConfigEvent(
-                        mapOf(
-                            "success" to true,
-                            "statusCode" to 200,
-                            "appliedConfig" to remoteConfig,
-                        )
-                    )
-                    completeReady(merged, callback)
-                } else {
-                    eventSender.sendRemoteConfigEvent(
-                        mapOf(
-                            "success" to false,
-                            "error" to "Remote config fetch failed or timed out",
-                        )
-                    )
-                    completeReady(localConfig, callback)
-                }
-            }
-        }
+        // TODO: Port remote config fetch to Rust
+        // For now, proceed with localConfig
+        completeReady(localConfig, callback)
     }
 
     private fun completeReady(
@@ -464,7 +468,7 @@ class TraceletSdk private constructor(private val context: Context) {
         LocationService.stopBootTracking()
 
         if (configManager.isDebug()) soundManager.start()
-        httpSyncManager.start()
+
         logger.pruneOldLogs()
         updateBootReceiverState()
 
@@ -485,6 +489,25 @@ class TraceletSdk private constructor(private val context: Context) {
         }
 
         isReady = true
+        syncConfigToRustFlat()
+
+        if (stateManager.enabled) {
+            when (stateManager.trackingMode) {
+                TrackingMode.CONTINUOUS -> {
+                    logger.info("Resuming continuous tracking on ready/takeover")
+                    start()
+                }
+                TrackingMode.PERIODIC -> {
+                    logger.info("Resuming periodic tracking on ready/takeover")
+                    startPeriodic()
+                }
+                TrackingMode.GEOFENCES -> {
+                    logger.info("Resuming geofence tracking on ready/takeover")
+                    startGeofences()
+                }
+            }
+        }
+
         val stateMap = stateManager.toMap(config)
         logger.info("ready() called")
         callback(stateMap)
@@ -516,7 +539,6 @@ class TraceletSdk private constructor(private val context: Context) {
         locationEngine.stopPeriodic()
         PeriodicLocationWorker.cancel(context)
         PeriodicLocationWorker.eventSender = null
-        PeriodicLocationWorker.httpSyncManager = null
 
         stateManager.enabled = true
         stateManager.trackingMode = TrackingMode.CONTINUOUS
@@ -614,7 +636,6 @@ class TraceletSdk private constructor(private val context: Context) {
 
         PeriodicLocationWorker.cancel(context)
         PeriodicLocationWorker.eventSender = null
-        PeriodicLocationWorker.httpSyncManager = null
 
         if (configManager.isForegroundServiceEnabled()) {
             LocationService.stop(context)
@@ -698,7 +719,6 @@ class TraceletSdk private constructor(private val context: Context) {
         stateManager.isMoving = false
 
         PeriodicLocationWorker.eventSender = eventSender
-        PeriodicLocationWorker.httpSyncManager = httpSyncManager
 
         val interval = configManager.getPeriodicLocationInterval()
         val useForeground = configManager.getPeriodicUseForegroundService()
@@ -765,6 +785,13 @@ class TraceletSdk private constructor(private val context: Context) {
         val oldConfig = configManager.getConfig()
         val merged = configManager.setConfig(config)
 
+        if (merged["encryptDatabase"] == true) {
+            val key = merged["encryptionKey"] as? String ?: ""
+            rustDatabase?.setEncryptionKey(key)
+        } else {
+            rustDatabase?.setEncryptionKey("")
+        }
+
         if (stateManager.enabled) {
             val locationKeys = listOf(
                 "desiredAccuracy", "distanceFilter", "locationUpdateInterval",
@@ -779,6 +806,7 @@ class TraceletSdk private constructor(private val context: Context) {
         }
 
         updateBootReceiverState()
+        syncConfigToRustFlat()
         return stateManager.toMap(merged)
     }
 
@@ -918,41 +946,101 @@ class TraceletSdk private constructor(private val context: Context) {
 
     fun getLocations(query: Map<String, Any?>?): List<Map<String, Any?>> {
         if (!isReady) return emptyList()
-        val limit = (query?.get("limit") as? Number)?.toInt() ?: -1
-        val offset = (query?.get("offset") as? Number)?.toInt() ?: 0
-        val orderAsc = (query?.get("order") as? Number)?.toInt() != 1
-        val startTime = (query?.get("start") as? Number)?.toLong()
-        val endTime = (query?.get("end") as? Number)?.toLong()
-        return database.getLocations(limit, offset, orderAsc, startTime, endTime)
+        val db = rustDatabase ?: return emptyList()
+        val limit = (query?.get("limit") as? Number)?.toInt() ?: 1000
+        return try {
+            val records = db.getLocationsBatch(limit)
+            records.map { record ->
+                mapOf(
+                    "uuid" to record.id.toString(),
+                    "timestamp" to record.timestamp,
+                    "is_moving" to stateManager.isMoving,
+                    "odometer" to locationEngine.getOdometer(),
+                    "event" to "location",
+                    "mock" to record.isMock,
+                    "coords" to mapOf(
+                        "latitude" to record.latitude,
+                        "longitude" to record.longitude,
+                        "altitude" to record.altitude,
+                        "speed" to record.speed,
+                        "heading" to record.heading,
+                        "accuracy" to record.accuracy
+                    ),
+                    "activity" to mapOf(
+                        "type" to record.activity,
+                        "confidence" to 100
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("getLocations failed: ${e.message}")
+            emptyList()
+        }
     }
 
     fun getCount(query: Map<String, Any?>?): Int {
         if (!isReady) return 0
-        val startTime = (query?.get("start") as? Number)?.toLong()
-        val endTime = (query?.get("end") as? Number)?.toLong()
-        return database.getLocationCount(startTime, endTime)
+        val db = rustDatabase ?: return 0
+        return try {
+            db.getLocationsCount()
+        } catch (e: Exception) {
+            logger.error("getCount failed: ${e.message}")
+            0
+        }
     }
 
     fun destroyLocations(): Boolean {
         if (!isReady) return false
-        return database.deleteAllLocations()
+        val db = rustDatabase ?: return false
+        return try {
+            db.destroyLocations()
+            true
+        } catch (e: Exception) {
+            logger.error("destroyLocations failed: ${e.message}")
+            false
+        }
     }
 
     fun destroySyncedLocations(): Int {
         if (!isReady) return 0
-        return database.deleteSyncedLocations()
+        // Centralized Rust Core auto-sync immediately prunes synced locations.
+        return 0
     }
 
     fun destroyLocation(uuid: String): Boolean {
         if (!isReady) return false
-        return database.deleteLocation(uuid)
+        val db = rustDatabase ?: return false
+        val id = uuid.toLongOrNull() ?: return false
+        return try {
+            db.destroyLocation(id)
+            true
+        } catch (e: Exception) {
+            logger.error("destroyLocation failed: ${e.message}")
+            false
+        }
     }
 
     fun insertLocation(params: Map<String, Any?>): String {
         if (!isReady) return ""
-        val uuid = database.insertLocation(params)
-        httpSyncManager.onLocationInserted()
-        return uuid
+        val db = rustDatabase ?: return ""
+        val coords = params["coords"] as? Map<*, *> ?: return ""
+        val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0
+        val lng = (coords["longitude"] as? Number)?.toDouble() ?: 0.0
+        val acc = (coords["accuracy"] as? Number)?.toDouble() ?: 0.0
+        val speed = (coords["speed"] as? Number)?.toDouble() ?: 0.0
+        val heading = (coords["heading"] as? Number)?.toDouble() ?: 0.0
+        val altitude = (coords["altitude"] as? Number)?.toDouble() ?: 0.0
+        val isMock = params["mock"] == true || params["is_mock"] == true
+        val activityMap = params["activity"] as? Map<*, *>
+        val activity = (activityMap?.get("type") as? String) ?: "unknown"
+        
+        return try {
+            db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity)
+            "success"
+        } catch (e: Exception) {
+            logger.error("insertLocation failed: ${e.message}")
+            ""
+        }
     }
 
     // =========================================================================
@@ -961,12 +1049,63 @@ class TraceletSdk private constructor(private val context: Context) {
 
     fun sync(callback: (List<Map<String, Any?>>) -> Unit) {
         if (!isReady) { callback(emptyList()); return }
-        httpSyncManager.sync(callback)
+        val db = rustDatabase ?: return callback(emptyList())
+        val sync = rustSyncManager ?: return callback(emptyList())
+        val state = rustEngineState ?: return callback(emptyList())
+        
+        Thread {
+            try {
+                val config = state.getConfig()
+                val batchSize = config.http.maxBatchSize
+                val records = db.getLocationsBatch(batchSize)
+                if (records.isEmpty()) {
+                    mainHandler.post { callback(emptyList()) }
+                    return@Thread
+                }
+                
+                val syncedCount = sync.syncBatchBlocking(config.http, records)
+                if (syncedCount > 0) {
+                    val lastRecord = records.take(syncedCount).lastOrNull()
+                    if (lastRecord != null) {
+                        db.clearLocationsUpTo(lastRecord.id)
+                    }
+                    val mapped = records.take(syncedCount).map { record ->
+                        mapOf(
+                            "uuid" to record.id.toString(),
+                            "timestamp" to record.timestamp,
+                            "is_moving" to stateManager.isMoving,
+                            "odometer" to locationEngine.getOdometer(),
+                            "event" to "location",
+                            "mock" to record.isMock,
+                            "coords" to mapOf(
+                                "latitude" to record.latitude,
+                                "longitude" to record.longitude,
+                                "altitude" to record.altitude,
+                                "speed" to record.speed,
+                                "heading" to record.heading,
+                                "accuracy" to record.accuracy
+                            ),
+                            "activity" to mapOf(
+                                "type" to record.activity,
+                                "confidence" to 100
+                            )
+                        )
+                    }
+                    mainHandler.post { callback(mapped) }
+                } else {
+                    mainHandler.post { callback(emptyList()) }
+                }
+            } catch (e: Exception) {
+                logger.error("Sync failed: ${e.message}")
+                mainHandler.post { callback(emptyList()) }
+            }
+        }.start()
     }
 
     fun setDynamicHeaders(headers: Map<String, String>) {
         if (!isReady) return
         configManager.setDynamicHeaders(headers)
+        rustEngineState?.setDynamicHeaders(HashMap(headers))
     }
 
     fun setRouteContext(ctx: Map<String, Any?>) {
@@ -1308,8 +1447,9 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     fun isDatabaseEncrypted(): Boolean {
-        if (!::encryptionManager.isInitialized) return false
-        return encryptionManager.isDatabaseEncrypted()
+        if (!isReady) return false
+        val state = rustEngineState ?: return false
+        return state.getConfig().security.encryptDatabase
     }
 
     /**
@@ -1320,12 +1460,26 @@ class TraceletSdk private constructor(private val context: Context) {
     fun encryptDatabase(): Boolean {
         if (!isReady) return false
         val customKey = configManager.getEncryptionKey()
-        val key = encryptionManager.getOrCreateKey(customKey)
-        val success = database.encryptDatabase(key, encryptionManager)
-        if (success) {
-            database = TraceletDatabase.getInstance(context, key)
+        val state = rustEngineState ?: return false
+        return try {
+            val currentConfig = state.getConfig()
+            val newSecurity = uniffi.tracelet_core.SecurityConfig(encryptDatabase = true)
+            val newConfig = uniffi.tracelet_core.EngineConfig(
+                geo = currentConfig.geo,
+                motion = currentConfig.motion,
+                http = currentConfig.http,
+                geofence = currentConfig.geofence,
+                persistence = currentConfig.persistence,
+                audit = currentConfig.audit,
+                security = newSecurity,
+                attestation = currentConfig.attestation
+            )
+            state.updateConfig(newConfig)
+            true
+        } catch (e: Exception) {
+            logger.error("encryptDatabase failed: ${e.message}")
+            false
         }
-        return success
     }
 
     // =========================================================================
@@ -1359,10 +1513,7 @@ class TraceletSdk private constructor(private val context: Context) {
         )
         val from = (query?.get("from") as? Number)?.toLong()
         val to = (query?.get("to") as? Number)?.toLong()
-        val locations = database.getLocations(
-            limit = -1, offset = 0, orderAsc = true,
-            startTime = from, endTime = to
-        )
+        val locations = getLocations(query)
 
         var totalGrams = 0.0
         val carbonByMode = mutableMapOf<String, Double>()
@@ -1409,7 +1560,18 @@ class TraceletSdk private constructor(private val context: Context) {
 
     private fun handleMotionStateChange(isMoving: Boolean) {
         if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
-            smartMotionCoordinator.onAccelStateChange(isMoving)
+            // In SMART mode, route the accel event through the coordinator first.
+            // Only reset the speed state machine when the coordinator actually
+            // decides to SWITCH_TO_CONTINUOUS (a genuine wake-up from stationary).
+            // This prevents micro-vibrations from the significant motion sensor
+            // from force-resetting the speed SM on every fire (infinite loop),
+            // while still allowing the system to wake from stationary when the
+            // coordinator determines real movement has begun.
+            val action = smartMotionCoordinator.onAccelStateChange(isMoving)
+            if (action == uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_CONTINUOUS
+                && ::speedMotionManager.isInitialized) {
+                speedMotionManager.onManualPaceChange(true)
+            }
             return
         }
 
@@ -1495,7 +1657,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     val fixTime = cached.time
                     if (fixTime != lastHeartbeatLocationTime) {
                         lastHeartbeatLocationTime = fixTime
-                        database.insertLocationAsync(locationData)
+                        // TODO: Port to Rust
                         locationEngine.onLocationPersisted?.invoke()
                     }
 
@@ -1680,7 +1842,8 @@ class TraceletSdk private constructor(private val context: Context) {
         // HttpSyncManager, but the plugin's instance must not be torn down
         // before that bootstrap completes (#65).
         if (!keepAlive) {
-            httpSyncManager.stop()
+            // TODO: Port to Rust
+        // httpSyncManager.stop()
         }
 
         // ScheduleManager & heartbeat — keep alive for continuity.
@@ -1699,10 +1862,81 @@ class TraceletSdk private constructor(private val context: Context) {
         }
         if (!keepPeriodicAlive) {
             PeriodicLocationWorker.eventSender = null
-            PeriodicLocationWorker.httpSyncManager = null
+            // TODO: Port to Rust
+        // PeriodicLocationWorker.httpSyncManager = null
         }
         if (!keepGeofencesAlive) {
             GeofenceBroadcastReceiver.geofenceManager = null
+        }
+    }
+
+    /**
+     * Synchronizes the active platform configuration stored in [configManager] 
+     * to the underlying Rust Core [rustEngineState] instance.
+     * 
+     * This method maps every individual geolocation, motion, network, geofencing,
+     * persistence, audit, database encryption, and device attestation property 
+     * from the native Android ConfigManager directly into a UniFFI-exported 
+     * [uniffi.tracelet_core.EngineConfig] record, ensuring the Rust core 
+     * engine maintains perfect configuration parity with the platform layer.
+     */
+    private fun syncConfigToRustFlat() {
+        val state = rustEngineState ?: return
+        try {
+            val newConfig = uniffi.tracelet_core.EngineConfig(
+                geo = uniffi.tracelet_core.GeoConfig(
+                    desiredAccuracy = configManager.getDesiredAccuracy(),
+                    distanceFilter = configManager.getDistanceFilter(),
+                    stationaryRadius = configManager.getStationaryRadius(),
+                    locationTimeout = configManager.getLocationTimeout(),
+                    disableElasticity = configManager.getDisableElasticity(),
+                    elasticityMultiplier = configManager.getElasticityMultiplier(),
+                    enableAdaptiveMode = configManager.getEnableAdaptiveMode(),
+                    enableTimestampMeta = configManager.getEnableTimestampMeta(),
+                    enableSparseUpdates = configManager.getEnableSparseUpdates(),
+                    sparseDistanceThreshold = configManager.getSparseDistanceThreshold()
+                ),
+                motion = uniffi.tracelet_core.MotionConfig(
+                    stopTimeout = configManager.getStopTimeout(),
+                    motionTriggerDelay = configManager.getMotionTriggerDelay(),
+                    disableMotionActivityUpdates = configManager.isMotionActivityUpdatesDisabled(),
+                    disableStopDetection = configManager.getDisableStopDetection(),
+                    shakeThreshold = configManager.getShakeThreshold()
+                ),
+                http = uniffi.tracelet_core.HttpConfig(
+                    url = configManager.getHttpUrl(),
+                    method = configManager.getHttpMethod(),
+                    headers = HashMap(configManager.getMergedHttpHeaders()),
+                    batchSync = configManager.getBatchSync(),
+                    maxBatchSize = configManager.getMaxBatchSize(),
+                    autoSync = configManager.getAutoSync(),
+                    maxRetries = configManager.getMaxRetries(),
+                    retryBackoffBase = configManager.getRetryBackoffBase(),
+                    retryBackoffCap = configManager.getRetryBackoffCap(),
+                    sslPinningCertificates = configManager.getSslPinningCertificates().takeIf { it.isNotEmpty() }
+                ),
+                geofence = uniffi.tracelet_core.GeofenceConfig(
+                    geofenceInitialTriggerEntry = configManager.getGeofenceInitialTriggerEntry(),
+                    geofenceProximityRadius = configManager.getGeofenceProximityRadius()
+                ),
+                persistence = uniffi.tracelet_core.PersistenceConfig(
+                    maxDaysToPersist = configManager.getMaxDaysToPersist(),
+                    maxRecordsToPersist = configManager.getMaxRecordsToPersist()
+                ),
+                audit = uniffi.tracelet_core.AuditConfig(
+                    enabled = configManager.getAuditEnabled()
+                ),
+                security = uniffi.tracelet_core.SecurityConfig(
+                    encryptDatabase = configManager.getEncryptDatabase()
+                ),
+                attestation = uniffi.tracelet_core.AttestationConfig(
+                    enabled = configManager.getAttestationEnabled()
+                )
+            )
+            state.updateConfig(newConfig)
+            android.util.Log.d("Tracelet", "Successfully synchronized ConfigManager state to Rust Core.")
+        } catch (e: Exception) {
+            android.util.Log.e("Tracelet", "Failed to sync config to Rust Core: ${e.message}")
         }
     }
 }

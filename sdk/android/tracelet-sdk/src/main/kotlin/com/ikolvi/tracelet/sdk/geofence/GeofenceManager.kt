@@ -13,7 +13,6 @@ import uniffi.tracelet_core.GeofenceEvaluator
 import uniffi.tracelet_core.CoreGeofence
 import uniffi.tracelet_core.Coordinate
 import com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofence
 import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofencingClient
 import com.ikolvi.tracelet.sdk.wrapper.TraceletGeofencingRequest
@@ -37,7 +36,7 @@ class GeofenceManager(
     private val context: Context,
     private val config: ConfigManager,
     private val events: TraceletEventSender,
-    private val db: TraceletDatabase,
+    private val rustDatabase: uniffi.tracelet_core.DatabaseManager? = null,
     private val geofencingClient: TraceletGeofencingClient = TraceletServices.getInstance(context).getGeofencingClient(context),
 ) {
     companion object {
@@ -53,17 +52,49 @@ class GeofenceManager(
 
     private var geofencePendingIntent: PendingIntent? = null
 
-    /** Cached geofences — invalidated on add/remove to avoid DB query per location. */
+    /**
+     * In-memory cache of geofences to prevent executing database queries per GPS location update.
+     * Maps are preserved to maintain compatibility with system location callbacks and Dart channel handlers.
+     */
     private var cachedGeofences: List<Map<String, Any?>>? = null
 
-    /** Returns geofences from cache, refreshing from DB only when invalidated. */
+    /**
+     * Retrieves geofences from the local cache. If the cache is empty or has been invalidated,
+     * it performs a fresh query against the shared Rust database and maps the [CoreGeofence]
+     * models to generic map structures.
+     */
     private fun getCachedGeofences(): List<Map<String, Any?>> {
-        return cachedGeofences ?: db.getGeofences().also { cachedGeofences = it }
+        val cached = cachedGeofences
+        if (cached != null) {
+            return cached
+        }
+        // Fetch all active geofences from the Rust core SQLite database
+        val loaded = rustDatabase?.getGeofences() ?: emptyList()
+        val mapped = loaded.map { mapFromCoreGeofence(it) }
+        cachedGeofences = mapped
+        return mapped
     }
 
-    /** Invalidate the geofence cache — forces DB re-query on next access. */
+    /**
+     * Invalidates the in-memory geofence cache. Forces a query against the Rust DB on the next access.
+     */
     private fun invalidateGeofenceCache() {
         cachedGeofences = null
+    }
+
+    /**
+     * Helper method to transform a Rust [CoreGeofence] record into a generic map structure.
+     * Translates coordinates and poly-vertex lists into the standard JSON-compatible formats.
+     */
+    private fun mapFromCoreGeofence(gf: CoreGeofence): Map<String, Any?> {
+        val verticesList = gf.vertices.map { listOf(it.lat, it.lng) }
+        return mapOf(
+            "identifier" to gf.identifier,
+            "latitude" to gf.latitude,
+            "longitude" to gf.longitude,
+            "radius" to gf.radius,
+            "vertices" to verticesList
+        )
     }
 
     /** Registered (active on the platform) geofence identifiers (thread-safe, A-M6). */
@@ -88,7 +119,16 @@ class GeofenceManager(
         val identifier = geofenceMap["identifier"] as? String ?: return false
 
         // Persist to database
-        if (!db.insertGeofence(geofenceMap)) return false
+        val lat = (geofenceMap["latitude"] as? Number)?.toDouble() ?: 0.0
+        val lng = (geofenceMap["longitude"] as? Number)?.toDouble() ?: 0.0
+        val radius = (geofenceMap["radius"] as? Number)?.toDouble() ?: 0.0
+        
+        try {
+            rustDatabase?.insertGeofence(identifier, lat, lng, radius)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist geofence to Rust DB", e)
+        }
+        
         invalidateGeofenceCache()
 
         // Polygon geofences are evaluated in Dart — no system registration needed
@@ -96,10 +136,10 @@ class GeofenceManager(
         if (vertices is List<*> && vertices.size >= 3) return true
 
         // If we have a known device location, use proximity-based registration
-        val lat = lastLatitude
-        val lng = lastLongitude
-        if (lat != null && lng != null) {
-            updateProximity(lat, lng)
+        val deviceLat = lastLatitude
+        val deviceLng = lastLongitude
+        if (deviceLat != null && deviceLng != null) {
+            updateProximity(deviceLat, deviceLng)
             return true
         }
 
@@ -120,25 +160,32 @@ class GeofenceManager(
 
     /** Remove a single geofence by identifier. */
     fun removeGeofence(identifier: String): Boolean {
-        db.deleteGeofence(identifier)
+        try {
+            rustDatabase?.deleteGeofence(identifier)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete geofence from Rust DB", e)
+        }
         invalidateGeofenceCache()
         return unregisterGeofence(identifier)
     }
 
     /** Remove all geofences. */
     fun removeGeofences(): Boolean {
-        db.deleteAllGeofences()
+        try {
+            rustDatabase?.clearGeofences()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear geofences from Rust DB", e)
+        }
         return unregisterAllGeofences()
     }
 
-    /** Get all stored geofences (from database). */
-    fun getGeofences(): List<Map<String, Any?>> = db.getGeofences()
+    fun getGeofences(): List<Map<String, Any?>> = getCachedGeofences()
 
     /** Get a single geofence by identifier. */
-    fun getGeofence(identifier: String): Map<String, Any?>? = db.getGeofence(identifier)
+    fun getGeofence(identifier: String): Map<String, Any?>? = getCachedGeofences().find { it["identifier"] == identifier }
 
     /** Check if a geofence exists. */
-    fun geofenceExists(identifier: String): Boolean = db.geofenceExists(identifier)
+    fun geofenceExists(identifier: String): Boolean = getGeofence(identifier) != null
 
     /**
      * Re-registers persisted geofences with the GeofencingClient.
@@ -154,7 +201,7 @@ class GeofenceManager(
             return
         }
         // No known location — register all circular geofences (capped at platform max)
-        val geofences = db.getGeofences()
+        val geofences = getCachedGeofences()
         var count = 0
         val maxMonitored = resolveMaxMonitored()
         for (gf in geofences) {
@@ -193,7 +240,7 @@ class GeofenceManager(
 
         for (geofence in triggeringGeofences) {
             val identifier = geofence.requestId
-            val storedGf = db.getGeofence(identifier)
+            val storedGf = getGeofence(identifier)
 
             val eventData = mapOf(
                 "identifier" to identifier,
@@ -218,7 +265,7 @@ class GeofenceManager(
         val on = mutableListOf<Map<String, Any?>>()
         val off = mutableListOf<Map<String, Any?>>()
         for (gf in triggeringGeofences) {
-            val gfMap = db.getGeofence(gf.requestId) ?: mapOf("identifier" to gf.requestId)
+            val gfMap = getGeofence(gf.requestId) ?: mapOf("identifier" to gf.requestId)
             when (action) {
                 "ENTER" -> on.add(gfMap)
                 "EXIT" -> off.add(gfMap)
@@ -351,7 +398,7 @@ class GeofenceManager(
 
         // Fire geofencesChange event (on = activated, off = deactivated)
         val on = toAdd.mapNotNull { candidateMap[it] }
-        val off = toRemove.map { db.getGeofence(it) ?: mapOf<String, Any?>("identifier" to it) }
+        val off = toRemove.map { getGeofence(it) ?: mapOf<String, Any?>("identifier" to it) }
         if (on.isNotEmpty() || off.isNotEmpty()) {
             events.sendGeofencesChange(mapOf("on" to on, "off" to off))
         }

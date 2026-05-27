@@ -24,12 +24,13 @@ void main() async {
   );
 
   // 4. Initialize Tracelet
+  final baseConfig = await Config.balanced();
   await Tracelet.ready(
-    Config(
-      geo: const GeoConfig(distanceFilter: 50),
+    baseConfig.copyWith(
+      geo: baseConfig.geo.copyWith(distanceFilter: 50.0),
       http: httpConfig,
-      android: const AndroidConfig(
-        foregroundService: ForegroundServiceConfig(
+      android: baseConfig.android.copyWith(
+        foregroundService: baseConfig.android.foregroundService.copyWith(
           enabled: true, // Required for continuous tracking when terminated
           showNotificationOnPauseOnly:
               true, // Hides notification while app is in foreground

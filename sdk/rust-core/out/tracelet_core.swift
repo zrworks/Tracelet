@@ -529,6 +529,24 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterData: FfiConverterRustBuffer {
+    typealias SwiftType = Data
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        let len: Int32 = try readInt(&buf)
+        return Data(try readBytes(&buf, count: Int(len)))
+    }
+
+    public static func write(_ value: Data, into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        writeBytes(&buf, value)
+    }
+}
+
 
 
 
@@ -1038,6 +1056,826 @@ public func FfiConverterTypeBatteryBudgetEngine_lift(_ handle: UInt64) throws ->
 #endif
 public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngine) -> UInt64 {
     return FfiConverterTypeBatteryBudgetEngine.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+public protocol DatabaseManagerProtocol: AnyObject, Sendable {
+    
+    func clearGeofences() throws 
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+    func clearLocationsUpTo(maxId: Int64) throws 
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+    func clearPrivacyZones() throws 
+    
+    func decryptPayload(payload: Data)  -> Data?
+    
+    func deleteGeofence(identifier: String) throws 
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+    func deletePrivacyZone(identifier: String) throws 
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+    func destroyLocation(id: Int64) throws 
+    
+    /**
+     * Deletes all location records in the database.
+     */
+    func destroyLocations() throws 
+    
+    func encryptPayload(plaintext: Data)  -> Data?
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+    func getAuditTrail() throws  -> [DbAuditRecord]
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+    func getGeofences() throws  -> [CoreGeofence]
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+    func getLocationsBatch(limit: Int32) throws  -> [DbLocationRecord]
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    func getLocationsCount() throws  -> Int32
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+    func getPrivacyZones() throws  -> [CorePrivacyZone]
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+    func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32) throws 
+    
+    func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double) throws 
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String) throws 
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+    func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double) throws 
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    func isEmpty() throws  -> Bool
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */
+    func setEncryptionKey(key: String) 
+    
+}
+/**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+open class DatabaseManager: DatabaseManagerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_databasemanager(self.handle, $0) }
+    }
+    /**
+     * Initializes a new database connection and creates tables if they don't exist.
+     */
+public convenience init(dbPath: String)throws  {
+    let handle =
+        try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_constructor_databasemanager_new(
+        FfiConverterString.lower(dbPath),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_databasemanager(handle, $0) }
+    }
+
+    
+
+    
+open func clearGeofences()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+open func clearLocationsUpTo(maxId: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(maxId),$0
+    )
+}
+}
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+open func clearPrivacyZones()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func decryptPayload(payload: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(payload),$0
+    )
+})
+}
+    
+open func deleteGeofence(identifier: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_delete_geofence(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),$0
+    )
+}
+}
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+open func deletePrivacyZone(identifier: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_delete_privacy_zone(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),$0
+    )
+}
+}
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+open func destroyLocation(id: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_destroy_location(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(id),$0
+    )
+}
+}
+    
+    /**
+     * Deletes all location records in the database.
+     */
+open func destroyLocations()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_destroy_locations(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func encryptPayload(plaintext: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_encrypt_payload(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(plaintext),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+open func getAuditTrail()throws  -> [DbAuditRecord]  {
+    return try  FfiConverterSequenceTypeDbAuditRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+open func getGeofences()throws  -> [CoreGeofence]  {
+    return try  FfiConverterSequenceTypeCoreGeofence.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_geofences(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+open func getLocationsBatch(limit: Int32)throws  -> [DbLocationRecord]  {
+    return try  FfiConverterSequenceTypeDbLocationRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+})
+}
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+open func getLocationsCount()throws  -> Int32  {
+    return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+open func getPrivacyZones()throws  -> [CorePrivacyZone]  {
+    return try  FfiConverterSequenceTypeCorePrivacyZone.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+open func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uuid),
+        FfiConverterString.lower(hash),
+        FfiConverterString.lower(prevHash),
+        FfiConverterInt32.lower(index),$0
+    )
+}
+}
+    
+open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(radius),$0
+    )
+}
+}
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_location(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(acc),
+        FfiConverterDouble.lower(speed),
+        FfiConverterDouble.lower(heading),
+        FfiConverterDouble.lower(altitude),
+        FfiConverterBool.lower(isMock),
+        FfiConverterString.lower(activity),$0
+    )
+}
+}
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+open func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(radius),
+        FfiConverterInt32.lower(action),
+        FfiConverterDouble.lower(degradedAccuracy),$0
+    )
+}
+}
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+open func isEmpty()throws  -> Bool  {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_is_empty(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */
+open func setEncryptionKey(key: String)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_set_encryption_key(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDatabaseManager: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = DatabaseManager
+
+    public static func lift(_ handle: UInt64) throws -> DatabaseManager {
+        return DatabaseManager(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: DatabaseManager) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DatabaseManager {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: DatabaseManager, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDatabaseManager_lift(_ handle: UInt64) throws -> DatabaseManager {
+    return try FfiConverterTypeDatabaseManager.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDatabaseManager_lower(_ value: DatabaseManager) -> UInt64 {
+    return FfiConverterTypeDatabaseManager.lower(value)
+}
+
+
+
+
+
+
+/**
+ * The centralized Engine State that holds the active configuration and current health.
+ * This acts as the single source of truth for the entire SDK across platforms.
+ */
+public protocol EngineStateProtocol: AnyObject, Sendable {
+    
+    /**
+     * Retrieves a cloned snapshot of the current active configuration.
+     */
+    func getConfig()  -> EngineConfig
+    
+    /**
+     * Retrieves a cloned snapshot of the current health state.
+     */
+    func getHealth()  -> HealthState
+    
+    /**
+     * Updates the dynamic HTTP headers in the configuration.
+     */
+    func setDynamicHeaders(headers: [String: String]) 
+    
+    /**
+     * Updates the global tracking status.
+     */
+    func setTracking(tracking: Bool) 
+    
+    /**
+     * Updates the global engine configuration.
+     */
+    func updateConfig(newConfig: EngineConfig) 
+    
+    /**
+     * Updates the global engine configuration from a JSON string.
+     */
+    func updateConfigFromJson(json: String) throws 
+    
+}
+/**
+ * The centralized Engine State that holds the active configuration and current health.
+ * This acts as the single source of truth for the entire SDK across platforms.
+ */
+open class EngineState: EngineStateProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_enginestate(self.handle, $0) }
+    }
+    /**
+     * Initializes a new EngineState with default configuration and health.
+     */
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_enginestate_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_enginestate(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Retrieves a cloned snapshot of the current active configuration.
+     */
+open func getConfig() -> EngineConfig  {
+    return try!  FfiConverterTypeEngineConfig_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_get_config(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves a cloned snapshot of the current health state.
+     */
+open func getHealth() -> HealthState  {
+    return try!  FfiConverterTypeHealthState_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_get_health(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Updates the dynamic HTTP headers in the configuration.
+     */
+open func setDynamicHeaders(headers: [String: String])  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(
+            self.uniffiCloneHandle(),
+        FfiConverterDictionaryStringString.lower(headers),$0
+    )
+}
+}
+    
+    /**
+     * Updates the global tracking status.
+     */
+open func setTracking(tracking: Bool)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_set_tracking(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(tracking),$0
+    )
+}
+}
+    
+    /**
+     * Updates the global engine configuration.
+     */
+open func updateConfig(newConfig: EngineConfig)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_enginestate_update_config(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEngineConfig_lower(newConfig),$0
+    )
+}
+}
+    
+    /**
+     * Updates the global engine configuration from a JSON string.
+     */
+open func updateConfigFromJson(json: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_enginestate_update_config_from_json(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(json),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineState: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = EngineState
+
+    public static func lift(_ handle: UInt64) throws -> EngineState {
+        return EngineState(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: EngineState) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineState {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: EngineState, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineState_lift(_ handle: UInt64) throws -> EngineState {
+    return try FfiConverterTypeEngineState.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineState_lower(_ value: EngineState) -> UInt64 {
+    return FfiConverterTypeEngineState.lower(value)
+}
+
+
+
+
+
+
+public protocol EventDispatcherProtocol: AnyObject, Sendable {
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */
+    func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool)  -> Bool
+    
+}
+open class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_eventdispatcher(self.handle, $0) }
+    }
+public convenience init(db: DatabaseManager, sync: SyncManager, state: EngineState) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_eventdispatcher_new(
+        FfiConverterTypeDatabaseManager_lower(db),
+        FfiConverterTypeSyncManager_lower(sync),
+        FfiConverterTypeEngineState_lower(state),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_eventdispatcher(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */
+open func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(accuracy),
+        FfiConverterDouble.lower(speed),
+        FfiConverterDouble.lower(heading),
+        FfiConverterDouble.lower(altitude),
+        FfiConverterBool.lower(isMock),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEventDispatcher: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = EventDispatcher
+
+    public static func lift(_ handle: UInt64) throws -> EventDispatcher {
+        return EventDispatcher(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: EventDispatcher) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EventDispatcher {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: EventDispatcher, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEventDispatcher_lift(_ handle: UInt64) throws -> EventDispatcher {
+    return try FfiConverterTypeEventDispatcher.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEventDispatcher_lower(_ value: EventDispatcher) -> UInt64 {
+    return FfiConverterTypeEventDispatcher.lower(value)
 }
 
 
@@ -1603,6 +2441,145 @@ public func FfiConverterTypeLocationProcessor_lower(_ value: LocationProcessor) 
 
 
 
+public protocol PrivacyZoneEvaluatorProtocol: AnyObject, Sendable {
+    
+    func degradeCoordinates(lat: Double, lng: Double, accuracyMeters: Double)  -> Coordinate
+    
+    func evaluate(latitude: Double, longitude: Double, zones: [CorePrivacyZone])  -> PrivacyEvaluationResult
+    
+}
+open class PrivacyZoneEvaluator: PrivacyZoneEvaluatorProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_privacyzoneevaluator(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_privacyzoneevaluator_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_privacyzoneevaluator(handle, $0) }
+    }
+
+    
+
+    
+open func degradeCoordinates(lat: Double, lng: Double, accuracyMeters: Double) -> Coordinate  {
+    return try!  FfiConverterTypeCoordinate_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_privacyzoneevaluator_degrade_coordinates(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(accuracyMeters),$0
+    )
+})
+}
+    
+open func evaluate(latitude: Double, longitude: Double, zones: [CorePrivacyZone]) -> PrivacyEvaluationResult  {
+    return try!  FfiConverterTypePrivacyEvaluationResult_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_privacyzoneevaluator_evaluate(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),
+        FfiConverterSequenceTypeCorePrivacyZone.lower(zones),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePrivacyZoneEvaluator: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = PrivacyZoneEvaluator
+
+    public static func lift(_ handle: UInt64) throws -> PrivacyZoneEvaluator {
+        return PrivacyZoneEvaluator(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: PrivacyZoneEvaluator) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PrivacyZoneEvaluator {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: PrivacyZoneEvaluator, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrivacyZoneEvaluator_lift(_ handle: UInt64) throws -> PrivacyZoneEvaluator {
+    return try FfiConverterTypePrivacyZoneEvaluator.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrivacyZoneEvaluator_lower(_ value: PrivacyZoneEvaluator) -> UInt64 {
+    return FfiConverterTypePrivacyZoneEvaluator.lower(value)
+}
+
+
+
+
+
+
 /**
  * Parses and evaluates tracking schedules to determine whether tracking should be active.
  */
@@ -1997,6 +2974,139 @@ public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoo
 
 
 
+public protocol SyncManagerProtocol: AnyObject, Sendable {
+    
+    /**
+     * Performs a synchronous/blocking sync of a batch of location records.
+     * Returns the number of successfully synced records.
+     */
+    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws  -> Int32
+    
+}
+open class SyncManager: SyncManagerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_syncmanager(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_syncmanager_new($0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_syncmanager(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Performs a synchronous/blocking sync of a batch of location records.
+     * Returns the number of successfully synced records.
+     */
+open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord])throws  -> Int32  {
+    return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeHttpConfig_lower(config),
+        FfiConverterSequenceTypeDbLocationRecord.lower(records),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncManager: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = SyncManager
+
+    public static func lift(_ handle: UInt64) throws -> SyncManager {
+        return SyncManager(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: SyncManager) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncManager {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: SyncManager, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncManager_lift(_ handle: UInt64) throws -> SyncManager {
+    return try FfiConverterTypeSyncManager.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncManager_lower(_ value: SyncManager) -> UInt64 {
+    return FfiConverterTypeSyncManager.lower(value)
+}
+
+
+
+
+
+
 /**
  * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
  */
@@ -2332,6 +3442,65 @@ public func FfiConverterTypeAdaptiveSamplingResult_lower(_ value: AdaptiveSampli
 
 
 /**
+ * Anti-spoofing and device validation configuration.
+ */
+public struct AttestationConfig: Equatable, Hashable {
+    /**
+     * If true, attestation tokens (Play Integrity/DeviceCheck) are gathered.
+     */
+    public var enabled: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * If true, attestation tokens (Play Integrity/DeviceCheck) are gathered.
+         */enabled: Bool) {
+        self.enabled = enabled
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AttestationConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAttestationConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AttestationConfig {
+        return
+            try AttestationConfig(
+                enabled: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AttestationConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.enabled, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAttestationConfig_lift(_ buf: RustBuffer) throws -> AttestationConfig {
+    return try FfiConverterTypeAttestationConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAttestationConfig_lower(_ value: AttestationConfig) -> RustBuffer {
+    return FfiConverterTypeAttestationConfig.lower(value)
+}
+
+
+/**
  * Contains the resulting hashes and chain index after appending a new record to the audit trail.
  */
 public struct AuditAppendResult: Equatable, Hashable {
@@ -2389,6 +3558,65 @@ public func FfiConverterTypeAuditAppendResult_lift(_ buf: RustBuffer) throws -> 
 #endif
 public func FfiConverterTypeAuditAppendResult_lower(_ value: AuditAppendResult) -> RustBuffer {
     return FfiConverterTypeAuditAppendResult.lower(value)
+}
+
+
+/**
+ * Security feature configuration for generating tamper-evident cryptographic trails.
+ */
+public struct AuditConfig: Equatable, Hashable {
+    /**
+     * If true, location events are hashed to provide an audit trail.
+     */
+    public var enabled: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * If true, location events are hashed to provide an audit trail.
+         */enabled: Bool) {
+        self.enabled = enabled
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AuditConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuditConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuditConfig {
+        return
+            try AuditConfig(
+                enabled: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AuditConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.enabled, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditConfig_lift(_ buf: RustBuffer) throws -> AuditConfig {
+    return try FfiConverterTypeAuditConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuditConfig_lower(_ value: AuditConfig) -> RustBuffer {
+    return FfiConverterTypeAuditConfig.lower(value)
 }
 
 
@@ -2729,6 +3957,614 @@ public func FfiConverterTypeCoreGeofence_lower(_ value: CoreGeofence) -> RustBuf
 }
 
 
+public struct CorePrivacyZone: Equatable, Hashable {
+    public var identifier: String
+    public var latitude: Double
+    public var longitude: Double
+    public var radius: Double
+    public var action: Int32
+    public var degradedAccuracyMeters: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(identifier: String, latitude: Double, longitude: Double, radius: Double, action: Int32, degradedAccuracyMeters: Double) {
+        self.identifier = identifier
+        self.latitude = latitude
+        self.longitude = longitude
+        self.radius = radius
+        self.action = action
+        self.degradedAccuracyMeters = degradedAccuracyMeters
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CorePrivacyZone: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCorePrivacyZone: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CorePrivacyZone {
+        return
+            try CorePrivacyZone(
+                identifier: FfiConverterString.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                radius: FfiConverterDouble.read(from: &buf), 
+                action: FfiConverterInt32.read(from: &buf), 
+                degradedAccuracyMeters: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CorePrivacyZone, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.identifier, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterDouble.write(value.radius, into: &buf)
+        FfiConverterInt32.write(value.action, into: &buf)
+        FfiConverterDouble.write(value.degradedAccuracyMeters, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCorePrivacyZone_lift(_ buf: RustBuffer) throws -> CorePrivacyZone {
+    return try FfiConverterTypeCorePrivacyZone.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCorePrivacyZone_lower(_ value: CorePrivacyZone) -> RustBuffer {
+    return FfiConverterTypeCorePrivacyZone.lower(value)
+}
+
+
+/**
+ * Represents a validated tamper-proof cryptographic audit trail record.
+ * Used to verify chain integrity across native and core database sync layers.
+ */
+public struct DbAuditRecord: Equatable, Hashable {
+    /**
+     * Unique identifier (UUID string) for this specific audit entry.
+     */
+    public var uuid: String
+    /**
+     * Cryptographic SHA-256 hash of the block's content.
+     */
+    public var auditHash: String
+    /**
+     * The SHA-256 hash of the immediate previous block in the blockchain.
+     */
+    public var auditPreviousHash: String
+    /**
+     * Ordered index representing position in the sequential audit ledger.
+     */
+    public var auditChainIndex: Int32
+    /**
+     * Unix timestamp in milliseconds when this audit entry was created.
+     */
+    public var auditCreatedAt: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Unique identifier (UUID string) for this specific audit entry.
+         */uuid: String, 
+        /**
+         * Cryptographic SHA-256 hash of the block's content.
+         */auditHash: String, 
+        /**
+         * The SHA-256 hash of the immediate previous block in the blockchain.
+         */auditPreviousHash: String, 
+        /**
+         * Ordered index representing position in the sequential audit ledger.
+         */auditChainIndex: Int32, 
+        /**
+         * Unix timestamp in milliseconds when this audit entry was created.
+         */auditCreatedAt: Int64) {
+        self.uuid = uuid
+        self.auditHash = auditHash
+        self.auditPreviousHash = auditPreviousHash
+        self.auditChainIndex = auditChainIndex
+        self.auditCreatedAt = auditCreatedAt
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbAuditRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbAuditRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbAuditRecord {
+        return
+            try DbAuditRecord(
+                uuid: FfiConverterString.read(from: &buf), 
+                auditHash: FfiConverterString.read(from: &buf), 
+                auditPreviousHash: FfiConverterString.read(from: &buf), 
+                auditChainIndex: FfiConverterInt32.read(from: &buf), 
+                auditCreatedAt: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbAuditRecord, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.uuid, into: &buf)
+        FfiConverterString.write(value.auditHash, into: &buf)
+        FfiConverterString.write(value.auditPreviousHash, into: &buf)
+        FfiConverterInt32.write(value.auditChainIndex, into: &buf)
+        FfiConverterInt64.write(value.auditCreatedAt, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbAuditRecord_lift(_ buf: RustBuffer) throws -> DbAuditRecord {
+    return try FfiConverterTypeDbAuditRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbAuditRecord_lower(_ value: DbAuditRecord) -> RustBuffer {
+    return FfiConverterTypeDbAuditRecord.lower(value)
+}
+
+
+/**
+ * Represents a serialized historical location record fetched from database.
+ */
+public struct DbLocationRecord: Equatable, Hashable {
+    public var id: Int64
+    public var timestamp: String
+    public var latitude: Double
+    public var longitude: Double
+    public var accuracy: Double
+    public var speed: Double
+    public var heading: Double
+    public var altitude: Double
+    public var isMock: Bool
+    public var activity: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: Int64, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String) {
+        self.id = id
+        self.timestamp = timestamp
+        self.latitude = latitude
+        self.longitude = longitude
+        self.accuracy = accuracy
+        self.speed = speed
+        self.heading = heading
+        self.altitude = altitude
+        self.isMock = isMock
+        self.activity = activity
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbLocationRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbLocationRecord {
+        return
+            try DbLocationRecord(
+                id: FfiConverterInt64.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                accuracy: FfiConverterDouble.read(from: &buf), 
+                speed: FfiConverterDouble.read(from: &buf), 
+                heading: FfiConverterDouble.read(from: &buf), 
+                altitude: FfiConverterDouble.read(from: &buf), 
+                isMock: FfiConverterBool.read(from: &buf), 
+                activity: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbLocationRecord, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterDouble.write(value.accuracy, into: &buf)
+        FfiConverterDouble.write(value.speed, into: &buf)
+        FfiConverterDouble.write(value.heading, into: &buf)
+        FfiConverterDouble.write(value.altitude, into: &buf)
+        FfiConverterBool.write(value.isMock, into: &buf)
+        FfiConverterString.write(value.activity, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbLocationRecord_lift(_ buf: RustBuffer) throws -> DbLocationRecord {
+    return try FfiConverterTypeDbLocationRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbLocationRecord_lower(_ value: DbLocationRecord) -> RustBuffer {
+    return FfiConverterTypeDbLocationRecord.lower(value)
+}
+
+
+/**
+ * The central configuration struct for the Tracelet Engine.
+ * This struct holds all tracking, network, and persistence parameters.
+ * It acts as the single source of truth for the SDK's behavior across platforms.
+ */
+public struct EngineConfig: Equatable, Hashable {
+    /**
+     * Geolocation tracking parameters (accuracy, filters, intervals).
+     */
+    public var geo: GeoConfig
+    /**
+     * Motion detection and activity recognition parameters.
+     */
+    public var motion: MotionConfig
+    /**
+     * HTTP synchronization and batching parameters for server communication.
+     */
+    public var http: HttpConfig
+    /**
+     * Geofencing parameters for proximity alerts and tracking boundaries.
+     */
+    public var geofence: GeofenceConfig
+    /**
+     * Local database persistence parameters for locations and events.
+     */
+    public var persistence: PersistenceConfig
+    /**
+     * Security audit trail parameters for tracking data integrity.
+     */
+    public var audit: AuditConfig
+    /**
+     * Core security parameters (e.g., database encryption).
+     */
+    public var security: SecurityConfig
+    /**
+     * Device attestation and anti-spoofing parameters.
+     */
+    public var attestation: AttestationConfig
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Geolocation tracking parameters (accuracy, filters, intervals).
+         */geo: GeoConfig, 
+        /**
+         * Motion detection and activity recognition parameters.
+         */motion: MotionConfig, 
+        /**
+         * HTTP synchronization and batching parameters for server communication.
+         */http: HttpConfig, 
+        /**
+         * Geofencing parameters for proximity alerts and tracking boundaries.
+         */geofence: GeofenceConfig, 
+        /**
+         * Local database persistence parameters for locations and events.
+         */persistence: PersistenceConfig, 
+        /**
+         * Security audit trail parameters for tracking data integrity.
+         */audit: AuditConfig, 
+        /**
+         * Core security parameters (e.g., database encryption).
+         */security: SecurityConfig, 
+        /**
+         * Device attestation and anti-spoofing parameters.
+         */attestation: AttestationConfig) {
+        self.geo = geo
+        self.motion = motion
+        self.http = http
+        self.geofence = geofence
+        self.persistence = persistence
+        self.audit = audit
+        self.security = security
+        self.attestation = attestation
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension EngineConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineConfig {
+        return
+            try EngineConfig(
+                geo: FfiConverterTypeGeoConfig.read(from: &buf), 
+                motion: FfiConverterTypeMotionConfig.read(from: &buf), 
+                http: FfiConverterTypeHttpConfig.read(from: &buf), 
+                geofence: FfiConverterTypeGeofenceConfig.read(from: &buf), 
+                persistence: FfiConverterTypePersistenceConfig.read(from: &buf), 
+                audit: FfiConverterTypeAuditConfig.read(from: &buf), 
+                security: FfiConverterTypeSecurityConfig.read(from: &buf), 
+                attestation: FfiConverterTypeAttestationConfig.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: EngineConfig, into buf: inout [UInt8]) {
+        FfiConverterTypeGeoConfig.write(value.geo, into: &buf)
+        FfiConverterTypeMotionConfig.write(value.motion, into: &buf)
+        FfiConverterTypeHttpConfig.write(value.http, into: &buf)
+        FfiConverterTypeGeofenceConfig.write(value.geofence, into: &buf)
+        FfiConverterTypePersistenceConfig.write(value.persistence, into: &buf)
+        FfiConverterTypeAuditConfig.write(value.audit, into: &buf)
+        FfiConverterTypeSecurityConfig.write(value.security, into: &buf)
+        FfiConverterTypeAttestationConfig.write(value.attestation, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineConfig_lift(_ buf: RustBuffer) throws -> EngineConfig {
+    return try FfiConverterTypeEngineConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineConfig_lower(_ value: EngineConfig) -> RustBuffer {
+    return FfiConverterTypeEngineConfig.lower(value)
+}
+
+
+/**
+ * Configuration for geolocation tracking behavior.
+ */
+public struct GeoConfig: Equatable, Hashable {
+    /**
+     * Desired accuracy for tracking (e.g., 0 = High, 1 = Medium).
+     */
+    public var desiredAccuracy: Int32
+    /**
+     * Minimum distance (in meters) the device must move before a location update is generated.
+     */
+    public var distanceFilter: Double
+    /**
+     * Radius (in meters) around the stationary location to detect when movement resumes.
+     */
+    public var stationaryRadius: Double
+    /**
+     * Maximum time (in seconds) to wait for a location fix before falling back.
+     */
+    public var locationTimeout: Int32
+    /**
+     * If true, disables the dynamic adjustment of the distance filter based on speed.
+     */
+    public var disableElasticity: Bool
+    /**
+     * Multiplier applied to speed to calculate the elastic distance filter.
+     */
+    public var elasticityMultiplier: Double
+    /**
+     * If true, enables battery-saving modes that dynamically degrade accuracy based on battery state.
+     */
+    public var enableAdaptiveMode: Bool
+    /**
+     * If true, includes OS-level timestamps as meta fields in location events.
+     */
+    public var enableTimestampMeta: Bool
+    /**
+     * If true, locations that do not meet the distance threshold are still recorded if time elapsed exceeds max idle.
+     */
+    public var enableSparseUpdates: Bool
+    /**
+     * Distance threshold (in meters) used to calculate sparse update eligibility.
+     */
+    public var sparseDistanceThreshold: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Desired accuracy for tracking (e.g., 0 = High, 1 = Medium).
+         */desiredAccuracy: Int32, 
+        /**
+         * Minimum distance (in meters) the device must move before a location update is generated.
+         */distanceFilter: Double, 
+        /**
+         * Radius (in meters) around the stationary location to detect when movement resumes.
+         */stationaryRadius: Double, 
+        /**
+         * Maximum time (in seconds) to wait for a location fix before falling back.
+         */locationTimeout: Int32, 
+        /**
+         * If true, disables the dynamic adjustment of the distance filter based on speed.
+         */disableElasticity: Bool, 
+        /**
+         * Multiplier applied to speed to calculate the elastic distance filter.
+         */elasticityMultiplier: Double, 
+        /**
+         * If true, enables battery-saving modes that dynamically degrade accuracy based on battery state.
+         */enableAdaptiveMode: Bool, 
+        /**
+         * If true, includes OS-level timestamps as meta fields in location events.
+         */enableTimestampMeta: Bool, 
+        /**
+         * If true, locations that do not meet the distance threshold are still recorded if time elapsed exceeds max idle.
+         */enableSparseUpdates: Bool, 
+        /**
+         * Distance threshold (in meters) used to calculate sparse update eligibility.
+         */sparseDistanceThreshold: Double) {
+        self.desiredAccuracy = desiredAccuracy
+        self.distanceFilter = distanceFilter
+        self.stationaryRadius = stationaryRadius
+        self.locationTimeout = locationTimeout
+        self.disableElasticity = disableElasticity
+        self.elasticityMultiplier = elasticityMultiplier
+        self.enableAdaptiveMode = enableAdaptiveMode
+        self.enableTimestampMeta = enableTimestampMeta
+        self.enableSparseUpdates = enableSparseUpdates
+        self.sparseDistanceThreshold = sparseDistanceThreshold
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GeoConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeoConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeoConfig {
+        return
+            try GeoConfig(
+                desiredAccuracy: FfiConverterInt32.read(from: &buf), 
+                distanceFilter: FfiConverterDouble.read(from: &buf), 
+                stationaryRadius: FfiConverterDouble.read(from: &buf), 
+                locationTimeout: FfiConverterInt32.read(from: &buf), 
+                disableElasticity: FfiConverterBool.read(from: &buf), 
+                elasticityMultiplier: FfiConverterDouble.read(from: &buf), 
+                enableAdaptiveMode: FfiConverterBool.read(from: &buf), 
+                enableTimestampMeta: FfiConverterBool.read(from: &buf), 
+                enableSparseUpdates: FfiConverterBool.read(from: &buf), 
+                sparseDistanceThreshold: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GeoConfig, into buf: inout [UInt8]) {
+        FfiConverterInt32.write(value.desiredAccuracy, into: &buf)
+        FfiConverterDouble.write(value.distanceFilter, into: &buf)
+        FfiConverterDouble.write(value.stationaryRadius, into: &buf)
+        FfiConverterInt32.write(value.locationTimeout, into: &buf)
+        FfiConverterBool.write(value.disableElasticity, into: &buf)
+        FfiConverterDouble.write(value.elasticityMultiplier, into: &buf)
+        FfiConverterBool.write(value.enableAdaptiveMode, into: &buf)
+        FfiConverterBool.write(value.enableTimestampMeta, into: &buf)
+        FfiConverterBool.write(value.enableSparseUpdates, into: &buf)
+        FfiConverterDouble.write(value.sparseDistanceThreshold, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeoConfig_lift(_ buf: RustBuffer) throws -> GeoConfig {
+    return try FfiConverterTypeGeoConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeoConfig_lower(_ value: GeoConfig) -> RustBuffer {
+    return FfiConverterTypeGeoConfig.lower(value)
+}
+
+
+/**
+ * Configuration for monitoring geographic boundaries.
+ */
+public struct GeofenceConfig: Equatable, Hashable {
+    /**
+     * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
+     */
+    public var geofenceInitialTriggerEntry: Bool
+    /**
+     * The radius (in meters) for loading geofences from the database into the active monitoring queue.
+     */
+    public var geofenceProximityRadius: Int32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
+         */geofenceInitialTriggerEntry: Bool, 
+        /**
+         * The radius (in meters) for loading geofences from the database into the active monitoring queue.
+         */geofenceProximityRadius: Int32) {
+        self.geofenceInitialTriggerEntry = geofenceInitialTriggerEntry
+        self.geofenceProximityRadius = geofenceProximityRadius
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GeofenceConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGeofenceConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeofenceConfig {
+        return
+            try GeofenceConfig(
+                geofenceInitialTriggerEntry: FfiConverterBool.read(from: &buf), 
+                geofenceProximityRadius: FfiConverterInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GeofenceConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.geofenceInitialTriggerEntry, into: &buf)
+        FfiConverterInt32.write(value.geofenceProximityRadius, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceConfig_lift(_ buf: RustBuffer) throws -> GeofenceConfig {
+    return try FfiConverterTypeGeofenceConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGeofenceConfig_lower(_ value: GeofenceConfig) -> RustBuffer {
+    return FfiConverterTypeGeofenceConfig.lower(value)
+}
+
+
 /**
  * Represents a crossing event when a user enters or exits a geofence.
  */
@@ -2783,6 +4619,220 @@ public func FfiConverterTypeGeofenceTransition_lift(_ buf: RustBuffer) throws ->
 #endif
 public func FfiConverterTypeGeofenceTransition_lower(_ value: GeofenceTransition) -> RustBuffer {
     return FfiConverterTypeGeofenceTransition.lower(value)
+}
+
+
+/**
+ * Represents the global health and status of the Tracelet Engine.
+ */
+public struct HealthState: Equatable, Hashable {
+    public var isTracking: Bool
+    public var isMoving: Bool
+    public var currentActivity: String
+    public var batteryLevel: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(isTracking: Bool, isMoving: Bool, currentActivity: String, batteryLevel: Double) {
+        self.isTracking = isTracking
+        self.isMoving = isMoving
+        self.currentActivity = currentActivity
+        self.batteryLevel = batteryLevel
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension HealthState: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHealthState: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HealthState {
+        return
+            try HealthState(
+                isTracking: FfiConverterBool.read(from: &buf), 
+                isMoving: FfiConverterBool.read(from: &buf), 
+                currentActivity: FfiConverterString.read(from: &buf), 
+                batteryLevel: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: HealthState, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.isTracking, into: &buf)
+        FfiConverterBool.write(value.isMoving, into: &buf)
+        FfiConverterString.write(value.currentActivity, into: &buf)
+        FfiConverterDouble.write(value.batteryLevel, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHealthState_lift(_ buf: RustBuffer) throws -> HealthState {
+    return try FfiConverterTypeHealthState.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHealthState_lower(_ value: HealthState) -> RustBuffer {
+    return FfiConverterTypeHealthState.lower(value)
+}
+
+
+/**
+ * Configuration for syncing location and event data to a remote server.
+ */
+public struct HttpConfig: Equatable, Hashable {
+    /**
+     * Remote URL endpoint for HTTP sync. If None, auto-sync is disabled.
+     */
+    public var url: String?
+    /**
+     * HTTP Method (0 = POST, 1 = PUT).
+     */
+    public var method: Int32
+    /**
+     * Custom HTTP headers attached to synchronization requests.
+     */
+    public var headers: [String: String]
+    /**
+     * If true, sends locations in a JSON array rather than individually.
+     */
+    public var batchSync: Bool
+    /**
+     * Maximum number of records to send in a single batch.
+     */
+    public var maxBatchSize: Int32
+    /**
+     * If true, automatically triggers HTTP sync operations based on internal thresholds.
+     */
+    public var autoSync: Bool
+    /**
+     * Maximum number of retries for a failed sync request.
+     */
+    public var maxRetries: Int32
+    /**
+     * Base backoff time in milliseconds for exponential retry.
+     */
+    public var retryBackoffBase: Int32
+    /**
+     * Maximum backoff time in milliseconds for exponential retry.
+     */
+    public var retryBackoffCap: Int32
+    /**
+     * Optional list of PEM or DER encoded certificates for SSL pinning.
+     */
+    public var sslPinningCertificates: [String]?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Remote URL endpoint for HTTP sync. If None, auto-sync is disabled.
+         */url: String?, 
+        /**
+         * HTTP Method (0 = POST, 1 = PUT).
+         */method: Int32, 
+        /**
+         * Custom HTTP headers attached to synchronization requests.
+         */headers: [String: String], 
+        /**
+         * If true, sends locations in a JSON array rather than individually.
+         */batchSync: Bool, 
+        /**
+         * Maximum number of records to send in a single batch.
+         */maxBatchSize: Int32, 
+        /**
+         * If true, automatically triggers HTTP sync operations based on internal thresholds.
+         */autoSync: Bool, 
+        /**
+         * Maximum number of retries for a failed sync request.
+         */maxRetries: Int32, 
+        /**
+         * Base backoff time in milliseconds for exponential retry.
+         */retryBackoffBase: Int32, 
+        /**
+         * Maximum backoff time in milliseconds for exponential retry.
+         */retryBackoffCap: Int32, 
+        /**
+         * Optional list of PEM or DER encoded certificates for SSL pinning.
+         */sslPinningCertificates: [String]?) {
+        self.url = url
+        self.method = method
+        self.headers = headers
+        self.batchSync = batchSync
+        self.maxBatchSize = maxBatchSize
+        self.autoSync = autoSync
+        self.maxRetries = maxRetries
+        self.retryBackoffBase = retryBackoffBase
+        self.retryBackoffCap = retryBackoffCap
+        self.sslPinningCertificates = sslPinningCertificates
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension HttpConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HttpConfig {
+        return
+            try HttpConfig(
+                url: FfiConverterOptionString.read(from: &buf), 
+                method: FfiConverterInt32.read(from: &buf), 
+                headers: FfiConverterDictionaryStringString.read(from: &buf), 
+                batchSync: FfiConverterBool.read(from: &buf), 
+                maxBatchSize: FfiConverterInt32.read(from: &buf), 
+                autoSync: FfiConverterBool.read(from: &buf), 
+                maxRetries: FfiConverterInt32.read(from: &buf), 
+                retryBackoffBase: FfiConverterInt32.read(from: &buf), 
+                retryBackoffCap: FfiConverterInt32.read(from: &buf), 
+                sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: HttpConfig, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.url, into: &buf)
+        FfiConverterInt32.write(value.method, into: &buf)
+        FfiConverterDictionaryStringString.write(value.headers, into: &buf)
+        FfiConverterBool.write(value.batchSync, into: &buf)
+        FfiConverterInt32.write(value.maxBatchSize, into: &buf)
+        FfiConverterBool.write(value.autoSync, into: &buf)
+        FfiConverterInt32.write(value.maxRetries, into: &buf)
+        FfiConverterInt32.write(value.retryBackoffBase, into: &buf)
+        FfiConverterInt32.write(value.retryBackoffCap, into: &buf)
+        FfiConverterOptionSequenceString.write(value.sslPinningCertificates, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpConfig_lift(_ buf: RustBuffer) throws -> HttpConfig {
+    return try FfiConverterTypeHttpConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpConfig_lower(_ value: HttpConfig) -> RustBuffer {
+    return FfiConverterTypeHttpConfig.lower(value)
 }
 
 
@@ -3010,6 +5060,232 @@ public func FfiConverterTypeLocationRecord_lower(_ value: LocationRecord) -> Rus
 
 
 /**
+ * Configuration for motion and activity detection.
+ */
+public struct MotionConfig: Equatable, Hashable {
+    /**
+     * Number of consecutive minutes a device must remain still to trigger a stationary event.
+     */
+    public var stopTimeout: Int32
+    /**
+     * Delay (in seconds) before a motion event is officially registered.
+     */
+    public var motionTriggerDelay: Int32
+    /**
+     * If true, stops the OS activity recognition updates to save battery (relies only on speed/geofences).
+     */
+    public var disableMotionActivityUpdates: Bool
+    /**
+     * If true, bypasses stop detection completely (device is considered always moving).
+     */
+    public var disableStopDetection: Bool
+    /**
+     * Accelerometer threshold (G-force) required to wake the device from a stationary state.
+     */
+    public var shakeThreshold: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Number of consecutive minutes a device must remain still to trigger a stationary event.
+         */stopTimeout: Int32, 
+        /**
+         * Delay (in seconds) before a motion event is officially registered.
+         */motionTriggerDelay: Int32, 
+        /**
+         * If true, stops the OS activity recognition updates to save battery (relies only on speed/geofences).
+         */disableMotionActivityUpdates: Bool, 
+        /**
+         * If true, bypasses stop detection completely (device is considered always moving).
+         */disableStopDetection: Bool, 
+        /**
+         * Accelerometer threshold (G-force) required to wake the device from a stationary state.
+         */shakeThreshold: Double) {
+        self.stopTimeout = stopTimeout
+        self.motionTriggerDelay = motionTriggerDelay
+        self.disableMotionActivityUpdates = disableMotionActivityUpdates
+        self.disableStopDetection = disableStopDetection
+        self.shakeThreshold = shakeThreshold
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension MotionConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMotionConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MotionConfig {
+        return
+            try MotionConfig(
+                stopTimeout: FfiConverterInt32.read(from: &buf), 
+                motionTriggerDelay: FfiConverterInt32.read(from: &buf), 
+                disableMotionActivityUpdates: FfiConverterBool.read(from: &buf), 
+                disableStopDetection: FfiConverterBool.read(from: &buf), 
+                shakeThreshold: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MotionConfig, into buf: inout [UInt8]) {
+        FfiConverterInt32.write(value.stopTimeout, into: &buf)
+        FfiConverterInt32.write(value.motionTriggerDelay, into: &buf)
+        FfiConverterBool.write(value.disableMotionActivityUpdates, into: &buf)
+        FfiConverterBool.write(value.disableStopDetection, into: &buf)
+        FfiConverterDouble.write(value.shakeThreshold, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMotionConfig_lift(_ buf: RustBuffer) throws -> MotionConfig {
+    return try FfiConverterTypeMotionConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMotionConfig_lower(_ value: MotionConfig) -> RustBuffer {
+    return FfiConverterTypeMotionConfig.lower(value)
+}
+
+
+/**
+ * Configuration for local SQLite database retention policies.
+ */
+public struct PersistenceConfig: Equatable, Hashable {
+    /**
+     * Maximum number of days to retain tracking records before pruning. (-1 for infinite)
+     */
+    public var maxDaysToPersist: Int32
+    /**
+     * Maximum number of absolute location records to keep. (-1 for infinite)
+     */
+    public var maxRecordsToPersist: Int32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Maximum number of days to retain tracking records before pruning. (-1 for infinite)
+         */maxDaysToPersist: Int32, 
+        /**
+         * Maximum number of absolute location records to keep. (-1 for infinite)
+         */maxRecordsToPersist: Int32) {
+        self.maxDaysToPersist = maxDaysToPersist
+        self.maxRecordsToPersist = maxRecordsToPersist
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PersistenceConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePersistenceConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PersistenceConfig {
+        return
+            try PersistenceConfig(
+                maxDaysToPersist: FfiConverterInt32.read(from: &buf), 
+                maxRecordsToPersist: FfiConverterInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PersistenceConfig, into buf: inout [UInt8]) {
+        FfiConverterInt32.write(value.maxDaysToPersist, into: &buf)
+        FfiConverterInt32.write(value.maxRecordsToPersist, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePersistenceConfig_lift(_ buf: RustBuffer) throws -> PersistenceConfig {
+    return try FfiConverterTypePersistenceConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePersistenceConfig_lower(_ value: PersistenceConfig) -> RustBuffer {
+    return FfiConverterTypePersistenceConfig.lower(value)
+}
+
+
+public struct PrivacyEvaluationResult: Equatable, Hashable {
+    public var action: Int32?
+    public var matchedZoneId: String?
+    public var degradedAccuracyMeters: Double?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(action: Int32?, matchedZoneId: String?, degradedAccuracyMeters: Double?) {
+        self.action = action
+        self.matchedZoneId = matchedZoneId
+        self.degradedAccuracyMeters = degradedAccuracyMeters
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PrivacyEvaluationResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePrivacyEvaluationResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PrivacyEvaluationResult {
+        return
+            try PrivacyEvaluationResult(
+                action: FfiConverterOptionInt32.read(from: &buf), 
+                matchedZoneId: FfiConverterOptionString.read(from: &buf), 
+                degradedAccuracyMeters: FfiConverterOptionDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PrivacyEvaluationResult, into buf: inout [UInt8]) {
+        FfiConverterOptionInt32.write(value.action, into: &buf)
+        FfiConverterOptionString.write(value.matchedZoneId, into: &buf)
+        FfiConverterOptionDouble.write(value.degradedAccuracyMeters, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrivacyEvaluationResult_lift(_ buf: RustBuffer) throws -> PrivacyEvaluationResult {
+    return try FfiConverterTypePrivacyEvaluationResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePrivacyEvaluationResult_lower(_ value: PrivacyEvaluationResult) -> RustBuffer {
+    return FfiConverterTypePrivacyEvaluationResult.lower(value)
+}
+
+
+/**
  * Contains the next absolute start and stop timestamps (in milliseconds) calculated from a schedule.
  */
 public struct ScheduleAlarms: Equatable, Hashable {
@@ -3063,6 +5339,65 @@ public func FfiConverterTypeScheduleAlarms_lift(_ buf: RustBuffer) throws -> Sch
 #endif
 public func FfiConverterTypeScheduleAlarms_lower(_ value: ScheduleAlarms) -> RustBuffer {
     return FfiConverterTypeScheduleAlarms.lower(value)
+}
+
+
+/**
+ * Core security and encryption configuration.
+ */
+public struct SecurityConfig: Equatable, Hashable {
+    /**
+     * If true, local SQLite databases are encrypted at rest (e.g., using SQLCipher).
+     */
+    public var encryptDatabase: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * If true, local SQLite databases are encrypted at rest (e.g., using SQLCipher).
+         */encryptDatabase: Bool) {
+        self.encryptDatabase = encryptDatabase
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SecurityConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSecurityConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SecurityConfig {
+        return
+            try SecurityConfig(
+                encryptDatabase: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SecurityConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.encryptDatabase, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSecurityConfig_lift(_ buf: RustBuffer) throws -> SecurityConfig {
+    return try FfiConverterTypeSecurityConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSecurityConfig_lower(_ value: SecurityConfig) -> RustBuffer {
+    return FfiConverterTypeSecurityConfig.lower(value)
 }
 
 
@@ -3595,6 +5930,100 @@ public func FfiConverterTypeCoordinatorAction_lower(_ value: CoordinatorAction) 
 }
 
 
+
+public enum TraceletError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Database(String
+    )
+    case Network(String
+    )
+    case Config(String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension TraceletError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTraceletError: FfiConverterRustBuffer {
+    typealias SwiftType = TraceletError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TraceletError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Database(
+            try FfiConverterString.read(from: &buf)
+            )
+        case 2: return .Network(
+            try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .Config(
+            try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TraceletError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Database(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(v1, into: &buf)
+            
+        
+        case let .Network(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(v1, into: &buf)
+            
+        
+        case let .Config(v1):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTraceletError_lift(_ buf: RustBuffer) throws -> TraceletError {
+    return try FfiConverterTypeTraceletError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTraceletError_lower(_ value: TraceletError) -> RustBuffer {
+    return FfiConverterTypeTraceletError.lower(value)
+}
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 /**
@@ -3747,6 +6176,30 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionData: FfiConverterRustBuffer {
+    typealias SwiftType = Data?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeAdaptiveContext: FfiConverterRustBuffer {
     typealias SwiftType = AdaptiveContext?
 
@@ -3867,6 +6320,30 @@ fileprivate struct FfiConverterOptionTypeTripLocation: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -3967,6 +6444,81 @@ fileprivate struct FfiConverterSequenceTypeCoreGeofence: FfiConverterRustBuffer 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeCorePrivacyZone: FfiConverterRustBuffer {
+    typealias SwiftType = [CorePrivacyZone]
+
+    public static func write(_ value: [CorePrivacyZone], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCorePrivacyZone.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CorePrivacyZone] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CorePrivacyZone]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCorePrivacyZone.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeDbAuditRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbAuditRecord]
+
+    public static func write(_ value: [DbAuditRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbAuditRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbAuditRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbAuditRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbAuditRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbLocationRecord]
+
+    public static func write(_ value: [DbLocationRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbLocationRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbLocationRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbLocationRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbLocationRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer {
     typealias SwiftType = [GeofenceTransition]
 
@@ -4011,6 +6563,32 @@ fileprivate struct FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer 
             seq.append(try FfiConverterTypeTripWaypoint.read(from: &buf))
         }
         return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
+    public static func write(_ value: [String: String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterString.write(key, into: &buf)
+            FfiConverterString.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String: String] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [String: String]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterString.read(from: &buf)
+            let value = try FfiConverterString.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
     }
 }
 /**
@@ -4171,6 +6749,72 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 38541) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences() != 43540) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to() != 905) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence() != 14855) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone() != 13424) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_destroy_location() != 60156) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations() != 41972) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload() != 52269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail() != 59184) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 44952) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26250) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -4186,6 +6830,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence() != 46486) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_privacyzoneevaluator_degrade_coordinates() != 39485) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_privacyzoneevaluator_evaluate() != 16097) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index() != 65350) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -4199,6 +6849,24 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_batterybudgetengine_reset() != 51841) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_get_config() != 36547) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_get_health() != 44119) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers() != 9455) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_set_tracking() != 2515) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_update_config() != 7370) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json() != 16970) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change() != 42508) {
@@ -4240,10 +6908,25 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_constructor_audittrailengine_new() != 16361) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_constructor_databasemanager_new() != 64846) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_eventdispatcher_new() != 12254) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_syncmanager_new() != 29825) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_constructor_privacyzoneevaluator_new() != 8853) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new() != 27221) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_enginestate_new() != 17691) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new() != 13932) {

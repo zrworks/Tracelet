@@ -30,7 +30,7 @@ background.
 import 'package:tracelet/tracelet.dart';
 
 // 1. Enable privacy zones in your Config
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   privacyZone: PrivacyZoneConfig(enabled: true),
   // ... other config
 ));

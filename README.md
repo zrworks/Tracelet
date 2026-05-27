@@ -109,7 +109,7 @@ Tracelet's core engines are also published as standalone native SDKs:
 | Android | `com.ikolvi:tracelet-sdk` | [Maven Central](https://central.sonatype.com/artifact/com.ikolvi/tracelet-sdk) |
 | iOS | `TraceletSDK` | [CocoaPods](https://cocoapods.org/pods/TraceletSDK) or [SPM](https://github.com/Ikolvi/Tracelet.git) |
 
-See the [Native SDK Guide](help/NATIVE-SDK.md) for installation and usage.
+See the [Native SDK Guide](help/NATIVE-SDK.md) and the new [Rust Core Architecture](help/RUST-CORE.md) for installation and internal details.
 
 ## Quick Start
 
@@ -126,7 +126,7 @@ tl.Tracelet.onMotionChange((tl.Location location) {
 });
 
 // 2. Configure & ready
-final state = await tl.Tracelet.ready(tl.Config(
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     desiredAccuracy: tl.DesiredAccuracy.high,
     distanceFilter: 10.0,
@@ -213,7 +213,7 @@ if (Platform.isAndroid) {
   if (ns != 3) await tl.Tracelet.requestNotificationPermission();
 }
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
@@ -229,7 +229,7 @@ await tl.Tracelet.start();
 ### Without Foreground Notification
 
 ```dart
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
     foregroundService: tl.ForegroundServiceConfig(enabled: false),

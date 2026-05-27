@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:meta/meta.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
@@ -12,6 +14,18 @@ import 'speed_motion_event.dart';
 
 export 'android_config.dart';
 export 'ios_config.dart';
+
+/// Standard configuration profiles for Tracelet.
+enum TraceletProfile {
+  /// Turn-by-Turn, precise tracking without adaptive degradation.
+  highAccuracy,
+
+  /// Standard tracking balancing battery and accuracy. Uses smart motion detection and adaptive mode.
+  balanced,
+
+  /// Background-only, battery-sensitive tracking with sparse updates and cellular/wifi locations.
+  lowPower,
+}
 
 /// Top-level compound configuration for Tracelet.
 ///
@@ -86,6 +100,63 @@ class Config {
 
   /// **Enterprise** — Device integrity attestation.
   final AttestationConfig attestation;
+
+  Config copyWith({
+    GeoConfig? geo,
+    AppConfig? app,
+    AndroidConfig? android,
+    IosConfig? ios,
+    HttpConfig? http,
+    LoggerConfig? logger,
+    MotionConfig? motion,
+    GeofenceConfig? geofence,
+    PersistenceConfig? persistence,
+    AuditConfig? audit,
+    PrivacyZoneConfig? privacyZone,
+    SecurityConfig? security,
+    AttestationConfig? attestation,
+  }) {
+    return Config(
+      geo: geo ?? this.geo,
+      app: app ?? this.app,
+      android: android ?? this.android,
+      ios: ios ?? this.ios,
+      http: http ?? this.http,
+      logger: logger ?? this.logger,
+      motion: motion ?? this.motion,
+      geofence: geofence ?? this.geofence,
+      persistence: persistence ?? this.persistence,
+      audit: audit ?? this.audit,
+      privacyZone: privacyZone ?? this.privacyZone,
+      security: security ?? this.security,
+      attestation: attestation ?? this.attestation,
+    );
+  }
+
+  static const Map<TraceletProfile, String> _profilesJson = {
+    TraceletProfile.highAccuracy:
+        '{"geo":{"desiredAccuracy":0,"distanceFilter":5.0,"stationaryRadius":25.0,"enableAdaptiveMode":false,"disableElasticity":true,"enableDeadReckoning":true,"filter":{"useKalmanFilter":true,"rejectMockLocations":true}},"motion":{"motionDetectionMode":0,"stationaryTrackingMode":0,"stopTimeout":3},"android":{"geofenceModeHighAccuracy":true,"locationUpdateInterval":1000,"fastestLocationUpdateInterval":500}}',
+    TraceletProfile.balanced:
+        '{"geo":{"desiredAccuracy":1,"distanceFilter":20.0,"stationaryRadius":50.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":1.0,"filter":{"useKalmanFilter":false}},"motion":{"motionDetectionMode":2,"stationaryTrackingMode":1,"stopTimeout":5},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":5000}}',
+    TraceletProfile.lowPower:
+        '{"geo":{"desiredAccuracy":2,"distanceFilter":50.0,"stationaryRadius":100.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":2.0,"enableSparseUpdates":true,"sparseDistanceThreshold":100.0},"motion":{"motionDetectionMode":1,"stationaryTrackingMode":1,"stopTimeout":2},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":10000}}',
+  };
+
+  /// Internal factory to load a profile
+  static Config _fromProfile(TraceletProfile profile) {
+    final jsonStr = _profilesJson[profile]!;
+    final baseMap = json.decode(jsonStr) as Map<String, dynamic>;
+    return Config.fromMap(baseMap);
+  }
+
+  /// High Accuracy profile tailored for turn-by-turn navigation or precise tracking.
+  factory Config.highAccuracy() => _fromProfile(TraceletProfile.highAccuracy);
+
+  /// Balanced profile tailored for standard social/fleet apps, balancing accuracy and battery.
+  factory Config.balanced() => _fromProfile(TraceletProfile.balanced);
+
+  /// Low Power profile tailored for background-only coarse tracking to maximize battery life.
+  factory Config.lowPower() => _fromProfile(TraceletProfile.lowPower);
 
   /// Creates a [Config] from a map. Supports both nested and flat formats.
   factory Config.fromMap(Map<String, Object?> map) {
@@ -332,6 +403,59 @@ class GeoConfig {
     this.deadReckoningMaxDuration = 0,
     this.filter = const LocationFilter(),
   });
+
+  GeoConfig copyWith({
+    DesiredAccuracy? desiredAccuracy,
+    double? distanceFilter,
+    double? stationaryRadius,
+    int? locationTimeout,
+    bool? disableElasticity,
+    double? elasticityMultiplier,
+    int? stopAfterElapsedMinutes,
+    int? maxMonitoredGeofences,
+    bool? enableTimestampMeta,
+    bool? enableAdaptiveMode,
+    int? periodicLocationInterval,
+    DesiredAccuracy? periodicDesiredAccuracy,
+    bool? enableSparseUpdates,
+    double? sparseDistanceThreshold,
+    int? sparseMaxIdleSeconds,
+    double? batteryBudgetPerHour,
+    bool? enableDeadReckoning,
+    int? deadReckoningActivationDelay,
+    int? deadReckoningMaxDuration,
+    LocationFilter? filter,
+  }) {
+    return GeoConfig(
+      desiredAccuracy: desiredAccuracy ?? this.desiredAccuracy,
+      distanceFilter: distanceFilter ?? this.distanceFilter,
+      stationaryRadius: stationaryRadius ?? this.stationaryRadius,
+      locationTimeout: locationTimeout ?? this.locationTimeout,
+      disableElasticity: disableElasticity ?? this.disableElasticity,
+      elasticityMultiplier: elasticityMultiplier ?? this.elasticityMultiplier,
+      stopAfterElapsedMinutes:
+          stopAfterElapsedMinutes ?? this.stopAfterElapsedMinutes,
+      maxMonitoredGeofences:
+          maxMonitoredGeofences ?? this.maxMonitoredGeofences,
+      enableTimestampMeta: enableTimestampMeta ?? this.enableTimestampMeta,
+      enableAdaptiveMode: enableAdaptiveMode ?? this.enableAdaptiveMode,
+      periodicLocationInterval:
+          periodicLocationInterval ?? this.periodicLocationInterval,
+      periodicDesiredAccuracy:
+          periodicDesiredAccuracy ?? this.periodicDesiredAccuracy,
+      enableSparseUpdates: enableSparseUpdates ?? this.enableSparseUpdates,
+      sparseDistanceThreshold:
+          sparseDistanceThreshold ?? this.sparseDistanceThreshold,
+      sparseMaxIdleSeconds: sparseMaxIdleSeconds ?? this.sparseMaxIdleSeconds,
+      batteryBudgetPerHour: batteryBudgetPerHour ?? this.batteryBudgetPerHour,
+      enableDeadReckoning: enableDeadReckoning ?? this.enableDeadReckoning,
+      deadReckoningActivationDelay:
+          deadReckoningActivationDelay ?? this.deadReckoningActivationDelay,
+      deadReckoningMaxDuration:
+          deadReckoningMaxDuration ?? this.deadReckoningMaxDuration,
+      filter: filter ?? this.filter,
+    );
+  }
 
   /// The desired location accuracy.
   /// Defaults to [DesiredAccuracy.high].
@@ -605,6 +729,29 @@ class AppConfig {
     this.remoteConfigRefreshInterval = 1440,
   });
 
+  AppConfig copyWith({
+    bool? stopOnTerminate,
+    bool? startOnBoot,
+    int? heartbeatInterval,
+    List<String>? schedule,
+    String? remoteConfigUrl,
+    dynamic remoteConfigHeaders,
+    int? remoteConfigTimeout,
+    int? remoteConfigRefreshInterval,
+  }) {
+    return AppConfig(
+      stopOnTerminate: stopOnTerminate ?? this.stopOnTerminate,
+      startOnBoot: startOnBoot ?? this.startOnBoot,
+      heartbeatInterval: heartbeatInterval ?? this.heartbeatInterval,
+      schedule: schedule ?? this.schedule,
+      remoteConfigUrl: remoteConfigUrl ?? this.remoteConfigUrl,
+      remoteConfigHeaders: remoteConfigHeaders ?? this.remoteConfigHeaders,
+      remoteConfigTimeout: remoteConfigTimeout ?? this.remoteConfigTimeout,
+      remoteConfigRefreshInterval:
+          remoteConfigRefreshInterval ?? this.remoteConfigRefreshInterval,
+    );
+  }
+
   /// Whether to stop location tracking when the application is terminated/killed by the user or OS.
   /// Defaults to `true`.
   final bool stopOnTerminate;
@@ -739,6 +886,54 @@ class HttpConfig {
     this.sslPinningFingerprints,
     this.sslPinningCertificates,
   });
+
+  HttpConfig copyWith({
+    String? url,
+    HttpMethod? method,
+    dynamic headers,
+    dynamic params,
+    bool? autoSync,
+    bool? batchSync,
+    int? maxBatchSize,
+    int? autoSyncThreshold,
+    int? httpTimeout,
+    LocationOrderDirection? locationsOrderDirection,
+    bool? disableAutoSyncOnCellular,
+    int? maxRetries,
+    int? retryBackoffBase,
+    int? retryBackoffCap,
+    bool? enableDeltaCompression,
+    int? deltaCoordinatePrecision,
+    List<String>? sslPinningFingerprints,
+    List<String>? sslPinningCertificates,
+  }) {
+    return HttpConfig(
+      url: url ?? this.url,
+      method: method ?? this.method,
+      headers: headers ?? this.headers,
+      params: params ?? this.params,
+      autoSync: autoSync ?? this.autoSync,
+      batchSync: batchSync ?? this.batchSync,
+      maxBatchSize: maxBatchSize ?? this.maxBatchSize,
+      autoSyncThreshold: autoSyncThreshold ?? this.autoSyncThreshold,
+      httpTimeout: httpTimeout ?? this.httpTimeout,
+      locationsOrderDirection:
+          locationsOrderDirection ?? this.locationsOrderDirection,
+      disableAutoSyncOnCellular:
+          disableAutoSyncOnCellular ?? this.disableAutoSyncOnCellular,
+      maxRetries: maxRetries ?? this.maxRetries,
+      retryBackoffBase: retryBackoffBase ?? this.retryBackoffBase,
+      retryBackoffCap: retryBackoffCap ?? this.retryBackoffCap,
+      enableDeltaCompression:
+          enableDeltaCompression ?? this.enableDeltaCompression,
+      deltaCoordinatePrecision:
+          deltaCoordinatePrecision ?? this.deltaCoordinatePrecision,
+      sslPinningFingerprints:
+          sslPinningFingerprints ?? this.sslPinningFingerprints,
+      sslPinningCertificates:
+          sslPinningCertificates ?? this.sslPinningCertificates,
+    );
+  }
 
   /// The HTTP server URL to sync locations to.
   /// Defaults to `null`.
@@ -957,6 +1152,14 @@ class LoggerConfig {
     this.logMaxDays = 3,
     this.debug = false,
   });
+
+  LoggerConfig copyWith({LogLevel? logLevel, int? logMaxDays, bool? debug}) {
+    return LoggerConfig(
+      logLevel: logLevel ?? this.logLevel,
+      logMaxDays: logMaxDays ?? this.logMaxDays,
+      debug: debug ?? this.debug,
+    );
+  }
 
   /// The minimum level of logs to capture and persist.
   /// Defaults to [LogLevel.info].

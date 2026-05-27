@@ -9,7 +9,6 @@ import android.os.Looper
 import android.util.Log
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.TraceletSdk
-import com.ikolvi.tracelet.sdk.http.HttpSyncManager
 import com.ikolvi.tracelet.TraceletHostApi
 import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -82,36 +81,6 @@ class TraceletAndroidPlugin :
             val mainHandler = Handler(Looper.getMainLooper())
             syncBodyChannel = MethodChannel(binding.binaryMessenger, "com.tracelet/sync_body")
 
-            HttpSyncManager.onAuthorizationRequired = {
-                if (isEngineAttached && Looper.myLooper() == Looper.getMainLooper()) {
-                    // We are on main thread, but sync needs a block. 
-                    // Actually HttpSyncManager calls these from a background thread.
-                    false 
-                } else if (isEngineAttached) {
-                    val refreshed = requestTokenRefreshFromDart(mainHandler)
-                    if (refreshed) true else hs.requestHeadersRefresh(DART_CALLBACK_TIMEOUT_MS)
-                } else {
-                    hs.requestHeadersRefresh(DART_CALLBACK_TIMEOUT_MS)
-                }
-            }
-
-            HttpSyncManager.onRequestFreshHeaders = {
-                if (isEngineAttached && Looper.myLooper() != Looper.getMainLooper()) {
-                    val refreshed = requestFreshHeadersFromDart(mainHandler)
-                    if (!refreshed) hs.requestHeadersRefresh(DART_CALLBACK_TIMEOUT_MS)
-                } else {
-                    hs.requestHeadersRefresh(DART_CALLBACK_TIMEOUT_MS)
-                }
-            }
-
-            HttpSyncManager.onBuildCustomSyncBody = buildCustomSyncBodyCallback@{ locations ->
-                if (isEngineAttached && Looper.myLooper() != Looper.getMainLooper()) {
-                    val result = requestSyncBodyFromDart(mainHandler, locations)
-                    if (result != null) return@buildCustomSyncBodyCallback result
-                }
-                hs.requestCustomSyncBody(locations, DART_CALLBACK_TIMEOUT_MS)
-            }
-
             eventDispatcher.headlessFallback = { eventName, eventData ->
                 if (hs.isRegistered()) {
                     hs.dispatchEvent(eventName, eventData)
@@ -165,9 +134,6 @@ class TraceletAndroidPlugin :
             Log.d(TAG, "onDetachedFromEngine: primary instance detaching")
             primaryInstance = null
             syncBodyChannel = null
-            HttpSyncManager.onAuthorizationRequired = null
-            HttpSyncManager.onRequestFreshHeaders = null
-            HttpSyncManager.onBuildCustomSyncBody = null
             
             // If this was the last engine, destroy the SDK.
             // Otherwise, we must NOT destroy the SDK because secondary engines might still be using it!

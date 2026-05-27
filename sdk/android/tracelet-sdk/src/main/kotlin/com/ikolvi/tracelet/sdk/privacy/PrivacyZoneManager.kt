@@ -2,106 +2,167 @@ package com.ikolvi.tracelet.sdk.privacy
 
 import android.content.Context
 import com.ikolvi.tracelet.sdk.ConfigManager
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
-import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import uniffi.tracelet_core.CorePrivacyZone
+import uniffi.tracelet_core.PrivacyZoneEvaluator
 
 /**
- * **[Enterprise]** Privacy zone manager.
+ * **[Enterprise]** Privacy Zone Manager.
  *
- * Evaluates incoming locations against registered privacy zones and applies
- * the configured action:
+ * This manager orchestrates geographic compliance and privacy controls (GDPR, CCPA, etc.).
+ * It intercepts incoming device GPS locations, matches them against registered geographic zones,
+ * and routes them through the appropriate action filters.
  *
- * - **Exclude** (`action = 0`): Location is dropped entirely — not persisted,
- *   not dispatched, not audited.
- * - **Degrade** (`action = 1`): Coordinates are degraded to a configurable
- *   accuracy radius (default 1 000 m) by snapping to a grid. The degraded
- *   location IS persisted and dispatched but with reduced precision.
- * - **Event-only** (`action = 2`): Location is dispatched to Dart listeners
- *   but NOT persisted to the database.
+ * The evaluation and mathematical grid snapping (precision degradation) logic are centralized
+ * in the shared Rust Core via [PrivacyZoneEvaluator] to guarantee cross-platform consistency.
  *
- * ## Distance Calculation
- *
- * Uses the **Haversine formula** for accurate great-circle distance on Earth.
- * This is fast enough for per-location checks (single trig call per zone).
+ * Supported Privacy Actions:
+ * - **Exclude** (`action = 0`): Drops the location entirely. It is not persisted in SQLite,
+ *   not sent to Dart, and not cryptographically audited.
+ * - **Degrade** (`action = 1`): Degrades coordinate precision by rounding latitude/longitude
+ *   to a configurable accuracy grid (e.g., 1000m cells). The degraded record is persisted
+ *   and dispatched, ensuring tracking without precise personal location tracing.
+ * - **Event-only** (`action = 2`): Dispatches location events to real-time Dart/Flutter
+ *   subscribers but does NOT save them to the database or include them in subsequent sync batches.
  */
 class PrivacyZoneManager(
     private val context: Context,
-    private val database: TraceletDatabase,
     private val configManager: ConfigManager,
+    private val rustDatabase: uniffi.tracelet_core.DatabaseManager? = null,
 ) {
     companion object {
-        /** Earth's mean radius in metres. */
-        private const val EARTH_RADIUS_M = 6_371_000.0
-
-        // Action constants (match Dart PrivacyZoneAction enum index)
+        // Action constants (matching the Dart/Swift platform contract)
         const val ACTION_EXCLUDE = 0
         const val ACTION_DEGRADE = 1
         const val ACTION_EVENT_ONLY = 2
     }
 
-    /** Whether privacy zones are enabled in configuration. */
+    /**
+     * Checks if geographic privacy zone enforcement is enabled in the configuration.
+     * Evaluates the core settings layer.
+     */
     fun isEnabled(): Boolean = configManager.getPrivacyZoneEnabled()
 
     // =========================================================================
     // In-memory zone cache
     // =========================================================================
 
-    /** Cached zones — invalidated on add/remove, avoids DB query per location. */
-    private var cachedZones: List<Map<String, Any?>>? = null
+    /**
+     * In-memory cache of privacy control zones to avoid performing database queries
+     * on every individual GPS location update.
+     */
+    private var cachedZones: List<CorePrivacyZone>? = null
 
-    /** Returns zones from cache, refreshing from DB only when invalidated. */
-    private fun getCachedZones(): List<Map<String, Any?>> {
-        return cachedZones ?: database.getPrivacyZones().also { cachedZones = it }
+    /**
+     * Returns the list of privacy zones. Queries the database if the cache is empty
+     * or has been invalidated.
+     */
+    private fun getCachedZones(): List<CorePrivacyZone> {
+        val cached = cachedZones
+        if (cached != null) {
+            return cached
+        }
+        // Fetch from the shared Rust SQLite database
+        val loaded = rustDatabase?.getPrivacyZones() ?: emptyList()
+        cachedZones = loaded
+        return loaded
     }
 
-    /** Invalidate the zone cache — forces a DB re-query on next evaluate(). */
+    /**
+     * Invalidates the in-memory cache, forcing a refresh from the SQLite database
+     * on the next location evaluation.
+     */
     private fun invalidateCache() {
         cachedZones = null
     }
 
     // =========================================================================
-    // Zone CRUD (delegates to database)
+    // Zone CRUD (delegated to Rust database)
     // =========================================================================
 
+    /**
+     * Registers a new geographic privacy zone in the shared database.
+     *
+     * @param zone A map containing zone properties: identifier, latitude, longitude, radius, action, degradedAccuracyMeters.
+     * @return True if the zone was inserted successfully, false otherwise.
+     */
     fun addZone(zone: Map<String, Any?>): Boolean {
-        val result = database.insertPrivacyZone(zone)
-        if (result) invalidateCache()
-        return result
+        val identifier = zone["identifier"] as? String ?: return false
+        val lat = (zone["latitude"] as? Number)?.toDouble() ?: 0.0
+        val lng = (zone["longitude"] as? Number)?.toDouble() ?: 0.0
+        val radius = (zone["radius"] as? Number)?.toDouble() ?: 0.0
+        val action = (zone["action"] as? Number)?.toInt() ?: ACTION_EXCLUDE
+        val degradedAccuracy = (zone["degradedAccuracyMeters"] as? Number)?.toDouble() ?: 1000.0
+        
+        try {
+            rustDatabase?.insertPrivacyZone(identifier, lat, lng, radius, action, degradedAccuracy)
+            invalidateCache()
+            return true
+        } catch (e: Exception) {
+            return false
+        }
     }
 
+    /**
+     * Registers multiple privacy zones in a single sweep.
+     *
+     * @param zones List of privacy zone property maps.
+     * @return True if all zones were added successfully.
+     */
     fun addZones(zones: List<Map<String, Any?>>): Boolean {
-        zones.forEach { database.insertPrivacyZone(it) }
-        invalidateCache()
-        return true
+        var allSuccess = true
+        for (zone in zones) {
+            if (!addZone(zone)) {
+                allSuccess = false
+            }
+        }
+        return allSuccess
     }
 
+    /**
+     * Removes a specific privacy zone from the database by its identifier.
+     *
+     * @param identifier Unique zone string identifier.
+     */
     fun removeZone(identifier: String): Boolean {
-        val result = database.deletePrivacyZone(identifier)
-        if (result) invalidateCache()
-        return result
+        try {
+            rustDatabase?.deletePrivacyZone(identifier)
+            invalidateCache()
+            return true
+        } catch (e: Exception) {
+            return false
+        }
     }
 
+    /**
+     * Removes all registered privacy zones from the database.
+     */
     fun removeAllZones(): Boolean {
-        val result = database.deleteAllPrivacyZones()
-        invalidateCache()
-        return result
+        try {
+            rustDatabase?.clearPrivacyZones()
+            invalidateCache()
+            return true
+        } catch (e: Exception) {
+            return false
+        }
     }
 
-    fun getZones(): List<Map<String, Any?>> = getCachedZones()
+    /**
+     * Exposes the currently active privacy zones as maps to preserve API compatibility
+     * with the Dart/Flutter bridge channel.
+     */
+    fun getZones(): List<Map<String, Any?>> {
+        return getCachedZones().map { mapFromCorePrivacyZone(it) }
+    }
 
     // =========================================================================
     // Location evaluation
     // =========================================================================
 
     /**
-     * Result of evaluating a location against all privacy zones.
+     * The result of evaluating a location against privacy boundaries.
      *
-     * @property action  The action to apply, or `null` if no zone matched.
-     * @property zone    The matching zone map, or `null` if no zone matched.
+     * @property action The resolved restrictive action to apply, or `null` if no zone contains the coordinate.
+     * @property zone The matching zone property map, or `null` if no zone matches.
      */
     data class EvaluationResult(
         val action: Int?,
@@ -109,12 +170,11 @@ class PrivacyZoneManager(
     )
 
     /**
-     * Evaluates whether a location at ([latitude], [longitude]) falls inside
-     * any registered privacy zone. Returns the matching zone's action, or
-     * `null` if no zone contains the point.
+     * Evaluates a location coordinate against all cached privacy zones.
+     * Delegates math and priority resolving (Exclude > EventOnly > Degrade) to the Rust [PrivacyZoneEvaluator].
      *
-     * When multiple zones overlap, the **most restrictive** action wins:
-     * exclude > eventOnly > degrade.
+     * @param latitude The coordinate latitude.
+     * @param longitude The coordinate longitude.
      */
     fun evaluate(latitude: Double, longitude: Double): EvaluationResult {
         if (!isEnabled()) return EvaluationResult(null, null)
@@ -122,36 +182,29 @@ class PrivacyZoneManager(
         val zones = getCachedZones()
         if (zones.isEmpty()) return EvaluationResult(null, null)
 
-        var matchedAction: Int? = null
-        var matchedZone: Map<String, Any?>? = null
+        // Instantiate the Rust evaluator to run optimized spatial checks and resolve action priorities
+        val evaluator = PrivacyZoneEvaluator()
+        val result = evaluator.evaluate(latitude, longitude, zones)
 
-        for (zone in zones) {
-            val zoneLat = (zone["latitude"] as? Number)?.toDouble() ?: continue
-            val zoneLng = (zone["longitude"] as? Number)?.toDouble() ?: continue
-            val zoneRadius = (zone["radius"] as? Number)?.toDouble() ?: continue
+        if (result.action == null) return EvaluationResult(null, null)
 
-            val distance = haversineDistance(latitude, longitude, zoneLat, zoneLng)
-            if (distance <= zoneRadius) {
-                val action = (zone["action"] as? Number)?.toInt() ?: ACTION_EXCLUDE
-                // Most restrictive wins: exclude(0) > eventOnly(2) > degrade(1)
-                if (matchedAction == null || isActionMoreRestrictive(action, matchedAction)) {
-                    matchedAction = action
-                    matchedZone = zone
-                }
-            }
-        }
+        // Locate the winner zone to build the detailed compatibility map
+        val matchedZone = zones.find { it.identifier == result.matchedZoneId }
+        val matchedZoneMap = matchedZone?.let { mapFromCorePrivacyZone(it) }
 
-        return EvaluationResult(matchedAction, matchedZone)
+        return EvaluationResult(result.action, matchedZoneMap)
     }
 
     /**
-     * Applies the privacy zone action to a location map.
+     * Processes a location against privacy zone rules and returns a [ProcessedLocation]
+     * indicating whether it should be kept, dropped, degraded, or kept event-only.
      *
-     * @return A [ProcessedLocation] describing what to do with the location.
+     * @param location The input location property map.
      */
     fun processLocation(location: Map<String, Any?>): ProcessedLocation {
-        val lat = (location["latitude"] as? Number)?.toDouble() ?: return ProcessedLocation.passThrough(location)
-        val lng = (location["longitude"] as? Number)?.toDouble() ?: return ProcessedLocation.passThrough(location)
+        val coords = location["coords"] as? Map<*, *> ?: location
+        val lat = (coords["latitude"] as? Number)?.toDouble() ?: return ProcessedLocation.passThrough(location)
+        val lng = (coords["longitude"] as? Number)?.toDouble() ?: return ProcessedLocation.passThrough(location)
 
         val result = evaluate(lat, lng)
         if (result.action == null) return ProcessedLocation.passThrough(location)
@@ -173,20 +226,20 @@ class PrivacyZoneManager(
     // =========================================================================
 
     /**
-     * Describes how a location should be handled after privacy zone evaluation.
+     * Encapsulates the routing decisions for location records after privacy checks.
      */
     data class ProcessedLocation(
         val action: Action,
         val location: Map<String, Any?>?,
     ) {
         enum class Action {
-            /** No privacy zone matched — pass through normally. */
+            /** Pass through normally — no privacy zone matches. */
             PASS_THROUGH,
-            /** Location is inside an exclusion zone — drop entirely. */
+            /** Drop entirely — location is in an exclusion zone. */
             DROP,
-            /** Location should be dispatched to Dart but NOT persisted. */
+            /** Event-only — dispatch to active Dart subscribers but do not persist. */
             EVENT_ONLY,
-            /** Coordinates have been degraded — persist and dispatch the degraded version. */
+            /** Degraded — persist and dispatch the coordinate with snapped/degraded precision. */
             DEGRADED,
         }
 
@@ -203,12 +256,8 @@ class PrivacyZoneManager(
     // =========================================================================
 
     /**
-     * Degrades location precision by snapping coordinates to a grid whose
-     * cell size approximates [accuracyMeters].
-     *
-     * The grid is computed in degrees: `gridSize ≈ accuracyMeters / 111_320`
-     * (1° latitude ≈ 111.32 km). Coordinates are rounded to the nearest grid
-     * line. The location's accuracy field is set to [accuracyMeters].
+     * Degrades coordinate precision by leveraging the Rust evaluator to snap coordinates
+     * to a coarse grid, then updates the coordinates and accuracy metadata fields in the map.
      */
     private fun degradeLocation(
         location: Map<String, Any?>,
@@ -216,83 +265,39 @@ class PrivacyZoneManager(
         lng: Double,
         accuracyMeters: Double,
     ): Map<String, Any?> {
-        val (snappedLat, snappedLng) = degradeCoordinates(lat, lng, accuracyMeters)
+        val evaluator = PrivacyZoneEvaluator()
+        val snapped = evaluator.degradeCoordinates(lat, lng, accuracyMeters)
 
         return location.toMutableMap().apply {
-            put("latitude", snappedLat)
-            put("longitude", snappedLng)
+            put("latitude", snapped.lat)
+            put("longitude", snapped.lng)
             put("accuracy", accuracyMeters)
-            // Mark as degraded so Dart can inspect
+            // Synchronize nested coordinate structure if it exists
             val coords = get("coords")
-            if (coords is MutableMap<*, *>) {
+            if (coords is Map<*, *>) {
                 @Suppress("UNCHECKED_CAST")
-                (coords as MutableMap<String, Any?>).apply {
-                    put("latitude", snappedLat)
-                    put("longitude", snappedLng)
+                val updatedCoords = (coords as Map<String, Any?>).toMutableMap().apply {
+                    put("latitude", snapped.lat)
+                    put("longitude", snapped.lng)
                     put("accuracy", accuracyMeters)
                 }
+                put("coords", updatedCoords)
             }
         }
     }
 
     /**
-     * Haversine great-circle distance between two points in metres.
+     * Maps a [CorePrivacyZone] struct into a generic map structure for transmission
+     * across framework bindings.
      */
-    private fun haversineDistance(
-        lat1: Double, lng1: Double,
-        lat2: Double, lng2: Double,
-    ): Double = haversineDistanceMetres(lat1, lng1, lat2, lng2)
-}
-
-// =============================================================================
-// Package-level pure functions — extracted for unit testing
-// =============================================================================
-
-/** Earth's mean radius in metres. */
-private const val EARTH_RADIUS_M = 6_371_000.0
-
-/**
- * Haversine great-circle distance between two points in metres.
- */
-fun haversineDistanceMetres(
-    lat1: Double, lng1: Double,
-    lat2: Double, lng2: Double,
-): Double {
-    val dLat = Math.toRadians(lat2 - lat1)
-    val dLng = Math.toRadians(lng2 - lng1)
-    val a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
-            sin(dLng / 2) * sin(dLng / 2)
-    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return EARTH_RADIUS_M * c
-}
-
-/**
- * Returns `true` if action [a] is more restrictive than action [b].
- *
- * Priority: exclude(0) > eventOnly(2) > degrade(1).
- */
-fun isActionMoreRestrictive(a: Int, b: Int): Boolean {
-    val priority = mapOf(
-        PrivacyZoneManager.ACTION_EXCLUDE to 3,
-        PrivacyZoneManager.ACTION_EVENT_ONLY to 2,
-        PrivacyZoneManager.ACTION_DEGRADE to 1,
-    )
-    return (priority[a] ?: 0) > (priority[b] ?: 0)
-}
-
-/**
- * Degrades coordinates by snapping to a grid of [accuracyMeters] resolution.
- *
- * Returns a pair of (snappedLat, snappedLng).
- */
-fun degradeCoordinates(
-    lat: Double,
-    lng: Double,
-    accuracyMeters: Double,
-): Pair<Double, Double> {
-    val gridDeg = accuracyMeters / 111_320.0
-    val snappedLat = Math.round(lat / gridDeg) * gridDeg
-    val snappedLng = Math.round(lng / gridDeg) * gridDeg
-    return Pair(snappedLat, snappedLng)
+    private fun mapFromCorePrivacyZone(zone: CorePrivacyZone): Map<String, Any?> {
+        return mapOf(
+            "identifier" to zone.identifier,
+            "latitude" to zone.latitude,
+            "longitude" to zone.longitude,
+            "radius" to zone.radius,
+            "action" to zone.action,
+            "degradedAccuracyMeters" to zone.degradedAccuracyMeters
+        )
+    }
 }

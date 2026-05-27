@@ -16,10 +16,9 @@ class TraceletFirebase {
   ///   path: 'locations/user_123',
   /// );
   ///
-  /// await Tracelet.ready(Config(
-  ///   geo: GeoConfig(distanceFilter: 50),
-  ///   http: httpConfig,
-  /// ));
+  /// await Tracelet.ready(Config.balanced(overrides: {
+  ///   'http': httpConfig.toMap(),
+  /// }));
   /// ```
   static Future<HttpConfig> buildHttpConfig({
     required String databaseUrl,

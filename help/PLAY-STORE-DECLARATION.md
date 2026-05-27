@@ -199,7 +199,7 @@ Set `disableMotionActivityUpdates: true` in your Dart config so Tracelet
 doesn't try to prompt for the permission:
 
 ```dart
-await Tracelet.ready(Config(
+await Tracelet.ready(Config.balanced().copyWith(
   motion: MotionConfig(disableMotionActivityUpdates: true),
 ));
 ```

@@ -24,7 +24,7 @@ breaks the chain and is immediately detectable via `verifyAuditTrail()`.
 import 'package:tracelet/tracelet.dart';
 
 // Enable audit trail in config
-final state = await Tracelet.ready(Config(
+final state = await Tracelet.ready(Config.balanced().copyWith(
   audit: AuditConfig(
     enabled: true,
   ),

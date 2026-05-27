@@ -3,7 +3,6 @@ package com.ikolvi.tracelet.sdk.motion
 import android.content.Context
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
 import com.ikolvi.tracelet.sdk.location.LocationEngine
 import com.ikolvi.tracelet.sdk.service.LocationService
 import com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker
@@ -28,7 +27,7 @@ class SmartMotionCoordinator(
     private val locationEngine: LocationEngine,
     private val motionDetector: MotionDetector,
 ) {
-    private val logger = TraceletLogger(context, configManager, TraceletDatabase.getInstance(context))
+    private val logger = TraceletLogger(context, configManager)
 
     private val coreCoordinator = uniffi.tracelet_core.SmartMotionCoordinator(
         configManager.getStationaryTrackingMode() == com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES
@@ -42,17 +41,35 @@ class SmartMotionCoordinator(
 
     /**
      * Called when the accelerometer/activity recognition state changes.
+     * Returns the action taken by the coordinator so the caller can
+     * conditionally reset the speed state machine on real wake-ups.
      */
-    fun onAccelStateChange(isMoving: Boolean) {
+    fun onAccelStateChange(isMoving: Boolean): uniffi.tracelet_core.CoordinatorAction {
         val action = coreCoordinator.onAccelStateChange(isMoving)
         logger.debug("SmartMotionCoordinator: onAccelStateChange -> isMoving=$isMoving, action=$action")
         handleAction(action)
+        return action
     }
 
     /**
      * Called when the GPS speed state changes.
      */
     fun onSpeedStateChange(isMoving: Boolean) {
+        if (!isMoving && coreCoordinator.isAccelMoving()) {
+            // Speed SM declared stationary (30s of speed < 1.5 m/s) but accel
+            // still reports moving. This could be:
+            //   a) Hand tremor while physically still (GPS speed ≈ 0 m/s)
+            //   b) Walking slowly (GPS speed 0.3-0.5 m/s, below speed threshold)
+            // Only override accel for case (a) — truly near-zero GPS speed.
+            // For case (b), trust the accelerometer: the user IS moving.
+            val lastSpeed = locationEngine.getLastLocation()?.speed ?: 0f
+            if (lastSpeed <= 0.15f) {
+                logger.info("SmartMotionCoordinator: GPS speed near zero (${lastSpeed} m/s) but accel moving — overriding accel to false (hand tremor).")
+                coreCoordinator.onAccelStateChange(false)
+            } else {
+                logger.info("SmartMotionCoordinator: GPS speed ${lastSpeed} m/s suggests walking — trusting accel, staying continuous.")
+            }
+        }
         val action = coreCoordinator.onSpeedStateChange(isMoving)
         logger.debug("SmartMotionCoordinator: onSpeedStateChange -> isMoving=$isMoving, action=$action")
         handleAction(action)

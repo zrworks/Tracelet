@@ -59,5 +59,14 @@
         <receiver
             android:name="com.ikolvi.tracelet.sdk.receiver.PeriodicAlarmReceiver"
             android:exported="false" />
+
+        <!-- Activity transition receiver -->
+        <receiver
+            android:name="com.ikolvi.tracelet.sdk.receiver.ActivityTransitionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.tracelet.ACTION_ACTIVITY_TRANSITION" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

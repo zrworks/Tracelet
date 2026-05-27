@@ -15,7 +15,7 @@ over time and adjusts parameters to meet a **target drain rate** (%/hour).
 ```dart
 import 'package:tracelet/tracelet.dart' as tl;
 
-await tl.Tracelet.ready(tl.Config(
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     batteryBudgetPerHour: 3.0,  // Target: max 3% battery drain per hour
     distanceFilter: 10.0,       // Initial distance filter (will be adjusted)

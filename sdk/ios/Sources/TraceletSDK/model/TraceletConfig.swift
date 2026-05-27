@@ -2,6 +2,17 @@ import Foundation
 
 // MARK: - Enums
 
+public enum TraceletProfile {
+    /// Turn-by-Turn, precise tracking without adaptive degradation.
+    case highAccuracy
+    
+    /// Standard tracking balancing battery and accuracy. Uses smart motion detection and adaptive mode.
+    case balanced
+    
+    /// Background-only, battery-sensitive tracking with sparse updates and cellular/wifi locations.
+    case lowPower
+}
+
 public enum TraceletDesiredAccuracy: Int {
     case high = 0, medium = 1, low = 2, veryLow = 3, passive = 4
 }
@@ -53,19 +64,19 @@ public enum TraceletHashAlgorithm: Int {
 // MARK: - TraceletConfig
 
 public struct TraceletConfig {
-    public let geo: TraceletGeoConfig
-    public let app: TraceletAppConfig
-    public let android: TraceletAndroidConfig
-    public let ios: TraceletIosConfig
-    public let http: TraceletHttpConfig
-    public let logger: TraceletLoggerConfig
-    public let motion: TraceletMotionConfig
-    public let geofence: TraceletGeofenceConfig
-    public let persistence: TraceletPersistenceConfig
-    public let audit: TraceletAuditConfig
-    public let privacyZone: TraceletPrivacyZoneConfig
-    public let security: TraceletSecurityConfig
-    public let attestation: TraceletAttestationConfig
+    public var geo: TraceletGeoConfig
+    public var app: TraceletAppConfig
+    public var android: TraceletAndroidConfig
+    public var ios: TraceletIosConfig
+    public var http: TraceletHttpConfig
+    public var logger: TraceletLoggerConfig
+    public var motion: TraceletMotionConfig
+    public var geofence: TraceletGeofenceConfig
+    public var persistence: TraceletPersistenceConfig
+    public var audit: TraceletAuditConfig
+    public var privacyZone: TraceletPrivacyZoneConfig
+    public var security: TraceletSecurityConfig
+    public var attestation: TraceletAttestationConfig
 
     public init(
         geo: TraceletGeoConfig = .init(),
@@ -137,26 +148,26 @@ public struct TraceletConfig {
 // MARK: - GeoConfig
 
 public struct TraceletGeoConfig {
-    public let desiredAccuracy: TraceletDesiredAccuracy
-    public let distanceFilter: Double
-    public let stationaryRadius: Double
-    public let locationTimeout: Int
-    public let disableElasticity: Bool
-    public let elasticityMultiplier: Double
-    public let stopAfterElapsedMinutes: Int
-    public let maxMonitoredGeofences: Int
-    public let enableTimestampMeta: Bool
-    public let enableAdaptiveMode: Bool
-    public let periodicLocationInterval: Int
-    public let periodicDesiredAccuracy: TraceletDesiredAccuracy
-    public let enableSparseUpdates: Bool
-    public let sparseDistanceThreshold: Double
-    public let sparseMaxIdleSeconds: Int
-    public let enableDeadReckoning: Bool
-    public let deadReckoningActivationDelay: Int
-    public let deadReckoningMaxDuration: Int
-    public let batteryBudgetPerHour: Double
-    public let filter: TraceletLocationFilter?
+    public var desiredAccuracy: TraceletDesiredAccuracy
+    public var distanceFilter: Double
+    public var stationaryRadius: Double
+    public var locationTimeout: Int
+    public var disableElasticity: Bool
+    public var elasticityMultiplier: Double
+    public var stopAfterElapsedMinutes: Int
+    public var maxMonitoredGeofences: Int
+    public var enableTimestampMeta: Bool
+    public var enableAdaptiveMode: Bool
+    public var periodicLocationInterval: Int
+    public var periodicDesiredAccuracy: TraceletDesiredAccuracy
+    public var enableSparseUpdates: Bool
+    public var sparseDistanceThreshold: Double
+    public var sparseMaxIdleSeconds: Int
+    public var enableDeadReckoning: Bool
+    public var deadReckoningActivationDelay: Int
+    public var deadReckoningMaxDuration: Int
+    public var batteryBudgetPerHour: Double
+    public var filter: TraceletLocationFilter?
 
     public init(
         desiredAccuracy: TraceletDesiredAccuracy = .high,
@@ -257,15 +268,15 @@ public struct TraceletGeoConfig {
 // MARK: - AndroidConfig
 
 public struct TraceletAndroidConfig {
-    public let locationUpdateInterval: Int
-    public let fastestLocationUpdateInterval: Int
-    public let deferTime: Int
-    public let allowIdenticalLocations: Bool
-    public let geofenceModeHighAccuracy: Bool
-    public let periodicUseForegroundService: Bool
-    public let periodicUseExactAlarms: Bool
-    public let scheduleUseAlarmManager: Bool
-    public let foregroundService: TraceletForegroundServiceConfig
+    public var locationUpdateInterval: Int
+    public var fastestLocationUpdateInterval: Int
+    public var deferTime: Int
+    public var allowIdenticalLocations: Bool
+    public var geofenceModeHighAccuracy: Bool
+    public var periodicUseForegroundService: Bool
+    public var periodicUseExactAlarms: Bool
+    public var scheduleUseAlarmManager: Bool
+    public var foregroundService: TraceletForegroundServiceConfig
 
     public init(
         locationUpdateInterval: Int = 1000,
@@ -321,13 +332,13 @@ public struct TraceletAndroidConfig {
 // MARK: - IosConfig
 
 public struct TraceletIosConfig {
-    public let activityType: TraceletActivityType
-    public let useSignificantChangesOnly: Bool
-    public let showsBackgroundLocationIndicator: Bool
-    public let pausesLocationUpdatesAutomatically: Bool
-    public let locationAuthorizationRequest: TraceletAuthorizationRequest
-    public let disableLocationAuthorizationAlert: Bool
-    public let preventSuspend: Bool
+    public var activityType: TraceletActivityType
+    public var useSignificantChangesOnly: Bool
+    public var showsBackgroundLocationIndicator: Bool
+    public var pausesLocationUpdatesAutomatically: Bool
+    public var locationAuthorizationRequest: TraceletAuthorizationRequest
+    public var disableLocationAuthorizationAlert: Bool
+    public var preventSuspend: Bool
 
     public init(
         activityType: TraceletActivityType = .other,
@@ -374,10 +385,10 @@ public struct TraceletIosConfig {
 
 // MARK: - TraceletLocationFilter
 public struct TraceletLocationFilter {
-    public let policy: TraceletLocationFilterPolicy
-    public let maxImpliedSpeed: Int, odometerAccuracyThreshold: Int, trackingAccuracyThreshold: Int
-    public let useKalmanFilter: Bool, rejectMockLocations: Bool
-    public let mockDetectionLevel: TraceletMockDetectionLevel
+    public var policy: TraceletLocationFilterPolicy
+    public var maxImpliedSpeed: Int, odometerAccuracyThreshold: Int, trackingAccuracyThreshold: Int
+    public var useKalmanFilter: Bool, rejectMockLocations: Bool
+    public var mockDetectionLevel: TraceletMockDetectionLevel
     public init(policy: TraceletLocationFilterPolicy = .adjust, maxImpliedSpeed: Int = 0, odometerAccuracyThreshold: Int = 0, trackingAccuracyThreshold: Int = 0, useKalmanFilter: Bool = false, rejectMockLocations: Bool = false, mockDetectionLevel: TraceletMockDetectionLevel = .disabled) { self.policy = policy; self.maxImpliedSpeed = maxImpliedSpeed; self.odometerAccuracyThreshold = odometerAccuracyThreshold; self.trackingAccuracyThreshold = trackingAccuracyThreshold; self.useKalmanFilter = useKalmanFilter; self.rejectMockLocations = rejectMockLocations; self.mockDetectionLevel = mockDetectionLevel }
     public func toMap() -> [String: Any] { ["policy": policy.rawValue, "maxImpliedSpeed": maxImpliedSpeed, "odometerAccuracyThreshold": odometerAccuracyThreshold, "trackingAccuracyThreshold": trackingAccuracyThreshold, "useKalmanFilter": useKalmanFilter, "rejectMockLocations": rejectMockLocations, "mockDetectionLevel": mockDetectionLevel.rawValue] }
     public static func fromMap(_ map: [String: Any]) -> TraceletLocationFilter { TraceletLocationFilter(policy: TraceletLocationFilterPolicy(rawValue: (map["policy"] as? NSNumber)?.intValue ?? 0) ?? .adjust, maxImpliedSpeed: (map["maxImpliedSpeed"] as? NSNumber)?.intValue ?? 0, odometerAccuracyThreshold: (map["odometerAccuracyThreshold"] as? NSNumber)?.intValue ?? 0, trackingAccuracyThreshold: (map["trackingAccuracyThreshold"] as? NSNumber)?.intValue ?? 0, useKalmanFilter: map["useKalmanFilter"] as? Bool ?? false, rejectMockLocations: map["rejectMockLocations"] as? Bool ?? false, mockDetectionLevel: TraceletMockDetectionLevel(rawValue: (map["mockDetectionLevel"] as? NSNumber)?.intValue ?? 0) ?? .disabled) }
@@ -385,12 +396,12 @@ public struct TraceletLocationFilter {
 
 // MARK: - TraceletAppConfig
 public struct TraceletAppConfig {
-    public let stopOnTerminate: Bool, startOnBoot: Bool
-    public let heartbeatInterval: Int
-    public let schedule: [String]
-    public let remoteConfigUrl: String?
-    public let remoteConfigHeaders: [String: String]
-    public let remoteConfigTimeout: Int, remoteConfigRefreshInterval: Int
+    public var stopOnTerminate: Bool, startOnBoot: Bool
+    public var heartbeatInterval: Int
+    public var schedule: [String]
+    public var remoteConfigUrl: String?
+    public var remoteConfigHeaders: [String: String]
+    public var remoteConfigTimeout: Int, remoteConfigRefreshInterval: Int
     public init(stopOnTerminate: Bool = true, startOnBoot: Bool = false, heartbeatInterval: Int = 60, schedule: [String] = [], remoteConfigUrl: String? = nil, remoteConfigHeaders: [String: String] = [:], remoteConfigTimeout: Int = 10000, remoteConfigRefreshInterval: Int = 0) { self.stopOnTerminate = stopOnTerminate; self.startOnBoot = startOnBoot; self.heartbeatInterval = heartbeatInterval; self.schedule = schedule; self.remoteConfigUrl = remoteConfigUrl; self.remoteConfigHeaders = remoteConfigHeaders; self.remoteConfigTimeout = remoteConfigTimeout; self.remoteConfigRefreshInterval = remoteConfigRefreshInterval }
     public func toMap() -> [String: Any] { var map: [String: Any] = ["stopOnTerminate": stopOnTerminate, "startOnBoot": startOnBoot, "heartbeatInterval": heartbeatInterval, "schedule": schedule, "remoteConfigHeaders": remoteConfigHeaders, "remoteConfigTimeout": remoteConfigTimeout, "remoteConfigRefreshInterval": remoteConfigRefreshInterval]; if let url = remoteConfigUrl { map["remoteConfigUrl"] = url }; return map }
     public static func fromMap(_ map: [String: Any]) -> TraceletAppConfig { TraceletAppConfig(stopOnTerminate: map["stopOnTerminate"] as? Bool ?? true, startOnBoot: map["startOnBoot"] as? Bool ?? false, heartbeatInterval: (map["heartbeatInterval"] as? NSNumber)?.intValue ?? 60, schedule: map["schedule"] as? [String] ?? [], remoteConfigUrl: map["remoteConfigUrl"] as? String, remoteConfigHeaders: map["remoteConfigHeaders"] as? [String: String] ?? [:], remoteConfigTimeout: (map["remoteConfigTimeout"] as? NSNumber)?.intValue ?? 10000, remoteConfigRefreshInterval: (map["remoteConfigRefreshInterval"] as? NSNumber)?.intValue ?? 0) }
@@ -398,9 +409,9 @@ public struct TraceletAppConfig {
 
 // MARK: - TraceletForegroundServiceConfig
 public struct TraceletForegroundServiceConfig {
-    public let enabled: Bool; public let channelId: String, channelName: String, notificationTitle: String, notificationText: String
-    public let notificationColor: String?, notificationSmallIcon: String?, notificationLargeIcon: String?
-    public let notificationPriority: TraceletNotificationPriority; public let notificationOngoing: Bool; public let actions: [String]
+    public var enabled: Bool; public var channelId: String, channelName: String, notificationTitle: String, notificationText: String
+    public var notificationColor: String?, notificationSmallIcon: String?, notificationLargeIcon: String?
+    public var notificationPriority: TraceletNotificationPriority; public var notificationOngoing: Bool; public var actions: [String]
     public init(enabled: Bool = true, channelId: String = "tracelet_channel", channelName: String = "Tracelet", notificationTitle: String = "Tracelet", notificationText: String = "Tracking location in background", notificationColor: String? = nil, notificationSmallIcon: String? = nil, notificationLargeIcon: String? = nil, notificationPriority: TraceletNotificationPriority = .default, notificationOngoing: Bool = true, actions: [String] = []) { self.enabled = enabled; self.channelId = channelId; self.channelName = channelName; self.notificationTitle = notificationTitle; self.notificationText = notificationText; self.notificationColor = notificationColor; self.notificationSmallIcon = notificationSmallIcon; self.notificationLargeIcon = notificationLargeIcon; self.notificationPriority = notificationPriority; self.notificationOngoing = notificationOngoing; self.actions = actions }
     public func toMap() -> [String: Any] { var map: [String: Any] = ["enabled": enabled, "channelId": channelId, "channelName": channelName, "notificationTitle": notificationTitle, "notificationText": notificationText, "notificationPriority": notificationPriority.rawValue, "notificationOngoing": notificationOngoing, "actions": actions]; if let color = notificationColor { map["notificationColor"] = color }; if let small = notificationSmallIcon { map["notificationSmallIcon"] = small }; if let large = notificationLargeIcon { map["notificationLargeIcon"] = large }; return map }
     public static func fromMap(_ map: [String: Any]) -> TraceletForegroundServiceConfig { TraceletForegroundServiceConfig(enabled: map["enabled"] as? Bool ?? true, channelId: map["channelId"] as? String ?? "tracelet_channel", channelName: map["channelName"] as? String ?? "Tracelet", notificationTitle: map["notificationTitle"] as? String ?? "Tracelet", notificationText: map["notificationText"] as? String ?? "Tracking location in background", notificationColor: map["notificationColor"] as? String, notificationSmallIcon: map["notificationSmallIcon"] as? String, notificationLargeIcon: map["notificationLargeIcon"] as? String, notificationPriority: TraceletNotificationPriority(rawValue: (map["notificationPriority"] as? NSNumber)?.intValue ?? 0) ?? .default, notificationOngoing: map["notificationOngoing"] as? Bool ?? true, actions: map["actions"] as? [String] ?? []) }
@@ -408,18 +419,18 @@ public struct TraceletForegroundServiceConfig {
 
 // MARK: - TraceletHttpConfig
 public struct TraceletHttpConfig {
-    public let url: String?
-    public let method: TraceletHttpMethod
-    public let headers: [String: String]
-    public let httpRootProperty: String
-    public let batchSync: Bool, maxBatchSize: Int, autoSync: Bool, autoSyncThreshold: Int, httpTimeout: Int
-    public let params: [String: Any]
-    public let locationsOrderDirection: TraceletLocationOrder
-    public let extras: [String: Any]
-    public let disableAutoSyncOnCellular: Bool
-    public let maxRetries: Int, retryBackoffBase: Int, retryBackoffCap: Int
-    public let enableDeltaCompression: Bool, deltaCoordinatePrecision: Int
-    public let sslPinningCertificates: [String], sslPinningFingerprints: [String]
+    public var url: String?
+    public var method: TraceletHttpMethod
+    public var headers: [String: String]
+    public var httpRootProperty: String
+    public var batchSync: Bool, maxBatchSize: Int, autoSync: Bool, autoSyncThreshold: Int, httpTimeout: Int
+    public var params: [String: Any]
+    public var locationsOrderDirection: TraceletLocationOrder
+    public var extras: [String: Any]
+    public var disableAutoSyncOnCellular: Bool
+    public var maxRetries: Int, retryBackoffBase: Int, retryBackoffCap: Int
+    public var enableDeltaCompression: Bool, deltaCoordinatePrecision: Int
+    public var sslPinningCertificates: [String], sslPinningFingerprints: [String]
     public init(url: String? = nil, method: TraceletHttpMethod = .post, headers: [String: String] = [:], httpRootProperty: String = "location", batchSync: Bool = false, maxBatchSize: Int = 250, autoSync: Bool = true, autoSyncThreshold: Int = 0, httpTimeout: Int = 60000, params: [String: Any] = [:], locationsOrderDirection: TraceletLocationOrder = .asc, extras: [String: Any] = [:], disableAutoSyncOnCellular: Bool = false, maxRetries: Int = 10, retryBackoffBase: Int = 1000, retryBackoffCap: Int = 300000, enableDeltaCompression: Bool = false, deltaCoordinatePrecision: Int = 6, sslPinningCertificates: [String] = [], sslPinningFingerprints: [String] = []) { self.url = url; self.method = method; self.headers = headers; self.httpRootProperty = httpRootProperty; self.batchSync = batchSync; self.maxBatchSize = maxBatchSize; self.autoSync = autoSync; self.autoSyncThreshold = autoSyncThreshold; self.httpTimeout = httpTimeout; self.params = params; self.locationsOrderDirection = locationsOrderDirection; self.extras = extras; self.disableAutoSyncOnCellular = disableAutoSyncOnCellular; self.maxRetries = maxRetries; self.retryBackoffBase = retryBackoffBase; self.retryBackoffCap = retryBackoffCap; self.enableDeltaCompression = enableDeltaCompression; self.deltaCoordinatePrecision = deltaCoordinatePrecision; self.sslPinningCertificates = sslPinningCertificates; self.sslPinningFingerprints = sslPinningFingerprints }
     public func toMap() -> [String: Any] { var map: [String: Any] = ["method": method.rawValue, "headers": headers, "httpRootProperty": httpRootProperty, "batchSync": batchSync, "maxBatchSize": maxBatchSize, "autoSync": autoSync, "autoSyncThreshold": autoSyncThreshold, "httpTimeout": httpTimeout, "params": params, "locationsOrderDirection": locationsOrderDirection.rawValue, "httpExtras": extras, "disableAutoSyncOnCellular": disableAutoSyncOnCellular, "maxRetries": maxRetries, "retryBackoffBase": retryBackoffBase, "retryBackoffCap": retryBackoffCap, "enableDeltaCompression": enableDeltaCompression, "deltaCoordinatePrecision": deltaCoordinatePrecision, "sslPinningCertificates": sslPinningCertificates, "sslPinningFingerprints": sslPinningFingerprints]; if let url = url { map["url"] = url }; return map }
     public static func fromMap(_ map: [String: Any]) -> TraceletHttpConfig { TraceletHttpConfig(url: map["url"] as? String, method: TraceletHttpMethod(rawValue: (map["method"] as? NSNumber)?.intValue ?? 0) ?? .post, headers: map["headers"] as? [String: String] ?? [:], httpRootProperty: map["httpRootProperty"] as? String ?? "location", batchSync: map["batchSync"] as? Bool ?? false, maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250, autoSync: map["autoSync"] as? Bool ?? true, autoSyncThreshold: (map["autoSyncThreshold"] as? NSNumber)?.intValue ?? 0, httpTimeout: (map["httpTimeout"] as? NSNumber)?.intValue ?? 60000, params: map["params"] as? [String: Any] ?? [:], locationsOrderDirection: TraceletLocationOrder(rawValue: (map["locationsOrderDirection"] as? NSNumber)?.intValue ?? 0) ?? .asc, extras: map["httpExtras"] as? [String: Any] ?? [:], disableAutoSyncOnCellular: map["disableAutoSyncOnCellular"] as? Bool ?? false, maxRetries: (map["maxRetries"] as? NSNumber)?.intValue ?? 10, retryBackoffBase: (map["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000, retryBackoffCap: (map["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000, enableDeltaCompression: map["enableDeltaCompression"] as? Bool ?? false, deltaCoordinatePrecision: (map["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 6, sslPinningCertificates: map["sslPinningCertificates"] as? [String] ?? [], sslPinningFingerprints: map["sslPinningFingerprints"] as? [String] ?? []) }
@@ -427,7 +438,7 @@ public struct TraceletHttpConfig {
 
 // MARK: - TraceletLoggerConfig
 public struct TraceletLoggerConfig {
-    public let logLevel: TraceletLogLevel, logMaxDays: Int, debug: Bool
+    public var logLevel: TraceletLogLevel, logMaxDays: Int, debug: Bool
     public init(logLevel: TraceletLogLevel = .info, logMaxDays: Int = 3, debug: Bool = false) { self.logLevel = logLevel; self.logMaxDays = logMaxDays; self.debug = debug }
     public func toMap() -> [String: Any] { ["logLevel": logLevel.rawValue, "logMaxDays": logMaxDays, "debug": debug] }
     public static func fromMap(_ map: [String: Any]) -> TraceletLoggerConfig { TraceletLoggerConfig(logLevel: TraceletLogLevel(rawValue: (map["logLevel"] as? NSNumber)?.intValue ?? 2) ?? .info, logMaxDays: (map["logMaxDays"] as? NSNumber)?.intValue ?? 3, debug: map["debug"] as? Bool ?? false) }
@@ -435,9 +446,9 @@ public struct TraceletLoggerConfig {
 
 // MARK: - TraceletMotionConfig
 public struct TraceletMotionConfig {
-    public let stopTimeout: Int, motionTriggerDelay: Int, disableMotionActivityUpdates: Bool, isMoving: Bool
-    public let activityRecognitionInterval: Int, minimumActivityRecognitionConfidence: Int, disableStopDetection: Bool, stopDetectionDelay: Int, stopOnStationary: Bool
-    public let activityTypes: [TraceletMotionActivityType]
+    public var stopTimeout: Int, motionTriggerDelay: Int, disableMotionActivityUpdates: Bool, isMoving: Bool
+    public var activityRecognitionInterval: Int, minimumActivityRecognitionConfidence: Int, disableStopDetection: Bool, stopDetectionDelay: Int, stopOnStationary: Bool
+    public var activityTypes: [TraceletMotionActivityType]
     public init(stopTimeout: Int = 5, motionTriggerDelay: Int = 0, disableMotionActivityUpdates: Bool = false, isMoving: Bool = false, activityRecognitionInterval: Int = 10000, minimumActivityRecognitionConfidence: Int = 75, disableStopDetection: Bool = false, stopDetectionDelay: Int = 0, stopOnStationary: Bool = false, activityTypes: [TraceletMotionActivityType] = [.still, .onFoot, .walking, .running, .onBicycle, .inVehicle]) { self.stopTimeout = stopTimeout; self.motionTriggerDelay = motionTriggerDelay; self.disableMotionActivityUpdates = disableMotionActivityUpdates; self.isMoving = isMoving; self.activityRecognitionInterval = activityRecognitionInterval; self.minimumActivityRecognitionConfidence = minimumActivityRecognitionConfidence; self.disableStopDetection = disableStopDetection; self.stopDetectionDelay = stopDetectionDelay; self.stopOnStationary = stopOnStationary; self.activityTypes = activityTypes }
     public func toMap() -> [String: Any] { ["stopTimeout": stopTimeout, "motionTriggerDelay": motionTriggerDelay, "disableMotionActivityUpdates": disableMotionActivityUpdates, "isMoving": isMoving, "activityRecognitionInterval": activityRecognitionInterval, "minimumActivityRecognitionConfidence": minimumActivityRecognitionConfidence, "disableStopDetection": disableStopDetection, "stopDetectionDelay": stopDetectionDelay, "stopOnStationary": stopOnStationary, "activityTypes": activityTypes.map { $0.rawValue }] }
     public static func fromMap(_ map: [String: Any]) -> TraceletMotionConfig { TraceletMotionConfig(stopTimeout: (map["stopTimeout"] as? NSNumber)?.intValue ?? 5, motionTriggerDelay: (map["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0, disableMotionActivityUpdates: map["disableMotionActivityUpdates"] as? Bool ?? false, isMoving: map["isMoving"] as? Bool ?? false, activityRecognitionInterval: (map["activityRecognitionInterval"] as? NSNumber)?.intValue ?? 10000, minimumActivityRecognitionConfidence: (map["minimumActivityRecognitionConfidence"] as? NSNumber)?.intValue ?? 75, disableStopDetection: map["disableStopDetection"] as? Bool ?? false, stopDetectionDelay: (map["stopDetectionDelay"] as? NSNumber)?.intValue ?? 0, stopOnStationary: map["stopOnStationary"] as? Bool ?? false, activityTypes: (map["activityTypes"] as? [String] ?? []).compactMap { TraceletMotionActivityType(rawValue: $0) }) }
@@ -445,7 +456,7 @@ public struct TraceletMotionConfig {
 
 // MARK: - TraceletGeofenceConfig
 public struct TraceletGeofenceConfig {
-    public let geofenceModeHighAccuracy: Bool, geofenceInitialTriggerEntry: Bool, geofenceProximityRadius: Int
+    public var geofenceModeHighAccuracy: Bool, geofenceInitialTriggerEntry: Bool, geofenceProximityRadius: Int
     public init(geofenceModeHighAccuracy: Bool = false, geofenceInitialTriggerEntry: Bool = true, geofenceProximityRadius: Int = 1000) { self.geofenceModeHighAccuracy = geofenceModeHighAccuracy; self.geofenceInitialTriggerEntry = geofenceInitialTriggerEntry; self.geofenceProximityRadius = geofenceProximityRadius }
     public func toMap() -> [String: Any] { ["geofenceModeHighAccuracy": geofenceModeHighAccuracy, "geofenceInitialTriggerEntry": geofenceInitialTriggerEntry, "geofenceProximityRadius": geofenceProximityRadius] }
     public static func fromMap(_ map: [String: Any]) -> TraceletGeofenceConfig { TraceletGeofenceConfig(geofenceModeHighAccuracy: map["geofenceModeHighAccuracy"] as? Bool ?? false, geofenceInitialTriggerEntry: map["geofenceInitialTriggerEntry"] as? Bool ?? true, geofenceProximityRadius: (map["geofenceProximityRadius"] as? NSNumber)?.intValue ?? 1000) }
@@ -453,7 +464,7 @@ public struct TraceletGeofenceConfig {
 
 // MARK: - TraceletPersistenceConfig
 public struct TraceletPersistenceConfig {
-    public let maxDaysToPersist: Int, maxRecordsToPersist: Int, persistMode: TraceletPersistMode
+    public var maxDaysToPersist: Int, maxRecordsToPersist: Int, persistMode: TraceletPersistMode
     public init(maxDaysToPersist: Int = 1, maxRecordsToPersist: Int = -1, persistMode: TraceletPersistMode = .all) { self.maxDaysToPersist = maxDaysToPersist; self.maxRecordsToPersist = maxRecordsToPersist; self.persistMode = persistMode }
     public func toMap() -> [String: Any] { ["maxDaysToPersist": maxDaysToPersist, "maxRecordsToPersist": maxRecordsToPersist, "persistMode": persistMode.rawValue] }
     public static func fromMap(_ map: [String: Any]) -> TraceletPersistenceConfig { TraceletPersistenceConfig(maxDaysToPersist: (map["maxDaysToPersist"] as? NSNumber)?.intValue ?? 1, maxRecordsToPersist: (map["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1, persistMode: TraceletPersistMode(rawValue: (map["persistMode"] as? NSNumber)?.intValue ?? 0) ?? .all) }
@@ -461,7 +472,7 @@ public struct TraceletPersistenceConfig {
 
 // MARK: - TraceletAuditConfig
 public struct TraceletAuditConfig {
-    public let enableAuditTrail: Bool, auditHashAlgorithm: TraceletHashAlgorithm
+    public var enableAuditTrail: Bool, auditHashAlgorithm: TraceletHashAlgorithm
     public init(enableAuditTrail: Bool = false, auditHashAlgorithm: TraceletHashAlgorithm = .sha256) { self.enableAuditTrail = enableAuditTrail; self.auditHashAlgorithm = auditHashAlgorithm }
     public func toMap() -> [String: Any] { ["enableAuditTrail": enableAuditTrail, "auditHashAlgorithm": auditHashAlgorithm.rawValue] }
     public static func fromMap(_ map: [String: Any]) -> TraceletAuditConfig { TraceletAuditConfig(enableAuditTrail: map["enableAuditTrail"] as? Bool ?? false, auditHashAlgorithm: TraceletHashAlgorithm(rawValue: (map["auditHashAlgorithm"] as? NSNumber)?.intValue ?? 0) ?? .sha256) }
@@ -469,7 +480,7 @@ public struct TraceletAuditConfig {
 
 // MARK: - TraceletPrivacyZoneConfig
 public struct TraceletPrivacyZoneConfig {
-    public let enablePrivacyZones: Bool
+    public var enablePrivacyZones: Bool
     public init(enablePrivacyZones: Bool = false) { self.enablePrivacyZones = enablePrivacyZones }
     public func toMap() -> [String: Any] { ["enablePrivacyZones": enablePrivacyZones] }
     public static func fromMap(_ map: [String: Any]) -> TraceletPrivacyZoneConfig { TraceletPrivacyZoneConfig(enablePrivacyZones: map["enablePrivacyZones"] as? Bool ?? false) }
@@ -477,7 +488,7 @@ public struct TraceletPrivacyZoneConfig {
 
 // MARK: - TraceletSecurityConfig
 public struct TraceletSecurityConfig {
-    public let encryptDatabase: Bool
+    public var encryptDatabase: Bool
     public init(encryptDatabase: Bool = false) { self.encryptDatabase = encryptDatabase }
     public func toMap() -> [String: Any] { ["encryptDatabase": encryptDatabase] }
     public static func fromMap(_ map: [String: Any]) -> TraceletSecurityConfig { TraceletSecurityConfig(encryptDatabase: map["encryptDatabase"] as? Bool ?? false) }
@@ -485,8 +496,28 @@ public struct TraceletSecurityConfig {
 
 // MARK: - TraceletAttestationConfig
 public struct TraceletAttestationConfig {
-    public let enableDeviceAttestation: Bool, attestationVendor: String?, attestationProject: String?
+    public var enableDeviceAttestation: Bool, attestationVendor: String?, attestationProject: String?
     public init(enableDeviceAttestation: Bool = false, attestationVendor: String? = nil, attestationProject: String? = nil) { self.enableDeviceAttestation = enableDeviceAttestation; self.attestationVendor = attestationVendor; self.attestationProject = attestationProject }
     public func toMap() -> [String: Any] { var map: [String: Any] = ["enableDeviceAttestation": enableDeviceAttestation]; if let v = attestationVendor { map["attestationVendor"] = v }; if let p = attestationProject { map["attestationProject"] = p }; return map }
     public static func fromMap(_ map: [String: Any]) -> TraceletAttestationConfig { TraceletAttestationConfig(enableDeviceAttestation: map["enableDeviceAttestation"] as? Bool ?? false, attestationVendor: map["attestationVendor"] as? String, attestationProject: map["attestationProject"] as? String) }
+}
+
+// MARK: - TraceletConfig Extension for Profiles
+
+public extension TraceletConfig {
+    private static let profilesJson: [TraceletProfile: String] = [
+        .highAccuracy: "{\"geo\":{\"desiredAccuracy\":0,\"distanceFilter\":5.0,\"stationaryRadius\":25.0,\"enableAdaptiveMode\":false,\"disableElasticity\":true,\"enableDeadReckoning\":true,\"filter\":{\"useKalmanFilter\":true,\"rejectMockLocations\":true}},\"motion\":{\"motionDetectionMode\":0,\"stationaryTrackingMode\":0,\"stopTimeout\":3},\"android\":{\"geofenceModeHighAccuracy\":true,\"locationUpdateInterval\":1000,\"fastestLocationUpdateInterval\":500}}",
+        .balanced: "{\"geo\":{\"desiredAccuracy\":1,\"distanceFilter\":20.0,\"stationaryRadius\":50.0,\"enableAdaptiveMode\":true,\"disableElasticity\":false,\"elasticityMultiplier\":1.0,\"filter\":{\"useKalmanFilter\":false}},\"motion\":{\"motionDetectionMode\":2,\"stationaryTrackingMode\":1,\"stopTimeout\":5},\"android\":{\"geofenceModeHighAccuracy\":false,\"locationUpdateInterval\":5000}}",
+        .lowPower: "{\"geo\":{\"desiredAccuracy\":2,\"distanceFilter\":50.0,\"stationaryRadius\":100.0,\"enableAdaptiveMode\":true,\"disableElasticity\":false,\"elasticityMultiplier\":2.0,\"enableSparseUpdates\":true,\"sparseDistanceThreshold\":100.0},\"motion\":{\"motionDetectionMode\":1,\"stationaryTrackingMode\":1,\"stopTimeout\":2},\"android\":{\"geofenceModeHighAccuracy\":false,\"locationUpdateInterval\":10000}}"
+    ]
+    
+    private static func fromProfile(_ profile: TraceletProfile) -> TraceletConfig {
+        guard let jsonStr = profilesJson[profile], let data = jsonStr.data(using: .utf8) else { return TraceletConfig() }
+        let map = (try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]) ?? [:]
+        return fromMap(map)
+    }
+    
+    public static func highAccuracy() -> TraceletConfig { return fromProfile(.highAccuracy) }
+    public static func balanced() -> TraceletConfig { return fromProfile(.balanced) }
+    public static func lowPower() -> TraceletConfig { return fromProfile(.lowPower) }
 }

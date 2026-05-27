@@ -271,7 +271,7 @@ Future<void> initTracking() async {
   });
 
   // Configure with full mock detection
-  await Tracelet.ready(Config(
+  await Tracelet.ready(Config.balanced().copyWith(
     geo: GeoConfig(
       distanceFilter: 10.0,
       filter: LocationFilter(

@@ -66,7 +66,7 @@ Tracelet.onTrip((trip) {
 import 'package:tracelet/tracelet.dart' as tl;
 
 Future<void> startTracking() async {
-  await tl.Tracelet.ready(tl.Config(
+  await tl.Tracelet.ready(tl.Config.balanced().copyWith(
     geo: tl.GeoConfig(
       distanceFilter: 10.0,
     ),

@@ -65,7 +65,7 @@ A developer can go from `flutter pub add tracelet` to receiving their first loca
 import 'package:tracelet/tracelet.dart' as tl;
 
 // 1. Initialize
-final state = await tl.Tracelet.ready(tl.Config());
+final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith());
 
 // 2. Request permissions
 await tl.Tracelet.requestPermission();
@@ -120,7 +120,7 @@ That's **4 lines of code** to start background tracking. No boilerplate, no buil
 | Sync to server | 3 | Set `HttpConfig.url` in config, call `start()` — auto-syncs |
 | Watch high-frequency position | 2 | `watchPosition(callback, interval: 1000)` |
 | Handle motion changes | 1 | `Tracelet.onMotionChange(callback)` |
-| Runtime reconfiguration | 1 | `Tracelet.setConfig(Config(...))` |
+| Runtime reconfiguration | 1 | `Tracelet.setConfig(Config.balanced().copyWith(...))` |
 | Query stored locations | 1 | `Tracelet.getLocations(SQLQuery(...))` |
 | Schedule time-based tracking | 2 | Set `AppConfig.schedule`, call `startSchedule()` |
 | Skip activity permission | 1 | Set `MotionConfig.disableMotionActivityUpdates: true` |
@@ -474,7 +474,7 @@ import 'package:tracelet/tracelet.dart' as tl;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await tl.Tracelet.ready(tl.Config());
+  await tl.Tracelet.ready(tl.Config.balanced().copyWith());
   await tl.Tracelet.requestPermission();
   tl.Tracelet.onLocation((loc) => print(loc.coords.latitude));
   await tl.Tracelet.start();
@@ -497,7 +497,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await tl.Tracelet.registerHeadlessTask(headlessTask);
 
-  final state = await tl.Tracelet.ready(tl.Config(
+  final state = await tl.Tracelet.ready(tl.Config.balanced().copyWith(
     geo: tl.GeoConfig(
       desiredAccuracy: tl.DesiredAccuracy.high,
       distanceFilter: 10,

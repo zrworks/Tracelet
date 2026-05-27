@@ -278,7 +278,7 @@ jobs:
           echo "| **Dry Run** | ${{ inputs.dry_run }} |" >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────
-  # Job 3: Publish iOS SDK (SPM & GitHub Release)
+  # Job 3: Build iOS SDK (For pub.dev bundling)
   # ─────────────────────────────────────────────────────────────
   publish-ios-sdk:
     name: Publish iOS SDK

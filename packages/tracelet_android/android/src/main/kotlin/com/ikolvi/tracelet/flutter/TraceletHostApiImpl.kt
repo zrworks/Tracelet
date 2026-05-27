@@ -788,7 +788,7 @@ class TraceletHostApiImpl(
             if (callbackIds.size >= 2) {
                 val id1 = callbackIds[0] ?: 0L
                 val id2 = callbackIds[1] ?: 0L
-                headlessService.registerCallbacks(id1, id2)
+                headlessService.registerCallbacks(HeadlessTaskService.CallbackType.MAIN, id1, id2)
                 callback(Result.success(true))
             } else {
                 callback(Result.failure(FlutterError("INVALID_ARGUMENT", "Expected 2 callback IDs", null)))
@@ -797,13 +797,29 @@ class TraceletHostApiImpl(
     }
 
     override fun registerHeadlessHeadersCallback(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit) {
-        // Implementation similar to registerHeadlessTask but for headers
-        callback(Result.success(true))
+        try {
+            if (callbackIds.size >= 2) {
+                val id1 = callbackIds[0] ?: 0L
+                val id2 = callbackIds[1] ?: 0L
+                headlessService.registerCallbacks(HeadlessTaskService.CallbackType.HEADERS, id1, id2)
+                callback(Result.success(true))
+            } else {
+                callback(Result.failure(FlutterError("INVALID_ARGUMENT", "Expected 2 callback IDs", null)))
+            }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     override fun registerHeadlessSyncBodyBuilder(callbackIds: List<Long?>, callback: (Result<Boolean>) -> Unit) {
-        // Implementation similar to registerHeadlessTask but for body builder
-        callback(Result.success(true))
+        try {
+            if (callbackIds.size >= 2) {
+                val id1 = callbackIds[0] ?: 0L
+                val id2 = callbackIds[1] ?: 0L
+                headlessService.registerCallbacks(HeadlessTaskService.CallbackType.SYNC_BODY, id1, id2)
+                callback(Result.success(true))
+            } else {
+                callback(Result.failure(FlutterError("INVALID_ARGUMENT", "Expected 2 callback IDs", null)))
+            }
+        } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
     // =========================================================================

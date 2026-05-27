@@ -711,27 +711,24 @@ class TraceletHostApiImpl: TraceletHostApi {
         let validIds = callbackIds.compactMap { $0 }
         let registrationId = validIds.first ?? -1
         let dispatchId = validIds.last ?? -1
-        headlessRunner.registerCallbacks(registrationId, dispatchId)
+        headlessRunner.registerCallbacks(type: .main, registrationId, dispatchId)
         completion(.success(true))
     }
 
     func registerHeadlessHeadersCallback(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void) {
-        storeHeadlessCallback(callbackIds.compactMap { $0 }, key: "headlessHeaders")
+        let validIds = callbackIds.compactMap { $0 }
+        let registrationId = validIds.first ?? -1
+        let dispatchId = validIds.last ?? -1
+        headlessRunner.registerCallbacks(type: .headers, registrationId, dispatchId)
         completion(.success(true))
     }
 
     func registerHeadlessSyncBodyBuilder(callbackIds: [Int64?], completion: @escaping (Result<Bool, Error>) -> Void) {
-        storeHeadlessCallback(callbackIds.compactMap { $0 }, key: "headlessSyncBody")
-        completion(.success(true))
-    }
-
-    private func storeHeadlessCallback(_ callbackIds: [Int64], key: String) {
         let validIds = callbackIds.compactMap { $0 }
         let registrationId = validIds.first ?? -1
         let dispatchId = validIds.last ?? -1
-        let defaults = UserDefaults.standard
-        defaults.set(registrationId, forKey: "com.tracelet.headless.\(key)_registrationId")
-        defaults.set(dispatchId, forKey: "com.tracelet.headless.\(key)_dispatchId")
+        headlessRunner.registerCallbacks(type: .syncBody, registrationId, dispatchId)
+        completion(.success(true))
     }
 
     // MARK: - Enterprise: Audit Trail

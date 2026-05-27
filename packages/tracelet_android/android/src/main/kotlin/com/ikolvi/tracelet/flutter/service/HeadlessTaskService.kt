@@ -47,6 +47,12 @@ class HeadlessTaskService(
         private const val METHODS_CHANNEL_NAME = "com.tracelet/methods"
     }
 
+    enum class CallbackType(val regKey: String, val dispatchKey: String) {
+        MAIN(KEY_REGISTRATION_CALLBACK, KEY_DISPATCH_CALLBACK),
+        HEADERS("headlessHeaders_registrationId", "headlessHeaders_dispatchId"),
+        SYNC_BODY("headlessSyncBody_registrationId", "headlessSyncBody_dispatchId")
+    }
+
     private var flutterEngine: FlutterEngine? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val isEngineReady = AtomicBoolean(false)
@@ -63,13 +69,13 @@ class HeadlessTaskService(
     private var syncBodyResponse: String? = null
 
     /** Register the headless callback IDs (called from Dart side). */
-    fun registerCallbacks(registrationCallbackId: Long, dispatchCallbackId: Long) {
+    fun registerCallbacks(type: CallbackType, registrationCallbackId: Long, dispatchCallbackId: Long) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
-            .putLong(KEY_REGISTRATION_CALLBACK, registrationCallbackId)
-            .putLong(KEY_DISPATCH_CALLBACK, dispatchCallbackId)
+            .putLong(type.regKey, registrationCallbackId)
+            .putLong(type.dispatchKey, dispatchCallbackId)
             .apply()
-        Log.d(TAG, "Headless callbacks registered: reg=$registrationCallbackId, dispatch=$dispatchCallbackId")
+        Log.d(TAG, "Headless callbacks registered ($type): reg=$registrationCallbackId, dispatch=$dispatchCallbackId")
     }
 
     /** Returns whether headless task is registered. */
@@ -245,12 +251,14 @@ class HeadlessTaskService(
         if (flutterEngine != null) return
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        // Try main headless callback first, fall back to headlessHeaders callback
-        var registrationCallbackId = prefs.getLong(KEY_REGISTRATION_CALLBACK, -1)
-        val dispatchCallbackId = prefs.getLong(KEY_DISPATCH_CALLBACK, -1)
-
+        
+        // Try main headless callback first, then fallback to headers or sync body
+        var registrationCallbackId = prefs.getLong(CallbackType.MAIN.regKey, -1L)
         if (registrationCallbackId == -1L) {
-            registrationCallbackId = prefs.getLong("headlessHeaders_registrationId", -1)
+            registrationCallbackId = prefs.getLong(CallbackType.HEADERS.regKey, -1L)
+        }
+        if (registrationCallbackId == -1L) {
+            registrationCallbackId = prefs.getLong(CallbackType.SYNC_BODY.regKey, -1L)
         }
 
         if (registrationCallbackId == -1L) {

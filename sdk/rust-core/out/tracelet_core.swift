@@ -1139,7 +1139,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String) throws 
+    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws 
     
     /**
      * Inserts or replaces a privacy zone record in the database.
@@ -1408,7 +1408,7 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
         FfiConverterDouble.lower(lat),
@@ -1418,7 +1418,8 @@ open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, h
         FfiConverterDouble.lower(heading),
         FfiConverterDouble.lower(altitude),
         FfiConverterBool.lower(isMock),
-        FfiConverterString.lower(activity),$0
+        FfiConverterString.lower(activity),
+        FfiConverterOptionString.lower(routeContext),$0
     )
 }
 }
@@ -3012,7 +3013,7 @@ public protocol SyncManagerProtocol: AnyObject, Sendable {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord], routeContext: String?) throws  -> Int32
+    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws  -> Int32
     
 }
 open class SyncManager: SyncManagerProtocol, @unchecked Sendable {
@@ -3079,13 +3080,12 @@ public convenience init() {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord], routeContext: String?)throws  -> Int32  {
+open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord])throws  -> Int32  {
     return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
             self.uniffiCloneHandle(),
         FfiConverterTypeHttpConfig_lower(config),
-        FfiConverterSequenceTypeDbLocationRecord.lower(records),
-        FfiConverterOptionString.lower(routeContext),$0
+        FfiConverterSequenceTypeDbLocationRecord.lower(records),$0
     )
 })
 }
@@ -4174,10 +4174,11 @@ public struct DbLocationRecord: Equatable, Hashable {
     public var altitude: Double
     public var isMock: Bool
     public var activity: String
+    public var routeContext: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: Int64, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String) {
+    public init(id: Int64, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) {
         self.id = id
         self.timestamp = timestamp
         self.latitude = latitude
@@ -4188,6 +4189,7 @@ public struct DbLocationRecord: Equatable, Hashable {
         self.altitude = altitude
         self.isMock = isMock
         self.activity = activity
+        self.routeContext = routeContext
     }
 
     
@@ -4215,7 +4217,8 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
                 heading: FfiConverterDouble.read(from: &buf), 
                 altitude: FfiConverterDouble.read(from: &buf), 
                 isMock: FfiConverterBool.read(from: &buf), 
-                activity: FfiConverterString.read(from: &buf)
+                activity: FfiConverterString.read(from: &buf), 
+                routeContext: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -4230,6 +4233,7 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
         FfiConverterDouble.write(value.altitude, into: &buf)
         FfiConverterBool.write(value.isMock, into: &buf)
         FfiConverterString.write(value.activity, into: &buf)
+        FfiConverterOptionString.write(value.routeContext, into: &buf)
     }
 }
 
@@ -6830,7 +6834,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26250) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {
@@ -6845,7 +6849,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 29728) {
+    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {

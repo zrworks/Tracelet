@@ -634,6 +634,13 @@ class _DashboardPageState extends State<DashboardPage>
         ),
       );
 
+      // Verify the new RouteContext feature
+      await tl.Tracelet.setRouteContext(const tl.RouteContext(
+        taskId: 'test-1234',
+        driverId: 'john_doe',
+        custom: {'app_version': '3.1.0'}
+      ));
+
       setState(() {
         _isReady = true;
         _isTracking = state.enabled;
@@ -1445,7 +1452,9 @@ class _DashboardPageState extends State<DashboardPage>
 
       if (result == tl.AuthorizationStatus.deniedForever && mounted) {
         _showPermissionDeniedDialog();
-      } else if (result == tl.AuthorizationStatus.whenInUse && !_isWeb && mounted) {
+      } else if (result == tl.AuthorizationStatus.whenInUse &&
+          !_isWeb &&
+          mounted) {
         // Foreground granted → offer background upgrade
         final shouldUpgrade = await _showBackgroundRationaleDialog();
         if (shouldUpgrade) {

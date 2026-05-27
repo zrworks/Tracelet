@@ -870,7 +870,8 @@ public final class TraceletSdk {
                 heading: heading,
                 altitude: altitude,
                 isMock: isMock,
-                activity: activity
+                activity: activity,
+                routeContext: rustEngineState?.getRouteContext()
             )
             return "success"
         } catch {
@@ -905,8 +906,7 @@ public final class TraceletSdk {
                     return
                 }
                 
-                let routeContextJson = state.getRouteContext()
-                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records, routeContext: routeContextJson)
+                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records)
                 if syncedCount > 0 {
                     let successfullySynced = Array(records.prefix(Int(syncedCount)))
                     if let lastRecord = successfullySynced.last {

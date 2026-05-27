@@ -113,6 +113,19 @@ void _printLocation(Map<dynamic, dynamic> loc, int reqNum, {int? index}) {
   if (accuracy != null) stdout.write(', acc=$accuracy');
   if (isMoving != null) stdout.write(', moving=$isMoving');
   if (uuid != '') stdout.write(', uuid=${uuid.toString().substring(0, 8)}...');
+  
+  // Find custom keys injected by routeContext
+  final standardKeys = {'latitude', 'lat', 'longitude', 'lng', 'lon', 'speed', 'timestamp', 'uuid', 'accuracy', 'is_moving', 'isMoving', 'coords', 'activity', 'id', 'is_mock'};
+  final customKeys = loc.keys.where((k) => !standardKeys.contains(k)).toList();
+  if (customKeys.isNotEmpty) {
+    stdout.write(' | routeContext: {');
+    for (var i = 0; i < customKeys.length; i++) {
+      final k = customKeys[i];
+      stdout.write('"$k": "${loc[k]}"${i < customKeys.length - 1 ? ', ' : ''}');
+    }
+    stdout.write('}');
+  }
+  
   stdout.writeln('');
   if (ts != '') stdout.writeln('$prefix  ts=$ts');
 }

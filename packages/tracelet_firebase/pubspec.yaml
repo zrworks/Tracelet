@@ -20,7 +20,7 @@ platforms:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: '^3.0.1'
+  tracelet: '^3.1.0'
   firebase_auth: ^6.5.1
   firebase_core: ^4.9.0
 

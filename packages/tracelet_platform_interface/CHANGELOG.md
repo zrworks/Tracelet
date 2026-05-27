@@ -1,14 +1,6 @@
 ## 3.1.0
 
-**FEAT**: Major architectural upgrade: Unified Rust Core.
-- The heavy lifting for Geofences, Privacy Zones, Audit Trail, and SQLite persistence has been moved to a shared Rust core (`tracelet_core`).
-- Guarantees 100% mathematical and behavioral parity between iOS and Android.
-- Eliminates subtle cross-platform inconsistencies in geofence ray-casting and proximity evaluation.
-- Native SDK wrappers (Swift/Kotlin) have been thinned out to act purely as FFI bridges via UniFFI.
-
-**FEAT**: Introduced explicit predefined tracking profiles: `Config.highAccuracy()`, `Config.balanced()`, and `Config.lowPower()` to simplify setup.
-
-**CHORE**: Release strategy overhaul. The iOS Rust Core is now bundled directly into the `tracelet_ios` plugin for pub.dev publication, while the Android SDK continues to be distributed via Maven Central.
+- **CHORE**: Sync release versions across workspace.
 
 ## 3.0.1
 

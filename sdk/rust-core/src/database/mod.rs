@@ -34,6 +34,7 @@ pub struct DbLocationRecord {
     pub altitude: f64,
     pub is_mock: bool,
     pub activity: String,
+    pub route_context: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -70,7 +71,9 @@ impl DatabaseManager {
                 heading REAL NOT NULL,
                 altitude REAL NOT NULL,
                 is_mock INTEGER NOT NULL,
-                activity TEXT NOT NULL
+                activity TEXT NOT NULL,
+                encrypted_payload BLOB,
+                route_context TEXT
             )",
             [],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
@@ -128,6 +131,7 @@ impl DatabaseManager {
 
         // Add encrypted_payload column if it doesn't exist (for seamless migration)
         let _ = conn.execute("ALTER TABLE location_events ADD COLUMN encrypted_payload BLOB", []);
+        let _ = conn.execute("ALTER TABLE location_events ADD COLUMN route_context TEXT", []);
         let _ = conn.execute("ALTER TABLE geofences ADD COLUMN encrypted_payload BLOB", []);
         let _ = conn.execute("ALTER TABLE privacy_zones ADD COLUMN encrypted_payload BLOB", []);
         let _ = conn.execute("ALTER TABLE audit_trail ADD COLUMN encrypted_payload BLOB", []);
@@ -195,7 +199,7 @@ impl DatabaseManager {
     }
 
     /// Inserts a new location record into the database.
-    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str) -> Result<(), TraceletError> {
+    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>) -> Result<(), TraceletError> {
         let conn = self.conn.lock().unwrap();
         let timestamp = Utc::now().to_rfc3339();
         
@@ -210,12 +214,13 @@ impl DatabaseManager {
                 "altitude": altitude,
                 "is_mock": is_mock,
                 "activity": activity,
+                "route_context": route_context
             });
             if let Some(payload) = self.encrypt_payload(record.to_string().as_bytes()) {
                 conn.execute(
-                    "INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload)
-                     VALUES (?1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?2)",
-                    params![timestamp, payload],
+                    "INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context)
+                     VALUES (?1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?2, ?3)",
+                    params![timestamp, payload, route_context],
                 ).map_err(|e| TraceletError::Database(e.to_string()))?;
                 return Ok(());
             }
@@ -223,9 +228,9 @@ impl DatabaseManager {
         
         // Fallback or unencrypted
         conn.execute(
-            "INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL)",
-            params![timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity],
+            "INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10)",
+            params![timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity, route_context],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
         Ok(())
     }
@@ -233,7 +238,7 @@ impl DatabaseManager {
     /// Retrieves a batch of location records, up to `limit`.
     pub fn get_locations_batch(&self, limit: i32) -> Result<Vec<DbLocationRecord>, TraceletError> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload FROM location_events ORDER BY id ASC LIMIT ?1").map_err(|e| TraceletError::Database(e.to_string()))?;
+        let mut stmt = conn.prepare("SELECT id, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context FROM location_events ORDER BY id ASC LIMIT ?1").map_err(|e| TraceletError::Database(e.to_string()))?;
         
         let iter = stmt.query_map([limit], |row| {
             let mut lat: f64 = row.get(2)?;
@@ -246,6 +251,7 @@ impl DatabaseManager {
             let mut activity_val: String = row.get(9)?;
             
             let encrypted_payload: Option<Vec<u8>> = row.get(10).unwrap_or(None);
+            let mut route_context: Option<String> = row.get(11).unwrap_or(None);
             
             if let Some(payload) = encrypted_payload {
                 if let Some(plaintext) = self.decrypt_payload(&payload) {
@@ -256,8 +262,9 @@ impl DatabaseManager {
                         speed = json["speed"].as_f64().unwrap_or(0.0);
                         heading = json["heading"].as_f64().unwrap_or(0.0);
                         altitude = json["altitude"].as_f64().unwrap_or(0.0);
-                        is_mock_val = if json["is_mock"].as_bool().unwrap_or(false) { 1 } else { 0 };
-                        activity_val = json["activity"].as_str().unwrap_or("").to_string();
+                        if let Some(is_mock) = json.get("is_mock").and_then(|v| v.as_bool()) { is_mock_val = if is_mock { 1 } else { 0 }; }
+                        if let Some(activity) = json.get("activity").and_then(|v| v.as_str()) { activity_val = activity.to_string(); }
+                        if let Some(rc) = json.get("route_context").and_then(|v| v.as_str()) { route_context = Some(rc.to_string()); }
                     }
                 }
             }
@@ -268,11 +275,12 @@ impl DatabaseManager {
                 latitude: lat,
                 longitude: lng,
                 accuracy: acc,
-                speed: speed,
-                heading: heading,
-                altitude: altitude,
-                is_mock: is_mock_val == 1,
+                speed,
+                heading,
+                altitude,
+                is_mock: is_mock_val != 0,
                 activity: activity_val,
+                route_context,
             })
         }).map_err(|e| TraceletError::Database(e.to_string()))?;
 

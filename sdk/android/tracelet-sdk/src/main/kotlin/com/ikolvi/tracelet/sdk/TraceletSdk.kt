@@ -1035,7 +1035,7 @@ class TraceletSdk private constructor(private val context: Context) {
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         
         return try {
-            db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity)
+            db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext())
             "success"
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")
@@ -1063,8 +1063,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     return@Thread
                 }
                 
-                val routeContextJson = state.getRouteContext()
-                val syncedCount = sync.syncBatchBlocking(config.http, records, routeContextJson)
+                val syncedCount = sync.syncBatchBlocking(config.http, records)
                 if (syncedCount > 0) {
                     val lastRecord = records.take(syncedCount).lastOrNull()
                     if (lastRecord != null) {

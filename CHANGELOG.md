@@ -9,7 +9,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ---
 
-## 3.1.3
+## 3.1.4
 
 **FEAT**: Major architectural upgrade: Unified Rust Core.
 - The heavy lifting for Geofences, Privacy Zones, Audit Trail, and SQLite persistence has been moved to a shared Rust core (`tracelet_core`).

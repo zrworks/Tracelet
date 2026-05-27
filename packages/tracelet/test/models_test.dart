@@ -721,26 +721,29 @@ void main() {
       expect(restored.radius, 200.0);
     });
 
-    test('fromMap parses Pigeon nested dynamic lists for vertices without TypeError', () {
-      // Reproduce issue #87 where Pigeon returns a List<Object?> of List<Object?>
-      final rawVertices = <Object?>[
-        <Object?>[37.0, -122.0],
-        <Object?>[38.0, -122.0],
-        <Object?>[38.0, -123.0]
-      ];
-      final geofence = Geofence.fromMap({
-        'identifier': 'polygon',
-        'latitude': 37.0,
-        'longitude': -122.0,
-        'radius': 0.0,
-        'vertices': rawVertices,
-      });
+    test(
+      'fromMap parses Pigeon nested dynamic lists for vertices without TypeError',
+      () {
+        // Reproduce issue #87 where Pigeon returns a List<Object?> of List<Object?>
+        final rawVertices = <Object?>[
+          <Object?>[37.0, -122.0],
+          <Object?>[38.0, -122.0],
+          <Object?>[38.0, -123.0],
+        ];
+        final geofence = Geofence.fromMap({
+          'identifier': 'polygon',
+          'latitude': 37.0,
+          'longitude': -122.0,
+          'radius': 0.0,
+          'vertices': rawVertices,
+        });
 
-      expect(geofence.identifier, 'polygon');
-      expect(geofence.vertices.length, 3);
-      expect(geofence.vertices[0], [37.0, -122.0]);
-      expect(geofence.vertices[2], [38.0, -123.0]);
-    });
+        expect(geofence.identifier, 'polygon');
+        expect(geofence.vertices.length, 3);
+        expect(geofence.vertices[0], [37.0, -122.0]);
+        expect(geofence.vertices[2], [38.0, -123.0]);
+      },
+    );
 
     test('equality based on identifier', () {
       final a = Geofence.fromMap(const {

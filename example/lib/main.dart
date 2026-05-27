@@ -178,7 +178,7 @@ class _DashboardPageState extends State<DashboardPage>
           _pluginState = state;
         });
         _addLog('RESTORE', 'Restored active tracking state from background');
-        
+
         // Grab the most recent location to populate the map/UI immediately
         final locs = await tl.Tracelet.getLocations();
         if (locs.isNotEmpty) {

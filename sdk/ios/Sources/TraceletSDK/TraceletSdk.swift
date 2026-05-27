@@ -905,7 +905,8 @@ public final class TraceletSdk {
                     return
                 }
                 
-                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records)
+                let routeContextJson = state.getRouteContext()
+                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records, routeContext: routeContextJson)
                 if syncedCount > 0 {
                     let successfullySynced = Array(records.prefix(Int(syncedCount)))
                     if let lastRecord = successfullySynced.last {
@@ -963,12 +964,21 @@ public final class TraceletSdk {
     public func setRouteContext(_ context: [String: Any]) {
         guard isReady else { return }
         configManager.setRouteContext(context)
+        do {
+            let data = try JSONSerialization.data(withJSONObject: context, options: [])
+            if let jsonString = String(data: data, encoding: .utf8) {
+                rustEngineState?.setRouteContext(json: jsonString)
+            }
+        } catch {
+            NSLog("Failed to serialize routeContext: \(error)")
+        }
     }
 
     /// Clear the current route context.
     public func clearRouteContext() {
         guard isReady else { return }
         configManager.clearRouteContext()
+        rustEngineState?.setRouteContext(json: nil)
     }
 
     // =========================================================================

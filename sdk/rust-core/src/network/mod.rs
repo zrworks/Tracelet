@@ -25,19 +25,19 @@ impl SyncManager {
 
     /// Performs a synchronous/blocking sync of a batch of location records.
     /// Returns the number of successfully synced records.
-    pub fn sync_batch_blocking(&self, config: HttpConfig, records: Vec<DbLocationRecord>) -> Result<i32, TraceletError> {
+    pub fn sync_batch_blocking(&self, config: HttpConfig, records: Vec<DbLocationRecord>, route_context: Option<String>) -> Result<i32, TraceletError> {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| TraceletError::Network(e.to_string()))?;
-        rt.block_on(self.sync_batch(&config, &records))
+        rt.block_on(self.sync_batch(&config, &records, route_context))
     }
 }
 
 impl SyncManager {
     /// Performs an asynchronous sync of a batch of location records.
     /// Returns the number of successfully synced records.
-    pub async fn sync_batch(&self, config: &HttpConfig, records: &[DbLocationRecord]) -> Result<i32, TraceletError> {
+    pub async fn sync_batch(&self, config: &HttpConfig, records: &[DbLocationRecord], route_context: Option<String>) -> Result<i32, TraceletError> {
         let url = match &config.url {
             Some(u) if !u.is_empty() => u,
             _ => {
@@ -62,10 +62,14 @@ impl SyncManager {
             }
         }
 
+        // Parse the route_context if provided
+        let route_context_json: Option<serde_json::Value> = route_context
+            .and_then(|rc| serde_json::from_str(&rc).ok());
+
         // Prepare Payload
         let payload = if config.batch_sync {
             let json_records: Vec<_> = records.iter().map(|r| {
-                json!({
+                let mut base_json = json!({
                     "id": r.id,
                     "timestamp": r.timestamp,
                     "coords": {
@@ -78,28 +82,46 @@ impl SyncManager {
                     },
                     "is_mock": r.is_mock,
                     "activity": r.activity
-                })
+                });
+                if let Some(ref rc) = route_context_json {
+                    if let Some(obj) = base_json.as_object_mut() {
+                        if let Some(rc_obj) = rc.as_object() {
+                            for (k, v) in rc_obj {
+                                obj.insert(k.clone(), v.clone());
+                            }
+                        }
+                    }
+                }
+                base_json
             }).collect();
             json!({ "location": json_records })
         } else {
             // For non-batch, just send the latest record
             let r = records.last().unwrap();
-            json!({
-                "location": {
-                    "id": r.id,
-                    "timestamp": r.timestamp,
-                    "coords": {
-                        "latitude": r.latitude,
-                        "longitude": r.longitude,
-                        "accuracy": r.accuracy,
-                        "speed": r.speed,
-                        "heading": r.heading,
-                        "altitude": r.altitude,
-                    },
-                    "is_mock": r.is_mock,
-                    "activity": r.activity
+            let mut base_json = json!({
+                "id": r.id,
+                "timestamp": r.timestamp,
+                "coords": {
+                    "latitude": r.latitude,
+                    "longitude": r.longitude,
+                    "accuracy": r.accuracy,
+                    "speed": r.speed,
+                    "heading": r.heading,
+                    "altitude": r.altitude,
+                },
+                "is_mock": r.is_mock,
+                "activity": r.activity
+            });
+            if let Some(ref rc) = route_context_json {
+                if let Some(obj) = base_json.as_object_mut() {
+                    if let Some(rc_obj) = rc.as_object() {
+                        for (k, v) in rc_obj {
+                            obj.insert(k.clone(), v.clone());
+                        }
+                    }
                 }
-            })
+            }
+            json!({ "location": base_json })
         };
 
         let method = if config.method == 1 { Method::PUT } else { Method::POST };

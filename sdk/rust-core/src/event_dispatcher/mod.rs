@@ -50,6 +50,7 @@ impl EventDispatcher {
         if config.http.auto_sync {
             let db_clone = Arc::clone(&self.db);
             let sync_clone = Arc::clone(&self.sync);
+            let state_clone = Arc::clone(&self.state);
             
             crate::logger::info("[Rust Core] 🔄 Triggering HTTP auto-sync batch request.");
             // Spawn background task using the dedicated tokio runtime
@@ -58,7 +59,8 @@ impl EventDispatcher {
                     Ok(records) => {
                         if !records.is_empty() {
                             crate::logger::info(&format!("[Rust Core] 🔄 Batch sync dispatcher loaded {} pending locations.", records.len()));
-                            match sync_clone.sync_batch(&config.http, &records).await {
+                            let route_context = state_clone.get_route_context();
+                            match sync_clone.sync_batch(&config.http, &records, route_context).await {
                                 Ok(count) => {
                                     if count > 0 {
                                         if let Some(last) = records.last() {

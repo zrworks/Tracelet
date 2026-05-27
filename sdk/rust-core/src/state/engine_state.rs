@@ -18,6 +18,7 @@ pub struct HealthState {
 pub struct EngineState {
     pub config: RwLock<EngineConfig>,
     pub health: RwLock<HealthState>,
+    pub route_context: RwLock<Option<String>>,
 }
 
 #[uniffi::export]
@@ -28,6 +29,7 @@ impl EngineState {
         Self {
             config: RwLock::new(EngineConfig::default()),
             health: RwLock::new(HealthState::default()),
+            route_context: RwLock::new(None),
         }
     }
 
@@ -68,5 +70,17 @@ impl EngineState {
     /// Retrieves a cloned snapshot of the current health state.
     pub fn get_health(&self) -> HealthState {
         self.health.read().unwrap().clone()
+    }
+
+    /// Updates the active route context (custom JSON payload) for upcoming locations.
+    pub fn set_route_context(&self, json: Option<String>) {
+        if let Ok(mut rc) = self.route_context.write() {
+            *rc = json;
+        }
+    }
+
+    /// Retrieves the current route context JSON string, if any.
+    pub fn get_route_context(&self) -> Option<String> {
+        self.route_context.read().unwrap().clone()
     }
 }

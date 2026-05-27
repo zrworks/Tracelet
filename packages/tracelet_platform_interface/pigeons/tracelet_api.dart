@@ -545,7 +545,7 @@ class TlGeofence {
   final bool notifyOnDwell;
   final int loiteringDelay;
   final Map<String?, Object?>? extras;
-  final List<List<double?>?>? vertices;
+  final List<Object?>? vertices;
 }
 
 class TlGeofenceEvent {

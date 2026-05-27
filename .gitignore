@@ -154,3 +154,7 @@ packages/tracelet_platform_interface/lib/src/rust/
 # Benchmark generated files
 benchmark/benchmark_results.json
 benchmark/benchmark_table.md
+
+# MCP
+.mcp.json
+sdk/rust-core/benchmark_results.json

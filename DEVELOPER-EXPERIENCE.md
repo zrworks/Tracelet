@@ -128,7 +128,7 @@ That's **4 lines of code** to start background tracking. No boilerplate, no buil
 ### 3.3 API Design Strengths
 
 1. **Single entry point**: `Tracelet` class — no service locators, no providers, no injection.
-2. **Compound Config**: 7 logically grouped sub-configs (`GeoConfig`, `AppConfig`, `HttpConfig`, etc.) vs. a flat 76-property constructor.
+2. **Compound Config**: 9 logically grouped sub-configs (`GeoConfig`, `AppConfig`, `AndroidConfig`, `IosConfig`, `HttpConfig`, etc.) vs. a flat 76-property constructor. Platform-specific settings (foreground service notification, iOS background sessions, AlarmManager) are isolated under `AndroidConfig`/`IosConfig`.
 3. **Automatic resource cleanup**: `removeListeners()` cancels all subscriptions + watch positions.
 4. **Best-of-N sampling**: `getCurrentPosition(samples: 3)` picks the most accurate from 3 readings.
 5. **Permission escalation**: `requestPermission()` auto-escalates: notDetermined → whenInUse → always. One call does the right thing.
@@ -506,6 +506,8 @@ void main() async {
       stopOnTerminate: false,
       startOnBoot: true,
       heartbeatInterval: 120,
+    ),
+    android: tl.AndroidConfig(
       foregroundService: tl.ForegroundServiceConfig(
         notificationTitle: 'My App',
         notificationText: 'Tracking your route',

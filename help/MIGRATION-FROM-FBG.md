@@ -78,6 +78,8 @@ tl.Config(
     stopOnTerminate: false,
     startOnBoot: true,
     heartbeatInterval: 60,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(
       notificationTitle: 'Tracking',
       notificationText: 'Active',
@@ -102,7 +104,9 @@ tl.Config(
 **The config sections at a glance:**
 
 - **`geo`** → `GeoConfig` — Accuracy, distance filter, elasticity, periodic mode, Kalman filter, mock detection
-- **`app`** → `AppConfig` — Lifecycle, heartbeat, schedule, foreground service notification
+- **`app`** → `AppConfig` — Lifecycle, heartbeat, schedule
+- **`android`** → `AndroidConfig` — 🆕 Android-only: foreground service notification, location update intervals, AlarmManager, periodic strategies
+- **`ios`** → `IosConfig` — 🆕 iOS-only: activity type, background sessions, prevent suspend
 - **`motion`** → `MotionConfig` — Stop timeout, activity recognition, accelerometer-only mode
 - **`http`** → `HttpConfig` — Sync URL, headers, batching, retry backoff, Wi-Fi-only mode
 - **`logger`** → `LoggerConfig` — Log level, max days, debug sounds
@@ -125,24 +129,38 @@ Before                              → Tracelet
 desiredAccuracy (int: -2…100)       → geo.desiredAccuracy (DesiredAccuracy enum)
                                       .high / .medium / .low / .veryLow / .passive
 distanceFilter                      → geo.distanceFilter (default 10m)
-locationUpdateInterval              → geo.locationUpdateInterval (Android, 1000ms)
-fastestLocationUpdateInterval       → geo.fastestLocationUpdateInterval (Android, 500ms)
 stationaryRadius                    → geo.stationaryRadius (default 25m)
 locationTimeout                     → geo.locationTimeout (default 60s)
-activityType                        → geo.activityType (LocationActivityType enum, iOS)
 disableElasticity                   → geo.disableElasticity
 elasticityMultiplier                → geo.elasticityMultiplier (default 1.0)
 stopAfterElapsedMinutes             → geo.stopAfterElapsedMinutes (-1 = disabled)
-deferTime                           → geo.deferTime (Android)
-allowIdenticalLocations             → geo.allowIdenticalLocations (Android)
-useSignificantChangesOnly           → geo.useSignificantChangesOnly (iOS)
-showsBackgroundLocationIndicator    → geo.showsBackgroundLocationIndicator (iOS)
-pausesLocationUpdatesAutomatically  → geo.pausesLocationUpdatesAutomatically (iOS)
-locationAuthorizationRequest        → geo.locationAuthorizationRequest (default LocationAuthorizationRequest.always)
-disableLocationAuthorizationAlert   → geo.disableLocationAuthorizationAlert
 enableTimestampMeta                 → geo.enableTimestampMeta
-geofenceModeHighAccuracy            → geo.geofenceModeHighAccuracy (Android)
 maxMonitoredGeofences               → geo.maxMonitoredGeofences (-1 = platform default)
+```
+
+**Android-specific fields → `AndroidConfig`:**
+```
+Before                              → Tracelet
+─────────────────────────────────────────────────────────────
+locationUpdateInterval              → android.locationUpdateInterval (1000ms)
+fastestLocationUpdateInterval       → android.fastestLocationUpdateInterval (500ms)
+deferTime                           → android.deferTime
+allowIdenticalLocations             → android.allowIdenticalLocations
+geofenceModeHighAccuracy            → android.geofenceModeHighAccuracy
+scheduleUseAlarmManager             → android.scheduleUseAlarmManager
+```
+
+**iOS-specific fields → `IosConfig`:**
+```
+Before                              → Tracelet
+─────────────────────────────────────────────────────────────
+activityType                        → ios.activityType (LocationActivityType enum)
+useSignificantChangesOnly           → ios.useSignificantChangesOnly
+showsBackgroundLocationIndicator    → ios.showsBackgroundLocationIndicator
+pausesLocationUpdatesAutomatically  → ios.pausesLocationUpdatesAutomatically
+locationAuthorizationRequest        → ios.locationAuthorizationRequest
+disableLocationAuthorizationAlert   → ios.disableLocationAuthorizationAlert
+preventSuspend                      → ios.preventSuspend
 ```
 
 **🆕 Tracelet-exclusive GeoConfig fields:**
@@ -150,8 +168,6 @@ maxMonitoredGeofences               → geo.maxMonitoredGeofences (-1 = platform
 - `geo.enableAdaptiveMode` — Adapts distance filter by activity + battery + speed
 - `geo.periodicLocationInterval` — Default 900s (15 min)
 - `geo.periodicDesiredAccuracy` — Default `.medium`
-- `geo.periodicUseForegroundService` — Android only
-- `geo.periodicUseExactAlarms` — Android only
 - `geo.filter` (`LocationFilter`) — Kalman, mock detection, accuracy thresholds
 
 ### 🧹 Location Filter → `LocationFilter` (Tracelet-exclusive!)
@@ -197,27 +213,28 @@ stopOnTerminate          → app.stopOnTerminate (default true)
 startOnBoot              → app.startOnBoot (default false)
 heartbeatInterval        → app.heartbeatInterval (default 60s)
 schedule                 → app.schedule (cron-like expressions)
-scheduleUseAlarmManager  → app.scheduleUseAlarmManager (Android)
-preventSuspend           → app.preventSuspend (iOS)
-notification             → app.foregroundService (see below)
 ```
 
-### 🔔 Foreground Service Notification (Android)
+> **Note:** `scheduleUseAlarmManager` → `android.scheduleUseAlarmManager` | `preventSuspend` → `ios.preventSuspend`
+
+### 🔔 Foreground Service Notification → `AndroidConfig.foregroundService`
+
+> **Important (2.x.x change):** The foreground service notification is now configured under `android.foregroundService` (an `AndroidConfig`), not under `app`. This is an Android-only concept.
 
 ```
-Before (Notification)     → Tracelet (ForegroundServiceConfig)
+Before (Notification)     → Tracelet (AndroidConfig.foregroundService)
 ─────────────────────────────────────────────────────────────
-title                     → notificationTitle
-text                      → notificationText
-color                     → notificationColor
-smallIcon                 → notificationSmallIcon
-largeIcon                 → notificationLargeIcon
-priority                  → notificationPriority
-channelName               → channelName
-channelId                 → channelId
-sticky                    → notificationOngoing
-actions                   → actions
-enabled                   → enabled
+title                     → android.foregroundService.notificationTitle
+text                      → android.foregroundService.notificationText
+color                     → android.foregroundService.notificationColor
+smallIcon                 → android.foregroundService.notificationSmallIcon
+largeIcon                 → android.foregroundService.notificationLargeIcon
+priority                  → android.foregroundService.notificationPriority
+channelName               → android.foregroundService.channelName
+channelId                 → android.foregroundService.channelId
+sticky                    → android.foregroundService.notificationOngoing
+actions                   → android.foregroundService.actions
+enabled                   → android.foregroundService.enabled
 ```
 
 ### HTTP Sync → `HttpConfig`
@@ -667,7 +684,9 @@ Don't learn these the hard way — we already did:
 - **`desiredAccuracy: -1` doesn't work** — Use `DesiredAccuracy.high` — typed enums, not magic numbers
 - **`logLevel: 5` doesn't work** — Use `LogLevel.verbose`
 - **Can't find `resetOdometer()`** — It's `setOdometer(0)` now
-- **`notification:` property gone** — It's `foregroundService: ForegroundServiceConfig(...)` inside `AppConfig`
+- **`notification:` property gone** — It's `foregroundService: ForegroundServiceConfig(...)` inside **`android:`** (`AndroidConfig`), not `app`
+- **`scheduleUseAlarmManager` not in AppConfig** — It's now `android.scheduleUseAlarmManager`
+- **`preventSuspend` not in AppConfig** — It's now `ios.preventSuspend`
 - **Backend can't parse `is_moving`** — It's `isMoving` now (camelCase)
 - **Still got license key code?** — Delete it — Tracelet doesn't need one
 - **`State` properties look different** — Check the [API Reference](https://github.com/Ikolvi/Tracelet/blob/main/help/API.md)

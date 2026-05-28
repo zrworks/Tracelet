@@ -29,6 +29,8 @@ await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(
       notificationTitle: 'My App',
       notificationText: 'Tracking your location',
@@ -84,6 +86,8 @@ in the background at any time.
 await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(enabled: false),
   ),
 ));
@@ -102,6 +106,8 @@ await tl.Tracelet.setConfig(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(
       notificationTitle: 'My App',
       notificationText: 'Background tracking active',
@@ -114,6 +120,8 @@ await tl.Tracelet.start();
 await tl.Tracelet.setConfig(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(enabled: false),
   ),
 ));
@@ -150,10 +158,10 @@ print(state.trackingMode); // TrackingMode.periodic
 
 | Option | Default | Description |
 |---|---|---|
-| `periodicLocationInterval` | `900` (15 min) | Seconds between fixes. Minimum 60s. WorkManager enforces ≥ 15 min on Android when not using foreground service. |
-| `periodicDesiredAccuracy` | `medium` | Accuracy per fix: `high`, `medium`, `low`, `veryLow`, `lowestUnbiased`. Lower = less battery but larger error radius. |
-| `periodicUseForegroundService` | `false` | **Android only.** `true` = foreground service with Handler timer (reliable timing, shows notification). `false` = WorkManager (no notification, system-managed scheduling). |
-| `periodicUseExactAlarms` | `false` | **Android only.** Use `AlarmManager` exact alarms for precise wakeups instead of WorkManager. Falls back to inexact alarms if `SCHEDULE_EXACT_ALARM` is not granted. See [Exact Alarms](#exact-alarms-periodicuseexactalarms-true) below. |
+| `geo.periodicLocationInterval` | `900` (15 min) | Seconds between fixes. Minimum 60s. WorkManager enforces ≥ 15 min on Android when not using foreground service. |
+| `geo.periodicDesiredAccuracy` | `medium` | Accuracy per fix: `high`, `medium`, `low`, `veryLow`, `lowestUnbiased`. Lower = less battery but larger error radius. |
+| `android.periodicUseForegroundService` | `false` | **Android only.** `true` = foreground service with Handler timer (reliable timing, shows notification). `false` = WorkManager (no notification, system-managed scheduling). |
+| `android.periodicUseExactAlarms` | `false` | **Android only.** Use `AlarmManager` exact alarms for precise wakeups instead of WorkManager. Falls back to inexact alarms if `SCHEDULE_EXACT_ALARM` is not granted. See [Exact Alarms](#exact-alarms-periodicuseexactalarms-true) below. |
 
 ### Android Strategies
 
@@ -202,6 +210,8 @@ await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     periodicLocationInterval: 600,         // 10 minutes
     periodicDesiredAccuracy: DesiredAccuracy.medium,
+  ),
+  android: AndroidConfig(
     periodicUseExactAlarms: true,          // Use AlarmManager
   ),
 ));

@@ -16,6 +16,8 @@ await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   geo: tl.GeoConfig(
     periodicLocationInterval: 900,             // Fix every 15 minutes
     periodicDesiredAccuracy: tl.DesiredAccuracy.medium,  // WiFi/cell accuracy
+  ),
+  android: tl.AndroidConfig(
     periodicUseForegroundService: false,        // Android: use WorkManager
   ),
 ));
@@ -51,10 +53,10 @@ Users see minimal visual indication of background tracking.
 
 | Property | Type | Default | Range | Description |
 |----------|------|---------|-------|-------------|
-| `periodicLocationInterval` | `int` | `900` | 60–43200 | Seconds between one-shot fixes |
-| `periodicDesiredAccuracy` | `DesiredAccuracy` | `medium` | — | Accuracy for periodic fixes |
-| `periodicUseForegroundService` | `bool` | `false` | — | Android: use foreground service instead of WorkManager |
-| `periodicUseExactAlarms` | `bool` | `false` | — | Android: use AlarmManager for precise timing |
+| `geo.periodicLocationInterval` | `int` | `900` | 60–43200 | Seconds between one-shot fixes |
+| `geo.periodicDesiredAccuracy` | `DesiredAccuracy` | `medium` | — | Accuracy for periodic fixes |
+| `android.periodicUseForegroundService` | `bool` | `false` | — | Android: use foreground service instead of WorkManager |
+| `android.periodicUseExactAlarms` | `bool` | `false` | — | Android: use AlarmManager for precise timing |
 
 ### Interval Guidelines
 
@@ -89,7 +91,7 @@ Three scheduling strategies are available:
 #### WorkManager (Default)
 
 ```dart
-GeoConfig(
+AndroidConfig(
   periodicUseForegroundService: false,
   periodicUseExactAlarms: false,
 )
@@ -107,7 +109,7 @@ GeoConfig(
 #### Foreground Service
 
 ```dart
-GeoConfig(
+AndroidConfig(
   periodicUseForegroundService: true,
 )
 ```
@@ -126,7 +128,7 @@ Use this when you need **sub-15-minute intervals**.
 #### Exact Alarms
 
 ```dart
-GeoConfig(
+AndroidConfig(
   periodicUseForegroundService: false,
   periodicUseExactAlarms: true,
 )
@@ -176,42 +178,58 @@ Background: BGAppRefreshTask for timer re-scheduling
 ### Fleet Check-In (Every 15 Minutes)
 
 ```dart
-GeoConfig(
-  periodicLocationInterval: 900,
-  periodicDesiredAccuracy: DesiredAccuracy.medium,
-  periodicUseForegroundService: false,  // WorkManager, no notification
-)
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
+  geo: GeoConfig(
+    periodicLocationInterval: 900,
+    periodicDesiredAccuracy: DesiredAccuracy.medium,
+  ),
+  android: AndroidConfig(
+    periodicUseForegroundService: false,  // WorkManager, no notification
+  ),
+));
 ```
 
 ### Active Delivery (Every 5 Minutes)
 
 ```dart
-GeoConfig(
-  periodicLocationInterval: 300,
-  periodicDesiredAccuracy: DesiredAccuracy.high,
-  periodicUseForegroundService: true,   // Needs FG service for < 15 min
-)
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
+  geo: GeoConfig(
+    periodicLocationInterval: 300,
+    periodicDesiredAccuracy: DesiredAccuracy.high,
+  ),
+  android: AndroidConfig(
+    periodicUseForegroundService: true,   // Needs FG service for < 15 min
+  ),
+));
 ```
 
 ### Low-Power Asset Tracking (Every Hour)
 
 ```dart
-GeoConfig(
-  periodicLocationInterval: 3600,
-  periodicDesiredAccuracy: DesiredAccuracy.low,   // Cell-only, minimal battery
-  periodicUseForegroundService: false,
-)
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
+  geo: GeoConfig(
+    periodicLocationInterval: 3600,
+    periodicDesiredAccuracy: DesiredAccuracy.low,   // Cell-only, minimal battery
+  ),
+  android: AndroidConfig(
+    periodicUseForegroundService: false,
+  ),
+));
 ```
 
 ### Precise Timing (Exact Alarms)
 
 ```dart
-GeoConfig(
-  periodicLocationInterval: 1800,       // Every 30 minutes, exactly
-  periodicDesiredAccuracy: DesiredAccuracy.medium,
-  periodicUseForegroundService: false,
-  periodicUseExactAlarms: true,          // Don't let WorkManager defer
-)
+await tl.Tracelet.ready(tl.Config.balanced().copyWith(
+  geo: GeoConfig(
+    periodicLocationInterval: 1800,       // Every 30 minutes, exactly
+    periodicDesiredAccuracy: DesiredAccuracy.medium,
+  ),
+  android: AndroidConfig(
+    periodicUseForegroundService: false,
+    periodicUseExactAlarms: true,          // Don't let WorkManager defer
+  ),
+));
 ```
 
 ---

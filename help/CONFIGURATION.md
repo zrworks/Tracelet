@@ -195,6 +195,8 @@ Configures Core Location parameters, accuracy, sampling filter thresholds, batte
 | `deadReckoningMaxDuration` | `int` | `0` | Maximum seconds to execute dead reckoning estimation. `0` for unlimited. |
 | `filter` | `LocationFilter` | `const LocationFilter()` | Detailed GPS filtering and smoothing options. |
 
+> **Note:** `periodicUseForegroundService` and `periodicUseExactAlarms` are Android-only — configure them under `AndroidConfig`, not `GeoConfig`.
+
 ### LocationFilter
 
 Nested under `GeoConfig.filter`. Controls GPS denoising, Extended Kalman Filter smoothing, and spoofing protection.

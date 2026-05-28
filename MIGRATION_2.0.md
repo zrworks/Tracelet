@@ -29,7 +29,7 @@ tl.Config(
 )
 ```
 
-#### After (Tracelet 2.0.0):
+#### After (Tracelet 2.x.x):
 ```dart
 tl.Config(
   geo: tl.GeoConfig(
@@ -47,8 +47,7 @@ tl.Config(
 )
 ```
 
-#### Field Mapping Cheat Sheet:
-| 1.x Field | 2.0.0 Path |
+| 1.x Field | 2.x.x Path |
 |---|---|
 | `desiredAccuracy` | `geo.desiredAccuracy` |
 | `distanceFilter` | `geo.distanceFilter` |
@@ -63,9 +62,13 @@ tl.Config(
 | `stopTimeout` | `motion.stopTimeout` |
 | `geofenceProximityRadius`| `geofence.geofenceProximityRadius` |
 | `notificationTitle` | `android.foregroundService.notificationTitle` |
+| `scheduleUseAlarmManager` | `android.scheduleUseAlarmManager` |
 | `rejectMockLocations` | `geo.filter.rejectMockLocations` |
 | `mockDetectionLevel` | `geo.filter.mockDetectionLevel` |
 | `encryptDatabase` | `security.encryptDatabase` |
+| `preventSuspend` | `ios.preventSuspend` |
+| `activityType` | `ios.activityType` |
+| `useSignificantChangesOnly` | `ios.useSignificantChangesOnly` |
 
 ### 3. Pigeon-Based Platform Interface
 Tracelet now uses **Pigeon** for all platform-to-native communication.

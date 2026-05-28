@@ -104,7 +104,8 @@ Top-level compound configuration. Organizes settings into logical groups:
 ```kotlin
 TraceletConfig(
     geo = GeoConfig(...),          // Location accuracy, sampling, filtering
-    app = AppConfig(...),          // Lifecycle, scheduling, foreground service
+    app = AppConfig(...),          // Lifecycle, scheduling
+    android = AndroidConfig(...),  // Android-specific: foreground service, AlarmManager
     http = HttpConfig(...),        // Server sync settings
     logger = LoggerConfig(...),    // Logging and debug sounds
     motion = MotionConfig(...),    // Motion detection sensitivity
@@ -145,18 +146,36 @@ GeoConfig(
     // Periodic mode
     periodicLocationInterval = 900,         // seconds (15 min default)
     periodicDesiredAccuracy = DesiredAccuracy.MEDIUM,
+)
+```
+
+### AndroidConfig
+
+```kotlin
+AndroidConfig(
+    // Foreground service notification
+    foregroundService = ForegroundServiceConfig(
+        notificationTitle = "My App",
+        notificationText = "Tracking your location",
+        notificationColor = "#4CAF50",
+        notificationPriority = NotificationPriority.LOW,
+        notificationSmallIcon = "drawable/ic_notification",
+        actions = listOf("Pause", "Stop"),
+    ),
+
+    // Periodic mode (Android-specific scheduling strategies)
     periodicUseForegroundService = false,   // sub-15-min intervals
     periodicUseExactAlarms = false,         // AlarmManager scheduling
 
-    // Android-only
+    // Scheduling
+    scheduleUseAlarmManager = false,        // exact-time schedule events
+
+    // Location
+    locationUpdateInterval = 1000,          // ms between updates
+    fastestLocationUpdateInterval = 500,
     deferTime = 0,
     allowIdenticalLocations = false,
     geofenceModeHighAccuracy = false,
-
-    // iOS-only (ignored on Android)
-    useSignificantChangesOnly = false,
-    showsBackgroundLocationIndicator = false,
-    pausesLocationUpdatesAutomatically = false,
 )
 ```
 
@@ -168,18 +187,11 @@ AppConfig(
     startOnBoot = true,                     // restart on device boot
     heartbeatInterval = 60,                 // seconds (-1 to disable)
     schedule = listOf("1-7 09:00-17:00"),   // Mon-Sun 9am-5pm
-    scheduleUseAlarmManager = false,        // exact-time scheduling
-    foregroundService = ForegroundServiceConfig(
-        notificationTitle = "My App",
-        notificationText = "Tracking your location",
-        notificationColor = "#4CAF50",
-        notificationPriority = NotificationPriority.LOW,
-        notificationSmallIcon = "drawable/ic_notification",
-        actions = listOf("Pause", "Stop"),
-    ),
     remoteConfigUrl = "https://api.example.com/config",
 )
 ```
+
+> **Note**: `foregroundService` notification, `scheduleUseAlarmManager`, `periodicUseForegroundService`, and `periodicUseExactAlarms` are configured under `AndroidConfig`, not `AppConfig`.
 
 ### HttpConfig
 
@@ -387,6 +399,8 @@ sdk.ready(TraceletConfig(
     app = AppConfig(
         stopOnTerminate = false,
         startOnBoot = true,
+    ),
+    android = AndroidConfig(
         foregroundService = ForegroundServiceConfig(
             notificationTitle = "Fleet Tracker",
             notificationText = "Recording trip",
@@ -403,6 +417,8 @@ sdk.ready(TraceletConfig(
 sdk.ready(TraceletConfig(
     app = AppConfig(
         stopOnTerminate = true,
+    ),
+    android = AndroidConfig(
         foregroundService = ForegroundServiceConfig(enabled = false),
     ),
 )) { state -> sdk.start() }
@@ -521,9 +537,12 @@ sdk.ready(TraceletConfig(
     geo = GeoConfig(
         periodicLocationInterval = 900,     // 15 min
         periodicDesiredAccuracy = DesiredAccuracy.MEDIUM,
+    ),
+    android = AndroidConfig(
         // Sub-15-minute intervals:
         periodicUseForegroundService = true,
-        periodicLocationInterval = 300,     // 5 min
+        // Override interval set above:
+        // periodicLocationInterval is still in GeoConfig
     ),
 )) { state -> sdk.startPeriodic() }
 ```

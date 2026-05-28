@@ -425,9 +425,9 @@ Starts **periodic interval tracking**. Instead of continuously streaming GPS coo
 
 | Strategy | Config | Notification? | Min Interval | Timing Precision |
 |---|---|---|---|---|
-| WorkManager (default) | Both `false` | No | 15 min | Approximate (system-batched) |
-| Exact Alarms | `periodicUseExactAlarms: true` | No | Any | Exact (AlarmManager) |
-| Foreground Service | `periodicUseForegroundService: true` | Yes | Any | Exact (Handler timer) |
+| WorkManager (default) | Both `false` in `AndroidConfig` | No | 15 min | Approximate (system-batched) |
+| Exact Alarms | `android.periodicUseExactAlarms: true` | No | Any | Exact (AlarmManager) |
+| Foreground Service | `android.periodicUseForegroundService: true` | Yes | Any | Exact (Handler timer) |
 
 ```dart
 // 1. Configure (optional — defaults to 15-min interval, medium accuracy)
@@ -435,6 +435,8 @@ await Tracelet.ready(Config.balanced().copyWith(
   geo: GeoConfig(
     periodicLocationInterval: 1800,        // 30 minutes
     periodicDesiredAccuracy: DesiredAccuracy.medium,
+  ),
+  android: AndroidConfig(
     periodicUseForegroundService: false,    // Android: WorkManager (no notification)
     periodicUseExactAlarms: false,          // Android: inexact alarms (battery-friendly)
   ),

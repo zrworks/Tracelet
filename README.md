@@ -21,7 +21,7 @@
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
 > [!IMPORTANT]
-> **Tracelet 2.0.0 Migration**: This version introduces a new structured configuration schema and optional Android dependencies. See the [Migration Guide](MIGRATION_2.0.md) for details.
+> **Tracelet 2.x.x**: Android-specific and iOS-specific settings (including foreground service notification) are now configured via `AndroidConfig` and `IosConfig` sub-objects, not `AppConfig`. See the [Migration Guide](MIGRATION_2.0.md) for the full config schema change.
 
 ---
 
@@ -217,6 +217,8 @@ await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: false,
     startOnBoot: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(
       notificationTitle: 'My App',
       notificationText: 'Tracking your location',
@@ -232,6 +234,8 @@ await tl.Tracelet.start();
 await tl.Tracelet.ready(tl.Config.balanced().copyWith(
   app: tl.AppConfig(
     stopOnTerminate: true,
+  ),
+  android: tl.AndroidConfig(
     foregroundService: tl.ForegroundServiceConfig(enabled: false),
   ),
 ));

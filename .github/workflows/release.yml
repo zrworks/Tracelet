@@ -412,7 +412,10 @@ jobs:
 
       - name: Build example iOS
         working-directory: example
-        run: flutter build ios --no-codesign --debug
+        run: |
+          # Remove TraceletSDK from example Podfile since it's now vendored in tracelet_ios
+          sed -i '' "s/pod 'TraceletSDK'.*//g" ios/Podfile
+          flutter build ios --no-codesign --debug
 
   # Job 4: Publish Flutter packages to pub.dev (dependency order)
   # ─────────────────────────────────────────────────────────────

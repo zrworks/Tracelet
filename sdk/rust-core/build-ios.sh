@@ -36,8 +36,14 @@ mkdir -p "$OUT_DIR/Headers"
 cp "$OUT_DIR/tracelet_coreFFI.h" "$OUT_DIR/Headers/"
 cp "$OUT_DIR/tracelet_coreFFI.modulemap" "$OUT_DIR/Headers/module.modulemap"
 
+# Rename module to TraceletCore so Xcode loads it properly from TraceletCore.xcframework
+sed -i '' 's/module tracelet_coreFFI/framework module TraceletCore/g' "$OUT_DIR/Headers/module.modulemap"
+
 # Copy generated Swift bindings to the iOS SDK sources
 cp "$OUT_DIR/tracelet_core.swift" "../../sdk/ios/Sources/TraceletSDK/"
+
+# Update Swift bindings to import TraceletCore instead of tracelet_coreFFI
+sed -i '' 's/tracelet_coreFFI/TraceletCore/g' "../../sdk/ios/Sources/TraceletSDK/tracelet_core.swift"
 
 # Remove old XCFramework
 rm -rf "$OUT_DIR/TraceletCore.xcframework"

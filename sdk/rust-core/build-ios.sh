@@ -41,9 +41,10 @@ sed -i '' 's/module tracelet_coreFFI/framework module TraceletCore/g' "$OUT_DIR/
 
 # Copy generated Swift bindings to the iOS SDK sources
 cp "$OUT_DIR/tracelet_core.swift" "../../sdk/ios/Sources/TraceletSDK/"
+cp "$OUT_DIR/tracelet_coreFFI.h" "../../sdk/ios/Sources/TraceletSDK/"
 
-# Update Swift bindings to import TraceletCore instead of tracelet_coreFFI
-sed -i '' 's/tracelet_coreFFI/TraceletCore/g' "../../sdk/ios/Sources/TraceletSDK/tracelet_core.swift"
+# Delete the #if canImport block completely since we use a public header now
+sed -i '' '/#if canImport(TraceletCore)/,/#endif/d' "../../sdk/ios/Sources/TraceletSDK/tracelet_core.swift"
 
 # Remove old XCFramework
 rm -rf "$OUT_DIR/TraceletCore.xcframework"

@@ -1,4 +1,4 @@
-## 3.1.6
+## 3.1.7
 
  - **FIX**(android): apply kotlin-android plugin to fix gradle build errors on newer AGP versions.
  - **FIX**(ios): fix SPM source folder paths in release bundling to ensure SDK compiles properly via CocoaPods.

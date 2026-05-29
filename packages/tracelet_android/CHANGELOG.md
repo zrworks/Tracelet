@@ -1,3 +1,8 @@
+## 3.1.9
+
+- **FIX**(android): conditionally apply kotlin-android plugin to support older flutter SDKs while preventing warnings in modern Flutter environments.
+- **CHORE**(ci): add strict pre-publish flutter build verification step to `release.yml`.
+
 ## 3.1.8
 
 - Fix iOS SPM publishing

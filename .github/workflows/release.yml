@@ -106,7 +106,7 @@ jobs:
           echo "✅ Generated files are up to date."
 
       - name: Upload Rust Bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frb-bindings
           path: packages/tracelet_platform_interface/lib/src/rust/
@@ -357,7 +357,7 @@ jobs:
 
       - name: Upload iOS SDK Artifacts
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-sdk-artifacts
           path: |

@@ -370,6 +370,51 @@ jobs:
 
 
   # ─────────────────────────────────────────────────────────────
+
+  # ─────────────────────────────────────────────────────────────
+  # Job: Test Flutter iOS Bundle (pre-publish verification)
+  # ─────────────────────────────────────────────────────────────
+  test-flutter-ios:
+    name: Test Bundled iOS Plugin
+    needs: publish-ios-sdk
+    if: |
+      always() &&
+      !inputs.skip_flutter &&
+      !inputs.skip_native_sdks &&
+      (needs.publish-ios-sdk.result == 'success' || needs.publish-ios-sdk.outputs.already_published == 'true')
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Download iOS SDK Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-sdk-artifacts
+          path: tracelet-ios-temp
+      - name: Bundle iOS SDK into tracelet_ios
+        run: |
+          echo "Bundling iOS SDK into tracelet_ios plugin..."
+          mkdir -p packages/tracelet_ios/ios/tracelet_ios/Frameworks
+          unzip -q tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
+          
+          mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
+          cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
+          
+          echo "Patching tracelet_ios.podspec..."
+          sed -i '' "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'tracelet_ios\/Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec
+          
+          echo "Patching tracelet_ios/Package.swift for SPM..."
+          sed -i '' "s/.*\.package(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          sed -i '' "s/\.product(name: "TraceletSDK", package: "Tracelet")/"TraceletCore"/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          sed -i '' "s/        )/        ),
+        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+
+      - name: Build example iOS
+        working-directory: example
+        run: flutter build ios --no-codesign --debug
+
   # Job 4: Publish Flutter packages to pub.dev (dependency order)
   # ─────────────────────────────────────────────────────────────
   publish-flutter:
@@ -378,12 +423,14 @@ jobs:
       - validate
       - publish-android-sdk
       - publish-ios-sdk
+      - test-flutter-ios
     # Run if native SDKs succeeded OR were skipped
     if: |
       always() &&
       !inputs.skip_flutter &&
       (needs.publish-android-sdk.result == 'success' || needs.publish-android-sdk.result == 'skipped') &&
       (needs.publish-ios-sdk.result == 'success' || needs.publish-ios-sdk.result == 'skipped') &&
+      (needs.test-flutter-ios.result == 'success' || needs.test-flutter-ios.result == 'skipped') &&
       needs.validate.result == 'success'
     runs-on: ubuntu-latest
     environment: pub.dev  # OIDC automated publishing

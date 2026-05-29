@@ -523,7 +523,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
-void uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustCallStatus *_Nonnull out_status
+void uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_PRIVACY_ZONE
@@ -715,6 +715,21 @@ RustBuffer uniffi_tracelet_core_fn_method_enginestate_get_config(uint64_t ptr, R
 RustBuffer uniffi_tracelet_core_fn_method_enginestate_get_health(uint64_t ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_GET_ROUTE_CONTEXT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_GET_ROUTE_CONTEXT
+RustBuffer uniffi_tracelet_core_fn_method_enginestate_get_route_context(uint64_t ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_DYNAMIC_HEADERS
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_DYNAMIC_HEADERS
+void uniffi_tracelet_core_fn_method_enginestate_set_dynamic_headers(uint64_t ptr, RustBuffer headers, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_ROUTE_CONTEXT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_ROUTE_CONTEXT
+void uniffi_tracelet_core_fn_method_enginestate_set_route_context(uint64_t ptr, RustBuffer json, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_TRACKING
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_SET_TRACKING
 void uniffi_tracelet_core_fn_method_enginestate_set_tracking(uint64_t ptr, int8_t tracking, RustCallStatus *_Nonnull out_status
@@ -723,6 +738,11 @@ void uniffi_tracelet_core_fn_method_enginestate_set_tracking(uint64_t ptr, int8_
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_UPDATE_CONFIG
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_UPDATE_CONFIG
 void uniffi_tracelet_core_fn_method_enginestate_update_config(uint64_t ptr, RustBuffer new_config, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_UPDATE_CONFIG_FROM_JSON
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_ENGINESTATE_UPDATE_CONFIG_FROM_JSON
+void uniffi_tracelet_core_fn_method_enginestate_update_config_from_json(uint64_t ptr, RustBuffer json, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_SMARTMOTIONCOORDINATOR
@@ -1425,6 +1445,24 @@ uint16_t uniffi_tracelet_core_checksum_method_enginestate_get_health(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_GET_ROUTE_CONTEXT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_GET_ROUTE_CONTEXT
+uint16_t uniffi_tracelet_core_checksum_method_enginestate_get_route_context(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_DYNAMIC_HEADERS
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_DYNAMIC_HEADERS
+uint16_t uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_ROUTE_CONTEXT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_ROUTE_CONTEXT
+uint16_t uniffi_tracelet_core_checksum_method_enginestate_set_route_context(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_TRACKING
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_SET_TRACKING
 uint16_t uniffi_tracelet_core_checksum_method_enginestate_set_tracking(void
@@ -1434,6 +1472,12 @@ uint16_t uniffi_tracelet_core_checksum_method_enginestate_set_tracking(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_UPDATE_CONFIG
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_UPDATE_CONFIG
 uint16_t uniffi_tracelet_core_checksum_method_enginestate_update_config(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_UPDATE_CONFIG_FROM_JSON
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_ENGINESTATE_UPDATE_CONFIG_FROM_JSON
+uint16_t uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json(void
     
 );
 #endif

@@ -453,6 +453,12 @@ jobs:
           echo "Patching tracelet_ios.podspec..."
           sed -i "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec
           
+          echo "Patching tracelet_ios/Package.swift for SPM..."
+          sed -i "s/.*\.package(url: \"https:\/\/github.com\/Ikolvi\/Tracelet.git\".*//" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          sed -i "s/\.product(name: \"TraceletSDK\", package: \"Tracelet\")/\"TraceletCore\"/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          sed -i "s/        )/        ),\n        .binaryTarget(name: \"TraceletCore\", path: \"..\/..\/Frameworks\/TraceletCore.xcframework\")/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+
+          
           echo "✅ iOS Bundle complete. tracelet_ios now contains pre-compiled Rust Core."
 
       # ── Setup pub.dev credentials ──

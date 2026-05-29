@@ -105,6 +105,13 @@ jobs:
           fi
           echo "✅ Generated files are up to date."
 
+      - name: Upload Rust Bindings
+        uses: actions/upload-artifact@v4
+        with:
+          name: frb-bindings
+          path: packages/tracelet_platform_interface/lib/src/rust/
+          retention-days: 1
+
       - name: Bootstrap
         run: melos bootstrap
 
@@ -393,6 +400,13 @@ jobs:
         with:
           name: ios-sdk-artifacts
           path: tracelet-ios-temp
+
+      - name: Download Rust Bindings
+        uses: actions/download-artifact@v4
+        with:
+          name: frb-bindings
+          path: packages/tracelet_platform_interface/lib/src/rust/
+
       - name: Bundle iOS SDK into tracelet_ios
         run: |
           echo "Bundling iOS SDK into tracelet_ios plugin..."

@@ -409,7 +409,7 @@ jobs:
           sed -i '' "s/.*\.package(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//" packages/tracelet_ios/ios/tracelet_ios/Package.swift
           sed -i '' "s/\.product(name: "TraceletSDK", package: "Tracelet")/"TraceletCore"/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
           sed -i '' "s/        )/        ),
-        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          .binaryTarget(name: \"TraceletCore\", path: \"Frameworks\/TraceletCore.xcframework\")/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
 
       - name: Build example iOS
         working-directory: example

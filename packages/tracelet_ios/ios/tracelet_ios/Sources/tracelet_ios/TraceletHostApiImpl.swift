@@ -1,7 +1,9 @@
 import Flutter
 import UIKit
 import CoreMotion
+#if canImport(TraceletSDK)
 import TraceletSDK
+#endif
 
 /// Pigeon-backed implementation of ``TraceletHostApi``.
 ///

@@ -1,5 +1,5 @@
 group = "com.ikolvi.tracelet.flutter"
-version = "3.1.4"
+version = "3.1.5"
 
 
 
@@ -12,6 +12,7 @@ allprojects {
 
 apply plugin: "com.android.library"
 
+
 android {
     namespace = "com.ikolvi.tracelet.flutter"
 
@@ -22,9 +23,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = '17'
-    }
+    // kotlinOptions replaced by tasks.withType at the bottom for Built-in Kotlin support
 
 
 
@@ -42,7 +41,7 @@ android {
         // Tracelet SDK — standalone geolocation engine
         // Resolved from Maven Central when published, substituted with local
         // module via includeBuild during development.
-        implementation("com.ikolvi:tracelet-sdk:3.1.4")
+        implementation("com.ikolvi:tracelet-sdk:3.1.5")
 
         // Testing
         testImplementation("org.jetbrains.kotlin:kotlin-test")
@@ -73,5 +72,11 @@ android {
         resources {
             excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }

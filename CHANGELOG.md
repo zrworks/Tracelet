@@ -1,3 +1,9 @@
+## 3.1.5
+
+ - **FIX**(android): apply kotlin-android plugin to fix gradle build errors on newer AGP versions.
+ - **FIX**(ios): fix SPM source folder paths in release bundling to ensure SDK compiles properly via CocoaPods.
+ - **FIX**(ios): fix duplicate module import errors by adding conditional import checks for TraceletSDK.
+
 # Change Log
 
 All notable changes to this project will be documented in this file.

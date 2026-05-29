@@ -1,6 +1,8 @@
 import Flutter
 import Foundation
+#if canImport(TraceletSDK)
 import TraceletSDK
+#endif
 
 /// Flutter-specific event dispatcher using Pigeon FlutterApi.
 ///

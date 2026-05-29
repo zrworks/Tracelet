@@ -447,8 +447,8 @@ jobs:
           mkdir -p packages/tracelet_ios/ios/Frameworks
           unzip -q tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/Frameworks/
           
-          mkdir -p packages/tracelet_ios/ios/Classes/TraceletSDK
-          cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/Classes/TraceletSDK/
+          mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
+          cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
           
           echo "Patching tracelet_ios.podspec..."
           sed -i "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec

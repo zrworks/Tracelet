@@ -43,9 +43,6 @@ sed -i '' 's/module tracelet_coreFFI/framework module TraceletCore/g' "$OUT_DIR/
 cp "$OUT_DIR/tracelet_core.swift" "../../sdk/ios/Sources/TraceletSDK/"
 cp "$OUT_DIR/tracelet_coreFFI.h" "../../sdk/ios/Sources/TraceletSDK/"
 
-# Delete the #if canImport block completely since we use a public header now
-sed -i '' '/#if canImport(TraceletCore)/,/#endif/d' "../../sdk/ios/Sources/TraceletSDK/tracelet_core.swift"
-
 # Remove old XCFramework
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
 

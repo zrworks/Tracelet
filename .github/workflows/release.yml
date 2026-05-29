@@ -510,6 +510,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           CREATED=0
+          NEW_TAGS=""
 
           if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
             PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
@@ -521,6 +522,7 @@ jobs:
                 git tag "$TAG" -m "Release ${pkg} v${VERSION}"
                 echo "🏷️ Tagged: $TAG"
                 CREATED=$((CREATED + 1))
+                NEW_TAGS="$NEW_TAGS $TAG"
               fi
             done
           fi
@@ -534,6 +536,7 @@ jobs:
               git tag "$SUPABASE_TAG" -m "Release tracelet_supabase v${SUPABASE_VERSION}"
               echo "🏷️ Tagged: $SUPABASE_TAG"
               CREATED=$((CREATED + 1))
+              NEW_TAGS="$NEW_TAGS $SUPABASE_TAG"
             fi
           fi
 
@@ -546,6 +549,7 @@ jobs:
               git tag "$FIREBASE_TAG" -m "Release tracelet_firebase v${FIREBASE_VERSION}"
               echo "🏷️ Tagged: $FIREBASE_TAG"
               CREATED=$((CREATED + 1))
+              NEW_TAGS="$NEW_TAGS $FIREBASE_TAG"
             fi
           fi
 
@@ -558,11 +562,12 @@ jobs:
               git tag "$DOCTOR_TAG" -m "Release tracelet_doctor v${DOCTOR_VERSION}"
               echo "🏷️ Tagged: $DOCTOR_TAG"
               CREATED=$((CREATED + 1))
+              NEW_TAGS="$NEW_TAGS $DOCTOR_TAG"
             fi
           fi
 
           if [ "$CREATED" -gt 0 ]; then
-            git push origin --tags
+            git push origin $NEW_TAGS
           else
             echo "ℹ️ All tags already existed — no push needed"
           fi

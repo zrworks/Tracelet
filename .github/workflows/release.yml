@@ -429,7 +429,16 @@ jobs:
         run: |
           # Remove TraceletSDK from example Podfile since it's now vendored in tracelet_ios
           sed -i '' "s/pod 'TraceletSDK'.*//g" ios/Podfile
-          flutter build ios --no-codesign --debug
+          flutter build ios --no-codesign --release
+
+      - name: Verify FRB Symbols are not stripped
+        working-directory: example
+        run: |
+          if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "frb_get_rust_content_hash"; then
+            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the iOS Release build!"
+            exit 1
+          fi
+          echo "✅ Verified flutter_rust_bridge symbols are present."
 
   # Job 4: Publish Flutter packages to pub.dev (dependency order)
   # ─────────────────────────────────────────────────────────────

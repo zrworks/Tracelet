@@ -51,6 +51,7 @@ on:
 permissions:
   contents: write
   id-token: write  # Required for pub.dev OIDC authentication
+  workflows: write  # Required to push tags referencing commits that modified workflow files
 
 concurrency:
   group: release
@@ -473,6 +474,7 @@ jobs:
     permissions:
       contents: write
       id-token: write  # Required for pub.dev OIDC token exchange
+      workflows: write  # Required to push tags referencing commits that modified workflow files
     steps:
       - uses: actions/checkout@v5
         with:

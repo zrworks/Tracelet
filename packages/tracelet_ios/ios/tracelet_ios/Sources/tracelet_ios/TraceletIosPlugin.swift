@@ -44,6 +44,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 @_silgen_name("frb_pde_ffi_dispatcher_primary") func dummy_frb_pde_ffi_dispatcher_primary()
 @_silgen_name("frb_pde_ffi_dispatcher_sync") func dummy_frb_pde_ffi_dispatcher_sync()
 @_silgen_name("frb_init_frb_dart_api_dl") func dummy_frb_init_frb_dart_api_dl()
+@_silgen_name("store_dart_post_cobject") func dummy_store_dart_post_cobject()
 
 // Arc functions for RustOpaque
 @_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart") func dummy_arc_inc_1()
@@ -68,6 +69,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         dummy_frb_pde_ffi_dispatcher_primary()
         dummy_frb_pde_ffi_dispatcher_sync()
         dummy_frb_init_frb_dart_api_dl()
+        dummy_store_dart_post_cobject()
         dummy_arc_inc_1()
         dummy_arc_dec_1()
         dummy_arc_inc_2()

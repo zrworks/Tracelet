@@ -273,6 +273,7 @@ Polygon containment uses the ray-casting algorithm for efficient point-in-polygo
 | [Background Tracking](https://github.com/Ikolvi/Tracelet/blob/main/help/BACKGROUND-TRACKING.md) | Foreground service, silent mode, runtime switching |
 | [API Reference](https://github.com/Ikolvi/Tracelet/blob/main/help/API.md) | All methods, events, and return types |
 | [Configuration](https://github.com/Ikolvi/Tracelet/blob/main/help/CONFIGURATION.md) | All config groups with property tables |
+| [Configuration Profiles](https://github.com/Ikolvi/Tracelet/blob/main/help/CONFIGURATION-PROFILES.md) | Easy-setup predefined profiles (Balanced, High Accuracy, Low Power) |
 | [Kalman Filter](https://github.com/Ikolvi/Tracelet/blob/main/help/KALMAN-FILTER.md) | GPS smoothing — how it works, when to use it |
 | [Trip Detection](https://github.com/Ikolvi/Tracelet/blob/main/help/TRIP-DETECTION.md) | Automatic trip events — setup, API, edge cases |
 | [Polygon Geofences](https://github.com/Ikolvi/Tracelet/blob/main/help/POLYGON-GEOFENCES.md) | Polygon geofences — vertices, ray-casting, examples |

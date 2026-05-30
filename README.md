@@ -257,6 +257,7 @@ await tl.Tracelet.start();
 | [Background Tracking](help/BACKGROUND-TRACKING.md) | Foreground service, silent mode, runtime switching |
 | [API Reference](help/API.md) | All methods, events, and return types |
 | [Configuration](help/CONFIGURATION.md) | All config groups with property tables |
+| [Configuration Profiles](help/CONFIGURATION-PROFILES.md) | Easy-setup predefined profiles (Balanced, High Accuracy, Low Power) |
 | [Kalman Filter](help/KALMAN-FILTER.md) | GPS smoothing — how it works, when to use it |
 | [Trip Detection](help/TRIP-DETECTION.md) | Automatic trip events — setup, API, edge cases |
 | [Polygon Geofences](help/POLYGON-GEOFENCES.md) | Polygon geofences — vertices, ray-casting, examples |

@@ -3,60 +3,9 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## 2026-05-30
-
-### Changes
-
----
-
-Packages with breaking changes:
-
- - There are no breaking changes in this release.
-
-Packages with other changes:
-
- - [`tracelet` - `v3.1.10`](#tracelet---v3110)
- - [`tracelet_platform_interface` - `v3.1.10`](#tracelet_platform_interface---v3110)
- - [`tracelet_android` - `v3.1.10`](#tracelet_android---v3110)
- - [`tracelet_ios` - `v3.1.10`](#tracelet_ios---v3110)
- - [`tracelet_web` - `v3.1.10`](#tracelet_web---v3110)
- - [`tracelet_doctor` - `v3.1.10`](#tracelet_doctor---v3110)
- - [`tracelet_supabase` - `v3.1.10`](#tracelet_supabase---v3110)
- - [`tracelet_firebase` - `v3.1.10`](#tracelet_firebase---v3110)
-
----
-
-#### `tracelet` - `v3.1.10`
-
- - Bump "tracelet" to `3.1.10`.
-
-#### `tracelet_platform_interface` - `v3.1.10`
-
- - Bump "tracelet_platform_interface" to `3.1.10`.
-
-#### `tracelet_android` - `v3.1.10`
-
- - Bump "tracelet_android" to `3.1.10`.
-
-#### `tracelet_ios` - `v3.1.10`
+## 3.1.10
 
  - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in iOS release builds by setting DEAD_CODE_STRIPPING=NO in CocoaPods xcconfig.
-
-#### `tracelet_web` - `v3.1.10`
-
- - Bump "tracelet_web" to `3.1.10`.
-
-#### `tracelet_doctor` - `v3.1.10`
-
- - Bump "tracelet_doctor" to `3.1.10`.
-
-#### `tracelet_supabase` - `v3.1.10`
-
- - Bump "tracelet_supabase" to `3.1.10`.
-
-#### `tracelet_firebase` - `v3.1.10`
-
- - Bump "tracelet_firebase" to `3.1.10`.
 
 ## 3.1.9
 

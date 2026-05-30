@@ -396,13 +396,13 @@ jobs:
         with:
           channel: stable
       - name: Download iOS SDK Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ios-sdk-artifacts
           path: tracelet-ios-temp
 
       - name: Download Rust Bindings
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frb-bindings
           path: packages/tracelet_platform_interface/lib/src/rust/
@@ -498,7 +498,7 @@ jobs:
 
       - name: Download iOS SDK Artifacts
         if: ${{ !inputs.skip_native_sdks && needs.publish-ios-sdk.outputs.already_published == 'false' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ios-sdk-artifacts
           path: tracelet-ios-temp

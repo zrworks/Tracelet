@@ -27,7 +27,6 @@ execution for iOS.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64' }
   s.user_target_xcconfig = { 
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64',
-    'OTHER_LDFLAGS' => '-force_load "${PODS_XCFRAMEWORKS_BUILD_DIR}/TraceletSDK/libtracelet_core.a"',
     'DEAD_CODE_STRIPPING' => 'NO'
   }
   s.swift_version = '5.0'

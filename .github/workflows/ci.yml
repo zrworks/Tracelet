@@ -130,7 +130,7 @@ jobs:
 
       - name: Build example APK
         working-directory: example
-        run: flutter build apk --debug
+        run: flutter build apk --release
 
   build-ios:
     name: Build iOS
@@ -162,7 +162,16 @@ jobs:
 
       - name: Build example iOS
         working-directory: example
-        run: flutter build ios --no-codesign --debug
+        run: flutter build ios --no-codesign --release
+
+      - name: Verify FRB Symbols are not stripped
+        working-directory: example
+        run: |
+          if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "frb_get_rust_content_hash"; then
+            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the iOS Release build!"
+            exit 1
+          fi
+          echo "✅ Verified flutter_rust_bridge symbols are present."
 
   build-web:
     name: Build Web

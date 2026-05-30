@@ -4,6 +4,9 @@ import UIKit
 import TraceletSDK
 #endif
 
+@_silgen_name("frb_get_rust_content_hash")
+func frb_get_rust_content_hash() -> Int32
+
 /// TraceletIosPlugin — Thin Flutter bridge that delegates all work to ``TraceletSdk``.
 ///
 /// This plugin owns only Flutter-specific concerns:
@@ -41,6 +44,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     // MARK: - FlutterPlugin registration
 
     public static func register(with registrar: FlutterPluginRegistrar) {
+        // Enforce bundling of flutter_rust_bridge C symbols in Release builds
+        _ = frb_get_rust_content_hash()
+
         let instance = TraceletIosPlugin()
 
         // ── Primary instance guard ───────────────────────────────────────

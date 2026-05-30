@@ -1,6 +1,6 @@
 ## 3.1.10
 
- - **FEAT**: add Configuration Profiles documentation and update README references. ([c866a49a](https://github.com/Ikolvi/Tracelet/commit/c866a49a340d93c81468b3e4e0f0122fea9199c2))
+ - Bump \"tracelet\" to `3.1.10`.
 
 ## 3.1.9
 

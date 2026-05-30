@@ -434,7 +434,7 @@ jobs:
       - name: Verify FRB Symbols are not stripped
         working-directory: example
         run: |
-          if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "frb_get_rust_content_hash"; then
+          if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "frbgen_tracelet"; then
             echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the iOS Release build!"
             exit 1
           fi

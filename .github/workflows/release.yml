@@ -223,6 +223,17 @@ jobs:
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: ./sdk/rust-core/build-android.sh
 
+      - name: Verify FRB Symbols in Android native library
+        if: ${{ steps.check_published.outputs.already_published == 'false' }}
+        run: |
+          SO="sdk/android/tracelet-sdk/src/main/jniLibs/arm64-v8a/libtracelet_core.so"
+          if ! nm -D "$SO" | grep -q "frbgen_tracelet"; then
+            echo "❌ ERROR: flutter_rust_bridge symbols missing from Android .so!"
+            exit 1
+          fi
+          COUNT=$(nm -D "$SO" | grep -c "frbgen_tracelet")
+          echo "✅ Verified $COUNT frbgen_tracelet symbols present in $SO"
+
       - name: Build release AAR
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android

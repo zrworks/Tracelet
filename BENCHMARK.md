@@ -89,6 +89,47 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 
 ## Results History
 
+### 2026-05-30 — Commit a8eb7cd
+
+**Environment:** Dart 3.12.0, ubuntu-latest (CI)
+
+| Benchmark | ops/sec | µs/op |
+|---|---:|---:|
+| schedule_parse | 2702702 | 0.37 |
+| schedule_matches | 83682 | 11.95 |
+| schedule_isWithin_5_entries | 74794 | 13.37 |
+| location_fromMap | 1724137 | 0.58 |
+| location_toMap | 613496 | 1.63 |
+| location_fromMap_toMap_roundtrip | 448430 | 2.23 |
+| location_copyWithCoords | 11111111 | 0.09 |
+| geofence_fromMap_circular | 4545454 | 0.22 |
+| geofence_fromMap_polygon | 1562500 | 0.64 |
+| carbon_trip_100_locations | 78308 | 12.77 |
+| carbon_onLocation | 3703703 | 0.27 |
+| carbon_setActivity | 9090909 | 0.11 |
+| carbon_cumulative_report | 2380952 | 0.42 |
+| persist_decider_location | 20000000 | 0.05 |
+| persist_decider_geofence | 20000000 | 0.05 |
+| config_fromMap | 444444 | 2.25 |
+| config_toMap | 124223 | 8.05 |
+| config_roundtrip | 96432 | 10.37 |
+| state_fromMap | 420168 | 2.38 |
+| state_toMap | 120627 | 8.29 |
+| route_context_toMap | 2941176 | 0.34 |
+| route_context_fromMap | 2127659 | 0.47 |
+| route_context_roundtrip | 1351351 | 0.74 |
+| sync_body_context_toMap_50 | 7692307 | 0.13 |
+| sync_body_context_fromMap_50 | 21881 | 45.70 |
+| http_config_ssl_toMap | 763358 | 1.31 |
+| http_config_ssl_fromMap | 3225806 | 0.31 |
+| http_config_ssl_roundtrip | 632911 | 1.58 |
+| smart_motion_accel_change | 18684603 | 0.05 |
+| battery_budget_single_sample | 21695686 | 0.05 |
+| battery_budget_60_samples | 1050493 | 0.95 |
+| smart_motion_speed_change | 17749473 | 0.06 |
+| battery_budget_heavy_drain | 540469 | 1.85 |
+
+
 ### 2026-05-30 — Commit 204528d
 
 **Environment:** Dart 3.12.0, ubuntu-latest (CI)
@@ -456,46 +497,5 @@ Critical operations that run on **every GPS fix** (1 Hz) must complete in < 1ms 
 | smart_motion_accel_change | 19061078 | 0.05 |
 | smart_motion_speed_change | 18237725 | 0.05 |
 | battery_budget_60_samples | 1129918 | 0.89 |
-
-
-### 2026-05-29 — Commit fff913d
-
-**Environment:** Dart 3.12.0, ubuntu-latest (CI)
-
-| Benchmark | ops/sec | µs/op |
-|---|---:|---:|
-| schedule_parse | 2702702 | 0.37 |
-| schedule_matches | 84245 | 11.87 |
-| schedule_isWithin_5_entries | 73475 | 13.61 |
-| location_fromMap | 1724137 | 0.58 |
-| location_toMap | 645161 | 1.55 |
-| location_fromMap_toMap_roundtrip | 480769 | 2.08 |
-| location_copyWithCoords | 11111111 | 0.09 |
-| geofence_fromMap_circular | 4761904 | 0.21 |
-| geofence_fromMap_polygon | 1612903 | 0.62 |
-| carbon_trip_100_locations | 91659 | 10.91 |
-| carbon_onLocation | 4000000 | 0.25 |
-| carbon_setActivity | 9090909 | 0.11 |
-| carbon_cumulative_report | 2564102 | 0.39 |
-| persist_decider_location | 20000000 | 0.05 |
-| persist_decider_geofence | 20000000 | 0.05 |
-| config_fromMap | 440528 | 2.27 |
-| config_toMap | 127551 | 7.84 |
-| config_roundtrip | 97847 | 10.22 |
-| state_fromMap | 416666 | 2.40 |
-| state_toMap | 121802 | 8.21 |
-| route_context_toMap | 3030303 | 0.33 |
-| route_context_fromMap | 2325581 | 0.43 |
-| route_context_roundtrip | 1388888 | 0.72 |
-| sync_body_context_toMap_50 | 8333333 | 0.12 |
-| sync_body_context_fromMap_50 | 22075 | 45.30 |
-| http_config_ssl_toMap | 775193 | 1.29 |
-| http_config_ssl_fromMap | 3225806 | 0.31 |
-| http_config_ssl_roundtrip | 636942 | 1.57 |
-| battery_budget_60_samples | 1088787 | 0.92 |
-| battery_budget_single_sample | 21683710 | 0.05 |
-| battery_budget_heavy_drain | 561276 | 1.78 |
-| smart_motion_speed_change | 17688718 | 0.06 |
-| smart_motion_accel_change | 18674667 | 0.05 |
 
 

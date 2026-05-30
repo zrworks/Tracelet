@@ -13,4 +13,7 @@ Pod::Spec.new do |s|
   s.frameworks       = 'CoreLocation', 'CoreMotion', 'UIKit', 'BackgroundTasks', 'AVFoundation', 'AudioToolbox', 'Network', 'DeviceCheck'
   s.vendored_frameworks = '../rust-core/out/TraceletCore.xcframework'
   s.libraries        = 'sqlite3'
+  s.user_target_xcconfig = {
+    'OTHER_LDFLAGS' => '-force_load "${PODS_XCFRAMEWORKS_BUILD_DIR}/TraceletSDK/libtracelet_core.a"'
+  }
 end

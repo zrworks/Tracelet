@@ -25,7 +25,10 @@ execution for iOS.
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64' }
-  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64' }
+  s.user_target_xcconfig = { 
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64',
+    'OTHER_LDFLAGS' => '-force_load "${PODS_XCFRAMEWORKS_BUILD_DIR}/TraceletSDK/libtracelet_core.a" -Xlinker -export_dynamic'
+  }
   s.swift_version = '5.0'
 
   s.resource_bundles = {'tracelet_ios_privacy' => ['tracelet_ios/Sources/tracelet_ios/PrivacyInfo.xcprivacy']}

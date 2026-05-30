@@ -4,9 +4,6 @@ import UIKit
 import TraceletSDK
 #endif
 
-@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart")
-func dummy_enforce_bundling()
-
 /// TraceletIosPlugin — Thin Flutter bridge that delegates all work to ``TraceletSdk``.
 ///
 /// This plugin owns only Flutter-specific concerns:
@@ -43,12 +40,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
     // MARK: - FlutterPlugin registration
 
-    public static var dummyCgen: Any?
-
     public static func register(with registrar: FlutterPluginRegistrar) {
-        // Enforce bundling of flutter_rust_bridge C symbols in Release builds
-        dummyCgen = dummy_enforce_bundling
-
         let instance = TraceletIosPlugin()
 
         // ── Primary instance guard ───────────────────────────────────────

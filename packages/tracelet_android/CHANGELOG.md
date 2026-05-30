@@ -1,3 +1,7 @@
+## 3.1.10
+
+ - Bump "tracelet_android" to `3.1.10`.
+
 ## 3.1.9
 
 - **FIX**(android): conditionally apply kotlin-android plugin to support older flutter SDKs while preventing warnings in modern Flutter environments.

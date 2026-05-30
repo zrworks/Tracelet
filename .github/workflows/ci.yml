@@ -143,6 +143,8 @@ jobs:
           fi
           COUNT=$(nm -D "$SO" | grep -c "frbgen_tracelet")
           echo "✅ Verified $COUNT frbgen_tracelet symbols present in the APK"
+
+  build-ios:
     name: Build iOS
     runs-on: macos-latest
     needs: analyze

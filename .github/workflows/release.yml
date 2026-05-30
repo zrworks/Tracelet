@@ -390,6 +390,61 @@ jobs:
   # ─────────────────────────────────────────────────────────────
 
   # ─────────────────────────────────────────────────────────────
+  # Job: Test Flutter Android Bundle (pre-publish verification)
+  # ─────────────────────────────────────────────────────────────
+  test-flutter-android:
+    name: Test Bundled Android Plugin
+    needs: publish-android-sdk
+    if: |
+      always() &&
+      !inputs.skip_flutter &&
+      !inputs.skip_native_sdks &&
+      (needs.publish-android-sdk.result == 'success' || needs.publish-android-sdk.outputs.already_published == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install Melos
+        run: dart pub global activate melos
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install flutter_rust_bridge_codegen & cargo-ndk
+        run: |
+          cargo binstall -y cargo-expand flutter_rust_bridge_codegen
+          cargo binstall -y cargo-ndk
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+      - name: Bootstrap
+        run: melos bootstrap
+      - name: Build Android Rust Core
+        run: ./sdk/rust-core/build-android.sh
+      - name: Build example APK
+        working-directory: example
+        run: flutter build apk --release
+      - name: Verify FRB Symbols in Release APK
+        working-directory: example
+        run: |
+          unzip -q build/app/outputs/flutter-apk/app-release.apk -d extracted_apk
+          SO="extracted_apk/lib/arm64-v8a/libtracelet_core.so"
+          if ! nm -D "$SO" | grep -q "frbgen_tracelet"; then
+            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the Android Release APK!"
+            exit 1
+          fi
+          COUNT=$(nm -D "$SO" | grep -c "frbgen_tracelet")
+          echo "✅ Verified $COUNT frbgen_tracelet symbols present in the APK"
+
+  # ─────────────────────────────────────────────────────────────
   # Job: Test Flutter iOS Bundle (pre-publish verification)
   # ─────────────────────────────────────────────────────────────
   test-flutter-ios:
@@ -461,6 +516,7 @@ jobs:
       - publish-android-sdk
       - publish-ios-sdk
       - test-flutter-ios
+      - test-flutter-android
     # Run if native SDKs succeeded OR were skipped
     if: |
       always() &&
@@ -468,6 +524,7 @@ jobs:
       (needs.publish-android-sdk.result == 'success' || needs.publish-android-sdk.result == 'skipped') &&
       (needs.publish-ios-sdk.result == 'success' || needs.publish-ios-sdk.result == 'skipped') &&
       (needs.test-flutter-ios.result == 'success' || needs.test-flutter-ios.result == 'skipped') &&
+      (needs.test-flutter-android.result == 'success' || needs.test-flutter-android.result == 'skipped') &&
       needs.validate.result == 'success'
     runs-on: ubuntu-latest
     environment: pub.dev  # OIDC automated publishing

@@ -428,18 +428,18 @@ jobs:
           cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
           
           echo "Patching tracelet_ios.podspec..."
-          sed -i '' "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'tracelet_ios\/Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec
+          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
           
           echo "Patching tracelet_ios/Package.swift for SPM..."
-          sed -i '' 's#.*\.package(url: "https://github.com/Ikolvi/Tracelet.git".*##' packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          sed -i '' 's/\.product(name: "TraceletSDK", package: "Tracelet")/"TraceletCore"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)/"TraceletCore"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
           perl -pi -e 's/        \)/        ),\n        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
 
       - name: Build example iOS
         working-directory: example
         run: |
           # Remove TraceletSDK from example Podfile since it's now vendored in tracelet_ios
-          sed -i '' "s/pod 'TraceletSDK'.*//g" ios/Podfile
+          perl -pi -e 's/pod '\''TraceletSDK'\''.*//g' ios/Podfile
           rm -f ios/Podfile.lock
           flutter build ios --no-codesign --release
 
@@ -535,12 +535,12 @@ jobs:
           cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
           
           echo "Patching tracelet_ios.podspec..."
-          sed -i "s/s.dependency 'TraceletSDK'.*/s.vendored_frameworks = 'tracelet_ios\/Frameworks\/TraceletCore.xcframework'/g" packages/tracelet_ios/ios/tracelet_ios.podspec
+          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
           
           echo "Patching tracelet_ios/Package.swift for SPM..."
-          sed -i "s/.*\.package(url: \"https:\/\/github.com\/Ikolvi\/Tracelet.git\".*//" packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          sed -i "s/\.product(name: \"TraceletSDK\", package: \"Tracelet\")/\"TraceletCore\"/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          sed -i "s/        )/        ),\n        .binaryTarget(name: \"TraceletCore\", path: \"Frameworks\/TraceletCore.xcframework\")/g" packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)/"TraceletCore"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/        \)/        ),\n        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
 
           
           echo "✅ iOS Bundle complete. tracelet_ios now contains pre-compiled Rust Core."

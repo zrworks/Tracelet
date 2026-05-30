@@ -40,7 +40,42 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
     // MARK: - FlutterPlugin registration
 
-    public static func register(with registrar: FlutterPluginRegistrar) {
+@_silgen_name("frb_get_rust_content_hash") func dummy_frb_get_rust_content_hash()
+@_silgen_name("frb_pde_ffi_dispatcher_primary") func dummy_frb_pde_ffi_dispatcher_primary()
+@_silgen_name("frb_pde_ffi_dispatcher_sync") func dummy_frb_pde_ffi_dispatcher_sync()
+@_silgen_name("frb_init_frb_dart_api_dl") func dummy_frb_init_frb_dart_api_dl()
+
+// Arc functions for RustOpaque
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart") func dummy_arc_inc_1()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart") func dummy_arc_dec_1()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart") func dummy_arc_inc_2()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart") func dummy_arc_dec_2()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart") func dummy_arc_inc_3()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart") func dummy_arc_dec_3()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart") func dummy_arc_inc_4()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart") func dummy_arc_dec_4()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart") func dummy_arc_inc_5()
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart") func dummy_arc_dec_5()
+
+public static func register(with registrar: FlutterPluginRegistrar) {
+        // Enforce bundling of flutter_rust_bridge symbols in SPM apps (prevents DEAD_CODE_STRIPPING from dropping them)
+        let ffiSymbols: [UnsafeRawPointer] = [
+            unsafeBitCast(dummy_frb_get_rust_content_hash, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_frb_pde_ffi_dispatcher_primary, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_frb_pde_ffi_dispatcher_sync, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_frb_init_frb_dart_api_dl, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_inc_1, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_dec_1, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_inc_2, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_dec_2, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_inc_3, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_dec_3, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_inc_4, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_dec_4, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_inc_5, to: UnsafeRawPointer.self),
+            unsafeBitCast(dummy_arc_dec_5, to: UnsafeRawPointer.self)
+        ]
+        
         let instance = TraceletIosPlugin()
 
         // ── Primary instance guard ───────────────────────────────────────

@@ -440,6 +440,7 @@ jobs:
         run: |
           # Remove TraceletSDK from example Podfile since it's now vendored in tracelet_ios
           sed -i '' "s/pod 'TraceletSDK'.*//g" ios/Podfile
+          rm -f ios/Podfile.lock
           flutter build ios --no-codesign --release
 
       - name: Verify FRB Symbols are not stripped

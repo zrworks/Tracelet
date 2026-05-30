@@ -57,24 +57,24 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 @_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart") func dummy_arc_inc_5()
 @_silgen_name("frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart") func dummy_arc_dec_5()
 
-public static func register(with registrar: FlutterPluginRegistrar) {
-        // Enforce bundling of flutter_rust_bridge symbols in SPM apps (prevents DEAD_CODE_STRIPPING from dropping them)
-        let ffiSymbols: [UnsafeRawPointer] = [
-            unsafeBitCast(dummy_frb_get_rust_content_hash, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_frb_pde_ffi_dispatcher_primary, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_frb_pde_ffi_dispatcher_sync, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_frb_init_frb_dart_api_dl, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_inc_1, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_dec_1, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_inc_2, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_dec_2, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_inc_3, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_dec_3, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_inc_4, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_dec_4, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_inc_5, to: UnsafeRawPointer.self),
-            unsafeBitCast(dummy_arc_dec_5, to: UnsafeRawPointer.self)
-        ]
+    public func dummyMethodToEnforceBundling() {
+        dummy_frb_get_rust_content_hash()
+        dummy_frb_pde_ffi_dispatcher_primary()
+        dummy_frb_pde_ffi_dispatcher_sync()
+        dummy_frb_init_frb_dart_api_dl()
+        dummy_arc_inc_1()
+        dummy_arc_dec_1()
+        dummy_arc_inc_2()
+        dummy_arc_dec_2()
+        dummy_arc_inc_3()
+        dummy_arc_dec_3()
+        dummy_arc_inc_4()
+        dummy_arc_dec_4()
+        dummy_arc_inc_5()
+        dummy_arc_dec_5()
+    }
+
+    public static func register(with registrar: FlutterPluginRegistrar) {
         
         let instance = TraceletIosPlugin()
 

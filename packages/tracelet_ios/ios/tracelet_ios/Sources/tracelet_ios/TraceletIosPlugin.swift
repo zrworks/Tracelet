@@ -4,8 +4,8 @@ import UIKit
 import TraceletSDK
 #endif
 
-@_silgen_name("frb_get_rust_content_hash")
-func frb_get_rust_content_hash() -> Int32
+@_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart")
+func dummy_enforce_bundling()
 
 /// TraceletIosPlugin — Thin Flutter bridge that delegates all work to ``TraceletSdk``.
 ///
@@ -43,9 +43,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
     // MARK: - FlutterPlugin registration
 
+    public static var dummyCgen: Any?
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         // Enforce bundling of flutter_rust_bridge C symbols in Release builds
-        _ = frb_get_rust_content_hash()
+        dummyCgen = dummy_enforce_bundling
 
         let instance = TraceletIosPlugin()
 

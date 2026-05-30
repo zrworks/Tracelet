@@ -1,3 +1,66 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+## 2026-05-30
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.1.10`](#tracelet---v3110)
+ - [`tracelet_platform_interface` - `v3.1.10`](#tracelet_platform_interface---v3110)
+ - [`tracelet_android` - `v3.1.10`](#tracelet_android---v3110)
+ - [`tracelet_ios` - `v3.1.10`](#tracelet_ios---v3110)
+ - [`tracelet_web` - `v3.1.10`](#tracelet_web---v3110)
+ - [`tracelet_doctor` - `v3.1.10`](#tracelet_doctor---v3110)
+ - [`tracelet_supabase` - `v3.1.10`](#tracelet_supabase---v3110)
+ - [`tracelet_firebase` - `v3.1.10`](#tracelet_firebase---v3110)
+
+---
+
+#### `tracelet` - `v3.1.10`
+
+ - **FEAT**: add Configuration Profiles documentation and update README references. ([c866a49a](https://github.com/Ikolvi/Tracelet/commit/c866a49a340d93c81468b3e4e0f0122fea9199c2))
+
+#### `tracelet_platform_interface` - `v3.1.10`
+
+ - Bump "tracelet_platform_interface" to `3.1.10`.
+
+#### `tracelet_android` - `v3.1.10`
+
+ - Bump "tracelet_android" to `3.1.10`.
+
+#### `tracelet_ios` - `v3.1.10`
+
+ - **FIX**(ios): remove -force_load to prevent xcode dependency graph errors, DEAD_CODE_STRIPPING=NO is sufficient. ([ca423c9e](https://github.com/Ikolvi/Tracelet/commit/ca423c9e160a495f0c755f7f77bf7eeb9151ad0f))
+ - **FIX**(ios): use DEAD_CODE_STRIPPING=NO to prevent stripping on CI. ([1643885b](https://github.com/Ikolvi/Tracelet/commit/1643885b764d7aba0e57996483abd6aaf819367f))
+ - **FIX**(ios): prevent dead code stripping of all rust symbols by using -force_load and -export_dynamic in CocoaPods user_target_xcconfig. ([bbca155e](https://github.com/Ikolvi/Tracelet/commit/bbca155e20cb63340c264502ed45120e1e614a39))
+ - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge v2 initialization symbols in release builds. ([cbb1d6f0](https://github.com/Ikolvi/Tracelet/commit/cbb1d6f04e9528fb911e3943a45edef313b9c505))
+
+#### `tracelet_web` - `v3.1.10`
+
+ - Bump "tracelet_web" to `3.1.10`.
+
+#### `tracelet_doctor` - `v3.1.10`
+
+ - Bump "tracelet_doctor" to `3.1.10`.
+
+#### `tracelet_supabase` - `v3.1.10`
+
+ - Bump "tracelet_supabase" to `3.1.10`.
+
+#### `tracelet_firebase` - `v3.1.10`
+
+ - Bump "tracelet_firebase" to `3.1.10`.
+
 ## 3.1.9
 
 - **FIX**(android): conditionally apply kotlin-android plugin to support older flutter SDKs while preventing warnings in modern Flutter environments.
@@ -13,10 +76,6 @@
  - **FIX**(ios): fix SPM source folder paths in release bundling to ensure SDK compiles properly via CocoaPods.
  - **FIX**(ios): fix duplicate module import errors by adding conditional import checks for TraceletSDK.
 
-# Change Log
-
-All notable changes to this project will be documented in this file.
-See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
 ## 2026-05-27
 

@@ -1,3 +1,7 @@
+## 3.1.10
+
+ - **FEAT**: add Configuration Profiles documentation and update README references. ([c866a49a](https://github.com/Ikolvi/Tracelet/commit/c866a49a340d93c81468b3e4e0f0122fea9199c2))
+
 ## 3.1.9
 
 - **FIX**(android): conditionally apply kotlin-android plugin to support older flutter SDKs while preventing warnings in modern Flutter environments.

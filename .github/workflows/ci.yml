@@ -179,11 +179,24 @@ jobs:
       - name: Verify FRB Symbols are not stripped
         working-directory: example
         run: |
-          if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "frbgen_tracelet"; then
-            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the iOS Release build!"
+          echo "Extracting expected FRB symbols from static library..."
+          EXPECTED_SYMBOLS=$(nm -g ../sdk/rust-core/target/aarch64-apple-ios/release/libtracelet_core.a 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
+          
+          echo "Verifying symbols in Release build..."
+          MISSING_SYMBOLS=0
+          for symbol in $EXPECTED_SYMBOLS; do
+            if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "$symbol"; then
+              echo "❌ ERROR: Symbol $symbol was stripped from the iOS Release build!"
+              MISSING_SYMBOLS=$((MISSING_SYMBOLS + 1))
+            fi
+          done
+          
+          if [ "$MISSING_SYMBOLS" -gt 0 ]; then
+            echo "❌ $MISSING_SYMBOLS symbols were stripped!"
             exit 1
+          else
+            echo "✅ All flutter_rust_bridge symbols successfully preserved!"
           fi
-          echo "✅ Verified flutter_rust_bridge symbols are present."
 
   build-web:
     name: Build Web

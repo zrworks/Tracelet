@@ -1,4 +1,4 @@
-## 3.1.15
+## 3.1.13
 
 - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in SPM apps by referencing them explicitly in TraceletIosPlugin
 

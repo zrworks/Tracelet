@@ -182,10 +182,13 @@ jobs:
           echo "Extracting expected FRB symbols from static library..."
           EXPECTED_SYMBOLS=$(nm -g ../sdk/rust-core/target/aarch64-apple-ios/release/libtracelet_core.a 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
           
+          echo "Dumping Runner symbols..."
+          nm -g build/ios/iphoneos/Runner.app/Runner > runner_symbols.txt
+          
           echo "Verifying symbols in Release build..."
           MISSING_SYMBOLS=0
           for symbol in $EXPECTED_SYMBOLS; do
-            if ! nm -g build/ios/iphoneos/Runner.app/Runner | grep -q "$symbol"; then
+            if ! grep -q "$symbol" runner_symbols.txt; then
               echo "❌ ERROR: Symbol $symbol was stripped from the iOS Release build!"
               MISSING_SYMBOLS=$((MISSING_SYMBOLS + 1))
             fi

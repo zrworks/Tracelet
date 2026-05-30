@@ -1,6 +1,6 @@
-## 3.1.14
+## 3.1.15
 
-- **FIX**(android): bump Android SDK and tracelet_android build.gradle versions to 3.1.14
+- **FIX**(android): bump Android SDK and tracelet_android build.gradle versions to 3.1.15
 
 
 ## 3.1.10

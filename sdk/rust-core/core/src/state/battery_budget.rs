@@ -16,7 +16,7 @@ pub struct BudgetAdjustmentEvent {
     pub new_periodic_interval: Option<i32>,
 }
 
-struct EngineState {
+struct BatteryEngineState {
     distance_filter: f64,
     accuracy_index: i32,
     periodic_interval: Option<i32>,
@@ -28,7 +28,7 @@ struct EngineState {
 #[derive(uniffi::Object)]
 pub struct BatteryBudgetEngine {
     target_budget_per_hour: f64,
-    state: Mutex<EngineState>,
+    state: Mutex<BatteryEngineState>,
 }
 
 #[uniffi::export]
@@ -43,7 +43,7 @@ impl BatteryBudgetEngine {
     ) -> Self {
         Self {
             target_budget_per_hour,
-            state: Mutex::new(EngineState {
+            state: Mutex::new(BatteryEngineState {
                 distance_filter: initial_distance_filter,
                 accuracy_index: initial_accuracy_index.clamp(0, 4),
                 periodic_interval: initial_periodic_interval,

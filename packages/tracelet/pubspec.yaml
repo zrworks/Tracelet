@@ -20,6 +20,7 @@ topics:
   - location
   - background
   - geofencing
+  - tracking
 
 screenshots:
   - description: 'Tracelet logo'

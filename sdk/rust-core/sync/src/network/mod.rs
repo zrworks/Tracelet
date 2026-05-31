@@ -1,5 +1,5 @@
 use tracelet_core::config::HttpConfig;
-use crate::database::DbLocationRecord;
+use tracelet_core::database::DbLocationRecord;
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use serde_json::json;
 use std::str::FromStr;
@@ -86,7 +86,7 @@ impl SyncManager {
                 if let Some(ref rc) = record_route_context {
                     if let Some(obj) = base_json.as_object_mut() {
                         if let Some(rc_obj) = rc.as_object() {
-                            for (k, v) in rc_obj {
+                            for (k, v) in rc_obj.iter() {
                                 obj.insert(k.clone(), v.clone());
                             }
                         }
@@ -118,7 +118,7 @@ impl SyncManager {
             if let Some(ref rc) = record_route_context {
                 if let Some(obj) = base_json.as_object_mut() {
                     if let Some(rc_obj) = rc.as_object() {
-                        for (k, v) in rc_obj {
+                        for (k, v) in rc_obj.iter() {
                             obj.insert(k.clone(), v.clone());
                         }
                     }

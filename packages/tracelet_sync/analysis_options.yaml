@@ -1,0 +1,38 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "build/**"
+    - "packages/*/build/**"
+    - "packages/*/example/build/**"
+    - "example*/build/**"
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "packages/tracelet_platform_interface/lib/src/rust/**"
+    - "**/frb_generated*.dart"
+
+  language:
+    strict-raw-types: false
+    strict-inference: false
+
+linter:
+  rules:
+    public_member_api_docs: false
+    sort_pub_dependencies: false
+    cascade_invocations: false
+    comment_references: false
+    avoid_positional_boolean_parameters: false
+    avoid_equals_and_hash_code_on_mutable_classes: false
+    avoid_dynamic_calls: false
+    use_setters_to_change_properties: false
+    directives_ordering: false
+    unawaited_futures: false
+    prefer_constructors_over_static_methods: false
+    lines_longer_than_80_chars: false
+    depend_on_referenced_packages: false
+    use_late_for_private_fields_and_variables: false
+    only_throw_errors: false
+    missing_code_block_language_in_doc_comment: false
+    join_return_with_assignment: false
+    cancel_subscriptions: false
+    avoid_multiple_declarations_per_line: false

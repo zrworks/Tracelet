@@ -28,7 +28,7 @@ mkdir -p "$OUT_DIR/core/ios" "$OUT_DIR/core/sim"
 cp target/aarch64-apple-ios-sim/release/libtracelet_core.a "$OUT_DIR/core/sim/libtracelet_core.a"
 cp target/aarch64-apple-ios/release/libtracelet_core.a "$OUT_DIR/core/ios/libtracelet_core.a"
 
-cargo run --features=uniffi/cli --manifest-path core/Cargo.toml --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_core.a --language swift --out-dir "$OUT_DIR/core"
+cargo run -p tracelet_core --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_core.a --language swift --out-dir "$OUT_DIR/core"
 
 mkdir -p "$OUT_DIR/core/Headers"
 cp "$OUT_DIR/core/tracelet_coreFFI.h" "$OUT_DIR/core/Headers/"
@@ -72,7 +72,7 @@ mkdir -p "$OUT_DIR/sync/ios" "$OUT_DIR/sync/sim"
 cp target/aarch64-apple-ios-sim/release/libtracelet_sync.a "$OUT_DIR/sync/sim/libtracelet_sync.a"
 cp target/aarch64-apple-ios/release/libtracelet_sync.a "$OUT_DIR/sync/ios/libtracelet_sync.a"
 
-cargo run --features=uniffi/cli --manifest-path sync/Cargo.toml --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_sync.a --language swift --out-dir "$OUT_DIR/sync"
+cargo run -p tracelet_sync --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_sync.a --language swift --out-dir "$OUT_DIR/sync"
 
 mkdir -p "$OUT_DIR/sync/Headers"
 cp "$OUT_DIR/sync/tracelet_syncFFI.h" "$OUT_DIR/sync/Headers/"
@@ -93,7 +93,7 @@ xcodebuild -create-xcframework \
 
 # --- SYMBOL VERIFICATION ---
 echo "Verifying symbols for TraceletCore..."
-if nm -gU "$OUT_DIR/TraceletCore.xcframework/ios-arm64/libtracelet_core.a" | grep -i 'reqwest\|rusqlite'; then
+if nm -gU "$OUT_DIR/TraceletCore.xcframework/ios-arm64/libtracelet_core.a" | grep -i 'reqwest'; then
     echo "❌ ERROR: Heavy dependencies leaked into TraceletCore!"
     exit 1
 fi

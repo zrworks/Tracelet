@@ -529,6 +529,24 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterData: FfiConverterRustBuffer {
+    typealias SwiftType = Data
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        let len: Int32 = try readInt(&buf)
+        return Data(try readBytes(&buf, count: Int(len)))
+    }
+
+    public static func write(_ value: Data, into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        writeBytes(&buf, value)
+    }
+}
+
 
 
 
@@ -872,6 +890,466 @@ public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngi
 
 
 /**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+public protocol DatabaseManagerProtocol: AnyObject, Sendable {
+    
+    func clearGeofences() throws 
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+    func clearLocationsUpTo(maxId: Int64) throws 
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+    func clearPrivacyZones() throws 
+    
+    func decryptPayload(payload: Data)  -> Data?
+    
+    func deleteGeofence(identifier: String) throws 
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+    func deletePrivacyZone(identifier: String) throws 
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+    func destroyLocation(id: Int64) throws 
+    
+    /**
+     * Deletes all location records in the database.
+     */
+    func destroyLocations() throws 
+    
+    func encryptPayload(plaintext: Data)  -> Data?
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+    func getAuditTrail() throws  -> [DbAuditRecord]
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+    func getGeofences() throws  -> [CoreGeofence]
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+    func getLocationsBatch(limit: Int32) throws  -> [DbLocationRecord]
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    func getLocationsCount() throws  -> Int32
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+    func getPrivacyZones() throws  -> [CorePrivacyZone]
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+    func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32) throws 
+    
+    func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double) throws 
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws 
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+    func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double) throws 
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+    func isEmpty() throws  -> Bool
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */
+    func setEncryptionKey(key: String) 
+    
+}
+/**
+ * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
+ * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
+ */
+open class DatabaseManager: DatabaseManagerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_databasemanager(self.handle, $0) }
+    }
+    /**
+     * Initializes a new database connection and creates tables if they don't exist.
+     */
+public convenience init(dbPath: String)throws  {
+    let handle =
+        try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_constructor_databasemanager_new(
+        FfiConverterString.lower(dbPath),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_databasemanager(handle, $0) }
+    }
+
+    
+
+    
+open func clearGeofences()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+    /**
+     * Deletes records up to the given max ID (used after successful sync).
+     */
+open func clearLocationsUpTo(maxId: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(maxId),$0
+    )
+}
+}
+    
+    /**
+     * Removes all stored privacy zones from the database.
+     */
+open func clearPrivacyZones()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func decryptPayload(payload: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(payload),$0
+    )
+})
+}
+    
+open func deleteGeofence(identifier: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_delete_geofence(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),$0
+    )
+}
+}
+    
+    /**
+     * Deletes a specific privacy zone from the database by its unique identifier.
+     */
+open func deletePrivacyZone(identifier: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_delete_privacy_zone(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),$0
+    )
+}
+}
+    
+    /**
+     * Deletes a specific location by ID.
+     */
+open func destroyLocation(id: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_destroy_location(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(id),$0
+    )
+}
+}
+    
+    /**
+     * Deletes all location records in the database.
+     */
+open func destroyLocations()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_destroy_locations(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+open func encryptPayload(plaintext: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_encrypt_payload(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(plaintext),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all audit trail records, ordered sequentially by their chain index.
+     */
+open func getAuditTrail()throws  -> [DbAuditRecord]  {
+    return try  FfiConverterSequenceTypeDbAuditRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all registered geofences from the database, parsing JSON-serialized vertices.
+     * Resolves polygon geofences containing multiple coordinate vertices as well as circular ones.
+     */
+open func getGeofences()throws  -> [CoreGeofence]  {
+    return try  FfiConverterSequenceTypeCoreGeofence.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_geofences(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves a batch of location records, up to `limit`.
+     */
+open func getLocationsBatch(limit: Int32)throws  -> [DbLocationRecord]  {
+    return try  FfiConverterSequenceTypeDbLocationRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+})
+}
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+open func getLocationsCount()throws  -> Int32  {
+    return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Retrieves all privacy zones registered in the local database.
+     * Used by native managers to query geofenced privacy control zones.
+     */
+open func getPrivacyZones()throws  -> [CorePrivacyZone]  {
+    return try  FfiConverterSequenceTypeCorePrivacyZone.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
+     */
+open func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uuid),
+        FfiConverterString.lower(hash),
+        FfiConverterString.lower(prevHash),
+        FfiConverterInt32.lower(index),$0
+    )
+}
+}
+    
+open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(radius),$0
+    )
+}
+}
+    
+    /**
+     * Inserts a new location record into the database.
+     */
+open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_location(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(acc),
+        FfiConverterDouble.lower(speed),
+        FfiConverterDouble.lower(heading),
+        FfiConverterDouble.lower(altitude),
+        FfiConverterBool.lower(isMock),
+        FfiConverterString.lower(activity),
+        FfiConverterOptionString.lower(routeContext),$0
+    )
+}
+}
+    
+    /**
+     * Inserts or replaces a privacy zone record in the database.
+     *
+     * # Arguments
+     * * `identifier` - A unique string identifying this privacy zone.
+     * * `lat` - Center latitude in decimal degrees.
+     * * `lng` - Center longitude in decimal degrees.
+     * * `radius` - Radius of the privacy zone in meters.
+     * * `action` - Integer indicating the privacy action to apply:
+     * - 0: EXCLUDE (drop locations completely)
+     * - 1: DEGRADE (snap coordinates to a coarse accuracy grid)
+     * - 2: EVENT_ONLY (dispatch real-time updates to listeners but do not persist)
+     * * `degraded_accuracy` - Precision grid size in meters for DEGRADE actions (defaults to 1000.0).
+     */
+open func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(radius),
+        FfiConverterInt32.lower(action),
+        FfiConverterDouble.lower(degradedAccuracy),$0
+    )
+}
+}
+    
+    /**
+     * Gets the total count of locations persisted in the database.
+     */
+open func isEmpty()throws  -> Bool  {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_is_empty(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
+     */
+open func setEncryptionKey(key: String)  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_databasemanager_set_encryption_key(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDatabaseManager: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = DatabaseManager
+
+    public static func lift(_ handle: UInt64) throws -> DatabaseManager {
+        return DatabaseManager(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: DatabaseManager) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DatabaseManager {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: DatabaseManager, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDatabaseManager_lift(_ handle: UInt64) throws -> DatabaseManager {
+    return try FfiConverterTypeDatabaseManager.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDatabaseManager_lower(_ value: DatabaseManager) -> UInt64 {
+    return FfiConverterTypeDatabaseManager.lower(value)
+}
+
+
+
+
+
+
+/**
  * The centralized Engine State that holds the active configuration and current health.
  * This acts as the single source of truth for the entire SDK across platforms.
  */
@@ -1116,6 +1594,146 @@ public func FfiConverterTypeEngineState_lift(_ handle: UInt64) throws -> EngineS
 #endif
 public func FfiConverterTypeEngineState_lower(_ value: EngineState) -> UInt64 {
     return FfiConverterTypeEngineState.lower(value)
+}
+
+
+
+
+
+
+public protocol EventDispatcherProtocol: AnyObject, Sendable {
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */
+    func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool)  -> Bool
+    
+}
+open class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_eventdispatcher(self.handle, $0) }
+    }
+public convenience init(db: DatabaseManager, state: EngineState) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_eventdispatcher_new(
+        FfiConverterTypeDatabaseManager_lower(db),
+        FfiConverterTypeEngineState_lower(state),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_eventdispatcher(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
+     * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
+     */
+open func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),
+        FfiConverterDouble.lower(accuracy),
+        FfiConverterDouble.lower(speed),
+        FfiConverterDouble.lower(heading),
+        FfiConverterDouble.lower(altitude),
+        FfiConverterBool.lower(isMock),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEventDispatcher: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = EventDispatcher
+
+    public static func lift(_ handle: UInt64) throws -> EventDispatcher {
+        return EventDispatcher(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: EventDispatcher) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EventDispatcher {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: EventDispatcher, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEventDispatcher_lift(_ handle: UInt64) throws -> EventDispatcher {
+    return try FfiConverterTypeEventDispatcher.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEventDispatcher_lower(_ value: EventDispatcher) -> UInt64 {
+    return FfiConverterTypeEventDispatcher.lower(value)
 }
 
 
@@ -2928,6 +3546,199 @@ public func FfiConverterTypeCorePrivacyZone_lift(_ buf: RustBuffer) throws -> Co
 #endif
 public func FfiConverterTypeCorePrivacyZone_lower(_ value: CorePrivacyZone) -> RustBuffer {
     return FfiConverterTypeCorePrivacyZone.lower(value)
+}
+
+
+/**
+ * Represents a validated tamper-proof cryptographic audit trail record.
+ * Used to verify chain integrity across native and core database sync layers.
+ */
+public struct DbAuditRecord: Equatable, Hashable {
+    /**
+     * Unique identifier (UUID string) for this specific audit entry.
+     */
+    public var uuid: String
+    /**
+     * Cryptographic SHA-256 hash of the block's content.
+     */
+    public var auditHash: String
+    /**
+     * The SHA-256 hash of the immediate previous block in the blockchain.
+     */
+    public var auditPreviousHash: String
+    /**
+     * Ordered index representing position in the sequential audit ledger.
+     */
+    public var auditChainIndex: Int32
+    /**
+     * Unix timestamp in milliseconds when this audit entry was created.
+     */
+    public var auditCreatedAt: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Unique identifier (UUID string) for this specific audit entry.
+         */uuid: String, 
+        /**
+         * Cryptographic SHA-256 hash of the block's content.
+         */auditHash: String, 
+        /**
+         * The SHA-256 hash of the immediate previous block in the blockchain.
+         */auditPreviousHash: String, 
+        /**
+         * Ordered index representing position in the sequential audit ledger.
+         */auditChainIndex: Int32, 
+        /**
+         * Unix timestamp in milliseconds when this audit entry was created.
+         */auditCreatedAt: Int64) {
+        self.uuid = uuid
+        self.auditHash = auditHash
+        self.auditPreviousHash = auditPreviousHash
+        self.auditChainIndex = auditChainIndex
+        self.auditCreatedAt = auditCreatedAt
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbAuditRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbAuditRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbAuditRecord {
+        return
+            try DbAuditRecord(
+                uuid: FfiConverterString.read(from: &buf), 
+                auditHash: FfiConverterString.read(from: &buf), 
+                auditPreviousHash: FfiConverterString.read(from: &buf), 
+                auditChainIndex: FfiConverterInt32.read(from: &buf), 
+                auditCreatedAt: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbAuditRecord, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.uuid, into: &buf)
+        FfiConverterString.write(value.auditHash, into: &buf)
+        FfiConverterString.write(value.auditPreviousHash, into: &buf)
+        FfiConverterInt32.write(value.auditChainIndex, into: &buf)
+        FfiConverterInt64.write(value.auditCreatedAt, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbAuditRecord_lift(_ buf: RustBuffer) throws -> DbAuditRecord {
+    return try FfiConverterTypeDbAuditRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbAuditRecord_lower(_ value: DbAuditRecord) -> RustBuffer {
+    return FfiConverterTypeDbAuditRecord.lower(value)
+}
+
+
+/**
+ * Represents a serialized historical location record fetched from database.
+ */
+public struct DbLocationRecord: Equatable, Hashable {
+    public var id: Int64
+    public var timestamp: String
+    public var latitude: Double
+    public var longitude: Double
+    public var accuracy: Double
+    public var speed: Double
+    public var heading: Double
+    public var altitude: Double
+    public var isMock: Bool
+    public var activity: String
+    public var routeContext: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: Int64, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) {
+        self.id = id
+        self.timestamp = timestamp
+        self.latitude = latitude
+        self.longitude = longitude
+        self.accuracy = accuracy
+        self.speed = speed
+        self.heading = heading
+        self.altitude = altitude
+        self.isMock = isMock
+        self.activity = activity
+        self.routeContext = routeContext
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbLocationRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbLocationRecord {
+        return
+            try DbLocationRecord(
+                id: FfiConverterInt64.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                accuracy: FfiConverterDouble.read(from: &buf), 
+                speed: FfiConverterDouble.read(from: &buf), 
+                heading: FfiConverterDouble.read(from: &buf), 
+                altitude: FfiConverterDouble.read(from: &buf), 
+                isMock: FfiConverterBool.read(from: &buf), 
+                activity: FfiConverterString.read(from: &buf), 
+                routeContext: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbLocationRecord, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterDouble.write(value.accuracy, into: &buf)
+        FfiConverterDouble.write(value.speed, into: &buf)
+        FfiConverterDouble.write(value.heading, into: &buf)
+        FfiConverterDouble.write(value.altitude, into: &buf)
+        FfiConverterBool.write(value.isMock, into: &buf)
+        FfiConverterString.write(value.activity, into: &buf)
+        FfiConverterOptionString.write(value.routeContext, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbLocationRecord_lift(_ buf: RustBuffer) throws -> DbLocationRecord {
+    return try FfiConverterTypeDbLocationRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbLocationRecord_lower(_ value: DbLocationRecord) -> RustBuffer {
+    return FfiConverterTypeDbLocationRecord.lower(value)
 }
 
 
@@ -4802,6 +5613,30 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionData: FfiConverterRustBuffer {
+    typealias SwiftType = Data?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeAdaptiveContext: FfiConverterRustBuffer {
     typealias SwiftType = AdaptiveContext?
 
@@ -5022,6 +5857,56 @@ fileprivate struct FfiConverterSequenceTypeCorePrivacyZone: FfiConverterRustBuff
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeDbAuditRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbAuditRecord]
+
+    public static func write(_ value: [DbAuditRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbAuditRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbAuditRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbAuditRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbAuditRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbLocationRecord]
+
+    public static func write(_ value: [DbLocationRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbLocationRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbLocationRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbLocationRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbLocationRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer {
     typealias SwiftType = [GeofenceTransition]
 
@@ -5187,6 +6072,69 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_tripmanager_reset() != 31344) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences() != 43540) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to() != 905) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence() != 14855) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone() != 13424) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_destroy_location() != 60156) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations() != 41972) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload() != 52269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail() != 59184) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 44952) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -5281,6 +6229,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 53892) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_databasemanager_new() != 64846) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_eventdispatcher_new() != 19) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816) {

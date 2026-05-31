@@ -7,9 +7,11 @@ pub mod state;
 pub mod config;
 pub mod error;
 pub mod logger;
+pub mod database;
+pub mod crypto;
+pub mod event_dispatcher;
 
 pub use algorithms::schedule_parser::*;
 pub use algorithms::trip_manager::*;
 
 pub mod api_dart;
-

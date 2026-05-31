@@ -616,10 +616,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             map["isMoving"] = isMoving
             map["event"] = "motionchange"
             locationMap = map
+            
+            enrichWithAddressIfNeeded(locationMap: locationMap, location: loc) { [weak self] enrichedMap in
+                self?.eventDispatcher.sendMotionChange(enrichedMap)
+            }
         } else {
             locationMap = ["isMoving": isMoving]
+            eventDispatcher.sendMotionChange(locationMap)
         }
-        eventDispatcher.sendMotionChange(locationMap)
         return true
     }
 
@@ -851,14 +855,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 // Dispatch to Flutter but do NOT persist or audit.
                 var data = privacyResult.location ?? locationMap
                 if isPeriodicTracking { data["event"] = "periodic" }
-                eventDispatcher.sendLocation(data)
-                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
-                if isPeriodicTracking {
-                    locationManager.stopUpdatingLocation()
-                    locationManager.allowsBackgroundLocationUpdates = false
-                    periodicFixTimeoutWork?.cancel()
-                    periodicFixTimeoutWork = nil
-                    endPeriodicFixBgTask()
+                
+                enrichWithAddressIfNeeded(locationMap: data, location: location) { [weak self] enrichedData in
+                    self?.eventDispatcher.sendLocation(enrichedData)
+                    self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    if self?.isPeriodicTracking == true {
+                        self?.locationManager.stopUpdatingLocation()
+                        self?.locationManager.allowsBackgroundLocationUpdates = false
+                        self?.periodicFixTimeoutWork?.cancel()
+                        self?.periodicFixTimeoutWork = nil
+                        self?.endPeriodicFixBgTask()
+                    }
                 }
                 return
             case .degraded:
@@ -871,15 +878,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                         degraded[key] = value
                     }
                 }
-                persistLocationIfAllowed(degraded, event: pzEventTag)
-                eventDispatcher.sendLocation(degraded)
-                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
-                if isPeriodicTracking {
-                    locationManager.stopUpdatingLocation()
-                    locationManager.allowsBackgroundLocationUpdates = false
-                    periodicFixTimeoutWork?.cancel()
-                    periodicFixTimeoutWork = nil
-                    endPeriodicFixBgTask()
+                
+                enrichWithAddressIfNeeded(locationMap: degraded, location: location) { [weak self] enrichedDegraded in
+                    self?.persistLocationIfAllowed(enrichedDegraded, event: pzEventTag)
+                    self?.eventDispatcher.sendLocation(enrichedDegraded)
+                    self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    if self?.isPeriodicTracking == true {
+                        self?.locationManager.stopUpdatingLocation()
+                        self?.locationManager.allowsBackgroundLocationUpdates = false
+                        self?.periodicFixTimeoutWork?.cancel()
+                        self?.periodicFixTimeoutWork = nil
+                        self?.endPeriodicFixBgTask()
+                    }
                 }
                 return
             case .passThrough:
@@ -897,23 +907,27 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Tag periodic fixes so Dart can distinguish them from continuous-mode events
         let eventTag = isPeriodicTracking ? "periodic" : "location"
         dispatchMap["event"] = eventTag
-        persistLocationIfAllowed(dispatchMap, event: eventTag)
-        eventDispatcher.sendLocation(dispatchMap)
+        
+        enrichWithAddressIfNeeded(locationMap: dispatchMap, location: location) { [weak self] enrichedMap in
+            guard let self = self else { return }
+            self.persistLocationIfAllowed(enrichedMap, event: eventTag)
+            self.eventDispatcher.sendLocation(enrichedMap)
 
-        // Notify geofenceModeHighAccuracy listener (if active)
-        onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+            // Notify geofenceModeHighAccuracy listener (if active)
+            self.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
 
-        // In periodic mode, immediately stop GPS after receiving the fix
-        // to minimise blue-arrow visibility.
-        if isPeriodicTracking {
-            NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
-                  location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
-            locationManager.stopUpdatingLocation()
-            locationManager.allowsBackgroundLocationUpdates = false
-            // Cancel the timeout and end the background task now that the fix succeeded.
-            periodicFixTimeoutWork?.cancel()
-            periodicFixTimeoutWork = nil
-            endPeriodicFixBgTask()
+            // In periodic mode, immediately stop GPS after receiving the fix
+            // to minimise blue-arrow visibility.
+            if self.isPeriodicTracking {
+                NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
+                      location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+                self.locationManager.stopUpdatingLocation()
+                self.locationManager.allowsBackgroundLocationUpdates = false
+                // Cancel the timeout and end the background task now that the fix succeeded.
+                self.periodicFixTimeoutWork?.cancel()
+                self.periodicFixTimeoutWork = nil
+                self.endPeriodicFixBgTask()
+            }
         }
     }
 
@@ -1071,11 +1085,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
         var locationMap = buildLocationMap(best)
         if !extras.isEmpty { locationMap["extras"] = extras }
-        if persist {
-            let _ = database.insertLocation(locationMap)
-            onLocationPersisted?()
+        
+        enrichWithAddressIfNeeded(locationMap: locationMap, location: best) { [weak self] enrichedMap in
+            if persist {
+                let _ = self?.database.insertLocation(enrichedMap)
+                self?.onLocationPersisted?()
+            }
+            callback(enrichedMap)
         }
-        callback(locationMap)
     }
 
     // MARK: - Helpers
@@ -1415,5 +1432,34 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if confidence >= 75 { return .high }
         if confidence >= 50 { return .medium }
         return .low
+    }
+
+    // MARK: - Reverse Geocoding
+
+    private func enrichWithAddressIfNeeded(locationMap: [String: Any], location: CLLocation?, completion: @escaping ([String: Any]) -> Void) {
+        guard configManager.getResolveAddress(), let clLoc = location else {
+            completion(locationMap)
+            return
+        }
+        
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(clLoc) { placemarks, error in
+            var finalMap = locationMap
+            if let placemark = placemarks?.first {
+                var addressMap: [String: Any] = [:]
+                if let thoroughfare = placemark.thoroughfare { addressMap["street"] = thoroughfare }
+                else if let name = placemark.name { addressMap["street"] = name }
+                
+                if let locality = placemark.locality { addressMap["city"] = locality }
+                if let adminArea = placemark.administrativeArea { addressMap["state"] = adminArea }
+                if let postalCode = placemark.postalCode { addressMap["postalCode"] = postalCode }
+                if let country = placemark.country { addressMap["country"] = country }
+                
+                if !addressMap.isEmpty {
+                    finalMap["address"] = addressMap
+                }
+            }
+            completion(finalMap)
+        }
     }
 }

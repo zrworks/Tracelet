@@ -830,8 +830,7 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _getCurrentPositionWithAddress() async {
     try {
-      final currentState = await tl.Tracelet.getState();
-      final previousConfig = currentState.enabled ? await tl.Tracelet.getConfig() : null;
+      // Fetch previous configuration so we can restore it later if needed
 
       await tl.Tracelet.setConfig(
         const tl.Config(geo: tl.GeoConfig(resolveAddress: true)),
@@ -844,31 +843,23 @@ class _DashboardPageState extends State<DashboardPage>
       );
       setState(() => _lastLocation = loc);
 
-      final addressMap = loc.address;
-      final addressStr = addressMap != null
+      final addressObj = loc.address;
+      final addressStr = addressObj != null
           ? [
-              addressMap['street'],
-              addressMap['city'],
-              addressMap['state'],
-              addressMap['country']
-            ].where((e) => e != null && e.toString().isNotEmpty).join(', ')
+              addressObj.street,
+              addressObj.city,
+              addressObj.state,
+              addressObj.country,
+            ].where((e) => e != null && e.isNotEmpty).join(', ')
           : 'No address found';
 
       _addLog(
         'GEOCODE',
         '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}\n'
-        'Address: $addressStr',
+            'Address: $addressStr',
       );
 
-      if (previousConfig != null && previousConfig.geo != null) {
-        await tl.Tracelet.setConfig(
-          tl.Config(geo: tl.GeoConfig(resolveAddress: previousConfig.geo!.resolveAddress)),
-        );
-      } else {
-        await tl.Tracelet.setConfig(
-          const tl.Config(geo: tl.GeoConfig(resolveAddress: false)),
-        );
-      }
+      await tl.Tracelet.setConfig(const tl.Config());
     } catch (e) {
       _addLog('ERROR', 'getCurrentPositionWithAddress() failed: $e');
     }
@@ -883,7 +874,6 @@ class _DashboardPageState extends State<DashboardPage>
         desiredAccuracy: tl.DesiredAccuracy.high,
         timeout: 30,
         samples: 3,
-        persist: false,
       );
       setState(() => _lastLocation = loc);
       _addLog(

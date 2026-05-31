@@ -518,7 +518,8 @@ data class TlGeoConfig (
   val deadReckoningActivationDelay: Long,
   val deadReckoningMaxDuration: Long,
   val batteryBudgetPerHour: Double,
-  val filter: TlLocationFilter
+  val filter: TlLocationFilter,
+  val resolveAddress: Boolean
 )
  {
   companion object {
@@ -543,7 +544,8 @@ data class TlGeoConfig (
       val deadReckoningMaxDuration = pigeonVar_list[17] as Long
       val batteryBudgetPerHour = pigeonVar_list[18] as Double
       val filter = pigeonVar_list[19] as TlLocationFilter
-      return TlGeoConfig(desiredAccuracy, distanceFilter, stationaryRadius, locationTimeout, disableElasticity, elasticityMultiplier, stopAfterElapsedMinutes, maxMonitoredGeofences, enableTimestampMeta, enableAdaptiveMode, periodicLocationInterval, periodicDesiredAccuracy, enableSparseUpdates, sparseDistanceThreshold, sparseMaxIdleSeconds, enableDeadReckoning, deadReckoningActivationDelay, deadReckoningMaxDuration, batteryBudgetPerHour, filter)
+      val resolveAddress = pigeonVar_list[20] as Boolean
+      return TlGeoConfig(desiredAccuracy, distanceFilter, stationaryRadius, locationTimeout, disableElasticity, elasticityMultiplier, stopAfterElapsedMinutes, maxMonitoredGeofences, enableTimestampMeta, enableAdaptiveMode, periodicLocationInterval, periodicDesiredAccuracy, enableSparseUpdates, sparseDistanceThreshold, sparseMaxIdleSeconds, enableDeadReckoning, deadReckoningActivationDelay, deadReckoningMaxDuration, batteryBudgetPerHour, filter, resolveAddress)
     }
   }
   fun toList(): List<Any?> {
@@ -568,6 +570,7 @@ data class TlGeoConfig (
       deadReckoningMaxDuration,
       batteryBudgetPerHour,
       filter,
+      resolveAddress,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -578,7 +581,7 @@ data class TlGeoConfig (
       return true
     }
     val other = other as TlGeoConfig
-    return TraceletApiPigeonUtils.deepEquals(this.desiredAccuracy, other.desiredAccuracy) && TraceletApiPigeonUtils.deepEquals(this.distanceFilter, other.distanceFilter) && TraceletApiPigeonUtils.deepEquals(this.stationaryRadius, other.stationaryRadius) && TraceletApiPigeonUtils.deepEquals(this.locationTimeout, other.locationTimeout) && TraceletApiPigeonUtils.deepEquals(this.disableElasticity, other.disableElasticity) && TraceletApiPigeonUtils.deepEquals(this.elasticityMultiplier, other.elasticityMultiplier) && TraceletApiPigeonUtils.deepEquals(this.stopAfterElapsedMinutes, other.stopAfterElapsedMinutes) && TraceletApiPigeonUtils.deepEquals(this.maxMonitoredGeofences, other.maxMonitoredGeofences) && TraceletApiPigeonUtils.deepEquals(this.enableTimestampMeta, other.enableTimestampMeta) && TraceletApiPigeonUtils.deepEquals(this.enableAdaptiveMode, other.enableAdaptiveMode) && TraceletApiPigeonUtils.deepEquals(this.periodicLocationInterval, other.periodicLocationInterval) && TraceletApiPigeonUtils.deepEquals(this.periodicDesiredAccuracy, other.periodicDesiredAccuracy) && TraceletApiPigeonUtils.deepEquals(this.enableSparseUpdates, other.enableSparseUpdates) && TraceletApiPigeonUtils.deepEquals(this.sparseDistanceThreshold, other.sparseDistanceThreshold) && TraceletApiPigeonUtils.deepEquals(this.sparseMaxIdleSeconds, other.sparseMaxIdleSeconds) && TraceletApiPigeonUtils.deepEquals(this.enableDeadReckoning, other.enableDeadReckoning) && TraceletApiPigeonUtils.deepEquals(this.deadReckoningActivationDelay, other.deadReckoningActivationDelay) && TraceletApiPigeonUtils.deepEquals(this.deadReckoningMaxDuration, other.deadReckoningMaxDuration) && TraceletApiPigeonUtils.deepEquals(this.batteryBudgetPerHour, other.batteryBudgetPerHour) && TraceletApiPigeonUtils.deepEquals(this.filter, other.filter)
+    return TraceletApiPigeonUtils.deepEquals(this.desiredAccuracy, other.desiredAccuracy) && TraceletApiPigeonUtils.deepEquals(this.distanceFilter, other.distanceFilter) && TraceletApiPigeonUtils.deepEquals(this.stationaryRadius, other.stationaryRadius) && TraceletApiPigeonUtils.deepEquals(this.locationTimeout, other.locationTimeout) && TraceletApiPigeonUtils.deepEquals(this.disableElasticity, other.disableElasticity) && TraceletApiPigeonUtils.deepEquals(this.elasticityMultiplier, other.elasticityMultiplier) && TraceletApiPigeonUtils.deepEquals(this.stopAfterElapsedMinutes, other.stopAfterElapsedMinutes) && TraceletApiPigeonUtils.deepEquals(this.maxMonitoredGeofences, other.maxMonitoredGeofences) && TraceletApiPigeonUtils.deepEquals(this.enableTimestampMeta, other.enableTimestampMeta) && TraceletApiPigeonUtils.deepEquals(this.enableAdaptiveMode, other.enableAdaptiveMode) && TraceletApiPigeonUtils.deepEquals(this.periodicLocationInterval, other.periodicLocationInterval) && TraceletApiPigeonUtils.deepEquals(this.periodicDesiredAccuracy, other.periodicDesiredAccuracy) && TraceletApiPigeonUtils.deepEquals(this.enableSparseUpdates, other.enableSparseUpdates) && TraceletApiPigeonUtils.deepEquals(this.sparseDistanceThreshold, other.sparseDistanceThreshold) && TraceletApiPigeonUtils.deepEquals(this.sparseMaxIdleSeconds, other.sparseMaxIdleSeconds) && TraceletApiPigeonUtils.deepEquals(this.enableDeadReckoning, other.enableDeadReckoning) && TraceletApiPigeonUtils.deepEquals(this.deadReckoningActivationDelay, other.deadReckoningActivationDelay) && TraceletApiPigeonUtils.deepEquals(this.deadReckoningMaxDuration, other.deadReckoningMaxDuration) && TraceletApiPigeonUtils.deepEquals(this.batteryBudgetPerHour, other.batteryBudgetPerHour) && TraceletApiPigeonUtils.deepEquals(this.filter, other.filter) && TraceletApiPigeonUtils.deepEquals(this.resolveAddress, other.resolveAddress)
   }
 
   override fun hashCode(): Int {
@@ -603,6 +606,7 @@ data class TlGeoConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.deadReckoningMaxDuration)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.batteryBudgetPerHour)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.filter)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.resolveAddress)
     return result
   }
 }
@@ -1572,6 +1576,56 @@ data class TlBattery (
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
+data class TlAddress (
+  val street: String? = null,
+  val city: String? = null,
+  val state: String? = null,
+  val postalCode: String? = null,
+  val country: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlAddress {
+      val street = pigeonVar_list[0] as String?
+      val city = pigeonVar_list[1] as String?
+      val state = pigeonVar_list[2] as String?
+      val postalCode = pigeonVar_list[3] as String?
+      val country = pigeonVar_list[4] as String?
+      return TlAddress(street, city, state, postalCode, country)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlAddress
+    return TraceletApiPigeonUtils.deepEquals(this.street, other.street) && TraceletApiPigeonUtils.deepEquals(this.city, other.city) && TraceletApiPigeonUtils.deepEquals(this.state, other.state) && TraceletApiPigeonUtils.deepEquals(this.postalCode, other.postalCode) && TraceletApiPigeonUtils.deepEquals(this.country, other.country)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.street)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.city)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.state)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.postalCode)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.country)
+    return result
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlLocation (
   val coords: TlCoords,
   val battery: TlBattery,
@@ -1581,7 +1635,8 @@ data class TlLocation (
   val odometer: Double,
   val event: String? = null,
   val activity: TlActivity? = null,
-  val extras: Map<String?, Any?>? = null
+  val extras: Map<String?, Any?>? = null,
+  val address: TlAddress? = null
 )
  {
   companion object {
@@ -1595,7 +1650,8 @@ data class TlLocation (
       val event = pigeonVar_list[6] as String?
       val activity = pigeonVar_list[7] as TlActivity?
       val extras = pigeonVar_list[8] as Map<String?, Any?>?
-      return TlLocation(coords, battery, timestamp, uuid, isMoving, odometer, event, activity, extras)
+      val address = pigeonVar_list[9] as TlAddress?
+      return TlLocation(coords, battery, timestamp, uuid, isMoving, odometer, event, activity, extras, address)
     }
   }
   fun toList(): List<Any?> {
@@ -1609,6 +1665,7 @@ data class TlLocation (
       event,
       activity,
       extras,
+      address,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -1619,7 +1676,7 @@ data class TlLocation (
       return true
     }
     val other = other as TlLocation
-    return TraceletApiPigeonUtils.deepEquals(this.coords, other.coords) && TraceletApiPigeonUtils.deepEquals(this.battery, other.battery) && TraceletApiPigeonUtils.deepEquals(this.timestamp, other.timestamp) && TraceletApiPigeonUtils.deepEquals(this.uuid, other.uuid) && TraceletApiPigeonUtils.deepEquals(this.isMoving, other.isMoving) && TraceletApiPigeonUtils.deepEquals(this.odometer, other.odometer) && TraceletApiPigeonUtils.deepEquals(this.event, other.event) && TraceletApiPigeonUtils.deepEquals(this.activity, other.activity) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras)
+    return TraceletApiPigeonUtils.deepEquals(this.coords, other.coords) && TraceletApiPigeonUtils.deepEquals(this.battery, other.battery) && TraceletApiPigeonUtils.deepEquals(this.timestamp, other.timestamp) && TraceletApiPigeonUtils.deepEquals(this.uuid, other.uuid) && TraceletApiPigeonUtils.deepEquals(this.isMoving, other.isMoving) && TraceletApiPigeonUtils.deepEquals(this.odometer, other.odometer) && TraceletApiPigeonUtils.deepEquals(this.event, other.event) && TraceletApiPigeonUtils.deepEquals(this.activity, other.activity) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras) && TraceletApiPigeonUtils.deepEquals(this.address, other.address)
   }
 
   override fun hashCode(): Int {
@@ -1633,6 +1690,7 @@ data class TlLocation (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.event)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.activity)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.extras)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.address)
     return result
   }
 }
@@ -2414,70 +2472,75 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
       }
       166.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlLocation.fromList(it)
+          TlAddress.fromList(it)
         }
       }
       167.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivity.fromList(it)
+          TlLocation.fromList(it)
         }
       }
       168.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlState.fromList(it)
+          TlActivity.fromList(it)
         }
       }
       169.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofence.fromList(it)
+          TlState.fromList(it)
         }
       }
       170.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceEvent.fromList(it)
+          TlGeofence.fromList(it)
         }
       }
       171.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpEvent.fromList(it)
+          TlGeofenceEvent.fromList(it)
         }
       }
       172.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlProviderChangeEvent.fromList(it)
+          TlHttpEvent.fromList(it)
         }
       }
       173.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCurrentPositionOptions.fromList(it)
+          TlProviderChangeEvent.fromList(it)
         }
       }
       174.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivityChangeEvent.fromList(it)
+          TlCurrentPositionOptions.fromList(it)
         }
       }
       175.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofencesChangeEvent.fromList(it)
+          TlActivityChangeEvent.fromList(it)
         }
       }
       176.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHeartbeatEvent.fromList(it)
+          TlGeofencesChangeEvent.fromList(it)
         }
       }
       177.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlSpeedMotionEvent.fromList(it)
+          TlHeartbeatEvent.fromList(it)
         }
       }
       178.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuthorizationEvent.fromList(it)
+          TlSpeedMotionEvent.fromList(it)
         }
       }
       179.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlAuthorizationEvent.fromList(it)
+        }
+      }
+      180.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           TlConnectivityChangeEvent.fromList(it)
         }
@@ -2635,60 +2698,64 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(165)
         writeValue(stream, value.toList())
       }
-      is TlLocation -> {
+      is TlAddress -> {
         stream.write(166)
         writeValue(stream, value.toList())
       }
-      is TlActivity -> {
+      is TlLocation -> {
         stream.write(167)
         writeValue(stream, value.toList())
       }
-      is TlState -> {
+      is TlActivity -> {
         stream.write(168)
         writeValue(stream, value.toList())
       }
-      is TlGeofence -> {
+      is TlState -> {
         stream.write(169)
         writeValue(stream, value.toList())
       }
-      is TlGeofenceEvent -> {
+      is TlGeofence -> {
         stream.write(170)
         writeValue(stream, value.toList())
       }
-      is TlHttpEvent -> {
+      is TlGeofenceEvent -> {
         stream.write(171)
         writeValue(stream, value.toList())
       }
-      is TlProviderChangeEvent -> {
+      is TlHttpEvent -> {
         stream.write(172)
         writeValue(stream, value.toList())
       }
-      is TlCurrentPositionOptions -> {
+      is TlProviderChangeEvent -> {
         stream.write(173)
         writeValue(stream, value.toList())
       }
-      is TlActivityChangeEvent -> {
+      is TlCurrentPositionOptions -> {
         stream.write(174)
         writeValue(stream, value.toList())
       }
-      is TlGeofencesChangeEvent -> {
+      is TlActivityChangeEvent -> {
         stream.write(175)
         writeValue(stream, value.toList())
       }
-      is TlHeartbeatEvent -> {
+      is TlGeofencesChangeEvent -> {
         stream.write(176)
         writeValue(stream, value.toList())
       }
-      is TlSpeedMotionEvent -> {
+      is TlHeartbeatEvent -> {
         stream.write(177)
         writeValue(stream, value.toList())
       }
-      is TlAuthorizationEvent -> {
+      is TlSpeedMotionEvent -> {
         stream.write(178)
         writeValue(stream, value.toList())
       }
-      is TlConnectivityChangeEvent -> {
+      is TlAuthorizationEvent -> {
         stream.write(179)
+        writeValue(stream, value.toList())
+      }
+      is TlConnectivityChangeEvent -> {
+        stream.write(180)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

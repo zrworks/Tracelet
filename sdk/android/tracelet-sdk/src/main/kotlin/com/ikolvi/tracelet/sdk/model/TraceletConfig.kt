@@ -148,6 +148,7 @@ data class GeoConfig(
     val deadReckoningActivationDelay: Int = 10,
     val deadReckoningMaxDuration: Int = 120,
     val batteryBudgetPerHour: Double = 0.0,
+    val resolveAddress: Boolean = false,
     val filter: LocationFilter? = null,
 ) {
     companion object {
@@ -171,6 +172,7 @@ data class GeoConfig(
             deadReckoningActivationDelay = (m["deadReckoningActivationDelay"] as? Number)?.toInt() ?: 10,
             deadReckoningMaxDuration = (m["deadReckoningMaxDuration"] as? Number)?.toInt() ?: 120,
             batteryBudgetPerHour = (m["batteryBudgetPerHour"] as? Number)?.toDouble() ?: 0.0,
+            resolveAddress = m["resolveAddress"] as? Boolean ?: false,
             filter = (m["filter"] as? Map<String, Any?>)?.let { LocationFilter.fromMap(it) }
         )
     }
@@ -183,7 +185,7 @@ data class GeoConfig(
         put("enableSparseUpdates", enableSparseUpdates); put("sparseDistanceThreshold", sparseDistanceThreshold)
         put("sparseMaxIdleSeconds", sparseMaxIdleSeconds); put("enableDeadReckoning", enableDeadReckoning)
         put("deadReckoningActivationDelay", deadReckoningActivationDelay); put("deadReckoningMaxDuration", deadReckoningMaxDuration)
-        put("batteryBudgetPerHour", batteryBudgetPerHour); filter?.let { put("filter", it.toMap()) }
+        put("batteryBudgetPerHour", batteryBudgetPerHour); put("resolveAddress", resolveAddress); filter?.let { put("filter", it.toMap()) }
     }
 }
 

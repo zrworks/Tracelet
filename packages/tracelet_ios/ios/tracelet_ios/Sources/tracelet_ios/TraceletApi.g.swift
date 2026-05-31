@@ -391,6 +391,7 @@ struct TlGeoConfig: Hashable {
   var deadReckoningMaxDuration: Int64
   var batteryBudgetPerHour: Double
   var filter: TlLocationFilter
+  var resolveAddress: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -415,6 +416,7 @@ struct TlGeoConfig: Hashable {
     let deadReckoningMaxDuration = pigeonVar_list[17] as! Int64
     let batteryBudgetPerHour = pigeonVar_list[18] as! Double
     let filter = pigeonVar_list[19] as! TlLocationFilter
+    let resolveAddress = pigeonVar_list[20] as! Bool
 
     return TlGeoConfig(
       desiredAccuracy: desiredAccuracy,
@@ -436,7 +438,8 @@ struct TlGeoConfig: Hashable {
       deadReckoningActivationDelay: deadReckoningActivationDelay,
       deadReckoningMaxDuration: deadReckoningMaxDuration,
       batteryBudgetPerHour: batteryBudgetPerHour,
-      filter: filter
+      filter: filter,
+      resolveAddress: resolveAddress
     )
   }
   func toList() -> [Any?] {
@@ -461,13 +464,14 @@ struct TlGeoConfig: Hashable {
       deadReckoningMaxDuration,
       batteryBudgetPerHour,
       filter,
+      resolveAddress,
     ]
   }
   static func == (lhs: TlGeoConfig, rhs: TlGeoConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.desiredAccuracy, rhs.desiredAccuracy) && deepEqualsTraceletApi(lhs.distanceFilter, rhs.distanceFilter) && deepEqualsTraceletApi(lhs.stationaryRadius, rhs.stationaryRadius) && deepEqualsTraceletApi(lhs.locationTimeout, rhs.locationTimeout) && deepEqualsTraceletApi(lhs.disableElasticity, rhs.disableElasticity) && deepEqualsTraceletApi(lhs.elasticityMultiplier, rhs.elasticityMultiplier) && deepEqualsTraceletApi(lhs.stopAfterElapsedMinutes, rhs.stopAfterElapsedMinutes) && deepEqualsTraceletApi(lhs.maxMonitoredGeofences, rhs.maxMonitoredGeofences) && deepEqualsTraceletApi(lhs.enableTimestampMeta, rhs.enableTimestampMeta) && deepEqualsTraceletApi(lhs.enableAdaptiveMode, rhs.enableAdaptiveMode) && deepEqualsTraceletApi(lhs.periodicLocationInterval, rhs.periodicLocationInterval) && deepEqualsTraceletApi(lhs.periodicDesiredAccuracy, rhs.periodicDesiredAccuracy) && deepEqualsTraceletApi(lhs.enableSparseUpdates, rhs.enableSparseUpdates) && deepEqualsTraceletApi(lhs.sparseDistanceThreshold, rhs.sparseDistanceThreshold) && deepEqualsTraceletApi(lhs.sparseMaxIdleSeconds, rhs.sparseMaxIdleSeconds) && deepEqualsTraceletApi(lhs.enableDeadReckoning, rhs.enableDeadReckoning) && deepEqualsTraceletApi(lhs.deadReckoningActivationDelay, rhs.deadReckoningActivationDelay) && deepEqualsTraceletApi(lhs.deadReckoningMaxDuration, rhs.deadReckoningMaxDuration) && deepEqualsTraceletApi(lhs.batteryBudgetPerHour, rhs.batteryBudgetPerHour) && deepEqualsTraceletApi(lhs.filter, rhs.filter)
+    return deepEqualsTraceletApi(lhs.desiredAccuracy, rhs.desiredAccuracy) && deepEqualsTraceletApi(lhs.distanceFilter, rhs.distanceFilter) && deepEqualsTraceletApi(lhs.stationaryRadius, rhs.stationaryRadius) && deepEqualsTraceletApi(lhs.locationTimeout, rhs.locationTimeout) && deepEqualsTraceletApi(lhs.disableElasticity, rhs.disableElasticity) && deepEqualsTraceletApi(lhs.elasticityMultiplier, rhs.elasticityMultiplier) && deepEqualsTraceletApi(lhs.stopAfterElapsedMinutes, rhs.stopAfterElapsedMinutes) && deepEqualsTraceletApi(lhs.maxMonitoredGeofences, rhs.maxMonitoredGeofences) && deepEqualsTraceletApi(lhs.enableTimestampMeta, rhs.enableTimestampMeta) && deepEqualsTraceletApi(lhs.enableAdaptiveMode, rhs.enableAdaptiveMode) && deepEqualsTraceletApi(lhs.periodicLocationInterval, rhs.periodicLocationInterval) && deepEqualsTraceletApi(lhs.periodicDesiredAccuracy, rhs.periodicDesiredAccuracy) && deepEqualsTraceletApi(lhs.enableSparseUpdates, rhs.enableSparseUpdates) && deepEqualsTraceletApi(lhs.sparseDistanceThreshold, rhs.sparseDistanceThreshold) && deepEqualsTraceletApi(lhs.sparseMaxIdleSeconds, rhs.sparseMaxIdleSeconds) && deepEqualsTraceletApi(lhs.enableDeadReckoning, rhs.enableDeadReckoning) && deepEqualsTraceletApi(lhs.deadReckoningActivationDelay, rhs.deadReckoningActivationDelay) && deepEqualsTraceletApi(lhs.deadReckoningMaxDuration, rhs.deadReckoningMaxDuration) && deepEqualsTraceletApi(lhs.batteryBudgetPerHour, rhs.batteryBudgetPerHour) && deepEqualsTraceletApi(lhs.filter, rhs.filter) && deepEqualsTraceletApi(lhs.resolveAddress, rhs.resolveAddress)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -492,6 +496,7 @@ struct TlGeoConfig: Hashable {
     deepHashTraceletApi(value: deadReckoningMaxDuration, hasher: &hasher)
     deepHashTraceletApi(value: batteryBudgetPerHour, hasher: &hasher)
     deepHashTraceletApi(value: filter, hasher: &hasher)
+    deepHashTraceletApi(value: resolveAddress, hasher: &hasher)
   }
 }
 
@@ -1517,6 +1522,57 @@ struct TlBattery: Hashable {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
+struct TlAddress: Hashable {
+  var street: String? = nil
+  var city: String? = nil
+  var state: String? = nil
+  var postalCode: String? = nil
+  var country: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlAddress? {
+    let street: String? = nilOrValue(pigeonVar_list[0])
+    let city: String? = nilOrValue(pigeonVar_list[1])
+    let state: String? = nilOrValue(pigeonVar_list[2])
+    let postalCode: String? = nilOrValue(pigeonVar_list[3])
+    let country: String? = nilOrValue(pigeonVar_list[4])
+
+    return TlAddress(
+      street: street,
+      city: city,
+      state: state,
+      postalCode: postalCode,
+      country: country
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+    ]
+  }
+  static func == (lhs: TlAddress, rhs: TlAddress) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.street, rhs.street) && deepEqualsTraceletApi(lhs.city, rhs.city) && deepEqualsTraceletApi(lhs.state, rhs.state) && deepEqualsTraceletApi(lhs.postalCode, rhs.postalCode) && deepEqualsTraceletApi(lhs.country, rhs.country)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlAddress")
+    deepHashTraceletApi(value: street, hasher: &hasher)
+    deepHashTraceletApi(value: city, hasher: &hasher)
+    deepHashTraceletApi(value: state, hasher: &hasher)
+    deepHashTraceletApi(value: postalCode, hasher: &hasher)
+    deepHashTraceletApi(value: country, hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
 struct TlLocation: Hashable {
   var coords: TlCoords
   var battery: TlBattery
@@ -1527,6 +1583,7 @@ struct TlLocation: Hashable {
   var event: String? = nil
   var activity: TlActivity? = nil
   var extras: [String?: Any?]? = nil
+  var address: TlAddress? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1540,6 +1597,7 @@ struct TlLocation: Hashable {
     let event: String? = nilOrValue(pigeonVar_list[6])
     let activity: TlActivity? = nilOrValue(pigeonVar_list[7])
     let extras: [String?: Any?]? = nilOrValue(pigeonVar_list[8])
+    let address: TlAddress? = nilOrValue(pigeonVar_list[9])
 
     return TlLocation(
       coords: coords,
@@ -1550,7 +1608,8 @@ struct TlLocation: Hashable {
       odometer: odometer,
       event: event,
       activity: activity,
-      extras: extras
+      extras: extras,
+      address: address
     )
   }
   func toList() -> [Any?] {
@@ -1564,13 +1623,14 @@ struct TlLocation: Hashable {
       event,
       activity,
       extras,
+      address,
     ]
   }
   static func == (lhs: TlLocation, rhs: TlLocation) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.coords, rhs.coords) && deepEqualsTraceletApi(lhs.battery, rhs.battery) && deepEqualsTraceletApi(lhs.timestamp, rhs.timestamp) && deepEqualsTraceletApi(lhs.uuid, rhs.uuid) && deepEqualsTraceletApi(lhs.isMoving, rhs.isMoving) && deepEqualsTraceletApi(lhs.odometer, rhs.odometer) && deepEqualsTraceletApi(lhs.event, rhs.event) && deepEqualsTraceletApi(lhs.activity, rhs.activity) && deepEqualsTraceletApi(lhs.extras, rhs.extras)
+    return deepEqualsTraceletApi(lhs.coords, rhs.coords) && deepEqualsTraceletApi(lhs.battery, rhs.battery) && deepEqualsTraceletApi(lhs.timestamp, rhs.timestamp) && deepEqualsTraceletApi(lhs.uuid, rhs.uuid) && deepEqualsTraceletApi(lhs.isMoving, rhs.isMoving) && deepEqualsTraceletApi(lhs.odometer, rhs.odometer) && deepEqualsTraceletApi(lhs.event, rhs.event) && deepEqualsTraceletApi(lhs.activity, rhs.activity) && deepEqualsTraceletApi(lhs.extras, rhs.extras) && deepEqualsTraceletApi(lhs.address, rhs.address)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1584,6 +1644,7 @@ struct TlLocation: Hashable {
     deepHashTraceletApi(value: event, hasher: &hasher)
     deepHashTraceletApi(value: activity, hasher: &hasher)
     deepHashTraceletApi(value: extras, hasher: &hasher)
+    deepHashTraceletApi(value: address, hasher: &hasher)
   }
 }
 
@@ -2323,32 +2384,34 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
     case 165:
       return TlBattery.fromList(self.readValue() as! [Any?])
     case 166:
-      return TlLocation.fromList(self.readValue() as! [Any?])
+      return TlAddress.fromList(self.readValue() as! [Any?])
     case 167:
-      return TlActivity.fromList(self.readValue() as! [Any?])
+      return TlLocation.fromList(self.readValue() as! [Any?])
     case 168:
-      return TlState.fromList(self.readValue() as! [Any?])
+      return TlActivity.fromList(self.readValue() as! [Any?])
     case 169:
-      return TlGeofence.fromList(self.readValue() as! [Any?])
+      return TlState.fromList(self.readValue() as! [Any?])
     case 170:
-      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofence.fromList(self.readValue() as! [Any?])
     case 171:
-      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
     case 172:
-      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlHttpEvent.fromList(self.readValue() as! [Any?])
     case 173:
-      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
     case 174:
-      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
     case 175:
-      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
     case 176:
-      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
     case 177:
-      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
+      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
     case 178:
-      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
     case 179:
+      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+    case 180:
       return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -2469,47 +2532,50 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlBattery {
       super.writeByte(165)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLocation {
+    } else if let value = value as? TlAddress {
       super.writeByte(166)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivity {
+    } else if let value = value as? TlLocation {
       super.writeByte(167)
       super.writeValue(value.toList())
-    } else if let value = value as? TlState {
+    } else if let value = value as? TlActivity {
       super.writeByte(168)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofence {
+    } else if let value = value as? TlState {
       super.writeByte(169)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceEvent {
+    } else if let value = value as? TlGeofence {
       super.writeByte(170)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpEvent {
+    } else if let value = value as? TlGeofenceEvent {
       super.writeByte(171)
       super.writeValue(value.toList())
-    } else if let value = value as? TlProviderChangeEvent {
+    } else if let value = value as? TlHttpEvent {
       super.writeByte(172)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCurrentPositionOptions {
+    } else if let value = value as? TlProviderChangeEvent {
       super.writeByte(173)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivityChangeEvent {
+    } else if let value = value as? TlCurrentPositionOptions {
       super.writeByte(174)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofencesChangeEvent {
+    } else if let value = value as? TlActivityChangeEvent {
       super.writeByte(175)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHeartbeatEvent {
+    } else if let value = value as? TlGeofencesChangeEvent {
       super.writeByte(176)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSpeedMotionEvent {
+    } else if let value = value as? TlHeartbeatEvent {
       super.writeByte(177)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuthorizationEvent {
+    } else if let value = value as? TlSpeedMotionEvent {
       super.writeByte(178)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConnectivityChangeEvent {
+    } else if let value = value as? TlAuthorizationEvent {
       super.writeByte(179)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlConnectivityChangeEvent {
+      super.writeByte(180)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

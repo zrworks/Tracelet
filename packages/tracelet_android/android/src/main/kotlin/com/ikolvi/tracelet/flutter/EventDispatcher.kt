@@ -281,6 +281,7 @@ class EventDispatcher : TraceletEventSender {
         val coordsMap = data["coords"] as? Map<String, Any?> ?: emptyMap()
         val batteryMap = data["battery"] as? Map<String, Any?> ?: emptyMap()
         val activityMap = data["activity"] as? Map<String, Any?>
+        val addressMap = data["address"] as? Map<String, Any?>
 
         val incomingExtras = (data["extras"] as? Map<String?, Any?>) ?: emptyMap()
         val synthesizedExtras = incomingExtras.toMutableMap()
@@ -320,6 +321,15 @@ class EventDispatcher : TraceletEventSender {
                 )
             },
             extras = synthesizedExtras,
+            address = addressMap?.let {
+                com.ikolvi.tracelet.TlAddress(
+                    street = it["street"] as? String,
+                    city = it["city"] as? String,
+                    state = it["state"] as? String,
+                    postalCode = it["postalCode"] as? String ?: it["postal_code"] as? String,
+                    country = it["country"] as? String,
+                )
+            },
         )
     }
 

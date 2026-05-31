@@ -817,58 +817,92 @@ class LocationEngine(
 
         val enriched = enrichLocation(location, event, result.effectiveSpeed, smoothedLat, smoothedLng)
 
-        // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
-        // Evaluates whether the location falls inside a registered privacy zone
-        // and applies the configured action (exclude / degrade / event-only).
-        val privacyResult = privacyZoneManager?.processLocation(enriched)
-        if (privacyResult != null) {
-            when (privacyResult.action) {
-                PrivacyZoneManager.ProcessedLocation.Action.DROP -> {
-                    // Exclusion zone — drop this location entirely.
-                    return
-                }
-                PrivacyZoneManager.ProcessedLocation.Action.EVENT_ONLY -> {
-                    // Dispatch to Dart but do NOT persist or audit.
-                    val locationData = privacyResult.location ?: enriched
-                    events.sendLocation(locationData)
-                    onLocationUpdate?.invoke(location.latitude, location.longitude)
-                    return
-                }
-                PrivacyZoneManager.ProcessedLocation.Action.DEGRADED -> {
-                    // Use the degraded location for audit + persist + dispatch.
-                    val degraded = privacyResult.location ?: enriched
-                    val auditFields = auditTrailManager?.appendToChain(degraded)
-                    val withAudit = if (auditFields != null) {
-                        degraded.toMutableMap().apply { putAll(auditFields) }
-                    } else {
-                        degraded
+        fun dispatch(finalEnriched: Map<String, Any?>) {
+            // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
+            // Evaluates whether the location falls inside a registered privacy zone
+            // and applies the configured action (exclude / degrade / event-only).
+            val privacyResult = privacyZoneManager?.processLocation(finalEnriched)
+            if (privacyResult != null) {
+                when (privacyResult.action) {
+                    PrivacyZoneManager.ProcessedLocation.Action.DROP -> {
+                        // Exclusion zone — drop this location entirely.
+                        return
                     }
-                    persistLocationIfAllowed(withAudit, event)
-                    events.sendLocation(withAudit)
-                    onLocationUpdate?.invoke(location.latitude, location.longitude)
-                    return
+                    PrivacyZoneManager.ProcessedLocation.Action.EVENT_ONLY -> {
+                        // Dispatch to Dart but do NOT persist or audit.
+                        val locationData = privacyResult.location ?: finalEnriched
+                        events.sendLocation(locationData)
+                        onLocationUpdate?.invoke(location.latitude, location.longitude)
+                        return
+                    }
+                    PrivacyZoneManager.ProcessedLocation.Action.DEGRADED -> {
+                        // Use the degraded location for audit + persist + dispatch.
+                        val degraded = privacyResult.location ?: finalEnriched
+                        val auditFields = auditTrailManager?.appendToChain(degraded)
+                        val withAudit = if (auditFields != null) {
+                            degraded.toMutableMap().apply { putAll(auditFields) }
+                        } else {
+                            degraded
+                        }
+                        persistLocationIfAllowed(withAudit, event)
+                        events.sendLocation(withAudit)
+                        onLocationUpdate?.invoke(location.latitude, location.longitude)
+                        return
+                    }
+                    else -> { /* PASS_THROUGH — fall through to normal flow */ }
                 }
-                else -> { /* PASS_THROUGH — fall through to normal flow */ }
             }
+
+            // Compute audit trail hash (Enterprise) — must happen BEFORE persist
+            // so the chain is sequential with DB inserts.
+            val auditFields = auditTrailManager?.appendToChain(finalEnriched)
+            val enrichedWithAudit = if (auditFields != null) {
+                finalEnriched.toMutableMap().apply { putAll(auditFields) }
+            } else {
+                finalEnriched
+            }
+
+            // Persist to database (respecting persistMode)
+            persistLocationIfAllowed(enrichedWithAudit, event)
+
+            // Dispatch to Dart
+            events.sendLocation(enrichedWithAudit)
+
+            // Notify geofenceModeHighAccuracy listener (if active)
+            onLocationUpdate?.invoke(location.latitude, location.longitude)
         }
 
-        // Compute audit trail hash (Enterprise) — must happen BEFORE persist
-        // so the chain is sequential with DB inserts.
-        val auditFields = auditTrailManager?.appendToChain(enriched)
-        val enrichedWithAudit = if (auditFields != null) {
-            enriched.toMutableMap().apply { putAll(auditFields) }
+        if (config.getResolveAddress() && android.location.Geocoder.isPresent()) {
+            java.util.concurrent.Executors.newSingleThreadExecutor().execute {
+                try {
+                    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val addr = addresses[0]
+                        val addressMap = mutableMapOf<String, Any?>()
+                        addr.thoroughfare?.let { addressMap["street"] = it }
+                        addr.locality?.let { addressMap["city"] = it }
+                        addr.adminArea?.let { addressMap["state"] = it }
+                        addr.postalCode?.let { addressMap["postalCode"] = it }
+                        addr.countryName?.let { addressMap["country"] = it }
+                        if (addressMap.isEmpty() && addr.featureName != null) {
+                            addressMap["street"] = addr.featureName
+                        }
+                        
+                        val mutableEnriched = enriched.toMutableMap()
+                        if (addressMap.isNotEmpty()) mutableEnriched["address"] = addressMap
+                        
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(mutableEnriched) }
+                    } else {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
+                    }
+                } catch (e: java.lang.Exception) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
+                }
+            }
         } else {
-            enriched
+            dispatch(enriched)
         }
-
-        // Persist to database (respecting persistMode)
-        persistLocationIfAllowed(enrichedWithAudit, event)
-
-        // Dispatch to Dart
-        events.sendLocation(enrichedWithAudit)
-
-        // Notify geofenceModeHighAccuracy listener (if active)
-        onLocationUpdate?.invoke(location.latitude, location.longitude)
     }
 
     /**

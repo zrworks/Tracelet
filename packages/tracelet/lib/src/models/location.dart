@@ -35,6 +35,7 @@ class Location {
     this.auditHash,
     this.auditPreviousHash,
     this.auditChainIndex,
+    this.address,
   });
 
   /// Creates a [Location] from a Pigeon [TlLocation] without map round-trip.
@@ -98,6 +99,7 @@ class Location {
         isCharging: tl.battery.isCharging,
       ),
       extras: synthesizedExtras,
+      address: tl.address != null ? Address.fromTl(tl.address!) : null,
     );
   }
 
@@ -106,6 +108,7 @@ class Location {
     final coordsMap = safeMap(map['coords']) ?? const <String, Object?>{};
     final activityMap = safeMap(map['activity']);
     final batteryMap = safeMap(map['battery']);
+    final addressMap = safeMap(map['address']);
     final extrasRaw = map['extras'];
 
     return Location(
@@ -135,6 +138,7 @@ class Location {
       battery: batteryMap != null
           ? LocationBattery.fromMap(batteryMap)
           : const LocationBattery(),
+      address: addressMap != null ? Address.fromMap(addressMap) : null,
       // Use Map.from() to avoid per-entry MapEntry allocation (D-L4).
       extras: extrasRaw is Map
           ? Map<String, Object?>.from(extrasRaw)
@@ -243,6 +247,11 @@ class Location {
   /// `null` when audit trail is disabled.
   final int? auditChainIndex;
 
+  /// The reverse geocoded human-readable address.
+  ///
+  /// Only populated when `Config.geo.resolveAddress` is `true`.
+  final Address? address;
+
   /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -262,6 +271,7 @@ class Location {
       if (auditHash != null) 'audit_hash': auditHash,
       if (auditPreviousHash != null) 'audit_previous_hash': auditPreviousHash,
       if (auditChainIndex != null) 'audit_chain_index': auditChainIndex,
+      if (address != null) 'address': address?.toMap(),
     };
   }
 
@@ -308,6 +318,7 @@ class Location {
       auditHash: auditHash,
       auditPreviousHash: auditPreviousHash,
       auditChainIndex: auditChainIndex,
+      address: address,
     );
   }
 
@@ -316,10 +327,102 @@ class Location {
       identical(this, other) ||
       other is Location &&
           runtimeType == other.runtimeType &&
-          uuid == other.uuid;
+          uuid == other.uuid &&
+          address == other.address;
 
   @override
-  int get hashCode => uuid.hashCode;
+  int get hashCode => Object.hash(uuid, address);
+}
+
+// ---------------------------------------------------------------------------
+// Address
+// ---------------------------------------------------------------------------
+
+/// A reverse geocoded human-readable address.
+@immutable
+class Address {
+  /// Creates a new [Address].
+  const Address({
+    this.street,
+    this.city,
+    this.state,
+    this.postalCode,
+    this.country,
+  });
+
+  /// Creates an [Address] from a Pigeon [TlAddress].
+  factory Address.fromTl(TlAddress tl) {
+    return Address(
+      street: tl.street,
+      city: tl.city,
+      state: tl.state,
+      postalCode: tl.postalCode,
+      country: tl.country,
+    );
+  }
+
+  /// Creates an [Address] from a platform map.
+  factory Address.fromMap(Map<String, Object?> map) {
+    return Address(
+      street: map['street'] as String?,
+      city: map['city'] as String?,
+      state: map['state'] as String?,
+      postalCode: map['postal_code'] as String? ?? map['postalCode'] as String?,
+      country: map['country'] as String?,
+    );
+  }
+
+  /// The street name and number.
+  final String? street;
+
+  /// The city or locality.
+  final String? city;
+
+  /// The state, province, or administrative area.
+  final String? state;
+
+  /// The postal code or ZIP code.
+  final String? postalCode;
+
+  /// The country name.
+  final String? country;
+
+  /// Serializes to a map.
+  Map<String, Object?> toMap() {
+    return <String, Object?>{
+      if (street != null) 'street': street,
+      if (city != null) 'city': city,
+      if (state != null) 'state': state,
+      if (postalCode != null) 'postal_code': postalCode,
+      if (country != null) 'country': country,
+    };
+  }
+
+  @override
+  String toString() {
+    final parts = [
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+    ].where((e) => e != null);
+    return 'Address(${parts.join(', ')})';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Address &&
+          runtimeType == other.runtimeType &&
+          street == other.street &&
+          city == other.city &&
+          state == other.state &&
+          postalCode == other.postalCode &&
+          country == other.country;
+
+  @override
+  int get hashCode => Object.hash(street, city, state, postalCode, country);
 }
 
 MockHeuristics? _parseMockHeuristics(Object? raw) {

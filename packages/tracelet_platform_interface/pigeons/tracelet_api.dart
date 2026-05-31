@@ -110,6 +110,7 @@ class TlGeoConfig {
     required this.deadReckoningMaxDuration,
     required this.batteryBudgetPerHour,
     required this.filter,
+    required this.resolveAddress,
   });
 
   final TlDesiredAccuracy desiredAccuracy;
@@ -132,6 +133,7 @@ class TlGeoConfig {
   final int deadReckoningMaxDuration;
   final double batteryBudgetPerHour;
   final TlLocationFilter filter;
+  final bool resolveAddress;
 }
 
 class TlAppConfig {
@@ -443,6 +445,21 @@ class TlBattery {
   final bool isCharging;
 }
 
+class TlAddress {
+  TlAddress({
+    this.street,
+    this.city,
+    this.state,
+    this.postalCode,
+    this.country,
+  });
+  final String? street;
+  final String? city;
+  final String? state;
+  final String? postalCode;
+  final String? country;
+}
+
 class TlLocation {
   TlLocation({
     required this.coords,
@@ -454,6 +471,7 @@ class TlLocation {
     this.event,
     this.activity,
     this.extras,
+    this.address,
   });
 
   final TlCoords coords;
@@ -465,6 +483,7 @@ class TlLocation {
   final String? event;
   final TlActivity? activity;
   final Map<String?, Object?>? extras;
+  final TlAddress? address;
 }
 
 class TlActivity {

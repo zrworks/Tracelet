@@ -1,3 +1,7 @@
+## 3.2.0
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
 ## 3.1.14
 
 - **FIX**(android): bump Android SDK and tracelet_android build.gradle versions to 3.1.14

@@ -3,6 +3,55 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-05-31
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.2.0`](#tracelet---v320)
+ - [`tracelet_platform_interface` - `v3.2.0`](#tracelet_platform_interface---v320)
+ - [`tracelet_android` - `v3.2.0`](#tracelet_android---v320)
+ - [`tracelet_ios` - `v3.2.0`](#tracelet_ios---v320)
+ - [`tracelet_web` - `v3.2.0`](#tracelet_web---v320)
+ - [`tracelet_doctor` - `v3.2.0`](#tracelet_doctor---v320)
+ - [`tracelet_firebase` - `v3.2.0`](#tracelet_firebase---v320)
+ - [`tracelet_supabase` - `v3.2.0`](#tracelet_supabase---v320)
+
+---
+
+#### `tracelet` - `v3.2.0`
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_platform_interface` - `v3.2.0`
+
+ - **FIX**(web): safe BigInt to int casting for rust bridge 64-bit integers. ([2e592b34](https://github.com/Ikolvi/Tracelet/commit/2e592b344ecc242d03e3c4f840d1f1380d6fecd0))
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_android` - `v3.2.0`
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_ios` - `v3.2.0`
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_web` - `v3.2.0`
+
+#### `tracelet_doctor` - `v3.2.0`
+
+#### `tracelet_firebase` - `v3.2.0`
+
+#### `tracelet_supabase` - `v3.2.0`
+
+
 ## 3.1.10
 
  - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in iOS release builds by setting DEAD_CODE_STRIPPING=NO in CocoaPods xcconfig.

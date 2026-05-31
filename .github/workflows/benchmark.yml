@@ -128,20 +128,20 @@ jobs:
           bm.write_text(content)
           print(f'Updated BENCHMARK.md with entry for {date} ({commit})')
 
-          # Prune: keep exactly the latest 10 entries (releases)
+          # Prune: keep exactly the latest 50 entries (releases)
           content = bm.read_text()
           # Split on entry headers
           parts = re.split(r'(?=^### \d{4}-\d{2}-\d{2})', content, flags=re.MULTILINE)
           header = parts[0]
           history_entries = parts[1:]
           
-          # Keep exactly the latest 10 entries
-          kept_entries = history_entries[:10]
+          # Keep exactly the latest 50 entries
+          kept_entries = history_entries[:50]
           pruned = len(history_entries) - len(kept_entries)
           
           new_content = header + ''.join(kept_entries)
           bm.write_text(new_content)
-          print(f'Pruned {pruned} older benchmark entries, keeping the latest 10 releases')
+          print(f'Pruned {pruned} older benchmark entries, keeping the latest 50 releases')
           "
 
       - name: Commit benchmark results

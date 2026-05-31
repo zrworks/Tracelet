@@ -45,7 +45,7 @@ pub struct AuditAppendResult {
     pub chain_index: i32,
 }
 
-struct EngineState {
+struct AuditEngineState {
     chain_index: i32,
     latest_hash: String,
     device_id: String,
@@ -54,7 +54,7 @@ struct EngineState {
 /// Core engine responsible for maintaining a cryptographic chain of custody for location records.
 #[derive(uniffi::Object)]
 pub struct AuditTrailEngine {
-    state: Mutex<EngineState>,
+    state: Mutex<AuditEngineState>,
 }
 
 #[uniffi::export]
@@ -110,7 +110,7 @@ impl AuditTrailEngine {
         });
         
         Self {
-            state: Mutex::new(EngineState {
+            state: Mutex::new(AuditEngineState {
                 chain_index: initial_chain_index,
                 latest_hash,
                 device_id,

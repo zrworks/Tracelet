@@ -19,7 +19,7 @@ pub struct PrivacyEvaluationResult {
 }
 
 #[derive(uniffi::Object)]
-pub struct PrivacyZoneEvaluator;
+pub struct PrivacyZoneEvaluator {}
 
 #[uniffi::export]
 impl PrivacyZoneEvaluator {

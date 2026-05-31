@@ -93,7 +93,7 @@ xcodebuild -create-xcframework \
 
 # --- SYMBOL VERIFICATION ---
 echo "Verifying symbols for TraceletCore..."
-if nm -gU "$OUT_DIR/TraceletCore.xcframework/ios-arm64/libtracelet_core.a" | grep -i 'reqwest'; then
+if nm -gU "$OUT_DIR/TraceletCore.xcframework/ios-arm64/libtracelet_core.a" 2>/dev/null | grep -i 'reqwest'; then
     echo "❌ ERROR: Heavy dependencies leaked into TraceletCore!"
     exit 1
 fi

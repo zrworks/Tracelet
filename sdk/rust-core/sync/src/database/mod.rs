@@ -1,7 +1,7 @@
 use rusqlite::{params, Connection};
 use std::sync::{Mutex, RwLock};
 use chrono::Utc;
-use crate::error::TraceletError;
+use tracelet_core::error::TraceletError;
 use aes_gcm::{
     aead::{Aead, KeyInit, generic_array::GenericArray},
     Aes256Gcm, Nonce
@@ -9,9 +9,9 @@ use aes_gcm::{
 use rand::{RngCore, rngs::OsRng};
 
 // Import spatial and geo structures to expose them directly through DatabaseManager
-use crate::spatial::geofence_evaluator::CoreGeofence;
-use crate::spatial::privacy_zone::CorePrivacyZone;
-use crate::algorithms::geo_utils::Coordinate;
+use tracelet_core::spatial::geofence_evaluator::CoreGeofence;
+use tracelet_core::spatial::privacy_zone::CorePrivacyZone;
+use tracelet_core::algorithms::geo_utils::Coordinate;
 
 #[derive(uniffi::Object)]
 /// Central database manager handling standard SQLite and secure AES-256 encrypted storage.

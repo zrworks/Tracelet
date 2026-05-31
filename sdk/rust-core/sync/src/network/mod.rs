@@ -1,10 +1,10 @@
-use crate::config::HttpConfig;
+use tracelet_core::config::HttpConfig;
 use crate::database::DbLocationRecord;
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use serde_json::json;
 use std::str::FromStr;
 use std::time::Duration;
-use crate::error::TraceletError;
+use tracelet_core::error::TraceletError;
 
 #[derive(uniffi::Object)]
 pub struct SyncManager {
@@ -41,17 +41,17 @@ impl SyncManager {
         let url = match &config.url {
             Some(u) if !u.is_empty() => u,
             _ => {
-                crate::logger::warn("[Rust Core] ⚠️ Sync skipped: HTTP sync URL is not configured in EngineConfig.");
+                tracelet_core::logger::warn("[Rust Core] ⚠️ Sync skipped: HTTP sync URL is not configured in EngineConfig.");
                 return Err(TraceletError::Config("HTTP sync URL not configured".into()));
             }
         };
 
         if records.is_empty() {
-            crate::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty.");
+            tracelet_core::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty.");
             return Ok(0);
         }
 
-        crate::logger::info(&format!("[Rust Core] 🌐 HTTP Sync batch size: {} record(s). Target URL: {}", records.len(), url));
+        tracelet_core::logger::info(&format!("[Rust Core] 🌐 HTTP Sync batch size: {} record(s). Target URL: {}", records.len(), url));
 
         // Prepare Headers
         let mut header_map = HeaderMap::new();
@@ -154,7 +154,7 @@ impl SyncManager {
         
         let mut attempt = 0;
         loop {
-            crate::logger::info(&format!("[Rust Core] 🌐 Sending HTTP {} request... (Attempt {}/{})", method, attempt + 1, max_retries + 1));
+            tracelet_core::logger::info(&format!("[Rust Core] 🌐 Sending HTTP {} request... (Attempt {}/{})", method, attempt + 1, max_retries + 1));
             // Execute Request
             let request = active_client.request(method.clone(), url)
                 .headers(header_map.clone())
@@ -164,25 +164,25 @@ impl SyncManager {
                 Ok(response) => {
                     let status = response.status();
                     if status.is_success() {
-                        crate::logger::info(&format!("[Rust Core] ✅ HTTP Sync succeeded! Status: {}, successfully synced {} location(s).", status, records.len()));
+                        tracelet_core::logger::info(&format!("[Rust Core] ✅ HTTP Sync succeeded! Status: {}, successfully synced {} location(s).", status, records.len()));
                         return Ok(records.len() as i32);
                     } else if status.is_client_error() {
                         // Do not retry 4xx errors
-                        crate::logger::error(&format!("[Rust Core] ❌ HTTP Sync failed with client error (4xx): {}. Aborting sync retries.", status));
+                        tracelet_core::logger::error(&format!("[Rust Core] ❌ HTTP Sync failed with client error (4xx): {}. Aborting sync retries.", status));
                         return Err(TraceletError::Network(format!("HTTP Error: {}", status)));
                     } else {
                         // 5xx errors can be retried
-                        crate::logger::error(&format!("[Rust Core] ⚠️ HTTP Sync received server error (5xx): {}.", status));
+                        tracelet_core::logger::error(&format!("[Rust Core] ⚠️ HTTP Sync received server error (5xx): {}.", status));
                         if attempt >= max_retries {
-                            crate::logger::error("[Rust Core] ❌ Max retries reached. Permanent sync failure.");
+                            tracelet_core::logger::error("[Rust Core] ❌ Max retries reached. Permanent sync failure.");
                             return Err(TraceletError::Network(format!("HTTP Error: {}", status)));
                         }
                     }
                 },
                 Err(e) => {
-                    crate::logger::error(&format!("[Rust Core] ⚠️ HTTP Sync connection error occurred: {}", e));
+                    tracelet_core::logger::error(&format!("[Rust Core] ⚠️ HTTP Sync connection error occurred: {}", e));
                     if attempt >= max_retries {
-                        crate::logger::error("[Rust Core] ❌ Max retries reached. Permanent sync failure.");
+                        tracelet_core::logger::error("[Rust Core] ❌ Max retries reached. Permanent sync failure.");
                         return Err(TraceletError::Network(e.to_string()));
                     }
                 }
@@ -191,7 +191,7 @@ impl SyncManager {
             // Calculate exponential backoff
             let multiplier = 2_u64.pow(attempt);
             let delay_ms = std::cmp::min(backoff_base * multiplier, backoff_cap);
-            crate::logger::info(&format!("[Rust Core] 🔄 Retrying HTTP Sync in {}ms...", delay_ms));
+            tracelet_core::logger::info(&format!("[Rust Core] 🔄 Retrying HTTP Sync in {}ms...", delay_ms));
             tokio::time::sleep(Duration::from_millis(delay_ms)).await;
             attempt += 1;
         }

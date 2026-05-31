@@ -2,6 +2,10 @@ import CoreLocation
 import Foundation
 import UIKit
 
+public protocol LocationDataSink {
+    func insertLocation(_ location: [String: Any])
+}
+
 /// CLLocationManager wrapper providing continuous location tracking,
 /// one-shot position, watch position, significant location changes,
 /// and odometer computation.
@@ -13,7 +17,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private let configManager: ConfigManager
     private let stateManager: StateManager
     private let eventDispatcher: TraceletEventSending
-    private let database: TraceletDatabase
+    private var sinks: [LocationDataSink] = []
 
     private var lastLocation: CLLocation?
     /// Last GPS-quality location (horizontalAccuracy ≤ 100m).
@@ -117,15 +121,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     public init(configManager: ConfigManager,
          stateManager: StateManager,
-         eventDispatcher: TraceletEventSending,
-         database: TraceletDatabase) {
+         eventDispatcher: TraceletEventSending) {
         self.configManager = configManager
         self.stateManager = stateManager
         self.eventDispatcher = eventDispatcher
-        self.database = database
         self.locationManager = CLLocationManager()
         super.init()
         locationManager.delegate = self
+    }
+
+    public func registerSink(_ sink: LocationDataSink) {
+        sinks.append(sink)
     }
 
     // MARK: - Start / Stop
@@ -524,8 +530,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 var locationMap = buildLocationMap(cached)
                 if !extras.isEmpty { locationMap["extras"] = extras }
                 if persist {
-                    let _ = database.insertLocation(locationMap)
-                    onLocationPersisted?()
+                    self.sinks.forEach { $0.insertLocation(locationMap) }
+                    self.onLocationPersisted?()
                 }
                 callback(locationMap)
                 return
@@ -561,8 +567,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if !extras.isEmpty { locationMap["extras"] = extras }
         locationMap["event"] = "getLastKnownLocation"
         if persist {
-            let _ = database.insertLocation(locationMap)
-            onLocationPersisted?()
+            self.sinks.forEach { $0.insertLocation(locationMap) }
+            self.onLocationPersisted?()
         }
         callback(locationMap)
     }
@@ -1088,7 +1094,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         
         enrichWithAddressIfNeeded(locationMap: locationMap, location: best) { [weak self] enrichedMap in
             if persist {
-                let _ = self?.database.insertLocation(enrichedMap)
+                self?.sinks.forEach { $0.insertLocation(enrichedMap) }
                 self?.onLocationPersisted?()
             }
             callback(enrichedMap)

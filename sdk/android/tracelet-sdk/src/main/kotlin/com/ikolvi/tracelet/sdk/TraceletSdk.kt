@@ -224,16 +224,13 @@ class TraceletSdk private constructor(private val context: Context) {
         privacyZoneManager = PrivacyZoneManager(context, configManager, rustDatabase)
         deviceAttestor = DeviceAttestor(context)
 
-        // Location engine — persistence flows through Rust EventDispatcher
+        // Location engine
         locationEngine = LocationEngine(
             context, configManager, stateManager, eventSender
         )
-        locationEngine.rustEventDispatcher = rustEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager
-        // Wire: every persisted location goes through Rust Core for DB + auto-sync
         locationEngine.onLocationPersisted = {
-            // EventDispatcher handles insert_location + auto HTTP sync internally
         }
 
         // Trip manager

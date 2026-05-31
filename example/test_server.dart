@@ -29,9 +29,9 @@ Future<void> main(List<String> args) async {
   stdout.writeln('║  Use this URL in your Tracelet HttpConfig.          ║');
   stdout.writeln('║  Press Ctrl+C to stop.                              ║');
   stdout.writeln('╚══════════════════════════════════════════════════════╝');
-  stdout.writeln('');
+  stdout.writeln();
   stdout.writeln('Waiting for location sync requests...');
-  stdout.writeln('');
+  stdout.writeln();
 
   var requestCount = 0;
 
@@ -59,7 +59,7 @@ Future<void> main(List<String> args) async {
           }
         } else {
           // Print raw body if format is unexpected
-          final encoder = const JsonEncoder.withIndent('  ');
+          const encoder = JsonEncoder.withIndent('  ');
           stdout.writeln('  ${encoder.convert(json)}');
         }
       } on FormatException {
@@ -81,7 +81,7 @@ Future<void> main(List<String> args) async {
     await request.response.close();
 
     stdout.writeln('  → 200 OK');
-    stdout.writeln('');
+    stdout.writeln();
   }
 }
 
@@ -126,7 +126,7 @@ void _printLocation(Map<dynamic, dynamic> loc, int reqNum, {int? index}) {
     stdout.write('}');
   }
   
-  stdout.writeln('');
+  stdout.writeln();
   if (ts != '') stdout.writeln('$prefix  ts=$ts');
 }
 
@@ -134,7 +134,6 @@ Future<String> _getLocalIp() async {
   try {
     final interfaces = await NetworkInterface.list(
       type: InternetAddressType.IPv4,
-      includeLoopback: false,
     );
     for (final iface in interfaces) {
       if (iface.name == 'en0' || iface.name == 'wlan0') {

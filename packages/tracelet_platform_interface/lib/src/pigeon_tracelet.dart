@@ -1,7 +1,7 @@
-import 'generated/tracelet_api.g.dart';
-import 'pigeon_event_receiver.dart';
-import 'tracelet_platform.dart';
-import 'types/enums.dart';
+import 'package:tracelet_platform_interface/src/generated/tracelet_api.g.dart';
+import 'package:tracelet_platform_interface/src/pigeon_event_receiver.dart';
+import 'package:tracelet_platform_interface/src/tracelet_platform.dart';
+import 'package:tracelet_platform_interface/src/types/enums.dart';
 
 /// A [TraceletPlatform] implementation backed by Pigeon-generated code.
 ///
@@ -88,14 +88,14 @@ class PigeonTracelet extends TraceletPlatform {
 
   TlGeofence _mapToGeofence(Map<String, Object?> m) {
     final extrasRaw = m['extras'];
-    final Map<String?, Object?>? extras = extrasRaw is Map
+    final extras = extrasRaw is Map
         ? extrasRaw.map<String?, Object?>(
             (Object? k, Object? v) => MapEntry(k?.toString(), v),
           )
         : null;
 
     final verticesRaw = m['vertices'];
-    final List<List<double?>?>? vertices = verticesRaw is List
+    final vertices = verticesRaw is List
         ? verticesRaw.map<List<double?>?>((Object? row) {
             if (row is! List) return null;
             return row

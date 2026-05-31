@@ -1,17 +1,16 @@
-import '../rust/api_dart/trip.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:tracelet_platform_interface/src/rust/api_dart/trip.dart';
 
 /// Rust-powered TripManager.
 class TripManager {
-  TripManagerDart? _inner;
-  void Function(Map<String, Object?>)? onTripEnd;
-
   TripManager() {
     if (!kIsWeb) {
       _inner = TripManagerDart();
     }
   }
+  TripManagerDart? _inner;
+  void Function(Map<String, Object?>)? onTripEnd;
 
   bool get isTripActive => _inner?.isTripActive() ?? false;
 
@@ -22,7 +21,7 @@ class TripManager {
     Object? timestamp,
   }) {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    int timestampMs = nowMs;
+    var timestampMs = nowMs;
     if (timestamp is int) {
       timestampMs = timestamp;
     } else if (timestamp is String) {
@@ -80,7 +79,7 @@ class TripManager {
     Object? timestamp,
   }) {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    int timestampMs = nowMs;
+    var timestampMs = nowMs;
     if (timestamp is int) {
       timestampMs = timestamp;
     } else if (timestamp is String) {

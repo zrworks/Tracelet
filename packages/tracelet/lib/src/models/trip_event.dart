@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
-import 'location.dart';
+import 'package:tracelet/src/models/_helpers.dart';
+import 'package:tracelet/src/models/location.dart';
 
 /// Represents a detected trip (start → stop).
 ///
@@ -28,6 +28,25 @@ class TripEvent {
     this.waypoints = const <Location>[],
   });
 
+  /// Creates a [TripEvent] from a platform map.
+  factory TripEvent.fromMap(Map<String, Object?> map) {
+    final startMap = safeMap(map['startLocation']) ?? const <String, Object?>{};
+    final stopMap = safeMap(map['stopLocation']) ?? const <String, Object?>{};
+    final waypointsList = map['waypoints'] as List<Object?>? ?? const [];
+
+    return TripEvent(
+      isMoving: ensureBool(map['isMoving'], fallback: false),
+      distance: ensureDouble(map['distance'], fallback: 0),
+      duration: ensureDouble(map['duration'], fallback: 0),
+      startLocation: Location.fromMap(startMap.cast<String, Object?>()),
+      stopLocation: Location.fromMap(stopMap.cast<String, Object?>()),
+      waypoints: waypointsList
+          .whereType<Map<Object?, Object?>>()
+          .map((wp) => Location.fromMap(wp.cast<String, Object?>()))
+          .toList(),
+    );
+  }
+
   /// Whether the device is currently moving (`true` = trip started,
   /// `false` = trip ended).
   final bool isMoving;
@@ -51,25 +70,6 @@ class TripEvent {
 
   /// The average speed (m/s) during the trip.
   double get averageSpeed => duration > 0 ? distance / duration : 0.0;
-
-  /// Creates a [TripEvent] from a platform map.
-  factory TripEvent.fromMap(Map<String, Object?> map) {
-    final startMap = safeMap(map['startLocation']) ?? const <String, Object?>{};
-    final stopMap = safeMap(map['stopLocation']) ?? const <String, Object?>{};
-    final waypointsList = map['waypoints'] as List<Object?>? ?? const [];
-
-    return TripEvent(
-      isMoving: ensureBool(map['isMoving'], fallback: false),
-      distance: ensureDouble(map['distance'], fallback: 0.0),
-      duration: ensureDouble(map['duration'], fallback: 0.0),
-      startLocation: Location.fromMap(startMap.cast<String, Object?>()),
-      stopLocation: Location.fromMap(stopMap.cast<String, Object?>()),
-      waypoints: waypointsList
-          .whereType<Map<Object?, Object?>>()
-          .map((wp) => Location.fromMap((wp).cast<String, Object?>()))
-          .toList(),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

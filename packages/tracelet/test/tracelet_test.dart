@@ -13,7 +13,7 @@ void main() {
 
   test('Config round-trip serialization', () {
     const config = Config(
-      geo: GeoConfig(distanceFilter: 50.0),
+      geo: GeoConfig(distanceFilter: 50),
       app: AppConfig(heartbeatInterval: 120),
     );
     final map = config.toMap();
@@ -43,9 +43,7 @@ void main() {
     });
 
     test('ready with useKalmanFilter: false disables filter', () async {
-      const config = Config(
-        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: false)),
-      );
+      const config = Config();
 
       await Tracelet.ready(config);
 
@@ -57,9 +55,7 @@ void main() {
         geo: GeoConfig(filter: LocationFilter(useKalmanFilter: true)),
       );
 
-      const configWithoutFilter = Config(
-        geo: GeoConfig(filter: LocationFilter(useKalmanFilter: false)),
-      );
+      const configWithoutFilter = Config();
 
       await Tracelet.ready(configWithoutFilter);
       expect(Tracelet.isKalmanFilterEnabled, isFalse);

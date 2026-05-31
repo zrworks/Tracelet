@@ -1,8 +1,9 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
+import 'package:tracelet/src/models/config.dart';
+import 'package:tracelet/src/tracelet.dart' show Tracelet;
+import 'package:tracelet/tracelet.dart' show Tracelet;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
-import 'config.dart';
 
 /// The current state of the Tracelet plugin.
 ///
@@ -21,6 +22,32 @@ class State {
     this.didDeviceReboot = false,
     this.config,
   });
+
+  /// Creates a [State] from a platform map.
+  factory State.fromMap(Map<String, Object?> map) {
+    final configMap = safeMap(map['config']);
+
+    return State(
+      enabled: ensureBool(map['enabled'], fallback: false),
+      trackingMode:
+          TrackingMode.values[ensureInt(
+            map['trackingMode'],
+            fallback: 0,
+          ).clamp(0, TrackingMode.values.length - 1)],
+      isMoving: ensureBool(
+        map['isMoving'] ?? map['is_moving'],
+        fallback: false,
+      ),
+      schedulerEnabled: ensureBool(map['schedulerEnabled'], fallback: false),
+      odometer: ensureDouble(map['odometer'], fallback: 0),
+      didLaunchInBackground: ensureBool(
+        map['didLaunchInBackground'],
+        fallback: false,
+      ),
+      didDeviceReboot: ensureBool(map['didDeviceReboot'], fallback: false),
+      config: configMap != null ? Config.fromMap(configMap) : null,
+    );
+  }
 
   /// Whether tracking is currently active.
   final bool enabled;
@@ -51,32 +78,6 @@ class State {
 
   /// Snapshot of the current configuration, if available.
   final Config? config;
-
-  /// Creates a [State] from a platform map.
-  factory State.fromMap(Map<String, Object?> map) {
-    final configMap = safeMap(map['config']);
-
-    return State(
-      enabled: ensureBool(map['enabled'], fallback: false),
-      trackingMode:
-          TrackingMode.values[ensureInt(
-            map['trackingMode'],
-            fallback: 0,
-          ).clamp(0, TrackingMode.values.length - 1)],
-      isMoving: ensureBool(
-        map['isMoving'] ?? map['is_moving'],
-        fallback: false,
-      ),
-      schedulerEnabled: ensureBool(map['schedulerEnabled'], fallback: false),
-      odometer: ensureDouble(map['odometer'], fallback: 0.0),
-      didLaunchInBackground: ensureBool(
-        map['didLaunchInBackground'],
-        fallback: false,
-      ),
-      didDeviceReboot: ensureBool(map['didDeviceReboot'], fallback: false),
-      config: configMap != null ? Config.fromMap(configMap) : null,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

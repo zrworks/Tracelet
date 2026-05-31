@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 /// Information about the device's available sensors.
 ///
@@ -16,6 +16,17 @@ class Sensors {
     this.significantMotion = false,
   });
 
+  /// Creates [Sensors] from a platform map.
+  factory Sensors.fromMap(Map<String, Object?> map) {
+    return Sensors(
+      platform: map['platform'] as String? ?? 'unknown',
+      accelerometer: ensureBool(map['accelerometer'], fallback: false),
+      gyroscope: ensureBool(map['gyroscope'], fallback: false),
+      magnetometer: ensureBool(map['magnetometer'], fallback: false),
+      significantMotion: ensureBool(map['significantMotion'], fallback: false),
+    );
+  }
+
   /// The platform identifier (`'android'` or `'ios'`).
   final String platform;
 
@@ -30,17 +41,6 @@ class Sensors {
 
   /// Whether the significant motion sensor is available (Android only).
   final bool significantMotion;
-
-  /// Creates [Sensors] from a platform map.
-  factory Sensors.fromMap(Map<String, Object?> map) {
-    return Sensors(
-      platform: map['platform'] as String? ?? 'unknown',
-      accelerometer: ensureBool(map['accelerometer'], fallback: false),
-      gyroscope: ensureBool(map['gyroscope'], fallback: false),
-      magnetometer: ensureBool(map['magnetometer'], fallback: false),
-      significantMotion: ensureBool(map['significantMotion'], fallback: false),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

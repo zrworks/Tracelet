@@ -1,7 +1,8 @@
 import 'dart:io';
-import '../rust/frb_generated.dart';
+
 // Note: This relies on flutter_rust_bridge_for_generated.dart being exposed by flutter_rust_bridge
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 Future<void> initializeRustLib() async {
   ExternalLibrary? lib;
@@ -12,7 +13,7 @@ Future<void> initializeRustLib() async {
     lib = ExternalLibrary.process(iKnowHowToUseIt: true);
   } else if (Platform.isMacOS) {
     // For local tests running on macOS host, resolve relative to the current script
-    String rootDir = Directory.current.path;
+    var rootDir = Directory.current.path;
     if (rootDir.endsWith('/benchmark')) {
       rootDir = Directory.current.parent.path;
     } else if (rootDir.contains('/packages/')) {

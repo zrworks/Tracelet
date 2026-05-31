@@ -19,10 +19,11 @@ workspace:
 
 dev_dependencies:
   melos: ^7.0.0
+  very_good_analysis: ^6.0.0
 
 melos:
   repository: https://github.com/Ikolvi/Tracelet
-
+  
   ide:
     intellij: false
 
@@ -120,3 +121,9 @@ melos:
     benchmark:
       description: Run performance benchmarks
       run: cd benchmark && flutter pub get && flutter test test/tracelet_benchmark_test.dart --reporter expanded
+
+    pana:
+      description: Run pana (pub.dev scoring) on all publishable packages
+      run: dart pub global run pana --no-warning --exit-code-threshold 0
+      packageFilters:
+        noPrivate: true

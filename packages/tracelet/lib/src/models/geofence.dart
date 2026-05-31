@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 /// A geofence definition.
 ///
@@ -35,6 +35,38 @@ class Geofence {
     this.extras = const <String, Object?>{},
     this.vertices = const <List<double>>[],
   });
+
+  /// Creates a [Geofence] from a platform map.
+  factory Geofence.fromMap(Map<String, Object?> map) {
+    final extrasRaw = map['extras'];
+    final verticesRaw = map['vertices'];
+
+    final verticesList = <List<double>>[];
+    if (verticesRaw is List) {
+      for (final Object? v in verticesRaw) {
+        if (v is List) {
+          verticesList.add(v.map((e) => ensureDouble(e, fallback: 0)).toList());
+        }
+      }
+    }
+
+    return Geofence(
+      identifier: map['identifier'] as String? ?? '',
+      latitude: ensureDouble(map['latitude'], fallback: 0),
+      longitude: ensureDouble(map['longitude'], fallback: 0),
+      radius: ensureDouble(map['radius'], fallback: 0),
+      notifyOnEntry: ensureBool(map['notifyOnEntry'], fallback: true),
+      notifyOnExit: ensureBool(map['notifyOnExit'], fallback: true),
+      notifyOnDwell: ensureBool(map['notifyOnDwell'], fallback: false),
+      loiteringDelay: ensureInt(map['loiteringDelay'], fallback: 0),
+      extras: extrasRaw is Map
+          ? extrasRaw.map<String, Object?>(
+              (Object? k, Object? v) => MapEntry(k.toString(), v),
+            )
+          : const <String, Object?>{},
+      vertices: verticesList,
+    );
+  }
 
   /// Unique identifier for this geofence.
   final String identifier;
@@ -85,40 +117,6 @@ class Geofence {
   /// );
   /// ```
   final List<List<double>> vertices;
-
-  /// Creates a [Geofence] from a platform map.
-  factory Geofence.fromMap(Map<String, Object?> map) {
-    final extrasRaw = map['extras'];
-    final verticesRaw = map['vertices'];
-
-    final verticesList = <List<double>>[];
-    if (verticesRaw is List) {
-      for (final Object? v in verticesRaw) {
-        if (v is List) {
-          verticesList.add(
-            v.map((e) => ensureDouble(e, fallback: 0.0)).toList(),
-          );
-        }
-      }
-    }
-
-    return Geofence(
-      identifier: map['identifier'] as String? ?? '',
-      latitude: ensureDouble(map['latitude'], fallback: 0.0),
-      longitude: ensureDouble(map['longitude'], fallback: 0.0),
-      radius: ensureDouble(map['radius'], fallback: 0.0),
-      notifyOnEntry: ensureBool(map['notifyOnEntry'], fallback: true),
-      notifyOnExit: ensureBool(map['notifyOnExit'], fallback: true),
-      notifyOnDwell: ensureBool(map['notifyOnDwell'], fallback: false),
-      loiteringDelay: ensureInt(map['loiteringDelay'], fallback: 0),
-      extras: extrasRaw is Map
-          ? extrasRaw.map<String, Object?>(
-              (Object? k, Object? v) => MapEntry(k.toString(), v),
-            )
-          : const <String, Object?>{},
-      vertices: verticesList,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

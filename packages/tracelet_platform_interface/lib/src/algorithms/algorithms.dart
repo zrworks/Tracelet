@@ -4,9 +4,9 @@
 /// and Swift (iOS) code. They are now shared across all platforms.
 library;
 
+export '../rust/state/battery_budget.dart';
 export 'adaptive_sampling_engine.dart';
 export 'battery_budget_engine.dart';
-export '../rust/state/battery_budget.dart';
 export 'carbon_estimator.dart';
 export 'delta_encoder.dart';
 export 'geo_utils.dart';

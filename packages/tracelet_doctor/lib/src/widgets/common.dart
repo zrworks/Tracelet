@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../doctor_theme.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
 
 /// A reusable status chip showing a colored dot and label.
 class StatusChip extends StatelessWidget {

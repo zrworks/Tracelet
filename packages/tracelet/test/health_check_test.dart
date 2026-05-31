@@ -646,7 +646,7 @@ void main() {
       });
 
       test('fromMap handles missing fields gracefully', () {
-        final health = HealthCheck.fromMap(<String, Object?>{});
+        final health = HealthCheck.fromMap(const <String, Object?>{});
         expect(health.trackingEnabled, false);
         expect(health.trackingMode, TrackingMode.location);
         expect(health.locationPermission, AuthorizationStatus.notDetermined);
@@ -657,7 +657,7 @@ void main() {
 
       test('fromMap handles invalid warning indices', () {
         final health = HealthCheck.fromMap(<String, Object?>{
-          'warnings': [0, 999, -1, 2],
+          'warnings': const [0, 999, -1, 2],
           'timestamp': DateTime.now().toUtc().toIso8601String(),
         });
         // Only valid indices 0 and 2 should be included.
@@ -670,7 +670,7 @@ void main() {
         final health = buildHealthy();
         final map = health.toMap();
         expect(map['timestamp'], isA<String>());
-        expect(DateTime.tryParse(map['timestamp'] as String), isNotNull);
+        expect(DateTime.tryParse(map['timestamp']! as String), isNotNull);
       });
 
       test('toMap serializes warnings as indices', () {
@@ -689,7 +689,7 @@ void main() {
           dbCount: 0,
         );
         final map = health.toMap();
-        final rawWarnings = map['warnings'] as List<dynamic>;
+        final rawWarnings = map['warnings']! as List<dynamic>;
         expect(
           rawWarnings,
           contains(HealthWarning.locationServicesDisabled.index),
@@ -706,36 +706,30 @@ void main() {
         final a = HealthCheck(
           trackingEnabled: true,
           trackingMode: TrackingMode.location,
-          isMoving: false,
-          odometer: 100.0,
+          odometer: 100,
           locationPermission: AuthorizationStatus.always,
           locationServicesEnabled: true,
-          isPowerSaveMode: false,
           isIgnoringBatteryOptimizations: true,
           manufacturer: 'Google',
-          isAggressiveOem: false,
           hasAccelerometer: true,
           hasSignificantMotion: true,
           locationCount: 42,
           platform: 'android',
-          timestamp: DateTime.utc(2025, 1, 1),
+          timestamp: DateTime.utc(2025),
         );
         final b = HealthCheck(
           trackingEnabled: true,
           trackingMode: TrackingMode.location,
-          isMoving: false,
-          odometer: 100.0,
+          odometer: 100,
           locationPermission: AuthorizationStatus.always,
           locationServicesEnabled: true,
-          isPowerSaveMode: false,
           isIgnoringBatteryOptimizations: true,
           manufacturer: 'Google',
-          isAggressiveOem: false,
           hasAccelerometer: true,
           hasSignificantMotion: true,
           locationCount: 42,
           platform: 'android',
-          timestamp: DateTime.utc(2025, 1, 1),
+          timestamp: DateTime.utc(2025),
         );
         expect(a, equals(b));
         expect(a.hashCode, equals(b.hashCode));
@@ -745,12 +739,12 @@ void main() {
         final a = HealthCheck(
           trackingEnabled: true,
           trackingMode: TrackingMode.location,
-          timestamp: DateTime.utc(2025, 1, 1),
+          timestamp: DateTime.utc(2025),
         );
         final b = HealthCheck(
           trackingEnabled: false,
           trackingMode: TrackingMode.location,
-          timestamp: DateTime.utc(2025, 1, 1),
+          timestamp: DateTime.utc(2025),
         );
         expect(a, isNot(equals(b)));
       });
@@ -806,7 +800,7 @@ void main() {
         };
         final health = HealthCheck.fromMaps(
           state: healthyState(),
-          provider: <String, Object?>{
+          provider: const <String, Object?>{
             'enabled': true,
             'status': 3,
             'gps': true,
@@ -815,7 +809,7 @@ void main() {
             'platform': 'ios',
           },
           settingsHealth: iosSettings,
-          sensors: <String, Object?>{
+          sensors: const <String, Object?>{
             'platform': 'ios',
             'accelerometer': true,
             'gyroscope': true,
@@ -823,7 +817,7 @@ void main() {
             'significantMotion': true,
             'motionActivity': true,
           },
-          deviceInfo: <String, Object?>{
+          deviceInfo: const <String, Object?>{
             'model': 'iPhone',
             'manufacturer': 'Apple',
             'version': '17.4',
@@ -875,11 +869,11 @@ void main() {
     group('edge cases', () {
       test('handles all-empty maps', () {
         final health = HealthCheck.fromMaps(
-          state: <String, Object?>{},
-          provider: <String, Object?>{},
-          settingsHealth: <String, Object?>{},
-          sensors: <String, Object?>{},
-          deviceInfo: <String, Object?>{},
+          state: const <String, Object?>{},
+          provider: const <String, Object?>{},
+          settingsHealth: const <String, Object?>{},
+          sensors: const <String, Object?>{},
+          deviceInfo: const <String, Object?>{},
           isPowerSave: false,
           ignoringBatteryOpt: true,
           locationPermissionStatus: 0,

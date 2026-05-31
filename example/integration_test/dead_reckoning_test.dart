@@ -52,8 +52,6 @@ void main() {
       tester,
     ) async {
       const config = GeoConfig(
-        desiredAccuracy: DesiredAccuracy.high,
-        distanceFilter: 10.0,
         enableDeadReckoning: true,
         deadReckoningActivationDelay: 10,
         deadReckoningMaxDuration: 120,
@@ -103,7 +101,6 @@ void main() {
 
     testWidgets('fromMap round-trip preserves disabled state', (tester) async {
       const original = GeoConfig(
-        enableDeadReckoning: false,
         deadReckoningActivationDelay: 10,
         deadReckoningMaxDuration: 120,
       );
@@ -133,8 +130,8 @@ void main() {
     testWidgets('Config round-trips dead reckoning through toMap', (
       tester,
     ) async {
-      final config = Config(
-        geo: const GeoConfig(
+      const config = Config(
+        geo: GeoConfig(
           enableDeadReckoning: true,
           deadReckoningActivationDelay: 20,
           deadReckoningMaxDuration: 90,
@@ -142,25 +139,25 @@ void main() {
       );
 
       final map = config.toMap();
-      final geoMap = map['geo'] as Map<String, Object?>;
+      final geoMap = map['geo']! as Map<String, Object?>;
       expect(geoMap['enableDeadReckoning'], isTrue);
       expect(geoMap['deadReckoningActivationDelay'], 20);
       expect(geoMap['deadReckoningMaxDuration'], 90);
     });
 
     testWidgets('Config combines DR with enterprise features', (tester) async {
-      final config = Config(
-        geo: const GeoConfig(
+      const config = Config(
+        geo: GeoConfig(
           enableDeadReckoning: true,
           deadReckoningActivationDelay: 15,
           deadReckoningMaxDuration: 240,
           enableSparseUpdates: true,
-          sparseDistanceThreshold: 100.0,
+          sparseDistanceThreshold: 100,
         ),
       );
 
       final map = config.toMap();
-      final geoMap = map['geo'] as Map<String, Object?>;
+      final geoMap = map['geo']! as Map<String, Object?>;
 
       // Dead reckoning fields
       expect(geoMap['enableDeadReckoning'], isTrue);

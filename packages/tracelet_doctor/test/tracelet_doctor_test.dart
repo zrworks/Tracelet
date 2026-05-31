@@ -21,7 +21,7 @@ void main() {
 
     test('card decoration has correct border radius', () {
       final borderRadius =
-          DoctorTheme.cardDecoration.borderRadius as BorderRadius;
+          DoctorTheme.cardDecoration.borderRadius! as BorderRadius;
       expect(borderRadius.topLeft.x, 14);
     });
 
@@ -55,19 +55,15 @@ void main() {
         trackingEnabled: true,
         trackingMode: TrackingMode.location,
         isMoving: true,
-        odometer: 12345.0,
+        odometer: 12345,
         locationPermission: AuthorizationStatus.always,
         motionPermission: 3,
-        accuracyAuthorization: AccuracyAuthorization.full,
         locationServicesEnabled: true,
         gpsEnabled: true,
         networkEnabled: true,
-        isPowerSaveMode: false,
         isIgnoringBatteryOptimizations: true,
         manufacturer: 'Google',
         model: 'Pixel 8',
-        isAggressiveOem: false,
-        aggressionRating: 0,
         hasAccelerometer: true,
         hasGyroscope: true,
         hasMagnetometer: true,
@@ -75,9 +71,7 @@ void main() {
         locationCount: 42,
         platform: 'android',
         osVersion: '14',
-        mockLocationsDetected: false,
         timestamp: DateTime.utc(2026, 5, 20),
-        warnings: const [],
       );
 
       expect(health.isHealthy, isTrue);
@@ -115,20 +109,16 @@ void main() {
       final original = HealthCheck(
         trackingEnabled: true,
         trackingMode: TrackingMode.geofences,
-        isMoving: false,
-        odometer: 999.0,
+        odometer: 999,
         locationPermission: AuthorizationStatus.whenInUse,
         motionPermission: 2,
         isPowerSaveMode: true,
-        isIgnoringBatteryOptimizations: false,
         manufacturer: 'Xiaomi',
         model: 'Redmi Note 12',
         isAggressiveOem: true,
         aggressionRating: 5,
         hasAccelerometer: true,
-        hasGyroscope: false,
         hasMagnetometer: true,
-        hasSignificantMotion: false,
         locationCount: 1000,
         platform: 'android',
         osVersion: '13',

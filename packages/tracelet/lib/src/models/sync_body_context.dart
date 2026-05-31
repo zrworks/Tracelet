@@ -21,12 +21,6 @@ class SyncBodyContext {
   /// Creates a new [SyncBodyContext].
   const SyncBodyContext({required this.locations});
 
-  /// The location maps about to be synced.
-  ///
-  /// Each map contains the same keys as [Location.toMap()]. The builder
-  /// can reshape, filter, or enrich these as needed.
-  final List<Map<String, Object?>> locations;
-
   /// Creates a [SyncBodyContext] from a map.
   factory SyncBodyContext.fromMap(Map<String, Object?> map) {
     final raw = map['locations'];
@@ -40,6 +34,12 @@ class SyncBodyContext {
     }
     return SyncBodyContext(locations: locations);
   }
+
+  /// The location maps about to be synced.
+  ///
+  /// Each map contains the same keys as [Location.toMap()]. The builder
+  /// can reshape, filter, or enrich these as needed.
+  final List<Map<String, Object?>> locations;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

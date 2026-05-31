@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 /// Event fired during HTTP sync operations.
 ///
@@ -17,6 +17,17 @@ class HttpEvent {
     this.retryCount = 0,
   });
 
+  /// Creates an [HttpEvent] from a platform map.
+  factory HttpEvent.fromMap(Map<String, Object?> map) {
+    return HttpEvent(
+      success: ensureBool(map['success'], fallback: false),
+      status: ensureInt(map['status'], fallback: 0),
+      responseText: map['responseText'] as String? ?? '',
+      isRetry: ensureBool(map['isRetry'], fallback: false),
+      retryCount: ensureInt(map['retryCount'], fallback: 0),
+    );
+  }
+
   /// Whether the HTTP request succeeded (2xx).
   final bool success;
 
@@ -31,17 +42,6 @@ class HttpEvent {
 
   /// The current retry attempt number (0 = first attempt).
   final int retryCount;
-
-  /// Creates an [HttpEvent] from a platform map.
-  factory HttpEvent.fromMap(Map<String, Object?> map) {
-    return HttpEvent(
-      success: ensureBool(map['success'], fallback: false),
-      status: ensureInt(map['status'], fallback: 0),
-      responseText: map['responseText'] as String? ?? '',
-      isRetry: ensureBool(map['isRetry'], fallback: false),
-      retryCount: ensureInt(map['retryCount'], fallback: 0),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

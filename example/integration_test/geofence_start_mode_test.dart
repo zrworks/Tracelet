@@ -33,18 +33,9 @@ void main() {
           const Config(
             geofence: GeofenceConfig(
               geofenceProximityRadius: 10000,
-              geofenceInitialTriggerEntry: true,
               geofenceModeHighAccuracy: true,
             ),
-            geo: GeoConfig(
-              desiredAccuracy: DesiredAccuracy.high,
-              distanceFilter: 0.0,
-              filter: LocationFilter(rejectMockLocations: false),
-            ),
-            ios: IosConfig(
-              locationAuthorizationRequest: LocationAuthorizationRequest.always,
-            ),
-            app: AppConfig(stopOnTerminate: true, startOnBoot: false),
+            geo: GeoConfig(distanceFilter: 0),
             logger: LoggerConfig(debug: true, logLevel: LogLevel.verbose),
           ),
         );
@@ -66,8 +57,6 @@ void main() {
           latitude: lat,
           longitude: lng,
           radius: 500, // 500m radius centered on device
-          notifyOnEntry: true,
-          notifyOnExit: true,
         );
         final added = await Tracelet.addGeofence(testGeofence);
         expect(added, isTrue, reason: 'Geofence should be added successfully');

@@ -140,10 +140,8 @@ class TlAppConfig {
     required this.startOnBoot,
     required this.heartbeatInterval,
     required this.schedule,
-    this.remoteConfigUrl,
+    required this.remoteConfigTimeout, required this.remoteConfigRefreshInterval, this.remoteConfigUrl,
     this.remoteConfigHeaders,
-    required this.remoteConfigTimeout,
-    required this.remoteConfigRefreshInterval,
   });
 
   final bool stopOnTerminate;
@@ -163,13 +161,9 @@ class TlForegroundServiceConfig {
     required this.channelName,
     required this.notificationTitle,
     required this.notificationText,
-    this.notificationColor,
+    required this.notificationPriority, required this.notificationOngoing, required this.showNotificationOnPauseOnly, required this.actions, this.notificationColor,
     this.notificationSmallIcon,
     this.notificationLargeIcon,
-    required this.notificationPriority,
-    required this.notificationOngoing,
-    required this.showNotificationOnPauseOnly,
-    required this.actions,
   });
 
   final bool enabled;
@@ -234,26 +228,13 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    this.url,
-    required this.method,
+    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
     this.headers,
     this.params,
-    required this.autoSync,
-    required this.batchSync,
-    required this.maxBatchSize,
     this.sslPinningFingerprints,
     this.sslPinningCertificates,
     this.httpRootProperty,
-    required this.autoSyncThreshold,
-    required this.httpTimeout,
-    required this.locationsOrderDirection,
     this.extras,
-    required this.disableAutoSyncOnCellular,
-    required this.maxRetries,
-    required this.retryBackoffBase,
-    required this.retryBackoffCap,
-    required this.enableDeltaCompression,
-    required this.deltaCoordinatePrecision,
   });
 
   final String? url;
@@ -342,19 +323,7 @@ class TlMotionConfig {
     required this.disableStopDetection,
     required this.stopDetectionDelay,
     required this.stopOnStationary,
-    this.activityTypes,
-    required this.stationaryRadius,
-    required this.useSignificantChangesOnly,
-    required this.shakeThreshold,
-    required this.stillThreshold,
-    required this.stillSampleCount,
-    required this.motionDetectionMode,
-    required this.speedMovingThreshold,
-    required this.speedStationaryDelay,
-    required this.stationaryTrackingMode,
-    required this.stationaryPeriodicInterval,
-    required this.stationaryPeriodicAccuracy,
-    required this.speedWakeConfirmCount,
+    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval, required this.stationaryPeriodicAccuracy, required this.speedWakeConfirmCount, this.activityTypes,
   });
   final int stopTimeout;
   final int motionTriggerDelay;

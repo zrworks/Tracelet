@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
-import '../doctor_theme.dart';
-import 'common.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
+import 'package:tracelet_doctor/src/widgets/common.dart';
 
 /// Displays pending database queue count, mock location status, and a
 /// purge button with confirmation dialog.
@@ -133,7 +133,7 @@ class DatabaseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Pending Locations', style: DoctorTheme.cardBodyStyle),
+              const Text('Pending Locations', style: DoctorTheme.cardBodyStyle),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,

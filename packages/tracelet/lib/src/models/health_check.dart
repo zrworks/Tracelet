@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
 
 /// A diagnostic warning detected by [HealthCheck].
 ///
@@ -122,6 +121,7 @@ class HealthCheck {
     // Tracking state
     required this.trackingEnabled,
     required this.trackingMode,
+    required this.timestamp,
     this.isMoving = false,
     this.odometer = 0.0,
     this.schedulerEnabled = false,
@@ -155,9 +155,243 @@ class HealthCheck {
     this.osVersion = '',
     // Diagnostics
     this.mockLocationsDetected = false,
-    required this.timestamp,
     this.warnings = const <HealthWarning>[],
   });
+
+  // ---------------------------------------------------------------------------
+  // Factory
+  // ---------------------------------------------------------------------------
+
+  /// Creates a [HealthCheck] by aggregating raw platform maps.
+  ///
+  /// This is the primary constructor used by `Tracelet.getHealth()`.
+  /// It accepts the raw results from multiple platform calls and computes
+  /// warnings automatically.
+  ///
+  /// Parameters:
+  /// - [state] — result of `getState()` (State.toMap())
+  /// - [provider] — result of `getProviderState()` (ProviderChangeEvent.toMap())
+  /// - [settingsHealth] — result of `getSettingsHealth()`
+  /// - [sensors] — result of `getSensors()` (Sensors.toMap())
+  /// - [deviceInfo] — result of `getDeviceInfo()` (DeviceInfo.toMap())
+  /// - [isPowerSave] — result of `isPowerSaveMode()`
+  /// - [ignoringBatteryOpt] — result of `isIgnoringBatteryOptimizations()`
+  /// - [locationPermissionStatus] — result of `getPermissionStatus()`
+  /// - [motionPermissionStatus] — result of `getMotionPermissionStatus()`
+  /// - [dbCount] — result of `getCount()`
+  factory HealthCheck.fromMaps({
+    required Map<String, Object?> state,
+    required Map<String, Object?> provider,
+    required Map<String, Object?> settingsHealth,
+    required Map<String, Object?> sensors,
+    required Map<String, Object?> deviceInfo,
+    required bool isPowerSave,
+    required bool ignoringBatteryOpt,
+    required int locationPermissionStatus,
+    required int motionPermissionStatus,
+    required int dbCount,
+  }) {
+    // Parse tracking state.
+    final enabled = ensureBool(state['enabled'], fallback: false);
+    final trackingModeIndex = ensureInt(
+      state['trackingMode'],
+      fallback: 0,
+    ).clamp(0, TrackingMode.values.length - 1);
+    final trackingMode = TrackingMode.values[trackingModeIndex];
+    final isMoving = ensureBool(
+      state['isMoving'] ?? state['is_moving'],
+      fallback: false,
+    );
+    final odometer = ensureDouble(state['odometer'], fallback: 0);
+    final schedulerEnabled = ensureBool(
+      state['schedulerEnabled'],
+      fallback: false,
+    );
+    final didLaunchInBackground = ensureBool(
+      state['didLaunchInBackground'],
+      fallback: false,
+    );
+    final didDeviceReboot = ensureBool(
+      state['didDeviceReboot'],
+      fallback: false,
+    );
+
+    // Parse provider state.
+    final locationServicesEnabled = ensureBool(
+      provider['enabled'],
+      fallback: false,
+    );
+    final gpsEnabled = ensureBool(provider['gps'], fallback: false);
+    final networkEnabled = ensureBool(provider['network'], fallback: false);
+    final accuracyAuthIndex = ensureInt(
+      provider['accuracyAuthorization'],
+      fallback: 0,
+    ).clamp(0, AccuracyAuthorization.values.length - 1);
+    final accuracyAuth = AccuracyAuthorization.values[accuracyAuthIndex];
+    final mockDetected = ensureBool(
+      provider['mockLocationsDetected'],
+      fallback: false,
+    );
+
+    // Parse permission status.
+    final locationPermClamp = locationPermissionStatus.clamp(
+      0,
+      AuthorizationStatus.values.length - 1,
+    );
+    final locationPerm = AuthorizationStatus.values[locationPermClamp];
+
+    // Parse OEM health.
+    final mfr = ensureString(settingsHealth['manufacturer']);
+    final mdl = ensureString(settingsHealth['model'] ?? deviceInfo['model']);
+    final aggressiveOem = ensureBool(
+      settingsHealth['isAggressiveOem'],
+      fallback: false,
+    );
+    final aggressionRating = ensureInt(
+      settingsHealth['aggressionRating'],
+      fallback: 0,
+    );
+
+    // Parse sensors.
+    final accel = ensureBool(sensors['accelerometer'], fallback: false);
+    final gyro = ensureBool(sensors['gyroscope'], fallback: false);
+    final mag = ensureBool(sensors['magnetometer'], fallback: false);
+    final sigMotion = ensureBool(sensors['significantMotion'], fallback: false);
+
+    // Parse device info.
+    final platformStr = ensureString(
+      deviceInfo['platform'] ?? provider['platform'],
+    );
+    final osVersion = ensureString(deviceInfo['version']);
+
+    // Compute warnings.
+    final warnings = _computeWarnings(
+      locationPerm: locationPerm,
+      locationServicesEnabled: locationServicesEnabled,
+      isPowerSave: isPowerSave,
+      aggressiveOem: aggressiveOem,
+      ignoringBatteryOpt: ignoringBatteryOpt,
+      accuracyAuth: accuracyAuth,
+      hasAccelerometer: accel,
+      hasSignificantMotion: sigMotion,
+      motionPermission: motionPermissionStatus,
+      mockDetected: mockDetected,
+    );
+
+    return HealthCheck(
+      trackingEnabled: enabled,
+      trackingMode: trackingMode,
+      isMoving: isMoving,
+      odometer: odometer,
+      schedulerEnabled: schedulerEnabled,
+      didLaunchInBackground: didLaunchInBackground,
+      didDeviceReboot: didDeviceReboot,
+      locationPermission: locationPerm,
+      motionPermission: motionPermissionStatus,
+      accuracyAuthorization: accuracyAuth,
+      locationServicesEnabled: locationServicesEnabled,
+      gpsEnabled: gpsEnabled,
+      networkEnabled: networkEnabled,
+      isPowerSaveMode: isPowerSave,
+      isIgnoringBatteryOptimizations: ignoringBatteryOpt,
+      manufacturer: mfr,
+      model: mdl,
+      isAggressiveOem: aggressiveOem,
+      aggressionRating: aggressionRating,
+      hasAccelerometer: accel,
+      hasGyroscope: gyro,
+      hasMagnetometer: mag,
+      hasSignificantMotion: sigMotion,
+      locationCount: dbCount,
+      platform: platformStr,
+      osVersion: osVersion,
+      mockLocationsDetected: mockDetected,
+      timestamp: DateTime.now().toUtc(),
+      warnings: warnings,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Serialization
+  // ---------------------------------------------------------------------------
+
+  /// Creates a [HealthCheck] from a serialized map.
+  factory HealthCheck.fromMap(Map<String, Object?> map) {
+    final warningsList = <HealthWarning>[];
+    final rawWarnings = map['warnings'];
+    if (rawWarnings is List) {
+      for (final w in rawWarnings) {
+        final index = ensureInt(w, fallback: -1);
+        if (index >= 0 && index < HealthWarning.values.length) {
+          warningsList.add(HealthWarning.values[index]);
+        }
+      }
+    }
+
+    final trackingModeIndex = ensureInt(
+      map['trackingMode'],
+      fallback: 0,
+    ).clamp(0, TrackingMode.values.length - 1);
+
+    final locationPermIndex = ensureInt(
+      map['locationPermission'],
+      fallback: 0,
+    ).clamp(0, AuthorizationStatus.values.length - 1);
+
+    final accuracyAuthIndex = ensureInt(
+      map['accuracyAuthorization'],
+      fallback: 0,
+    ).clamp(0, AccuracyAuthorization.values.length - 1);
+
+    return HealthCheck(
+      trackingEnabled: ensureBool(map['trackingEnabled'], fallback: false),
+      trackingMode: TrackingMode.values[trackingModeIndex],
+      isMoving: ensureBool(map['isMoving'], fallback: false),
+      odometer: ensureDouble(map['odometer'], fallback: 0),
+      schedulerEnabled: ensureBool(map['schedulerEnabled'], fallback: false),
+      didLaunchInBackground: ensureBool(
+        map['didLaunchInBackground'],
+        fallback: false,
+      ),
+      didDeviceReboot: ensureBool(map['didDeviceReboot'], fallback: false),
+      locationPermission: AuthorizationStatus.values[locationPermIndex],
+      motionPermission: ensureInt(map['motionPermission'], fallback: 0),
+      accuracyAuthorization: AccuracyAuthorization.values[accuracyAuthIndex],
+      locationServicesEnabled: ensureBool(
+        map['locationServicesEnabled'],
+        fallback: false,
+      ),
+      gpsEnabled: ensureBool(map['gpsEnabled'], fallback: false),
+      networkEnabled: ensureBool(map['networkEnabled'], fallback: false),
+      isPowerSaveMode: ensureBool(map['isPowerSaveMode'], fallback: false),
+      isIgnoringBatteryOptimizations: ensureBool(
+        map['isIgnoringBatteryOptimizations'],
+        fallback: false,
+      ),
+      manufacturer: ensureString(map['manufacturer']),
+      model: ensureString(map['model']),
+      isAggressiveOem: ensureBool(map['isAggressiveOem'], fallback: false),
+      aggressionRating: ensureInt(map['aggressionRating'], fallback: 0),
+      hasAccelerometer: ensureBool(map['hasAccelerometer'], fallback: false),
+      hasGyroscope: ensureBool(map['hasGyroscope'], fallback: false),
+      hasMagnetometer: ensureBool(map['hasMagnetometer'], fallback: false),
+      hasSignificantMotion: ensureBool(
+        map['hasSignificantMotion'],
+        fallback: false,
+      ),
+      locationCount: ensureInt(map['locationCount'], fallback: 0),
+      platform: ensureString(map['platform']),
+      osVersion: ensureString(map['osVersion']),
+      mockLocationsDetected: ensureBool(
+        map['mockLocationsDetected'],
+        fallback: false,
+      ),
+      timestamp:
+          DateTime.tryParse(ensureString(map['timestamp']))?.toUtc() ??
+          DateTime.now().toUtc(),
+      warnings: warningsList,
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Tracking State
@@ -300,159 +534,6 @@ class HealthCheck {
   /// specific condition that may degrade tracking quality.
   final List<HealthWarning> warnings;
 
-  // ---------------------------------------------------------------------------
-  // Factory
-  // ---------------------------------------------------------------------------
-
-  /// Creates a [HealthCheck] by aggregating raw platform maps.
-  ///
-  /// This is the primary constructor used by `Tracelet.getHealth()`.
-  /// It accepts the raw results from multiple platform calls and computes
-  /// warnings automatically.
-  ///
-  /// Parameters:
-  /// - [state] — result of `getState()` (State.toMap())
-  /// - [provider] — result of `getProviderState()` (ProviderChangeEvent.toMap())
-  /// - [settingsHealth] — result of `getSettingsHealth()`
-  /// - [sensors] — result of `getSensors()` (Sensors.toMap())
-  /// - [deviceInfo] — result of `getDeviceInfo()` (DeviceInfo.toMap())
-  /// - [isPowerSave] — result of `isPowerSaveMode()`
-  /// - [ignoringBatteryOpt] — result of `isIgnoringBatteryOptimizations()`
-  /// - [locationPermissionStatus] — result of `getPermissionStatus()`
-  /// - [motionPermissionStatus] — result of `getMotionPermissionStatus()`
-  /// - [dbCount] — result of `getCount()`
-  factory HealthCheck.fromMaps({
-    required Map<String, Object?> state,
-    required Map<String, Object?> provider,
-    required Map<String, Object?> settingsHealth,
-    required Map<String, Object?> sensors,
-    required Map<String, Object?> deviceInfo,
-    required bool isPowerSave,
-    required bool ignoringBatteryOpt,
-    required int locationPermissionStatus,
-    required int motionPermissionStatus,
-    required int dbCount,
-  }) {
-    // Parse tracking state.
-    final enabled = ensureBool(state['enabled'], fallback: false);
-    final trackingModeIndex = ensureInt(
-      state['trackingMode'],
-      fallback: 0,
-    ).clamp(0, TrackingMode.values.length - 1);
-    final trackingMode = TrackingMode.values[trackingModeIndex];
-    final isMoving = ensureBool(
-      state['isMoving'] ?? state['is_moving'],
-      fallback: false,
-    );
-    final odometer = ensureDouble(state['odometer'], fallback: 0.0);
-    final schedulerEnabled = ensureBool(
-      state['schedulerEnabled'],
-      fallback: false,
-    );
-    final didLaunchInBackground = ensureBool(
-      state['didLaunchInBackground'],
-      fallback: false,
-    );
-    final didDeviceReboot = ensureBool(
-      state['didDeviceReboot'],
-      fallback: false,
-    );
-
-    // Parse provider state.
-    final locationServicesEnabled = ensureBool(
-      provider['enabled'],
-      fallback: false,
-    );
-    final gpsEnabled = ensureBool(provider['gps'], fallback: false);
-    final networkEnabled = ensureBool(provider['network'], fallback: false);
-    final accuracyAuthIndex = ensureInt(
-      provider['accuracyAuthorization'],
-      fallback: 0,
-    ).clamp(0, AccuracyAuthorization.values.length - 1);
-    final accuracyAuth = AccuracyAuthorization.values[accuracyAuthIndex];
-    final mockDetected = ensureBool(
-      provider['mockLocationsDetected'],
-      fallback: false,
-    );
-
-    // Parse permission status.
-    final locationPermClamp = locationPermissionStatus.clamp(
-      0,
-      AuthorizationStatus.values.length - 1,
-    );
-    final locationPerm = AuthorizationStatus.values[locationPermClamp];
-
-    // Parse OEM health.
-    final mfr = ensureString(settingsHealth['manufacturer']);
-    final mdl = ensureString(settingsHealth['model'] ?? deviceInfo['model']);
-    final aggressiveOem = ensureBool(
-      settingsHealth['isAggressiveOem'],
-      fallback: false,
-    );
-    final aggressionRating = ensureInt(
-      settingsHealth['aggressionRating'],
-      fallback: 0,
-    );
-
-    // Parse sensors.
-    final accel = ensureBool(sensors['accelerometer'], fallback: false);
-    final gyro = ensureBool(sensors['gyroscope'], fallback: false);
-    final mag = ensureBool(sensors['magnetometer'], fallback: false);
-    final sigMotion = ensureBool(sensors['significantMotion'], fallback: false);
-
-    // Parse device info.
-    final platformStr = ensureString(
-      deviceInfo['platform'] ?? provider['platform'],
-    );
-    final osVersion = ensureString(deviceInfo['version']);
-
-    // Compute warnings.
-    final warnings = _computeWarnings(
-      locationPerm: locationPerm,
-      locationServicesEnabled: locationServicesEnabled,
-      isPowerSave: isPowerSave,
-      aggressiveOem: aggressiveOem,
-      ignoringBatteryOpt: ignoringBatteryOpt,
-      accuracyAuth: accuracyAuth,
-      hasAccelerometer: accel,
-      hasSignificantMotion: sigMotion,
-      motionPermission: motionPermissionStatus,
-      mockDetected: mockDetected,
-    );
-
-    return HealthCheck(
-      trackingEnabled: enabled,
-      trackingMode: trackingMode,
-      isMoving: isMoving,
-      odometer: odometer,
-      schedulerEnabled: schedulerEnabled,
-      didLaunchInBackground: didLaunchInBackground,
-      didDeviceReboot: didDeviceReboot,
-      locationPermission: locationPerm,
-      motionPermission: motionPermissionStatus,
-      accuracyAuthorization: accuracyAuth,
-      locationServicesEnabled: locationServicesEnabled,
-      gpsEnabled: gpsEnabled,
-      networkEnabled: networkEnabled,
-      isPowerSaveMode: isPowerSave,
-      isIgnoringBatteryOptimizations: ignoringBatteryOpt,
-      manufacturer: mfr,
-      model: mdl,
-      isAggressiveOem: aggressiveOem,
-      aggressionRating: aggressionRating,
-      hasAccelerometer: accel,
-      hasGyroscope: gyro,
-      hasMagnetometer: mag,
-      hasSignificantMotion: sigMotion,
-      locationCount: dbCount,
-      platform: platformStr,
-      osVersion: osVersion,
-      mockLocationsDetected: mockDetected,
-      timestamp: DateTime.now().toUtc(),
-      warnings: warnings,
-    );
-  }
-
   /// Computes diagnostic warnings from health check data.
   static List<HealthWarning> _computeWarnings({
     required AuthorizationStatus locationPerm,
@@ -518,88 +599,6 @@ class HealthCheck {
     }
 
     return List<HealthWarning>.unmodifiable(warnings);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Serialization
-  // ---------------------------------------------------------------------------
-
-  /// Creates a [HealthCheck] from a serialized map.
-  factory HealthCheck.fromMap(Map<String, Object?> map) {
-    final warningsList = <HealthWarning>[];
-    final rawWarnings = map['warnings'];
-    if (rawWarnings is List) {
-      for (final w in rawWarnings) {
-        final index = ensureInt(w, fallback: -1);
-        if (index >= 0 && index < HealthWarning.values.length) {
-          warningsList.add(HealthWarning.values[index]);
-        }
-      }
-    }
-
-    final trackingModeIndex = ensureInt(
-      map['trackingMode'],
-      fallback: 0,
-    ).clamp(0, TrackingMode.values.length - 1);
-
-    final locationPermIndex = ensureInt(
-      map['locationPermission'],
-      fallback: 0,
-    ).clamp(0, AuthorizationStatus.values.length - 1);
-
-    final accuracyAuthIndex = ensureInt(
-      map['accuracyAuthorization'],
-      fallback: 0,
-    ).clamp(0, AccuracyAuthorization.values.length - 1);
-
-    return HealthCheck(
-      trackingEnabled: ensureBool(map['trackingEnabled'], fallback: false),
-      trackingMode: TrackingMode.values[trackingModeIndex],
-      isMoving: ensureBool(map['isMoving'], fallback: false),
-      odometer: ensureDouble(map['odometer'], fallback: 0.0),
-      schedulerEnabled: ensureBool(map['schedulerEnabled'], fallback: false),
-      didLaunchInBackground: ensureBool(
-        map['didLaunchInBackground'],
-        fallback: false,
-      ),
-      didDeviceReboot: ensureBool(map['didDeviceReboot'], fallback: false),
-      locationPermission: AuthorizationStatus.values[locationPermIndex],
-      motionPermission: ensureInt(map['motionPermission'], fallback: 0),
-      accuracyAuthorization: AccuracyAuthorization.values[accuracyAuthIndex],
-      locationServicesEnabled: ensureBool(
-        map['locationServicesEnabled'],
-        fallback: false,
-      ),
-      gpsEnabled: ensureBool(map['gpsEnabled'], fallback: false),
-      networkEnabled: ensureBool(map['networkEnabled'], fallback: false),
-      isPowerSaveMode: ensureBool(map['isPowerSaveMode'], fallback: false),
-      isIgnoringBatteryOptimizations: ensureBool(
-        map['isIgnoringBatteryOptimizations'],
-        fallback: false,
-      ),
-      manufacturer: ensureString(map['manufacturer']),
-      model: ensureString(map['model']),
-      isAggressiveOem: ensureBool(map['isAggressiveOem'], fallback: false),
-      aggressionRating: ensureInt(map['aggressionRating'], fallback: 0),
-      hasAccelerometer: ensureBool(map['hasAccelerometer'], fallback: false),
-      hasGyroscope: ensureBool(map['hasGyroscope'], fallback: false),
-      hasMagnetometer: ensureBool(map['hasMagnetometer'], fallback: false),
-      hasSignificantMotion: ensureBool(
-        map['hasSignificantMotion'],
-        fallback: false,
-      ),
-      locationCount: ensureInt(map['locationCount'], fallback: 0),
-      platform: ensureString(map['platform']),
-      osVersion: ensureString(map['osVersion']),
-      mockLocationsDetected: ensureBool(
-        map['mockLocationsDetected'],
-        fallback: false,
-      ),
-      timestamp:
-          DateTime.tryParse(ensureString(map['timestamp']))?.toUtc() ??
-          DateTime.now().toUtc(),
-      warnings: warningsList,
-    );
   }
 
   /// Serializes this health check to a map.

@@ -3,9 +3,19 @@ description: >-
   A common platform interface for the Tracelet background geolocation plugin.
   Used by tracelet_android and tracelet_ios implementations.
 version: 3.1.14
+topics:
+  - location
+  - background
+  - plugin
 license: Apache-2.0
 homepage: https://github.com/Ikolvi/Tracelet
 repository: https://github.com/Ikolvi/Tracelet/tree/main/packages/tracelet_platform_interface
+funding:
+  - https://github.com/sponsors/GalacticTitan
+  - https://www.buymeacoffee.com/kiranbjm
+  - https://thanks.dev/d/gh/galactictitan/dependencies
+  - https://www.patreon.com/c/kiranbjm
+
 issue_tracker: https://github.com/Ikolvi/Tracelet/issues
 resolution: workspace
 

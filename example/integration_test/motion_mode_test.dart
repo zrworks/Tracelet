@@ -10,13 +10,7 @@ void main() {
       tester,
     ) async {
       // 1. Initialize with accelerometer
-      await Tracelet.ready(
-        const Config(
-          motion: MotionConfig(
-            motionDetectionMode: MotionDetectionMode.accelerometer,
-          ),
-        ),
-      );
+      await Tracelet.ready(const Config());
 
       var state = await Tracelet.getState();
       expect(state, isNotNull);

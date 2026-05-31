@@ -1,4 +1,4 @@
-import 'geo_utils.dart';
+import 'package:tracelet_platform_interface/src/algorithms/geo_utils.dart';
 
 /// Default CO₂ emission factors (gCO₂/km) based on EU EEA 2024 averages.
 const Map<String, double> kDefaultEmissionFactors = <String, double>{
@@ -76,7 +76,7 @@ class CarbonEstimator {
   final Map<String, double> _distanceByMode = <String, double>{};
 
   // Cumulative state (survives across trips until [resetCumulative]).
-  double _cumulativeCarbonGrams = 0.0;
+  double _cumulativeCarbonGrams = 0;
   int _cumulativeTrips = 0;
   final Map<String, double> _cumulativeCarbonByMode = <String, double>{};
   final Map<String, double> _cumulativeDistanceByMode = <String, double>{};
@@ -125,8 +125,8 @@ class CarbonEstimator {
     _active = false;
 
     final carbonByMode = <String, double>{};
-    double totalCarbon = 0.0;
-    double totalDistance = 0.0;
+    var totalCarbon = 0.toDouble();
+    var totalDistance = 0.toDouble();
 
     for (final entry in _distanceByMode.entries) {
       final mode = entry.key;
@@ -149,8 +149,8 @@ class CarbonEstimator {
     _cumulativeTrips++;
 
     // Dominant mode = mode with highest distance.
-    String dominantMode = 'unknown';
-    double maxDist = 0.0;
+    var dominantMode = 'unknown';
+    var maxDist = 0.toDouble();
     for (final entry in _distanceByMode.entries) {
       if (entry.value > maxDist) {
         maxDist = entry.value;

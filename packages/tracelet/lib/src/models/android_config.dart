@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import '_helpers.dart';
 
 /// Android-specific configuration settings.
 ///
@@ -19,6 +19,45 @@ class AndroidConfig {
     this.scheduleUseAlarmManager = false,
     this.foregroundService = const ForegroundServiceConfig(),
   });
+
+  /// Creates an [AndroidConfig] from a map.
+  factory AndroidConfig.fromMap(Map<String, Object?> map) {
+    final fgMap = safeMap(map['foregroundService']);
+    return AndroidConfig(
+      locationUpdateInterval: ensureInt(
+        map['locationUpdateInterval'],
+        fallback: 1000,
+      ),
+      fastestLocationUpdateInterval: ensureInt(
+        map['fastestLocationUpdateInterval'],
+        fallback: 500,
+      ),
+      deferTime: ensureInt(map['deferTime'], fallback: 0),
+      allowIdenticalLocations: ensureBool(
+        map['allowIdenticalLocations'],
+        fallback: false,
+      ),
+      geofenceModeHighAccuracy: ensureBool(
+        map['geofenceModeHighAccuracy'],
+        fallback: false,
+      ),
+      periodicUseForegroundService: ensureBool(
+        map['periodicUseForegroundService'],
+        fallback: false,
+      ),
+      periodicUseExactAlarms: ensureBool(
+        map['periodicUseExactAlarms'],
+        fallback: false,
+      ),
+      scheduleUseAlarmManager: ensureBool(
+        map['scheduleUseAlarmManager'],
+        fallback: false,
+      ),
+      foregroundService: fgMap != null
+          ? ForegroundServiceConfig.fromMap(fgMap)
+          : const ForegroundServiceConfig(),
+    );
+  }
 
   AndroidConfig copyWith({
     int? locationUpdateInterval,
@@ -84,45 +123,6 @@ class AndroidConfig {
 
   /// Foreground service notification configuration.
   final ForegroundServiceConfig foregroundService;
-
-  /// Creates an [AndroidConfig] from a map.
-  factory AndroidConfig.fromMap(Map<String, Object?> map) {
-    final fgMap = safeMap(map['foregroundService']);
-    return AndroidConfig(
-      locationUpdateInterval: ensureInt(
-        map['locationUpdateInterval'],
-        fallback: 1000,
-      ),
-      fastestLocationUpdateInterval: ensureInt(
-        map['fastestLocationUpdateInterval'],
-        fallback: 500,
-      ),
-      deferTime: ensureInt(map['deferTime'], fallback: 0),
-      allowIdenticalLocations: ensureBool(
-        map['allowIdenticalLocations'],
-        fallback: false,
-      ),
-      geofenceModeHighAccuracy: ensureBool(
-        map['geofenceModeHighAccuracy'],
-        fallback: false,
-      ),
-      periodicUseForegroundService: ensureBool(
-        map['periodicUseForegroundService'],
-        fallback: false,
-      ),
-      periodicUseExactAlarms: ensureBool(
-        map['periodicUseExactAlarms'],
-        fallback: false,
-      ),
-      scheduleUseAlarmManager: ensureBool(
-        map['scheduleUseAlarmManager'],
-        fallback: false,
-      ),
-      foregroundService: fgMap != null
-          ? ForegroundServiceConfig.fromMap(fgMap)
-          : const ForegroundServiceConfig(),
-    );
-  }
 
   /// Converts to Pigeon [TlAndroidConfig].
   TlAndroidConfig toTlConfig() => TlAndroidConfig(
@@ -204,6 +204,40 @@ class ForegroundServiceConfig {
     this.showNotificationOnPauseOnly = false,
     this.actions = const <String>[],
   });
+
+  factory ForegroundServiceConfig.fromMap(Map<String, Object?> map) {
+    final rawActions = map['actions'];
+    final actionsList = <String>[];
+    if (rawActions is List) {
+      for (final item in rawActions) {
+        if (item is String) actionsList.add(item);
+      }
+    }
+    return ForegroundServiceConfig(
+      enabled: ensureBool(map['enabled'], fallback: true),
+      channelId: map['channelId'] as String? ?? 'tracelet_channel',
+      channelName: map['channelName'] as String? ?? 'Tracelet',
+      notificationTitle: map['notificationTitle'] as String? ?? 'Tracelet',
+      notificationText:
+          map['notificationText'] as String? ??
+          'Tracking location in background',
+      notificationColor: map['notificationColor'] as String?,
+      notificationSmallIcon: map['notificationSmallIcon'] as String?,
+      notificationLargeIcon: map['notificationLargeIcon'] as String?,
+      notificationPriority: _parseNotificationPriority(
+        map['notificationPriority'],
+      ),
+      notificationOngoing: ensureBool(
+        map['notificationOngoing'],
+        fallback: true,
+      ),
+      showNotificationOnPauseOnly: ensureBool(
+        map['showNotificationOnPauseOnly'],
+        fallback: false,
+      ),
+      actions: actionsList,
+    );
+  }
 
   ForegroundServiceConfig copyWith({
     bool? enabled,
@@ -289,40 +323,6 @@ class ForegroundServiceConfig {
   /// Action buttons to display inside the notification drawer (e.g. `['Stop', 'Sync']`).
   /// Defaults to empty list.
   final List<String> actions;
-
-  factory ForegroundServiceConfig.fromMap(Map<String, Object?> map) {
-    final rawActions = map['actions'];
-    final actionsList = <String>[];
-    if (rawActions is List) {
-      for (final item in rawActions) {
-        if (item is String) actionsList.add(item);
-      }
-    }
-    return ForegroundServiceConfig(
-      enabled: ensureBool(map['enabled'], fallback: true),
-      channelId: map['channelId'] as String? ?? 'tracelet_channel',
-      channelName: map['channelName'] as String? ?? 'Tracelet',
-      notificationTitle: map['notificationTitle'] as String? ?? 'Tracelet',
-      notificationText:
-          map['notificationText'] as String? ??
-          'Tracking location in background',
-      notificationColor: map['notificationColor'] as String?,
-      notificationSmallIcon: map['notificationSmallIcon'] as String?,
-      notificationLargeIcon: map['notificationLargeIcon'] as String?,
-      notificationPriority: _parseNotificationPriority(
-        map['notificationPriority'],
-      ),
-      notificationOngoing: ensureBool(
-        map['notificationOngoing'],
-        fallback: true,
-      ),
-      showNotificationOnPauseOnly: ensureBool(
-        map['showNotificationOnPauseOnly'],
-        fallback: false,
-      ),
-      actions: actionsList,
-    );
-  }
 
   /// Converts to Pigeon [TlForegroundServiceConfig].
   TlForegroundServiceConfig toTlConfig() => TlForegroundServiceConfig(

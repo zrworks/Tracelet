@@ -1,5 +1,5 @@
-import 'geo_utils.dart';
-import 'rtree.dart';
+import 'package:tracelet_platform_interface/src/algorithms/geo_utils.dart';
+import 'package:tracelet_platform_interface/src/algorithms/rtree.dart';
 
 /// A single geofence state transition detected by [GeofenceEvaluator].
 class GeofenceTransition {
@@ -87,7 +87,7 @@ class GeofenceEvaluator {
   /// Call this whenever the registered geofence list changes. To remove
   /// the index, call [clearIndex].
   void indexGeofences(List<Map<String, Object?>> geofences) {
-    final tree = RTree<Map<String, Object?>>(maxEntries: 8);
+    final tree = RTree<Map<String, Object?>>();
     final lookup = <String, Map<String, Object?>>{};
 
     for (final gf in geofences) {

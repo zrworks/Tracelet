@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/tracelet.dart' show HttpConfig, Tracelet;
 
 /// Immutable context attached to each location at record time.
 ///
@@ -44,24 +45,6 @@ class RouteContext {
     this.custom = const <String, String>{},
   });
 
-  /// The ID of the entity that owns this route (e.g. fleet, company).
-  final String? ownerId;
-
-  /// The ID of the driver or operator.
-  final String? driverId;
-
-  /// The ID of the current task, delivery, or work order.
-  final String? taskId;
-
-  /// A unique session identifier for this tracking period.
-  final String? trackingSessionId;
-
-  /// ISO 8601 timestamp of when this context was activated.
-  final String? startedAt;
-
-  /// Custom key-value pairs for application-specific context.
-  final Map<String, String> custom;
-
   /// Creates a [RouteContext] from a map.
   factory RouteContext.fromMap(Map<String, Object?> map) {
     final customRaw = map['custom'];
@@ -80,6 +63,24 @@ class RouteContext {
           : const <String, String>{},
     );
   }
+
+  /// The ID of the entity that owns this route (e.g. fleet, company).
+  final String? ownerId;
+
+  /// The ID of the driver or operator.
+  final String? driverId;
+
+  /// The ID of the current task, delivery, or work order.
+  final String? taskId;
+
+  /// A unique session identifier for this tracking period.
+  final String? trackingSessionId;
+
+  /// ISO 8601 timestamp of when this context was activated.
+  final String? startedAt;
+
+  /// Custom key-value pairs for application-specific context.
+  final Map<String, String> custom;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

@@ -14,7 +14,7 @@ void main() {
     testWidgets('GeoConfig accepts sparse update properties', (tester) async {
       const config = GeoConfig(
         enableSparseUpdates: true,
-        sparseDistanceThreshold: 100.0,
+        sparseDistanceThreshold: 100,
         sparseMaxIdleSeconds: 600,
       );
 
@@ -36,7 +36,7 @@ void main() {
     ) async {
       const config = GeoConfig(
         enableSparseUpdates: true,
-        sparseDistanceThreshold: 200.0,
+        sparseDistanceThreshold: 200,
         sparseMaxIdleSeconds: 0,
       );
       final map = config.toMap();
@@ -59,11 +59,7 @@ void main() {
     testWidgets('sparse updates work with distanceFilter combination', (
       tester,
     ) async {
-      const config = GeoConfig(
-        distanceFilter: 10.0,
-        enableSparseUpdates: true,
-        sparseDistanceThreshold: 50.0,
-      );
+      const config = GeoConfig(enableSparseUpdates: true);
 
       // distanceFilter controls GPS radio wake (platform-level)
       // sparseDistanceThreshold controls recording (app-level)
@@ -80,16 +76,16 @@ void main() {
     testWidgets('Config round-trips sparse updates through toMap', (
       tester,
     ) async {
-      final config = Config(
-        geo: const GeoConfig(
+      const config = Config(
+        geo: GeoConfig(
           enableSparseUpdates: true,
-          sparseDistanceThreshold: 75.0,
+          sparseDistanceThreshold: 75,
           sparseMaxIdleSeconds: 120,
         ),
       );
 
       final map = config.toMap();
-      final geoMap = map['geo'] as Map<String, Object?>;
+      final geoMap = map['geo']! as Map<String, Object?>;
       expect(geoMap['enableSparseUpdates'], isTrue);
       expect(geoMap['sparseDistanceThreshold'], 75.0);
       expect(geoMap['sparseMaxIdleSeconds'], 120);

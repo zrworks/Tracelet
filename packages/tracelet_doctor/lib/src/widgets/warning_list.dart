@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
-import '../doctor_theme.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
 
 /// Displays computed health warnings as expandable cards with descriptions.
 class WarningList extends StatelessWidget {
@@ -48,7 +48,7 @@ class WarningList extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  const Text(
                     'No issues detected — tracking is healthy.',
                     style: DoctorTheme.cardBodyStyle,
                   ),

@@ -61,7 +61,7 @@ void main() {
       final decoded = jsonDecode(response!) as Map<String, Object?>;
       expect(decoded['deviceId'], 'dev-1');
       expect(decoded['points'], isList);
-      expect((decoded['points'] as List).length, 2);
+      expect((decoded['points']! as List).length, 2);
     });
 
     test('handler returns JSON with builder output', () async {
@@ -259,9 +259,9 @@ void main() {
       expect(receivedLocations, hasLength(1));
       final extras = receivedLocations[0]['extras'];
       expect(extras, isA<Map<String, Object?>>());
-      final nested = (extras as Map<String, Object?>)['nested'];
+      final nested = (extras! as Map<String, Object?>)['nested'];
       expect(nested, isA<Map<String, Object?>>());
-      expect((nested as Map<String, Object?>)['deep'], 'value');
+      expect((nested! as Map<String, Object?>)['deep'], 'value');
     });
 
     test(
@@ -287,7 +287,7 @@ void main() {
         );
 
         expect(response, isNotNull);
-        final tags = receivedLocations[0]['tags'] as List;
+        final tags = receivedLocations[0]['tags']! as List;
         expect(tags[0], isA<Map<String, Object?>>());
         expect((tags[0] as Map<String, Object?>)['key'], 'a');
         expect(tags[1], 'plain-string');

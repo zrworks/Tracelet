@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'geofence.dart';
+import 'package:tracelet/src/models/geofence.dart';
 
 /// Event fired when the set of active geofences changes.
 ///
@@ -15,12 +15,6 @@ class GeofencesChangeEvent {
     this.off = const <Geofence>[],
   });
 
-  /// Geofences that were activated (started monitoring).
-  final List<Geofence> on;
-
-  /// Geofences that were deactivated (stopped monitoring).
-  final List<Geofence> off;
-
   /// Creates a [GeofencesChangeEvent] from a platform map.
   factory GeofencesChangeEvent.fromMap(Map<String, Object?> map) {
     final onRaw = map['on'];
@@ -31,6 +25,12 @@ class GeofencesChangeEvent {
       off: _parseGeofenceList(offRaw),
     );
   }
+
+  /// Geofences that were activated (started monitoring).
+  final List<Geofence> on;
+
+  /// Geofences that were deactivated (stopped monitoring).
+  final List<Geofence> off;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

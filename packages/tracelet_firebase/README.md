@@ -1,15 +1,26 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/logo_anim.webp" alt="Tracelet" width="100%"/>
+</p>
+
 # Tracelet Firebase Adapter
 
-The official Firebase adapter for [Tracelet](https://pub.dev/packages/tracelet).
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pub Package](https://img.shields.io/pub/v/tracelet_firebase.svg)](https://pub.dev/packages/tracelet_firebase)
+[![CI](https://github.com/Ikolvi/Tracelet/actions/workflows/main.yaml/badge.svg)](https://github.com/Ikolvi/Tracelet/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/Ikolvi/Tracelet?flag=tracelet_firebase)](https://codecov.io/gh/Ikolvi/Tracelet)
 
-This adapter seamlessly connects Tracelet's battery-efficient native HTTP sync engine to the Firebase Realtime Database (RTDB) via its REST API. By pushing locations directly to the RTDB, you achieve 100% serverless, zero-cost (free tier) background location tracking without the need to deploy Cloud Functions.
+> **The official Firebase Realtime Database (RTDB) adapter for Tracelet.**
 
-## Features
-* **Zero Cloud Functions**: Syncs directly to RTDB via Firebase's REST API.
-* **Auto Token Refresh**: Automatically detects 401 errors in the background and refreshes the Firebase Auth ID token natively.
-* **Batch Syncing**: Compatible with Tracelet's batch engine out of the box.
+This adapter seamlessly connects Tracelet's battery-efficient native HTTP sync engine directly to the Firebase Realtime Database (RTDB) REST API. By pushing locations natively to the RTDB, you achieve 100% serverless, zero-cost background location tracking without the need to deploy Cloud Functions.
 
-## Getting Started
+## 🚀 Features
+
+- **Zero Cloud Functions** — Syncs natively from the device to RTDB via Firebase's REST API.
+- **Auto Token Refresh** — Automatically detects 401 errors in the background and refreshes the Firebase Auth ID token natively, even when the Flutter app is terminated.
+- **Batch Syncing** — fully compatible with Tracelet's robust HTTP batch engine, including exponential backoff and offline queues.
+- **Enterprise Tested** — 100% test coverage using Mocktail and Dependency Injection.
+
+## 📦 Getting Started
 
 1. Set up Firebase in your Flutter app using `firebase_core` and `firebase_auth`.
 2. Initialize Tracelet using `TraceletFirebase`.
@@ -41,8 +52,9 @@ void main() async {
 }
 ```
 
-## Customizing the Payload
-If you want to inject custom data (like an `order_id` or `trip_id`) into every location point dynamically, you can use the `Tracelet.setRouteContext()` API in Dart. For example:
+## 🛠 Customizing the Payload
+
+If you want to inject custom data (like an `order_id` or `trip_id`) into every location point dynamically, use the `Tracelet.setRouteContext()` API in Dart:
 
 ```dart
 await Tracelet.setRouteContext(RouteContext(
@@ -51,10 +63,11 @@ await Tracelet.setRouteContext(RouteContext(
 ));
 ```
 
-The route context data travels with the location row through the sync queue and will be included in the Firebase RTDB payload. Do not reshape the core JSON manually in Dart, as this drains the battery.
+The route context data travels with the location row through the SQLite queue and is included natively in the Firebase RTDB payload.
 
-## Security Rules
-Make sure to secure your RTDB to only allow authenticated users to write to their own location path:
+## 🔒 Security Rules
+
+Secure your RTDB to only allow authenticated users to write to their own location path:
 
 ```json
 {
@@ -68,3 +81,11 @@ Make sure to secure your RTDB to only allow authenticated users to write to thei
   }
 }
 ```
+
+## 🤝 Contributing
+
+See the root [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+Apache 2.0 — see [LICENSE](../../LICENSE) for details.

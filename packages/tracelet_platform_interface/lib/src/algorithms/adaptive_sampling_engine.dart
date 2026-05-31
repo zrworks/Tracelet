@@ -1,4 +1,4 @@
-import '../types/enums.dart';
+import 'package:tracelet_platform_interface/src/types/enums.dart';
 
 /// Contextual data used by [AdaptiveSamplingEngine] to compute the
 /// optimal distance filter for each location fix.
@@ -165,20 +165,20 @@ class AdaptiveSamplingEngine {
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Distance filter profile for [ActivityType.still].
-  static const double distanceStill = 500.0;
+  static const double distanceStill = 500;
 
   /// Distance filter profile for [ActivityType.walking] and
   /// [ActivityType.onFoot].
-  static const double distanceWalking = 50.0;
+  static const double distanceWalking = 50;
 
   /// Distance filter profile for [ActivityType.running].
-  static const double distanceRunning = 30.0;
+  static const double distanceRunning = 30;
 
   /// Distance filter profile for [ActivityType.onBicycle].
-  static const double distanceBicycle = 25.0;
+  static const double distanceBicycle = 25;
 
   /// Distance filter profile for [ActivityType.inVehicle].
-  static const double distanceVehicle = 10.0;
+  static const double distanceVehicle = 10;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Battery thresholds
@@ -202,15 +202,15 @@ class AdaptiveSamplingEngine {
   static const double batteryLowFactor = 2.5;
 
   /// Scaling factor when battery is below [batteryLowThreshold].
-  static const double batteryCriticalFactor = 5.0;
+  static const double batteryCriticalFactor = 5;
 
   /// Compute the optimal distance filter for the given [context].
   ///
   /// Returns an [AdaptiveSamplingResult] with the effective distance filter
   /// and a breakdown of factors.
   AdaptiveSamplingResult compute(AdaptiveContext context) {
-    double activityFactor = 1.0;
-    double speedFactor = 1.0;
+    var activityFactor = 1.toDouble();
+    var speedFactor = 1.toDouble();
     var source = AdaptiveSource.static_;
 
     // ── Activity-based distance ───────────────────────────────────────────
@@ -293,11 +293,11 @@ class AdaptiveSamplingEngine {
   /// - Battery level is unknown (-1)
   double _batteryFactor(double batteryLevel, bool isCharging) {
     // No scaling while charging or when battery level is unknown.
-    if (isCharging || batteryLevel < 0) return 1.0;
+    if (isCharging || batteryLevel < 0) return 1;
 
     if (batteryLevel < batteryLowThreshold) return batteryCriticalFactor;
     if (batteryLevel < batteryMediumThreshold) return batteryLowFactor;
     if (batteryLevel < batteryHighThreshold) return batteryMediumFactor;
-    return 1.0;
+    return 1;
   }
 }

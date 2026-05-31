@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:meta/meta.dart';
 import 'package:tracelet/tracelet.dart';
 
 /// Adapter to seamlessly integrate Tracelet's native HTTP sync engine with Firebase Realtime Database.
@@ -26,12 +27,14 @@ class TraceletFirebase {
     bool autoSync = true,
     bool batchSync = true,
     int maxBatchSize = 250,
+    FirebaseAuth? auth,
   }) async {
     // Strip trailing slashes from the URL and leading/trailing slashes from the path
     final cleanUrl = databaseUrl.replaceAll(RegExp(r'/$'), '');
     final cleanPath = path.replaceAll(RegExp(r'^/|/$'), '');
 
-    final user = FirebaseAuth.instance.currentUser;
+    final authInstance = auth ?? FirebaseAuth.instance;
+    final user = authInstance.currentUser;
     final token = user != null ? await user.getIdToken() : null;
 
     // The .json extension is strictly required for the Firebase RTDB REST API
@@ -43,7 +46,6 @@ class TraceletFirebase {
 
     return HttpConfig(
       url: url,
-      method: HttpMethod.post, // POST adds data to a list in RTDB
       autoSync: autoSync,
       batchSync: batchSync,
       maxBatchSize: maxBatchSize,
@@ -58,10 +60,10 @@ class TraceletFirebase {
   /// ```dart
   /// await TraceletFirebase.configureTokenRefresh();
   /// ```
-  static Future<void> configureTokenRefresh() async {
+  static Future<void> configureTokenRefresh({FirebaseAuth? auth}) async {
     // 1. Foreground token refresh
     Tracelet.setTokenRefreshCallback(() async {
-      await _refreshAndUpdateConfig();
+      await refreshAndUpdateConfig(auth: auth);
       return {};
     });
 
@@ -69,8 +71,10 @@ class TraceletFirebase {
     await Tracelet.registerHeadlessHeadersCallback(_headlessTokenRefresh);
   }
 
-  static Future<void> _refreshAndUpdateConfig() async {
-    final user = FirebaseAuth.instance.currentUser;
+  @visibleForTesting
+  static Future<void> refreshAndUpdateConfig({FirebaseAuth? auth}) async {
+    final authInstance = auth ?? FirebaseAuth.instance;
+    final user = authInstance.currentUser;
     if (user == null) return;
 
     final token = await user.getIdToken(true);
@@ -100,13 +104,13 @@ class TraceletFirebase {
 /// Called by Tracelet's native HTTP engine in a background isolate when a 401 error occurs
 /// and the main app is terminated.
 @pragma('vm:entry-point')
-void _headlessTokenRefresh(HeadlessEvent event) async {
+Future<void> _headlessTokenRefresh(HeadlessEvent event) async {
   try {
     // Initialize Firebase in the background isolate if it hasn't been already
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
     }
-    await TraceletFirebase._refreshAndUpdateConfig();
+    await TraceletFirebase.refreshAndUpdateConfig();
   } catch (e) {
     Tracelet.log(
       'error',

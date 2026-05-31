@@ -3,12 +3,11 @@ import 'dart:js_interop';
 
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
     show GeoUtils;
+import 'package:tracelet_web/src/web_event_dispatcher.dart';
+import 'package:tracelet_web/src/web_geofence_engine.dart';
+import 'package:tracelet_web/src/web_privacy_engine.dart';
+import 'package:tracelet_web/src/web_utils.dart';
 import 'package:web/web.dart' as web;
-
-import 'web_event_dispatcher.dart';
-import 'web_geofence_engine.dart';
-import 'web_privacy_engine.dart';
-import 'web_utils.dart';
 
 /// Wraps the browser Geolocation API for Tracelet.
 ///
@@ -27,7 +26,7 @@ class WebLocationEngine {
   Map<String, Object?>? _lastLocation;
 
   /// Current odometer value in meters.
-  double _odometer = 0.0;
+  double _odometer = 0;
 
   /// Whether tracking is currently active.
   bool _isTracking = false;
@@ -47,8 +46,8 @@ class WebLocationEngine {
 
   /// Config values (set via ready/setConfig).
   int _desiredAccuracy = 0; // 0=high
-  double _distanceFilter = 10.0;
-  double _stationaryRadius = 25.0;
+  double _distanceFilter = 10;
+  double _stationaryRadius = 25;
   int _heartbeatInterval = 0; // 0 = disabled
   int _stopTimeout = 5; // minutes
 
@@ -133,8 +132,8 @@ class WebLocationEngine {
           _events.log(
             'debug',
             '[Tracelet Web] getCurrentPosition success: '
-                '${location['coords'] is Map ? (location['coords'] as Map)['latitude'] : 'unknown'}, '
-                '${location['coords'] is Map ? (location['coords'] as Map)['longitude'] : 'unknown'}',
+                '${location['coords'] is Map ? (location['coords']! as Map)['latitude'] : 'unknown'}, '
+                '${location['coords'] is Map ? (location['coords']! as Map)['longitude'] : 'unknown'}',
           );
           return location;
         })
@@ -308,7 +307,7 @@ class WebLocationEngine {
     );
 
     _browserWatchId = web.window.navigator.geolocation.watchPosition(
-      ((web.GeolocationPosition pos) => _onBrowserPosition(pos)).toJS,
+      _onBrowserPosition.toJS,
       ((web.GeolocationPositionError err) {
         _onBrowserError(err);
         // If high accuracy timed out, restart watch without it.
@@ -337,8 +336,8 @@ class WebLocationEngine {
       maximumAge: 5000,
     );
     _browserWatchId = web.window.navigator.geolocation.watchPosition(
-      ((web.GeolocationPosition pos) => _onBrowserPosition(pos)).toJS,
-      ((web.GeolocationPositionError err) => _onBrowserError(err)).toJS,
+      _onBrowserPosition.toJS,
+      _onBrowserError.toJS,
       options,
     );
   }
@@ -355,15 +354,16 @@ class WebLocationEngine {
     final locationMap = _positionToMap(pos);
 
     final prevLat = _lastLocation?['coords'] is Map
-        ? (_lastLocation!['coords'] as Map)['latitude'] as double?
+        ? (_lastLocation!['coords']! as Map)['latitude'] as double?
         : null;
     final prevLon = _lastLocation?['coords'] is Map
-        ? (_lastLocation!['coords'] as Map)['longitude'] as double?
+        ? (_lastLocation!['coords']! as Map)['longitude'] as double?
         : null;
     final curLat =
-        (locationMap['coords'] as Map<String, Object?>)['latitude'] as double;
+        (locationMap['coords']! as Map<String, Object?>)['latitude']! as double;
     final curLon =
-        (locationMap['coords'] as Map<String, Object?>)['longitude'] as double;
+        (locationMap['coords']! as Map<String, Object?>)['longitude']!
+            as double;
 
     if (_privacyEngine.isLocationInPrivacyZone(curLat, curLon)) {
       _events.log(
@@ -387,7 +387,7 @@ class WebLocationEngine {
     _updateLastLocation(locationMap);
 
     final speed =
-        (locationMap['coords'] as Map<String, Object?>)['speed'] as double? ??
+        (locationMap['coords']! as Map<String, Object?>)['speed'] as double? ??
         0.0;
 
     // Motion detection.
@@ -489,20 +489,20 @@ class WebLocationEngine {
   Map<String, Object?> _positionToMap(web.GeolocationPosition pos) {
     final coords = pos.coords;
     final timestamp = DateTime.fromMillisecondsSinceEpoch(
-      pos.timestamp.toInt(),
+      pos.timestamp,
     ).toIso8601String();
 
     return <String, Object?>{
       'coords': <String, Object?>{
-        'latitude': coords.latitude.toDouble(),
-        'longitude': coords.longitude.toDouble(),
-        'altitude': coords.altitude?.toDouble(),
-        'speed': coords.speed?.toDouble(),
-        'heading': coords.heading?.toDouble(),
-        'accuracy': coords.accuracy.toDouble(),
+        'latitude': coords.latitude,
+        'longitude': coords.longitude,
+        'altitude': coords.altitude,
+        'speed': coords.speed,
+        'heading': coords.heading,
+        'accuracy': coords.accuracy,
         'speedAccuracy': -1.0,
         'headingAccuracy': -1.0,
-        'altitudeAccuracy': coords.altitudeAccuracy?.toDouble(),
+        'altitudeAccuracy': coords.altitudeAccuracy,
         'floor': null,
       },
       'timestamp': timestamp,

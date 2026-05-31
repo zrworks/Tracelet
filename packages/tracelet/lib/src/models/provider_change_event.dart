@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
 
 /// Event fired when the location provider state changes.
 ///
@@ -19,6 +18,30 @@ class ProviderChangeEvent {
     this.mockLocationsDetected = false,
     this.gpsFallback = false,
   });
+
+  /// Creates a [ProviderChangeEvent] from a platform map.
+  factory ProviderChangeEvent.fromMap(Map<String, Object?> map) {
+    return ProviderChangeEvent(
+      enabled: ensureBool(map['enabled'], fallback: false),
+      status:
+          AuthorizationStatus.values[ensureInt(
+            map['status'],
+            fallback: 0,
+          ).clamp(0, AuthorizationStatus.values.length - 1)],
+      gps: ensureBool(map['gps'], fallback: false),
+      network: ensureBool(map['network'], fallback: false),
+      accuracyAuthorization:
+          AccuracyAuthorization.values[ensureInt(
+            map['accuracyAuthorization'],
+            fallback: 0,
+          ).clamp(0, AccuracyAuthorization.values.length - 1)],
+      mockLocationsDetected: ensureBool(
+        map['mockLocationsDetected'],
+        fallback: false,
+      ),
+      gpsFallback: ensureBool(map['gpsFallback'], fallback: false),
+    );
+  }
 
   /// Whether location services are globally enabled on the device.
   final bool enabled;
@@ -52,30 +75,6 @@ class ProviderChangeEvent {
   ///
   /// Only applicable on Android. Always `false` on iOS and Web.
   final bool gpsFallback;
-
-  /// Creates a [ProviderChangeEvent] from a platform map.
-  factory ProviderChangeEvent.fromMap(Map<String, Object?> map) {
-    return ProviderChangeEvent(
-      enabled: ensureBool(map['enabled'], fallback: false),
-      status:
-          AuthorizationStatus.values[ensureInt(
-            map['status'],
-            fallback: 0,
-          ).clamp(0, AuthorizationStatus.values.length - 1)],
-      gps: ensureBool(map['gps'], fallback: false),
-      network: ensureBool(map['network'], fallback: false),
-      accuracyAuthorization:
-          AccuracyAuthorization.values[ensureInt(
-            map['accuracyAuthorization'],
-            fallback: 0,
-          ).clamp(0, AccuracyAuthorization.values.length - 1)],
-      mockLocationsDetected: ensureBool(
-        map['mockLocationsDetected'],
-        fallback: false,
-      ),
-      gpsFallback: ensureBool(map['gpsFallback'], fallback: false),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

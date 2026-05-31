@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide HttpMethod;
 import 'package:tracelet/tracelet.dart';
 
@@ -28,6 +29,7 @@ class TraceletSupabase {
     bool autoSync = true,
     bool batchSync = true,
     int maxBatchSize = 250,
+    SupabaseClient? client,
   }) {
     assert(
       (rpcFunction != null) ^ (edgeFunction != null),
@@ -41,13 +43,12 @@ class TraceletSupabase {
       url = '$supabaseUrl/functions/v1/$edgeFunction';
     }
 
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
+    final supabaseClient = client ?? Supabase.instance.client;
+    final session = supabaseClient.auth.currentSession;
     final token = session?.accessToken ?? anonKey;
 
     return HttpConfig(
       url: url,
-      method: HttpMethod.post,
       autoSync: autoSync,
       batchSync: batchSync,
       maxBatchSize: maxBatchSize,
@@ -67,12 +68,16 @@ class TraceletSupabase {
   /// ```dart
   /// await TraceletSupabase.configureTokenRefresh(anonKey: 'your_anon_key');
   /// ```
-  static Future<void> configureTokenRefresh({required String anonKey}) async {
+  static Future<void> configureTokenRefresh({
+    required String anonKey,
+    SupabaseClient? client,
+  }) async {
     // 1. Foreground token refresh
     Tracelet.setTokenRefreshCallback(() async {
-      final client = Supabase.instance.client;
-      await client.auth.refreshSession();
-      final token = client.auth.currentSession?.accessToken ?? anonKey;
+      final token = await refreshSessionAndGetToken(
+        anonKey: anonKey,
+        client: client,
+      );
       return {'Authorization': 'Bearer $token'};
     });
 
@@ -81,12 +86,22 @@ class TraceletSupabase {
     // However, the developer can just read it from their env.dart or dotenv.
     await Tracelet.registerHeadlessHeadersCallback(_headlessTokenRefresh);
   }
+
+  @visibleForTesting
+  static Future<String> refreshSessionAndGetToken({
+    required String anonKey,
+    SupabaseClient? client,
+  }) async {
+    final supabaseClient = client ?? Supabase.instance.client;
+    await supabaseClient.auth.refreshSession();
+    return supabaseClient.auth.currentSession?.accessToken ?? anonKey;
+  }
 }
 
 /// Called by Tracelet's native HTTP engine in a background isolate when a 401 error occurs
 /// and the main app is terminated.
 @pragma('vm:entry-point')
-void _headlessTokenRefresh(HeadlessEvent event) async {
+Future<void> _headlessTokenRefresh(HeadlessEvent event) async {
   try {
     final client = Supabase.instance.client;
     await client.auth.refreshSession();

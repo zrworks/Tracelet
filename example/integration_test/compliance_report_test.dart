@@ -106,7 +106,7 @@ void main() {
     testWidgets('toJson dataInventory has correct structure', (tester) async {
       final report = await Tracelet.generateComplianceReport();
       final json = report.toJson();
-      final dataInventory = json['dataInventory'] as Map<String, Object?>;
+      final dataInventory = json['dataInventory']! as Map<String, Object?>;
 
       expect(dataInventory.containsKey('totalLocationsStored'), isTrue);
       expect(dataInventory.containsKey('totalLocationsSynced'), isTrue);
@@ -115,7 +115,7 @@ void main() {
     testWidgets('toJson privacyMeasures has correct structure', (tester) async {
       final report = await Tracelet.generateComplianceReport();
       final json = report.toJson();
-      final privacy = json['privacyMeasures'] as Map<String, Object?>;
+      final privacy = json['privacyMeasures']! as Map<String, Object?>;
 
       expect(privacy.containsKey('databaseEncrypted'), isTrue);
       expect(privacy.containsKey('activePrivacyZones'), isTrue);
@@ -157,7 +157,7 @@ void main() {
         maxRecordsToPersist: 10000,
         databaseEncrypted: true,
         activePrivacyZones: 2,
-        privacyZoneIdentifiers: ['home', 'office'],
+        privacyZoneIdentifiers: const ['home', 'office'],
         httpSyncUrl: 'https://api.example.com/locations',
         autoSyncEnabled: true,
         auditTrailEnabled: true,
@@ -189,7 +189,7 @@ void main() {
         maxRecordsToPersist: -1,
         databaseEncrypted: false,
         activePrivacyZones: 0,
-        privacyZoneIdentifiers: <String>[],
+        privacyZoneIdentifiers: const <String>[],
         autoSyncEnabled: false,
         auditTrailEnabled: false,
         locationPermissionStatus: 0,

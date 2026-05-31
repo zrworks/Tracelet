@@ -74,7 +74,7 @@ void main() {
       tester,
     ) async {
       // Test that the model can be constructed from a typical native response
-      final verification = AuditVerification.fromMap({
+      final verification = AuditVerification.fromMap(const {
         'is_valid': true,
         'total_records': 10,
         'verified_records': 10,
@@ -92,7 +92,7 @@ void main() {
     testWidgets('AuditVerification.fromMap handles broken chain response', (
       tester,
     ) async {
-      final verification = AuditVerification.fromMap({
+      final verification = AuditVerification.fromMap(const {
         'is_valid': false,
         'total_records': 10,
         'verified_records': 5,
@@ -110,7 +110,7 @@ void main() {
     });
 
     testWidgets('AuditProof.fromMap handles snake_case keys', (tester) async {
-      final proof = AuditProof.fromMap({
+      final proof = AuditProof.fromMap(const {
         'uuid': 'test-uuid',
         'hash': 'abc123def456',
         'previous_hash': 'genesis',
@@ -126,7 +126,7 @@ void main() {
     });
 
     testWidgets('AuditProof.fromMap handles camelCase keys', (tester) async {
-      final proof = AuditProof.fromMap({
+      final proof = AuditProof.fromMap(const {
         'uuid': 'test-uuid-2',
         'hash': 'xyz789',
         'previousHash': 'prev-hash',

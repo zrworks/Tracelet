@@ -56,8 +56,8 @@ void main() {
         },
       ];
 
-      final encoded = DeltaEncoder.encode(locations, precision: 6);
-      final decoded = DeltaEncoder.decode(encoded, precision: 6);
+      final encoded = DeltaEncoder.encode(locations);
+      final decoded = DeltaEncoder.decode(encoded);
 
       expect(decoded.length, locations.length);
 
@@ -68,14 +68,14 @@ void main() {
 
       // Verify coordinates reconstruct within precision tolerance
       for (var i = 0; i < locations.length; i++) {
-        final origCoords = locations[i]['coords'] as Map;
-        final decodedCoords = decoded[i]['coords'] as Map;
+        final origCoords = locations[i]['coords']! as Map;
+        final decodedCoords = decoded[i]['coords']! as Map;
         expect(
-          (decodedCoords['latitude'] as double),
+          decodedCoords['latitude'] as double,
           closeTo(origCoords['latitude'] as double, 0.000002),
         );
         expect(
-          (decodedCoords['longitude'] as double),
+          decodedCoords['longitude'] as double,
           closeTo(origCoords['longitude'] as double, 0.000002),
         );
       }
@@ -179,7 +179,7 @@ void main() {
       final encoded = DeltaEncoder.encode(locations);
       final decoded = DeltaEncoder.decode(encoded);
 
-      final decodedCoords = decoded[1]['coords'] as Map;
+      final decodedCoords = decoded[1]['coords']! as Map;
       // Heading should reconstruct to ~10° (not 350 + delta)
       expect((decodedCoords['heading'] as double) % 360, closeTo(10.0, 0.1));
     });
@@ -208,10 +208,7 @@ void main() {
     });
 
     testWidgets('HttpConfig.toMap includes delta fields', (tester) async {
-      const config = HttpConfig(
-        enableDeltaCompression: true,
-        deltaCoordinatePrecision: 5,
-      );
+      const config = HttpConfig(enableDeltaCompression: true);
       final map = config.toMap();
 
       expect(map['enableDeltaCompression'], isTrue);

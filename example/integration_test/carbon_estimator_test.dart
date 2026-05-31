@@ -77,7 +77,7 @@ void main() {
       expect(summary!.carbonByMode.containsKey('walking'), isTrue);
       expect(summary.carbonByMode.containsKey('in_vehicle'), isTrue);
       expect(summary.carbonByMode['walking'], 0.0);
-      expect(summary.carbonByMode['in_vehicle']!, greaterThan(0));
+      expect(summary.carbonByMode['in_vehicle'], greaterThan(0));
     });
   });
 
@@ -120,7 +120,7 @@ void main() {
 
       final report = estimator.getCumulativeReport();
       expect(report['totalTrips'], 2);
-      expect((report['totalCarbonGrams'] as double), greaterThan(0));
+      expect(report['totalCarbonGrams']! as double, greaterThan(0));
     });
 
     testWidgets('resetCumulative clears totals', (tester) async {

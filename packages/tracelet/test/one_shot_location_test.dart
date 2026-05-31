@@ -86,7 +86,7 @@ void main() {
       expect(location.uuid, 'test-uuid-001');
       expect(location.coords.latitude, 37.7749);
       expect(mock.calls.length, 1);
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args, isEmpty); // No overrides → empty options
     });
 
@@ -95,42 +95,42 @@ void main() {
         desiredAccuracy: DesiredAccuracy.medium,
       );
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['desiredAccuracy'], DesiredAccuracy.medium.index);
     });
 
     test('forwards timeout', () async {
       await Tracelet.getCurrentPosition(timeout: 15);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['timeout'], 15);
     });
 
     test('forwards maximumAge', () async {
       await Tracelet.getCurrentPosition(maximumAge: 5000);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['maximumAge'], 5000);
     });
 
     test('forwards persist: false', () async {
       await Tracelet.getCurrentPosition(persist: false);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['persist'], false);
     });
 
     test('forwards persist: true explicitly', () async {
       await Tracelet.getCurrentPosition(persist: true);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['persist'], true);
     });
 
     test('forwards samples', () async {
       await Tracelet.getCurrentPosition(samples: 3);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['samples'], 3);
     });
 
@@ -139,8 +139,8 @@ void main() {
         extras: {'route': 'delivery-42', 'driver': 'A1'},
       );
 
-      final args = mock.calls.first.args as Map<String, Object?>;
-      final extras = args['extras'] as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
+      final extras = args['extras']! as Map<String, Object?>;
       expect(extras['route'], 'delivery-42');
       expect(extras['driver'], 'A1');
     });
@@ -155,7 +155,7 @@ void main() {
         extras: {'key': 'value'},
       );
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['desiredAccuracy'], DesiredAccuracy.high.index);
       expect(args['timeout'], 20);
       expect(args['maximumAge'], 10000);
@@ -177,23 +177,13 @@ void main() {
     test('propagates PlatformException on failure', () async {
       mock.failCurrentPosition = true;
 
-      expect(
-        () => Tracelet.getCurrentPosition(),
-        throwsA(isA<PlatformException>()),
-      );
+      expect(Tracelet.getCurrentPosition, throwsA(isA<PlatformException>()));
     });
 
     test('omits null parameters from options map', () async {
-      await Tracelet.getCurrentPosition(
-        desiredAccuracy: null,
-        timeout: null,
-        maximumAge: null,
-        persist: null,
-        samples: null,
-        extras: null,
-      );
+      await Tracelet.getCurrentPosition();
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args.containsKey('desiredAccuracy'), false);
       expect(args.containsKey('timeout'), false);
       expect(args.containsKey('maximumAge'), false);
@@ -243,7 +233,7 @@ void main() {
 
       await Tracelet.getLastKnownLocation();
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['persist'], false);
     });
 
@@ -256,7 +246,7 @@ void main() {
 
       await Tracelet.getLastKnownLocation(persist: true);
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['persist'], true);
     });
 
@@ -269,7 +259,7 @@ void main() {
 
       await Tracelet.getLastKnownLocation(extras: {'source': 'cache'});
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args['extras'], {'source': 'cache'});
     });
 
@@ -278,7 +268,7 @@ void main() {
 
       await Tracelet.getLastKnownLocation();
 
-      final args = mock.calls.first.args as Map<String, Object?>;
+      final args = mock.calls.first.args! as Map<String, Object?>;
       expect(args.containsKey('extras'), false);
     });
   });
@@ -314,11 +304,7 @@ void main() {
     });
 
     test('enabled: true round-trip', () {
-      const config = Config(
-        android: AndroidConfig(
-          foregroundService: ForegroundServiceConfig(enabled: true),
-        ),
-      );
+      const config = Config();
 
       final map = config.toMap();
       final restored = Config.fromMap(map);
@@ -334,7 +320,7 @@ void main() {
 
       await Tracelet.ready(config);
 
-      final configArg = mock.calls.first.args as TlConfig;
+      final configArg = mock.calls.first.args! as TlConfig;
       expect(configArg.android.foregroundService.enabled, false);
     });
   });

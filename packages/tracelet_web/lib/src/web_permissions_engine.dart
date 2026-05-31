@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:js_interop';
 
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
+    show AuthorizationStatus;
+import 'package:tracelet_web/src/web_event_dispatcher.dart';
 import 'package:web/web.dart' as web;
-
-import 'web_event_dispatcher.dart';
 
 // ignore: unused_import — needed for jsify extension
 
@@ -64,7 +65,7 @@ class WebPermissionsEngine {
   Future<int> getPermissionStatus() async {
     try {
       final descriptor =
-          <String, String>{'name': 'geolocation'}.jsify() as JSObject;
+          <String, String>{'name': 'geolocation'}.jsify()! as JSObject;
       final status = await web.window.navigator.permissions
           .query(descriptor)
           .toDart

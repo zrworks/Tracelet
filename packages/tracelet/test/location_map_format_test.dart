@@ -212,17 +212,23 @@ void main() {
   // ========================================================================
   group('LocationBattery.fromMap key conventions', () {
     test('reads is_charging snake_case', () {
-      final b = LocationBattery.fromMap({'level': 0.5, 'is_charging': true});
+      final b = LocationBattery.fromMap(const {
+        'level': 0.5,
+        'is_charging': true,
+      });
       expect(b.isCharging, isTrue);
     });
 
     test('falls back to isCharging camelCase', () {
-      final b = LocationBattery.fromMap({'level': 0.5, 'isCharging': true});
+      final b = LocationBattery.fromMap(const {
+        'level': 0.5,
+        'isCharging': true,
+      });
       expect(b.isCharging, isTrue);
     });
 
     test('defaults to false when key is absent', () {
-      final b = LocationBattery.fromMap({'level': 0.5});
+      final b = LocationBattery.fromMap(const {'level': 0.5});
       expect(b.isCharging, isFalse);
     });
   });
@@ -232,19 +238,25 @@ void main() {
   // ========================================================================
   group('LocationActivity.fromMap', () {
     test('parses string type and int confidence', () {
-      final a = LocationActivity.fromMap({'type': 'walking', 'confidence': 90});
+      final a = LocationActivity.fromMap(const {
+        'type': 'walking',
+        'confidence': 90,
+      });
       expect(a.type, ActivityType.walking);
       expect(a.confidence, ActivityConfidence.high);
     });
 
     test('parses int type index', () {
-      final a = LocationActivity.fromMap({'type': 0, 'confidence': 30});
+      final a = LocationActivity.fromMap(const {'type': 0, 'confidence': 30});
       expect(a.type, ActivityType.values[0]);
       expect(a.confidence, ActivityConfidence.low);
     });
 
     test('unknown type string maps to ActivityType.unknown', () {
-      final a = LocationActivity.fromMap({'type': 'flying', 'confidence': 50});
+      final a = LocationActivity.fromMap(const {
+        'type': 'flying',
+        'confidence': 50,
+      });
       expect(a.type, ActivityType.unknown);
       expect(a.confidence, ActivityConfidence.medium);
     });
@@ -259,20 +271,20 @@ void main() {
         coords: TlCoords(
           latitude: 48.8566,
           longitude: 2.3522,
-          accuracy: 10.0,
-          speed: 3.0,
-          heading: 270.0,
-          altitude: 35.0,
-          altitudeAccuracy: 5.0,
-          speedAccuracy: 2.0,
-          headingAccuracy: 15.0,
+          accuracy: 10,
+          speed: 3,
+          heading: 270,
+          altitude: 35,
+          altitudeAccuracy: 5,
+          speedAccuracy: 2,
+          headingAccuracy: 15,
           floor: 1,
         ),
         battery: TlBattery(level: 0.9, isCharging: false),
         timestamp: '2024-06-15T12:00:00Z',
         uuid: 'pigeon-uuid',
         isMoving: true,
-        odometer: 500.0,
+        odometer: 500,
         event: 'location',
         activity: TlActivity(type: 'still', confidence: 95),
         extras: {'key': 'value'},
@@ -300,21 +312,21 @@ void main() {
     test('handles null optional fields', () {
       final tl = TlLocation(
         coords: TlCoords(
-          latitude: 0.0,
-          longitude: 0.0,
-          accuracy: 0.0,
-          speed: 0.0,
-          heading: 0.0,
-          altitude: 0.0,
-          altitudeAccuracy: 0.0,
-          speedAccuracy: 0.0,
-          headingAccuracy: 0.0,
+          latitude: 0,
+          longitude: 0,
+          accuracy: 0,
+          speed: 0,
+          heading: 0,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          speedAccuracy: 0,
+          headingAccuracy: 0,
         ),
-        battery: TlBattery(level: -1.0, isCharging: false),
+        battery: TlBattery(level: -1, isCharging: false),
         timestamp: '',
         uuid: '',
         isMoving: false,
-        odometer: 0.0,
+        odometer: 0,
       );
       final loc = Location.fromTl(tl);
 
@@ -329,17 +341,17 @@ void main() {
   // ========================================================================
   group('Location round-trip serialization', () {
     test('toMap() → fromMap() preserves all fields', () {
-      final original = Location(
-        coords: const Coords(
+      const original = Location(
+        coords: Coords(
           latitude: 37.4219983,
           longitude: -122.084,
-          accuracy: 5.0,
+          accuracy: 5,
           speed: 2.5,
-          heading: 180.0,
-          altitude: 100.0,
-          altitudeAccuracy: 3.0,
+          heading: 180,
+          altitude: 100,
+          altitudeAccuracy: 3,
           speedAccuracy: 1.5,
-          headingAccuracy: 10.0,
+          headingAccuracy: 10,
           floor: 2,
         ),
         timestamp: '2024-06-15T10:30:00.000Z',
@@ -347,12 +359,12 @@ void main() {
         uuid: 'round-trip-uuid',
         odometer: 999.9,
         event: 'heartbeat',
-        activity: const LocationActivity(
+        activity: LocationActivity(
           type: ActivityType.inVehicle,
           confidence: ActivityConfidence.medium,
         ),
-        battery: const LocationBattery(level: 0.42, isCharging: true),
-        extras: const <String, Object?>{'foo': 'bar'},
+        battery: LocationBattery(level: 0.42, isCharging: true),
+        extras: <String, Object?>{'foo': 'bar'},
       );
 
       final map = original.toMap();

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();

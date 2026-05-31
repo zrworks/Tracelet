@@ -1,19 +1,18 @@
 import 'dart:math' as math;
 
-import 'geo_utils.dart';
+import 'package:tracelet_platform_interface/src/algorithms/geo_utils.dart';
 
 /// Axis-aligned bounding box for R-tree nodes.
 class RTreeBBox {
-  double minLat;
-  double minLng;
-  double maxLat;
-  double maxLng;
-
   RTreeBBox(this.minLat, this.minLng, this.maxLat, this.maxLng);
 
   /// Create a bbox that contains a single point.
   factory RTreeBBox.fromPoint(double lat, double lng) =>
       RTreeBBox(lat, lng, lat, lng);
+  double minLat;
+  double minLng;
+  double maxLat;
+  double maxLng;
 
   /// Expand this bbox to contain [other].
   void expand(RTreeBBox other) {
@@ -261,8 +260,8 @@ class RTree<T> {
 
     // Choose the child that requires the least enlargement.
     _RTreeNode<T>? best;
-    double bestEnlargement = double.infinity;
-    double bestArea = double.infinity;
+    var bestEnlargement = double.infinity;
+    var bestArea = double.infinity;
 
     for (final child in node.children) {
       final enlargement = child.bbox.enlargement(bbox);
@@ -300,8 +299,9 @@ class RTree<T> {
     _RTreeNode<T> node,
     _RTreeNode<T> sibling,
   ) {
-    int seed1 = 0, seed2 = 1;
-    double maxWaste = double.negativeInfinity;
+    var seed1 = 0;
+    var seed2 = 1;
+    var maxWaste = double.negativeInfinity;
     for (var i = 0; i < entries.length; i++) {
       for (var j = i + 1; j < entries.length; j++) {
         final combined = RTreeBBox(
@@ -379,8 +379,8 @@ class RTree<T> {
     final sibling = _RTreeNode<T>(isLeaf: false);
 
     // Pick seeds: two children with maximum wasted area.
-    int seed1 = 0, seed2 = 1;
-    double maxWaste = double.negativeInfinity;
+    var seed1 = 0, seed2 = 1;
+    var maxWaste = double.negativeInfinity;
     for (var i = 0; i < children.length; i++) {
       for (var j = i + 1; j < children.length; j++) {
         final combined = RTreeBBox(

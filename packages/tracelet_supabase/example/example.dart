@@ -24,10 +24,10 @@ void main() async {
   );
 
   // 4. Initialize Tracelet
-  final baseConfig = await Config.balanced();
+  final baseConfig = Config.balanced();
   await Tracelet.ready(
     baseConfig.copyWith(
-      geo: baseConfig.geo.copyWith(distanceFilter: 50.0),
+      geo: baseConfig.geo.copyWith(distanceFilter: 50),
       http: httpConfig,
       android: baseConfig.android.copyWith(
         foregroundService: baseConfig.android.foregroundService.copyWith(

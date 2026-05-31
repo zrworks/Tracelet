@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import '_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // AttestationConfig
@@ -49,6 +49,23 @@ class AttestationConfig {
     this.verificationUrl,
   });
 
+  /// Creates an [AttestationConfig] from a map.
+  factory AttestationConfig.fromMap(Map<String, Object?> map) {
+    return AttestationConfig(
+      enabled: ensureBool(
+        map['attestationEnabled'] ?? map['enabled'],
+        fallback: false,
+      ),
+      refreshInterval: ensureInt(
+        map['attestationRefreshInterval'] ?? map['refreshInterval'],
+        fallback: 3600,
+      ),
+      verificationUrl:
+          map['attestationVerificationUrl'] as String? ??
+          map['verificationUrl'] as String?,
+    );
+  }
+
   /// Enable device attestation.
   ///
   /// When `true`, an attestation token is generated periodically and
@@ -70,23 +87,6 @@ class AttestationConfig {
   ///
   /// Only HTTPS URLs are accepted. Defaults to `null`.
   final String? verificationUrl;
-
-  /// Creates an [AttestationConfig] from a map.
-  factory AttestationConfig.fromMap(Map<String, Object?> map) {
-    return AttestationConfig(
-      enabled: ensureBool(
-        map['attestationEnabled'] ?? map['enabled'],
-        fallback: false,
-      ),
-      refreshInterval: ensureInt(
-        map['attestationRefreshInterval'] ?? map['refreshInterval'],
-        fallback: 3600,
-      ),
-      verificationUrl:
-          map['attestationVerificationUrl'] as String? ??
-          map['verificationUrl'] as String?,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -133,6 +133,18 @@ class AttestationToken {
     this.verified,
   });
 
+  /// Creates an [AttestationToken] from a map.
+  factory AttestationToken.fromMap(Map<String, Object?> map) {
+    return AttestationToken(
+      token: map['token'] as String? ?? '',
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        map['timestamp'] as int? ?? 0,
+      ),
+      provider: map['provider'] as String? ?? 'unknown',
+      verified: map['verified'] as bool?,
+    );
+  }
+
   /// Platform-specific token string.
   ///
   /// - **Android**: Play Integrity API verdict token (JWT).
@@ -151,18 +163,6 @@ class AttestationToken {
   ///
   /// `null` if server-side verification hasn't been performed yet.
   final bool? verified;
-
-  /// Creates an [AttestationToken] from a map.
-  factory AttestationToken.fromMap(Map<String, Object?> map) {
-    return AttestationToken(
-      token: map['token'] as String? ?? '',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(
-        map['timestamp'] as int? ?? 0,
-      ),
-      provider: map['provider'] as String? ?? 'unknown',
-      verified: map['verified'] as bool?,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

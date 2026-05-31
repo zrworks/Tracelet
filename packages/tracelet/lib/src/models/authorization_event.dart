@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 /// Event fired when the HTTP Authorization token exchange occurs.
 ///
@@ -15,15 +15,6 @@ class AuthorizationEvent {
     this.response = '',
   });
 
-  /// Whether the authorization token exchange succeeded.
-  final bool success;
-
-  /// HTTP status code from the authorization endpoint.
-  final int status;
-
-  /// Response body from the authorization endpoint.
-  final String response;
-
   /// Creates an [AuthorizationEvent] from a platform map.
   factory AuthorizationEvent.fromMap(Map<String, Object?> map) {
     return AuthorizationEvent(
@@ -32,6 +23,15 @@ class AuthorizationEvent {
       response: map['response'] as String? ?? '',
     );
   }
+
+  /// Whether the authorization token exchange succeeded.
+  final bool success;
+
+  /// HTTP status code from the authorization endpoint.
+  final int status;
+
+  /// Response body from the authorization endpoint.
+  final String response;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

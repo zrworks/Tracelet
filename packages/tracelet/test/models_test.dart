@@ -29,8 +29,8 @@ void main() {
     test('round-trip serialization preserves all fields', () {
       const config = Config(
         geo: GeoConfig(
-          distanceFilter: 50.0,
-          stationaryRadius: 30.0,
+          distanceFilter: 50,
+          stationaryRadius: 30,
           desiredAccuracy: DesiredAccuracy.medium,
         ),
         app: AppConfig(
@@ -49,11 +49,7 @@ void main() {
           geofenceInitialTriggerEntry: false,
           geofenceModeHighAccuracy: true,
         ),
-        logger: LoggerConfig(
-          logLevel: LogLevel.info,
-          logMaxDays: 7,
-          debug: true,
-        ),
+        logger: LoggerConfig(logMaxDays: 7, debug: true),
       );
 
       final map = config.toMap();
@@ -79,9 +75,9 @@ void main() {
     });
 
     test('equality based on all sub-configs', () {
-      const a = Config(geo: GeoConfig(distanceFilter: 10.0));
-      const b = Config(geo: GeoConfig(distanceFilter: 10.0));
-      const c = Config(geo: GeoConfig(distanceFilter: 20.0));
+      const a = Config();
+      const b = Config();
+      const c = Config(geo: GeoConfig(distanceFilter: 20));
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });
@@ -132,18 +128,8 @@ void main() {
     });
 
     test('HttpConfig equality includes all scalar fields', () {
-      const a = HttpConfig(
-        url: 'https://a.com',
-        method: HttpMethod.post,
-        autoSync: true,
-        maxBatchSize: 100,
-      );
-      const b = HttpConfig(
-        url: 'https://a.com',
-        method: HttpMethod.post,
-        autoSync: true,
-        maxBatchSize: 200,
-      );
+      const a = HttpConfig(url: 'https://a.com', maxBatchSize: 100);
+      const b = HttpConfig(url: 'https://a.com', maxBatchSize: 200);
       expect(a, isNot(equals(b)));
     });
 
@@ -175,9 +161,9 @@ void main() {
       });
 
       test('equality', () {
-        const a = MotionConfig(shakeThreshold: 2.0);
-        const b = MotionConfig(shakeThreshold: 2.0);
-        const c = MotionConfig(shakeThreshold: 3.0);
+        const a = MotionConfig(shakeThreshold: 2);
+        const b = MotionConfig(shakeThreshold: 2);
+        const c = MotionConfig(shakeThreshold: 3);
         expect(a, equals(b));
         expect(a, isNot(equals(c)));
       });
@@ -190,7 +176,7 @@ void main() {
     });
 
     test('HttpConfig.toMap serializes method as int index', () {
-      const postConfig = HttpConfig(method: HttpMethod.post);
+      const postConfig = HttpConfig();
       const putConfig = HttpConfig(method: HttpMethod.put);
       expect(postConfig.toMap()['method'], 0);
       expect(putConfig.toMap()['method'], 1);
@@ -209,7 +195,7 @@ void main() {
         headers: {'x-api-key': 'abc123', 'x-account-id': 'acct'},
       );
       final map = config.toMap();
-      final headers = map['headers'] as Map<String, String>;
+      final headers = map['headers']! as Map<String, String>;
       expect(headers['x-api-key'], 'abc123');
       expect(headers['x-account-id'], 'acct');
     });
@@ -231,7 +217,6 @@ void main() {
         channelId: 'ch1',
         notificationTitle: 'T',
         notificationText: 'B',
-        notificationPriority: NotificationPriority.defaultPriority,
       );
       const b = ForegroundServiceConfig(
         channelId: 'ch1',
@@ -261,7 +246,7 @@ void main() {
     });
 
     test('ForegroundServiceConfig.enabled affects equality', () {
-      const a = ForegroundServiceConfig(enabled: true);
+      const a = ForegroundServiceConfig();
       const b = ForegroundServiceConfig(enabled: false);
       expect(a, isNot(equals(b)));
     });
@@ -295,7 +280,7 @@ void main() {
     test('equality and hashCode', () {
       const a = LocationFilter(useKalmanFilter: true);
       const b = LocationFilter(useKalmanFilter: true);
-      const c = LocationFilter(useKalmanFilter: false);
+      const c = LocationFilter();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
       expect(a.hashCode, equals(b.hashCode));
@@ -514,7 +499,7 @@ void main() {
         'locationSource': 'wifi',
         'coords': {'latitude': 37.0, 'longitude': -122.0},
       });
-      final copy = original.copyWithCoords(latitude: 38.0);
+      final copy = original.copyWithCoords(latitude: 38);
       expect(copy.locationSource, 'wifi');
       expect(copy.coords.latitude, 38.0);
     });
@@ -581,7 +566,7 @@ void main() {
         'reducedAccuracy': true,
         'coords': {'latitude': 37.0, 'longitude': -122.0},
       });
-      final copy = original.copyWithCoords(latitude: 38.0);
+      final copy = original.copyWithCoords(latitude: 38);
       expect(copy.reducedAccuracy, true);
     });
 
@@ -631,7 +616,7 @@ void main() {
 
     test('mockHeuristics round-trips through toMap/fromMap', () {
       const original = Location(
-        coords: Coords(latitude: 37.0, longitude: -122.0),
+        coords: Coords(latitude: 37, longitude: -122),
         timestamp: '2024-01-01T00:00:00.000Z',
         isMoving: false,
         uuid: 'test-uuid',
@@ -639,7 +624,7 @@ void main() {
         isMock: true,
         mockHeuristics: MockHeuristics(
           satellites: 5,
-          elapsedRealtimeDriftMs: 200.0,
+          elapsedRealtimeDriftMs: 200,
           platformFlagMock: false,
         ),
       );
@@ -676,7 +661,7 @@ void main() {
   // ==========================================================================
   group('Coords', () {
     test('defaults', () {
-      const coords = Coords(latitude: 0.0, longitude: 0.0);
+      const coords = Coords(latitude: 0, longitude: 0);
       expect(coords.altitude, 0.0);
       expect(coords.speed, 0.0);
       expect(coords.accuracy, 0.0);
@@ -684,8 +669,8 @@ void main() {
     });
 
     test('equality based on lat/lng', () {
-      const a = Coords(latitude: 1.0, longitude: 2.0, altitude: 10.0);
-      const b = Coords(latitude: 1.0, longitude: 2.0, altitude: 20.0);
+      const a = Coords(latitude: 1, longitude: 2, altitude: 10);
+      const b = Coords(latitude: 1, longitude: 2, altitude: 20);
       expect(a, equals(b));
     });
   });
@@ -865,13 +850,12 @@ void main() {
         enabled: true,
         trackingMode: TrackingMode.location,
         isMoving: true,
-        odometer: 100.0,
+        odometer: 100,
       );
       const b = State(
         enabled: true,
         trackingMode: TrackingMode.location,
-        isMoving: false,
-        odometer: 100.0,
+        odometer: 100,
       );
       expect(a, isNot(equals(b)));
     });
@@ -1137,7 +1121,7 @@ void main() {
     });
 
     test('hashCode differs for different retry values', () {
-      const a = HttpEvent(success: true, status: 200, retryCount: 0);
+      const a = HttpEvent(success: true, status: 200);
       const b = HttpEvent(success: true, status: 200, retryCount: 1);
       // Different retry counts should (very likely) have different hashes
       expect(a.hashCode, isNot(equals(b.hashCode)));
@@ -1254,7 +1238,7 @@ void main() {
     });
 
     test('toMap includes timestamps as milliseconds', () {
-      final now = DateTime(2024, 6, 15, 12, 0, 0);
+      final now = DateTime(2024, 6, 15, 12);
       final query = SQLQuery(
         start: now,
         limit: 100,
@@ -1266,7 +1250,7 @@ void main() {
     });
 
     test('toMap includes both start and end as milliseconds', () {
-      final start = DateTime(2024, 1, 1);
+      final start = DateTime(2024);
       final end = DateTime(2024, 12, 31);
       final query = SQLQuery(start: start, end: end);
       final map = query.toMap();
@@ -1286,7 +1270,7 @@ void main() {
 
     test('fromMap round-trips start and end', () {
       final start = DateTime(2024, 3, 15, 8, 30);
-      final end = DateTime(2024, 3, 15, 17, 0);
+      final end = DateTime(2024, 3, 15, 17);
       final original = SQLQuery(
         start: start,
         end: end,
@@ -1307,7 +1291,7 @@ void main() {
     });
 
     test('fromMap with only start set', () {
-      final start = DateTime(2024, 6, 1);
+      final start = DateTime(2024, 6);
       final query = SQLQuery.fromMap({
         'start': start.millisecondsSinceEpoch,
         'limit': -1,
@@ -1330,7 +1314,7 @@ void main() {
 
     test('toString includes start and end', () {
       final query = SQLQuery(
-        start: DateTime(2024, 1, 1),
+        start: DateTime(2024),
         end: DateTime(2024, 12, 31),
       );
       final str = query.toString();
@@ -1472,7 +1456,7 @@ void main() {
     });
 
     test('toMap serializes to standard string format', () {
-      const config = AuditConfig(hashAlgorithm: HashAlgorithm.sha256);
+      const config = AuditConfig();
       expect(config.toMap()['hashAlgorithm'], 'SHA-256');
 
       const config384 = AuditConfig(hashAlgorithm: HashAlgorithm.sha384);

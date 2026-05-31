@@ -1,8 +1,7 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
+import 'package:tracelet/src/models/location.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
-import 'location.dart';
 
 /// Event fired when a geofence transition occurs.
 ///
@@ -18,22 +17,10 @@ class GeofenceEvent {
     this.extras = const <String, Object?>{},
   });
 
-  /// The identifier of the geofence.
-  final String identifier;
-
-  /// The transition action.
-  final GeofenceAction action;
-
-  /// The location at the time of the event.
-  final Location location;
-
-  /// Extra data from the geofence definition.
-  final Map<String, Object?> extras;
-
   /// Creates a [GeofenceEvent] from a platform map.
   factory GeofenceEvent.fromMap(Map<String, Object?> map) {
     final actionRaw = map['action'];
-    GeofenceAction action = GeofenceAction.enter;
+    var action = GeofenceAction.enter;
     if (actionRaw is int) {
       action = GeofenceAction
           .values[actionRaw.clamp(0, GeofenceAction.values.length - 1)];
@@ -58,6 +45,18 @@ class GeofenceEvent {
           : const <String, Object?>{},
     );
   }
+
+  /// The identifier of the geofence.
+  final String identifier;
+
+  /// The transition action.
+  final GeofenceAction action;
+
+  /// The location at the time of the event.
+  final Location location;
+
+  /// Extra data from the geofence definition.
+  final Map<String, Object?> extras;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

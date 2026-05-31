@@ -25,12 +25,11 @@ void main() {
     });
 
     testWidgets('addPrivacyZone returns true', (tester) async {
-      final zone = PrivacyZone(
+      const zone = PrivacyZone(
         identifier: 'test-zone-1',
         latitude: 37.7749,
         longitude: -122.4194,
         radius: 500,
-        action: PrivacyZoneAction.exclude,
       );
       final result = await Tracelet.addPrivacyZone(zone);
       expect(result, isTrue);
@@ -162,7 +161,6 @@ void main() {
           latitude: 37.7749,
           longitude: -122.4194,
           radius: 100,
-          action: PrivacyZoneAction.exclude,
         ),
       );
 
@@ -193,7 +191,6 @@ void main() {
           latitude: 0,
           longitude: 0,
           radius: 100,
-          action: PrivacyZoneAction.exclude,
         ),
         const PrivacyZone(
           identifier: 'action-degrade',

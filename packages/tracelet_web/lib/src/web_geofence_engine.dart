@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
     show GeoUtils;
 
-import 'web_event_dispatcher.dart';
+import 'package:tracelet_web/src/web_event_dispatcher.dart';
 
 /// Emulated geofence engine for web.
 ///

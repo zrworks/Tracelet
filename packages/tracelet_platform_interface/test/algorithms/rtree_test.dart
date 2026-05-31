@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
@@ -76,7 +76,7 @@ void main() async {
       tree.insert(34.0522, -118.2437, 100, 'la');
 
       // Bounding box covering California
-      final results = tree.queryBBox(33.0, -123.0, 38.0, -117.0);
+      final results = tree.queryBBox(33, -123, 38, -117);
       expect(results, containsAll(['sf', 'la']));
       expect(results, isNot(contains('nyc')));
     });
@@ -172,7 +172,7 @@ void main() async {
 
   group('RTreeBBox', () {
     test('fromPoint creates zero-area bbox', () {
-      final bbox = RTreeBBox.fromPoint(37.0, -122.0);
+      final bbox = RTreeBBox.fromPoint(37, -122);
       expect(bbox.minLat, 37.0);
       expect(bbox.maxLat, 37.0);
       expect(bbox.minLng, -122.0);
@@ -181,8 +181,8 @@ void main() async {
     });
 
     test('expand grows bounds', () {
-      final bbox = RTreeBBox.fromPoint(37.0, -122.0);
-      bbox.expand(RTreeBBox.fromPoint(38.0, -121.0));
+      final bbox = RTreeBBox.fromPoint(37, -122);
+      bbox.expand(RTreeBBox.fromPoint(38, -121));
 
       expect(bbox.minLat, 37.0);
       expect(bbox.maxLat, 38.0);
@@ -228,7 +228,7 @@ void main() async {
     });
 
     test('toString formats correctly', () {
-      final bbox = RTreeBBox(1.0, 2.0, 3.0, 4.0);
+      final bbox = RTreeBBox(1, 2, 3, 4);
       expect(bbox.toString(), 'RTreeBBox(1.0,2.0 → 3.0,4.0)');
     });
   });

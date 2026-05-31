@@ -1,5 +1,5 @@
-import '../rust/api_dart/schedule.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:tracelet_platform_interface/src/rust/api_dart/schedule.dart';
 
 /// Rust-powered schedule parsing and matching.
 class ScheduleParser {
@@ -36,11 +36,11 @@ class ScheduleParser {
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
     return (
-      start: alarms.nextStartMs.toInt() > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs.toInt())
+      start: alarms.nextStartMs > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs)
           : null,
-      stop: alarms.nextStopMs.toInt() > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs.toInt())
+      stop: alarms.nextStopMs > 0
+          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs)
           : null,
     );
   }

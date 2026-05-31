@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
-import 'web_utils.dart';
+import 'package:tracelet_web/src/web_utils.dart';
 
 /// In-memory + localStorage persistence engine for Tracelet web.
 ///
@@ -228,8 +228,8 @@ class WebStorageEngine {
       };
     }
 
-    String currentHash = '';
-    int verifiedCount = 0;
+    var currentHash = '';
+    var verifiedCount = 0;
     for (final loc in _locations) {
       final prevHash = loc['_audit_prev_hash'] as String? ?? '';
       final storedHash = loc['_audit_hash'] as String? ?? '';

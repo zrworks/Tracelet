@@ -258,6 +258,9 @@ class ConfigManager(context: Context) {
     fun getDesiredAccuracy(): Int =
         getInt("desiredAccuracy", DEFAULT_DESIRED_ACCURACY)
 
+    fun getResolveAddress(): Boolean =
+        getBool("resolveAddress", false)
+
     fun getDistanceFilter(): Double =
         getDouble("distanceFilter", DEFAULT_DISTANCE_FILTER)
 

@@ -828,6 +828,52 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  Future<void> _getCurrentPositionWithAddress() async {
+    try {
+      final currentState = await tl.Tracelet.getState();
+      final previousConfig = currentState.enabled ? await tl.Tracelet.getConfig() : null;
+
+      await tl.Tracelet.setConfig(
+        const tl.Config(geo: tl.GeoConfig(resolveAddress: true)),
+      );
+
+      _addLog('GEOCODE', 'Requesting location with reverse geocoding...');
+      final loc = await tl.Tracelet.getCurrentPosition(
+        desiredAccuracy: tl.DesiredAccuracy.high,
+        timeout: 30,
+      );
+      setState(() => _lastLocation = loc);
+
+      final addressMap = loc.address;
+      final addressStr = addressMap != null
+          ? [
+              addressMap['street'],
+              addressMap['city'],
+              addressMap['state'],
+              addressMap['country']
+            ].where((e) => e != null && e.toString().isNotEmpty).join(', ')
+          : 'No address found';
+
+      _addLog(
+        'GEOCODE',
+        '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}\n'
+        'Address: $addressStr',
+      );
+
+      if (previousConfig != null && previousConfig.geo != null) {
+        await tl.Tracelet.setConfig(
+          tl.Config(geo: tl.GeoConfig(resolveAddress: previousConfig.geo!.resolveAddress)),
+        );
+      } else {
+        await tl.Tracelet.setConfig(
+          const tl.Config(geo: tl.GeoConfig(resolveAddress: false)),
+        );
+      }
+    } catch (e) {
+      _addLog('ERROR', 'getCurrentPositionWithAddress() failed: $e');
+    }
+  }
+
   // ── One-Shot Location ───────────────────────────────────────────────────
 
   Future<void> _singleFetchBestOfThree() async {
@@ -3692,6 +3738,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'Get Position',
                         Icons.my_location,
                         _getCurrentPosition,
+                      ),
+                      _Chip(
+                        'Resolve Address',
+                        Icons.pin_drop,
+                        _getCurrentPositionWithAddress,
                       ),
                       _Chip(
                         _isMoving ? 'Pace → Still' : 'Pace → Move',

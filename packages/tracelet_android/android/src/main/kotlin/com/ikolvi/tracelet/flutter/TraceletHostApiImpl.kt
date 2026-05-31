@@ -69,6 +69,7 @@ class TraceletHostApiImpl(
         val coords = m["coords"] as? Map<String, Any?> ?: emptyMap()
         val battery = m["battery"] as? Map<String, Any?> ?: emptyMap()
         val activity = m["activity"] as? Map<String, Any?>
+        val addressMap = m["address"] as? Map<String, Any?>
 
         return TlLocation(
             coords = TlCoords(
@@ -98,6 +99,15 @@ class TraceletHostApiImpl(
                 confidence = (activity["confidence"] as? Number)?.toLong() ?: 0L,
             ) else null,
             extras = m["extras"] as? Map<String?, Any?>,
+            address = addressMap?.let {
+                com.ikolvi.tracelet.TlAddress(
+                    street = it["street"] as? String,
+                    city = it["city"] as? String,
+                    state = it["state"] as? String,
+                    postalCode = it["postalCode"] as? String ?: it["postal_code"] as? String,
+                    country = it["country"] as? String,
+                )
+            },
         )
     }
 
@@ -158,6 +168,7 @@ class TraceletHostApiImpl(
             put("deadReckoningActivationDelay", c.geo.deadReckoningActivationDelay)
             put("deadReckoningMaxDuration", c.geo.deadReckoningMaxDuration)
             put("batteryBudgetPerHour", c.geo.batteryBudgetPerHour)
+            put("resolveAddress", c.geo.resolveAddress)
             put("filter", buildMap {
                 put("trackingAccuracyThreshold", c.geo.filter.trackingAccuracyThreshold)
                 put("maxImpliedSpeed", c.geo.filter.maxImpliedSpeed)

@@ -72,7 +72,7 @@ mkdir -p "$OUT_DIR/sync/ios" "$OUT_DIR/sync/sim"
 cp target/aarch64-apple-ios-sim/release/libtracelet_sync.a "$OUT_DIR/sync/sim/libtracelet_sync.a"
 cp target/aarch64-apple-ios/release/libtracelet_sync.a "$OUT_DIR/sync/ios/libtracelet_sync.a"
 
-cargo run -p tracelet_sync --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_sync.a --language swift --out-dir "$OUT_DIR/sync"
+cargo run -p tracelet_sync --features=uniffi/cli --bin sync-uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_sync.a --language swift --out-dir "$OUT_DIR/sync"
 
 mkdir -p "$OUT_DIR/sync/Headers"
 cp "$OUT_DIR/sync/tracelet_syncFFI.h" "$OUT_DIR/sync/Headers/"

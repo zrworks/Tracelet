@@ -25,7 +25,7 @@ pub struct PrivacyZoneEvaluator {}
 impl PrivacyZoneEvaluator {
     #[uniffi::constructor]
     pub fn new() -> Arc<Self> {
-        Arc::new(Self)
+        Arc::new(Self {})
     }
 
     pub fn evaluate(&self, latitude: f64, longitude: f64, zones: Vec<CorePrivacyZone>) -> PrivacyEvaluationResult {

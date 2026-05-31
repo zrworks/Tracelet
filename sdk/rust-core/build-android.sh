@@ -41,7 +41,7 @@ cp "$TEMP_OUT/uniffi/tracelet_core/tracelet_core.kt" "$KOTLIN_OUT_DIR_CORE/"
 
 echo "Generating Kotlin bindings for sync..."
 KOTLIN_OUT_DIR_SYNC="../android/tracelet-sdk/src/main/kotlin/uniffi/tracelet_sync"
-cargo run -p tracelet_sync --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-linux-android/release/libtracelet_sync.so --language kotlin --out-dir "$TEMP_OUT"
+cargo run -p tracelet_sync --features=uniffi/cli --bin sync-uniffi-bindgen generate --library target/aarch64-linux-android/release/libtracelet_sync.so --language kotlin --out-dir "$TEMP_OUT"
 
 mkdir -p "$KOTLIN_OUT_DIR_SYNC"
 cp "$TEMP_OUT/uniffi/tracelet_sync/tracelet_sync.kt" "$KOTLIN_OUT_DIR_SYNC/"

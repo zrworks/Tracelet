@@ -80,6 +80,7 @@ public final class ConfigManager {
     public func getLocationTimeout() -> Int { (cache["locationTimeout"] as? NSNumber)?.intValue ?? 60 }
     public func getStationaryRadius() -> Double { cache["stationaryRadius"] as? Double ?? 25.0 }
     public func getGeofenceProximityRadius() -> Double { cache["geofenceProximityRadius"] as? Double ?? 1000.0 }
+    public func getResolveAddress() -> Bool { cache["resolveAddress"] as? Bool ?? false }
     public func getMaxDaysToPersist() -> Int { (cache["maxDaysToPersist"] as? NSNumber)?.intValue ?? -1 }
     public func getMaxRecordsToPersist() -> Int { (cache["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1 }
     public func getLocationUpdateInterval() -> Int { (cache["locationUpdateInterval"] as? NSNumber)?.intValue ?? 1000 }

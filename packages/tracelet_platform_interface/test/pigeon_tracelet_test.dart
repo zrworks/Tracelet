@@ -565,6 +565,7 @@ void main() {
         deadReckoningActivationDelay: 10,
         deadReckoningMaxDuration: 120,
         batteryBudgetPerHour: 0,
+        resolveAddress: false,
         filter: TlLocationFilter(
           trackingAccuracyThreshold: 100,
           maxImpliedSpeed: 50,

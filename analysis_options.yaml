@@ -8,6 +8,8 @@ analyzer:
     - "example*/build/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "packages/tracelet_platform_interface/lib/src/rust/**"
+    - "**/frb_generated*.dart"
 
   language:
     strict-raw-types: false

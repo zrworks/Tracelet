@@ -24,6 +24,12 @@ class ScheduleParser {
     return isWithinSchedule([schedule], now);
   }
 
+  static int _toInt(dynamic val) {
+    if (val is BigInt) return val.toInt();
+    if (val is int) return val;
+    return int.parse(val.toString());
+  }
+
   /// Calculate the next start and stop timestamps from a schedule string.
   static ({DateTime? start, DateTime? stop}) calculateNextAlarms(
     String schedule, [
@@ -35,13 +41,11 @@ class ScheduleParser {
       timestampMs: PlatformInt64Util.from(now.millisecondsSinceEpoch),
       tzOffsetSeconds: now.timeZoneOffset.inSeconds,
     );
+    final startMs = _toInt(alarms.nextStartMs);
+    final stopMs = _toInt(alarms.nextStopMs);
     return (
-      start: alarms.nextStartMs > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStartMs)
-          : null,
-      stop: alarms.nextStopMs > 0
-          ? DateTime.fromMillisecondsSinceEpoch(alarms.nextStopMs)
-          : null,
+      start: startMs > 0 ? DateTime.fromMillisecondsSinceEpoch(startMs) : null,
+      stop: stopMs > 0 ? DateTime.fromMillisecondsSinceEpoch(stopMs) : null,
     );
   }
 

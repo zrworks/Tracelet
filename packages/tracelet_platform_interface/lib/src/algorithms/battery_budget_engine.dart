@@ -37,11 +37,18 @@ class BatteryBudgetEngine {
     );
   }
 
+  static int _toInt(dynamic val) {
+    if (val is BigInt) return val.toInt();
+    if (val is int) return val;
+    return int.parse(val.toString());
+  }
+
   int getRecommendedIntervalMs(int defaultIntervalMs) {
     if (_inner == null) return defaultIntervalMs;
-    return _inner!.getRecommendedIntervalMs(
+    final result = _inner!.getRecommendedIntervalMs(
       defaultIntervalMs: PlatformInt64Util.from(defaultIntervalMs),
     );
+    return _toInt(result);
   }
 
   bool shouldThrottleLocation() {

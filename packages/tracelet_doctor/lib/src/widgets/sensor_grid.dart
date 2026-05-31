@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
-import '../doctor_theme.dart';
-import 'common.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
+import 'package:tracelet_doctor/src/widgets/common.dart';
 
 /// Displays available hardware sensors in a compact grid.
 class SensorGrid extends StatelessWidget {

@@ -16,8 +16,8 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 import 'package:tracelet/tracelet.dart';
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -76,24 +76,6 @@ List<({double lat, double lng, double acc, int ts})> _generateTrack(int n) {
   return points;
 }
 
-/// Generate a polygon with [n] vertices (regular polygon around center).
-List<List<double>> _generatePolygon(
-  int n, {
-  double centerLat = 37.422,
-  double centerLng = -122.084,
-  double r = 0.002,
-}) {
-  final vertices = <List<double>>[];
-  for (var i = 0; i < n; i++) {
-    final angle = 2 * math.pi * i / n;
-    vertices.add([
-      centerLat + r * math.cos(angle),
-      centerLng + r * math.sin(angle),
-    ]);
-  }
-  return vertices;
-}
-
 /// Generate a location map for serialization benchmarks.
 Map<String, Object?> _generateLocationMap() {
   return <String, Object?>{
@@ -125,10 +107,6 @@ Map<String, Object?> _generateLocationMap() {
   };
 }
 
-
-
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Schedule Parser
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,7 +119,7 @@ void _benchScheduleParser() {
   _bench('schedule_matches', () {
     ScheduleParser.matchesSchedule(
       '1-5 09:00-17:00',
-      DateTime(2024, 3, 13, 12, 0), // Wednesday noon
+      DateTime(2024, 3, 13, 12), // Wednesday noon
     );
   });
 
@@ -152,11 +130,9 @@ void _benchScheduleParser() {
       '1-5 17:00-22:00',
       '6-7 08:00-20:00',
       '1-7 22:00-06:00',
-    ], DateTime(2024, 3, 13, 12, 0));
+    ], DateTime(2024, 3, 13, 12));
   });
 }
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Location Serialization
@@ -170,9 +146,7 @@ void _benchLocationSerialization() {
   });
 
   final loc = Location.fromMap(map);
-  _bench('location_toMap', () {
-    loc.toMap();
-  });
+  _bench('location_toMap', loc.toMap);
 
   _bench('location_fromMap_toMap_roundtrip', () {
     Location.fromMap(map).toMap();
@@ -222,8 +196,6 @@ void _benchGeofenceSerialization() {
   });
 }
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Benchmark: Carbon Estimator
 // ─────────────────────────────────────────────────────────────────────────────
@@ -270,9 +242,7 @@ void _benchCarbonEstimator() {
     }
     est.endTrip();
   }
-  _bench('carbon_cumulative_report', () {
-    est.getCumulativeReport();
-  });
+  _bench('carbon_cumulative_report', est.getCumulativeReport);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,10 +276,8 @@ void _benchConfigSerialization() {
     Config.fromMap(configMap);
   });
 
-  final config = const Config();
-  _bench('config_toMap', () {
-    config.toMap();
-  });
+  const config = Config();
+  _bench('config_toMap', config.toMap);
 
   _bench('config_roundtrip', () {
     Config.fromMap(const Config().toMap());
@@ -337,9 +305,7 @@ void _benchStateSerialization() {
   });
 
   final state = State.fromMap(stateMap);
-  _bench('state_toMap', () {
-    state.toMap();
-  });
+  _bench('state_toMap', state.toMap);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -382,9 +348,7 @@ void _benchSyncBodyContext() {
   }
   final ctx = SyncBodyContext(locations: locations);
 
-  _bench('sync_body_context_toMap_50', () {
-    ctx.toMap();
-  });
+  _bench('sync_body_context_toMap_50', ctx.toMap);
 
   final map = ctx.toMap();
   _bench('sync_body_context_fromMap_50', () {
@@ -399,7 +363,6 @@ void _benchSyncBodyContext() {
 void _benchHttpConfigSsl() {
   const http = HttpConfig(
     url: 'https://api.example.com/locations',
-    method: HttpMethod.post,
     headers: {'Authorization': 'Bearer tok', 'X-Device': 'abc'},
     sslPinningCertificates: ['MIIBcert1base64==', 'MIIBcert2base64=='],
     sslPinningFingerprints: ['sha256/AAAA', 'sha256/BBBB'],

@@ -30,7 +30,6 @@ void main() async {
       http: httpConfig,
       android: const AndroidConfig(
         foregroundService: ForegroundServiceConfig(
-          enabled: true, // Required for continuous tracking when terminated
           showNotificationOnPauseOnly:
               true, // Hides notification while app is in foreground
           notificationTitle: 'Tracelet Tracker',

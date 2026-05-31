@@ -28,7 +28,7 @@ TlLocation _tlLocation({double lat = 37.0, double lng = -122.0}) => TlLocation(
   timestamp: '2025-01-01T00:00:00.000Z',
   uuid: 'test-uuid',
   isMoving: true,
-  odometer: 100.0,
+  odometer: 100,
 );
 
 // ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ void main() {
   group('locationStream', () {
     test('emits Location objects from platform events', () async {
       // Initialize processor so _shouldAcceptLocation works.
-      await Tracelet.ready(Config());
+      await Tracelet.ready(const Config());
 
       final locations = <Location>[];
       final sub = Tracelet.locationStream.listen(locations.add);
@@ -156,7 +156,7 @@ void main() {
     });
 
     test('supports multiple listeners (broadcast)', () async {
-      await Tracelet.ready(Config());
+      await Tracelet.ready(const Config());
 
       final list1 = <Location>[];
       final list2 = <Location>[];
@@ -288,9 +288,9 @@ void main() {
           on: [
             TlGeofence(
               identifier: 'gf1',
-              latitude: 37.0,
-              longitude: -122.0,
-              radius: 200.0,
+              latitude: 37,
+              longitude: -122,
+              radius: 200,
             ),
           ],
           off: [],
@@ -453,7 +453,7 @@ void main() {
       // Listen again — should create a fresh stream
       final second = <Location>[];
       final sub2 = Tracelet.motionChangeStream.listen(second.add);
-      mock.motionChangeCtrl.add(_tlLocation(lat: 38.0));
+      mock.motionChangeCtrl.add(_tlLocation(lat: 38));
       await Future<void>.delayed(Duration.zero);
       expect(second, hasLength(1));
       expect(second.first.coords.latitude, 38.0);

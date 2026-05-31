@@ -31,11 +31,6 @@ void main() {
       (tester) async {
         await Tracelet.ready(
           const Config(
-            geo: GeoConfig(
-              desiredAccuracy: DesiredAccuracy.high,
-              filter: LocationFilter(rejectMockLocations: false),
-            ),
-            app: AppConfig(stopOnTerminate: true, startOnBoot: false),
             logger: LoggerConfig(debug: true, logLevel: LogLevel.verbose),
           ),
         );
@@ -52,8 +47,6 @@ void main() {
             latitude: 12.9716,
             longitude: 77.5946,
             radius: 500,
-            notifyOnEntry: true,
-            notifyOnExit: true,
             extras: expectedExtras,
           ),
         );

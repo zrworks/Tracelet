@@ -6,7 +6,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize core Tracelet configuration
-  final baseConfig = await tl.Config.highAccuracy();
+  final baseConfig = tl.Config.highAccuracy();
   await tl.Tracelet.ready(
     baseConfig.copyWith(
       app: baseConfig.app.copyWith(stopOnTerminate: false, startOnBoot: true),

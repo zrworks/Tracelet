@@ -35,10 +35,7 @@ void main() {
 
     test('getLastKnownLocation throws UnimplementedError by default', () {
       final platform = _TestPlatform();
-      expect(
-        () => platform.getLastKnownLocation(),
-        throwsA(isA<UnimplementedError>()),
-      );
+      expect(platform.getLastKnownLocation, throwsA(isA<UnimplementedError>()));
     });
 
     test('getLastKnownLocation with options throws UnimplementedError', () {
@@ -51,15 +48,12 @@ void main() {
 
     test('startPeriodic throws UnimplementedError by default', () {
       final platform = _TestPlatform();
-      expect(
-        () => platform.startPeriodic(),
-        throwsA(isA<UnimplementedError>()),
-      );
+      expect(platform.startPeriodic, throwsA(isA<UnimplementedError>()));
     });
 
     test('getLocations throws UnimplementedError by default', () {
       final platform = _TestPlatform();
-      expect(() => platform.getLocations(), throwsA(isA<UnimplementedError>()));
+      expect(platform.getLocations, throwsA(isA<UnimplementedError>()));
     });
 
     test('getLocations accepts optional query map', () {
@@ -72,7 +66,7 @@ void main() {
 
     test('getCount throws UnimplementedError by default', () {
       final platform = _TestPlatform();
-      expect(() => platform.getCount(), throwsA(isA<UnimplementedError>()));
+      expect(platform.getCount, throwsA(isA<UnimplementedError>()));
     });
 
     test('getCount accepts optional query map', () {
@@ -101,10 +95,7 @@ void main() {
 
     test('clearRouteContext throws UnimplementedError by default', () {
       final platform = _TestPlatform();
-      expect(
-        () => platform.clearRouteContext(),
-        throwsA(isA<UnimplementedError>()),
-      );
+      expect(platform.clearRouteContext, throwsA(isA<UnimplementedError>()));
     });
 
     test(

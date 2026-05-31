@@ -25,11 +25,7 @@ void main() {
     });
 
     test('round-trip serialization preserves all fields', () {
-      const original = AuditConfig(
-        enabled: true,
-        hashAlgorithm: HashAlgorithm.sha256,
-        includeExtrasInHash: true,
-      );
+      const original = AuditConfig(enabled: true, includeExtrasInHash: true);
 
       final map = original.toMap();
       final restored = AuditConfig.fromMap(map);
@@ -56,12 +52,9 @@ void main() {
     });
 
     test('equality', () {
-      const a = AuditConfig(enabled: true, hashAlgorithm: HashAlgorithm.sha256);
-      const b = AuditConfig(enabled: true, hashAlgorithm: HashAlgorithm.sha256);
-      const c = AuditConfig(
-        enabled: false,
-        hashAlgorithm: HashAlgorithm.sha256,
-      );
+      const a = AuditConfig(enabled: true);
+      const b = AuditConfig(enabled: true);
+      const c = AuditConfig();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });
@@ -301,7 +294,7 @@ void main() {
     test('Config equality includes audit', () {
       const a = Config(audit: AuditConfig(enabled: true));
       const b = Config(audit: AuditConfig(enabled: true));
-      const c = Config(audit: AuditConfig(enabled: false));
+      const c = Config();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });
@@ -310,7 +303,7 @@ void main() {
       const config = Config(audit: AuditConfig(enabled: true));
       final map = config.toMap();
       expect(map.containsKey('audit'), true);
-      final auditMap = map['audit'] as Map<String, Object?>;
+      final auditMap = map['audit']! as Map<String, Object?>;
       expect(auditMap['auditEnabled'], true);
     });
   });

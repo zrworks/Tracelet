@@ -4,14 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import 'web_carbon_engine.dart';
-import 'web_event_dispatcher.dart';
-import 'web_geofence_engine.dart';
-import 'web_http_engine.dart';
-import 'web_location_engine.dart';
-import 'web_permissions_engine.dart';
-import 'web_privacy_engine.dart';
-import 'web_storage_engine.dart';
+import 'package:tracelet_web/src/web_carbon_engine.dart';
+import 'package:tracelet_web/src/web_event_dispatcher.dart';
+import 'package:tracelet_web/src/web_geofence_engine.dart';
+import 'package:tracelet_web/src/web_http_engine.dart';
+import 'package:tracelet_web/src/web_location_engine.dart';
+import 'package:tracelet_web/src/web_permissions_engine.dart';
+import 'package:tracelet_web/src/web_privacy_engine.dart';
+import 'package:tracelet_web/src/web_storage_engine.dart';
 
 /// Web implementation of [TraceletPlatform].
 ///
@@ -890,11 +890,10 @@ class TraceletWebPlugin extends TraceletPlatform {
           ? TlActivity(
               type: activityMap['type'] as String? ?? 'unknown',
               confidence: activityMap['confidence'] is int
-                  ? activityMap['confidence'] as int
+                  ? activityMap['confidence']! as int
                   : 50,
             )
           : null,
-      extras: null,
     );
   }
 

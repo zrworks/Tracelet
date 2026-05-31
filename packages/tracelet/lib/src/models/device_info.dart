@@ -12,6 +12,17 @@ class DeviceInfo {
     this.framework = 'Flutter',
   });
 
+  /// Creates [DeviceInfo] from a platform map.
+  factory DeviceInfo.fromMap(Map<String, Object?> map) {
+    return DeviceInfo(
+      model: map['model'] as String? ?? 'unknown',
+      manufacturer: map['manufacturer'] as String? ?? 'unknown',
+      version: map['version'] as String? ?? 'unknown',
+      platform: map['platform'] as String? ?? 'unknown',
+      framework: map['framework'] as String? ?? 'Flutter',
+    );
+  }
+
   /// Device model name (e.g. `'Pixel 8'`, `'iPhone 15,4'`).
   final String model;
 
@@ -26,17 +37,6 @@ class DeviceInfo {
 
   /// Framework identifier. Always `'Flutter'`.
   final String framework;
-
-  /// Creates [DeviceInfo] from a platform map.
-  factory DeviceInfo.fromMap(Map<String, Object?> map) {
-    return DeviceInfo(
-      model: map['model'] as String? ?? 'unknown',
-      manufacturer: map['manufacturer'] as String? ?? 'unknown',
-      version: map['version'] as String? ?? 'unknown',
-      platform: map['platform'] as String? ?? 'unknown',
-      framework: map['framework'] as String? ?? 'Flutter',
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

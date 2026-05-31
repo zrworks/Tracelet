@@ -1,20 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
   group('ScheduleParser', () {
     test('isWithinSchedule returns true for matching window', () {
       // Monday at 10:00.
-      final now = DateTime(2024, 1, 8, 10, 0); // Monday = weekday 1.
+      final now = DateTime(2024, 1, 8, 10); // Monday = weekday 1.
       expect(ScheduleParser.isWithinSchedule(['1-5 09:00-17:00'], now), isTrue);
     });
 
     test('isWithinSchedule returns false outside time window', () {
       // Monday at 18:00.
-      final now = DateTime(2024, 1, 8, 18, 0);
+      final now = DateTime(2024, 1, 8, 18);
       expect(
         ScheduleParser.isWithinSchedule(['1-5 09:00-17:00'], now),
         isFalse,
@@ -23,7 +23,7 @@ void main() async {
 
     test('isWithinSchedule returns false outside day window', () {
       // Sunday at 10:00.
-      final now = DateTime(2024, 1, 7, 10, 0); // Sunday = weekday 7.
+      final now = DateTime(2024, 1, 7, 10); // Sunday = weekday 7.
       expect(
         ScheduleParser.isWithinSchedule(['1-5 09:00-17:00'], now),
         isFalse,
@@ -32,12 +32,12 @@ void main() async {
 
     test('isWithinSchedule weekend schedule works', () {
       // Saturday at 12:00.
-      final now = DateTime(2024, 1, 6, 12, 0); // Saturday = weekday 6.
+      final now = DateTime(2024, 1, 6, 12); // Saturday = weekday 6.
       expect(ScheduleParser.isWithinSchedule(['6-7 08:00-20:00'], now), isTrue);
     });
 
     test('isWithinSchedule matches any of multiple schedules', () {
-      final now = DateTime(2024, 1, 6, 10, 0); // Saturday.
+      final now = DateTime(2024, 1, 6, 10); // Saturday.
       expect(
         ScheduleParser.isWithinSchedule([
           '1-5 09:00-17:00', // Weekdays — no match.
@@ -53,18 +53,18 @@ void main() async {
 
     test('matchesSchedule end time is exclusive', () {
       // Monday at exactly 17:00 — outside "09:00-17:00" (exclusive end).
-      final now = DateTime(2024, 1, 8, 17, 0);
+      final now = DateTime(2024, 1, 8, 17);
       expect(ScheduleParser.matchesSchedule('1-5 09:00-17:00', now), isFalse);
     });
 
     test('matchesSchedule start time is inclusive', () {
       // Monday at exactly 09:00 — inside "09:00-17:00" (inclusive start).
-      final now = DateTime(2024, 1, 8, 9, 0);
+      final now = DateTime(2024, 1, 8, 9);
       expect(ScheduleParser.matchesSchedule('1-5 09:00-17:00', now), isTrue);
     });
 
     test('matchesSchedule returns false for malformed string', () {
-      final now = DateTime(2024, 1, 8, 10, 0);
+      final now = DateTime(2024, 1, 8, 10);
       expect(ScheduleParser.matchesSchedule('invalid', now), isFalse);
       expect(ScheduleParser.matchesSchedule('1-5', now), isFalse);
       expect(ScheduleParser.matchesSchedule('1-5 09:00', now), isFalse);
@@ -88,7 +88,7 @@ void main() async {
     });
 
     test('calculateNextAlarms returns future times', () {
-      final now = DateTime(2024, 1, 8, 10, 0);
+      final now = DateTime(2024, 1, 8, 10);
       final alarms = ScheduleParser.calculateNextAlarms('1-5 09:00-17:00', now);
 
       // Start is 09:00 but we're past that → next day.
@@ -103,7 +103,7 @@ void main() async {
     });
 
     test('calculateNextAlarms handles midnight crossing', () {
-      final now = DateTime(2024, 1, 8, 23, 0);
+      final now = DateTime(2024, 1, 8, 23);
       final alarms = ScheduleParser.calculateNextAlarms('1-5 09:00-17:00', now);
 
       // Both times are before now → both pushed to next day.
@@ -112,7 +112,7 @@ void main() async {
     });
 
     test('ScheduleWindow toString formats correctly', () {
-      final window = ScheduleWindow(
+      const window = ScheduleWindow(
         dayStart: 1,
         dayEnd: 5,
         startMinutes: 540,

@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import '_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // SecurityConfig
@@ -50,6 +50,17 @@ class SecurityConfig {
   /// Creates a new [SecurityConfig].
   const SecurityConfig({this.encryptDatabase = false, this.encryptionKey});
 
+  /// Creates a [SecurityConfig] from a map.
+  factory SecurityConfig.fromMap(Map<String, Object?> map) {
+    return SecurityConfig(
+      encryptDatabase: ensureBool(
+        map['encryptDatabase'] ?? map['encrypt_database'],
+        fallback: false,
+      ),
+      encryptionKey: map['encryptionKey'] as String?,
+    );
+  }
+
   /// Enable at-rest database encryption.
   ///
   /// When `true`, the SQLite database is encrypted using AES-256 via
@@ -69,17 +80,6 @@ class SecurityConfig {
   /// The key must be a non-empty string. It is passed directly to
   /// SQLCipher as the `PRAGMA key`.
   final String? encryptionKey;
-
-  /// Creates a [SecurityConfig] from a map.
-  factory SecurityConfig.fromMap(Map<String, Object?> map) {
-    return SecurityConfig(
-      encryptDatabase: ensureBool(
-        map['encryptDatabase'] ?? map['encrypt_database'],
-        fallback: false,
-      ),
-      encryptionKey: map['encryptionKey'] as String?,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

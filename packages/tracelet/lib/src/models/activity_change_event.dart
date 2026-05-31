@@ -9,15 +9,9 @@ class ActivityChangeEvent {
   /// Creates a new [ActivityChangeEvent].
   const ActivityChangeEvent({required this.activity, required this.confidence});
 
-  /// The detected activity type.
-  final ActivityType activity;
-
-  /// The confidence level of the detection.
-  final ActivityConfidence confidence;
-
   /// Creates an [ActivityChangeEvent] from a platform map.
   factory ActivityChangeEvent.fromMap(Map<String, Object?> map) {
-    ActivityType act = ActivityType.unknown;
+    var act = ActivityType.unknown;
     final rawAct = map['activity'];
     if (rawAct is int) {
       act =
@@ -29,7 +23,7 @@ class ActivityChangeEvent {
       );
     }
 
-    ActivityConfidence conf = ActivityConfidence.low;
+    var conf = ActivityConfidence.low;
     final rawConf = map['confidence'];
     if (rawConf is int) {
       if (rawConf >= 75) {
@@ -48,6 +42,12 @@ class ActivityChangeEvent {
 
     return ActivityChangeEvent(activity: act, confidence: conf);
   }
+
+  /// The detected activity type.
+  final ActivityType activity;
+
+  /// The confidence level of the detection.
+  final ActivityConfidence confidence;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

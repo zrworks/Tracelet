@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
@@ -71,11 +71,11 @@ void main() async {
       );
 
       final startLoc =
-          tripEvents.first['startLocation'] as Map<String, Object?>;
+          tripEvents.first['startLocation']! as Map<String, Object?>;
       expect(startLoc['latitude'], 37.4220);
       expect(startLoc['longitude'], -122.0840);
 
-      final stopLoc = tripEvents.first['stopLocation'] as Map<String, Object?>;
+      final stopLoc = tripEvents.first['stopLocation']! as Map<String, Object?>;
       expect(stopLoc['latitude'], 37.4230);
       expect(stopLoc['longitude'], -122.0830);
     });
@@ -111,7 +111,7 @@ void main() async {
       );
 
       final waypoints =
-          tripEvents.first['waypoints'] as List<Map<String, Object?>>;
+          tripEvents.first['waypoints']! as List<Map<String, Object?>>;
       // start waypoint + 3 locations + stop waypoint = 5
       expect(waypoints.length, 5);
     });
@@ -132,7 +132,7 @@ void main() async {
       );
 
       final waypoints =
-          tripEvents.first['waypoints'] as List<Map<String, Object?>>;
+          tripEvents.first['waypoints']! as List<Map<String, Object?>>;
       // Only start + stop = 2
       expect(waypoints.length, 2);
     });
@@ -140,20 +140,20 @@ void main() async {
     test('calculates distance using Haversine', () {
       tripManager.onMotionStateChanged(
         isMoving: true,
-        latitude: 37.0,
-        longitude: -122.0,
+        latitude: 37,
+        longitude: -122,
       );
 
       // Move ~111 km north (1 degree latitude)
-      tripManager.onLocationReceived(latitude: 38.0, longitude: -122.0);
+      tripManager.onLocationReceived(latitude: 38, longitude: -122);
 
       tripManager.onMotionStateChanged(
         isMoving: false,
-        latitude: 38.0,
-        longitude: -122.0,
+        latitude: 38,
+        longitude: -122,
       );
 
-      final distance = tripEvents.first['distance'] as double;
+      final distance = tripEvents.first['distance']! as double;
       // 1 degree latitude ≈ 111,195 meters (±500m tolerance)
       expect(distance, closeTo(111195, 500));
     });
@@ -198,7 +198,7 @@ void main() async {
       expect(tripEvents.length, 1);
       // Waypoints: start(10,20) + location(11,21) + stop(13,23) = 3
       final waypoints =
-          tripEvents.first['waypoints'] as List<Map<String, Object?>>;
+          tripEvents.first['waypoints']! as List<Map<String, Object?>>;
       expect(waypoints.length, 3);
     });
 
@@ -246,7 +246,7 @@ void main() async {
 
       expect(tripEvents.length, 1);
       final startLoc =
-          tripEvents.first['startLocation'] as Map<String, Object?>;
+          tripEvents.first['startLocation']! as Map<String, Object?>;
       expect(startLoc, isEmpty);
     });
 
@@ -259,7 +259,7 @@ void main() async {
 
       // Feed 5001 locations (exceeds _maxWaypoints = 5000).
       // Start waypoint counts as 1, so we need 5000 more to trigger eviction.
-      for (int i = 1; i <= 5001; i++) {
+      for (var i = 1; i <= 5001; i++) {
         tripManager.onLocationReceived(
           latitude: i.toDouble(),
           longitude: i.toDouble(),
@@ -274,7 +274,7 @@ void main() async {
       );
 
       final waypoints =
-          tripEvents.first['waypoints'] as List<Map<String, Object?>>;
+          tripEvents.first['waypoints']! as List<Map<String, Object?>>;
       // Should be capped at 5000 (oldest evicted) + 1 stop waypoint
       // = 5000 total (cap enforced on add, stop adds one more but
       // onLocationReceived already added 5001 which was capped to 5000,
@@ -300,7 +300,7 @@ void main() async {
         longitude: 2,
       );
 
-      final distance = tripEvents.first['distance'] as double;
+      final distance = tripEvents.first['distance']! as double;
       // 2 degrees of longitude at equator ≈ 222,390m
       expect(distance, closeTo(222390, 1000));
     });
@@ -318,12 +318,12 @@ void main() async {
         longitude: 21,
       );
 
-      final duration = tripEvents.first['duration'] as double;
+      final duration = tripEvents.first['duration']! as double;
       expect(duration, greaterThanOrEqualTo(0));
     });
 
     test('consecutive start-stop cycles produce separate trips', () {
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         tripManager.onMotionStateChanged(
           isMoving: true,
           latitude: i.toDouble(),

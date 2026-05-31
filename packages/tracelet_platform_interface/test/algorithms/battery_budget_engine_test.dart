@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
   group('BatteryBudgetEngine', () {
     test('constructor sets defaults', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       expect(engine.targetBudgetPerHour, 3.0);
       expect(engine.distanceFilter, 10.0);
@@ -17,8 +17,8 @@ void main() async {
 
     test('constructor accepts custom initial values', () {
       final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 5.0,
-        initialDistanceFilter: 50.0,
+        targetBudgetPerHour: 5,
+        initialDistanceFilter: 50,
         initialAccuracyIndex: 2,
         initialPeriodicInterval: 300,
       );
@@ -30,28 +30,22 @@ void main() async {
     });
 
     test('clamps accuracy index to 0-4 range', () {
-      final tooHigh = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialAccuracyIndex: 10,
-      );
+      final tooHigh = BatteryBudgetEngine(initialAccuracyIndex: 10);
       expect(tooHigh.accuracyIndex, 4);
 
-      final tooLow = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialAccuracyIndex: -5,
-      );
+      final tooLow = BatteryBudgetEngine(initialAccuracyIndex: -5);
       expect(tooLow.accuracyIndex, 0);
     });
 
     test('first processSample returns null (baseline)', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       final result = engine.processSample(0.95);
       expect(result, isNull);
     });
 
     test('second processSample within 60s returns null', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       // First call sets baseline
       engine.processSample(0.95);
@@ -62,7 +56,7 @@ void main() async {
     });
 
     test('reset allows re-establishing baseline', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       engine.processSample(0.95);
       engine.reset();
@@ -74,8 +68,8 @@ void main() async {
 
     test('reset does not change configuration', () {
       final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 5.0,
-        initialDistanceFilter: 50.0,
+        targetBudgetPerHour: 5,
+        initialDistanceFilter: 50,
         initialAccuracyIndex: 2,
       );
 
@@ -92,8 +86,8 @@ void main() async {
     test('constructor stores all fields', () {
       const event = BudgetAdjustmentEvent(
         currentBatteryDrain: 4.5,
-        targetBudget: 3.0,
-        newDistanceFilter: 50.0,
+        targetBudget: 3,
+        newDistanceFilter: 50,
         newDesiredAccuracy: 2,
         newPeriodicInterval: 600,
       );
@@ -107,9 +101,9 @@ void main() async {
 
     test('newPeriodicInterval defaults to null', () {
       const event = BudgetAdjustmentEvent(
-        currentBatteryDrain: 2.0,
-        targetBudget: 3.0,
-        newDistanceFilter: 10.0,
+        currentBatteryDrain: 2,
+        targetBudget: 3,
+        newDistanceFilter: 10,
         newDesiredAccuracy: 0,
       );
 
@@ -119,46 +113,34 @@ void main() async {
 
   group('BatteryBudgetEngine — internal state', () {
     test('initial distanceFilter matches constructor param', () {
-      final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialDistanceFilter: 100.0,
-      );
+      final engine = BatteryBudgetEngine(initialDistanceFilter: 100);
       expect(engine.distanceFilter, 100.0);
     });
 
     test('initial periodicInterval matches constructor param', () {
-      final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialPeriodicInterval: 300,
-      );
+      final engine = BatteryBudgetEngine(initialPeriodicInterval: 300);
       expect(engine.periodicInterval, 300);
     });
 
     test('periodicInterval is null when not provided', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
       expect(engine.periodicInterval, isNull);
     });
 
     test('accuracy index clamped to minimum 0', () {
-      final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialAccuracyIndex: -100,
-      );
+      final engine = BatteryBudgetEngine(initialAccuracyIndex: -100);
       expect(engine.accuracyIndex, 0);
     });
 
     test('accuracy index clamped to maximum 4', () {
-      final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 3.0,
-        initialAccuracyIndex: 100,
-      );
+      final engine = BatteryBudgetEngine(initialAccuracyIndex: 100);
       expect(engine.accuracyIndex, 4);
     });
 
     test('reset preserves distance filter and accuracy', () {
       final engine = BatteryBudgetEngine(
-        targetBudgetPerHour: 5.0,
-        initialDistanceFilter: 200.0,
+        targetBudgetPerHour: 5,
+        initialDistanceFilter: 200,
         initialAccuracyIndex: 3,
         initialPeriodicInterval: 600,
       );
@@ -177,7 +159,7 @@ void main() async {
     });
 
     test('charging (battery increase) returns null', () {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       // The engine uses DateTime.now() internally so we can only test
       // the first-sample baseline behavior directly. Charging detection
@@ -194,7 +176,7 @@ void main() async {
     late BatteryBudgetEngine engine;
 
     setUp(() {
-      fakeNow = DateTime(2024, 1, 1, 12, 0, 0);
+      fakeNow = DateTime(2024, 1, 1, 12);
     });
 
     BatteryBudgetEngine createEngine({
@@ -213,7 +195,7 @@ void main() async {
     }
 
     test('throttles when draining too fast', () {
-      engine = createEngine(targetBudgetPerHour: 3.0);
+      engine = createEngine();
 
       // Baseline at 95%
       engine.processSample(0.95);
@@ -235,8 +217,8 @@ void main() async {
 
     test('boosts when under budget', () {
       engine = createEngine(
-        targetBudgetPerHour: 10.0,
-        initialDistanceFilter: 100.0,
+        targetBudgetPerHour: 10,
+        initialDistanceFilter: 100,
         initialAccuracyIndex: 3,
       );
 
@@ -258,7 +240,7 @@ void main() async {
     });
 
     test('no adjustment when within error threshold', () {
-      engine = createEngine(targetBudgetPerHour: 3.0);
+      engine = createEngine();
 
       // Baseline at 95%
       engine.processSample(0.95);
@@ -274,7 +256,7 @@ void main() async {
     });
 
     test('no adjustment when charging', () {
-      engine = createEngine(targetBudgetPerHour: 3.0);
+      engine = createEngine();
 
       engine.processSample(0.50);
 
@@ -286,7 +268,7 @@ void main() async {
     });
 
     test('too-soon sample is ignored', () {
-      engine = createEngine(targetBudgetPerHour: 3.0);
+      engine = createEngine();
 
       engine.processSample(0.95);
 
@@ -298,10 +280,7 @@ void main() async {
     });
 
     test('throttles periodic interval when draining fast', () {
-      engine = createEngine(
-        targetBudgetPerHour: 3.0,
-        initialPeriodicInterval: 300,
-      );
+      engine = createEngine(initialPeriodicInterval: 300);
 
       engine.processSample(0.95);
       fakeNow = fakeNow.add(const Duration(hours: 1));
@@ -316,7 +295,7 @@ void main() async {
 
     test('boosts periodic interval when under budget', () {
       engine = createEngine(
-        targetBudgetPerHour: 10.0,
+        targetBudgetPerHour: 10,
         initialPeriodicInterval: 300,
       );
 
@@ -332,7 +311,7 @@ void main() async {
     });
 
     test('accuracy index does not exceed 4 on repeated throttling', () {
-      engine = createEngine(targetBudgetPerHour: 1.0, initialAccuracyIndex: 3);
+      engine = createEngine(targetBudgetPerHour: 1, initialAccuracyIndex: 3);
 
       engine.processSample(0.95);
       fakeNow = fakeNow.add(const Duration(hours: 1));
@@ -347,7 +326,7 @@ void main() async {
     });
 
     test('accuracy index does not go below 0 on repeated boosting', () {
-      engine = createEngine(targetBudgetPerHour: 50.0, initialAccuracyIndex: 1);
+      engine = createEngine(targetBudgetPerHour: 50, initialAccuracyIndex: 1);
 
       engine.processSample(0.95);
       fakeNow = fakeNow.add(const Duration(hours: 1));
@@ -361,10 +340,7 @@ void main() async {
     });
 
     test('distance filter clamped to min on aggressive boosting', () {
-      engine = createEngine(
-        targetBudgetPerHour: 50.0,
-        initialDistanceFilter: 11.0,
-      );
+      engine = createEngine(targetBudgetPerHour: 50, initialDistanceFilter: 11);
 
       engine.processSample(0.95);
       fakeNow = fakeNow.add(const Duration(hours: 1));
@@ -377,7 +353,7 @@ void main() async {
     test('distance filter clamped to max on aggressive throttling', () {
       engine = createEngine(
         targetBudgetPerHour: 0.1,
-        initialDistanceFilter: 4000.0,
+        initialDistanceFilter: 4000,
       );
 
       engine.processSample(0.95);
@@ -390,7 +366,7 @@ void main() async {
 
     test('periodic interval clamped to min 60 on boosting', () {
       engine = createEngine(
-        targetBudgetPerHour: 50.0,
+        targetBudgetPerHour: 50,
         initialPeriodicInterval: 65,
       );
 
@@ -417,11 +393,7 @@ void main() async {
     });
 
     test('multiple successive adjustments accumulate', () {
-      engine = createEngine(
-        targetBudgetPerHour: 1.0,
-        initialDistanceFilter: 10.0,
-        initialAccuracyIndex: 0,
-      );
+      engine = createEngine(targetBudgetPerHour: 1);
 
       // Round 1: heavy drain
       engine.processSample(0.95);

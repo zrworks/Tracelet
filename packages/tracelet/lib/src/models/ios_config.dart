@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import '_helpers.dart';
 
 /// iOS-specific configuration settings.
 ///
@@ -17,34 +17,6 @@ class IosConfig {
     this.disableLocationAuthorizationAlert = false,
     this.preventSuspend = false,
   });
-
-  /// Hint to the platform about the type of activity being performed.
-  /// Defaults to [LocationActivityType.other].
-  final LocationActivityType activityType;
-
-  /// Use significant-change monitoring instead of standard location updates.
-  /// Saves battery but lower accuracy. Defaults to `false`.
-  final bool useSignificantChangesOnly;
-
-  /// Show the blue status bar indicator when tracking in the background.
-  /// Defaults to `false`.
-  final bool showsBackgroundLocationIndicator;
-
-  /// Allow iOS to automatically pause location updates.
-  /// Defaults to `false`.
-  final bool pausesLocationUpdatesAutomatically;
-
-  /// The location authorization level to request.
-  /// Defaults to [LocationAuthorizationRequest.always].
-  final LocationAuthorizationRequest locationAuthorizationRequest;
-
-  /// Disable the automatic alert shown when the user has disabled required
-  /// location authorization. Defaults to `false`.
-  final bool disableLocationAuthorizationAlert;
-
-  /// Play a silent audio clip to keep the app alive in the background.
-  /// Defaults to `false`.
-  final bool preventSuspend;
 
   /// Creates an [IosConfig] from a map.
   factory IosConfig.fromMap(Map<String, Object?> map) {
@@ -76,6 +48,34 @@ class IosConfig {
       preventSuspend: ensureBool(map['preventSuspend'], fallback: false),
     );
   }
+
+  /// Hint to the platform about the type of activity being performed.
+  /// Defaults to [LocationActivityType.other].
+  final LocationActivityType activityType;
+
+  /// Use significant-change monitoring instead of standard location updates.
+  /// Saves battery but lower accuracy. Defaults to `false`.
+  final bool useSignificantChangesOnly;
+
+  /// Show the blue status bar indicator when tracking in the background.
+  /// Defaults to `false`.
+  final bool showsBackgroundLocationIndicator;
+
+  /// Allow iOS to automatically pause location updates.
+  /// Defaults to `false`.
+  final bool pausesLocationUpdatesAutomatically;
+
+  /// The location authorization level to request.
+  /// Defaults to [LocationAuthorizationRequest.always].
+  final LocationAuthorizationRequest locationAuthorizationRequest;
+
+  /// Disable the automatic alert shown when the user has disabled required
+  /// location authorization. Defaults to `false`.
+  final bool disableLocationAuthorizationAlert;
+
+  /// Play a silent audio clip to keep the app alive in the background.
+  /// Defaults to `false`.
+  final bool preventSuspend;
 
   /// Converts to Pigeon [TlIosConfig].
   TlIosConfig toTlConfig() => TlIosConfig(

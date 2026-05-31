@@ -64,7 +64,7 @@ void main() {
     });
 
     test('fromMap coerces custom map values to strings', () {
-      final ctx = RouteContext.fromMap({
+      final ctx = RouteContext.fromMap(const {
         'taskId': 'task-1',
         'custom': {'count': 42, 'active': true},
       });
@@ -117,7 +117,7 @@ void main() {
     });
 
     test('fromMap handles empty locations', () {
-      final ctx = SyncBodyContext.fromMap({'locations': <Object>[]});
+      final ctx = SyncBodyContext.fromMap(const {'locations': <Object>[]});
       expect(ctx.locations, isEmpty);
     });
 
@@ -127,7 +127,7 @@ void main() {
     });
 
     test('fromMap filters non-map entries', () {
-      final ctx = SyncBodyContext.fromMap({
+      final ctx = SyncBodyContext.fromMap(const {
         'locations': [
           {'uuid': 'valid'},
           'not-a-map',

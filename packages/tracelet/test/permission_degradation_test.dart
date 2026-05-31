@@ -466,7 +466,7 @@ void main() {
       mock.throwOnGetCurrentPosition = true;
 
       expect(
-        () => Tracelet.getCurrentPosition(),
+        Tracelet.getCurrentPosition,
         throwsA(
           isA<PlatformException>().having(
             (e) => e.code,
@@ -726,7 +726,7 @@ void main() {
       () {
         final platform = _TestPlatform();
         expect(
-          () => platform.getLocationAuthorization(),
+          platform.getLocationAuthorization,
           throwsA(isA<UnimplementedError>()),
         );
       },
@@ -737,7 +737,7 @@ void main() {
       () {
         final platform = _TestPlatform();
         expect(
-          () => platform.requestLocationAuthorization(),
+          platform.requestLocationAuthorization,
           throwsA(isA<UnimplementedError>()),
         );
       },
@@ -746,7 +746,7 @@ void main() {
     test('_TestPlatform getMotionAuthorization throws UnimplementedError', () {
       final platform = _TestPlatform();
       expect(
-        () => platform.getMotionAuthorization(),
+        platform.getMotionAuthorization,
         throwsA(isA<UnimplementedError>()),
       );
     });
@@ -755,7 +755,7 @@ void main() {
         'UnimplementedError', () {
       final platform = _TestPlatform();
       expect(
-        () => platform.getNotificationAuthorization(),
+        platform.getNotificationAuthorization,
         throwsA(isA<UnimplementedError>()),
       );
     });
@@ -763,7 +763,7 @@ void main() {
     test('_TestPlatform canScheduleExactAlarms throws UnimplementedError', () {
       final platform = _TestPlatform();
       expect(
-        () => platform.canScheduleExactAlarms(),
+        platform.canScheduleExactAlarms,
         throwsA(isA<UnimplementedError>()),
       );
     });

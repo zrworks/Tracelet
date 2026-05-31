@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-import '_helpers.dart';
 
 /// **Enterprise** — Configuration for Privacy Zones.
 ///
@@ -16,12 +16,6 @@ import '_helpers.dart';
 class PrivacyZoneConfig {
   const PrivacyZoneConfig({this.enabled = false});
 
-  /// Master toggle for privacy zone evaluation.
-  ///
-  /// When `false` (default), all registered privacy zones are ignored and
-  /// locations flow through the normal dispatch pipeline unchanged.
-  final bool enabled;
-
   /// Creates a [PrivacyZoneConfig] from a platform map.
   factory PrivacyZoneConfig.fromMap(Map<String, Object?> map) {
     return PrivacyZoneConfig(
@@ -31,6 +25,12 @@ class PrivacyZoneConfig {
       ),
     );
   }
+
+  /// Master toggle for privacy zone evaluation.
+  ///
+  /// When `false` (default), all registered privacy zones are ignored and
+  /// locations flow through the normal dispatch pipeline unchanged.
+  final bool enabled;
 
   /// Serializes to a map.
   ///

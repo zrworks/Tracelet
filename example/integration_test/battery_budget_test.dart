@@ -16,12 +16,12 @@ void main() {
 
   group('BatteryBudgetEngine — Construction', () {
     testWidgets('can be instantiated with default parameters', (tester) async {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
       expect(engine, isA<BatteryBudgetEngine>());
     });
 
     testWidgets('accepts zero budget (disabled)', (tester) async {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 0.0);
+      final engine = BatteryBudgetEngine(targetBudgetPerHour: 0);
       expect(engine, isA<BatteryBudgetEngine>());
     });
   });
@@ -30,7 +30,7 @@ void main() {
     testWidgets('processSample returns null when no samples yet', (
       tester,
     ) async {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       // First call establishes baseline, no adjustment yet
       final adjustment = engine.processSample(0.95);
@@ -40,7 +40,7 @@ void main() {
     testWidgets('processSample returns adjustment after sufficient samples', (
       tester,
     ) async {
-      final engine = BatteryBudgetEngine(targetBudgetPerHour: 3.0);
+      final engine = BatteryBudgetEngine();
 
       // Simulate baseline
       engine.processSample(0.95);
@@ -62,10 +62,9 @@ void main() {
     testWidgets('BudgetAdjustmentEvent has correct fields', (tester) async {
       const event = BudgetAdjustmentEvent(
         currentBatteryDrain: 4.5,
-        targetBudget: 3.0,
-        newDistanceFilter: 50.0,
+        targetBudget: 3,
+        newDistanceFilter: 50,
         newDesiredAccuracy: 2,
-        newPeriodicInterval: null,
       );
 
       expect(event.currentBatteryDrain, 4.5);
@@ -79,9 +78,9 @@ void main() {
       tester,
     ) async {
       const event = BudgetAdjustmentEvent(
-        currentBatteryDrain: 5.0,
-        targetBudget: 2.0,
-        newDistanceFilter: 100.0,
+        currentBatteryDrain: 5,
+        targetBudget: 2,
+        newDistanceFilter: 100,
         newDesiredAccuracy: 3,
         newPeriodicInterval: 1800,
       );
@@ -92,7 +91,7 @@ void main() {
 
   group('GeoConfig — Battery Budget Property', () {
     testWidgets('GeoConfig accepts batteryBudgetPerHour', (tester) async {
-      const config = GeoConfig(batteryBudgetPerHour: 3.0);
+      const config = GeoConfig(batteryBudgetPerHour: 3);
       expect(config.batteryBudgetPerHour, 3.0);
     });
 

@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // AuditProof
@@ -31,6 +31,20 @@ class AuditProof {
     required this.timestamp,
   });
 
+  /// Creates an [AuditProof] from a platform map.
+  factory AuditProof.fromMap(Map<String, Object?> map) {
+    return AuditProof(
+      uuid: ensureString(map['uuid']),
+      hash: ensureString(map['hash']),
+      previousHash: ensureString(map['previousHash'] ?? map['previous_hash']),
+      chainIndex: ensureInt(
+        map['chainIndex'] ?? map['chain_index'],
+        fallback: 0,
+      ),
+      timestamp: ensureString(map['timestamp']),
+    );
+  }
+
   /// The UUID of the location record this proof belongs to.
   final String uuid;
 
@@ -51,20 +65,6 @@ class AuditProof {
 
   /// ISO 8601 timestamp of the location record.
   final String timestamp;
-
-  /// Creates an [AuditProof] from a platform map.
-  factory AuditProof.fromMap(Map<String, Object?> map) {
-    return AuditProof(
-      uuid: ensureString(map['uuid']),
-      hash: ensureString(map['hash']),
-      previousHash: ensureString(map['previousHash'] ?? map['previous_hash']),
-      chainIndex: ensureInt(
-        map['chainIndex'] ?? map['chain_index'],
-        fallback: 0,
-      ),
-      timestamp: ensureString(map['timestamp']),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -128,6 +128,29 @@ class AuditVerification {
     this.error,
   });
 
+  /// Creates an [AuditVerification] from a platform map.
+  factory AuditVerification.fromMap(Map<String, Object?> map) {
+    return AuditVerification(
+      isValid: ensureBool(map['isValid'] ?? map['is_valid'], fallback: false),
+      totalRecords: ensureInt(
+        map['totalRecords'] ?? map['total_records'],
+        fallback: 0,
+      ),
+      verifiedRecords: ensureInt(
+        map['verifiedRecords'] ?? map['verified_records'],
+        fallback: 0,
+      ),
+      brokenAtIndex: (map['brokenAtIndex'] ?? map['broken_at_index']) != null
+          ? ensureInt(
+              map['brokenAtIndex'] ?? map['broken_at_index'],
+              fallback: 0,
+            )
+          : null,
+      brokenAtUuid: (map['brokenAtUuid'] ?? map['broken_at_uuid']) as String?,
+      error: map['error'] as String?,
+    );
+  }
+
   /// Whether the entire audit chain is intact.
   ///
   /// `true` if every record's hash matches the expected computation.
@@ -159,29 +182,6 @@ class AuditVerification {
   ///
   /// `null` when [isValid] is `true`.
   final String? error;
-
-  /// Creates an [AuditVerification] from a platform map.
-  factory AuditVerification.fromMap(Map<String, Object?> map) {
-    return AuditVerification(
-      isValid: ensureBool(map['isValid'] ?? map['is_valid'], fallback: false),
-      totalRecords: ensureInt(
-        map['totalRecords'] ?? map['total_records'],
-        fallback: 0,
-      ),
-      verifiedRecords: ensureInt(
-        map['verifiedRecords'] ?? map['verified_records'],
-        fallback: 0,
-      ),
-      brokenAtIndex: (map['brokenAtIndex'] ?? map['broken_at_index']) != null
-          ? ensureInt(
-              map['brokenAtIndex'] ?? map['broken_at_index'],
-              fallback: 0,
-            )
-          : null,
-      brokenAtUuid: (map['brokenAtUuid'] ?? map['broken_at_uuid']) as String?,
-      error: map['error'] as String?,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

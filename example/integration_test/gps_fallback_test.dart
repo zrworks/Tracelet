@@ -65,7 +65,7 @@ void main() {
         'reducedAccuracy': true,
         'coords': {'latitude': 37.0, 'longitude': -122.0},
       });
-      final copy = original.copyWithCoords(latitude: 38.0);
+      final copy = original.copyWithCoords(latitude: 38);
       expect(copy.reducedAccuracy, isTrue);
       expect(copy.coords.latitude, 38.0);
     });

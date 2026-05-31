@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '_helpers.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // PrivacyZoneAction
@@ -60,6 +60,21 @@ class PrivacyZone {
     this.degradedAccuracyMeters = 1000.0,
   });
 
+  /// Creates a [PrivacyZone] from a platform map.
+  factory PrivacyZone.fromMap(Map<String, Object?> map) {
+    return PrivacyZone(
+      identifier: map['identifier'] as String? ?? '',
+      latitude: ensureDouble(map['latitude'], fallback: 0),
+      longitude: ensureDouble(map['longitude'], fallback: 0),
+      radius: ensureDouble(map['radius'], fallback: 100),
+      action: _actionFromValue(map['action']),
+      degradedAccuracyMeters: ensureDouble(
+        map['degradedAccuracyMeters'] ?? map['degraded_accuracy_meters'],
+        fallback: 1000,
+      ),
+    );
+  }
+
   /// Unique identifier for this privacy zone.
   final String identifier;
 
@@ -83,21 +98,6 @@ class PrivacyZone {
   ///
   /// Defaults to 1000.0 meters (~1 km).
   final double degradedAccuracyMeters;
-
-  /// Creates a [PrivacyZone] from a platform map.
-  factory PrivacyZone.fromMap(Map<String, Object?> map) {
-    return PrivacyZone(
-      identifier: map['identifier'] as String? ?? '',
-      latitude: ensureDouble(map['latitude'], fallback: 0.0),
-      longitude: ensureDouble(map['longitude'], fallback: 0.0),
-      radius: ensureDouble(map['radius'], fallback: 100.0),
-      action: _actionFromValue(map['action']),
-      degradedAccuracyMeters: ensureDouble(
-        map['degradedAccuracyMeters'] ?? map['degraded_accuracy_meters'],
-        fallback: 1000.0,
-      ),
-    );
-  }
 
   /// Serializes to a map suitable for platform channel transmission.
   Map<String, Object?> toMap() {

@@ -7,33 +7,33 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import 'models/activity_change_event.dart';
-import 'models/attestation_config.dart';
-import 'models/audit_config.dart';
-import 'models/audit_proof.dart';
-import 'models/authorization_event.dart';
-import 'models/compliance_report.dart';
-import 'models/config.dart';
-import 'models/connectivity_change_event.dart';
-import 'models/device_info.dart';
-import 'models/geofence.dart';
-import 'models/geofence_event.dart';
-import 'models/geofences_change_event.dart';
-import 'models/headless_event.dart';
-import 'models/health_check.dart';
-import 'models/heartbeat_event.dart';
-import 'models/http_event.dart';
-import 'models/location.dart';
-import 'models/privacy_zone.dart';
-import 'models/privacy_zone_config.dart';
-import 'models/provider_change_event.dart';
-import 'models/route_context.dart';
-import 'models/sensors.dart';
-import 'models/sql_query.dart';
-import 'models/state.dart';
-import 'models/sync_body_context.dart';
-import 'models/trip_event.dart';
-import 'models/speed_motion_event.dart';
+import 'package:tracelet/src/models/activity_change_event.dart';
+import 'package:tracelet/src/models/attestation_config.dart';
+import 'package:tracelet/src/models/audit_config.dart';
+import 'package:tracelet/src/models/audit_proof.dart';
+import 'package:tracelet/src/models/authorization_event.dart';
+import 'package:tracelet/src/models/compliance_report.dart';
+import 'package:tracelet/src/models/config.dart';
+import 'package:tracelet/src/models/connectivity_change_event.dart';
+import 'package:tracelet/src/models/device_info.dart';
+import 'package:tracelet/src/models/geofence.dart';
+import 'package:tracelet/src/models/geofence_event.dart';
+import 'package:tracelet/src/models/geofences_change_event.dart';
+import 'package:tracelet/src/models/headless_event.dart';
+import 'package:tracelet/src/models/health_check.dart';
+import 'package:tracelet/src/models/heartbeat_event.dart';
+import 'package:tracelet/src/models/http_event.dart';
+import 'package:tracelet/src/models/location.dart';
+import 'package:tracelet/src/models/privacy_zone.dart';
+import 'package:tracelet/src/models/privacy_zone_config.dart';
+import 'package:tracelet/src/models/provider_change_event.dart';
+import 'package:tracelet/src/models/route_context.dart';
+import 'package:tracelet/src/models/sensors.dart';
+import 'package:tracelet/src/models/sql_query.dart';
+import 'package:tracelet/src/models/state.dart';
+import 'package:tracelet/src/models/sync_body_context.dart';
+import 'package:tracelet/src/models/trip_event.dart';
+import 'package:tracelet/src/models/speed_motion_event.dart';
 
 /// Production-grade background geolocation for Flutter.
 ///
@@ -840,7 +840,7 @@ class Tracelet {
 
         final locations = rawLocations
             .whereType<Map>()
-            .map((e) => _deepCastMap(e))
+            .map(_deepCastMap)
             .toList();
 
         final body = await builder(SyncBodyContext(locations: locations));
@@ -1662,7 +1662,6 @@ class Tracelet {
       httpSyncUrl: httpMap?['url'] as String?,
       autoSyncEnabled: httpMap?['autoSync'] as bool? ?? true,
       auditTrailEnabled: auditMap?['enabled'] as bool? ?? false,
-      auditTrailValid: null, // Not verified until explicitly called
       locationPermissionStatus: locationPerm,
       motionPermissionStatus: motionPerm,
       sparseUpdatesEnabled: geoMap?['enableSparseUpdates'] as bool? ?? false,
@@ -2329,5 +2328,5 @@ void _headlessCallbackDispatcher() {
   });
 
   // Signal to the native side that the isolate is ready.
-  channel.invokeMethod<void>('initialized', null);
+  channel.invokeMethod<void>('initialized');
 }

@@ -1,9 +1,20 @@
 name: tracelet_android
 description: Android implementation of the Tracelet background geolocation plugin.
 version: 3.1.14
+topics:
+  - location
+  - background
+  - geofencing
+  - android
 license: Apache-2.0
 homepage: https://github.com/Ikolvi/Tracelet
 repository: https://github.com/Ikolvi/Tracelet/tree/main/packages/tracelet_android
+funding:
+  - https://github.com/sponsors/GalacticTitan
+  - https://www.buymeacoffee.com/kiranbjm
+  - https://thanks.dev/d/gh/galactictitan/dependencies
+  - https://www.patreon.com/c/kiranbjm
+
 resolution: workspace
 
 environment:

@@ -1,4 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/tracelet.dart' show Tracelet;
+import 'package:tracelet/tracelet.dart' show Tracelet;
 
 /// GDPR Article 30 / CCPA data processing compliance report.
 ///
@@ -15,15 +17,11 @@ class ComplianceReport {
     required this.totalLocationsSynced,
     required this.maxDaysToPersist,
     required this.maxRecordsToPersist,
-    this.oldestRecord,
-    this.newestRecord,
     required this.databaseEncrypted,
     required this.activePrivacyZones,
     required this.privacyZoneIdentifiers,
-    this.httpSyncUrl,
     required this.autoSyncEnabled,
     required this.auditTrailEnabled,
-    this.auditTrailValid,
     required this.locationPermissionStatus,
     required this.motionPermissionStatus,
     required this.sparseUpdatesEnabled,
@@ -31,6 +29,10 @@ class ComplianceReport {
     required this.deltaCompressionEnabled,
     required this.trackingEnabled,
     required this.trackingMode,
+    this.oldestRecord,
+    this.newestRecord,
+    this.httpSyncUrl,
+    this.auditTrailValid,
   });
 
   /// Report generation timestamp.

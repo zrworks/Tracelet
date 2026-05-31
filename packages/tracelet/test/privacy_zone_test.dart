@@ -52,7 +52,7 @@ void main() {
     test('equality', () {
       const a = PrivacyZoneConfig(enabled: true);
       const b = PrivacyZoneConfig(enabled: true);
-      const c = PrivacyZoneConfig(enabled: false);
+      const c = PrivacyZoneConfig();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });
@@ -111,7 +111,7 @@ void main() {
         longitude: -74.0060,
         radius: 500,
         action: PrivacyZoneAction.degrade,
-        degradedAccuracyMeters: 2000.0,
+        degradedAccuracyMeters: 2000,
       );
       expect(zone.identifier, 'office');
       expect(zone.action, PrivacyZoneAction.degrade);
@@ -125,7 +125,7 @@ void main() {
         longitude: -0.1278,
         radius: 300,
         action: PrivacyZoneAction.eventOnly,
-        degradedAccuracyMeters: 500.0,
+        degradedAccuracyMeters: 500,
       );
 
       final map = original.toMap();
@@ -142,11 +142,11 @@ void main() {
     test('toMap produces expected keys', () {
       const zone = PrivacyZone(
         identifier: 'z1',
-        latitude: 0.0,
-        longitude: 0.0,
+        latitude: 0,
+        longitude: 0,
         radius: 100,
         action: PrivacyZoneAction.degrade,
-        degradedAccuracyMeters: 750.0,
+        degradedAccuracyMeters: 750,
       );
       final map = zone.toMap();
       expect(map['identifier'], 'z1');
@@ -306,14 +306,14 @@ void main() {
       const config = Config(privacyZone: PrivacyZoneConfig(enabled: true));
       final map = config.toMap();
       expect(map.containsKey('privacyZone'), true);
-      final section = map['privacyZone'] as Map<String, Object?>;
+      final section = map['privacyZone']! as Map<String, Object?>;
       expect(section['privacyZoneEnabled'], true);
     });
 
     test('Config equality considers privacyZone', () {
       const a = Config(privacyZone: PrivacyZoneConfig(enabled: true));
       const b = Config(privacyZone: PrivacyZoneConfig(enabled: true));
-      const c = Config(privacyZone: PrivacyZoneConfig(enabled: false));
+      const c = Config();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });

@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
 
 // ---------------------------------------------------------------------------
 // AuditConfig
@@ -64,6 +63,21 @@ class AuditConfig {
     this.includeExtrasInHash = false,
   });
 
+  /// Creates an [AuditConfig] from a map.
+  factory AuditConfig.fromMap(Map<String, Object?> map) {
+    return AuditConfig(
+      enabled: ensureBool(
+        map['auditEnabled'] ?? map['enabled'],
+        fallback: false,
+      ),
+      hashAlgorithm: _parseHashAlgorithm(map['hashAlgorithm']),
+      includeExtrasInHash: ensureBool(
+        map['includeExtrasInHash'],
+        fallback: false,
+      ),
+    );
+  }
+
   /// Whether the tamper-proof audit trail is enabled.
   ///
   /// When `true`, every persisted location is hashed and chained.
@@ -84,21 +98,6 @@ class AuditConfig {
   /// will also break the audit chain. When `false` (default), only core
   /// location fields are hashed for performance and simplicity.
   final bool includeExtrasInHash;
-
-  /// Creates an [AuditConfig] from a map.
-  factory AuditConfig.fromMap(Map<String, Object?> map) {
-    return AuditConfig(
-      enabled: ensureBool(
-        map['auditEnabled'] ?? map['enabled'],
-        fallback: false,
-      ),
-      hashAlgorithm: _parseHashAlgorithm(map['hashAlgorithm']),
-      includeExtrasInHash: ensureBool(
-        map['includeExtrasInHash'],
-        fallback: false,
-      ),
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

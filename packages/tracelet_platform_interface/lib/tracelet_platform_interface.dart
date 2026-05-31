@@ -5,12 +5,15 @@
 /// default [PigeonTracelet] implementation.
 library;
 
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
+    show PigeonTracelet, TraceletPlatform;
+
 export 'src/algorithms/algorithms.dart';
-export 'src/tracelet_platform.dart';
-export 'src/method_channel_tracelet.dart'; // Legacy, kept for backward compat
-export 'src/pigeon_tracelet.dart';
-export 'src/pigeon_event_receiver.dart';
 export 'src/event_channel_names.dart';
 export 'src/generated/tracelet_api.g.dart';
-export 'src/types/types.dart';
+export 'src/method_channel_tracelet.dart'; // Legacy, kept for backward compat
+export 'src/pigeon_event_receiver.dart';
+export 'src/pigeon_tracelet.dart';
 export 'src/rust_loader/rust_loader.dart';
+export 'src/tracelet_platform.dart';
+export 'src/types/types.dart';

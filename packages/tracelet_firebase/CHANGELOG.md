@@ -1,3 +1,5 @@
+## 3.2.0
+
 ## 3.1.14
 
 - **CHORE**: Sync release versions across workspace.

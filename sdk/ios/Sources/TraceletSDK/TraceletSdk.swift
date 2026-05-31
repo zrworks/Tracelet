@@ -69,7 +69,6 @@ public final class TraceletSdk {
 
     // MARK: - Rust Core subsystems
     public private(set) var rustDatabase: DatabaseManager?
-    public private(set) var rustSyncManager: SyncManager?
     public private(set) var rustEngineState: EngineState?
     public private(set) var rustPluginEventDispatcher: EventDispatcher?
 
@@ -890,7 +889,6 @@ public final class TraceletSdk {
     public func sync(completion: (([[String: Any]]) -> Void)? = nil) {
         guard isReady else { completion?([]); return }
         guard let db = rustDatabase,
-              let sync = rustSyncManager,
               let state = rustEngineState else {
             completion?([])
             return
@@ -1290,9 +1288,9 @@ public final class TraceletSdk {
             
             let sync = SyncManager()
             let state = EngineState()
-            let dispatcher = EventDispatcher(db: db, sync: sync, state: state)
+            let dispatcher = EventDispatcher(db: db, state: state)
             self.rustDatabase = db
-            self.rustSyncManager = sync
+            
             self.rustEngineState = state
             self.rustPluginEventDispatcher = dispatcher
             syncConfigToRustFlat()

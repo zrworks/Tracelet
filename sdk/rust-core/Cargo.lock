@@ -2455,14 +2455,19 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 name = "tracelet_core"
 version = "0.1.0"
 dependencies = [
+ "aes-gcm",
  "chrono",
  "criterion",
  "flutter_rust_bridge",
  "geo",
+ "hex",
  "log",
+ "rand 0.8.6",
  "rstar",
+ "rusqlite",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "uniffi",
 ]

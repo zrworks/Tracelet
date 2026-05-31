@@ -15,7 +15,6 @@ import com.ikolvi.tracelet.sdk.algorithm.TripManager
 import com.ikolvi.tracelet.sdk.attestation.DeviceAttestor
 import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
 import uniffi.tracelet_core.DatabaseManager as RustDatabaseManager
-import uniffi.tracelet_core.SyncManager as RustSyncManager
 import uniffi.tracelet_core.EngineState as RustEngineState
 import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 
@@ -112,9 +111,7 @@ class TraceletSdk private constructor(private val context: Context) {
     /** Rust-native SQLite database for location persistence. */
     var rustDatabase: RustDatabaseManager? = null
         private set
-    /** Rust-native HTTP sync manager. */
-    var rustSyncManager: RustSyncManager? = null
-        private set
+
     /** Rust-native engine state (config + health). */
     var rustEngineState: RustEngineState? = null
         private set
@@ -203,11 +200,9 @@ class TraceletSdk private constructor(private val context: Context) {
                 db.setEncryptionKey("")
             }
             
-            val sync = RustSyncManager()
             val state = RustEngineState()
-            val dispatcher = RustEventDispatcher(db, sync, state)
+            val dispatcher = RustEventDispatcher(db, state)
             rustDatabase = db
-            rustSyncManager = sync
             rustEngineState = state
             rustEventDispatcher = dispatcher
             android.util.Log.i("Tracelet", "Rust Core initialized: $dbPath")
@@ -1045,58 +1040,8 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     fun sync(callback: (List<Map<String, Any?>>) -> Unit) {
-        if (!isReady) { callback(emptyList()); return }
-        val db = rustDatabase ?: return callback(emptyList())
-        val sync = rustSyncManager ?: return callback(emptyList())
-        val state = rustEngineState ?: return callback(emptyList())
-        
-        Thread {
-            try {
-                val config = state.getConfig()
-                val batchSize = config.http.maxBatchSize
-                val records = db.getLocationsBatch(batchSize)
-                if (records.isEmpty()) {
-                    mainHandler.post { callback(emptyList()) }
-                    return@Thread
-                }
-                
-                val syncedCount = sync.syncBatchBlocking(config.http, records)
-                if (syncedCount > 0) {
-                    val lastRecord = records.take(syncedCount).lastOrNull()
-                    if (lastRecord != null) {
-                        db.clearLocationsUpTo(lastRecord.id)
-                    }
-                    val mapped = records.take(syncedCount).map { record ->
-                        mapOf(
-                            "uuid" to record.id.toString(),
-                            "timestamp" to record.timestamp,
-                            "is_moving" to stateManager.isMoving,
-                            "odometer" to locationEngine.getOdometer(),
-                            "event" to "location",
-                            "mock" to record.isMock,
-                            "coords" to mapOf(
-                                "latitude" to record.latitude,
-                                "longitude" to record.longitude,
-                                "altitude" to record.altitude,
-                                "speed" to record.speed,
-                                "heading" to record.heading,
-                                "accuracy" to record.accuracy
-                            ),
-                            "activity" to mapOf(
-                                "type" to record.activity,
-                                "confidence" to 100
-                            )
-                        )
-                    }
-                    mainHandler.post { callback(mapped) }
-                } else {
-                    mainHandler.post { callback(emptyList()) }
-                }
-            } catch (e: Exception) {
-                logger.error("Sync failed: ${e.message}")
-                mainHandler.post { callback(emptyList()) }
-            }
-        }.start()
+        // HTTP sync is handled via TraceletSync plugin
+        callback(emptyList())
     }
 
     fun setDynamicHeaders(headers: Map<String, String>) {

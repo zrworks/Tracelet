@@ -1,10 +1,10 @@
 // ignore_for_file: uri_does_not_exist, undefined_identifier
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:example_firebase/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart';
 import 'package:tracelet_firebase/tracelet_firebase.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +46,6 @@ void main() async {
       http: httpConfig,
       android: const AndroidConfig(
         foregroundService: ForegroundServiceConfig(
-          enabled: true, // Required for continuous tracking when terminated
           showNotificationOnPauseOnly:
               true, // Hides notification while app is in foreground
           notificationTitle: 'Tracelet Tracker',

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
 import 'package:tracelet_doctor/tracelet_doctor.dart';
-import 'map_page.dart';
+import 'package:tracelet_example/map_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Headless background callback — MUST be a top-level function.
@@ -576,22 +576,14 @@ class _DashboardPageState extends State<DashboardPage>
 
       final state = await tl.Tracelet.ready(
         tl.Config(
-          geo: tl.GeoConfig(
-            desiredAccuracy: tl.DesiredAccuracy.high,
-            distanceFilter: 0.0,
-            stationaryRadius: 25,
-            locationTimeout: 60,
-            filter: const tl.LocationFilter(
+          geo: const tl.GeoConfig(
+            distanceFilter: 0,
+            filter: tl.LocationFilter(
               useKalmanFilter: true,
               mockDetectionLevel: 2, // 2 = HEURISTIC
-              rejectMockLocations: false, // Let them show up in UI but tag them
             ),
-            // ── New features ──
-            disableElasticity: false,
-            elasticityMultiplier: 1.0,
-            stopAfterElapsedMinutes: -1, // disabled by default
             // ── Battery budget (auto-adjusts tracking to save battery) ──
-            batteryBudgetPerHour: 3.0, // 3% max drain per hour
+            batteryBudgetPerHour: 3, // 3% max drain per hour
           ),
           app: const tl.AppConfig(
             stopOnTerminate: false,
@@ -628,8 +620,6 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           motion: const tl.MotionConfig(
             stopTimeout: 1, // 1 minute for fast stop-timeout testing
-            disableMotionActivityUpdates:
-                false, // Use ActivityRecognition for instant walk detection
             motionDetectionMode: tl.MotionDetectionMode.smart,
             shakeThreshold: 0.5, // 🚀 NEW: Ultra-sensitive for indoor testing!
             speedStationaryDelay: 30, // Make it quicker for demo testing
@@ -637,23 +627,13 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           http: const tl.HttpConfig(
             url: 'http://192.168.20.100:8099/locations',
-            method: tl.HttpMethod.post,
             // ── New features ──
             // (HTTP config goes here)
           ),
-          audit: const tl.AuditConfig(
-            enabled: true,
-            hashAlgorithm: tl.HashAlgorithm.sha256,
-          ),
+          audit: const tl.AuditConfig(enabled: true),
           persistence: const tl.PersistenceConfig(
-            // ── New features ──
-            persistMode: tl.PersistMode.all,
             maxDaysToPersist: 7,
             maxRecordsToPersist: 5000,
-          ),
-          geofence: const tl.GeofenceConfig(
-            geofenceProximityRadius: 1000,
-            geofenceInitialTriggerEntry: true,
           ),
           logger: const tl.LoggerConfig(
             logLevel: tl.LogLevel.verbose,
@@ -965,7 +945,6 @@ class _DashboardPageState extends State<DashboardPage>
       }
       await tl.Tracelet.setConfig(
         const tl.Config(
-          app: tl.AppConfig(stopOnTerminate: true),
           android: tl.AndroidConfig(
             foregroundService: tl.ForegroundServiceConfig(enabled: false),
           ),
@@ -1304,8 +1283,6 @@ class _DashboardPageState extends State<DashboardPage>
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
           radius: 200,
-          notifyOnEntry: true,
-          notifyOnExit: true,
           notifyOnDwell: true,
           loiteringDelay: 30000,
         ),
@@ -1340,8 +1317,6 @@ class _DashboardPageState extends State<DashboardPage>
           latitude: lat,
           longitude: lng,
           radius: 0, // ignored for polygon
-          notifyOnEntry: true,
-          notifyOnExit: true,
           vertices: [
             [lat + offset, lng - offset], // NW
             [lat + offset, lng + offset], // NE
@@ -1621,7 +1596,7 @@ class _DashboardPageState extends State<DashboardPage>
               : 'Tracelet needs "Always" location access to '
                     'continue recording your location when the app is '
                     'not in the foreground.\n\n'
-                    'You may see a system prompt, or you\'ll be taken '
+                    "You may see a system prompt, or you'll be taken "
                     'to Settings where you can change Location to '
                     '"Always".',
         ),
@@ -1984,7 +1959,7 @@ class _DashboardPageState extends State<DashboardPage>
       ),
     );
 
-    if (shouldOpen == true) {
+    if (shouldOpen ?? false) {
       final opened = await tl.Tracelet.openExactAlarmSettings();
       if (opened) {
         _addLog('CONFIG', 'Opened exact alarm settings');
@@ -2103,13 +2078,10 @@ class _DashboardPageState extends State<DashboardPage>
       switch (_motionMode) {
         case tl.MotionDetectionMode.accelerometer:
           nextMode = tl.MotionDetectionMode.speed;
-          break;
         case tl.MotionDetectionMode.speed:
           nextMode = tl.MotionDetectionMode.smart;
-          break;
         case tl.MotionDetectionMode.smart:
           nextMode = tl.MotionDetectionMode.accelerometer;
-          break;
       }
       final state = await tl.Tracelet.setConfig(
         tl.Config(motion: tl.MotionConfig(motionDetectionMode: nextMode)),
@@ -2203,8 +2175,8 @@ class _DashboardPageState extends State<DashboardPage>
     }
     // Cumulative stats
     final cumReport = _carbonEstimator.getCumulativeReport();
-    final cumGrams = cumReport['totalCarbonGrams'] as double;
-    final cumTrips = cumReport['totalTrips'] as int;
+    final cumGrams = cumReport['totalCarbonGrams']! as double;
+    final cumTrips = cumReport['totalTrips']! as int;
     _addLog(
       'CO\u2082 TOTAL',
       '${cumGrams.toStringAsFixed(1)}g across $cumTrips trip(s)',
@@ -2218,8 +2190,6 @@ class _DashboardPageState extends State<DashboardPage>
       context: context,
       isScrollControlled: true,
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.25,
         maxChildSize: 0.7,
         expand: false,
         builder: (ctx, scrollCtrl) => ListView(
@@ -2278,7 +2248,7 @@ class _DashboardPageState extends State<DashboardPage>
             const SizedBox(height: 4),
             _HealthRow(
               'Total CO\u2082',
-              '${(cumReport['totalCarbonGrams'] as double).toStringAsFixed(1)} g',
+              '${(cumReport['totalCarbonGrams']! as double).toStringAsFixed(1)} g',
             ),
             _HealthRow('Total Trips', '${cumReport['totalTrips']}'),
           ],
@@ -2429,7 +2399,7 @@ class _DashboardPageState extends State<DashboardPage>
                     : report.auditTrailValid!
                     ? 'Yes'
                     : 'No',
-                valueColor: report.auditTrailValid == true
+                valueColor: report.auditTrailValid ?? false
                     ? Colors.green
                     : report.auditTrailValid == false
                     ? Colors.red
@@ -2465,9 +2435,7 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _toggleDeadReckoning() async {
     try {
       final newValue = !_deadReckoningEnabled;
-      final state = await tl.Tracelet.setConfig(
-        const tl.Config(geo: tl.GeoConfig()),
-      );
+      final state = await tl.Tracelet.setConfig(const tl.Config());
       setState(() {
         _deadReckoningEnabled = newValue;
         _pluginState = state;
@@ -2559,13 +2527,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final newValue = !_sparseUpdatesEnabled;
       final state = await tl.Tracelet.setConfig(
-        tl.Config(
-          geo: tl.GeoConfig(
-            enableSparseUpdates: newValue,
-            sparseDistanceThreshold: 50,
-            sparseMaxIdleSeconds: 300,
-          ),
-        ),
+        tl.Config(geo: tl.GeoConfig(enableSparseUpdates: newValue)),
       );
       setState(() {
         _sparseUpdatesEnabled = newValue;
@@ -2616,9 +2578,7 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _toggleCellularSync() async {
     try {
       final newValue = !_cellularSyncDisabled;
-      final state = await tl.Tracelet.setConfig(
-        const tl.Config(http: tl.HttpConfig()),
-      );
+      final state = await tl.Tracelet.setConfig(const tl.Config());
       setState(() {
         _cellularSyncDisabled = newValue;
         _pluginState = state;
@@ -2755,12 +2715,7 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _toggleElasticity() async {
     try {
       final state = await tl.Tracelet.setConfig(
-        tl.Config(
-          geo: const tl.GeoConfig(
-            disableElasticity: true,
-            elasticityMultiplier: 1.0,
-          ),
-        ),
+        const tl.Config(geo: tl.GeoConfig(disableElasticity: true)),
       );
       setState(() => _pluginState = state);
       _addLog('CONFIG', 'Elasticity DISABLED (fixed distanceFilter)');
@@ -2811,11 +2766,7 @@ class _DashboardPageState extends State<DashboardPage>
   /// Toggle geofenceModeHighAccuracy to false and restart geofence-only mode.
   Future<void> _startGeofencesLowAccuracy() async {
     try {
-      await tl.Tracelet.setConfig(
-        const tl.Config(
-          geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: false),
-        ),
-      );
+      await tl.Tracelet.setConfig(const tl.Config());
       final state = await tl.Tracelet.startGeofences();
       setState(() {
         _isTracking = state.enabled;
@@ -2855,15 +2806,9 @@ class _DashboardPageState extends State<DashboardPage>
 
       // 1. Configure like the issue #51 reporter
       await tl.Tracelet.setConfig(
-        tl.Config(
-          geofence: const tl.GeofenceConfig(
-            geofenceProximityRadius: 1000,
-            geofenceInitialTriggerEntry: true,
-          ),
+        const tl.Config(
           geo: tl.GeoConfig(
-            desiredAccuracy: tl.DesiredAccuracy.high,
-            distanceFilter: 0.0,
-            enableAdaptiveMode: false,
+            distanceFilter: 0,
             disableElasticity: true,
             locationTimeout: 30,
           ),
@@ -2885,8 +2830,6 @@ class _DashboardPageState extends State<DashboardPage>
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
           radius: 20,
-          notifyOnEntry: true,
-          notifyOnExit: true,
           notifyOnDwell: true,
           loiteringDelay: 30000,
         ),
@@ -2903,8 +2846,6 @@ class _DashboardPageState extends State<DashboardPage>
           latitude: loc.coords.latitude + 0.00036, // ~40m north
           longitude: loc.coords.longitude,
           radius: 20,
-          notifyOnEntry: true,
-          notifyOnExit: true,
         ),
       );
       _addLog('ISSUE_51', 'Geofence added: $gf2Id  r=20m (~40m north)');
@@ -2934,9 +2875,7 @@ class _DashboardPageState extends State<DashboardPage>
   /// Update location filter settings live.
   Future<void> _setStrictFilter() async {
     try {
-      final state = await tl.Tracelet.setConfig(
-        const tl.Config(geo: tl.GeoConfig()),
-      );
+      final state = await tl.Tracelet.setConfig(const tl.Config());
       setState(() => _pluginState = state);
       _addLog(
         'CONFIG',
@@ -2983,7 +2922,7 @@ class _DashboardPageState extends State<DashboardPage>
           next = 'Low';
       }
 
-      await tl.Tracelet.setConfig(const tl.Config(motion: tl.MotionConfig()));
+      await tl.Tracelet.setConfig(const tl.Config());
       setState(() => _motionSensitivity = next);
       _addLog('MOTION', '$next sensitivity (Native OS default)');
     } catch (e) {
@@ -3501,7 +3440,6 @@ class _DashboardPageState extends State<DashboardPage>
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
           radius: 200,
-          action: tl.PrivacyZoneAction.exclude,
         ),
       );
       _addLog(
@@ -3530,7 +3468,6 @@ class _DashboardPageState extends State<DashboardPage>
           longitude: loc.coords.longitude,
           radius: 500,
           action: tl.PrivacyZoneAction.degrade,
-          degradedAccuracyMeters: 1000,
         ),
       );
       _addLog(
@@ -3650,7 +3587,7 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           IconButton(
             tooltip: 'Clear log',
-            onPressed: () => setState(() => _log.clear()),
+            onPressed: () => setState(_log.clear),
             icon: const Icon(Icons.delete_sweep),
           ),
         ],
@@ -4206,7 +4143,7 @@ class _DashboardPageState extends State<DashboardPage>
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             tooltip: 'Clear log',
-                            onPressed: () => setState(() => _log.clear()),
+                            onPressed: () => setState(_log.clear),
                           ),
                       ],
                     ),

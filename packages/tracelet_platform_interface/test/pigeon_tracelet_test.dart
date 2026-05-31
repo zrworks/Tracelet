@@ -29,13 +29,13 @@ class FakeHostApi extends TraceletHostApi {
     coords: TlCoords(
       latitude: 37.4219983,
       longitude: -122.084,
-      accuracy: 5.0,
+      accuracy: 5,
       speed: 2.5,
-      heading: 90.0,
-      altitude: 10.0,
-      altitudeAccuracy: 3.0,
-      speedAccuracy: 1.0,
-      headingAccuracy: 2.0,
+      heading: 90,
+      altitude: 10,
+      altitudeAccuracy: 3,
+      speedAccuracy: 1,
+      headingAccuracy: 2,
     ),
     battery: TlBattery(level: 0.85, isCharging: true),
     timestamp: '2024-01-01T00:00:00Z',
@@ -50,11 +50,7 @@ class FakeHostApi extends TraceletHostApi {
     identifier: 'home',
     latitude: 37.42,
     longitude: -122.08,
-    radius: 200.0,
-    notifyOnEntry: true,
-    notifyOnExit: true,
-    notifyOnDwell: false,
-    loiteringDelay: 0,
+    radius: 200,
   );
 
   static final _defaultProvider = TlProviderChangeEvent(
@@ -551,11 +547,11 @@ void main() {
     return TlConfig(
       geo: TlGeoConfig(
         desiredAccuracy: TlDesiredAccuracy.high,
-        distanceFilter: 10.0,
-        stationaryRadius: 25.0,
+        distanceFilter: 10,
+        stationaryRadius: 25,
         locationTimeout: 60,
         disableElasticity: false,
-        elasticityMultiplier: 1.0,
+        elasticityMultiplier: 1,
         stopAfterElapsedMinutes: -1,
         maxMonitoredGeofences: -1,
         enableTimestampMeta: false,
@@ -563,12 +559,12 @@ void main() {
         periodicLocationInterval: 900,
         periodicDesiredAccuracy: TlDesiredAccuracy.medium,
         enableSparseUpdates: false,
-        sparseDistanceThreshold: 50.0,
+        sparseDistanceThreshold: 50,
         sparseMaxIdleSeconds: 300,
         enableDeadReckoning: false,
         deadReckoningActivationDelay: 10,
         deadReckoningMaxDuration: 120,
-        batteryBudgetPerHour: 0.0,
+        batteryBudgetPerHour: 0,
         filter: TlLocationFilter(
           trackingAccuracyThreshold: 100,
           maxImpliedSpeed: 50,
@@ -647,7 +643,7 @@ void main() {
         disableStopDetection: false,
         stopDetectionDelay: 0,
         stopOnStationary: false,
-        stationaryRadius: 25.0,
+        stationaryRadius: 25,
         useSignificantChangesOnly: false,
         shakeThreshold: 2.5,
         stillThreshold: 0.4,
@@ -746,7 +742,7 @@ void main() {
     test('getCurrentPosition() returns location map', () async {
       final loc = await pigeon.getCurrentPosition({'timeout': 30});
       expect(loc['uuid'], 'test-uuid-123');
-      expect((loc['coords'] as Map)['latitude'], 37.4219983);
+      expect((loc['coords']! as Map)['latitude'], 37.4219983);
       expect(loc['isMoving'], true);
       expect(fakeApi.wasCalled('getCurrentPosition'), true);
     });
@@ -775,7 +771,7 @@ void main() {
     });
 
     test('setOdometer() returns location map', () async {
-      final loc = await pigeon.setOdometer(100.0);
+      final loc = await pigeon.setOdometer(100);
       expect(loc['uuid'], 'test-uuid-123');
     });
   });
@@ -814,7 +810,7 @@ void main() {
           ],
         });
         final args = fakeApi.lastCallArgs('addGeofence');
-        final TlGeofence forwarded = args!.first as TlGeofence;
+        final forwarded = args!.first! as TlGeofence;
         expect(forwarded.extras, <String?, Object?>{
           'demo_test': 'Hello from the geofence extras!',
           'Hello': 'World',
@@ -1153,7 +1149,7 @@ void main() {
   group('Converter fidelity', () {
     test('location map includes all nested fields', () async {
       final loc = await pigeon.getCurrentPosition({'timeout': 10});
-      final coords = loc['coords'] as Map<String, Object?>;
+      final coords = loc['coords']! as Map<String, Object?>;
       expect(coords['latitude'], 37.4219983);
       expect(coords['longitude'], -122.084);
       expect(coords['accuracy'], 5.0);
@@ -1164,11 +1160,11 @@ void main() {
       expect(coords['speedAccuracy'], 1.0);
       expect(coords['headingAccuracy'], 2.0);
 
-      final battery = loc['battery'] as Map<String, Object?>;
+      final battery = loc['battery']! as Map<String, Object?>;
       expect(battery['level'], 0.85);
       expect(battery['isCharging'], true);
 
-      final activity = loc['activity'] as Map<String, Object?>;
+      final activity = loc['activity']! as Map<String, Object?>;
       expect(activity['type'], 'walking');
       expect(activity['confidence'], 80);
     });

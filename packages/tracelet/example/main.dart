@@ -14,13 +14,7 @@ Future<void> main() async {
 
   // 2. Initialize the plugin with a configuration.
   final state = await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10,
-      ),
-      logger: tl.LoggerConfig(logLevel: tl.LogLevel.verbose),
-    ),
+    const tl.Config(logger: tl.LoggerConfig(logLevel: tl.LogLevel.verbose)),
   );
 
   print(
@@ -44,10 +38,8 @@ Future<void> singleLocationExample() async {
   // Initialize with foreground service DISABLED (Android).
   // No persistent notification will be shown.
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: const tl.AppConfig(stopOnTerminate: true),
-      android: const tl.AndroidConfig(
+    const tl.Config(
+      android: tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(
           enabled: false, // No foreground notification on Android.
         ),
@@ -84,10 +76,8 @@ Future<void> singleLocationExample() async {
 /// high confidence in a single reading.
 Future<void> bestOfThreeSamplesExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: const tl.AppConfig(stopOnTerminate: true),
-      android: const tl.AndroidConfig(
+    const tl.Config(
+      android: tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(enabled: false),
       ),
     ),
@@ -122,10 +112,8 @@ Future<void> bestOfThreeSamplesExample() async {
 /// location (e.g. fresh device boot with no prior location providers used).
 Future<void> lastKnownLocationExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      app: const tl.AppConfig(stopOnTerminate: true),
-      android: const tl.AndroidConfig(
+    const tl.Config(
+      android: tl.AndroidConfig(
         foregroundService: tl.ForegroundServiceConfig(enabled: false),
       ),
     ),
@@ -162,15 +150,11 @@ Future<void> lastKnownLocationExample() async {
 /// speed. Disable elasticity for a fixed `distanceFilter` regardless of speed.
 Future<void> elasticityExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
+    const tl.Config(
       geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
         distanceFilter: 50,
         // Disable elasticity: record at exactly every 50m regardless of speed.
         disableElasticity: true,
-        // When elasticity is enabled, this multiplier scales the dynamic
-        // adjustment (higher = fewer points at high speed). Defaults to 1.0.
-        elasticityMultiplier: 1.0,
       ),
     ),
   );
@@ -179,30 +163,10 @@ Future<void> elasticityExample() async {
 
 /// Example: Location filtering — reject GPS spikes and low-accuracy readings.
 ///
-/// The [LocationFilter] denoises raw GPS samples before they are recorded.
+/// The [tl.LocationFilter] denoises raw GPS samples before they are recorded.
 /// This helps eliminate noise, phantom jumps, and low-quality readings.
 Future<void> locationFilterExample() async {
-  await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10,
-        filter: tl.LocationFilter(
-          // Reject locations with horizontal accuracy worse than 100m.
-          trackingAccuracyThreshold: 100,
-          // Reject locations that imply speed > 80 m/s (~290 km/h).
-          maxImpliedSpeed: 80,
-          // Only count locations with accuracy < 50m toward the odometer.
-          odometerAccuracyThreshold: 50,
-          // How rejected locations are handled:
-          //   adjust  — smooth/correct (default)
-          //   ignore  — silently drop
-          //   discard — drop and fire an error event
-          policy: tl.LocationFilterPolicy.adjust,
-        ),
-      ),
-    ),
-  );
+  await tl.Tracelet.ready(const tl.Config());
   await tl.Tracelet.start();
 }
 
@@ -211,10 +175,8 @@ Future<void> locationFilterExample() async {
 /// Useful for time-boxed tracking sessions (e.g., a 30-minute workout).
 Future<void> autoStopExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
+    const tl.Config(
       geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10,
         // Automatically stop tracking after 30 minutes. Use -1 to disable.
         stopAfterElapsedMinutes: 30,
       ),
@@ -229,16 +191,12 @@ Future<void> autoStopExample() async {
 /// Fine-tune what goes into the SQLite database and how long records are kept.
 Future<void> persistenceConfigExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
+    const tl.Config(
       persistence: tl.PersistenceConfig(
-        // What to persist: all | location | geofence | none
-        persistMode: tl.PersistMode.all,
         // Auto-prune records older than 7 days. Use -1 for unlimited.
         maxDaysToPersist: 7,
         // Auto-prune when exceeding 5000 records. Use -1 for unlimited.
         maxRecordsToPersist: 5000,
-        // Skip recording provider-change events (GPS→network transitions).
-        disableProviderChangeRecord: false,
       ),
     ),
   );
@@ -252,9 +210,8 @@ Future<void> persistenceConfigExample() async {
 /// full GPS + motion pipeline even in geofence-only mode.
 Future<void> geofenceHighAccuracyExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: const tl.GeoConfig(desiredAccuracy: tl.DesiredAccuracy.high),
-      android: const tl.AndroidConfig(
+    const tl.Config(
+      android: tl.AndroidConfig(
         // Enable high-accuracy geofence monitoring (Android only).
         geofenceModeHighAccuracy: true,
       ),
@@ -263,13 +220,11 @@ Future<void> geofenceHighAccuracyExample() async {
 
   // Add a geofence first
   await tl.Tracelet.addGeofence(
-    tl.Geofence(
+    const tl.Geofence(
       identifier: 'office',
       latitude: 37.4220,
       longitude: -122.0841,
       radius: 200,
-      notifyOnEntry: true,
-      notifyOnExit: true,
     ),
   );
 
@@ -283,13 +238,7 @@ Future<void> geofenceHighAccuracyExample() async {
 /// useful for debugging timing issues and analyzing location pipeline latency.
 Future<void> timestampMetaExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10,
-        enableTimestampMeta: true,
-      ),
-    ),
+    const tl.Config(geo: tl.GeoConfig(enableTimestampMeta: true)),
   );
 
   tl.Tracelet.onLocation((loc) {
@@ -305,23 +254,7 @@ Future<void> timestampMetaExample() async {
 ///
 /// Fine-tune how aggressively Tracelet detects motion state changes.
 Future<void> motionTuningExample() async {
-  await tl.Tracelet.ready(
-    tl.Config(
-      motion: tl.MotionConfig(
-        // Minutes of stillness before transitioning to stationary.
-        stopTimeout: 5,
-        // Minimum confidence (0–100) for an activity to trigger motion change.
-        // Higher = fewer false positives, but slower detection.
-        minimumActivityRecognitionConfidence: 75,
-        // Disable automatic stop detection (never go stationary automatically).
-        disableStopDetection: false,
-        // Extra delay (minutes) after stop-timeout before engaging detection.
-        stopDetectionDelay: 0,
-        // Automatically call stop() instead of just transitioning to stationary.
-        stopOnStationary: false,
-      ),
-    ),
-  );
+  await tl.Tracelet.ready(const tl.Config());
   await tl.Tracelet.start();
 }
 
@@ -331,9 +264,9 @@ Future<void> motionTuningExample() async {
 /// Uses minimal battery but ensures continuous background execution.
 Future<void> preventSuspendExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      app: const tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
-      ios: const tl.IosConfig(
+    const tl.Config(
+      app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
+      ios: tl.IosConfig(
         // iOS only: prevent iOS from suspending the app.
         preventSuspend: true,
       ),
@@ -348,14 +281,14 @@ Future<void> preventSuspendExample() async {
 /// JobScheduler/WorkManager which may defer execution.
 Future<void> scheduleAlarmManagerExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
-      app: const tl.AppConfig(
+    const tl.Config(
+      app: tl.AppConfig(
         stopOnTerminate: false,
         startOnBoot: true,
         // Define a schedule: Mon-Fri, 9am-5pm
         schedule: ['1-5 09:00-17:00'],
       ),
-      android: const tl.AndroidConfig(
+      android: tl.AndroidConfig(
         // Android only: use AlarmManager for exact schedule timing.
         scheduleUseAlarmManager: true,
       ),
@@ -369,10 +302,9 @@ Future<void> scheduleAlarmManagerExample() async {
 /// Useful for bandwidth-conscious apps that should only sync on Wi-Fi.
 Future<void> wifiOnlySyncExample() async {
   await tl.Tracelet.ready(
-    tl.Config(
+    const tl.Config(
       http: tl.HttpConfig(
         url: 'https://example.com/locations',
-        autoSync: true,
         // Only sync when connected to Wi-Fi, not on cellular.
         disableAutoSyncOnCellular: true,
       ),
@@ -423,7 +355,9 @@ Future<void> permissionFlowExample() async {
 
   // Permission is now whenInUse (2) or always (3) — safe to start.
   await tl.Tracelet.ready(
-    tl.Config(app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true)),
+    const tl.Config(
+      app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
+    ),
   );
   await tl.Tracelet.start();
 }
@@ -440,48 +374,16 @@ Future<void> fullFeaturedExample() async {
   });
 
   await tl.Tracelet.ready(
-    tl.Config(
-      geo: tl.GeoConfig(
-        desiredAccuracy: tl.DesiredAccuracy.high,
-        distanceFilter: 10,
-        stationaryRadius: 25,
-        disableElasticity: false,
-        elasticityMultiplier: 1.0,
-        enableTimestampMeta: true,
-        stopAfterElapsedMinutes: -1,
-        filter: tl.LocationFilter(
-          trackingAccuracyThreshold: 100,
-          maxImpliedSpeed: 80,
-          odometerAccuracyThreshold: 50,
-        ),
-      ),
-      app: const tl.AppConfig(
-        stopOnTerminate: false,
-        startOnBoot: true,
-        heartbeatInterval: 60,
-      ),
-      android: const tl.AndroidConfig(
-        geofenceModeHighAccuracy: false,
-        scheduleUseAlarmManager: false,
-      ),
-      ios: const tl.IosConfig(preventSuspend: false),
-      motion: const tl.MotionConfig(
-        stopTimeout: 5,
-        minimumActivityRecognitionConfidence: 75,
-        disableStopDetection: false,
-        stopDetectionDelay: 0,
-        stopOnStationary: false,
-      ),
+    const tl.Config(
+      geo: tl.GeoConfig(enableTimestampMeta: true),
+      app: tl.AppConfig(stopOnTerminate: false, startOnBoot: true),
       http: tl.HttpConfig(
         url: 'https://example.com/locations',
-        autoSync: true,
         disableAutoSyncOnCellular: true,
       ),
       persistence: tl.PersistenceConfig(
-        persistMode: tl.PersistMode.all,
         maxDaysToPersist: 7,
         maxRecordsToPersist: 5000,
-        disableProviderChangeRecord: false,
       ),
       logger: tl.LoggerConfig(logLevel: tl.LogLevel.verbose, debug: true),
     ),

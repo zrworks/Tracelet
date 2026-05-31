@@ -25,20 +25,20 @@ void main() {
     });
 
     test('fromMap with empty map uses defaults', () {
-      final config = SecurityConfig.fromMap({});
+      final config = SecurityConfig.fromMap(const {});
       expect(config.encryptDatabase, false);
       expect(config.encryptionKey, isNull);
     });
 
     test('fromMap accepts snake_case keys', () {
-      final config = SecurityConfig.fromMap({'encrypt_database': true});
+      final config = SecurityConfig.fromMap(const {'encrypt_database': true});
       expect(config.encryptDatabase, true);
     });
 
     test('equality and hashCode', () {
       const a = SecurityConfig(encryptDatabase: true);
       const b = SecurityConfig(encryptDatabase: true);
-      const c = SecurityConfig(encryptDatabase: false);
+      const c = SecurityConfig();
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
       expect(a, isNot(equals(c)));
@@ -80,14 +80,14 @@ void main() {
     });
 
     test('fromMap with empty map uses defaults', () {
-      final config = AttestationConfig.fromMap({});
+      final config = AttestationConfig.fromMap(const {});
       expect(config.enabled, false);
       expect(config.refreshInterval, 3600);
       expect(config.verificationUrl, isNull);
     });
 
     test('fromMap accepts prefixed keys', () {
-      final config = AttestationConfig.fromMap({
+      final config = AttestationConfig.fromMap(const {
         'attestationEnabled': true,
         'attestationRefreshInterval': 900,
         'attestationVerificationUrl': 'https://attest.example.com',
@@ -98,7 +98,7 @@ void main() {
     });
 
     test('fromMap accepts short keys', () {
-      final config = AttestationConfig.fromMap({
+      final config = AttestationConfig.fromMap(const {
         'enabled': true,
         'refreshInterval': 600,
         'verificationUrl': 'https://short.example.com',
@@ -111,7 +111,7 @@ void main() {
     test('equality and hashCode', () {
       const a = AttestationConfig(enabled: true, refreshInterval: 1800);
       const b = AttestationConfig(enabled: true, refreshInterval: 1800);
-      const c = AttestationConfig(enabled: false, refreshInterval: 1800);
+      const c = AttestationConfig(refreshInterval: 1800);
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
       expect(a, isNot(equals(c)));
@@ -138,7 +138,7 @@ void main() {
     });
 
     test('fromMap handles null verified', () {
-      final token = AttestationToken.fromMap({
+      final token = AttestationToken.fromMap(const {
         'token': 'abc',
         'timestamp': 1700000000000,
         'provider': 'app_attest',
@@ -148,7 +148,7 @@ void main() {
     });
 
     test('fromMap handles missing fields', () {
-      final token = AttestationToken.fromMap({});
+      final token = AttestationToken.fromMap(const {});
       expect(token.token, '');
       expect(token.provider, 'unknown');
       expect(token.verified, isNull);
@@ -207,7 +207,7 @@ void main() {
     test('Config equality includes security and attestation', () {
       const a = Config(security: SecurityConfig(encryptDatabase: true));
       const b = Config(security: SecurityConfig(encryptDatabase: true));
-      const c = Config(security: SecurityConfig(encryptDatabase: false));
+      const c = Config();
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });

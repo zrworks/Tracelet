@@ -255,7 +255,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             if (_trail.length >= 2) {
               final prev = _trail[_trail.length - 2].position;
               final curr = _trail.last.position;
-              final d = const Distance();
+              const d = Distance();
               _tripDistance += d.as(LengthUnit.Meter, prev, curr);
             }
           }
@@ -513,8 +513,6 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           latitude: pos.latitude,
           longitude: pos.longitude,
           radius: 200,
-          notifyOnEntry: true,
-          notifyOnExit: true,
           notifyOnDwell: true,
           loiteringDelay: 30000,
         ),
@@ -547,7 +545,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
     try {
       final id = 'map_poly_${DateTime.now().millisecondsSinceEpoch}';
-      double latSum = 0, lngSum = 0;
+      double latSum = 0;
+      double lngSum = 0;
       for (final v in _polygonVertices) {
         latSum += v.latitude;
         lngSum += v.longitude;
@@ -558,8 +557,6 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           latitude: latSum / _polygonVertices.length,
           longitude: lngSum / _polygonVertices.length,
           radius: 0,
-          notifyOnEntry: true,
-          notifyOnExit: true,
           vertices: _polygonVertices
               .map((v) => [v.latitude, v.longitude])
               .toList(),
@@ -785,7 +782,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
     // Per-segment speed coloring
     final polylines = <Polyline>[];
-    for (int i = 0; i < _trail.length - 1; i++) {
+    for (var i = 0; i < _trail.length - 1; i++) {
       polylines.add(
         Polyline(
           points: [_trail[i].position, _trail[i + 1].position],
@@ -803,7 +800,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
     final step = (_trail.length / 50).ceil().clamp(1, 20);
     final markers = <Marker>[];
-    for (int i = 0; i < _trail.length; i += step) {
+    for (var i = 0; i < _trail.length; i += step) {
       final pt = _trail[i];
       final isPeriodic = pt.isPeriodic;
       final size = isPeriodic ? 14.0 : 8.0;
@@ -839,7 +836,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         .toList();
     final step = (points.length / 30).ceil().clamp(1, 50);
     final markers = <Marker>[];
-    for (int i = 0; i < points.length; i += step) {
+    for (var i = 0; i < points.length; i += step) {
       markers.add(
         Marker(
           point: points[i],
@@ -984,7 +981,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               ? Colors.purple.withAlpha(30)
               : Colors.indigo.withAlpha(25),
           borderColor: isExclude ? Colors.purple : Colors.indigo,
-          borderStrokeWidth: 2.0,
+          borderStrokeWidth: 2,
         ),
       );
     }
@@ -1132,7 +1129,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
     // Vertex markers
     final markers = <Marker>[];
-    for (int i = 0; i < _polygonVertices.length; i++) {
+    for (var i = 0; i < _polygonVertices.length; i++) {
       markers.add(
         Marker(
           point: _polygonVertices[i],
@@ -1568,7 +1565,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => setState(() => _eventLog.clear()),
+                    onTap: () => setState(_eventLog.clear),
                     child: const Text(
                       'Clear',
                       style: TextStyle(fontSize: 10, color: Colors.red),
@@ -1712,12 +1709,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                   motionDetectionMode: tl.MotionDetectionMode.speed,
                   speedMovingThreshold: 0.5, // Lowered for mock walking routes
                   speedStationaryDelay: 60,
-                  stationaryTrackingMode: tl.StationaryTrackingMode.periodic,
                   stationaryPeriodicInterval: 300,
                 )
-              : const tl.MotionConfig(
-                  motionDetectionMode: tl.MotionDetectionMode.accelerometer,
-                ),
+              : const tl.MotionConfig(),
         ),
       );
       setState(() => _motionDetectionMode = nextMode);
@@ -1806,7 +1800,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   Future<void> _toggleKalmanFromMap() async {
     try {
       final newValue = !_kalmanEnabled;
-      await tl.Tracelet.setConfig(const tl.Config(geo: tl.GeoConfig()));
+      await tl.Tracelet.setConfig(const tl.Config());
       setState(() {
         _kalmanEnabled = newValue;
       });
@@ -2067,8 +2061,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                 ),
                 if (_polygonVertices.isNotEmpty)
                   TextButton(
-                    onPressed: () =>
-                        setState(() => _polygonVertices.removeLast()),
+                    onPressed: () => setState(_polygonVertices.removeLast),
                     child: const Text('Undo'),
                   ),
                 if (_polygonVertices.length >= 3)

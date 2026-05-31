@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
-import 'generated/tracelet_api.g.dart';
+import 'package:tracelet_platform_interface/src/generated/tracelet_api.g.dart';
 
-import 'tracelet_platform.dart';
+import 'package:tracelet_platform_interface/src/tracelet_platform.dart';
 
 /// A [TraceletPlatform] implementation that uses MethodChannel and EventChannels.
 ///
@@ -172,10 +172,7 @@ class MethodChannelTracelet extends TraceletPlatform {
   @override
   Future<List<Map<String, Object?>>> getGeofences() async {
     final result = await _methodChannel.invokeListMethod<Map>('getGeofences');
-    return result
-            ?.map((e) => Map<String, Object?>.from(e))
-            .toList(growable: false) ??
-        [];
+    return result?.map(Map<String, Object?>.from).toList(growable: false) ?? [];
   }
 
   @override
@@ -209,10 +206,7 @@ class MethodChannelTracelet extends TraceletPlatform {
       'getLocations',
       query,
     );
-    return result
-            ?.map((e) => Map<String, Object?>.from(e))
-            .toList(growable: false) ??
-        [];
+    return result?.map(Map<String, Object?>.from).toList(growable: false) ?? [];
   }
 
   @override
@@ -260,10 +254,7 @@ class MethodChannelTracelet extends TraceletPlatform {
   @override
   Future<List<Map<String, Object?>>> sync() async {
     final result = await _methodChannel.invokeListMethod<Map>('sync');
-    return result
-            ?.map((e) => Map<String, Object?>.from(e))
-            .toList(growable: false) ??
-        [];
+    return result?.map(Map<String, Object?>.from).toList(growable: false) ?? [];
   }
 
   @override
@@ -549,10 +540,7 @@ class MethodChannelTracelet extends TraceletPlatform {
     final result = await _methodChannel.invokeListMethod<Map>(
       'getPrivacyZones',
     );
-    return result
-            ?.map((e) => Map<String, Object?>.from(e))
-            .toList(growable: false) ??
-        [];
+    return result?.map(Map<String, Object?>.from).toList(growable: false) ?? [];
   }
 
   // ---------------------------------------------------------------------------

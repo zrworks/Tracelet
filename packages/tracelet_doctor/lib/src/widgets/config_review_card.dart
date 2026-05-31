@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
-import '../doctor_theme.dart';
-import 'common.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
+import 'package:tracelet_doctor/src/widgets/common.dart';
 
 /// Analyzes the active Tracelet configuration for common misconfigurations,
 /// missing headless handlers, and HTTP sync issues.
@@ -190,7 +190,7 @@ class _HeadlessRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Headless Task', style: DoctorTheme.cardBodyStyle),
+          const Text('Headless Task', style: DoctorTheme.cardBodyStyle),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

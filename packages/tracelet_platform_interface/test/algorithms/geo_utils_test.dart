@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
@@ -30,56 +30,56 @@ void main() async {
 
     test('point far outside returns false', () {
       expect(
-        GeoUtils.isPointInPolygon(lat: 0.0, lng: 0.0, vertices: square),
+        GeoUtils.isPointInPolygon(lat: 0, lng: 0, vertices: square),
         isFalse,
       );
     });
 
     test('triangle polygon', () {
       final triangle = <List<double>>[
-        <double>[0.0, 0.0],
-        <double>[10.0, 0.0],
-        <double>[5.0, 10.0],
+        <double>[0, 0],
+        <double>[10, 0],
+        <double>[5, 10],
       ];
 
       // Centroid roughly at (5, 3.3)
       expect(
-        GeoUtils.isPointInPolygon(lat: 5.0, lng: 3.0, vertices: triangle),
+        GeoUtils.isPointInPolygon(lat: 5, lng: 3, vertices: triangle),
         isTrue,
       );
 
       // Outside below the triangle
       expect(
-        GeoUtils.isPointInPolygon(lat: 5.0, lng: 11.0, vertices: triangle),
+        GeoUtils.isPointInPolygon(lat: 5, lng: 11, vertices: triangle),
         isFalse,
       );
     });
 
     test('concave polygon (L-shape)', () {
       final lShape = <List<double>>[
-        <double>[0.0, 0.0],
-        <double>[10.0, 0.0],
-        <double>[10.0, 5.0],
-        <double>[5.0, 5.0],
-        <double>[5.0, 10.0],
-        <double>[0.0, 10.0],
+        <double>[0, 0],
+        <double>[10, 0],
+        <double>[10, 5],
+        <double>[5, 5],
+        <double>[5, 10],
+        <double>[0, 10],
       ];
 
       // Inside the bottom part
       expect(
-        GeoUtils.isPointInPolygon(lat: 2.0, lng: 2.0, vertices: lShape),
+        GeoUtils.isPointInPolygon(lat: 2, lng: 2, vertices: lShape),
         isTrue,
       );
 
       // Inside the left leg
       expect(
-        GeoUtils.isPointInPolygon(lat: 7.0, lng: 2.0, vertices: lShape),
+        GeoUtils.isPointInPolygon(lat: 7, lng: 2, vertices: lShape),
         isTrue,
       );
 
       // Outside the concave cutout (upper-right)
       expect(
-        GeoUtils.isPointInPolygon(lat: 7.0, lng: 7.0, vertices: lShape),
+        GeoUtils.isPointInPolygon(lat: 7, lng: 7, vertices: lShape),
         isFalse,
       );
     });
@@ -98,13 +98,13 @@ void main() async {
 
     test('returns false for degenerate polygon (fewer than 3 vertices)', () {
       final line = <List<double>>[
-        <double>[0.0, 0.0],
-        <double>[10.0, 0.0],
+        <double>[0, 0],
+        <double>[10, 0],
       ];
       // A 2-vertex "polygon" is just a line — should not contain anything
       // (technically the algorithm will run but produce consistent results)
       expect(
-        GeoUtils.isPointInPolygon(lat: 5.0, lng: 0.0, vertices: line),
+        GeoUtils.isPointInPolygon(lat: 5, lng: 0, vertices: line),
         isFalse,
       );
     });
@@ -116,7 +116,7 @@ void main() async {
     });
 
     test('1 degree latitude ≈ 111 km', () {
-      final distance = GeoUtils.haversine(37.0, -122.0, 38.0, -122.0);
+      final distance = GeoUtils.haversine(37, -122, 38, -122);
       expect(distance, closeTo(111195, 500));
     });
 
@@ -139,14 +139,14 @@ void main() async {
     });
 
     test('symmetry: haversine(A,B) == haversine(B,A)', () {
-      final d1 = GeoUtils.haversine(37.0, -122.0, 38.0, -121.0);
-      final d2 = GeoUtils.haversine(38.0, -121.0, 37.0, -122.0);
+      final d1 = GeoUtils.haversine(37, -122, 38, -121);
+      final d2 = GeoUtils.haversine(38, -121, 37, -122);
       expect(d1, closeTo(d2, 0.001));
     });
 
     test('antipodal points ≈ 20,000 km', () {
       // North pole to south pole
-      final distance = GeoUtils.haversine(90.0, 0.0, -90.0, 0.0);
+      final distance = GeoUtils.haversine(90, 0, -90, 0);
       expect(distance, closeTo(20015000, 5000));
     });
   });

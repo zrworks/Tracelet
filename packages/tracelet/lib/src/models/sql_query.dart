@@ -21,6 +21,26 @@ class SQLQuery {
     this.order = LocationOrderDirection.ascending,
   });
 
+  /// Creates a [SQLQuery] from a map.
+  factory SQLQuery.fromMap(Map<String, Object?> map) {
+    final startMs = map['start'] as int?;
+    final endMs = map['end'] as int?;
+
+    return SQLQuery(
+      start: startMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(startMs)
+          : null,
+      end: endMs != null ? DateTime.fromMillisecondsSinceEpoch(endMs) : null,
+      limit: (map['limit'] as int?) ?? -1,
+      offset: (map['offset'] as int?) ?? 0,
+      order:
+          LocationOrderDirection.values[((map['order'] as int?) ?? 0).clamp(
+            0,
+            LocationOrderDirection.values.length - 1,
+          )],
+    );
+  }
+
   /// Start of the time range (inclusive). `null` means no lower bound.
   final DateTime? start;
 
@@ -45,26 +65,6 @@ class SQLQuery {
       'offset': offset,
       'order': order.index,
     };
-  }
-
-  /// Creates a [SQLQuery] from a map.
-  factory SQLQuery.fromMap(Map<String, Object?> map) {
-    final startMs = map['start'] as int?;
-    final endMs = map['end'] as int?;
-
-    return SQLQuery(
-      start: startMs != null
-          ? DateTime.fromMillisecondsSinceEpoch(startMs)
-          : null,
-      end: endMs != null ? DateTime.fromMillisecondsSinceEpoch(endMs) : null,
-      limit: (map['limit'] as int?) ?? -1,
-      offset: (map['offset'] as int?) ?? 0,
-      order:
-          LocationOrderDirection.values[((map['order'] as int?) ?? 0).clamp(
-            0,
-            LocationOrderDirection.values.length - 1,
-          )],
-    );
   }
 
   @override

@@ -1,6 +1,6 @@
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
     show GeoUtils;
-import 'web_storage_engine.dart';
+import 'package:tracelet_web/src/web_storage_engine.dart';
 
 /// Web implementation of the Carbon Estimator.
 ///
@@ -12,17 +12,17 @@ class WebCarbonEngine {
   final WebStorageEngine _storage;
 
   // Simple emission factors (grams of CO2 per km)
-  static const double _walkingFactor = 0.0;
-  static const double _drivingFactor = 120.0;
-  static const double _unknownFactor = 120.0;
+  static const double _walkingFactor = 0;
+  static const double _drivingFactor = 120;
+  static const double _unknownFactor = 120;
 
   Future<Map<String, Object?>> getCarbonReport([
     Map<String, Object?>? query,
   ]) async {
     final locations = await _storage.getLocations(query);
 
-    double totalCarbon = 0.0;
-    const int totalTrips = 1; // Simplified: 1 trip for the session
+    var totalCarbon = 0.toDouble();
+    const totalTrips = 1; // Simplified: 1 trip for the session
 
     final carbonByMode = <String, double>{
       'walking': 0.0,
@@ -36,9 +36,9 @@ class WebCarbonEngine {
       'unknown': 0.0,
     };
 
-    double prevLat = 0.0;
-    double prevLon = 0.0;
-    bool hasPrev = false;
+    var prevLat = 0.toDouble();
+    var prevLon = 0.toDouble();
+    var hasPrev = false;
 
     for (final loc in locations) {
       final coords = loc['coords'];
@@ -52,12 +52,12 @@ class WebCarbonEngine {
 
           // On Web, activity is typically unknown unless manually set
           final activity = loc['activity'];
-          String mode = 'unknown';
+          var mode = 'unknown';
           if (activity is Map) {
             mode = (activity['type'] as String?)?.toLowerCase() ?? 'unknown';
           }
 
-          double factor = _unknownFactor;
+          var factor = _unknownFactor;
           if (mode == 'walking' || mode == 'running' || mode == 'bicycle') {
             factor = _walkingFactor;
             mode = 'walking';

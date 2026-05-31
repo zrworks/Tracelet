@@ -1,13 +1,10 @@
-import '../rust/api_dart/battery_budget.dart';
-import '../rust/state/battery_budget.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:tracelet_platform_interface/src/rust/api_dart/battery_budget.dart';
+import 'package:tracelet_platform_interface/src/rust/state/battery_budget.dart';
 
 /// Rust-powered battery budget engine.
 class BatteryBudgetEngine {
-  BatteryBudgetEngineDart? _inner;
-  final DateTime Function() _clock;
-
   BatteryBudgetEngine({
     double targetBudgetPerHour = 3.0,
     double initialDistanceFilter = 10.0,
@@ -25,6 +22,8 @@ class BatteryBudgetEngine {
       );
     }
   }
+  BatteryBudgetEngineDart? _inner;
+  final DateTime Function() _clock;
 
   BudgetAdjustmentEvent? processSample(
     double batteryLevel, {
@@ -40,11 +39,9 @@ class BatteryBudgetEngine {
 
   int getRecommendedIntervalMs(int defaultIntervalMs) {
     if (_inner == null) return defaultIntervalMs;
-    return _inner!
-        .getRecommendedIntervalMs(
-          defaultIntervalMs: PlatformInt64Util.from(defaultIntervalMs),
-        )
-        .toInt();
+    return _inner!.getRecommendedIntervalMs(
+      defaultIntervalMs: PlatformInt64Util.from(defaultIntervalMs),
+    );
   }
 
   bool shouldThrottleLocation() {

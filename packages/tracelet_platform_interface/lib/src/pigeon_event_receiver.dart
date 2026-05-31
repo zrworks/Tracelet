@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'generated/tracelet_api.g.dart';
+import 'package:tracelet_platform_interface/src/generated/tracelet_api.g.dart';
 
 /// Implements [TraceletEventApi] and routes each Pigeon callback into a
 /// broadcast [StreamController].

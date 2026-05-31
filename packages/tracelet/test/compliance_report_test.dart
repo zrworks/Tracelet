@@ -135,7 +135,7 @@ void main() {
 
     test('dataInventory has correct values', () {
       final json = report.toJson();
-      final inv = json['dataInventory'] as Map<String, Object?>;
+      final inv = json['dataInventory']! as Map<String, Object?>;
 
       expect(inv['totalLocationsStored'], 500);
       expect(inv['totalLocationsSynced'], 450);
@@ -145,7 +145,7 @@ void main() {
 
     test('retentionPolicy has correct values', () {
       final json = report.toJson();
-      final ret = json['retentionPolicy'] as Map<String, Object?>;
+      final ret = json['retentionPolicy']! as Map<String, Object?>;
 
       expect(ret['maxDaysToPersist'], 90);
       expect(ret['maxRecordsToPersist'], 50000);
@@ -153,7 +153,7 @@ void main() {
 
     test('privacyMeasures has correct values', () {
       final json = report.toJson();
-      final priv = json['privacyMeasures'] as Map<String, Object?>;
+      final priv = json['privacyMeasures']! as Map<String, Object?>;
 
       expect(priv['databaseEncrypted'], isTrue);
       expect(priv['activePrivacyZones'], 1);
@@ -165,7 +165,7 @@ void main() {
 
     test('dataDestinations has correct values', () {
       final json = report.toJson();
-      final dest = json['dataDestinations'] as Map<String, Object?>;
+      final dest = json['dataDestinations']! as Map<String, Object?>;
 
       expect(dest['httpSyncUrl'], 'https://api.example.com/sync');
       expect(dest['autoSyncEnabled'], isTrue);
@@ -173,7 +173,7 @@ void main() {
 
     test('auditTrail has correct values', () {
       final json = report.toJson();
-      final audit = json['auditTrail'] as Map<String, Object?>;
+      final audit = json['auditTrail']! as Map<String, Object?>;
 
       expect(audit['enabled'], isTrue);
       expect(audit['valid'], isTrue);
@@ -181,7 +181,7 @@ void main() {
 
     test('consent has correct values', () {
       final json = report.toJson();
-      final consent = json['consent'] as Map<String, Object?>;
+      final consent = json['consent']! as Map<String, Object?>;
 
       expect(consent['locationPermissionStatus'], 3);
       expect(consent['motionPermissionStatus'], 2);
@@ -189,7 +189,7 @@ void main() {
 
     test('trackingState has correct values', () {
       final json = report.toJson();
-      final state = json['trackingState'] as Map<String, Object?>;
+      final state = json['trackingState']! as Map<String, Object?>;
 
       expect(state['enabled'], isTrue);
       expect(state['mode'], 'location');
@@ -217,14 +217,14 @@ void main() {
       );
 
       final json = minimal.toJson();
-      final inv = json['dataInventory'] as Map<String, Object?>;
+      final inv = json['dataInventory']! as Map<String, Object?>;
       expect(inv['oldestRecord'], isNull);
       expect(inv['newestRecord'], isNull);
 
-      final dest = json['dataDestinations'] as Map<String, Object?>;
+      final dest = json['dataDestinations']! as Map<String, Object?>;
       expect(dest['httpSyncUrl'], isNull);
 
-      final audit = json['auditTrail'] as Map<String, Object?>;
+      final audit = json['auditTrail']! as Map<String, Object?>;
       expect(audit['valid'], isNull);
     });
   });

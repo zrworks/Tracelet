@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart' show State;
+import 'package:flutter/material.dart' show State;
+import 'package:flutter/widgets.dart' show State;
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'generated/tracelet_api.g.dart';
-import 'pigeon_tracelet.dart';
-import 'types/enums.dart';
+import 'package:tracelet_platform_interface/src/generated/tracelet_api.g.dart';
+import 'package:tracelet_platform_interface/src/pigeon_tracelet.dart';
+import 'package:tracelet_platform_interface/src/types/enums.dart';
 
 /// The interface that platform implementations of Tracelet must extend.
 ///

@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/tracelet.dart' show MotionConfig, Tracelet;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 /// Motion detection strategy.
@@ -94,15 +95,6 @@ class SpeedMotionEvent {
     required this.trackingMode,
   });
 
-  /// The new state after this transition.
-  final SpeedMotionState state;
-
-  /// The previous state before this transition.
-  final SpeedMotionState previousState;
-
-  /// The underlying tracking mode after the transition.
-  final SpeedMotionTrackingMode trackingMode;
-
   /// Creates a [SpeedMotionEvent] from a Pigeon [TlSpeedMotionEvent].
   ///
   /// Used internally by the platform bridge to convert typed Pigeon
@@ -124,6 +116,15 @@ class SpeedMotionEvent {
       trackingMode: _parseTrackingMode(map['trackingMode']),
     );
   }
+
+  /// The new state after this transition.
+  final SpeedMotionState state;
+
+  /// The previous state before this transition.
+  final SpeedMotionState previousState;
+
+  /// The underlying tracking mode after the transition.
+  final SpeedMotionTrackingMode trackingMode;
 
   /// Serializes to a map for test round-tripping and headless dispatch.
   Map<String, Object?> toMap() {

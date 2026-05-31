@@ -17,10 +17,7 @@ void main() {
           periodicLocationInterval: 300,
           periodicDesiredAccuracy: DesiredAccuracy.high,
         ),
-        android: AndroidConfig(
-          periodicUseForegroundService: true,
-          periodicUseExactAlarms: false,
-        ),
+        android: AndroidConfig(periodicUseForegroundService: true),
       );
 
       expect(config.geo.periodicLocationInterval, 300);
@@ -44,14 +41,11 @@ void main() {
           periodicLocationInterval: 1800,
           periodicDesiredAccuracy: DesiredAccuracy.low,
         ),
-        android: AndroidConfig(
-          periodicUseForegroundService: false,
-          periodicUseExactAlarms: true,
-        ),
+        android: AndroidConfig(periodicUseExactAlarms: true),
       );
       final map = config.toMap();
-      final geoMap = map['geo'] as Map<String, Object?>;
-      final androidMap = map['android'] as Map<String, Object?>;
+      final geoMap = map['geo']! as Map<String, Object?>;
+      final androidMap = map['android']! as Map<String, Object?>;
 
       expect(geoMap['periodicLocationInterval'], 1800);
       expect(androidMap['periodicUseExactAlarms'], isTrue);
@@ -60,16 +54,7 @@ void main() {
 
   group('Periodic Mode — Configuration Combinations', () {
     testWidgets('WorkManager config (default)', (tester) async {
-      const config = Config(
-        geo: GeoConfig(
-          periodicLocationInterval: 900,
-          periodicDesiredAccuracy: DesiredAccuracy.medium,
-        ),
-        android: AndroidConfig(
-          periodicUseForegroundService: false,
-          periodicUseExactAlarms: false,
-        ),
-      );
+      const config = Config();
 
       // WorkManager: no notification, 15-min minimum
       expect(config.android.periodicUseForegroundService, isFalse);
@@ -92,14 +77,8 @@ void main() {
 
     testWidgets('Exact Alarms config', (tester) async {
       const config = Config(
-        geo: GeoConfig(
-          periodicLocationInterval: 1800,
-          periodicDesiredAccuracy: DesiredAccuracy.medium,
-        ),
-        android: AndroidConfig(
-          periodicUseForegroundService: false,
-          periodicUseExactAlarms: true,
-        ),
+        geo: GeoConfig(periodicLocationInterval: 1800),
+        android: AndroidConfig(periodicUseExactAlarms: true),
       );
 
       expect(config.android.periodicUseExactAlarms, isTrue);
@@ -134,35 +113,31 @@ void main() {
     testWidgets('Config round-trips periodic settings through toMap', (
       tester,
     ) async {
-      final config = Config(
-        geo: const GeoConfig(
+      const config = Config(
+        geo: GeoConfig(
           periodicLocationInterval: 600,
           periodicDesiredAccuracy: DesiredAccuracy.high,
         ),
-        android: const AndroidConfig(
-          periodicUseForegroundService: true,
-          periodicUseExactAlarms: false,
-        ),
+        android: AndroidConfig(periodicUseForegroundService: true),
       );
 
       final map = config.toMap();
-      final geoMap = map['geo'] as Map<String, Object?>;
-      final androidMap = map['android'] as Map<String, Object?>;
+      final geoMap = map['geo']! as Map<String, Object?>;
+      final androidMap = map['android']! as Map<String, Object?>;
       expect(geoMap['periodicLocationInterval'], 600);
       expect(androidMap['periodicUseForegroundService'], isTrue);
     });
 
     testWidgets('periodic config combined with app config', (tester) async {
-      final config = Config(
-        geo: const GeoConfig(periodicLocationInterval: 900),
-        android: const AndroidConfig(
+      const config = Config(
+        android: AndroidConfig(
           periodicUseForegroundService: true,
           foregroundService: ForegroundServiceConfig(
             notificationTitle: 'Periodic Tracking',
             notificationText: 'Check-in every 15 min',
           ),
         ),
-        app: const AppConfig(stopOnTerminate: false, startOnBoot: true),
+        app: AppConfig(stopOnTerminate: false, startOnBoot: true),
       );
 
       final map = config.toMap();

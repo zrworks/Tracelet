@@ -145,7 +145,7 @@ void main() {
     });
 
     test('MotionConfig.fromMap handles unknown enum strings with defaults', () {
-      final config = MotionConfig.fromMap(<String, Object?>{
+      final config = MotionConfig.fromMap(const <String, Object?>{
         'motionDetectionMode': 'bogus',
         'stationaryTrackingMode': 'unknown',
       });

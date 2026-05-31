@@ -37,8 +37,6 @@ void main() {
         success: false,
         status: 401,
         responseText: '{"error":"unauthorized"}',
-        isRetry: false,
-        retryCount: 0,
       );
 
       final map = original.toMap();
@@ -58,8 +56,6 @@ void main() {
         success: false,
         status: 401,
         responseText: '{"error":"token expired"}',
-        isRetry: false,
-        retryCount: 0,
       );
 
       // Second event: successful retry after headers refresh
@@ -68,7 +64,6 @@ void main() {
         status: 200,
         responseText: '{"ok":true}',
         isRetry: true,
-        retryCount: 0,
       );
 
       expect(failure.success, isFalse);

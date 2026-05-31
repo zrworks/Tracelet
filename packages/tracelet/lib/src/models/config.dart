@@ -1,16 +1,15 @@
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
+import 'package:tracelet/src/models/android_config.dart';
+import 'package:tracelet/src/models/attestation_config.dart';
+import 'package:tracelet/src/models/audit_config.dart';
+import 'package:tracelet/src/models/ios_config.dart';
+import 'package:tracelet/src/models/privacy_zone_config.dart';
+import 'package:tracelet/src/models/security_config.dart';
+import 'package:tracelet/src/models/speed_motion_event.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
-import 'android_config.dart';
-import 'ios_config.dart';
-import 'attestation_config.dart';
-import 'audit_config.dart';
-import 'privacy_zone_config.dart';
-import 'security_config.dart';
-import 'speed_motion_event.dart';
 
 export 'android_config.dart';
 export 'ios_config.dart';
@@ -61,6 +60,48 @@ class Config {
     this.security = const SecurityConfig(),
     this.attestation = const AttestationConfig(),
   });
+
+  /// High Accuracy profile tailored for turn-by-turn navigation or precise tracking.
+  factory Config.highAccuracy() => _fromProfile(TraceletProfile.highAccuracy);
+
+  /// Balanced profile tailored for standard social/fleet apps, balancing accuracy and battery.
+  factory Config.balanced() => _fromProfile(TraceletProfile.balanced);
+
+  /// Low Power profile tailored for background-only coarse tracking to maximize battery life.
+  factory Config.lowPower() => _fromProfile(TraceletProfile.lowPower);
+
+  /// Creates a [Config] from a map. Supports both nested and flat formats.
+  factory Config.fromMap(Map<String, Object?> map) {
+    final geoMap = safeMap(map['geo']);
+    final appMap = safeMap(map['app']);
+    final androidMap = safeMap(map['android']);
+    final iosMap = safeMap(map['ios']);
+    final httpMap = safeMap(map['http']);
+    final loggerMap = safeMap(map['logger']);
+    final motionMap = safeMap(map['motion']);
+    final geofenceMap = safeMap(map['geofence']);
+    final persistenceMap = safeMap(map['persistence']);
+    final auditMap = safeMap(map['audit']);
+    final privacyMap = safeMap(map['privacyZone']);
+    final securityMap = safeMap(map['security']);
+    final attestMap = safeMap(map['attestation']);
+
+    return Config(
+      geo: GeoConfig.fromMap(geoMap ?? map),
+      app: AppConfig.fromMap(appMap ?? map),
+      android: AndroidConfig.fromMap(androidMap ?? map),
+      ios: IosConfig.fromMap(iosMap ?? map),
+      http: HttpConfig.fromMap(httpMap ?? map),
+      logger: LoggerConfig.fromMap(loggerMap ?? map),
+      motion: MotionConfig.fromMap(motionMap ?? map),
+      geofence: GeofenceConfig.fromMap(geofenceMap ?? map),
+      persistence: PersistenceConfig.fromMap(persistenceMap ?? map),
+      audit: AuditConfig.fromMap(auditMap ?? map),
+      privacyZone: PrivacyZoneConfig.fromMap(privacyMap ?? map),
+      security: SecurityConfig.fromMap(securityMap ?? map),
+      attestation: AttestationConfig.fromMap(attestMap ?? map),
+    );
+  }
 
   /// Shared location accuracy and sampling settings.
   final GeoConfig geo;
@@ -147,48 +188,6 @@ class Config {
     final jsonStr = _profilesJson[profile]!;
     final baseMap = json.decode(jsonStr) as Map<String, dynamic>;
     return Config.fromMap(baseMap);
-  }
-
-  /// High Accuracy profile tailored for turn-by-turn navigation or precise tracking.
-  factory Config.highAccuracy() => _fromProfile(TraceletProfile.highAccuracy);
-
-  /// Balanced profile tailored for standard social/fleet apps, balancing accuracy and battery.
-  factory Config.balanced() => _fromProfile(TraceletProfile.balanced);
-
-  /// Low Power profile tailored for background-only coarse tracking to maximize battery life.
-  factory Config.lowPower() => _fromProfile(TraceletProfile.lowPower);
-
-  /// Creates a [Config] from a map. Supports both nested and flat formats.
-  factory Config.fromMap(Map<String, Object?> map) {
-    final geoMap = safeMap(map['geo']);
-    final appMap = safeMap(map['app']);
-    final androidMap = safeMap(map['android']);
-    final iosMap = safeMap(map['ios']);
-    final httpMap = safeMap(map['http']);
-    final loggerMap = safeMap(map['logger']);
-    final motionMap = safeMap(map['motion']);
-    final geofenceMap = safeMap(map['geofence']);
-    final persistenceMap = safeMap(map['persistence']);
-    final auditMap = safeMap(map['audit']);
-    final privacyMap = safeMap(map['privacyZone']);
-    final securityMap = safeMap(map['security']);
-    final attestMap = safeMap(map['attestation']);
-
-    return Config(
-      geo: GeoConfig.fromMap(geoMap ?? map),
-      app: AppConfig.fromMap(appMap ?? map),
-      android: AndroidConfig.fromMap(androidMap ?? map),
-      ios: IosConfig.fromMap(iosMap ?? map),
-      http: HttpConfig.fromMap(httpMap ?? map),
-      logger: LoggerConfig.fromMap(loggerMap ?? map),
-      motion: MotionConfig.fromMap(motionMap ?? map),
-      geofence: GeofenceConfig.fromMap(geofenceMap ?? map),
-      persistence: PersistenceConfig.fromMap(persistenceMap ?? map),
-      audit: AuditConfig.fromMap(auditMap ?? map),
-      privacyZone: PrivacyZoneConfig.fromMap(privacyMap ?? map),
-      security: SecurityConfig.fromMap(securityMap ?? map),
-      attestation: AttestationConfig.fromMap(attestMap ?? map),
-    );
   }
 
   /// Converts this [Config] to a Pigeon-generated [TlConfig].
@@ -284,27 +283,6 @@ class LocationFilter {
     this.useKalmanFilter = false,
   });
 
-  /// Reject locations with accuracy worse than this value (meters).
-  final int trackingAccuracyThreshold;
-
-  /// Reject locations that imply a speed greater than this value (m/s).
-  final int maxImpliedSpeed;
-
-  /// Only count locations with accuracy better than this value toward odometer.
-  final int odometerAccuracyThreshold;
-
-  /// How to handle rejected locations.
-  final LocationFilterPolicy policy;
-
-  /// Reject locations flagged as mock by the OS.
-  final bool rejectMockLocations;
-
-  /// Sensitivity level for custom mock detection.
-  final int mockDetectionLevel;
-
-  /// Whether the Kalman filter is currently enabled for GPS smoothing.
-  final bool useKalmanFilter;
-
   factory LocationFilter.fromMap(Map<String, Object?> map) {
     return LocationFilter(
       trackingAccuracyThreshold: ensureInt(
@@ -329,6 +307,27 @@ class LocationFilter {
       useKalmanFilter: ensureBool(map['useKalmanFilter'], fallback: false),
     );
   }
+
+  /// Reject locations with accuracy worse than this value (meters).
+  final int trackingAccuracyThreshold;
+
+  /// Reject locations that imply a speed greater than this value (m/s).
+  final int maxImpliedSpeed;
+
+  /// Only count locations with accuracy better than this value toward odometer.
+  final int odometerAccuracyThreshold;
+
+  /// How to handle rejected locations.
+  final LocationFilterPolicy policy;
+
+  /// Reject locations flagged as mock by the OS.
+  final bool rejectMockLocations;
+
+  /// Sensitivity level for custom mock detection.
+  final int mockDetectionLevel;
+
+  /// Whether the Kalman filter is currently enabled for GPS smoothing.
+  final bool useKalmanFilter;
 
   /// Converts to Pigeon [TlLocationFilter].
   TlLocationFilter toTlConfig() => TlLocationFilter(
@@ -403,6 +402,78 @@ class GeoConfig {
     this.deadReckoningMaxDuration = 0,
     this.filter = const LocationFilter(),
   });
+
+  factory GeoConfig.fromMap(Map<String, Object?> map) {
+    return GeoConfig(
+      desiredAccuracy:
+          DesiredAccuracy.values[ensureInt(
+            map['desiredAccuracy'],
+            fallback: 0,
+          ).clamp(0, DesiredAccuracy.values.length - 1)],
+      distanceFilter: ensureDouble(map['distanceFilter'], fallback: 10),
+      stationaryRadius: ensureDouble(map['stationaryRadius'], fallback: 25),
+      locationTimeout: ensureInt(map['locationTimeout'], fallback: 60),
+      disableElasticity: ensureBool(map['disableElasticity'], fallback: false),
+      elasticityMultiplier: ensureDouble(
+        map['elasticityMultiplier'],
+        fallback: 1,
+      ),
+      stopAfterElapsedMinutes: ensureInt(
+        map['stopAfterElapsedMinutes'],
+        fallback: -1,
+      ),
+      maxMonitoredGeofences: ensureInt(
+        map['maxMonitoredGeofences'],
+        fallback: -1,
+      ),
+      enableTimestampMeta: ensureBool(
+        map['enableTimestampMeta'],
+        fallback: false,
+      ),
+      enableAdaptiveMode: ensureBool(
+        map['enableAdaptiveMode'],
+        fallback: false,
+      ),
+      periodicLocationInterval: ensureInt(
+        map['periodicLocationInterval'],
+        fallback: 900,
+      ),
+      periodicDesiredAccuracy:
+          DesiredAccuracy.values[ensureInt(
+            map['periodicDesiredAccuracy'],
+            fallback: 1, // medium
+          ).clamp(0, DesiredAccuracy.values.length - 1)],
+      enableSparseUpdates: ensureBool(
+        map['enableSparseUpdates'],
+        fallback: false,
+      ),
+      sparseDistanceThreshold: ensureDouble(
+        map['sparseDistanceThreshold'],
+        fallback: 50,
+      ),
+      sparseMaxIdleSeconds: ensureInt(
+        map['sparseMaxIdleSeconds'],
+        fallback: 300,
+      ),
+      batteryBudgetPerHour: ensureDouble(
+        map['batteryBudgetPerHour'],
+        fallback: 0,
+      ),
+      enableDeadReckoning: ensureBool(
+        map['enableDeadReckoning'],
+        fallback: false,
+      ),
+      deadReckoningActivationDelay: ensureInt(
+        map['deadReckoningActivationDelay'],
+        fallback: 0,
+      ),
+      deadReckoningMaxDuration: ensureInt(
+        map['deadReckoningMaxDuration'],
+        fallback: 0,
+      ),
+      filter: LocationFilter.fromMap(safeMap(map['filter']) ?? map),
+    );
+  }
 
   GeoConfig copyWith({
     DesiredAccuracy? desiredAccuracy,
@@ -542,78 +613,6 @@ class GeoConfig {
   /// Defaults to [LocationFilter].
   final LocationFilter filter;
 
-  factory GeoConfig.fromMap(Map<String, Object?> map) {
-    return GeoConfig(
-      desiredAccuracy:
-          DesiredAccuracy.values[ensureInt(
-            map['desiredAccuracy'],
-            fallback: 0,
-          ).clamp(0, DesiredAccuracy.values.length - 1)],
-      distanceFilter: ensureDouble(map['distanceFilter'], fallback: 10.0),
-      stationaryRadius: ensureDouble(map['stationaryRadius'], fallback: 25.0),
-      locationTimeout: ensureInt(map['locationTimeout'], fallback: 60),
-      disableElasticity: ensureBool(map['disableElasticity'], fallback: false),
-      elasticityMultiplier: ensureDouble(
-        map['elasticityMultiplier'],
-        fallback: 1.0,
-      ),
-      stopAfterElapsedMinutes: ensureInt(
-        map['stopAfterElapsedMinutes'],
-        fallback: -1,
-      ),
-      maxMonitoredGeofences: ensureInt(
-        map['maxMonitoredGeofences'],
-        fallback: -1,
-      ),
-      enableTimestampMeta: ensureBool(
-        map['enableTimestampMeta'],
-        fallback: false,
-      ),
-      enableAdaptiveMode: ensureBool(
-        map['enableAdaptiveMode'],
-        fallback: false,
-      ),
-      periodicLocationInterval: ensureInt(
-        map['periodicLocationInterval'],
-        fallback: 900,
-      ),
-      periodicDesiredAccuracy:
-          DesiredAccuracy.values[ensureInt(
-            map['periodicDesiredAccuracy'],
-            fallback: 1, // medium
-          ).clamp(0, DesiredAccuracy.values.length - 1)],
-      enableSparseUpdates: ensureBool(
-        map['enableSparseUpdates'],
-        fallback: false,
-      ),
-      sparseDistanceThreshold: ensureDouble(
-        map['sparseDistanceThreshold'],
-        fallback: 50.0,
-      ),
-      sparseMaxIdleSeconds: ensureInt(
-        map['sparseMaxIdleSeconds'],
-        fallback: 300,
-      ),
-      batteryBudgetPerHour: ensureDouble(
-        map['batteryBudgetPerHour'],
-        fallback: 0.0,
-      ),
-      enableDeadReckoning: ensureBool(
-        map['enableDeadReckoning'],
-        fallback: false,
-      ),
-      deadReckoningActivationDelay: ensureInt(
-        map['deadReckoningActivationDelay'],
-        fallback: 0,
-      ),
-      deadReckoningMaxDuration: ensureInt(
-        map['deadReckoningMaxDuration'],
-        fallback: 0,
-      ),
-      filter: LocationFilter.fromMap(safeMap(map['filter']) ?? map),
-    );
-  }
-
   /// Converts to Pigeon [TlGeoConfig].
   TlGeoConfig toTlConfig() => TlGeoConfig(
     desiredAccuracy: TlDesiredAccuracy.values[desiredAccuracy.index],
@@ -729,13 +728,40 @@ class AppConfig {
     this.remoteConfigRefreshInterval = 1440,
   });
 
+  factory AppConfig.fromMap(Map<String, Object?> map) {
+    final rawSchedule = map['schedule'];
+    final scheduleList = <String>[];
+    if (rawSchedule is List) {
+      for (final item in rawSchedule) {
+        if (item is String) scheduleList.add(item);
+      }
+    }
+    return AppConfig(
+      stopOnTerminate: ensureBool(map['stopOnTerminate'], fallback: true),
+      startOnBoot: ensureBool(map['startOnBoot'], fallback: false),
+      heartbeatInterval: ensureInt(map['heartbeatInterval'], fallback: 60),
+      schedule: scheduleList,
+      remoteConfigUrl: map['remoteConfigUrl'] as String?,
+      remoteConfigHeaders: (map['remoteConfigHeaders'] as Map?)
+          ?.cast<String, String>(),
+      remoteConfigTimeout: ensureInt(
+        map['remoteConfigTimeout'],
+        fallback: 60000,
+      ),
+      remoteConfigRefreshInterval: ensureInt(
+        map['remoteConfigRefreshInterval'],
+        fallback: 1440,
+      ),
+    );
+  }
+
   AppConfig copyWith({
     bool? stopOnTerminate,
     bool? startOnBoot,
     int? heartbeatInterval,
     List<String>? schedule,
     String? remoteConfigUrl,
-    dynamic remoteConfigHeaders,
+    Map<String, String>? remoteConfigHeaders,
     int? remoteConfigTimeout,
     int? remoteConfigRefreshInterval,
   }) {
@@ -783,33 +809,6 @@ class AppConfig {
   /// How often to refresh/fetch the remote configuration (in minutes).
   /// Defaults to `1440` (24 hours).
   final int remoteConfigRefreshInterval;
-
-  factory AppConfig.fromMap(Map<String, Object?> map) {
-    final rawSchedule = map['schedule'];
-    final scheduleList = <String>[];
-    if (rawSchedule is List) {
-      for (final item in rawSchedule) {
-        if (item is String) scheduleList.add(item);
-      }
-    }
-    return AppConfig(
-      stopOnTerminate: ensureBool(map['stopOnTerminate'], fallback: true),
-      startOnBoot: ensureBool(map['startOnBoot'], fallback: false),
-      heartbeatInterval: ensureInt(map['heartbeatInterval'], fallback: 60),
-      schedule: scheduleList,
-      remoteConfigUrl: map['remoteConfigUrl'] as String?,
-      remoteConfigHeaders: (map['remoteConfigHeaders'] as Map?)
-          ?.cast<String, String>(),
-      remoteConfigTimeout: ensureInt(
-        map['remoteConfigTimeout'],
-        fallback: 60000,
-      ),
-      remoteConfigRefreshInterval: ensureInt(
-        map['remoteConfigRefreshInterval'],
-        fallback: 1440,
-      ),
-    );
-  }
 
   /// Converts to Pigeon [TlAppConfig].
   TlAppConfig toTlConfig() => TlAppConfig(
@@ -887,11 +886,53 @@ class HttpConfig {
     this.sslPinningCertificates,
   });
 
+  factory HttpConfig.fromMap(Map<String, Object?> map) {
+    return HttpConfig(
+      url: map['url'] as String?,
+      method:
+          HttpMethod.values[ensureInt(
+            map['method'],
+            fallback: 0,
+          ).clamp(0, HttpMethod.values.length - 1)],
+      headers: (map['headers'] as Map?)?.cast<String, String>(),
+      params: (map['params'] as Map?)?.cast<String, Object?>(),
+      autoSync: ensureBool(map['autoSync'], fallback: true),
+      batchSync: ensureBool(map['batchSync'], fallback: false),
+      maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
+      autoSyncThreshold: ensureInt(map['autoSyncThreshold'], fallback: 0),
+      httpTimeout: ensureInt(map['httpTimeout'], fallback: 60000),
+      locationsOrderDirection:
+          LocationOrderDirection.values[ensureInt(
+            map['locationsOrderDirection'],
+            fallback: 0,
+          ).clamp(0, LocationOrderDirection.values.length - 1)],
+      disableAutoSyncOnCellular: ensureBool(
+        map['disableAutoSyncOnCellular'],
+        fallback: false,
+      ),
+      maxRetries: ensureInt(map['maxRetries'], fallback: 3),
+      retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1000),
+      retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 60000),
+      enableDeltaCompression: ensureBool(
+        map['enableDeltaCompression'],
+        fallback: false,
+      ),
+      deltaCoordinatePrecision: ensureInt(
+        map['deltaCoordinatePrecision'],
+        fallback: 5,
+      ),
+      sslPinningFingerprints: (map['sslPinningFingerprints'] as List?)
+          ?.cast<String>(),
+      sslPinningCertificates: (map['sslPinningCertificates'] as List?)
+          ?.cast<String>(),
+    );
+  }
+
   HttpConfig copyWith({
     String? url,
     HttpMethod? method,
-    dynamic headers,
-    dynamic params,
+    Map<String, String>? headers,
+    Map<String, Object?>? params,
     bool? autoSync,
     bool? batchSync,
     int? maxBatchSize,
@@ -1006,48 +1047,6 @@ class HttpConfig {
   /// **Enterprise** — Base64 encoded SSL certificates.
   final List<String>? sslPinningCertificates;
 
-  factory HttpConfig.fromMap(Map<String, Object?> map) {
-    return HttpConfig(
-      url: map['url'] as String?,
-      method:
-          HttpMethod.values[ensureInt(
-            map['method'],
-            fallback: 0,
-          ).clamp(0, HttpMethod.values.length - 1)],
-      headers: (map['headers'] as Map?)?.cast<String, String>(),
-      params: (map['params'] as Map?)?.cast<String, Object?>(),
-      autoSync: ensureBool(map['autoSync'], fallback: true),
-      batchSync: ensureBool(map['batchSync'], fallback: false),
-      maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
-      autoSyncThreshold: ensureInt(map['autoSyncThreshold'], fallback: 0),
-      httpTimeout: ensureInt(map['httpTimeout'], fallback: 60000),
-      locationsOrderDirection:
-          LocationOrderDirection.values[ensureInt(
-            map['locationsOrderDirection'],
-            fallback: 0,
-          ).clamp(0, LocationOrderDirection.values.length - 1)],
-      disableAutoSyncOnCellular: ensureBool(
-        map['disableAutoSyncOnCellular'],
-        fallback: false,
-      ),
-      maxRetries: ensureInt(map['maxRetries'], fallback: 3),
-      retryBackoffBase: ensureInt(map['retryBackoffBase'], fallback: 1000),
-      retryBackoffCap: ensureInt(map['retryBackoffCap'], fallback: 60000),
-      enableDeltaCompression: ensureBool(
-        map['enableDeltaCompression'],
-        fallback: false,
-      ),
-      deltaCoordinatePrecision: ensureInt(
-        map['deltaCoordinatePrecision'],
-        fallback: 5,
-      ),
-      sslPinningFingerprints: (map['sslPinningFingerprints'] as List?)
-          ?.cast<String>(),
-      sslPinningCertificates: (map['sslPinningCertificates'] as List?)
-          ?.cast<String>(),
-    );
-  }
-
   /// Converts to Pigeon [TlHttpConfig].
   TlHttpConfig toTlConfig() => TlHttpConfig(
     url: url,
@@ -1153,6 +1152,18 @@ class LoggerConfig {
     this.debug = false,
   });
 
+  factory LoggerConfig.fromMap(Map<String, Object?> map) {
+    return LoggerConfig(
+      logLevel:
+          LogLevel.values[ensureInt(
+            map['logLevel'],
+            fallback: 2,
+          ).clamp(0, LogLevel.values.length - 1)],
+      logMaxDays: ensureInt(map['logMaxDays'], fallback: 3),
+      debug: ensureBool(map['debug'], fallback: false),
+    );
+  }
+
   LoggerConfig copyWith({LogLevel? logLevel, int? logMaxDays, bool? debug}) {
     return LoggerConfig(
       logLevel: logLevel ?? this.logLevel,
@@ -1172,18 +1183,6 @@ class LoggerConfig {
   /// Enable debugging mode (which produces platform-specific tracking sounds
   /// and verbose local logging). Defaults to `false`.
   final bool debug;
-
-  factory LoggerConfig.fromMap(Map<String, Object?> map) {
-    return LoggerConfig(
-      logLevel:
-          LogLevel.values[ensureInt(
-            map['logLevel'],
-            fallback: 2,
-          ).clamp(0, LogLevel.values.length - 1)],
-      logMaxDays: ensureInt(map['logMaxDays'], fallback: 3),
-      debug: ensureBool(map['debug'], fallback: false),
-    );
-  }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -1240,6 +1239,83 @@ class MotionConfig {
   }) : assert(speedStationaryDelay >= 0, 'speedStationaryDelay must be >= 0'),
        assert(speedWakeConfirmCount >= 1, 'speedWakeConfirmCount must be >= 1'),
        assert(speedMovingThreshold > 0, 'speedMovingThreshold must be > 0');
+
+  factory MotionConfig.fromMap(Map<String, Object?> map) {
+    // Parse activityTypes from the map if present.
+    final rawActivityTypes = map['activityTypes'];
+    List<LocationActivityType>? activityTypesList;
+    if (rawActivityTypes is List) {
+      activityTypesList = <LocationActivityType>[];
+      for (final item in rawActivityTypes) {
+        final index = item is int ? item : int.tryParse(item.toString());
+        if (index != null &&
+            index >= 0 &&
+            index < LocationActivityType.values.length) {
+          activityTypesList.add(LocationActivityType.values[index]);
+        }
+      }
+      if (activityTypesList.isEmpty) activityTypesList = null;
+    }
+    return MotionConfig(
+      stopTimeout: ensureInt(map['stopTimeout'], fallback: 5),
+      motionTriggerDelay: ensureInt(map['motionTriggerDelay'], fallback: 0),
+      disableMotionActivityUpdates: ensureBool(
+        map['disableMotionActivityUpdates'],
+        fallback: false,
+      ),
+      isMoving: ensureBool(map['isMoving'], fallback: false),
+      activityRecognitionInterval: ensureInt(
+        map['activityRecognitionInterval'],
+        fallback: 1000,
+      ),
+      minimumActivityRecognitionConfidence: ensureInt(
+        map['minimumActivityRecognitionConfidence'],
+        fallback: 75,
+      ),
+      disableStopDetection: ensureBool(
+        map['disableStopDetection'],
+        fallback: false,
+      ),
+      stopDetectionDelay: ensureInt(map['stopDetectionDelay'], fallback: 0),
+      stopOnStationary: ensureBool(map['stopOnStationary'], fallback: false),
+      activityTypes: activityTypesList,
+      stationaryRadius: ensureDouble(map['stationaryRadius'], fallback: 25),
+      useSignificantChangesOnly: ensureBool(
+        map['useSignificantChangesOnly'],
+        fallback: false,
+      ),
+      shakeThreshold: ensureDouble(map['shakeThreshold'], fallback: 2.5),
+      stillThreshold: ensureDouble(map['stillThreshold'], fallback: 0.4),
+      stillSampleCount: ensureInt(map['stillSampleCount'], fallback: 25),
+      motionDetectionMode: _parseMotionDetectionMode(
+        map['motionDetectionMode'],
+      ),
+      speedMovingThreshold: ensureDouble(
+        map['speedMovingThreshold'],
+        fallback: 1.5,
+      ),
+      speedStationaryDelay: ensureInt(
+        map['speedStationaryDelay'],
+        fallback: 180,
+      ),
+      stationaryTrackingMode: _parseStationaryTrackingMode(
+        map['stationaryTrackingMode'],
+      ),
+      stationaryPeriodicInterval: ensureInt(
+        map['stationaryPeriodicInterval'],
+        fallback: 120,
+      ),
+      stationaryPeriodicAccuracy:
+          DesiredAccuracy.values[ensureInt(
+            map['stationaryPeriodicAccuracy'],
+            fallback: DesiredAccuracy.high.index,
+          ).clamp(0, DesiredAccuracy.values.length - 1)],
+      speedWakeConfirmCount: ensureInt(
+        map['speedWakeConfirmCount'],
+        fallback: 1,
+      ),
+    );
+  }
 
   /// The amount of time (in minutes) the device must be stationary before declaring the stationary state.
   /// Defaults to `5`.
@@ -1372,83 +1448,6 @@ class MotionConfig {
   /// GPS speed is jitter-free. Increase to `3+` if you lower the
   /// stationary accuracy.
   final int speedWakeConfirmCount;
-
-  factory MotionConfig.fromMap(Map<String, Object?> map) {
-    // Parse activityTypes from the map if present.
-    final rawActivityTypes = map['activityTypes'];
-    List<LocationActivityType>? activityTypesList;
-    if (rawActivityTypes is List) {
-      activityTypesList = <LocationActivityType>[];
-      for (final item in rawActivityTypes) {
-        final index = item is int ? item : int.tryParse(item.toString());
-        if (index != null &&
-            index >= 0 &&
-            index < LocationActivityType.values.length) {
-          activityTypesList.add(LocationActivityType.values[index]);
-        }
-      }
-      if (activityTypesList.isEmpty) activityTypesList = null;
-    }
-    return MotionConfig(
-      stopTimeout: ensureInt(map['stopTimeout'], fallback: 5),
-      motionTriggerDelay: ensureInt(map['motionTriggerDelay'], fallback: 0),
-      disableMotionActivityUpdates: ensureBool(
-        map['disableMotionActivityUpdates'],
-        fallback: false,
-      ),
-      isMoving: ensureBool(map['isMoving'], fallback: false),
-      activityRecognitionInterval: ensureInt(
-        map['activityRecognitionInterval'],
-        fallback: 1000,
-      ),
-      minimumActivityRecognitionConfidence: ensureInt(
-        map['minimumActivityRecognitionConfidence'],
-        fallback: 75,
-      ),
-      disableStopDetection: ensureBool(
-        map['disableStopDetection'],
-        fallback: false,
-      ),
-      stopDetectionDelay: ensureInt(map['stopDetectionDelay'], fallback: 0),
-      stopOnStationary: ensureBool(map['stopOnStationary'], fallback: false),
-      activityTypes: activityTypesList,
-      stationaryRadius: ensureDouble(map['stationaryRadius'], fallback: 25.0),
-      useSignificantChangesOnly: ensureBool(
-        map['useSignificantChangesOnly'],
-        fallback: false,
-      ),
-      shakeThreshold: ensureDouble(map['shakeThreshold'], fallback: 2.5),
-      stillThreshold: ensureDouble(map['stillThreshold'], fallback: 0.4),
-      stillSampleCount: ensureInt(map['stillSampleCount'], fallback: 25),
-      motionDetectionMode: _parseMotionDetectionMode(
-        map['motionDetectionMode'],
-      ),
-      speedMovingThreshold: ensureDouble(
-        map['speedMovingThreshold'],
-        fallback: 1.5,
-      ),
-      speedStationaryDelay: ensureInt(
-        map['speedStationaryDelay'],
-        fallback: 180,
-      ),
-      stationaryTrackingMode: _parseStationaryTrackingMode(
-        map['stationaryTrackingMode'],
-      ),
-      stationaryPeriodicInterval: ensureInt(
-        map['stationaryPeriodicInterval'],
-        fallback: 120,
-      ),
-      stationaryPeriodicAccuracy:
-          DesiredAccuracy.values[ensureInt(
-            map['stationaryPeriodicAccuracy'],
-            fallback: DesiredAccuracy.high.index,
-          ).clamp(0, DesiredAccuracy.values.length - 1)],
-      speedWakeConfirmCount: ensureInt(
-        map['speedWakeConfirmCount'],
-        fallback: 1,
-      ),
-    );
-  }
 
   /// Parses [MotionDetectionMode] from a String name or int index.
   static MotionDetectionMode _parseMotionDetectionMode(Object? raw) {
@@ -1614,19 +1613,6 @@ class GeofenceConfig {
     this.geofenceProximityRadius = 1000,
   });
 
-  /// Enable high-accuracy location tracking during geofence monitoring (Android only).
-  /// Defaults to `false`.
-  final bool geofenceModeHighAccuracy;
-
-  /// Fire enter trigger immediately upon registration if device is already inside the geofence.
-  /// Defaults to `true`.
-  final bool geofenceInitialTriggerEntry;
-
-  /// The radius (in meters) for proximity-based geofence loading.
-  /// Only geofences within this distance are actively registered with the OS.
-  /// Defaults to `1000`.
-  final int geofenceProximityRadius;
-
   factory GeofenceConfig.fromMap(Map<String, Object?> map) {
     return GeofenceConfig(
       geofenceModeHighAccuracy: ensureBool(
@@ -1643,6 +1629,19 @@ class GeofenceConfig {
       ),
     );
   }
+
+  /// Enable high-accuracy location tracking during geofence monitoring (Android only).
+  /// Defaults to `false`.
+  final bool geofenceModeHighAccuracy;
+
+  /// Fire enter trigger immediately upon registration if device is already inside the geofence.
+  /// Defaults to `true`.
+  final bool geofenceInitialTriggerEntry;
+
+  /// The radius (in meters) for proximity-based geofence loading.
+  /// Only geofences within this distance are actively registered with the OS.
+  /// Defaults to `1000`.
+  final int geofenceProximityRadius;
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -1685,22 +1684,6 @@ class PersistenceConfig {
     this.disableProviderChangeRecord = false,
   });
 
-  /// The maximum number of days to retain tracked locations and geofence events in the database.
-  /// Set to `-1` for unlimited retention. Defaults to `1`.
-  final int maxDaysToPersist;
-
-  /// The maximum number of location records to keep in the database.
-  /// Set to `-1` for unlimited. Defaults to `-1`.
-  final int maxRecordsToPersist;
-
-  /// The tracking data persistence mode.
-  /// Defaults to [PersistMode.all].
-  final PersistMode persistMode;
-
-  /// Skip writing a database record when location providers change (e.g. GPS disabled/enabled).
-  /// Defaults to `false`.
-  final bool disableProviderChangeRecord;
-
   factory PersistenceConfig.fromMap(Map<String, Object?> map) {
     return PersistenceConfig(
       maxDaysToPersist: ensureInt(map['maxDaysToPersist'], fallback: 1),
@@ -1716,6 +1699,22 @@ class PersistenceConfig {
       ),
     );
   }
+
+  /// The maximum number of days to retain tracked locations and geofence events in the database.
+  /// Set to `-1` for unlimited retention. Defaults to `1`.
+  final int maxDaysToPersist;
+
+  /// The maximum number of location records to keep in the database.
+  /// Set to `-1` for unlimited. Defaults to `-1`.
+  final int maxRecordsToPersist;
+
+  /// The tracking data persistence mode.
+  /// Defaults to [PersistMode.all].
+  final PersistMode persistMode;
+
+  /// Skip writing a database record when location providers change (e.g. GPS disabled/enabled).
+  /// Defaults to `false`.
+  final bool disableProviderChangeRecord;
 
   Map<String, Object?> toMap() {
     return <String, Object?>{

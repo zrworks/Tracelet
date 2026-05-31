@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
-import 'doctor_theme.dart';
-import 'widgets/battery_oem_card.dart';
-import 'widgets/config_review_card.dart';
-import 'widgets/database_card.dart';
-import 'widgets/permission_card.dart';
-import 'widgets/sensor_grid.dart';
-import 'widgets/tracking_card.dart';
-import 'widgets/warning_list.dart';
+import 'package:tracelet_doctor/src/doctor_theme.dart';
+import 'package:tracelet_doctor/src/widgets/battery_oem_card.dart';
+import 'package:tracelet_doctor/src/widgets/config_review_card.dart';
+import 'package:tracelet_doctor/src/widgets/database_card.dart';
+import 'package:tracelet_doctor/src/widgets/permission_card.dart';
+import 'package:tracelet_doctor/src/widgets/sensor_grid.dart';
+import 'package:tracelet_doctor/src/widgets/tracking_card.dart';
+import 'package:tracelet_doctor/src/widgets/warning_list.dart';
 
 /// A drop-in diagnostic overlay for Tracelet.
 ///
@@ -309,7 +309,7 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               ),
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'The Tracelet plugin has not been initialized yet.\n'
               'Call Tracelet.ready() before opening the Doctor.',
               textAlign: TextAlign.center,
@@ -323,11 +323,11 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('QUICK FIX', style: DoctorTheme.sectionStyle),
+                  const Text('QUICK FIX', style: DoctorTheme.sectionStyle),
                   const SizedBox(height: 8),
                   Text(
                     'await Tracelet.ready(Config.balanced(\n'
-                    '  overrides: {\'geo\': ...}\n'
+                    "  overrides: {'geo': ...}\n"
                     '));\n\n'
                     '// Then open the Doctor:\n'
                     'TraceletDoctor.show(context);',

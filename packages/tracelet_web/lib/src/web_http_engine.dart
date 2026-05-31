@@ -4,10 +4,9 @@ import 'dart:js_interop';
 
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart'
     show DeltaEncoder;
+import 'package:tracelet_web/src/web_event_dispatcher.dart';
+import 'package:tracelet_web/src/web_storage_engine.dart';
 import 'package:web/web.dart' as web;
-
-import 'web_event_dispatcher.dart';
-import 'web_storage_engine.dart';
 
 /// HTTP sync engine for Tracelet web using the `fetch()` API.
 ///
@@ -163,7 +162,7 @@ class WebHttpEngine {
 
       final status = response.status;
       final success = status >= 200 && status < 300;
-      final responseText = (await response.text().toDart);
+      final responseText = await response.text().toDart;
 
       _events.emitHttp(<String, Object?>{
         'success': success,
@@ -205,7 +204,7 @@ class WebHttpEngine {
 
       final status = response.status;
       final success = status >= 200 && status < 300;
-      final responseText = (await response.text().toDart);
+      final responseText = await response.text().toDart;
 
       _events.emitHttp(<String, Object?>{
         'success': success,

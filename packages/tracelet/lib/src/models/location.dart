@@ -1,7 +1,8 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet/src/models/_helpers.dart';
+import 'package:tracelet/src/models/audit_config.dart' show AuditConfig;
+import 'package:tracelet/tracelet.dart' show AuditConfig;
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
-
-import '_helpers.dart';
 
 /// A recorded location from the native platform.
 ///
@@ -35,6 +36,122 @@ class Location {
     this.auditPreviousHash,
     this.auditChainIndex,
   });
+
+  /// Creates a [Location] from a Pigeon [TlLocation] without map round-trip.
+  factory Location.fromTl(TlLocation tl) {
+    final c = tl.coords;
+    final ext = tl.extras ?? const <String, Object?>{};
+
+    // Extract metadata injected by EventDispatcher into extras because Pigeon
+    // TlLocation doesn't natively support these fields.
+    final synthesizedExtras = Map<String, Object?>.from(ext);
+    final isMock = ensureBool(
+      synthesizedExtras.remove('is_mock'),
+      fallback: false,
+    );
+    final locationSource = _ensureLocationSource(
+      synthesizedExtras.remove('locationSource'),
+    );
+    final reducedAccuracy = ensureBool(
+      synthesizedExtras.remove('reducedAccuracy'),
+      fallback: false,
+    );
+    final mockHeuristics = _parseMockHeuristics(
+      synthesizedExtras.remove('mockHeuristics'),
+    );
+    final auditHash = synthesizedExtras.remove('audit_hash') as String?;
+    final auditPreviousHash =
+        synthesizedExtras.remove('audit_previous_hash') as String?;
+    final auditChainIndex =
+        (synthesizedExtras.remove('audit_chain_index') as num?)?.toInt();
+
+    return Location(
+      coords: Coords(
+        latitude: c.latitude,
+        longitude: c.longitude,
+        accuracy: c.accuracy,
+        speed: c.speed,
+        heading: c.heading,
+        altitude: c.altitude,
+        altitudeAccuracy: c.altitudeAccuracy,
+        speedAccuracy: c.speedAccuracy,
+        headingAccuracy: c.headingAccuracy,
+        floor: c.floor,
+      ),
+      timestamp: tl.timestamp,
+      isMoving: tl.isMoving,
+      uuid: tl.uuid,
+      odometer: tl.odometer,
+      event: tl.event,
+      isMock: isMock,
+      locationSource: locationSource,
+      reducedAccuracy: reducedAccuracy,
+      mockHeuristics: mockHeuristics,
+      auditHash: auditHash,
+      auditPreviousHash: auditPreviousHash,
+      auditChainIndex: auditChainIndex,
+      activity: tl.activity != null
+          ? LocationActivity.fromTl(tl.activity!)
+          : const LocationActivity(),
+      battery: LocationBattery(
+        level: tl.battery.level,
+        isCharging: tl.battery.isCharging,
+      ),
+      extras: synthesizedExtras,
+    );
+  }
+
+  /// Creates a [Location] from a platform map.
+  factory Location.fromMap(Map<String, Object?> map) {
+    final coordsMap = safeMap(map['coords']) ?? const <String, Object?>{};
+    final activityMap = safeMap(map['activity']);
+    final batteryMap = safeMap(map['battery']);
+    final extrasRaw = map['extras'];
+
+    return Location(
+      coords: Coords.fromMap(coordsMap.isEmpty ? map : coordsMap),
+      timestamp: ensureString(map['timestamp']),
+      isMoving: ensureBool(
+        map['is_moving'] ?? map['isMoving'],
+        fallback: false,
+      ),
+      uuid: ensureString(map['uuid']),
+      odometer: ensureDouble(map['odometer'], fallback: 0),
+      locationSource: _ensureLocationSource(
+        map['locationSource'] ?? map['location_source'],
+      ),
+      reducedAccuracy: ensureBool(
+        map['reducedAccuracy'] ?? map['reduced_accuracy'],
+        fallback: false,
+      ),
+      isMock: ensureBool(
+        map['is_mock'] ?? map['isMock'] ?? map['mock'],
+        fallback: false,
+      ),
+      mockHeuristics: _parseMockHeuristics(map['mockHeuristics']),
+      activity: activityMap != null
+          ? LocationActivity.fromMap(activityMap)
+          : const LocationActivity(),
+      battery: batteryMap != null
+          ? LocationBattery.fromMap(batteryMap)
+          : const LocationBattery(),
+      // Use Map.from() to avoid per-entry MapEntry allocation (D-L4).
+      extras: extrasRaw is Map
+          ? Map<String, Object?>.from(extrasRaw)
+          : const <String, Object?>{},
+      event: map['event'] is String
+          ? map['event']! as String
+          : map['event']?.toString(),
+      auditHash: (map['audit_hash'] ?? map['auditHash']) as String?,
+      auditPreviousHash:
+          (map['audit_previous_hash'] ?? map['auditPreviousHash']) as String?,
+      auditChainIndex:
+          (map['audit_chain_index'] ?? map['auditChainIndex']) is num
+          ? ((map['audit_chain_index'] ?? map['auditChainIndex'])! as num)
+                .toInt()
+          : null,
+    );
+  }
 
   /// Geographic coordinates and accuracy metrics.
   final Coords coords;
@@ -125,124 +242,6 @@ class Location {
   ///
   /// `null` when audit trail is disabled.
   final int? auditChainIndex;
-
-  /// Creates a [Location] from a Pigeon [TlLocation] without map round-trip.
-  factory Location.fromTl(TlLocation tl) {
-    final c = tl.coords;
-    final ext = tl.extras ?? const <String, Object?>{};
-
-    // Extract metadata injected by EventDispatcher into extras because Pigeon
-    // TlLocation doesn't natively support these fields.
-    final Map<String, Object?> synthesizedExtras = Map<String, Object?>.from(
-      ext,
-    );
-    final bool isMock = ensureBool(
-      synthesizedExtras.remove('is_mock'),
-      fallback: false,
-    );
-    final String locationSource = _ensureLocationSource(
-      synthesizedExtras.remove('locationSource'),
-    );
-    final bool reducedAccuracy = ensureBool(
-      synthesizedExtras.remove('reducedAccuracy'),
-      fallback: false,
-    );
-    final MockHeuristics? mockHeuristics = _parseMockHeuristics(
-      synthesizedExtras.remove('mockHeuristics'),
-    );
-    final String? auditHash = synthesizedExtras.remove('audit_hash') as String?;
-    final String? auditPreviousHash =
-        synthesizedExtras.remove('audit_previous_hash') as String?;
-    final int? auditChainIndex =
-        (synthesizedExtras.remove('audit_chain_index') as num?)?.toInt();
-
-    return Location(
-      coords: Coords(
-        latitude: c.latitude,
-        longitude: c.longitude,
-        accuracy: c.accuracy,
-        speed: c.speed,
-        heading: c.heading,
-        altitude: c.altitude,
-        altitudeAccuracy: c.altitudeAccuracy,
-        speedAccuracy: c.speedAccuracy,
-        headingAccuracy: c.headingAccuracy,
-        floor: c.floor,
-      ),
-      timestamp: tl.timestamp,
-      isMoving: tl.isMoving,
-      uuid: tl.uuid,
-      odometer: tl.odometer,
-      event: tl.event,
-      isMock: isMock,
-      locationSource: locationSource,
-      reducedAccuracy: reducedAccuracy,
-      mockHeuristics: mockHeuristics,
-      auditHash: auditHash,
-      auditPreviousHash: auditPreviousHash,
-      auditChainIndex: auditChainIndex,
-      activity: tl.activity != null
-          ? LocationActivity.fromTl(tl.activity!)
-          : const LocationActivity(),
-      battery: LocationBattery(
-        level: tl.battery.level,
-        isCharging: tl.battery.isCharging,
-      ),
-      extras: synthesizedExtras,
-    );
-  }
-
-  /// Creates a [Location] from a platform map.
-  factory Location.fromMap(Map<String, Object?> map) {
-    final coordsMap = safeMap(map['coords']) ?? const <String, Object?>{};
-    final activityMap = safeMap(map['activity']);
-    final batteryMap = safeMap(map['battery']);
-    final extrasRaw = map['extras'];
-
-    return Location(
-      coords: Coords.fromMap(coordsMap.isEmpty ? map : coordsMap),
-      timestamp: ensureString(map['timestamp']),
-      isMoving: ensureBool(
-        map['is_moving'] ?? map['isMoving'],
-        fallback: false,
-      ),
-      uuid: ensureString(map['uuid']),
-      odometer: ensureDouble(map['odometer'], fallback: 0.0),
-      locationSource: _ensureLocationSource(
-        map['locationSource'] ?? map['location_source'],
-      ),
-      reducedAccuracy: ensureBool(
-        map['reducedAccuracy'] ?? map['reduced_accuracy'],
-        fallback: false,
-      ),
-      isMock: ensureBool(
-        map['is_mock'] ?? map['isMock'] ?? map['mock'],
-        fallback: false,
-      ),
-      mockHeuristics: _parseMockHeuristics(map['mockHeuristics']),
-      activity: activityMap != null
-          ? LocationActivity.fromMap(activityMap)
-          : const LocationActivity(),
-      battery: batteryMap != null
-          ? LocationBattery.fromMap(batteryMap)
-          : const LocationBattery(),
-      // Use Map.from() to avoid per-entry MapEntry allocation (D-L4).
-      extras: extrasRaw is Map
-          ? Map<String, Object?>.from(extrasRaw)
-          : const <String, Object?>{},
-      event: map['event'] is String
-          ? map['event'] as String
-          : map['event']?.toString(),
-      auditHash: (map['audit_hash'] ?? map['auditHash']) as String?,
-      auditPreviousHash:
-          (map['audit_previous_hash'] ?? map['auditPreviousHash']) as String?,
-      auditChainIndex:
-          (map['audit_chain_index'] ?? map['auditChainIndex']) is num
-          ? ((map['audit_chain_index'] ?? map['auditChainIndex']) as num)
-                .toInt()
-          : null,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -378,6 +377,24 @@ class MockHeuristics {
     this.platformFlagMock,
   });
 
+  /// Creates a [MockHeuristics] from a platform map.
+  factory MockHeuristics.fromMap(Map<String, Object?> map) {
+    return MockHeuristics(
+      satellites: map['satellites'] is num
+          ? (map['satellites']! as num).toInt()
+          : null,
+      elapsedRealtimeDriftMs: map['elapsedRealtimeDriftMs'] is num
+          ? (map['elapsedRealtimeDriftMs']! as num).toDouble()
+          : null,
+      timestampDriftMs: map['timestampDriftMs'] is num
+          ? (map['timestampDriftMs']! as num).toDouble()
+          : null,
+      platformFlagMock: map['platformFlagMock'] is bool
+          ? map['platformFlagMock']! as bool
+          : null,
+    );
+  }
+
   /// Number of GPS satellites used for this fix (Android only).
   ///
   /// Real GPS fixes outdoors typically report 4–30 satellites. Mock locations
@@ -410,24 +427,6 @@ class MockHeuristics {
   /// This is the same value as [Location.isMock] at detection level `basic`,
   /// but exposed here for logging/analytics alongside the heuristic signals.
   final bool? platformFlagMock;
-
-  /// Creates a [MockHeuristics] from a platform map.
-  factory MockHeuristics.fromMap(Map<String, Object?> map) {
-    return MockHeuristics(
-      satellites: map['satellites'] is num
-          ? (map['satellites'] as num).toInt()
-          : null,
-      elapsedRealtimeDriftMs: map['elapsedRealtimeDriftMs'] is num
-          ? (map['elapsedRealtimeDriftMs'] as num).toDouble()
-          : null,
-      timestampDriftMs: map['timestampDriftMs'] is num
-          ? (map['timestampDriftMs'] as num).toDouble()
-          : null,
-      platformFlagMock: map['platformFlagMock'] is bool
-          ? map['platformFlagMock'] as bool
-          : null,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -487,6 +486,31 @@ class Coords {
     this.floor,
   });
 
+  /// Creates [Coords] from a platform map.
+  factory Coords.fromMap(Map<String, Object?> map) {
+    return Coords(
+      latitude: ensureDouble(map['latitude'], fallback: 0),
+      longitude: ensureDouble(map['longitude'], fallback: 0),
+      altitude: ensureDouble(map['altitude'], fallback: 0),
+      speed: ensureDouble(map['speed'], fallback: 0),
+      heading: ensureDouble(map['heading'], fallback: 0),
+      accuracy: ensureDouble(map['accuracy'], fallback: 0),
+      speedAccuracy: ensureDouble(
+        map['speed_accuracy'] ?? map['speedAccuracy'],
+        fallback: 0,
+      ),
+      headingAccuracy: ensureDouble(
+        map['heading_accuracy'] ?? map['headingAccuracy'],
+        fallback: 0,
+      ),
+      altitudeAccuracy: ensureDouble(
+        map['altitude_accuracy'] ?? map['altitudeAccuracy'],
+        fallback: 0,
+      ),
+      floor: map['floor'] as int?,
+    );
+  }
+
   /// Latitude in degrees.
   final double latitude;
 
@@ -516,31 +540,6 @@ class Coords {
 
   /// The floor of the building (iOS only).
   final int? floor;
-
-  /// Creates [Coords] from a platform map.
-  factory Coords.fromMap(Map<String, Object?> map) {
-    return Coords(
-      latitude: ensureDouble(map['latitude'], fallback: 0.0),
-      longitude: ensureDouble(map['longitude'], fallback: 0.0),
-      altitude: ensureDouble(map['altitude'], fallback: 0.0),
-      speed: ensureDouble(map['speed'], fallback: 0.0),
-      heading: ensureDouble(map['heading'], fallback: 0.0),
-      accuracy: ensureDouble(map['accuracy'], fallback: 0.0),
-      speedAccuracy: ensureDouble(
-        map['speed_accuracy'] ?? map['speedAccuracy'],
-        fallback: 0.0,
-      ),
-      headingAccuracy: ensureDouble(
-        map['heading_accuracy'] ?? map['headingAccuracy'],
-        fallback: 0.0,
-      ),
-      altitudeAccuracy: ensureDouble(
-        map['altitude_accuracy'] ?? map['altitudeAccuracy'],
-        fallback: 0.0,
-      ),
-      floor: map['floor'] as int?,
-    );
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -586,19 +585,13 @@ class LocationActivity {
     this.confidence = ActivityConfidence.low,
   });
 
-  /// The detected activity type.
-  final ActivityType type;
-
-  /// The confidence level of the detection.
-  final ActivityConfidence confidence;
-
   /// Creates a [LocationActivity] from a Pigeon [TlActivity].
   factory LocationActivity.fromTl(TlActivity tl) {
     final actType = ActivityType.values.firstWhere(
       (e) => e.name == tl.type,
       orElse: () => ActivityType.unknown,
     );
-    ActivityConfidence conf = ActivityConfidence.low;
+    var conf = ActivityConfidence.low;
     if (tl.confidence >= 75) {
       conf = ActivityConfidence.high;
     } else if (tl.confidence >= 50) {
@@ -610,7 +603,7 @@ class LocationActivity {
   /// Creates a [LocationActivity] from a platform map.
   factory LocationActivity.fromMap(Map<String, Object?> map) {
     // Activity type can be sent as string or int
-    ActivityType actType = ActivityType.unknown;
+    var actType = ActivityType.unknown;
     final rawType = map['type'];
     if (rawType is int) {
       actType =
@@ -622,7 +615,7 @@ class LocationActivity {
       );
     }
 
-    ActivityConfidence conf = ActivityConfidence.low;
+    var conf = ActivityConfidence.low;
     final rawConf = map['confidence'];
     if (rawConf is int) {
       // Native can send 0-100 confidence → map to enum
@@ -642,6 +635,12 @@ class LocationActivity {
 
     return LocationActivity(type: actType, confidence: conf);
   }
+
+  /// The detected activity type.
+  final ActivityType type;
+
+  /// The confidence level of the detection.
+  final ActivityConfidence confidence;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -672,22 +671,22 @@ class LocationBattery {
   /// Creates a new [LocationBattery].
   const LocationBattery({this.level = -1.0, this.isCharging = false});
 
-  /// Battery level from `0.0` to `1.0`, or `-1.0` if unknown.
-  final double level;
-
-  /// Whether the device is currently charging.
-  final bool isCharging;
-
   /// Creates a [LocationBattery] from a platform map.
   factory LocationBattery.fromMap(Map<String, Object?> map) {
     return LocationBattery(
-      level: ensureDouble(map['level'], fallback: -1.0),
+      level: ensureDouble(map['level'], fallback: -1),
       isCharging: ensureBool(
         map['is_charging'] ?? map['isCharging'],
         fallback: false,
       ),
     );
   }
+
+  /// Battery level from `0.0` to `1.0`, or `-1.0` if unknown.
+  final double level;
+
+  /// Whether the device is currently charging.
+  final bool isCharging;
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

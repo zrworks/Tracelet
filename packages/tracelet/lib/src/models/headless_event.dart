@@ -9,6 +9,18 @@ class HeadlessEvent {
   /// Creates a new [HeadlessEvent].
   const HeadlessEvent({required this.name, required this.event});
 
+  /// Creates a [HeadlessEvent] from a platform map.
+  factory HeadlessEvent.fromMap(Map<String, Object?> map) {
+    final eventRaw = map['event'];
+    final eventMap = eventRaw is Map
+        ? eventRaw.map<String, Object?>(
+            (Object? k, Object? v) => MapEntry(k.toString(), v),
+          )
+        : const <String, Object?>{};
+
+    return HeadlessEvent(name: map['name'] as String? ?? '', event: eventMap);
+  }
+
   /// The name of the event (e.g. "location", "motionchange").
   ///
   /// Known values: `'location'`, `'motionchange'`, `'activitychange'`,
@@ -22,18 +34,6 @@ class HeadlessEvent {
   /// Use the appropriate model's `fromMap()` factory to parse this,
   /// based on the [name] value.
   final Map<String, Object?> event;
-
-  /// Creates a [HeadlessEvent] from a platform map.
-  factory HeadlessEvent.fromMap(Map<String, Object?> map) {
-    final eventRaw = map['event'];
-    final eventMap = eventRaw is Map
-        ? eventRaw.map<String, Object?>(
-            (Object? k, Object? v) => MapEntry(k.toString(), v),
-          )
-        : const <String, Object?>{};
-
-    return HeadlessEvent(name: map['name'] as String? ?? '', event: eventMap);
-  }
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
-import "package:tracelet_platform_interface/src/rust/frb_generated.dart";
+import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 void main() async {
   await RustLib.init();
@@ -229,7 +229,7 @@ void main() async {
     test('toMap returns structured map', () {
       const summary = TripCarbonSummary(
         totalCarbonGrams: 123.45,
-        totalDistanceMeters: 5000.0,
+        totalDistanceMeters: 5000,
         carbonByMode: {'in_vehicle': 123.45},
         distanceByMode: {'in_vehicle': 5000.0},
         dominantMode: 'in_vehicle',
@@ -264,21 +264,21 @@ void main() async {
     });
 
     test('motorized modes have positive factors', () {
-      expect(kDefaultEmissionFactors['in_vehicle']!, greaterThan(0));
-      expect(kDefaultEmissionFactors['bus']!, greaterThan(0));
-      expect(kDefaultEmissionFactors['train']!, greaterThan(0));
+      expect(kDefaultEmissionFactors['in_vehicle'], greaterThan(0));
+      expect(kDefaultEmissionFactors['bus'], greaterThan(0));
+      expect(kDefaultEmissionFactors['train'], greaterThan(0));
     });
 
     test('bus emits less than car', () {
       expect(
-        kDefaultEmissionFactors['bus']!,
+        kDefaultEmissionFactors['bus'],
         lessThan(kDefaultEmissionFactors['in_vehicle']!),
       );
     });
 
     test('train emits less than bus', () {
       expect(
-        kDefaultEmissionFactors['train']!,
+        kDefaultEmissionFactors['train'],
         lessThan(kDefaultEmissionFactors['bus']!),
       );
     });

@@ -85,7 +85,7 @@ void main() {
     });
 
     test('returns correct state after ready()', () async {
-      await Tracelet.ready(Config());
+      await Tracelet.ready(const Config());
       final state = await Tracelet.getState();
 
       expect(state.enabled, isFalse);
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('returns enabled state after start()', () async {
-      await Tracelet.ready(Config());
+      await Tracelet.ready(const Config());
       await Tracelet.start();
       final state = await Tracelet.getState();
 
@@ -125,7 +125,7 @@ void main() {
     });
 
     test('calls stop if getState shows enabled', () async {
-      await Tracelet.ready(Config());
+      await Tracelet.ready(const Config());
       await Tracelet.start();
       mock.calls.clear();
 
@@ -158,7 +158,7 @@ void main() {
       if (state.enabled) {
         await Tracelet.stop();
       }
-      final readyState = await Tracelet.ready(Config());
+      final readyState = await Tracelet.ready(const Config());
 
       expect(readyState.enabled, isFalse);
       // Only getState + ready; stop was skipped because enabled=false

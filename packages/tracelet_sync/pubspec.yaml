@@ -6,7 +6,7 @@ repository: https://github.com/ikolvi/tracelet/tree/main/packages/tracelet_sync
 resolution: workspace
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: ^3.10.3
   flutter: '>=3.16.0'
 
 dependencies:

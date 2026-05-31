@@ -1,40 +1,6 @@
-
-[package]
-name = "rust-core"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-crate-type = ["cdylib", "staticlib", "lib"]
-name = "tracelet_core"
-
-[dependencies]
-uniffi = { version = "0.31.1", features = ["cli"] }
-geo = "0.28.0"
-rstar = "0.12.0"
-sha2 = "0.10.8"
-serde = { version = "1.0.228", features = ["derive"] }
-hex = "0.4.3"
-serde_json = "1.0.133"
-chrono = "0.4.44"
-flutter_rust_bridge = "=2.12.0"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
-reqwest = { version = "0.12.4", features = ["json", "rustls-tls"], default-features = false }
-tokio = { version = "1.37.0", features = ["full"] }
-thiserror = "2.0.11"
-aes-gcm = "0.10.3"
-rand = "0.8.5"
-
-[dev-dependencies]
-criterion = "0.8.2"
-serde_json = "1.0.133"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
-
-[profile.release]
-opt-level = "z"
-lto = false
-codegen-units = 1
-strip = "debuginfo"
-panic = "abort"
+[workspace]
+members = [
+    "core",
+    "sync"
+]
+resolver = "2"

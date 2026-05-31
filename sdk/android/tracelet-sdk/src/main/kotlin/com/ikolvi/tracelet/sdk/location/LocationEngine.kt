@@ -21,7 +21,6 @@ import com.ikolvi.tracelet.sdk.privacy.PrivacyZoneManager
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import uniffi.tracelet_core.LocationProcessor as RustLocationProcessor
 import uniffi.tracelet_core.KalmanLocationFilter as RustKalmanFilter
-import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 import uniffi.tracelet_core.LocationProcessorResult
 import uniffi.tracelet_core.AdaptiveContext
 import uniffi.tracelet_core.ActivityType as RustActivityType
@@ -46,6 +45,10 @@ import java.util.concurrent.ConcurrentHashMap
  * - Location result enrichment (UUID, battery, activity, odometer)
  * - Persist to SQLite and dispatch to EventChannels
  */
+interface LocationDataSink {
+    fun insertLocation(location: Map<String, Any?>)
+}
+
 class LocationEngine(
     private val context: Context,
     private val config: ConfigManager,
@@ -105,9 +108,12 @@ class LocationEngine(
     /** Counter for throttling DB retention pruning — runs every N inserts. */
     private var insertCountSincePrune = 0
 
-    /** Rust EventDispatcher — set by TraceletSdk after initialization.
-     *  Routes each location through Rust Core for DB persistence + auto HTTP sync. */
-    var rustEventDispatcher: RustEventDispatcher? = null
+    /** Native data sinks for DB persistence and auto HTTP sync. */
+    private val sinks: MutableList<LocationDataSink> = mutableListOf()
+
+    fun registerSink(sink: LocationDataSink) {
+        sinks.add(sink)
+    }
 
     // =========================================================================
     // Rust-powered location processing (LocationProcessor + Kalman)
@@ -1228,23 +1234,8 @@ class LocationEngine(
         // Skip provider change records if disabled
         if (event == "providerchange" && config.getDisableProviderChangeRecord()) return
 
-        // Route through Rust EventDispatcher for DB persistence + auto HTTP sync
-        val dispatcher = rustEventDispatcher
-        if (dispatcher != null) {
-            val coords = location["coords"] as? Map<*, *>
-            val lat = (coords?.get("latitude") as? Number)?.toDouble() ?: 0.0
-            val lng = (coords?.get("longitude") as? Number)?.toDouble() ?: 0.0
-            val accuracy = (coords?.get("accuracy") as? Number)?.toDouble() ?: 0.0
-            val speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
-            val heading = (coords?.get("heading") as? Number)?.toDouble() ?: 0.0
-            val altitude = (coords?.get("altitude") as? Number)?.toDouble() ?: 0.0
-            val isMock = location["mock"] == true || location["is_mock"] == true
-            try {
-                dispatcher.onLocationUpdate(lat, lng, accuracy, speed, heading, altitude, isMock)
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Rust EventDispatcher.onLocationUpdate failed: ${e.message}")
-            }
-        }
+        // Route through Native Sinks for DB persistence + auto HTTP sync
+        sinks.forEach { it.insertLocation(location) }
 
         // Notify callback so auto-sync can fire
         onLocationPersisted?.invoke()

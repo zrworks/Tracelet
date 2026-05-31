@@ -1935,28 +1935,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-core"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "chrono",
- "criterion",
- "flutter_rust_bridge",
- "geo",
- "hex",
- "rand 0.8.6",
- "reqwest",
- "rstar",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
- "tokio",
- "uniffi",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2472,6 +2450,41 @@ name = "tower-service"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
+
+[[package]]
+name = "tracelet_core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "criterion",
+ "flutter_rust_bridge",
+ "geo",
+ "log",
+ "rstar",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "uniffi",
+]
+
+[[package]]
+name = "tracelet_sync"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "chrono",
+ "hex",
+ "rand 0.8.6",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "tokio",
+ "tracelet_core",
+ "uniffi",
+]
 
 [[package]]
 name = "tracing"

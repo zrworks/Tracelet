@@ -1313,9 +1313,9 @@ public final class TraceletSdk {
         locationEngine = LocationEngine(
             configManager: configManager,
             stateManager: stateManager,
-            eventDispatcher: eventSender,
-            database: database
+            eventDispatcher: eventSender
         )
+        locationEngine.registerSink(database)
         locationEngine.rustPluginEventDispatcher = rustPluginEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager

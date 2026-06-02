@@ -724,19 +724,23 @@ mod tests {
         let count: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM geofences", [], |r| r.get(0)).unwrap();
         assert_eq!(count, 1);
 
-        // Manually update/test with JSON-serialized vertices (polygons)
-        db.conn.lock().unwrap().execute(
-            "UPDATE geofences SET vertices = ?1 WHERE identifier = 'home_zone'",
-            params!["[[37.0, -122.0], [37.1, -122.1], [37.2, -122.2]]"]
-        ).unwrap();
+        // Test inserting a polygon geofence with extras
+        let vertices = vec![
+            Coordinate { lat: 37.0, lng: -122.0 },
+            Coordinate { lat: 37.1, lng: -122.1 },
+            Coordinate { lat: 37.2, lng: -122.2 }
+        ];
+        let extras = Some("{\"type\":\"polygon\",\"color\":\"blue\"}".to_string());
+        db.insert_geofence("home_zone", 37.0, -122.0, 150.0, Some(vertices), extras).unwrap();
 
-        // Verify retrieval of geofences and parsing of vertices
+        // Verify retrieval of geofences and parsing of vertices and extras
         let geofences = db.get_geofences().unwrap();
         assert_eq!(geofences.len(), 1);
         assert_eq!(geofences[0].identifier, "home_zone");
         assert_eq!(geofences[0].vertices.len(), 3);
         assert_eq!(geofences[0].vertices[0].lat, 37.0);
         assert_eq!(geofences[0].vertices[2].lng, -122.2);
+        assert_eq!(geofences[0].extras.as_ref().unwrap(), "{\"type\":\"polygon\",\"color\":\"blue\"}");
         
         // Delete the geofence
         db.delete_geofence("home_zone").unwrap();

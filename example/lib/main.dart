@@ -787,6 +787,31 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  // ── Insert/Destroy Test ──────────────────────────────────────────────────
+  Future<void> _testInsertLocationAndDestroy() async {
+    try {
+      _addLog('TEST_INSERT', 'Starting Test: insertLocation Return Value');
+      final resultId = await tl.Tracelet.insertLocation({
+        'timestamp': DateTime.now().toIso8601String(),
+        'coords': {
+          'latitude': 45.0,
+          'longitude': 5.0,
+          'accuracy': 10.0,
+        },
+      });
+      _addLog('TEST_INSERT', 'Inserted Location ID returned: "$resultId"');
+
+      if (resultId.isNotEmpty && resultId != "success") {
+        final isDeleted = await tl.Tracelet.destroyLocation(resultId);
+        _addLog('TEST_INSERT', 'Was custom location successfully deleted? $isDeleted');
+      } else {
+        _addLog('TEST_INSERT', 'Skipped deletion due to invalid/legacy ID: "$resultId"');
+      }
+    } catch (e) {
+      _addLog('ERROR', '_testInsertLocationAndDestroy failed: $e');
+    }
+  }
+
   /// Safely stop tracking — checks state before calling stop().
   ///
   /// Uses [tl.Tracelet.getState] to check if tracking is enabled before
@@ -3687,6 +3712,7 @@ class _DashboardPageState extends State<DashboardPage>
                       _Chip('Geofences Only', Icons.fence, _startGeofences),
                       _Chip('Get State', Icons.info_outline, _getState),
                       _Chip('Test Logs', Icons.bug_report, _testLogs),
+                      _Chip('Test insertLocation', Icons.add_location, _testInsertLocationAndDestroy),
                       _Chip('Live Map', Icons.map, () {
                         Navigator.push(
                           context,

@@ -943,7 +943,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
+): Long
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_log(`ptr`: Long,`level`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`action`: Int,`degradedAccuracy`: Double,uniffi_out_err: UniffiRustCallStatus, 
@@ -1296,7 +1296,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 31305.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891.toShort()) {
@@ -2875,7 +2875,7 @@ public interface DatabaseManagerInterface {
     /**
      * Inserts a new location record into the database.
      */
-    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?)
+    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?): kotlin.Long
     
     /**
      * Inserts a log entry into the database.
@@ -3307,8 +3307,8 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     /**
      * Inserts a new location record into the database.
      */
-    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?)
-        = 
+    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?): kotlin.Long {
+            return FfiConverterLong.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
@@ -3316,7 +3316,8 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
         FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),_status)
 }
     }
-    
+    )
+    }
     
 
     

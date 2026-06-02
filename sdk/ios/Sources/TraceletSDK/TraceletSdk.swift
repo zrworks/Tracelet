@@ -774,7 +774,6 @@ public final class TraceletSdk {
     ///
     /// - Returns: Array of geofence dictionaries.
     public func getGeofences() -> [[String: Any]] {
-        guard isReady else { return [] }
         return geofenceManager.getGeofences()
     }
 
@@ -783,7 +782,6 @@ public final class TraceletSdk {
     /// - Parameter identifier: The geofence identifier.
     /// - Returns: Geofence dictionary, or nil if not found.
     public func getGeofence(_ identifier: String) -> [String: Any]? {
-        guard isReady else { return nil }
         return geofenceManager.getGeofence(identifier)
     }
 
@@ -792,7 +790,6 @@ public final class TraceletSdk {
     /// - Parameter identifier: The geofence identifier.
     /// - Returns: `true` if the geofence exists.
     public func geofenceExists(_ identifier: String) -> Bool {
-        guard isReady else { return false }
         return geofenceManager.geofenceExists(identifier)
     }
 

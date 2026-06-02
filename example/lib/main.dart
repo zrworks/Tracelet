@@ -596,6 +596,7 @@ class _DashboardPageState extends State<DashboardPage>
           // were used instead. After the fix, the notification should show
           // the custom title/text and deferTime should be 60s.
           android: tl.AndroidConfig(
+            periodicUseForegroundService: true, // KEEP NOTIFICATION ALIVE
             locationUpdateInterval: 2000, // 2s
             deferTime: 1000, // 10s — batches ~5 locations every 10s
             foregroundService: _isAndroid
@@ -626,7 +627,7 @@ class _DashboardPageState extends State<DashboardPage>
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
           http: const tl.HttpConfig(
-            url: 'http://192.168.20.101:8099/locations',
+            url: 'http://192.168.20.100:8099/locations',
             // ── New features ──
             // (HTTP config goes here)
           ),
@@ -762,6 +763,12 @@ class _DashboardPageState extends State<DashboardPage>
         _pluginState = state;
       });
       _addLog('START', 'enabled=${state.enabled}');
+      
+      // Fetch the initial location immediately so the UI doesn't stay at 0,0
+      // when the device is stationary and continuous updates are paused.
+      if (_lastLocation == null) {
+        await _getCurrentPosition();
+      }
     } catch (e) {
       _addLog('ERROR', 'start() failed: $e');
     }

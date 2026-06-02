@@ -43,6 +43,7 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["enableDeadReckoning"] = c.geo.enableDeadReckoning
         dict["deadReckoningActivationDelay"] = c.geo.deadReckoningActivationDelay
         dict["deadReckoningMaxDuration"] = c.geo.deadReckoningMaxDuration
+        dict["resolveAddress"] = c.geo.resolveAddress
 
         var filterDict = [String: Any]()
         filterDict["trackingAccuracyThreshold"] = c.geo.filter.trackingAccuracyThreshold
@@ -206,7 +207,16 @@ class TraceletHostApiImpl: TraceletHostApi {
                     confidence: Int64($0["confidence"] as? Int ?? 0)
                 )
             },
-            extras: d["extras"] as? [String?: Any?]
+            extras: d["extras"] as? [String?: Any?],
+            address: (d["address"] as? [String: Any]).map { addr in
+                TlAddress(
+                    street: addr["street"] as? String,
+                    city: addr["city"] as? String,
+                    state: addr["state"] as? String,
+                    postalCode: (addr["postalCode"] as? String) ?? (addr["postal_code"] as? String),
+                    country: addr["country"] as? String
+                )
+            }
         )
     }
 

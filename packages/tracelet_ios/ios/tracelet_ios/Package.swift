@@ -24,10 +24,7 @@ let package = Package(
                 .product(name: "TraceletSDK", package: "Tracelet"),
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
             ],
-            path: "Sources/tracelet_ios",
-            resources: [
-                .process("PrivacyInfo.xcprivacy")
-            ]
+            path: "Sources/tracelet_ios"
         )
     ]
 )

@@ -10,7 +10,7 @@ Tracelet ships **three independent distribution channels**:
 |---------|----------|----------|-----------------|
 | Android SDK | `com.ikolvi:tracelet-sdk` | Maven Central | See `sdk/android/gradle.properties` |
 | iOS SDK | `TraceletSDK` | GitHub Release (Bundled in Flutter) | See `TraceletSDK.podspec` |
-| Flutter | 6 federated packages | pub.dev | See `packages/tracelet/pubspec.yaml` |
+| Flutter | 7 federated packages | pub.dev | See `packages/tracelet/pubspec.yaml` |
 
 The native SDKs (Android + iOS) version independently from Flutter packages. Flutter packages are always version-locked together (including the `tracelet_doctor` diagnostics package).
 
@@ -30,6 +30,7 @@ The native SDKs (Android + iOS) version independently from Flutter packages. Flu
 │     ├── tracelet_ios                 (depends on ^above) │
 │     ├── tracelet_web                 (depends on ^above) │
 │     ├── tracelet                     (depends on all)    │
+│     ├── tracelet_sync                (depends on tracelet)│
 │     └── tracelet_doctor              (depends on tracelet)│
 └──────────────────────────────────────────────────────────┘
 ```
@@ -46,8 +47,9 @@ The native SDKs (Android + iOS) version independently from Flutter packages. Flu
 
 Before triggering a release, update these files manually:
 
-### Flutter packages (all 6 must match)
+### Flutter packages (all 7 must match)
 - [ ] `packages/tracelet/pubspec.yaml` — bump `version:`
+- [ ] `packages/tracelet_sync/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_platform_interface/pubspec.yaml` — bump `version:`
 - [ ] `packages/tracelet_android/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
 - [ ] `packages/tracelet_android/android/build.gradle` — update `version = "X.Y.Z"` AND update native SDK reference `implementation("com.ikolvi:tracelet-sdk:X.Y.Z")`
@@ -84,7 +86,7 @@ tracelet_ios: ^X.Y.Z                 # ← must match
 tracelet_web: ^X.Y.Z                 # ← must match
 tracelet_platform_interface: ^X.Y.Z  # ← must match
 
-# tracelet_doctor/pubspec.yaml
+# tracelet_doctor/pubspec.yaml & tracelet_sync/pubspec.yaml
 tracelet: ^X.Y.Z                     # ← must match
 ```
 
@@ -200,15 +202,19 @@ cd packages/tracelet_web && dart pub publish --force
 # 3. App-facing package (wait 30s after step 2)
 cd packages/tracelet && dart pub publish --force
 
-# 4. Diagnostics helper package (wait 30s after step 3)
+# 4. Sync package (wait 30s after step 3)
+cd packages/tracelet_sync && dart pub publish --force
+
+# 5. Diagnostics helper package (wait 30s after step 4)
 cd packages/tracelet_doctor && dart pub publish --force
 
-# 5. Tags
+# 6. Tags
 git tag tracelet_platform_interface-vX.Y.Z
 git tag tracelet_android-vX.Y.Z
 git tag tracelet_ios-vX.Y.Z
 git tag tracelet_web-vX.Y.Z
 git tag tracelet-vX.Y.Z
+git tag tracelet_sync-vX.Y.Z
 git tag tracelet_doctor-vX.Y.Z
 git push origin --tags
 ```
@@ -223,7 +229,7 @@ For Flutter packages, Melos can automate version bumps and changelog generation:
 melos version   # Interactive — bumps all packages, updates CHANGELOGs
 ```
 
-This updates all 6 Flutter package versions and cross-references in a single commit. Native SDK versions must still be bumped manually.
+This updates all 7 Flutter package versions and cross-references in a single commit. Native SDK versions must still be bumped manually.
 
 To verify and automatically apply code formatting across all packages before release:
 
@@ -266,6 +272,7 @@ dart run melos run format
 | Flutter iOS | `tracelet_ios-vX.Y.Z` | `tracelet_ios-v1.8.1` |
 | Flutter Web | `tracelet_web-vX.Y.Z` | `tracelet_web-v1.8.1` |
 | Flutter app-facing | `tracelet-vX.Y.Z` | `tracelet-v1.8.1` |
+| Flutter sync | `tracelet_sync-vX.Y.Z` | `tracelet_sync-v1.8.1` |
 | Flutter doctor | `tracelet_doctor-vX.Y.Z` | `tracelet_doctor-v1.0.1` |
 
 ---

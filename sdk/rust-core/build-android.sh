@@ -26,7 +26,7 @@ done
 
 # Build using cargo-ndk
 echo "Compiling for Android targets..."
-cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o "$OUT_DIR" build --release
+cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o "$OUT_DIR" build --release -p tracelet_core
 
 # Generate Kotlin bindings using uniffi-bindgen
 echo "Generating Kotlin bindings for core..."

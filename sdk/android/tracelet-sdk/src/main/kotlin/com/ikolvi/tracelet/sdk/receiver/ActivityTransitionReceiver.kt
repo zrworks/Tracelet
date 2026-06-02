@@ -35,6 +35,23 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
                     bootMotionDetector.handleTransitionIntent(intent)
                 } else {
                     Log.w(TAG, "No active or boot-mode MotionDetector found to handle transition")
+                    val state = com.ikolvi.tracelet.sdk.StateManager(context)
+                    if (state.enabled && state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC) {
+                        val extractor = com.ikolvi.tracelet.sdk.wrapper.TraceletServices.getInstance(context).getEventExtractor()
+                        val result = extractor.extractActivityTransitionResult(intent)
+                        if (result != null) {
+                            for (event in result.transitionEvents) {
+                                // 0 = ENTER, 3 = STILL
+                                if (event.transitionType == 0 && event.activityType != 3) {
+                                    Log.d(TAG, "Detected moving transition while in killed periodic mode — waking up SDK!")
+                                    state.isMoving = true
+                                    state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
+                                    LocationService.startFromBoot(context)
+                                    break
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {

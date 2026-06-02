@@ -3,6 +3,11 @@ description: Offline SQLite persistence and automatic HTTP synchronization engin
 version: 3.2.0
 homepage: https://github.com/ikolvi/tracelet
 repository: https://github.com/ikolvi/tracelet/tree/main/packages/tracelet_sync
+funding:
+  - https://github.com/sponsors/GalacticTitan
+  - https://www.buymeacoffee.com/kiranbjm
+  - https://thanks.dev/d/gh/galactictitan/dependencies
+  - https://www.patreon.com/c/kiranbjm
 resolution: workspace
 
 environment:

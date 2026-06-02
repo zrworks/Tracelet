@@ -3,7 +3,8 @@ import Foundation
 import UIKit
 
 public protocol LocationDataSink {
-    func insertLocation(_ location: [String: Any])
+    @discardableResult
+    func insertLocation(_ location: [String: Any]) -> String
 }
 
 /// CLLocationManager wrapper providing continuous location tracking,
@@ -26,7 +27,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private var oneShots: [((CLLocation?) -> Void)] = []
     private var watchCallbacks: [Int: Bool] = [:]
     private var nextWatchId = 0
-    private var isTracking = false
+    public private(set) var isTracking = false
 
     /// Background task ID for the current periodic fix request.
     /// Ended in didUpdateLocations/didFailWithError when periodic mode is active.
@@ -783,6 +784,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             isMock: mock,
             adaptiveContext: adaptiveCtx
         )
+        // IMPORTANT: Always feed the speed motion state machine, even when the
+        // Rust processor rejects the location for persistence/dispatch. The speed
+        // SM needs every speed reading to correctly transition between
+        // MOVING → SLOWING → STATIONARY. Without this, a stationary device
+        // whose locations are filtered (e.g. same lat/lng, no distance change)
+        // will never transition out of MOVING state.
+        speedSink?(result.effectiveSpeed)
+
         if !result.accepted {
             NSLog("[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown")
             if result.odometerDelta > 0 {
@@ -811,10 +820,6 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         lastEffectiveSpeed = result.effectiveSpeed
-
-        // Forward speed to SpeedMotionManager when speed-based motion detection
-        // is active.
-        speedSink?(result.effectiveSpeed)
 
         // Persist last periodic coordinates for cross-restart odometer
         if isPeriodicTracking {
@@ -1083,8 +1088,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         return true
     }
 
-    /// Picks the best-accuracy location from samples and delivers it.
-    private func deliverBest(samples: [CLLocation], persist: Bool, extras: [String: Any], callback: ([String: Any]?) -> Void) {
+    private func deliverBest(samples: [CLLocation], persist: Bool, extras: [String: Any], callback: @escaping ([String: Any]?) -> Void) {
         guard let best = samples.min(by: { $0.horizontalAccuracy < $1.horizontalAccuracy }) else {
             callback(nil)
             return
@@ -1096,6 +1100,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             if persist {
                 self?.sinks.forEach { $0.insertLocation(enrichedMap) }
                 self?.onLocationPersisted?()
+                self?.eventDispatcher.sendLocation(enrichedMap)
             }
             callback(enrichedMap)
         }
@@ -1264,6 +1269,16 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 altitude: altitude,
                 isMock: isMock
             )
+            
+            // Still notify other sinks (like SyncSink) but skip TraceletDatabase to avoid duplicate inserts
+            self.sinks.forEach { sink in
+                if String(describing: type(of: sink)) != "TraceletDatabase" {
+                    sink.insertLocation(location)
+                }
+            }
+        } else {
+            self.sinks.forEach { $0.insertLocation(location) }
+            self.onLocationPersisted?()
         }
 
         // Notify HTTP sync manager (if wired) so auto-sync can fire.
@@ -1448,10 +1463,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             return
         }
         
+        NSLog("[Tracelet] GEOCODE: Requesting reverse geocoding for lat=%.6f, lon=%.6f", clLoc.coordinate.latitude, clLoc.coordinate.longitude)
+        
         let geocoder = CLGeocoder()
         geocoder.reverseGeocodeLocation(clLoc) { placemarks, error in
             var finalMap = locationMap
+            
+            if let err = error {
+                NSLog("[Tracelet] GEOCODE: Error resolving address: %@", err.localizedDescription)
+            }
+            
             if let placemark = placemarks?.first {
+                NSLog("[Tracelet] GEOCODE: Found placemark: %@", placemark.description)
                 var addressMap: [String: Any] = [:]
                 if let thoroughfare = placemark.thoroughfare { addressMap["street"] = thoroughfare }
                 else if let name = placemark.name { addressMap["street"] = name }
@@ -1463,7 +1486,12 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 
                 if !addressMap.isEmpty {
                     finalMap["address"] = addressMap
+                    NSLog("[Tracelet] GEOCODE: Mapped address: %@", addressMap.description)
+                } else {
+                    NSLog("[Tracelet] GEOCODE: Placemark had no mappable address fields.")
                 }
+            } else {
+                NSLog("[Tracelet] GEOCODE: No placemarks found.")
             }
             completion(finalMap)
         }

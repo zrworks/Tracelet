@@ -1,10 +1,38 @@
-use tracelet_core::config::HttpConfig;
-use tracelet_core::database::DbLocationRecord;
+use std::collections::HashMap;
+use tracelet_core::error::TraceletError;
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use serde_json::json;
 use std::str::FromStr;
 use std::time::Duration;
-use tracelet_core::error::TraceletError;
+
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct SyncHttpConfig {
+    pub url: Option<String>,
+    pub method: i32,
+    pub headers: HashMap<String, String>,
+    pub batch_sync: bool,
+    pub max_batch_size: i32,
+    pub auto_sync: bool,
+    pub max_retries: i32,
+    pub retry_backoff_base: i32,
+    pub retry_backoff_cap: i32,
+    pub ssl_pinning_certificates: Option<Vec<String>>,
+}
+
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct SyncLocationRecord {
+    pub id: i64,
+    pub timestamp: String,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub accuracy: f64,
+    pub speed: f64,
+    pub heading: f64,
+    pub altitude: f64,
+    pub is_mock: bool,
+    pub activity: String,
+    pub route_context: Option<String>,
+}
 
 #[derive(uniffi::Object)]
 pub struct SyncManager {
@@ -25,19 +53,20 @@ impl SyncManager {
 
     /// Performs a synchronous/blocking sync of a batch of location records.
     /// Returns the number of successfully synced records.
-    pub fn sync_batch_blocking(&self, config: HttpConfig, records: Vec<DbLocationRecord>) -> Result<i32, TraceletError> {
+    pub fn sync_batch_blocking(&self, config: SyncHttpConfig, records: Vec<SyncLocationRecord>) -> Result<u32, TraceletError> {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| TraceletError::Network(e.to_string()))?;
-        rt.block_on(self.sync_batch(&config, &records))
+        let res = rt.block_on(self.sync_batch(&config, &records))?;
+        Ok(res as u32)
     }
 }
 
 impl SyncManager {
     /// Performs an asynchronous sync of a batch of location records.
     /// Returns the number of successfully synced records.
-    pub async fn sync_batch(&self, config: &HttpConfig, records: &[DbLocationRecord]) -> Result<i32, TraceletError> {
+    pub async fn sync_batch(&self, config: &SyncHttpConfig, records: &[SyncLocationRecord]) -> Result<i32, TraceletError> {
         let url = match &config.url {
             Some(u) if !u.is_empty() => u,
             _ => {

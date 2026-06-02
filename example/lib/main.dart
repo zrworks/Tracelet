@@ -596,6 +596,7 @@ class _DashboardPageState extends State<DashboardPage>
           // were used instead. After the fix, the notification should show
           // the custom title/text and deferTime should be 60s.
           android: tl.AndroidConfig(
+            periodicUseForegroundService: true, // KEEP NOTIFICATION ALIVE
             locationUpdateInterval: 2000, // 2s
             deferTime: 1000, // 10s — batches ~5 locations every 10s
             foregroundService: _isAndroid
@@ -762,6 +763,12 @@ class _DashboardPageState extends State<DashboardPage>
         _pluginState = state;
       });
       _addLog('START', 'enabled=${state.enabled}');
+      
+      // Fetch the initial location immediately so the UI doesn't stay at 0,0
+      // when the device is stationary and continuous updates are paused.
+      if (_lastLocation == null) {
+        await _getCurrentPosition();
+      }
     } catch (e) {
       _addLog('ERROR', 'start() failed: $e');
     }
@@ -828,6 +835,43 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  Future<void> _getCurrentPositionWithAddress() async {
+    try {
+      // Fetch previous configuration so we can restore it later if needed
+
+      await tl.Tracelet.setConfig(
+        const tl.Config(geo: tl.GeoConfig(resolveAddress: true)),
+      );
+
+      _addLog('GEOCODE', 'Requesting location with reverse geocoding...');
+      final loc = await tl.Tracelet.getCurrentPosition(
+        desiredAccuracy: tl.DesiredAccuracy.high,
+        timeout: 30,
+      );
+      setState(() => _lastLocation = loc);
+
+      final addressObj = loc.address;
+      final addressStr = addressObj != null
+          ? [
+              addressObj.street,
+              addressObj.city,
+              addressObj.state,
+              addressObj.country,
+            ].where((e) => e != null && e.isNotEmpty).join(', ')
+          : 'No address found';
+
+      _addLog(
+        'GEOCODE',
+        '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}\n'
+            'Address: $addressStr',
+      );
+
+      await tl.Tracelet.setConfig(const tl.Config());
+    } catch (e) {
+      _addLog('ERROR', 'getCurrentPositionWithAddress() failed: $e');
+    }
+  }
+
   // ── One-Shot Location ───────────────────────────────────────────────────
 
   Future<void> _singleFetchBestOfThree() async {
@@ -837,7 +881,6 @@ class _DashboardPageState extends State<DashboardPage>
         desiredAccuracy: tl.DesiredAccuracy.high,
         timeout: 30,
         samples: 3,
-        persist: false,
       );
       setState(() => _lastLocation = loc);
       _addLog(
@@ -3692,6 +3735,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'Get Position',
                         Icons.my_location,
                         _getCurrentPosition,
+                      ),
+                      _Chip(
+                        'Resolve Address',
+                        Icons.pin_drop,
+                        _getCurrentPositionWithAddress,
                       ),
                       _Chip(
                         _isMoving ? 'Pace → Still' : 'Pace → Move',

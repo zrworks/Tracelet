@@ -21,7 +21,6 @@ import com.ikolvi.tracelet.sdk.privacy.PrivacyZoneManager
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import uniffi.tracelet_core.LocationProcessor as RustLocationProcessor
 import uniffi.tracelet_core.KalmanLocationFilter as RustKalmanFilter
-import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 import uniffi.tracelet_core.LocationProcessorResult
 import uniffi.tracelet_core.AdaptiveContext
 import uniffi.tracelet_core.ActivityType as RustActivityType
@@ -46,11 +45,15 @@ import java.util.concurrent.ConcurrentHashMap
  * - Location result enrichment (UUID, battery, activity, odometer)
  * - Persist to SQLite and dispatch to EventChannels
  */
+interface LocationDataSink {
+    fun insertLocation(location: Map<String, Any?>)
+}
+
 class LocationEngine(
     private val context: Context,
     private val config: ConfigManager,
     private val state: StateManager,
-    internal val events: TraceletEventSender,
+    var events: TraceletEventSender,
 ) {
     companion object {
         private const val TAG = "LocationEngine"
@@ -102,12 +105,18 @@ class LocationEngine(
     private var currentActivityType: String = "unknown"
     private var currentActivityConfidence: Int = -1
 
+    /** Force accept the next location (even if distance is 0) to guarantee a motion change sync on wakeup. */
+    var forcePersistNextFilteredLocation = false
+
     /** Counter for throttling DB retention pruning — runs every N inserts. */
     private var insertCountSincePrune = 0
 
-    /** Rust EventDispatcher — set by TraceletSdk after initialization.
-     *  Routes each location through Rust Core for DB persistence + auto HTTP sync. */
-    var rustEventDispatcher: RustEventDispatcher? = null
+    /** Native data sinks for DB persistence and auto HTTP sync. */
+    private val sinks: MutableList<LocationDataSink> = mutableListOf()
+
+    fun registerSink(sink: LocationDataSink) {
+        sinks.add(sink)
+    }
 
     // =========================================================================
     // Rust-powered location processing (LocationProcessor + Kalman)
@@ -422,10 +431,12 @@ class LocationEngine(
                 if (age <= maximumAge) {
                     val enriched = enrichLocation(cached, "getCurrentPosition").toMutableMap()
                     if (extras.isNotEmpty()) enriched["extras"] = extras
-                    if (persist) {
-                        onLocationPersisted?.invoke()
+                    resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
+                        if (persist) {
+                            onLocationPersisted?.invoke()
+                        }
+                        callback(finalEnriched)
                     }
-                    callback(enriched)
                     return
                 }
             }
@@ -465,10 +476,12 @@ class LocationEngine(
         if (cached != null) {
             val enriched = enrichLocation(cached, "getLastKnownLocation").toMutableMap()
             if (extras.isNotEmpty()) enriched["extras"] = extras
-            if (persist) {
-                onLocationPersisted?.invoke()
+            resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
+                if (persist) {
+                    onLocationPersisted?.invoke()
+                }
+                callback(finalEnriched)
             }
-            callback(enriched)
             return
         }
 
@@ -479,10 +492,12 @@ class LocationEngine(
                     lastLocation = location
                     val enriched = enrichLocation(location, "getLastKnownLocation").toMutableMap()
                     if (extras.isNotEmpty()) enriched["extras"] = extras
-                    if (persist) {
-                        onLocationPersisted?.invoke()
+                    resolveAddressAndDispatch(location, enriched) { finalEnriched ->
+                        if (persist) {
+                            onLocationPersisted?.invoke()
+                        }
+                        callback(finalEnriched)
                     }
-                    callback(enriched)
                 } else {
                     // 3. Fallback to system LocationManager — works even when
                     //    TraceletLocationClient has no cache.
@@ -491,10 +506,12 @@ class LocationEngine(
                         lastLocation = fallback
                         val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
                         if (extras.isNotEmpty()) enriched["extras"] = extras
-                        if (persist) {
-                            onLocationPersisted?.invoke()
+                        resolveAddressAndDispatch(fallback, enriched) { finalEnriched ->
+                            if (persist) {
+                                onLocationPersisted?.invoke()
+                            }
+                            callback(finalEnriched)
                         }
-                        callback(enriched)
                     } else {
                         callback(null)
                     }
@@ -779,13 +796,30 @@ class LocationEngine(
             isMock = mock,
             adaptiveContext = adaptiveCtx,
         )
+        // IMPORTANT: Always feed the speed motion state machine, even when the
+        // Rust processor rejects the location for persistence/dispatch. The speed
+        // SM needs every speed reading to correctly transition between
+        // MOVING → SLOWING → STATIONARY. Without this, a stationary device
+        // whose locations are filtered (e.g. same lat/lng, no distance change)
+        // will never transition out of MOVING state.
+        speedMotionSpeedSink?.invoke(result.effectiveSpeed)
+
+        var isForcedAccept = false
         if (!result.accepted) {
-            Log.d(TAG, "Location filtered by Rust processor: ${result.reason}")
-            // Still update odometer if the processor computed a delta
-            if (result.odometerDelta > 0) {
-                state.addOdometer(result.odometerDelta)
+            if (forcePersistNextFilteredLocation) {
+                Log.d(TAG, "Location filtered by Rust processor, but FORCE ACCEPTING due to pending motion change.")
+                isForcedAccept = true
+                forcePersistNextFilteredLocation = false
+            } else {
+                Log.d(TAG, "Location filtered by Rust processor: ${result.reason}")
+                // Still update odometer if the processor computed a delta
+                if (result.odometerDelta > 0) {
+                    state.addOdometer(result.odometerDelta)
+                }
+                return
             }
-            return
+        } else {
+            forcePersistNextFilteredLocation = false
         }
 
         // Odometer update from processor's computed delta
@@ -812,63 +846,81 @@ class LocationEngine(
             lastGpsLocation = location
         }
         lastEffectiveSpeed = result.effectiveSpeed
-        speedMotionSpeedSink?.invoke(result.effectiveSpeed)
         state.lastLocationTime = location.time
 
-        val enriched = enrichLocation(location, event, result.effectiveSpeed, smoothedLat, smoothedLng)
+        val actualEvent = if (isForcedAccept) "motionchange" else event
+        val enriched = enrichLocation(location, actualEvent, result.effectiveSpeed, smoothedLat, smoothedLng)
 
-        // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
-        // Evaluates whether the location falls inside a registered privacy zone
-        // and applies the configured action (exclude / degrade / event-only).
-        val privacyResult = privacyZoneManager?.processLocation(enriched)
-        if (privacyResult != null) {
-            when (privacyResult.action) {
-                PrivacyZoneManager.ProcessedLocation.Action.DROP -> {
-                    // Exclusion zone — drop this location entirely.
-                    return
-                }
-                PrivacyZoneManager.ProcessedLocation.Action.EVENT_ONLY -> {
-                    // Dispatch to Dart but do NOT persist or audit.
-                    val locationData = privacyResult.location ?: enriched
-                    events.sendLocation(locationData)
-                    onLocationUpdate?.invoke(location.latitude, location.longitude)
-                    return
-                }
-                PrivacyZoneManager.ProcessedLocation.Action.DEGRADED -> {
-                    // Use the degraded location for audit + persist + dispatch.
-                    val degraded = privacyResult.location ?: enriched
-                    val auditFields = auditTrailManager?.appendToChain(degraded)
-                    val withAudit = if (auditFields != null) {
-                        degraded.toMutableMap().apply { putAll(auditFields) }
-                    } else {
-                        degraded
+        fun dispatch(finalEnriched: Map<String, Any?>) {
+            // Privacy zone check (Enterprise) — BEFORE audit + persist + send.
+            // Evaluates whether the location falls inside a registered privacy zone
+            // and applies the configured action (exclude / degrade / event-only).
+            val privacyResult = privacyZoneManager?.processLocation(finalEnriched)
+            if (privacyResult != null) {
+                when (privacyResult.action) {
+                    PrivacyZoneManager.ProcessedLocation.Action.DROP -> {
+                        // Exclusion zone — drop this location entirely.
+                        return
                     }
-                    persistLocationIfAllowed(withAudit, event)
-                    events.sendLocation(withAudit)
-                    onLocationUpdate?.invoke(location.latitude, location.longitude)
-                    return
+                    PrivacyZoneManager.ProcessedLocation.Action.EVENT_ONLY -> {
+                        // Dispatch to Dart but do NOT persist or audit.
+                        val locationData = privacyResult.location ?: finalEnriched
+                        events.sendLocation(locationData)
+                        onLocationUpdate?.invoke(location.latitude, location.longitude)
+                        return
+                    }
+                    PrivacyZoneManager.ProcessedLocation.Action.DEGRADED -> {
+                        // Use the degraded location for audit + persist + dispatch.
+                        val degraded = privacyResult.location ?: finalEnriched
+                        val auditFields = auditTrailManager?.appendToChain(degraded)
+                        val withAudit = if (auditFields != null) {
+                            degraded.toMutableMap().apply { putAll(auditFields) }
+                        } else {
+                            degraded
+                        }
+                        persistLocationIfAllowed(withAudit, actualEvent)
+                        events.sendLocation(withAudit)
+                        onLocationUpdate?.invoke(location.latitude, location.longitude)
+                        
+                        if (isForcedAccept) {
+                            try {
+                                com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(context).sync {}
+                            } catch (e: Exception) {}
+                        }
+                        return
+                    }
+                    else -> { /* PASS_THROUGH — fall through to normal flow */ }
                 }
-                else -> { /* PASS_THROUGH — fall through to normal flow */ }
+            }
+
+            // Compute audit trail hash (Enterprise) — must happen BEFORE persist
+            // so the chain is sequential with DB inserts.
+            val auditFields = auditTrailManager?.appendToChain(finalEnriched)
+            val enrichedWithAudit = if (auditFields != null) {
+                finalEnriched.toMutableMap().apply { putAll(auditFields) }
+            } else {
+                finalEnriched
+            }
+
+            // Persist to database (respecting persistMode)
+            persistLocationIfAllowed(enrichedWithAudit, actualEvent)
+
+            // Dispatch to Dart
+            events.sendLocation(enrichedWithAudit)
+
+            // Notify geofenceModeHighAccuracy listener (if active)
+            onLocationUpdate?.invoke(location.latitude, location.longitude)
+            
+            if (isForcedAccept) {
+                try {
+                    com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(context).sync {}
+                } catch (e: Exception) {}
             }
         }
 
-        // Compute audit trail hash (Enterprise) — must happen BEFORE persist
-        // so the chain is sequential with DB inserts.
-        val auditFields = auditTrailManager?.appendToChain(enriched)
-        val enrichedWithAudit = if (auditFields != null) {
-            enriched.toMutableMap().apply { putAll(auditFields) }
-        } else {
-            enriched
+        resolveAddressAndDispatch(location, enriched) { finalEnriched ->
+            dispatch(finalEnriched)
         }
-
-        // Persist to database (respecting persistMode)
-        persistLocationIfAllowed(enrichedWithAudit, event)
-
-        // Dispatch to Dart
-        events.sendLocation(enrichedWithAudit)
-
-        // Notify geofenceModeHighAccuracy listener (if active)
-        onLocationUpdate?.invoke(location.latitude, location.longitude)
     }
 
     /**
@@ -1039,10 +1091,13 @@ class LocationEngine(
         }
         val enriched = enrichLocation(best, "getCurrentPosition").toMutableMap()
         if (extras.isNotEmpty()) enriched["extras"] = extras
-        if (persist) {
-            onLocationPersisted?.invoke()
+        resolveAddressAndDispatch(best, enriched) { finalEnriched ->
+            if (persist) {
+                persistLocationIfAllowed(finalEnriched, "location")
+                events.sendLocation(finalEnriched)
+            }
+            callback(finalEnriched)
         }
-        callback(enriched)
     }
 
     private fun buildLocationRequest(): TraceletLocationRequest {
@@ -1194,23 +1249,8 @@ class LocationEngine(
         // Skip provider change records if disabled
         if (event == "providerchange" && config.getDisableProviderChangeRecord()) return
 
-        // Route through Rust EventDispatcher for DB persistence + auto HTTP sync
-        val dispatcher = rustEventDispatcher
-        if (dispatcher != null) {
-            val coords = location["coords"] as? Map<*, *>
-            val lat = (coords?.get("latitude") as? Number)?.toDouble() ?: 0.0
-            val lng = (coords?.get("longitude") as? Number)?.toDouble() ?: 0.0
-            val accuracy = (coords?.get("accuracy") as? Number)?.toDouble() ?: 0.0
-            val speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
-            val heading = (coords?.get("heading") as? Number)?.toDouble() ?: 0.0
-            val altitude = (coords?.get("altitude") as? Number)?.toDouble() ?: 0.0
-            val isMock = location["mock"] == true || location["is_mock"] == true
-            try {
-                dispatcher.onLocationUpdate(lat, lng, accuracy, speed, heading, altitude, isMock)
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Rust EventDispatcher.onLocationUpdate failed: ${e.message}")
-            }
-        }
+        // Route through Native Sinks for DB persistence + auto HTTP sync
+        sinks.forEach { it.insertLocation(location) }
 
         // Notify callback so auto-sync can fire
         onLocationPersisted?.invoke()
@@ -1432,6 +1472,58 @@ class LocationEngine(
             confidence >= 75 -> RustActivityConfidence.HIGH
             confidence >= 50 -> RustActivityConfidence.MEDIUM
             else -> RustActivityConfidence.LOW
+        }
+    }
+    
+    private fun resolveAddressAndDispatch(
+        location: Location,
+        enriched: Map<String, Any?>,
+        dispatch: (Map<String, Any?>) -> Unit
+    ) {
+        val resolveEnabled = config.getResolveAddress()
+        val geocoderPresent = android.location.Geocoder.isPresent()
+        Log.d(TAG, "resolveAddressAndDispatch: resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
+        
+        if (resolveEnabled && geocoderPresent) {
+            Log.d(TAG, "resolveAddressAndDispatch: Starting reverse geocode lookup for lat=${location.latitude}, lng=${location.longitude} on background thread.")
+            java.util.concurrent.Executors.newSingleThreadExecutor().execute {
+                try {
+                    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    
+                    if (!addresses.isNullOrEmpty()) {
+                        Log.d(TAG, "resolveAddressAndDispatch: Geocoder returned ${addresses.size} addresses.")
+                        val addr = addresses[0]
+                        Log.d(TAG, "resolveAddressAndDispatch: First address: $addr")
+                        
+                        val addressMap = mutableMapOf<String, Any?>()
+                        addr.thoroughfare?.let { addressMap["street"] = it }
+                        addr.locality?.let { addressMap["city"] = it }
+                        addr.adminArea?.let { addressMap["state"] = it }
+                        addr.postalCode?.let { addressMap["postalCode"] = it }
+                        addr.countryName?.let { addressMap["country"] = it }
+                        if (addressMap.isEmpty() && addr.featureName != null) {
+                            addressMap["street"] = addr.featureName
+                        }
+                        
+                        Log.d(TAG, "resolveAddressAndDispatch: Parsed addressMap: $addressMap")
+                        
+                        val mutableEnriched = enriched.toMutableMap()
+                        if (addressMap.isNotEmpty()) mutableEnriched["address"] = addressMap
+                        
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(mutableEnriched) }
+                    } else {
+                        Log.w(TAG, "resolveAddressAndDispatch: Geocoder returned empty address list for lat=${location.latitude}, lng=${location.longitude}")
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
+                    }
+                } catch (e: java.lang.Exception) {
+                    Log.e(TAG, "resolveAddressAndDispatch: Exception during reverse geocoding", e)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
+                }
+            }
+        } else {
+            Log.d(TAG, "resolveAddressAndDispatch: Skipping geocoding. resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
+            dispatch(enriched)
         }
     }
 }

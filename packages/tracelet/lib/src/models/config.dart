@@ -401,6 +401,7 @@ class GeoConfig {
     this.deadReckoningActivationDelay = 0,
     this.deadReckoningMaxDuration = 0,
     this.filter = const LocationFilter(),
+    this.resolveAddress = false,
   });
 
   factory GeoConfig.fromMap(Map<String, Object?> map) {
@@ -472,6 +473,7 @@ class GeoConfig {
         fallback: 0,
       ),
       filter: LocationFilter.fromMap(safeMap(map['filter']) ?? map),
+      resolveAddress: ensureBool(map['resolveAddress'], fallback: false),
     );
   }
 
@@ -496,6 +498,7 @@ class GeoConfig {
     int? deadReckoningActivationDelay,
     int? deadReckoningMaxDuration,
     LocationFilter? filter,
+    bool? resolveAddress,
   }) {
     return GeoConfig(
       desiredAccuracy: desiredAccuracy ?? this.desiredAccuracy,
@@ -525,6 +528,7 @@ class GeoConfig {
       deadReckoningMaxDuration:
           deadReckoningMaxDuration ?? this.deadReckoningMaxDuration,
       filter: filter ?? this.filter,
+      resolveAddress: resolveAddress ?? this.resolveAddress,
     );
   }
 
@@ -613,6 +617,10 @@ class GeoConfig {
   /// Defaults to [LocationFilter].
   final LocationFilter filter;
 
+  /// Automatically resolve coordinates to a street address using the native OS Geocoder.
+  /// Defaults to `false` to save network and battery.
+  final bool resolveAddress;
+
   /// Converts to Pigeon [TlGeoConfig].
   TlGeoConfig toTlConfig() => TlGeoConfig(
     desiredAccuracy: TlDesiredAccuracy.values[desiredAccuracy.index],
@@ -636,6 +644,7 @@ class GeoConfig {
     deadReckoningActivationDelay: deadReckoningActivationDelay,
     deadReckoningMaxDuration: deadReckoningMaxDuration,
     filter: filter.toTlConfig(),
+    resolveAddress: resolveAddress,
   );
 
   Map<String, Object?> toMap() {
@@ -660,6 +669,7 @@ class GeoConfig {
       'deadReckoningActivationDelay': deadReckoningActivationDelay,
       'deadReckoningMaxDuration': deadReckoningMaxDuration,
       'filter': filter.toMap(),
+      'resolveAddress': resolveAddress,
     };
   }
 
@@ -687,7 +697,8 @@ class GeoConfig {
           enableDeadReckoning == other.enableDeadReckoning &&
           deadReckoningActivationDelay == other.deadReckoningActivationDelay &&
           deadReckoningMaxDuration == other.deadReckoningMaxDuration &&
-          filter == other.filter;
+          filter == other.filter &&
+          resolveAddress == other.resolveAddress;
 
   @override
   int get hashCode => Object.hashAll([
@@ -711,6 +722,7 @@ class GeoConfig {
     deadReckoningActivationDelay,
     deadReckoningMaxDuration,
     filter,
+    resolveAddress,
   ]);
 }
 

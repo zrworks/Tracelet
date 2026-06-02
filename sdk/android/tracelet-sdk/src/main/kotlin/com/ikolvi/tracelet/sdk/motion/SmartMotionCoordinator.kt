@@ -23,7 +23,7 @@ class SmartMotionCoordinator(
     private val context: Context,
     private val configManager: ConfigManager,
     private val stateManager: StateManager,
-    private val eventSender: TraceletEventSender,
+    var events: TraceletEventSender,
     private val locationEngine: LocationEngine,
     private val motionDetector: MotionDetector,
 ) {
@@ -46,7 +46,7 @@ class SmartMotionCoordinator(
      */
     fun onAccelStateChange(isMoving: Boolean): uniffi.tracelet_core.CoordinatorAction {
         val action = coreCoordinator.onAccelStateChange(isMoving)
-        logger.debug("SmartMotionCoordinator: onAccelStateChange -> isMoving=$isMoving, action=$action")
+        logger.debug("SmartMotionCoordinator: onAccelStateChange -> isMoving=$isMoving, action=$action, isAccelMoving=${coreCoordinator.isAccelMoving()}, isSpeedMoving=${coreCoordinator.isSpeedMoving()}")
         handleAction(action)
         return action
     }
@@ -71,7 +71,16 @@ class SmartMotionCoordinator(
             }
         }
         val action = coreCoordinator.onSpeedStateChange(isMoving)
-        logger.debug("SmartMotionCoordinator: onSpeedStateChange -> isMoving=$isMoving, action=$action")
+        logger.debug("SmartMotionCoordinator: onSpeedStateChange -> isMoving=$isMoving, action=$action, isAccelMoving=${coreCoordinator.isAccelMoving()}, isSpeedMoving=${coreCoordinator.isSpeedMoving()}")
+        handleAction(action)
+    }
+
+    /**
+     * Called when the user manually forces the pace via changePace().
+     */
+    fun onManualPaceChange(isMoving: Boolean) {
+        coreCoordinator.onAccelStateChange(isMoving)
+        val action = coreCoordinator.onSpeedStateChange(isMoving)
         handleAction(action)
     }
     
@@ -96,21 +105,22 @@ class SmartMotionCoordinator(
             uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_CONTINUOUS -> {
                 logger.info("SmartMotionCoordinator: Switching to CONTINUOUS")
                 val useForeground = configManager.isForegroundServiceEnabled()
+                logger.debug("SmartMotionCoordinator: SWITCH_TO_CONTINUOUS — useForeground=$useForeground")
                 if (useForeground) {
                     LocationService.switchToContinuous(locationEngine, stateManager)
                 } else {
                     PeriodicLocationWorker.cancel(context)
-                    stateManager.trackingMode = TrackingMode.CONTINUOUS
                     locationEngine.start()
                 }
                 stateManager.isMoving = true
+                logger.debug("SmartMotionCoordinator: SWITCH_TO_CONTINUOUS — calling motionDetector.onManualPaceChange(true)")
                 motionDetector.onManualPaceChange(true)
                 
                 // Dispatch motionchange event
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
                 } ?: mapOf("is_moving" to true)
-                eventSender.sendMotionChange(locationMap)
+                events.sendMotionChange(locationMap)
             }
             uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_STATIONARY_GEOFENCES -> {
                 logger.info("SmartMotionCoordinator: Switching to STATIONARY_GEOFENCES")
@@ -119,7 +129,6 @@ class SmartMotionCoordinator(
                     LocationService.switchToStationaryGeofences(locationEngine, stateManager)
                 } else {
                     locationEngine.stop()
-                    stateManager.trackingMode = TrackingMode.GEOFENCES
                 }
                 stateManager.isMoving = false
                 motionDetector.onManualPaceChange(false)
@@ -127,11 +136,12 @@ class SmartMotionCoordinator(
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
                 } ?: mapOf("is_moving" to false)
-                eventSender.sendMotionChange(locationMap)
+                events.sendMotionChange(locationMap)
             }
             uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_STATIONARY_PERIODIC -> {
                 logger.info("SmartMotionCoordinator: Switching to STATIONARY_PERIODIC")
                 val useForeground = configManager.isForegroundServiceEnabled()
+                logger.debug("SmartMotionCoordinator: SWITCH_TO_STATIONARY_PERIODIC — useForeground=$useForeground")
                 if (useForeground) {
                     LocationService.switchToStationaryPeriodic(locationEngine, configManager, stateManager)
                 } else {
@@ -142,7 +152,6 @@ class SmartMotionCoordinator(
                         stateManager.lastPeriodicLongitude = lastLoc.longitude
                         stateManager.lastLocationTime = lastLoc.time
                     }
-                    stateManager.trackingMode = TrackingMode.PERIODIC
                     val interval = configManager.getStationaryPeriodicInterval()
                     
                     val useExactAlarms = configManager.getPeriodicUseExactAlarms() || interval < 900
@@ -154,12 +163,13 @@ class SmartMotionCoordinator(
                     }
                 }
                 stateManager.isMoving = false
+                logger.debug("SmartMotionCoordinator: SWITCH_TO_STATIONARY_PERIODIC — calling motionDetector.onManualPaceChange(false)")
                 motionDetector.onManualPaceChange(false)
                 
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
                 } ?: mapOf("is_moving" to false)
-                eventSender.sendMotionChange(locationMap)
+                events.sendMotionChange(locationMap)
             }
             uniffi.tracelet_core.CoordinatorAction.NONE -> {
                 // Do nothing

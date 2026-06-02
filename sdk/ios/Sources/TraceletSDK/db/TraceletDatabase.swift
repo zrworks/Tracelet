@@ -1001,3 +1001,6 @@ public final class TraceletDatabase {
         }
     }
 }
+
+
+extension TraceletDatabase: LocationDataSink {}

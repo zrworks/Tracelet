@@ -2,6 +2,11 @@ import CoreLocation
 import Foundation
 import UIKit
 
+public protocol LocationDataSink {
+    @discardableResult
+    func insertLocation(_ location: [String: Any]) -> String
+}
+
 /// CLLocationManager wrapper providing continuous location tracking,
 /// one-shot position, watch position, significant location changes,
 /// and odometer computation.
@@ -13,7 +18,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private let configManager: ConfigManager
     private let stateManager: StateManager
     private let eventDispatcher: TraceletEventSending
-    private let database: TraceletDatabase
+    private var sinks: [LocationDataSink] = []
 
     private var lastLocation: CLLocation?
     /// Last GPS-quality location (horizontalAccuracy ≤ 100m).
@@ -22,7 +27,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private var oneShots: [((CLLocation?) -> Void)] = []
     private var watchCallbacks: [Int: Bool] = [:]
     private var nextWatchId = 0
-    private var isTracking = false
+    public private(set) var isTracking = false
 
     /// Background task ID for the current periodic fix request.
     /// Ended in didUpdateLocations/didFailWithError when periodic mode is active.
@@ -117,15 +122,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     public init(configManager: ConfigManager,
          stateManager: StateManager,
-         eventDispatcher: TraceletEventSending,
-         database: TraceletDatabase) {
+         eventDispatcher: TraceletEventSending) {
         self.configManager = configManager
         self.stateManager = stateManager
         self.eventDispatcher = eventDispatcher
-        self.database = database
         self.locationManager = CLLocationManager()
         super.init()
         locationManager.delegate = self
+    }
+
+    public func registerSink(_ sink: LocationDataSink) {
+        sinks.append(sink)
     }
 
     // MARK: - Start / Stop
@@ -524,8 +531,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 var locationMap = buildLocationMap(cached)
                 if !extras.isEmpty { locationMap["extras"] = extras }
                 if persist {
-                    let _ = database.insertLocation(locationMap)
-                    onLocationPersisted?()
+                    self.sinks.forEach { $0.insertLocation(locationMap) }
+                    self.onLocationPersisted?()
                 }
                 callback(locationMap)
                 return
@@ -561,8 +568,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if !extras.isEmpty { locationMap["extras"] = extras }
         locationMap["event"] = "getLastKnownLocation"
         if persist {
-            let _ = database.insertLocation(locationMap)
-            onLocationPersisted?()
+            self.sinks.forEach { $0.insertLocation(locationMap) }
+            self.onLocationPersisted?()
         }
         callback(locationMap)
     }
@@ -616,10 +623,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             map["isMoving"] = isMoving
             map["event"] = "motionchange"
             locationMap = map
+            
+            enrichWithAddressIfNeeded(locationMap: locationMap, location: loc) { [weak self] enrichedMap in
+                self?.eventDispatcher.sendMotionChange(enrichedMap)
+            }
         } else {
             locationMap = ["isMoving": isMoving]
+            eventDispatcher.sendMotionChange(locationMap)
         }
-        eventDispatcher.sendMotionChange(locationMap)
         return true
     }
 
@@ -773,6 +784,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             isMock: mock,
             adaptiveContext: adaptiveCtx
         )
+        // IMPORTANT: Always feed the speed motion state machine, even when the
+        // Rust processor rejects the location for persistence/dispatch. The speed
+        // SM needs every speed reading to correctly transition between
+        // MOVING → SLOWING → STATIONARY. Without this, a stationary device
+        // whose locations are filtered (e.g. same lat/lng, no distance change)
+        // will never transition out of MOVING state.
+        speedSink?(result.effectiveSpeed)
+
         if !result.accepted {
             NSLog("[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown")
             if result.odometerDelta > 0 {
@@ -801,10 +820,6 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         lastEffectiveSpeed = result.effectiveSpeed
-
-        // Forward speed to SpeedMotionManager when speed-based motion detection
-        // is active.
-        speedSink?(result.effectiveSpeed)
 
         // Persist last periodic coordinates for cross-restart odometer
         if isPeriodicTracking {
@@ -851,14 +866,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 // Dispatch to Flutter but do NOT persist or audit.
                 var data = privacyResult.location ?? locationMap
                 if isPeriodicTracking { data["event"] = "periodic" }
-                eventDispatcher.sendLocation(data)
-                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
-                if isPeriodicTracking {
-                    locationManager.stopUpdatingLocation()
-                    locationManager.allowsBackgroundLocationUpdates = false
-                    periodicFixTimeoutWork?.cancel()
-                    periodicFixTimeoutWork = nil
-                    endPeriodicFixBgTask()
+                
+                enrichWithAddressIfNeeded(locationMap: data, location: location) { [weak self] enrichedData in
+                    self?.eventDispatcher.sendLocation(enrichedData)
+                    self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    if self?.isPeriodicTracking == true {
+                        self?.locationManager.stopUpdatingLocation()
+                        self?.locationManager.allowsBackgroundLocationUpdates = false
+                        self?.periodicFixTimeoutWork?.cancel()
+                        self?.periodicFixTimeoutWork = nil
+                        self?.endPeriodicFixBgTask()
+                    }
                 }
                 return
             case .degraded:
@@ -871,15 +889,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                         degraded[key] = value
                     }
                 }
-                persistLocationIfAllowed(degraded, event: pzEventTag)
-                eventDispatcher.sendLocation(degraded)
-                onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
-                if isPeriodicTracking {
-                    locationManager.stopUpdatingLocation()
-                    locationManager.allowsBackgroundLocationUpdates = false
-                    periodicFixTimeoutWork?.cancel()
-                    periodicFixTimeoutWork = nil
-                    endPeriodicFixBgTask()
+                
+                enrichWithAddressIfNeeded(locationMap: degraded, location: location) { [weak self] enrichedDegraded in
+                    self?.persistLocationIfAllowed(enrichedDegraded, event: pzEventTag)
+                    self?.eventDispatcher.sendLocation(enrichedDegraded)
+                    self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    if self?.isPeriodicTracking == true {
+                        self?.locationManager.stopUpdatingLocation()
+                        self?.locationManager.allowsBackgroundLocationUpdates = false
+                        self?.periodicFixTimeoutWork?.cancel()
+                        self?.periodicFixTimeoutWork = nil
+                        self?.endPeriodicFixBgTask()
+                    }
                 }
                 return
             case .passThrough:
@@ -897,23 +918,27 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Tag periodic fixes so Dart can distinguish them from continuous-mode events
         let eventTag = isPeriodicTracking ? "periodic" : "location"
         dispatchMap["event"] = eventTag
-        persistLocationIfAllowed(dispatchMap, event: eventTag)
-        eventDispatcher.sendLocation(dispatchMap)
+        
+        enrichWithAddressIfNeeded(locationMap: dispatchMap, location: location) { [weak self] enrichedMap in
+            guard let self = self else { return }
+            self.persistLocationIfAllowed(enrichedMap, event: eventTag)
+            self.eventDispatcher.sendLocation(enrichedMap)
 
-        // Notify geofenceModeHighAccuracy listener (if active)
-        onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+            // Notify geofenceModeHighAccuracy listener (if active)
+            self.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
 
-        // In periodic mode, immediately stop GPS after receiving the fix
-        // to minimise blue-arrow visibility.
-        if isPeriodicTracking {
-            NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
-                  location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
-            locationManager.stopUpdatingLocation()
-            locationManager.allowsBackgroundLocationUpdates = false
-            // Cancel the timeout and end the background task now that the fix succeeded.
-            periodicFixTimeoutWork?.cancel()
-            periodicFixTimeoutWork = nil
-            endPeriodicFixBgTask()
+            // In periodic mode, immediately stop GPS after receiving the fix
+            // to minimise blue-arrow visibility.
+            if self.isPeriodicTracking {
+                NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
+                      location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+                self.locationManager.stopUpdatingLocation()
+                self.locationManager.allowsBackgroundLocationUpdates = false
+                // Cancel the timeout and end the background task now that the fix succeeded.
+                self.periodicFixTimeoutWork?.cancel()
+                self.periodicFixTimeoutWork = nil
+                self.endPeriodicFixBgTask()
+            }
         }
     }
 
@@ -1063,19 +1088,22 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         return true
     }
 
-    /// Picks the best-accuracy location from samples and delivers it.
-    private func deliverBest(samples: [CLLocation], persist: Bool, extras: [String: Any], callback: ([String: Any]?) -> Void) {
+    private func deliverBest(samples: [CLLocation], persist: Bool, extras: [String: Any], callback: @escaping ([String: Any]?) -> Void) {
         guard let best = samples.min(by: { $0.horizontalAccuracy < $1.horizontalAccuracy }) else {
             callback(nil)
             return
         }
         var locationMap = buildLocationMap(best)
         if !extras.isEmpty { locationMap["extras"] = extras }
-        if persist {
-            let _ = database.insertLocation(locationMap)
-            onLocationPersisted?()
+        
+        enrichWithAddressIfNeeded(locationMap: locationMap, location: best) { [weak self] enrichedMap in
+            if persist {
+                self?.sinks.forEach { $0.insertLocation(enrichedMap) }
+                self?.onLocationPersisted?()
+                self?.eventDispatcher.sendLocation(enrichedMap)
+            }
+            callback(enrichedMap)
         }
-        callback(locationMap)
     }
 
     // MARK: - Helpers
@@ -1241,6 +1269,16 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 altitude: altitude,
                 isMock: isMock
             )
+            
+            // Still notify other sinks (like SyncSink) but skip TraceletDatabase to avoid duplicate inserts
+            self.sinks.forEach { sink in
+                if String(describing: type(of: sink)) != "TraceletDatabase" {
+                    sink.insertLocation(location)
+                }
+            }
+        } else {
+            self.sinks.forEach { $0.insertLocation(location) }
+            self.onLocationPersisted?()
         }
 
         // Notify HTTP sync manager (if wired) so auto-sync can fire.
@@ -1415,5 +1453,47 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if confidence >= 75 { return .high }
         if confidence >= 50 { return .medium }
         return .low
+    }
+
+    // MARK: - Reverse Geocoding
+
+    private func enrichWithAddressIfNeeded(locationMap: [String: Any], location: CLLocation?, completion: @escaping ([String: Any]) -> Void) {
+        guard configManager.getResolveAddress(), let clLoc = location else {
+            completion(locationMap)
+            return
+        }
+        
+        NSLog("[Tracelet] GEOCODE: Requesting reverse geocoding for lat=%.6f, lon=%.6f", clLoc.coordinate.latitude, clLoc.coordinate.longitude)
+        
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(clLoc) { placemarks, error in
+            var finalMap = locationMap
+            
+            if let err = error {
+                NSLog("[Tracelet] GEOCODE: Error resolving address: %@", err.localizedDescription)
+            }
+            
+            if let placemark = placemarks?.first {
+                NSLog("[Tracelet] GEOCODE: Found placemark: %@", placemark.description)
+                var addressMap: [String: Any] = [:]
+                if let thoroughfare = placemark.thoroughfare { addressMap["street"] = thoroughfare }
+                else if let name = placemark.name { addressMap["street"] = name }
+                
+                if let locality = placemark.locality { addressMap["city"] = locality }
+                if let adminArea = placemark.administrativeArea { addressMap["state"] = adminArea }
+                if let postalCode = placemark.postalCode { addressMap["postalCode"] = postalCode }
+                if let country = placemark.country { addressMap["country"] = country }
+                
+                if !addressMap.isEmpty {
+                    finalMap["address"] = addressMap
+                    NSLog("[Tracelet] GEOCODE: Mapped address: %@", addressMap.description)
+                } else {
+                    NSLog("[Tracelet] GEOCODE: Placemark had no mappable address fields.")
+                }
+            } else {
+                NSLog("[Tracelet] GEOCODE: No placemarks found.")
+            }
+            completion(finalMap)
+        }
     }
 }

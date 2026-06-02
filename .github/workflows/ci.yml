@@ -63,6 +63,9 @@ jobs:
           - tracelet_ios
           - tracelet_web
           - tracelet_doctor
+          - tracelet_sync
+          - tracelet_firebase
+          - tracelet_supabase
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
@@ -141,11 +144,19 @@ jobs:
           unzip -q build/app/outputs/flutter-apk/app-release.apk -d extracted_apk
           SO="extracted_apk/lib/arm64-v8a/libtracelet_core.so"
           if ! nm -D "$SO" | grep -q "frbgen_tracelet"; then
-            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the Android Release APK!"
+            echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the Android Release APK (libtracelet_core)!"
             exit 1
           fi
           COUNT=$(nm -D "$SO" | grep -c "frbgen_tracelet")
-          echo "✅ Verified $COUNT frbgen_tracelet symbols present in the APK"
+          echo "✅ Verified $COUNT frbgen_tracelet symbols present in the APK (libtracelet_core)"
+
+          SO_SYNC="extracted_apk/lib/arm64-v8a/libtracelet_sync.so"
+          if ! nm -D "$SO_SYNC" | grep -q "uniffi_"; then
+            echo "❌ ERROR: uniffi symbols were stripped from the Android Release APK (libtracelet_sync)!"
+            exit 1
+          fi
+          COUNT_SYNC=$(nm -D "$SO_SYNC" | grep -c "uniffi_")
+          echo "✅ Verified $COUNT_SYNC uniffi symbols present in the APK (libtracelet_sync)"
 
   build-ios:
     name: Build iOS
@@ -198,10 +209,29 @@ jobs:
           done
           
           if [ "$MISSING_SYMBOLS" -gt 0 ]; then
-            echo "❌ $MISSING_SYMBOLS symbols were stripped!"
+            echo "❌ $MISSING_SYMBOLS symbols were stripped from tracelet_core!"
             exit 1
           else
-            echo "✅ All flutter_rust_bridge symbols successfully preserved!"
+            echo "✅ All tracelet_core flutter_rust_bridge symbols successfully preserved!"
+          fi
+
+          echo "Extracting expected FRB symbols from tracelet_sync static library..."
+          EXPECTED_SYNC_SYMBOLS=$(nm -g ../sdk/rust-core/target/aarch64-apple-ios/release/libtracelet_sync.a 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
+          
+          echo "Verifying tracelet_sync symbols in Release build..."
+          MISSING_SYNC_SYMBOLS=0
+          for symbol in $EXPECTED_SYNC_SYMBOLS; do
+            if ! grep -q "$symbol" runner_symbols.txt; then
+              echo "❌ ERROR: Symbol $symbol was stripped from the iOS Release build (tracelet_sync)!"
+              MISSING_SYNC_SYMBOLS=$((MISSING_SYNC_SYMBOLS + 1))
+            fi
+          done
+          
+          if [ "$MISSING_SYNC_SYMBOLS" -gt 0 ]; then
+            echo "❌ $MISSING_SYNC_SYMBOLS symbols were stripped from tracelet_sync!"
+            exit 1
+          else
+            echo "✅ All tracelet_sync flutter_rust_bridge symbols successfully preserved!"
           fi
 
   build-web:
@@ -252,7 +282,7 @@ jobs:
         run: |
           mkdir -p coverage
           LCOV_FILES=""
-          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor; do
+          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor tracelet_sync tracelet_firebase tracelet_supabase; do
             FILE="coverage-artifacts/coverage-${pkg}/lcov.info"
             if [ -f "$FILE" ]; then
               LCOV_FILES="$LCOV_FILES -a $FILE"
@@ -284,7 +314,7 @@ jobs:
         run: |
           echo "Checking version consistency across packages..."
           VERSIONS=""
-          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web; do
+          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor tracelet_sync tracelet_firebase tracelet_supabase; do
             VER=$(grep '^version:' "packages/$pkg/pubspec.yaml" | awk '{print $2}')
             echo "  $pkg: $VER"
             VERSIONS="$VERSIONS $VER"
@@ -300,7 +330,7 @@ jobs:
       - name: Check CHANGELOG entries
         run: |
           echo "Checking CHANGELOG.md files exist and have entries..."
-          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor; do
+          for pkg in tracelet tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet_doctor tracelet_sync tracelet_firebase tracelet_supabase; do
             FILE="packages/$pkg/CHANGELOG.md"
             if [ ! -f "$FILE" ]; then
               echo "❌ Missing $FILE"
@@ -318,14 +348,16 @@ jobs:
         run: |
           echo "Checking cross-package dependency constraints..."
           IFACE_VER=$(grep '^version:' packages/tracelet_platform_interface/pubspec.yaml | awk '{print $2}')
-          for pkg in tracelet tracelet_android tracelet_ios tracelet_web; do
+          for pkg in tracelet tracelet_android tracelet_ios tracelet_web tracelet_sync; do
             CONSTRAINT=$(grep 'tracelet_platform_interface:' "packages/$pkg/pubspec.yaml" | head -1 | awk '{print $2}')
             echo "  $pkg depends on tracelet_platform_interface: $CONSTRAINT (interface is $IFACE_VER)"
           done
           
-          # Verify tracelet_doctor dependency on tracelet
+          # Verify tracelet_doctor, firebase, supabase dependency on tracelet
           CORE_VER=$(grep '^version:' packages/tracelet/pubspec.yaml | awk '{print $2}')
-          DOCTOR_CONSTRAINT=$(grep 'tracelet:' packages/tracelet_doctor/pubspec.yaml | head -1 | awk '{print $2}')
-          echo "  tracelet_doctor depends on tracelet: $DOCTOR_CONSTRAINT (core is $CORE_VER)"
+          for pkg in tracelet_doctor tracelet_firebase tracelet_supabase; do
+            CONSTRAINT=$(grep 'tracelet:' "packages/$pkg/pubspec.yaml" | head -1 | awk '{print $2}')
+            echo "  $pkg depends on tracelet: $CONSTRAINT (core is $CORE_VER)"
+          done
           
           echo "✅ Dependency constraints checked"

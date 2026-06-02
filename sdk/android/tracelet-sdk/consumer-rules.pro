@@ -40,6 +40,7 @@
 -keep class com.sun.jna.** { *; }
 -keepclassmembers class * extends com.sun.jna.** { *; }
 -keep class uniffi.tracelet_core.** { *; }
+-keep class uniffi.tracelet_sync.** { *; }
 
 -dontwarn java.awt.**
 -dontwarn com.sun.jna.**

@@ -537,6 +537,12 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
                 }
             }
         }
-        return CoreGeofence(identifier: identifier, latitude: latitude, longitude: longitude, radius: radius, vertices: vertices)
+        var extrasStr: String? = nil
+        if let extrasRaw = gf["extras"] as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: extrasRaw, options: []),
+           let jsonStr = String(data: jsonData, encoding: .utf8) {
+            extrasStr = jsonStr
+        }
+        return CoreGeofence(identifier: identifier, latitude: latitude, longitude: longitude, radius: radius, vertices: vertices, extras: extrasStr)
     }
 }

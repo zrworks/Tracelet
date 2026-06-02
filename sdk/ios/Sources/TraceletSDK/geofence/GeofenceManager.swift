@@ -71,8 +71,21 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
             let lat = data["latitude"] as? Double ?? 0.0
             let lng = data["longitude"] as? Double ?? 0.0
             let radius = data["radius"] as? Double ?? 100.0
+            
+            var vertices: [Coordinate]? = nil
+            if let verticesRaw = data["vertices"] as? [[Double]] {
+                vertices = verticesRaw.filter { $0.count >= 2 }.map { Coordinate(lat: $0[0], lng: $0[1]) }
+            }
+            
+            var extrasStr: String? = nil
+            if let extrasRaw = data["extras"] as? [String: Any],
+               let jsonData = try? JSONSerialization.data(withJSONObject: extrasRaw, options: []),
+               let jsonStr = String(data: jsonData, encoding: .utf8) {
+                extrasStr = jsonStr
+            }
+            
             do {
-                try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius)
+                try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius, vertices: vertices, extras: extrasStr)
             } catch {
                 NSLog("GeofenceManager: Failed to write geofence to Rust Core DB: \(error)")
             }
@@ -105,8 +118,21 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
                 let lat = g["latitude"] as? Double ?? 0.0
                 let lng = g["longitude"] as? Double ?? 0.0
                 let radius = g["radius"] as? Double ?? 100.0
+                
+                var vertices: [Coordinate]? = nil
+                if let verticesRaw = g["vertices"] as? [[Double]] {
+                    vertices = verticesRaw.filter { $0.count >= 2 }.map { Coordinate(lat: $0[0], lng: $0[1]) }
+                }
+                
+                var extrasStr: String? = nil
+                if let extrasRaw = g["extras"] as? [String: Any],
+                   let jsonData = try? JSONSerialization.data(withJSONObject: extrasRaw, options: []),
+                   let jsonStr = String(data: jsonData, encoding: .utf8) {
+                    extrasStr = jsonStr
+                }
+                
                 do {
-                    try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius)
+                    try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius, vertices: vertices, extras: extrasStr)
                 } catch {
                     NSLog("GeofenceManager: Failed to write batch geofence to Rust Core DB: \(error)")
                 }
@@ -184,13 +210,21 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     /// Maps a Rust `CoreGeofence` structure into a bridge-compatible Swift dictionary.
     private func mapFromCoreGeofence(_ gf: CoreGeofence) -> [String: Any] {
         let verticesArray = gf.vertices.map { [$0.lat, $0.lng] }
-        return [
+        var result: [String: Any] = [
             "identifier": gf.identifier,
             "latitude": gf.latitude,
             "longitude": gf.longitude,
             "radius": gf.radius,
             "vertices": verticesArray
         ]
+        
+        if let extrasStr = gf.extras,
+           let data = extrasStr.data(using: .utf8),
+           let extrasDict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+            result["extras"] = extrasDict
+        }
+        
+        return result
     }
 
     // MARK: - Re-register all (on boot or restart)

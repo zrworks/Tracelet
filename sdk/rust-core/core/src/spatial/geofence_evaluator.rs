@@ -11,6 +11,7 @@ pub struct CoreGeofence {
     pub longitude: f64,
     pub radius: f64,
     pub vertices: Vec<Coordinate>,
+    pub extras: Option<String>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]

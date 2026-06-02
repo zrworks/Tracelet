@@ -528,7 +528,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(uint64_t 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_GEOFENCE
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_GEOFENCE
-void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr, RustBuffer identifier, double lat, double lng, double radius, RustCallStatus *_Nonnull out_status
+void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr, RustBuffer identifier, double lat, double lng, double radius, RustBuffer vertices, RustBuffer extras, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION

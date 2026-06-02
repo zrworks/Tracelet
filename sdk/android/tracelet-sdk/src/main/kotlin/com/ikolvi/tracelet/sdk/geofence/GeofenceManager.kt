@@ -88,13 +88,29 @@ class GeofenceManager(
      */
     private fun mapFromCoreGeofence(gf: CoreGeofence): Map<String, Any?> {
         val verticesList = gf.vertices.map { listOf(it.lat, it.lng) }
-        return mapOf(
+        val result = mutableMapOf<String, Any?>(
             "identifier" to gf.identifier,
             "latitude" to gf.latitude,
             "longitude" to gf.longitude,
             "radius" to gf.radius,
             "vertices" to verticesList
         )
+        
+        gf.extras?.let { extrasStr ->
+            try {
+                val jsonObject = org.json.JSONObject(extrasStr)
+                val map = mutableMapOf<String, Any?>()
+                val keys = jsonObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    map[key] = jsonObject.get(key)
+                }
+                result["extras"] = map
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to parse geofence extras from DB: ${e.message}")
+            }
+        }
+        return result
     }
 
     /** Registered (active on the platform) geofence identifiers (thread-safe, A-M6). */
@@ -123,8 +139,34 @@ class GeofenceManager(
         val lng = (geofenceMap["longitude"] as? Number)?.toDouble() ?: 0.0
         val radius = (geofenceMap["radius"] as? Number)?.toDouble() ?: 0.0
         
+        val verticesRaw = geofenceMap["vertices"] as? List<*>
+        var coreVertices: List<Coordinate>? = null
+        if (verticesRaw != null) {
+            val vList = mutableListOf<Coordinate>()
+            for (v in verticesRaw) {
+                if (v is List<*> && v.size >= 2) {
+                    val vLat = (v[0] as? Number)?.toDouble()
+                    val vLng = (v[1] as? Number)?.toDouble()
+                    if (vLat != null && vLng != null) {
+                        vList.add(Coordinate(vLat, vLng))
+                    }
+                }
+            }
+            coreVertices = vList.takeIf { it.isNotEmpty() }
+        }
+
+        val extrasRaw = geofenceMap["extras"] as? Map<*, *>
+        var extrasStr: String? = null
+        if (extrasRaw != null) {
+            try {
+                extrasStr = org.json.JSONObject(extrasRaw).toString()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to stringify geofence extras: ${e.message}")
+            }
+        }
+        
         try {
-            rustDatabase?.insertGeofence(identifier, lat, lng, radius)
+            rustDatabase?.insertGeofence(identifier, lat, lng, radius, coreVertices, extrasStr)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to persist geofence to Rust DB", e)
         }
@@ -586,6 +628,15 @@ class GeofenceManager(
                 }
             }
         }
-        return CoreGeofence(identifier, latitude, longitude, radius, vertices)
+        val extrasRaw = gf["extras"] as? Map<*, *>
+        var extrasStr: String? = null
+        if (extrasRaw != null) {
+            try {
+                extrasStr = org.json.JSONObject(extrasRaw).toString()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to stringify geofence extras: ${e.message}")
+            }
+        }
+        return CoreGeofence(identifier, latitude, longitude, radius, vertices, extrasStr)
     }
 }

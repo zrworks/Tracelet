@@ -1144,7 +1144,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
      */
     func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32) throws 
     
-    func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double) throws 
+    func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double, vertices: [Coordinate]?, extras: String?) throws 
     
     /**
      * Inserts a new location record into the database.
@@ -1431,13 +1431,15 @@ open func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: 
 }
 }
     
-open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: Double, vertices: [Coordinate]?, extras: String?)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(identifier),
         FfiConverterDouble.lower(lat),
         FfiConverterDouble.lower(lng),
-        FfiConverterDouble.lower(radius),$0
+        FfiConverterDouble.lower(radius),
+        FfiConverterOptionSequenceTypeCoordinate.lower(vertices),
+        FfiConverterOptionString.lower(extras),$0
     )
 }
 }
@@ -3848,15 +3850,17 @@ public struct CoreGeofence: Equatable, Hashable {
     public var longitude: Double
     public var radius: Double
     public var vertices: [Coordinate]
+    public var extras: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(identifier: String, latitude: Double, longitude: Double, radius: Double, vertices: [Coordinate]) {
+    public init(identifier: String, latitude: Double, longitude: Double, radius: Double, vertices: [Coordinate], extras: String?) {
         self.identifier = identifier
         self.latitude = latitude
         self.longitude = longitude
         self.radius = radius
         self.vertices = vertices
+        self.extras = extras
     }
 
     
@@ -3879,7 +3883,8 @@ public struct FfiConverterTypeCoreGeofence: FfiConverterRustBuffer {
                 latitude: FfiConverterDouble.read(from: &buf), 
                 longitude: FfiConverterDouble.read(from: &buf), 
                 radius: FfiConverterDouble.read(from: &buf), 
-                vertices: FfiConverterSequenceTypeCoordinate.read(from: &buf)
+                vertices: FfiConverterSequenceTypeCoordinate.read(from: &buf), 
+                extras: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -3889,6 +3894,7 @@ public struct FfiConverterTypeCoreGeofence: FfiConverterRustBuffer {
         FfiConverterDouble.write(value.longitude, into: &buf)
         FfiConverterDouble.write(value.radius, into: &buf)
         FfiConverterSequenceTypeCoordinate.write(value.vertices, into: &buf)
+        FfiConverterOptionString.write(value.extras, into: &buf)
     }
 }
 
@@ -6506,6 +6512,30 @@ fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionSequenceTypeCoordinate: FfiConverterRustBuffer {
+    typealias SwiftType = [Coordinate]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceTypeCoordinate.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceTypeCoordinate.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -6972,7 +7002,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41574) {

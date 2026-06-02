@@ -22,35 +22,35 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
 
     private suspend fun triggerSync() {
         syncMutex.withLock {
-            android.util.Log.d("NativeSyncProvider", "triggerSync started")
+            sdk.logger.debug("NativeSyncProvider: triggerSync started")
             val db = sdk.rustDatabase ?: run {
-                android.util.Log.e("NativeSyncProvider", "rustDatabase is null")
+                sdk.logger.error("NativeSyncProvider: rustDatabase is null")
                 return
             }
             val state = sdk.rustEngineState ?: run {
-                android.util.Log.e("NativeSyncProvider", "rustEngineState is null")
+                sdk.logger.error("NativeSyncProvider: rustEngineState is null")
                 return
             }
 
             try {
                 val coreHttp = state.getConfig().http
-                android.util.Log.d("NativeSyncProvider", "coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
+                sdk.logger.debug("NativeSyncProvider: coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
                 if (coreHttp.url.isNullOrEmpty() || !coreHttp.autoSync) return
 
                 val limit = if (coreHttp.maxBatchSize > 0) coreHttp.maxBatchSize else 250
                 val records = db.getLocationsBatch(limit.toInt())
-                android.util.Log.d("NativeSyncProvider", "Found ${records.size} locations in DB")
+                sdk.logger.debug("NativeSyncProvider: Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
 
                 val count = syncManager.syncBatchBlocking(coreHttp, records)
                 if (count > 0) {
                     records.lastOrNull()?.id?.let { lastId ->
                         db.clearLocationsUpTo(lastId)
-                        android.util.Log.i("NativeSyncProvider", "Synced and cleared $count locations.")
+                        sdk.logger.info("NativeSyncProvider: Synced and cleared $count locations.")
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("NativeSyncProvider", "Sync failed: ${e.message}")
+                sdk.logger.error("NativeSyncProvider: Sync failed: ${e.message}")
             }
         }
     }

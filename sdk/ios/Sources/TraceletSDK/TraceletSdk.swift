@@ -265,6 +265,7 @@ public final class TraceletSdk {
             }
         }
 
+        logger.info("ready() called")
         return stateManager.toMap(merged)
     }
 
@@ -334,6 +335,7 @@ public final class TraceletSdk {
         serviceSessionManager.start()
 
         eventSender.sendEnabledChange(true)
+        logger.info("start() — tracking started")
 
         return stateManager.toMap(configManager.getConfig())
     }
@@ -369,6 +371,7 @@ public final class TraceletSdk {
             stopBatteryBudgetSampling()
             batteryBudgetEngine?.reset()
             eventSender.sendEnabledChange(false)
+            logger.info("stop() — tracking stopped")
         }
 
         return stateManager.toMap(configManager.getConfig())
@@ -430,6 +433,7 @@ public final class TraceletSdk {
         }
 
         eventSender.sendEnabledChange(true)
+        logger.info("startGeofences() — geofence-only mode")
 
         return stateManager.toMap(configManager.getConfig())
     }
@@ -491,6 +495,7 @@ public final class TraceletSdk {
         startServiceSessionForCurrentAuth()
 
         eventSender.sendEnabledChange(true)
+        logger.info("startPeriodic() — periodic tracking started")
 
         return stateManager.toMap(configManager.getConfig())
     }
@@ -610,6 +615,7 @@ public final class TraceletSdk {
             stateManager.reset()
             configManager.reset(config)
             isReady = false
+            logger.info("reset() — all subsystems reset")
         }
 
         return stateManager.toMap(configManager.getConfig())

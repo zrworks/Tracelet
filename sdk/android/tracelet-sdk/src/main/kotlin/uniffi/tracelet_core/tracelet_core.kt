@@ -686,6 +686,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_logs(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload(
@@ -708,6 +710,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count(
     ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_logs(
+    ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail(
@@ -715,6 +719,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_location(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_log(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone(
     ): Short
@@ -904,6 +910,8 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(`ptr
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(`ptr`: Long,`maxId`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_clear_logs(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(`ptr`: Long,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -926,6 +934,8 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_logs(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`ptr`: Long,`uuid`: RustBuffer.ByValue,`hash`: RustBuffer.ByValue,`prevHash`: RustBuffer.ByValue,`index`: Int,uniffi_out_err: UniffiRustCallStatus, 
@@ -933,6 +943,8 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_log(`ptr`: Long,`level`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`action`: Int,`degradedAccuracy`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -1236,6 +1248,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to() != 905.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_logs() != 12719.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1269,6 +1284,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_logs() != 48390.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1279,6 +1297,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263.toShort()) {
@@ -2782,6 +2803,11 @@ public interface DatabaseManagerInterface {
     fun `clearLocationsUpTo`(`maxId`: kotlin.Long)
     
     /**
+     * Clears all log entries from the database.
+     */
+    fun `clearLogs`()
+    
+    /**
      * Removes all stored privacy zones from the database.
      */
     fun `clearPrivacyZones`()
@@ -2829,6 +2855,11 @@ public interface DatabaseManagerInterface {
     fun `getLocationsCount`(): kotlin.Int
     
     /**
+     * Retrieves a batch of log entries, up to `limit`.
+     */
+    fun `getLogs`(`limit`: kotlin.Int): List<LogEntry>
+    
+    /**
      * Retrieves all privacy zones registered in the local database.
      * Used by native managers to query geofenced privacy control zones.
      */
@@ -2845,6 +2876,11 @@ public interface DatabaseManagerInterface {
      * Inserts a new location record into the database.
      */
     fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?)
+    
+    /**
+     * Inserts a log entry into the database.
+     */
+    fun `insertLog`(`level`: kotlin.String, `message`: kotlin.String, `source`: kotlin.String)
     
     /**
      * Inserts or replaces a privacy zone record in the database.
@@ -3010,6 +3046,22 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(
         it,
         FfiConverterLong.lower(`maxId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Clears all log entries from the database.
+     */
+    @Throws(TraceletException::class)override fun `clearLogs`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_logs(
+        it,
+        _status)
 }
     }
     
@@ -3189,6 +3241,23 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
 
     
     /**
+     * Retrieves a batch of log entries, up to `limit`.
+     */
+    @Throws(TraceletException::class)override fun `getLogs`(`limit`: kotlin.Int): List<LogEntry> {
+            return FfiConverterSequenceTypeLogEntry.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_logs(
+        it,
+        FfiConverterInt.lower(`limit`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Retrieves all privacy zones registered in the local database.
      * Used by native managers to query geofenced privacy control zones.
      */
@@ -3245,6 +3314,22 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
         it,
         FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Inserts a log entry into the database.
+     */
+    @Throws(TraceletException::class)override fun `insertLog`(`level`: kotlin.String, `message`: kotlin.String, `source`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_log(
+        it,
+        FfiConverterString.lower(`level`),FfiConverterString.lower(`message`),FfiConverterString.lower(`source`),_status)
 }
     }
     
@@ -7687,6 +7772,62 @@ public object FfiConverterTypeLocationRecord: FfiConverterRustBuffer<LocationRec
 
 
 /**
+ * Represents a single log entry persisted in the database.
+ */
+data class LogEntry (
+    var `id`: kotlin.Long
+    , 
+    var `level`: kotlin.String
+    , 
+    var `message`: kotlin.String
+    , 
+    var `timestamp`: kotlin.String
+    , 
+    var `source`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeLogEntry: FfiConverterRustBuffer<LogEntry> {
+    override fun read(buf: ByteBuffer): LogEntry {
+        return LogEntry(
+            FfiConverterLong.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: LogEntry) = (
+            FfiConverterLong.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`level`) +
+            FfiConverterString.allocationSize(value.`message`) +
+            FfiConverterString.allocationSize(value.`timestamp`) +
+            FfiConverterString.allocationSize(value.`source`)
+    )
+
+    override fun write(value: LogEntry, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`id`, buf)
+            FfiConverterString.write(value.`level`, buf)
+            FfiConverterString.write(value.`message`, buf)
+            FfiConverterString.write(value.`timestamp`, buf)
+            FfiConverterString.write(value.`source`, buf)
+    }
+}
+
+
+
+/**
  * Configuration for motion and activity detection.
  */
 data class MotionConfig (
@@ -8907,6 +9048,34 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeGeofenceTransition.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeLogEntry: FfiConverterRustBuffer<List<LogEntry>> {
+    override fun read(buf: ByteBuffer): List<LogEntry> {
+        val len = buf.getInt()
+        return List<LogEntry>(len) {
+            FfiConverterTypeLogEntry.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<LogEntry>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeLogEntry.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<LogEntry>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeLogEntry.write(it, buf)
         }
     }
 }

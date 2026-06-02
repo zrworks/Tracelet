@@ -13,6 +13,8 @@ class TraceletLogger(
     private val context: Context,
     private val config: ConfigManager,
 ) {
+    var rustDatabase: uniffi.tracelet_core.DatabaseManager? = null
+
     companion object {
         private const val TAG = "Tracelet"
 
@@ -76,14 +78,29 @@ class TraceletLogger(
 
     /** Get the log as a string (optionally filtered). */
     fun getLog(query: Map<String, Any?>?): String {
-        return "Not implemented (SQLite removed)"
+        return try {
+            val limit = (query?.get("limit") as? Number)?.toInt() ?: 500
+            val logs = rustDatabase?.getLogs(limit) ?: emptyList()
+            logs.joinToString("\n") { "[${it.timestamp}] [${it.level}] ${it.message}" }
+        } catch (e: Exception) {
+            "Failed to retrieve logs: ${e.message}"
+        }
     }
 
     /** Delete all log entries. */
-    fun destroyLog(): Boolean = true
+    fun destroyLog(): Boolean {
+        return try {
+            rustDatabase?.clearLogs()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     /** Email the log (returns intent data; actual email launch is done by caller). */
-    fun getLogForEmail(): String = "Not implemented (SQLite removed)"
+    fun getLogForEmail(): String {
+        return getLog(mapOf("limit" to 2000))
+    }
 
     /** Prune old logs based on config. */
     fun pruneOldLogs() {
@@ -105,6 +122,14 @@ class TraceletLogger(
             LEVEL_INFO -> Log.i(tag, message)
             LEVEL_DEBUG -> Log.d(tag, message)
             LEVEL_VERBOSE -> Log.v(tag, message)
+        }
+
+        // Persist to Rust Core Database
+        try {
+            val levelName = levelToString(level)
+            rustDatabase?.insertLog(levelName, message, "plugin")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist log to Rust Database: ${e.message}")
         }
     }
 }

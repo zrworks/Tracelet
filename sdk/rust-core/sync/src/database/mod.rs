@@ -334,11 +334,20 @@ impl DatabaseManager {
 
     // --- Geofences ---
     
-    pub fn insert_geofence(&self, identifier: &str, lat: f64, lng: f64, radius: f64) -> Result<(), TraceletError> {
+    pub fn insert_geofence(
+        &self, 
+        identifier: &str, 
+        lat: f64, 
+        lng: f64, 
+        radius: f64,
+        vertices: Option<Vec<Coordinate>>,
+        extras: Option<String>
+    ) -> Result<(), TraceletError> {
         let conn = self.conn.lock().unwrap();
+        let vertices_json = vertices.map(|v| serde_json::to_string(&v).unwrap_or_default());
         conn.execute(
-            "INSERT OR REPLACE INTO geofences (identifier, latitude, longitude, radius) VALUES (?1, ?2, ?3, ?4)",
-            params![identifier, lat, lng, radius]
+            "INSERT OR REPLACE INTO geofences (identifier, latitude, longitude, radius, vertices, extras) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![identifier, lat, lng, radius, vertices_json, extras]
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
         Ok(())
     }
@@ -580,7 +589,7 @@ mod tests {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
         // Insert a circular geofence
-        db.insert_geofence("home_zone", 37.0, -122.0, 150.0).unwrap();
+        db.insert_geofence("home_zone", 37.0, -122.0, 150.0, None, None).unwrap();
         
         let count: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM geofences", [], |r| r.get(0)).unwrap();
         assert_eq!(count, 1);
@@ -605,8 +614,8 @@ mod tests {
         assert_eq!(count_after_delete, 0);
         
         // Batch inserting and clearing multiple
-        db.insert_geofence("work", 38.0, -121.0, 50.0).unwrap();
-        db.insert_geofence("gym", 39.0, -120.0, 100.0).unwrap();
+        db.insert_geofence("work", 38.0, -121.0, 50.0, None, None).unwrap();
+        db.insert_geofence("gym", 39.0, -120.0, 100.0, None, None).unwrap();
         db.clear_geofences().unwrap();
         let count_after_clear: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM geofences", [], |r| r.get(0)).unwrap();
         assert_eq!(count_after_clear, 0);

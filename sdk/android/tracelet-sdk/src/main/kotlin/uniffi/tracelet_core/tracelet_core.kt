@@ -940,7 +940,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(`p
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`ptr`: Long,`uuid`: RustBuffer.ByValue,`hash`: RustBuffer.ByValue,`prevHash`: RustBuffer.ByValue,`index`: Int,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`vertices`: RustBuffer.ByValue,`extras`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,`timestampOverride`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1293,7 +1293,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41574.toShort()) {
@@ -2870,7 +2870,7 @@ public interface DatabaseManagerInterface {
      */
     fun `insertAuditTrail`(`uuid`: kotlin.String, `hash`: kotlin.String, `prevHash`: kotlin.String, `index`: kotlin.Int)
     
-    fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double)
+    fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double, `vertices`: List<Coordinate>?, `extras`: kotlin.String?)
     
     /**
      * Inserts a new location record into the database.
@@ -3291,13 +3291,13 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     
 
     
-    @Throws(TraceletException::class)override fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double)
+    @Throws(TraceletException::class)override fun `insertGeofence`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double, `vertices`: List<Coordinate>?, `extras`: kotlin.String?)
         = 
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(
         it,
-        FfiConverterString.lower(`identifier`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`radius`),_status)
+        FfiConverterString.lower(`identifier`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`radius`),FfiConverterOptionalSequenceTypeCoordinate.lower(`vertices`),FfiConverterOptionalString.lower(`extras`),_status)
 }
     }
     
@@ -6867,6 +6867,8 @@ data class CoreGeofence (
     var `radius`: kotlin.Double
     , 
     var `vertices`: List<Coordinate>
+    , 
+    var `extras`: kotlin.String?
     
 ){
     
@@ -6888,6 +6890,7 @@ public object FfiConverterTypeCoreGeofence: FfiConverterRustBuffer<CoreGeofence>
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterSequenceTypeCoordinate.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -6896,7 +6899,8 @@ public object FfiConverterTypeCoreGeofence: FfiConverterRustBuffer<CoreGeofence>
             FfiConverterDouble.allocationSize(value.`latitude`) +
             FfiConverterDouble.allocationSize(value.`longitude`) +
             FfiConverterDouble.allocationSize(value.`radius`) +
-            FfiConverterSequenceTypeCoordinate.allocationSize(value.`vertices`)
+            FfiConverterSequenceTypeCoordinate.allocationSize(value.`vertices`) +
+            FfiConverterOptionalString.allocationSize(value.`extras`)
     )
 
     override fun write(value: CoreGeofence, buf: ByteBuffer) {
@@ -6905,6 +6909,7 @@ public object FfiConverterTypeCoreGeofence: FfiConverterRustBuffer<CoreGeofence>
             FfiConverterDouble.write(value.`longitude`, buf)
             FfiConverterDouble.write(value.`radius`, buf)
             FfiConverterSequenceTypeCoordinate.write(value.`vertices`, buf)
+            FfiConverterOptionalString.write(value.`extras`, buf)
     }
 }
 
@@ -8974,6 +8979,38 @@ public object FfiConverterOptionalSequenceString: FfiConverterRustBuffer<List<ko
         } else {
             buf.put(1)
             FfiConverterSequenceString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalSequenceTypeCoordinate: FfiConverterRustBuffer<List<Coordinate>?> {
+    override fun read(buf: ByteBuffer): List<Coordinate>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceTypeCoordinate.read(buf)
+    }
+
+    override fun allocationSize(value: List<Coordinate>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceTypeCoordinate.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<Coordinate>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceTypeCoordinate.write(value, buf)
         }
     }
 }

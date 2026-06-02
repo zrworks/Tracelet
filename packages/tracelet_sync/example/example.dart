@@ -4,7 +4,7 @@ import 'package:tracelet_sync/tracelet_sync.dart';
 void main() async {
   // Tracelet Sync plugin automatically connects to Tracelet Core
   // No configuration is required.
-  // 
+  //
   // Make sure you have configured Tracelet Core correctly:
   await Tracelet.init(
     config: const EngineConfig(

@@ -763,7 +763,7 @@ class _DashboardPageState extends State<DashboardPage>
         _pluginState = state;
       });
       _addLog('START', 'enabled=${state.enabled}');
-      
+
       // Fetch the initial location immediately so the UI doesn't stay at 0,0
       // when the device is stationary and continuous updates are paused.
       if (_lastLocation == null) {

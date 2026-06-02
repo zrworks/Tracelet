@@ -560,6 +560,11 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           vertices: _polygonVertices
               .map((v) => [v.latitude, v.longitude])
               .toList(),
+          extras: {
+            'zone_type': 'restricted_area',
+            'severity': 'high',
+            'created_at': DateTime.now().toIso8601String(),
+          },
         ),
       );
       final fences = await tl.Tracelet.getGeofences();
@@ -686,6 +691,15 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                             '${gf.vertices[i][1].toStringAsFixed(5)}'
                       : 'invalid',
                 ),
+            ],
+            if (gf.extras.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Custom Extras',
+                style: TextStyle(fontSize: 12, color: Theme.of(ctx).hintColor),
+              ),
+              for (final e in gf.extras.entries)
+                _DetailRow('  ${e.key}', '${e.value}'),
             ],
             const SizedBox(height: 8),
           ],

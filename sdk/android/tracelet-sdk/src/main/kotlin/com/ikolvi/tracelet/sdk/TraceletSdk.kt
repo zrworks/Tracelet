@@ -209,6 +209,9 @@ class TraceletSdk private constructor(private val context: Context) {
         configManager = ConfigManager.getInstance(context)
         stateManager = StateManager(context)
 
+        // Logger
+        logger = TraceletLogger(context, configManager)
+
         // ── Rust Core bootstrap ──
         val dbDir = context.filesDir.resolve("tracelet")
         if (!dbDir.exists()) dbDir.mkdirs()
@@ -218,12 +221,16 @@ class TraceletSdk private constructor(private val context: Context) {
             
             val savedConfig = configManager.getConfig()
             if (savedConfig["encryptDatabase"] == true) {
-                val key = savedConfig["encryptionKey"] as? String ?: ""
+                val key = configManager.getEncryptionKey() ?: ""
                 db.setEncryptionKey(key)
             } else {
                 db.setEncryptionKey("")
             }
             
+            rustDatabase = db
+            logger.rustDatabase = db // Inject the DB instance so it can persist logs
+            logger.debug("Successfully initialized Rust Native Database: $dbPath")
+
             val state = RustEngineState()
             val dispatcher = RustEventDispatcher(db, state)
             rustDatabase = db
@@ -234,9 +241,6 @@ class TraceletSdk private constructor(private val context: Context) {
         } catch (e: Exception) {
             android.util.Log.e("Tracelet", "Failed to initialize Rust Core: ${e.message}")
         }
-
-        // Logger
-        logger = TraceletLogger(context, configManager)
 
         // Enterprise
         auditTrailManager = AuditTrailManager(context, configManager, rustDatabase)
@@ -373,7 +377,7 @@ class TraceletSdk private constructor(private val context: Context) {
         )
         
         smartMotionCoordinator = com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator(
-            context, configManager, stateManager, eventSender, locationEngine, motionDetector
+            context, configManager, stateManager, eventSender, locationEngine, motionDetector, logger
         )
         smartMotionCoordinator.syncCurrentMode()
 

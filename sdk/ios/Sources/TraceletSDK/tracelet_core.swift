@@ -1077,6 +1077,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func clearLocationsUpTo(maxId: Int64) throws 
     
     /**
+     * Clears all log entries from the database.
+     */
+    func clearLogs() throws 
+    
+    /**
      * Removes all stored privacy zones from the database.
      */
     func clearPrivacyZones() throws 
@@ -1124,6 +1129,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func getLocationsCount() throws  -> Int32
     
     /**
+     * Retrieves a batch of log entries, up to `limit`.
+     */
+    func getLogs(limit: Int32) throws  -> [LogEntry]
+    
+    /**
      * Retrieves all privacy zones registered in the local database.
      * Used by native managers to query geofenced privacy control zones.
      */
@@ -1140,6 +1150,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
      * Inserts a new location record into the database.
      */
     func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws 
+    
+    /**
+     * Inserts a log entry into the database.
+     */
+    func insertLog(level: String, message: String, source: String) throws 
     
     /**
      * Inserts or replaces a privacy zone record in the database.
@@ -1250,6 +1265,16 @@ open func clearLocationsUpTo(maxId: Int64)throws   {try rustCallWithError(FfiCon
     uniffi_tracelet_core_fn_method_databasemanager_clear_locations_up_to(
             self.uniffiCloneHandle(),
         FfiConverterInt64.lower(maxId),$0
+    )
+}
+}
+    
+    /**
+     * Clears all log entries from the database.
+     */
+open func clearLogs()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_logs(
+            self.uniffiCloneHandle(),$0
     )
 }
 }
@@ -1369,6 +1394,18 @@ open func getLocationsCount()throws  -> Int32  {
 }
     
     /**
+     * Retrieves a batch of log entries, up to `limit`.
+     */
+open func getLogs(limit: Int32)throws  -> [LogEntry]  {
+    return try  FfiConverterSequenceTypeLogEntry.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_logs(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+})
+}
+    
+    /**
      * Retrieves all privacy zones registered in the local database.
      * Used by native managers to query geofenced privacy control zones.
      */
@@ -1420,6 +1457,19 @@ open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, h
         FfiConverterBool.lower(isMock),
         FfiConverterString.lower(activity),
         FfiConverterOptionString.lower(routeContext),$0
+    )
+}
+}
+    
+    /**
+     * Inserts a log entry into the database.
+     */
+open func insertLog(level: String, message: String, source: String)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_log(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(level),
+        FfiConverterString.lower(message),
+        FfiConverterString.lower(source),$0
     )
 }
 }
@@ -4963,6 +5013,75 @@ public func FfiConverterTypeLocationRecord_lower(_ value: LocationRecord) -> Rus
 
 
 /**
+ * Represents a single log entry persisted in the database.
+ */
+public struct LogEntry: Equatable, Hashable {
+    public var id: Int64
+    public var level: String
+    public var message: String
+    public var timestamp: String
+    public var source: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: Int64, level: String, message: String, timestamp: String, source: String) {
+        self.id = id
+        self.level = level
+        self.message = message
+        self.timestamp = timestamp
+        self.source = source
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LogEntry: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLogEntry: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LogEntry {
+        return
+            try LogEntry(
+                id: FfiConverterInt64.read(from: &buf), 
+                level: FfiConverterString.read(from: &buf), 
+                message: FfiConverterString.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                source: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LogEntry, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.level, into: &buf)
+        FfiConverterString.write(value.message, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterString.write(value.source, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLogEntry_lift(_ buf: RustBuffer) throws -> LogEntry {
+    return try FfiConverterTypeLogEntry.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLogEntry_lower(_ value: LogEntry) -> RustBuffer {
+    return FfiConverterTypeLogEntry.lower(value)
+}
+
+
+/**
  * Configuration for motion and activity detection.
  */
 public struct MotionConfig: Equatable, Hashable {
@@ -6447,6 +6566,31 @@ fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustB
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeLogEntry: FfiConverterRustBuffer {
+    typealias SwiftType = [LogEntry]
+
+    public static func write(_ value: [LogEntry], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeLogEntry.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [LogEntry] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [LogEntry]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeLogEntry.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeTripWaypoint: FfiConverterRustBuffer {
     typealias SwiftType = [TripWaypoint]
 
@@ -6643,6 +6787,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to() != 905) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_logs() != 12719) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6676,6 +6823,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_logs() != 48390) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6686,6 +6836,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {

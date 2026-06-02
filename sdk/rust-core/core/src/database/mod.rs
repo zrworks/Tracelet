@@ -53,6 +53,16 @@ pub struct DbAuditRecord {
     pub audit_created_at: i64,
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+/// Represents a single log entry persisted in the database.
+pub struct LogEntry {
+    pub id: i64,
+    pub level: String,
+    pub message: String,
+    pub timestamp: String,
+    pub source: String,
+}
+
 #[uniffi::export]
 impl DatabaseManager {
     /// Initializes a new database connection and creates tables if they don't exist.
@@ -125,6 +135,17 @@ impl DatabaseManager {
                 radius REAL NOT NULL,
                 pz_action INTEGER NOT NULL DEFAULT 0,
                 pz_degraded_accuracy REAL DEFAULT 1000.0
+            )",
+            [],
+        ).map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                level TEXT NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TEXT DEFAULT (datetime('now')),
+                source TEXT DEFAULT 'plugin'
             )",
             [],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
@@ -510,6 +531,51 @@ impl DatabaseManager {
         }
         Ok(records)
     }
+
+    // --- Logs ---
+
+    /// Inserts a log entry into the database.
+    pub fn insert_log(&self, level: &str, message: &str, source: &str) -> Result<(), TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO logs (level, message, source) VALUES (?1, ?2, ?3)",
+            params![level, message, source]
+        ).map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Retrieves a batch of log entries, up to `limit`.
+    pub fn get_logs(&self, limit: i32) -> Result<Vec<LogEntry>, TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, level, message, timestamp, source FROM logs ORDER BY id DESC LIMIT ?1")
+            .map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        let iter = stmt.query_map([limit], |row| {
+            Ok(LogEntry {
+                id: row.get(0)?,
+                level: row.get(1)?,
+                message: row.get(2)?,
+                timestamp: row.get(3)?,
+                source: row.get(4)?,
+            })
+        }).map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        let mut records = Vec::new();
+        for r in iter {
+            if let Ok(record) = r {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+
+    /// Clears all log entries from the database.
+    pub fn clear_logs(&self) -> Result<(), TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM logs", [])
+            .map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -522,7 +588,7 @@ mod tests {
         // Ensure no key is set
         db.set_encryption_key("");
         
-        db.insert_location(37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, "walking").unwrap();
+        db.insert_location(37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
         
         let locations = db.get_locations_batch(10).unwrap();
         assert_eq!(locations.len(), 1);
@@ -540,7 +606,7 @@ mod tests {
         let test_key = "my_super_secret_encryption_key_!";
         db.set_encryption_key(test_key);
         
-        db.insert_location(40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, "running").unwrap();
+        db.insert_location(40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, "running", None).unwrap();
         
         let locations = db.get_locations_batch(10).unwrap();
         assert_eq!(locations.len(), 1);
@@ -557,12 +623,12 @@ mod tests {
         
         // Insert unencrypted
         db.set_encryption_key("");
-        db.insert_location(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, "unencrypted").unwrap();
+        db.insert_location(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, "unencrypted", None).unwrap();
         
         // Turn encryption ON
         let test_key = "another_secret_key_1234567890!!!";
         db.set_encryption_key(test_key);
-        db.insert_location(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, "encrypted").unwrap();
+        db.insert_location(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, "encrypted", None).unwrap();
         
         let locations = db.get_locations_batch(10).unwrap();
         assert_eq!(locations.len(), 2);
@@ -657,5 +723,30 @@ mod tests {
         
         let hash: String = db.conn.lock().unwrap().query_row("SELECT audit_hash FROM audit_trail WHERE uuid = 'uuid-1234'", [], |r| r.get(0)).unwrap();
         assert_eq!(hash, "hash1-updated");
+    }
+
+    #[test]
+    fn test_logs_crud() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        db.insert_log("INFO", "Test log message 1", "plugin").unwrap();
+        db.insert_log("ERROR", "Test log message 2", "dart").unwrap();
+        
+        let count: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM logs", [], |r| r.get(0)).unwrap();
+        assert_eq!(count, 2);
+
+        // Fetch logs (should be ordered DESC by id)
+        let logs = db.get_logs(10).unwrap();
+        assert_eq!(logs.len(), 2);
+        assert_eq!(logs[0].level, "ERROR");
+        assert_eq!(logs[0].message, "Test log message 2");
+        assert_eq!(logs[0].source, "dart");
+        
+        assert_eq!(logs[1].level, "INFO");
+        
+        // Clear logs
+        db.clear_logs().unwrap();
+        let count_after_clear: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM logs", [], |r| r.get(0)).unwrap();
+        assert_eq!(count_after_clear, 0);
     }
 }

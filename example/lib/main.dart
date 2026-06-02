@@ -774,6 +774,19 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  // ── Logging Test ────────────────────────────────────────────────────────
+  Future<void> _testLogs() async {
+    try {
+      _addLog('TEST_LOGS', 'Retrieving logs...');
+      final logs = await tl.Tracelet.getLog();
+      // Only log the first 200 characters to avoid huge UI stalls if logs are large
+      final displayLogs = logs.length > 500 ? '${logs.substring(0, 500)}...' : logs;
+      _addLog('TEST_LOGS', 'Retrieved logs:\n$displayLogs');
+    } catch (e) {
+      _addLog('ERROR', 'testLogs() failed: $e');
+    }
+  }
+
   /// Safely stop tracking — checks state before calling stop().
   ///
   /// Uses [tl.Tracelet.getState] to check if tracking is enabled before
@@ -3673,6 +3686,7 @@ class _DashboardPageState extends State<DashboardPage>
                       _Chip('Stop', Icons.stop, _stop),
                       _Chip('Geofences Only', Icons.fence, _startGeofences),
                       _Chip('Get State', Icons.info_outline, _getState),
+                      _Chip('Test Logs', Icons.bug_report, _testLogs),
                       _Chip('Live Map', Icons.map, () {
                         Navigator.push(
                           context,

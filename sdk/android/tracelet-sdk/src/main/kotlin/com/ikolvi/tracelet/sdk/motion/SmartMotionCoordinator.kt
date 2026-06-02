@@ -26,9 +26,8 @@ class SmartMotionCoordinator(
     var events: TraceletEventSender,
     private val locationEngine: LocationEngine,
     private val motionDetector: MotionDetector,
+    private val logger: TraceletLogger,
 ) {
-    private val logger = TraceletLogger(context, configManager)
-
     private val coreCoordinator = uniffi.tracelet_core.SmartMotionCoordinator(
         configManager.getStationaryTrackingMode() == com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES
     )

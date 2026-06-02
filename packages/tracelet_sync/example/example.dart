@@ -1,25 +1,21 @@
 import 'package:tracelet/tracelet.dart';
-import 'package:tracelet_sync/tracelet_sync.dart';
+import 'package:tracelet_sync/tracelet_sync.dart'; // ignore: unused_import
 
 void main() async {
   // Tracelet Sync plugin automatically connects to Tracelet Core
   // No configuration is required.
   //
   // Make sure you have configured Tracelet Core correctly:
-  await Tracelet.init(
-    config: const EngineConfig(
-      location: LocationConfig(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
+  await Tracelet.ready(
+    const Config(
       http: HttpConfig(
-        endpoint: 'https://api.example.com/locations',
+        url: 'https://api.example.com/locations',
         headers: {'Authorization': 'Bearer YOUR_TOKEN'},
-        batchSize: 50,
+        maxBatchSize: 50,
       ),
     ),
   );
 
   // Start tracking
-  await Tracelet.startTracking();
+  await Tracelet.start();
 }

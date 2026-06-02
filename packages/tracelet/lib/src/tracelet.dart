@@ -347,8 +347,8 @@ class Tracelet {
   /// Verifies if tracelet_sync is installed/registered when HTTP URL is configured.
   /// Displays a developer warning in the console if sync is setup without the sync package.
   static void _checkSyncProvider(Config config) {
-    final httpUrl = config.http?.url;
-    if (httpUrl != null && httpUrl.isNotEmpty) {
+    final httpUrl = config.http.url ?? '';
+    if (httpUrl.isNotEmpty) {
       scheduleMicrotask(() async {
         try {
           await const MethodChannel('tracelet_sync').invokeMethod('initialize');

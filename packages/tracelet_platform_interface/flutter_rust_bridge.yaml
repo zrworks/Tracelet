@@ -1,4 +1,4 @@
 rust_input: "crate::api_dart"
 dart_output: "lib/src/rust"
-rust_root: "../../sdk/rust-core"
+rust_root: "../../sdk/rust-core/core"
 c_output: "../../packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/frb_generated.h"

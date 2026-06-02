@@ -70,6 +70,15 @@ class PigeonTracelet extends TraceletPlatform {
             'confidence': l.activity!.confidence,
           }
         : null,
+    'address': l.address != null
+        ? <String, Object?>{
+            'street': l.address!.street,
+            'city': l.address!.city,
+            'state': l.address!.state,
+            'postalCode': l.address!.postalCode,
+            'country': l.address!.country,
+          }
+        : null,
     'extras': l.extras,
   };
 

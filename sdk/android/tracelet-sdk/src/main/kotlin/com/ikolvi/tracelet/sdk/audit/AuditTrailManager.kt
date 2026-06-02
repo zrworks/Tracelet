@@ -219,9 +219,9 @@ class AuditTrailManager(
             "totalRecords" to result.totalRecords,
             "verifiedRecords" to result.verifiedRecords,
         )
-        result.brokenAtIndex?.let { map["brokenAtIndex"] = it }
-        result.brokenAtUuid?.let { map["brokenAtUuid"] = it }
-        result.error?.let { map["error"] = it }
+        if (result.brokenAtIndex != null) { map["brokenAtIndex"] = result.brokenAtIndex }
+        if (result.brokenAtUuid != null) { map["brokenAtUuid"] = result.brokenAtUuid }
+        if (result.error != null) { map["error"] = result.error }
 
         return map
     }

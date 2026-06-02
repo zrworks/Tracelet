@@ -1,3 +1,7 @@
+## 3.2.0
+
+- **FEAT**(ios): Add reverse geocoding functionality.
+
 ## 3.1.14
 
 - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in SPM apps by referencing them explicitly in TraceletIosPlugin

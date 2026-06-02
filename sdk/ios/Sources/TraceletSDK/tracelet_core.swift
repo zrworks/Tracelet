@@ -1823,12 +1823,11 @@ open class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_tracelet_core_fn_clone_eventdispatcher(self.handle, $0) }
     }
-public convenience init(db: DatabaseManager, sync: SyncManager, state: EngineState) {
+public convenience init(db: DatabaseManager, state: EngineState) {
     let handle =
         try! rustCall() {
     uniffi_tracelet_core_fn_constructor_eventdispatcher_new(
         FfiConverterTypeDatabaseManager_lower(db),
-        FfiConverterTypeSyncManager_lower(sync),
         FfiConverterTypeEngineState_lower(state),$0
     )
 }
@@ -3000,139 +2999,6 @@ public func FfiConverterTypeSmartMotionCoordinator_lift(_ handle: UInt64) throws
 #endif
 public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoordinator) -> UInt64 {
     return FfiConverterTypeSmartMotionCoordinator.lower(value)
-}
-
-
-
-
-
-
-public protocol SyncManagerProtocol: AnyObject, Sendable {
-    
-    /**
-     * Performs a synchronous/blocking sync of a batch of location records.
-     * Returns the number of successfully synced records.
-     */
-    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws  -> Int32
-    
-}
-open class SyncManager: SyncManagerProtocol, @unchecked Sendable {
-    fileprivate let handle: UInt64
-
-    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public struct NoHandle {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    required public init(unsafeFromHandle handle: UInt64) {
-        self.handle = handle
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public init(noHandle: NoHandle) {
-        self.handle = 0
-    }
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public func uniffiCloneHandle() -> UInt64 {
-        return try! rustCall { uniffi_tracelet_core_fn_clone_syncmanager(self.handle, $0) }
-    }
-public convenience init() {
-    let handle =
-        try! rustCall() {
-    uniffi_tracelet_core_fn_constructor_syncmanager_new($0
-    )
-}
-    self.init(unsafeFromHandle: handle)
-}
-
-    deinit {
-        if handle == 0 {
-            // Mock objects have handle=0 don't try to free them
-            return
-        }
-
-        try! rustCall { uniffi_tracelet_core_fn_free_syncmanager(handle, $0) }
-    }
-
-    
-
-    
-    /**
-     * Performs a synchronous/blocking sync of a batch of location records.
-     * Returns the number of successfully synced records.
-     */
-open func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord])throws  -> Int32  {
-    return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
-    uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(
-            self.uniffiCloneHandle(),
-        FfiConverterTypeHttpConfig_lower(config),
-        FfiConverterSequenceTypeDbLocationRecord.lower(records),$0
-    )
-})
-}
-    
-
-    
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeSyncManager: FfiConverter {
-    typealias FfiType = UInt64
-    typealias SwiftType = SyncManager
-
-    public static func lift(_ handle: UInt64) throws -> SyncManager {
-        return SyncManager(unsafeFromHandle: handle)
-    }
-
-    public static func lower(_ value: SyncManager) -> UInt64 {
-        return value.uniffiCloneHandle()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncManager {
-        let handle: UInt64 = try readInt(&buf)
-        return try lift(handle)
-    }
-
-    public static func write(_ value: SyncManager, into buf: inout [UInt8]) {
-        writeInt(&buf, lower(value))
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSyncManager_lift(_ handle: UInt64) throws -> SyncManager {
-    return try FfiConverterTypeSyncManager.lift(handle)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSyncManager_lower(_ value: SyncManager) -> UInt64 {
-    return FfiConverterTypeSyncManager.lower(value)
 }
 
 
@@ -6686,18 +6552,6 @@ public func sha256(input: String) -> String  {
     )
 })
 }
-/**
- * Encodes a batch of JSON location data into a Google Polyline style delta string for efficient transmission.
- * `precision` specifies the multiplier (e.g. 1e5 for 5 decimal places).
- */
-public func encodeDeltas(batchJson: String, precision: Int32) -> String  {
-    return try!  FfiConverterString.lift(try! rustCall() {
-    uniffi_tracelet_core_fn_func_encode_deltas(
-        FfiConverterString.lower(batchJson),
-        FfiConverterInt32.lower(precision),$0
-    )
-})
-}
 
 private enum InitializationResult {
     case ok
@@ -6727,9 +6581,6 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_func_sha256() != 14625) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_tracelet_core_checksum_func_encode_deltas() != 25656) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 64160) {
@@ -6849,9 +6700,6 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking() != 28631) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6954,10 +6802,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_constructor_databasemanager_new() != 64846) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_constructor_eventdispatcher_new() != 12254) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_tracelet_core_checksum_constructor_syncmanager_new() != 29825) {
+    if (uniffi_tracelet_core_checksum_constructor_eventdispatcher_new() != 19) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new() != 55816) {

@@ -77,6 +77,35 @@ data class TraceletActivity(
 }
 
 /**
+ * Reverse geocoded address.
+ */
+data class TraceletAddress(
+    val street: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    val postalCode: String? = null,
+    val country: String? = null,
+) {
+    companion object {
+        fun fromMap(map: Map<String, Any?>): TraceletAddress = TraceletAddress(
+            street = map["street"] as? String,
+            city = map["city"] as? String,
+            state = map["state"] as? String,
+            postalCode = map["postalCode"] as? String ?: map["postal_code"] as? String,
+            country = map["country"] as? String,
+        )
+    }
+
+    fun toMap(): Map<String, Any?> = buildMap {
+        street?.let { put("street", it) }
+        city?.let { put("city", it) }
+        state?.let { put("state", it) }
+        postalCode?.let { put("postalCode", it) }
+        country?.let { put("country", it) }
+    }
+}
+
+/**
  * Battery state data.
  */
 data class TraceletBattery(
@@ -114,6 +143,7 @@ data class TraceletLocation(
     val mockHeuristics: Map<String, Any?>? = null,
     val activity: TraceletActivity = TraceletActivity(),
     val battery: TraceletBattery = TraceletBattery(),
+    val address: TraceletAddress? = null,
     val event: String? = null,
     val extras: Map<String, Any?> = emptyMap(),
 ) {
@@ -123,6 +153,7 @@ data class TraceletLocation(
             val coordsMap = map["coords"] as? Map<String, Any?> ?: emptyMap()
             val activityMap = map["activity"] as? Map<String, Any?> ?: emptyMap()
             val batteryMap = map["battery"] as? Map<String, Any?> ?: emptyMap()
+            val addressMap = map["address"] as? Map<String, Any?>
 
             return TraceletLocation(
                 coords = TraceletCoords.fromMap(coordsMap),
@@ -136,6 +167,7 @@ data class TraceletLocation(
                 mockHeuristics = map["mockHeuristics"] as? Map<String, Any?>,
                 activity = TraceletActivity.fromMap(activityMap),
                 battery = TraceletBattery.fromMap(batteryMap),
+                address = addressMap?.let { TraceletAddress.fromMap(it) },
                 event = map["event"] as? String,
                 extras = map["extras"] as? Map<String, Any?> ?: emptyMap(),
             )
@@ -154,6 +186,7 @@ data class TraceletLocation(
         mockHeuristics?.let { put("mockHeuristics", it) }
         put("activity", activity.toMap())
         put("battery", battery.toMap())
+        address?.let { put("address", it.toMap()) }
         event?.let { put("event", it) }
         if (extras.isNotEmpty()) put("extras", extras)
     }

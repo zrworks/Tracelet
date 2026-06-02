@@ -15,7 +15,6 @@ import com.ikolvi.tracelet.sdk.algorithm.TripManager
 import com.ikolvi.tracelet.sdk.attestation.DeviceAttestor
 import com.ikolvi.tracelet.sdk.audit.AuditTrailManager
 import uniffi.tracelet_core.DatabaseManager as RustDatabaseManager
-import uniffi.tracelet_core.SyncManager as RustSyncManager
 import uniffi.tracelet_core.EngineState as RustEngineState
 import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 
@@ -112,9 +111,7 @@ class TraceletSdk private constructor(private val context: Context) {
     /** Rust-native SQLite database for location persistence. */
     var rustDatabase: RustDatabaseManager? = null
         private set
-    /** Rust-native HTTP sync manager. */
-    var rustSyncManager: RustSyncManager? = null
-        private set
+
     /** Rust-native engine state (config + health). */
     var rustEngineState: RustEngineState? = null
         private set
@@ -134,6 +131,15 @@ class TraceletSdk private constructor(private val context: Context) {
     var activity: Activity? = null
     var isReady: Boolean = false
         private set
+
+    val isTracking: Boolean
+        get() = ::locationEngine.isInitialized && (locationEngine.isTracking || LocationService.isServiceRunning())
+
+    interface SyncProvider {
+        fun syncBatchBlocking(config: uniffi.tracelet_core.HttpConfig, records: List<uniffi.tracelet_core.DbLocationRecord>): Long
+    }
+
+    var syncProvider: SyncProvider? = null
 
     private var heartbeatRunnable: Runnable? = null
     private var stopAfterElapsedRunnable: Runnable? = null
@@ -163,6 +169,21 @@ class TraceletSdk private constructor(private val context: Context) {
      */
     fun setEventSender(sender: TraceletEventSender) {
         this.eventSender = sender
+        
+        if (::locationEngine.isInitialized) locationEngine.events = sender
+        if (::motionDetector.isInitialized) motionDetector.events = sender
+        if (::speedMotionManager.isInitialized) speedMotionManager.events = sender
+        
+        // Propagate to active background boot trackers so the UI gets events
+        // after being swiped away and reopened.
+        try {
+            com.ikolvi.tracelet.sdk.service.LocationService.bootLocationEngine?.events = sender
+            com.ikolvi.tracelet.sdk.service.LocationService.bootMotionDetector?.events = sender
+            com.ikolvi.tracelet.sdk.service.LocationService.bootSpeedMotionManager?.events = sender
+            com.ikolvi.tracelet.sdk.service.LocationService.bootSmartMotionCoordinator?.events = sender
+        } catch (e: Exception) {
+            android.util.Log.e("Tracelet", "Failed to update boot event senders: ${e.message}")
+        }
     }
 
     fun getEventSender(): TraceletEventSender = eventSender
@@ -203,11 +224,9 @@ class TraceletSdk private constructor(private val context: Context) {
                 db.setEncryptionKey("")
             }
             
-            val sync = RustSyncManager()
             val state = RustEngineState()
-            val dispatcher = RustEventDispatcher(db, sync, state)
+            val dispatcher = RustEventDispatcher(db, state)
             rustDatabase = db
-            rustSyncManager = sync
             rustEngineState = state
             rustEventDispatcher = dispatcher
             android.util.Log.i("Tracelet", "Rust Core initialized: $dbPath")
@@ -224,16 +243,25 @@ class TraceletSdk private constructor(private val context: Context) {
         privacyZoneManager = PrivacyZoneManager(context, configManager, rustDatabase)
         deviceAttestor = DeviceAttestor(context)
 
-        // Location engine — persistence flows through Rust EventDispatcher
+        // Location engine
         locationEngine = LocationEngine(
             context, configManager, stateManager, eventSender
         )
-        locationEngine.rustEventDispatcher = rustEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager
-        // Wire: every persisted location goes through Rust Core for DB + auto-sync
         locationEngine.onLocationPersisted = {
-            // EventDispatcher handles insert_location + auto HTTP sync internally
+        }
+        
+        // Register the Rust Database sink
+        locationEngine.registerSink(object : com.ikolvi.tracelet.sdk.location.LocationDataSink {
+            override fun insertLocation(location: Map<String, Any?>) {
+                this@TraceletSdk.insertLocation(location)
+            }
+        })
+
+        // Register sync provider as a sink if it was attached prior to initialization
+        if (syncProvider is com.ikolvi.tracelet.sdk.location.LocationDataSink) {
+            locationEngine.registerSink(syncProvider as com.ikolvi.tracelet.sdk.location.LocationDataSink)
         }
 
         // Trip manager
@@ -347,6 +375,7 @@ class TraceletSdk private constructor(private val context: Context) {
         smartMotionCoordinator = com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator(
             context, configManager, stateManager, eventSender, locationEngine, motionDetector
         )
+        smartMotionCoordinator.syncCurrentMode()
 
         // Geofencing
         geofenceManager = GeofenceManager(
@@ -490,20 +519,28 @@ class TraceletSdk private constructor(private val context: Context) {
 
         isReady = true
         syncConfigToRustFlat()
+        checkSyncProvider()
 
         if (stateManager.enabled) {
-            when (stateManager.trackingMode) {
-                TrackingMode.CONTINUOUS -> {
-                    logger.info("Resuming continuous tracking on ready/takeover")
-                    start()
-                }
-                TrackingMode.PERIODIC -> {
-                    logger.info("Resuming periodic tracking on ready/takeover")
-                    startPeriodic()
-                }
-                TrackingMode.GEOFENCES -> {
-                    logger.info("Resuming geofence tracking on ready/takeover")
-                    startGeofences()
+            val motionMode = configManager.getMotionDetectionMode()
+            if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART || 
+                motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
+                logger.info("Resuming tracking with motion detection on ready/takeover")
+                start(isResume = true)
+            } else {
+                when (stateManager.trackingMode) {
+                    TrackingMode.CONTINUOUS -> {
+                        logger.info("Resuming continuous tracking on ready/takeover")
+                        start(isResume = true)
+                    }
+                    TrackingMode.PERIODIC -> {
+                        logger.info("Resuming periodic tracking on ready/takeover")
+                        startPeriodic()
+                    }
+                    TrackingMode.GEOFENCES -> {
+                        logger.info("Resuming geofence tracking on ready/takeover")
+                        startGeofences()
+                    }
                 }
             }
         }
@@ -522,7 +559,7 @@ class TraceletSdk private constructor(private val context: Context) {
      *
      * @return Error string if not ready or permission denied, null on success.
      */
-    fun start(): String? {
+    fun start(isResume: Boolean = false): String? {
         if (!isReady) return "NOT_READY"
 
         val authStatus = permissionManager.getAuthorizationStatus(activity)
@@ -542,13 +579,20 @@ class TraceletSdk private constructor(private val context: Context) {
 
         stateManager.enabled = true
         stateManager.trackingMode = TrackingMode.CONTINUOUS
-        stateManager.isMoving = configManager.getIsMoving()
+        if (!isResume) {
+            stateManager.isMoving = configManager.getIsMoving()
+        }
+
+        val shouldForceMoving = !isResume || stateManager.isMoving
+
+        if (!isResume && isTracking) {
+            changePace(shouldForceMoving)
+            return null
+        }
 
         if (configManager.isForegroundServiceEnabled()) {
             LocationService.start(context)
         }
-
-        locationEngine.start()
 
         // Wire proximity-based geofence monitoring + trip waypoints
         locationEngine.onLocationUpdate = { lat, lng ->
@@ -561,24 +605,27 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // Start the appropriate motion detector
         val motionMode = configManager.getMotionDetectionMode()
+        
         if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
-            speedMotionManager.start(forceMoving = true)
+            speedMotionManager.start(forceMoving = shouldForceMoving)
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
             
-            // Dispatch motionchange event so Flutter UI updates _isMoving synchronously with the forced state
-            val locationMap = locationEngine.getLastLocation()?.let {
-                locationEngine.enrichLocation(it, "motionchange")
-            } ?: mapOf("is_moving" to true)
-            eventSender.sendMotionChange(locationMap)
+            if (shouldForceMoving) {
+                val locationMap = locationEngine.getLastLocation()?.let {
+                    locationEngine.enrichLocation(it, "motionchange")
+                } ?: mapOf("is_moving" to true)
+                eventSender.sendMotionChange(locationMap)
+            }
         } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
-            speedMotionManager.start(forceMoving = true)
+            speedMotionManager.start(forceMoving = shouldForceMoving)
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
             
-            // Dispatch motionchange event
-            val locationMap = locationEngine.getLastLocation()?.let {
-                locationEngine.enrichLocation(it, "motionchange")
-            } ?: mapOf("is_moving" to true)
-            eventSender.sendMotionChange(locationMap)
+            if (shouldForceMoving) {
+                val locationMap = locationEngine.getLastLocation()?.let {
+                    locationEngine.enrichLocation(it, "motionchange")
+                } ?: mapOf("is_moving" to true)
+                eventSender.sendMotionChange(locationMap)
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val hasMotion = ContextCompat.checkSelfPermission(
@@ -606,6 +653,12 @@ class TraceletSdk private constructor(private val context: Context) {
             } else {
                 motionDetector.start()
             }
+        }
+
+        if (stateManager.isMoving) {
+            locationEngine.start()
+        } else {
+            changePace(false)
         }
 
         startHeartbeat()
@@ -807,7 +860,34 @@ class TraceletSdk private constructor(private val context: Context) {
 
         updateBootReceiverState()
         syncConfigToRustFlat()
+        checkSyncProvider()
         return stateManager.toMap(merged)
+    }
+
+    internal fun bootstrapForBackground(sender: TraceletEventSender) {
+        if (!::eventSender.isInitialized) {
+            setEventSender(sender)
+        }
+        if (rustDatabase == null) {
+            initialize()
+        }
+        checkSyncProvider()
+    }
+
+    internal fun checkSyncProvider() {
+        val url = configManager.getHttpUrl()
+        if (!url.isNullOrEmpty() && syncProvider == null) {
+            try {
+                val sink = com.ikolvi.tracelet.sdk.sync.NativeSyncProvider(this)
+                if (::locationEngine.isInitialized) {
+                    locationEngine.registerSink(sink)
+                }
+                syncProvider = sink
+                logger.info("NativeSyncProvider loaded for background sync.")
+            } catch (e: Throwable) {
+                logger.warning("⚠️ WARNING [Tracelet]: Failed to load NativeSyncProvider (tracelet_sync may be absent): ${e.message}")
+            }
+        }
     }
 
     fun reset(newConfig: Map<String, Any?>?) {
@@ -861,9 +941,20 @@ class TraceletSdk private constructor(private val context: Context) {
             "trackingMode" to TrackingMode.CONTINUOUS.value, "schedulerEnabled" to false, "odometer" to 0.0,
         )
         
-        if (configManager.getMotionDetectionMode() == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
+        val mode = configManager.getMotionDetectionMode()
+        if (mode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
             if (::speedMotionManager.isInitialized) {
                 speedMotionManager.onManualPaceChange(isMoving)
+            }
+        } else if (mode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
+            if (::speedMotionManager.isInitialized) {
+                speedMotionManager.onManualPaceChange(isMoving)
+            }
+            if (::motionDetector.isInitialized) {
+                motionDetector.onManualPaceChange(isMoving)
+            }
+            if (::smartMotionCoordinator.isInitialized) {
+                smartMotionCoordinator.onManualPaceChange(isMoving)
             }
         } else {
             locationEngine.changePace(isMoving)
@@ -1048,45 +1139,52 @@ class TraceletSdk private constructor(private val context: Context) {
     // =========================================================================
 
     fun sync(callback: (List<Map<String, Any?>>) -> Unit) {
-        if (!isReady) { callback(emptyList()); return }
-        val db = rustDatabase ?: return callback(emptyList())
-        val sync = rustSyncManager ?: return callback(emptyList())
-        val state = rustEngineState ?: return callback(emptyList())
+        val db = rustDatabase
+        val state = rustEngineState
+        val provider = syncProvider
+        if (!isReady || db == null || state == null) {
+            callback(emptyList())
+            return
+        }
         
+        if (provider == null) {
+            logger.error("Sync failed: No SyncProvider registered (is tracelet_sync installed?)")
+            callback(emptyList())
+            return
+        }
+
         Thread {
             try {
                 val config = state.getConfig()
-                val batchSize = config.http.maxBatchSize
-                val records = db.getLocationsBatch(batchSize)
+                val batchSize = if (config.http.maxBatchSize > 0) config.http.maxBatchSize else 250
+                val records = db.getLocationsBatch(batchSize.toInt())
                 if (records.isEmpty()) {
                     mainHandler.post { callback(emptyList()) }
                     return@Thread
                 }
                 
-                val syncedCount = sync.syncBatchBlocking(config.http, records)
-                if (syncedCount > 0) {
-                    val lastRecord = records.take(syncedCount).lastOrNull()
-                    if (lastRecord != null) {
+                val count = provider.syncBatchBlocking(config.http, records)
+                if (count > 0) {
+                    val syncedCount = count.toInt()
+                    val successfullySynced = records.take(syncedCount)
+                    successfullySynced.lastOrNull()?.let { lastRecord ->
                         db.clearLocationsUpTo(lastRecord.id)
                     }
-                    val mapped = records.take(syncedCount).map { record ->
+                    val mapped = successfullySynced.map { r ->
                         mapOf(
-                            "uuid" to record.id.toString(),
-                            "timestamp" to record.timestamp,
+                            "uuid" to r.id.toString(),
+                            "timestamp" to r.timestamp,
                             "is_moving" to stateManager.isMoving,
-                            "odometer" to locationEngine.getOdometer(),
-                            "event" to "location",
-                            "mock" to record.isMock,
                             "coords" to mapOf(
-                                "latitude" to record.latitude,
-                                "longitude" to record.longitude,
-                                "altitude" to record.altitude,
-                                "speed" to record.speed,
-                                "heading" to record.heading,
-                                "accuracy" to record.accuracy
+                                "latitude" to r.latitude,
+                                "longitude" to r.longitude,
+                                "altitude" to r.altitude,
+                                "speed" to r.speed,
+                                "heading" to r.heading,
+                                "accuracy" to r.accuracy
                             ),
                             "activity" to mapOf(
-                                "type" to record.activity,
+                                "type" to r.activity,
                                 "confidence" to 100
                             )
                         )

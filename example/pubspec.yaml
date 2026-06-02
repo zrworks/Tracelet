@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   tracelet:
     path: ../packages/tracelet
+  tracelet_sync:
+    path: ../packages/tracelet_sync
   tracelet_android:
     path: ../packages/tracelet_android
   tracelet_ios:

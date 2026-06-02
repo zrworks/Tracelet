@@ -1,3 +1,8 @@
+## 3.2.0
+
+- **FEAT**: Introduced new `tracelet_sync` package for offline SQLite persistence and automatic HTTP synchronization.
+- **FEAT**: Add reverse geocoding (`resolveAddress`) functionality for automatic address lookups.
+
 ## 3.1.14
 
 - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in SPM apps by referencing them explicitly in TraceletIosPlugin

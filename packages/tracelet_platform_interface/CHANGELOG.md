@@ -1,3 +1,8 @@
+## 3.2.0
+
+- **FIX**(web): safe BigInt to int casting for rust bridge 64-bit integers.
+- **FEAT**: Add reverse geocoding functionality (`resolveAddress`).
+
 ## 3.1.14
 
 - **CHORE**: Sync release versions across workspace.

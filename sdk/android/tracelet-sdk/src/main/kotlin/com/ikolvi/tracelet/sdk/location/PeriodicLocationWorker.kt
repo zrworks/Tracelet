@@ -175,8 +175,14 @@ class PeriodicLocationWorker(
             if (location != null) {
                 var effectiveSpeed = location.speed.toDouble()
                 val locationMap = buildLocationMap(location, config, state)
-                // In the Rust architecture, periodic mode will be handled mostly natively,
-                // but for now we just dispatch to the event sender which will route to Rust EventDispatcher.
+
+                // Bootstrap native tracking and persist location so it can be synced even if UI is dead.
+                val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
+                val fallbackSender = TraceletBootstrap.eventSenderFactory?.invoke(applicationContext) ?: com.ikolvi.tracelet.sdk.ListenerEventSender()
+                sdk.bootstrapForBackground(fallbackSender)
+                sdk.insertLocation(locationMap)
+
+                // Dispatch to the event sender which will route to UI/Headless
                 dispatchLocation(locationMap)
                 Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
             }

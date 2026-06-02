@@ -29,7 +29,7 @@ import com.ikolvi.tracelet.sdk.model.StationaryTrackingMode
 class SpeedMotionManager(
     private val config: ConfigManager,
     private val state: StateManager,
-    private val events: TraceletEventSender,
+    var events: TraceletEventSender,
     private val callback: SpeedMotionCallback,
 ) {
     companion object {
@@ -114,10 +114,11 @@ class SpeedMotionManager(
         } else {
             Log.d(TAG, "start() — restored state=$currentState, lowCount=$lowSpeedCount, wakeCount=$wakeCount")
 
-            // If we restored a STATIONARY state, explicitly switch the engine to periodic mode.
-            // Otherwise it defaults to continuous.
             if (currentState == SpeedMotionState.STATIONARY) {
                 switchToStationary()
+            } else if (currentState == SpeedMotionState.SLOWING) {
+                slowingStartTimeMs = android.os.SystemClock.elapsedRealtime()
+                startSlowingTimer()
             }
         }
     }
@@ -163,6 +164,7 @@ class SpeedMotionManager(
      */
     fun onLocation(speedMetersPerSecond: Double) {
         if (!started) return
+        val speed = if (speedMetersPerSecond < 0) 0.0 else speedMetersPerSecond
 
         // Track inter-fix interval for SLOWING countdown.
         // Use elapsedRealtime() which is monotonic and immune to NTP / manual clock changes.
@@ -180,9 +182,9 @@ class SpeedMotionManager(
         lastFixTime = now
 
         when (currentState) {
-            SpeedMotionState.MOVING -> onLocationMoving(speedMetersPerSecond)
-            SpeedMotionState.SLOWING -> onLocationSlowing(speedMetersPerSecond)
-            SpeedMotionState.STATIONARY -> onLocationStationary(speedMetersPerSecond)
+            SpeedMotionState.MOVING -> onLocationMoving(speed)
+            SpeedMotionState.SLOWING -> onLocationSlowing(speed)
+            SpeedMotionState.STATIONARY -> onLocationStationary(speed)
         }
     }
 

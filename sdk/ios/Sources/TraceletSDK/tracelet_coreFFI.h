@@ -553,33 +553,12 @@ void uniffi_tracelet_core_fn_free_eventdispatcher(uint64_t handle, RustCallStatu
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_EVENTDISPATCHER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_EVENTDISPATCHER_NEW
-uint64_t uniffi_tracelet_core_fn_constructor_eventdispatcher_new(uint64_t db, uint64_t sync, uint64_t state, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_tracelet_core_fn_constructor_eventdispatcher_new(uint64_t db, uint64_t state, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
 int8_t uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(uint64_t ptr, double lat, double lng, double accuracy, double speed, double heading, double altitude, int8_t is_mock, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_SYNCMANAGER
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_SYNCMANAGER
-uint64_t uniffi_tracelet_core_fn_clone_syncmanager(uint64_t handle, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FREE_SYNCMANAGER
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FREE_SYNCMANAGER
-void uniffi_tracelet_core_fn_free_syncmanager(uint64_t handle, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_SYNCMANAGER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_SYNCMANAGER_NEW
-uint64_t uniffi_tracelet_core_fn_constructor_syncmanager_new(RustCallStatus *_Nonnull out_status
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
-int32_t uniffi_tracelet_core_fn_method_syncmanager_sync_batch_blocking(uint64_t ptr, RustBuffer config, RustBuffer records, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_GEOFENCEEVALUATOR
@@ -818,11 +797,6 @@ RustBuffer uniffi_tracelet_core_fn_func_compute_genesis_hash(RustBuffer device_i
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FUNC_SHA256
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FUNC_SHA256
 RustBuffer uniffi_tracelet_core_fn_func_sha256(RustBuffer input, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FUNC_ENCODE_DELTAS
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FUNC_ENCODE_DELTAS
-RustBuffer uniffi_tracelet_core_fn_func_encode_deltas(RustBuffer batch_json, int32_t precision, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_TRACELET_CORE_RUSTBUFFER_ALLOC
@@ -1115,12 +1089,6 @@ uint16_t uniffi_tracelet_core_checksum_func_sha256(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_FUNC_ENCODE_DELTAS
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_FUNC_ENCODE_DELTAS
-uint16_t uniffi_tracelet_core_checksum_func_encode_deltas(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_KALMANLOCATIONFILTER_ESTIMATED_SPEED
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_KALMANLOCATIONFILTER_ESTIMATED_SPEED
 uint16_t uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed(void
@@ -1355,12 +1323,6 @@ uint16_t uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_SYNCMANAGER_SYNC_BATCH_BLOCKING
-uint16_t uniffi_tracelet_core_checksum_method_syncmanager_sync_batch_blocking(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_GEOFENCEEVALUATOR_CLEAR
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_GEOFENCEEVALUATOR_CLEAR
 uint16_t uniffi_tracelet_core_checksum_method_geofenceevaluator_clear(void
@@ -1568,12 +1530,6 @@ uint16_t uniffi_tracelet_core_checksum_constructor_databasemanager_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_EVENTDISPATCHER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_EVENTDISPATCHER_NEW
 uint16_t uniffi_tracelet_core_checksum_constructor_eventdispatcher_new(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_SYNCMANAGER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_SYNCMANAGER_NEW
-uint16_t uniffi_tracelet_core_checksum_constructor_syncmanager_new(void
     
 );
 #endif

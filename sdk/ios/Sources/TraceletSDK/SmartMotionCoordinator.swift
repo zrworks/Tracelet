@@ -53,7 +53,6 @@ public class TraceletSmartMotionCoordinator {
         return action
     }
     
-    /// Called when the GPS speed state changes.
     public func onSpeedStateChange(isMoving: Bool) {
         if !isMoving && isAccelMoving {
             // Speed SM declared stationary but accel reports moving.
@@ -70,6 +69,14 @@ public class TraceletSmartMotionCoordinator {
         guard let action = coreCoordinator?.onSpeedStateChange(isMoving: isMoving) else { return }
         NSLog("[Tracelet] SmartMotionCoordinator: onSpeedStateChange -> isMoving=\(isMoving), action=\(action)")
         handleAction(action)
+    }
+    
+    /// Called when the user manually forces the pace via changePace().
+    public func onManualPaceChange(isMoving: Bool) {
+        _ = coreCoordinator?.onAccelStateChange(isMoving: isMoving)
+        if let action = coreCoordinator?.onSpeedStateChange(isMoving: isMoving) {
+            handleAction(action)
+        }
     }
     
     private func handleAction(_ action: CoordinatorAction) {

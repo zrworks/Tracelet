@@ -6,10 +6,10 @@ import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
 Future<void> initializeRustLib() async {
   ExternalLibrary? lib;
-  if (Platform.isIOS) {
-    // In iOS, TraceletCore is bundled statically via the cocoapods xcframework,
-    // so we resolve symbols directly from the process instead of trying to open
-    // 'tracelet_core.framework/tracelet_core'.
+  if (Platform.isIOS || Platform.isAndroid) {
+    // In iOS, TraceletCore is bundled statically via the cocoapods xcframework.
+    // In Android, TraceletCore is loaded by JNI (System.loadLibrary) before Tracelet.ready() is called.
+    // So for both platforms, we resolve symbols directly from the process.
     lib = ExternalLibrary.process(iKnowHowToUseIt: true);
   } else if (Platform.isMacOS) {
     // For local tests running on macOS host, resolve relative to the current script

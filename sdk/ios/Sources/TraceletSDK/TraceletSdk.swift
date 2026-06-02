@@ -29,12 +29,24 @@ import UIKit
 ///
 /// The API surface mirrors the Dart `Tracelet` class so developers switching
 /// between Flutter and native iOS have a familiar interface.
+public protocol SyncProvider {
+    func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws -> UInt32
+}
+
 public final class TraceletSdk {
 
     // MARK: - Singleton
 
     /// The shared singleton instance.
     public static let shared = TraceletSdk()
+
+    public var syncProvider: SyncProvider? = nil {
+        didSet {
+            if let sink = syncProvider as? LocationDataSink {
+                locationEngine?.registerSink(sink)
+            }
+        }
+    }
 
     // MARK: - Delegate
 
@@ -121,6 +133,10 @@ public final class TraceletSdk {
     /// to their respective background runtimes.
     public func setHeadlessDispatcher(_ dispatcher: HeadlessDispatching?) {
         delegateEventSender.headlessDispatcher = dispatcher
+    }
+
+    public var isTracking: Bool {
+        return locationEngine.isTracking || stateManager.enabled
     }
 
     // =========================================================================
@@ -233,12 +249,13 @@ public final class TraceletSdk {
 
         isReady = true
         syncConfigToRustFlat()
+        checkSyncProvider()
 
         if stateManager.enabled {
             switch stateManager.trackingMode {
             case .continuous:
                 NSLog("[Tracelet] ready: Resuming continuous tracking")
-                start()
+                start(isResume: true)
             case .periodic:
                 NSLog("[Tracelet] ready: Resuming periodic tracking")
                 startPeriodic()
@@ -255,18 +272,29 @@ public final class TraceletSdk {
     ///
     /// - Returns: Updated state as a dictionary.
     @discardableResult
-    public func start() -> [String: Any] {
+    public func start(isResume: Bool = false) -> [String: Any] {
         precondition(isReady, "TraceletSdk.ready() must be called before start()")
+
+        let wasTracking = locationEngine.isTracking
 
         stateManager.enabled = true
         stateManager.trackingMode = .continuous
-        stateManager.isMoving = false
+        if !isResume {
+            stateManager.isMoving = configManager.getIsMoving()
+        }
+        
+        smartMotionCoordinator.syncCurrentMode()
+
+        let shouldForceMoving = !isResume || stateManager.isMoving
+
+        if !isResume && wasTracking {
+            _ = changePace(shouldForceMoving)
+            return stateManager.toMap(configManager.getConfig())
+        }
 
         // Stop any periodic tracking before switching to continuous mode.
         locationEngine.stopPeriodic()
         periodicRefreshScheduler.stop()
-
-        locationEngine.start()
 
         // Wire proximity-based geofence monitoring + trip waypoints.
         locationEngine.onLocationUpdate = { [weak self] lat, lng in
@@ -282,19 +310,27 @@ public final class TraceletSdk {
         }
 
         let motionMode = configManager.getMotionDetectionMode()
+        
         if motionMode == .speed {
-            startSpeedMotionManager(forceMoving: true)
+            startSpeedMotionManager(forceMoving: shouldForceMoving)
         } else if motionMode == .smart {
-            startSpeedMotionManager(forceMoving: true)
+            startSpeedMotionManager(forceMoving: shouldForceMoving)
             motionDetector.start()
         } else {
             motionDetector.start()
         }
+
+        if stateManager.isMoving {
+            locationEngine.start()
+            backgroundActivitySessionManager.start()
+        } else {
+            _ = changePace(false)
+        }
+
         startHeartbeat()
         startStopAfterElapsedTimer()
         startBatteryBudgetSampling()
         preventSuspendManager.start()
-        backgroundActivitySessionManager.start()
         serviceSessionManager.start()
 
         eventSender.sendEnabledChange(true)
@@ -531,7 +567,15 @@ public final class TraceletSdk {
         }
 
         syncConfigToRustFlat()
+        checkSyncProvider()
         return stateManager.toMap(configManager.getConfig())
+    }
+
+    private func checkSyncProvider() {
+        let url = configManager.getUrl()
+        if !url.isEmpty, syncProvider == nil {
+            NSLog("⚠️ WARNING [Tracelet]: HTTP sync URL is configured (\"\(url)\"), but no SyncProvider is registered. Location synchronization will NOT work without the tracelet_sync package. Please ensure tracelet_sync is installed and initialized.")
+        }
     }
 
     /// Reset all state and optionally apply new configuration.
@@ -630,6 +674,11 @@ public final class TraceletSdk {
         let motionMode = configManager.getMotionDetectionMode()
         if motionMode == .speed {
             speedMotionManager?.onManualPaceChange(isMoving: isMoving)
+            return true
+        } else if motionMode == .smart {
+            speedMotionManager?.onManualPaceChange(isMoving: isMoving)
+            motionDetector.onManualPaceChange(isMoving)
+            smartMotionCoordinator.onManualPaceChange(isMoving: isMoving)
             return true
         } else {
             let result = locationEngine.changePace(isMoving)
@@ -904,7 +953,13 @@ public final class TraceletSdk {
                     return
                 }
                 
-                let syncedCount = try sync.syncBatchBlocking(config: config.http, records: records)
+                guard let syncProvider = syncProvider else {
+                    NSLog("Sync failed: No SyncProvider registered (is tracelet_sync installed?)")
+                    DispatchQueue.main.async { completion?([]) }
+                    return
+                }
+                
+                let syncedCount = try syncProvider.syncBatchBlocking(config: config.http, records: records)
                 if syncedCount > 0 {
                     let successfullySynced = Array(records.prefix(Int(syncedCount)))
                     if let lastRecord = successfullySynced.last {
@@ -1286,7 +1341,6 @@ public final class TraceletSdk {
                 db.setEncryptionKey(key: "")
             }
             
-            let sync = SyncManager()
             let state = EngineState()
             let dispatcher = EventDispatcher(db: db, state: state)
             self.rustDatabase = db
@@ -1314,6 +1368,9 @@ public final class TraceletSdk {
             eventDispatcher: eventSender
         )
         locationEngine.registerSink(database)
+        if let syncSink = syncProvider as? LocationDataSink {
+            locationEngine.registerSink(syncSink)
+        }
         locationEngine.rustPluginEventDispatcher = rustPluginEventDispatcher
         locationEngine.auditTrailManager = auditTrailManager
         locationEngine.privacyZoneManager = privacyZoneManager
@@ -1413,6 +1470,12 @@ public final class TraceletSdk {
             guard let self = self else { return }
             self.stateManager.isMoving = isMoving
             self.locationEngine.changePace(isMoving)
+
+            if isMoving {
+                self.backgroundActivitySessionManager.start()
+            } else {
+                self.backgroundActivitySessionManager.stop()
+            }
 
             // Feed TripManager with motion state change
             let lastLoc = self.locationEngine.getLastLocation()
@@ -1911,6 +1974,7 @@ extension TraceletSdk: SpeedMotionDelegate {
             stateManager.isMoving = true
             stateManager.trackingMode = .continuous
             locationEngine.switchToContinuous()
+            backgroundActivitySessionManager.start()
 
             // Emit motionchange event for backward compatibility
             let lastLoc = locationEngine.getLastLocation()
@@ -1943,8 +2007,8 @@ extension TraceletSdk: SpeedMotionDelegate {
     public func switchToStationaryPeriodicForce() {
         BackgroundTaskHelper.shared.run("speedSwitchStationary") { [self] in
             stateManager.isMoving = false
-            stateManager.trackingMode = .periodic
             locationEngine.switchToStationaryPeriodic()
+            backgroundActivitySessionManager.stop()
 
             // Emit motionchange event for backward compatibility
             let lastLoc = locationEngine.getLastLocation()
@@ -1984,6 +2048,7 @@ extension TraceletSdk: SpeedMotionDelegate {
             stateManager.isMoving = false
             stateManager.trackingMode = .geofences
             locationEngine.switchToStationaryGeofences()
+            backgroundActivitySessionManager.stop()
             geofenceManager.reRegisterAll()
 
             // Emit motionchange event for backward compatibility

@@ -8,7 +8,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 import com.ikolvi.tracelet.sdk.TraceletSdk
 import com.ikolvi.tracelet.sdk.location.LocationDataSink
-import com.ikolvi.tracelet.sdk.model.Location
 import uniffi.tracelet_sync.SyncManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,12 +15,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink {
+class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, TraceletSdk.SyncProvider {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val syncMutex = Mutex()
     private val syncManager = SyncManager()
     
-    override fun onLocationReceived(location: Location) {
+    override fun insertLocation(location: Map<String, Any?>) {
         scope.launch {
             triggerSync()
         }
@@ -29,15 +28,24 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink {
     
     private suspend fun triggerSync() {
         syncMutex.withLock {
-            val db = sdk.rustDatabase ?: return
-            val state = sdk.rustEngineState ?: return
+            android.util.Log.d("TraceletSync", "triggerSync started")
+            val db = sdk.rustDatabase ?: run {
+                android.util.Log.e("TraceletSync", "rustDatabase is null")
+                return
+            }
+            val state = sdk.rustEngineState ?: run {
+                android.util.Log.e("TraceletSync", "rustEngineState is null")
+                return
+            }
             
             try {
                 val coreHttp = state.getConfig().http
+                android.util.Log.d("TraceletSync", "coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
                 if (coreHttp.url.isNullOrEmpty() || !coreHttp.autoSync) return
                 
                 val limit = if (coreHttp.maxBatchSize > 0) coreHttp.maxBatchSize else 250
-                val records = db.getLocationsBatch(limit)
+                val records = db.getLocationsBatch(limit.toInt())
+                android.util.Log.d("TraceletSync", "Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
                 
                 val count = syncManager.syncBatchBlocking(coreHttp, records)
@@ -51,6 +59,10 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink {
                 android.util.Log.e("TraceletSync", "Sync failed: ${e.message}")
             }
         }
+    }
+    
+    override fun syncBatchBlocking(config: uniffi.tracelet_core.HttpConfig, records: List<uniffi.tracelet_core.DbLocationRecord>): Long {
+        return syncManager.syncBatchBlocking(config, records).toLong()
     }
 }
 
@@ -69,6 +81,7 @@ class TraceletSyncPlugin : FlutterPlugin, MethodCallHandler {
             
             val sink = TraceletSyncSink(traceletSdk)
             traceletSdk.locationEngine?.registerSink(sink)
+            traceletSdk.syncProvider = sink
             syncSink = sink
             
             android.util.Log.i("TraceletSync", "Sync sink registered!")

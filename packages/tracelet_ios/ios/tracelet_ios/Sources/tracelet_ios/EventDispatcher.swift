@@ -256,7 +256,16 @@ public final class PluginEventDispatcher: NSObject, TraceletEventSending {
                     confidence: Int64($0["confidence"] as? Int ?? -1)
                 )
             },
-            extras: synthesizedExtras
+            extras: synthesizedExtras,
+            address: (data["address"] as? [String: Any]).map { addr in
+                TlAddress(
+                    street: addr["street"] as? String,
+                    city: addr["city"] as? String,
+                    state: addr["state"] as? String,
+                    postalCode: (addr["postalCode"] as? String) ?? (addr["postal_code"] as? String),
+                    country: addr["country"] as? String
+                )
+            }
         )
     }
 

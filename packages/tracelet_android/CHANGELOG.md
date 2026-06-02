@@ -1,6 +1,6 @@
 ## 3.2.0
 
- - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+- **FEAT**(android): Add reverse geocoding functionality.
 
 ## 3.1.14
 

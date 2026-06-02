@@ -9,15 +9,16 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 A new Flutter plugin project.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://ikolvi.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Your Company' => 'connect@ikolvi.com' }
   s.source           = { :path => '.' }
   s.source_files = 'tracelet_sync/Sources/tracelet_sync/**/*'
+  s.public_header_files = 'tracelet_sync/Sources/tracelet_sync/**/*.h', 'tracelet_sync/Sources/tracelet_sync/*.h'
   s.dependency 'Flutter'
   s.dependency 'TraceletSDK'
   s.platform = :ios, '14.0'
-  s.vendored_frameworks = 'TraceletSync.xcframework'
+  s.vendored_frameworks = 'TraceletSyncFFI.xcframework'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64' }

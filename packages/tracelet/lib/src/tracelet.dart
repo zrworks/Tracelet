@@ -195,6 +195,8 @@ class Tracelet {
       _tripController.add(TripEvent.fromMap(tripData));
     };
 
+    _checkSyncProvider(config);
+
     final result = await _platform.ready(config.toTlConfig());
     return State.fromMap(result);
   }
@@ -336,8 +338,34 @@ class Tracelet {
     // Invalidate cached stream pipeline so it rebuilds with new settings (D-M8).
     _processedLocationStream = null;
 
+    _checkSyncProvider(config);
+
     final s = await _platform.setConfig(config.toTlConfig());
     return State.fromMap(s);
+  }
+
+  /// Verifies if tracelet_sync is installed/registered when HTTP URL is configured.
+  /// Displays a developer warning in the console if sync is setup without the sync package.
+  static void _checkSyncProvider(Config config) {
+    final httpUrl = config.http?.url;
+    if (httpUrl != null && httpUrl.isNotEmpty) {
+      scheduleMicrotask(() async {
+        try {
+          await const MethodChannel('tracelet_sync').invokeMethod('initialize');
+        } on MissingPluginException {
+          // ignore: avoid_print
+          print(
+            '⚠️ WARNING [Tracelet]: HTTP sync URL is configured ("$httpUrl"), '
+            'but the "tracelet_sync" package is not installed or registered. '
+            'Location synchronization will not work without "tracelet_sync". '
+            'Please ensure that you have added "tracelet_sync" to your pubspec.yaml '
+            'dependencies.',
+          );
+        } catch (e) {
+          // Other exceptions are ignored since they imply the channel is registered.
+        }
+      });
+    }
   }
 
   /// Reset to default configuration, optionally applying a new [config].

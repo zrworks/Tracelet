@@ -220,7 +220,7 @@ impl DatabaseManager {
     }
 
     /// Inserts a new location record into the database.
-    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>) -> Result<(), TraceletError> {
+    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>) -> Result<i64, TraceletError> {
         let conn = self.conn.lock().unwrap();
         let timestamp = Utc::now().to_rfc3339();
         
@@ -243,7 +243,7 @@ impl DatabaseManager {
                      VALUES (?1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?2, ?3)",
                     params![timestamp, payload, route_context],
                 ).map_err(|e| TraceletError::Database(e.to_string()))?;
-                return Ok(());
+                return Ok(conn.last_insert_rowid());
             }
         }
         
@@ -253,7 +253,8 @@ impl DatabaseManager {
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10)",
             params![timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity, route_context],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
-        Ok(())
+        
+        Ok(conn.last_insert_rowid())
     }
 
     /// Retrieves a batch of location records, up to `limit`.
@@ -748,5 +749,14 @@ mod tests {
         db.clear_logs().unwrap();
         let count_after_clear: i32 = db.conn.lock().unwrap().query_row("SELECT COUNT(*) FROM logs", [], |r| r.get(0)).unwrap();
         assert_eq!(count_after_clear, 0);
+    }
+
+    #[test]
+    fn test_insert_location_returns_id() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        let id1 = db.insert_location(1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
+        let id2 = db.insert_location(2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
+        assert_eq!(id1, 1);
+        assert_eq!(id2, 2);
     }
 }

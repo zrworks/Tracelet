@@ -1130,8 +1130,8 @@ class TraceletSdk private constructor(private val context: Context) {
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         
         return try {
-            db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext())
-            "success"
+            val newRowId = db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext())
+            newRowId.toString()
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")
             ""

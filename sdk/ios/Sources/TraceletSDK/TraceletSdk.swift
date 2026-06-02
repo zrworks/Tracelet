@@ -916,7 +916,7 @@ public final class TraceletSdk {
         let activity = activityMap?["type"] as? String ?? "unknown"
         
         do {
-            try db.insertLocation(
+            let newRowId = try db.insertLocation(
                 lat: lat,
                 lng: lng,
                 acc: acc,
@@ -927,7 +927,7 @@ public final class TraceletSdk {
                 activity: activity,
                 routeContext: rustEngineState?.getRouteContext()
             )
-            return "success"
+            return newRowId.description
         } catch {
             NSLog("insertLocation failed: \(error)")
             return ""

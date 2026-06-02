@@ -1149,7 +1149,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws 
+    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws  -> Int64
     
     /**
      * Inserts a log entry into the database.
@@ -1445,7 +1445,8 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?)throws  -> Int64  {
+    return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
         FfiConverterDouble.lower(lat),
@@ -1458,7 +1459,7 @@ open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, h
         FfiConverterString.lower(activity),
         FfiConverterOptionString.lower(routeContext),$0
     )
-}
+})
 }
     
     /**
@@ -6835,7 +6836,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 37770) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 31305) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {

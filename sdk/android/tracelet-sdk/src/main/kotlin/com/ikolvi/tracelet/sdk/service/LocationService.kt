@@ -651,7 +651,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     bootMotionDetector = detector
 
                     val coordinator = com.ikolvi.tracelet.sdk.motion.SmartMotionCoordinator(
-                        ctx, config, state, eventSender, engine, detector
+                        ctx, config, state, eventSender, engine, detector, sdk.logger
                     )
                     bootSmartMotionCoordinator = coordinator
                     

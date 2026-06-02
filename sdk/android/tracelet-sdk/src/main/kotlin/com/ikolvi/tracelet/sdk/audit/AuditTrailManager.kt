@@ -179,7 +179,13 @@ class AuditTrailManager(
             )
         }
 
-        val locations = rustDatabase?.getLocationsBatch(10000) ?: emptyList()
+        val locations = rustDatabase?.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
+            startTimeMs = null,
+            endTimeMs = null,
+            limit = 10000,
+            offset = null,
+            orderDescending = null
+        )) ?: emptyList()
 
         // Map sequential audit trail records to AuditRecordWithLocation structures
         val rustRecords = auditRecords.mapIndexed { index, auditRecord ->
@@ -239,7 +245,13 @@ class AuditTrailManager(
         
         // Find the index of the audit record to pair with the location record at the same position
         val recordIndex = auditRecords.indexOf(matchedRecord)
-        val locations = rustDatabase?.getLocationsBatch(10000) ?: return null
+        val locations = rustDatabase?.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
+            startTimeMs = null,
+            endTimeMs = null,
+            limit = 10000,
+            offset = null,
+            orderDescending = null
+        )) ?: return null
         val location = if (recordIndex >= 0 && recordIndex < locations.size) locations[recordIndex] else null
         
         return mapOf(

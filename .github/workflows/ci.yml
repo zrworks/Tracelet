@@ -48,6 +48,9 @@ jobs:
         run: melos run format
       - name: Analyze
         run: melos run analyze
+      - name: Run Rust tests
+        working-directory: sdk/rust-core
+        run: cargo test
 
   test:
     name: Tests (${{ matrix.package }})

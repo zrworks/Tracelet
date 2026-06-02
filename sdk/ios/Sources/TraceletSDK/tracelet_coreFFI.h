@@ -503,7 +503,7 @@ RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_geofences(uint64_t
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATIONS_BATCH
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATIONS_BATCH
-RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(uint64_t ptr, int32_t limit, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(uint64_t ptr, RustBuffer query, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATIONS_COUNT
@@ -533,7 +533,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
-int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustCallStatus *_Nonnull out_status
+int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustBuffer timestamp_override, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOG

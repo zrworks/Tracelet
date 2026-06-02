@@ -629,7 +629,25 @@ class Tracelet {
   ///
   /// Returns the UUID of the inserted location.
   static Future<String> insertLocation(Map<String, Object?> params) {
-    return _platform.insertLocation(params);
+    final mutableParams = Map<String, Object?>.from(params);
+    if (mutableParams.containsKey('timestamp')) {
+      final ts = mutableParams['timestamp'];
+      DateTime? dt;
+      if (ts is DateTime) {
+        dt = ts;
+      } else if (ts is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(ts);
+      } else if (ts is String) {
+        dt = DateTime.tryParse(ts);
+      }
+      
+      if (dt != null) {
+        final utcDt = dt.toUtc();
+        // Normalize to RFC3339 exact format to ensure SQLite string comparisons work flawlessly against Rust querying limits.
+        mutableParams['timestamp'] = utcDt.toIso8601String().replaceAll('.000Z', '+00:00').replaceAll('Z', '+00:00');
+      }
+    }
+    return _platform.insertLocation(mutableParams);
   }
 
   // ---------------------------------------------------------------------------

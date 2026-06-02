@@ -9,7 +9,7 @@ All map builders (SDK `buildLocationMap()`, `enrichLocation()`, DB `locationRowT
 ```json
 {
   "uuid": "string",
-  "timestamp": "ISO-8601 string or epoch millis (long)",
+  "timestamp": "ISO-8601 string or epoch millis (long). See [TIMESTAMP-FORMAT.md](TIMESTAMP-FORMAT.md) for details.",
   "is_moving": true,
   "odometer": 1234.5,
   "event": "motionchange | location | heartbeat | geofence | ...",

@@ -44,7 +44,13 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                 if (coreHttp.url.isNullOrEmpty() || !coreHttp.autoSync) return
                 
                 val limit = if (coreHttp.maxBatchSize > 0) coreHttp.maxBatchSize else 250
-                val records = db.getLocationsBatch(limit.toInt())
+                val records = db.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
+                    startTimeMs = null,
+                    endTimeMs = null,
+                    limit = limit.toInt(),
+                    offset = null,
+                    orderDescending = null
+                ))
                 android.util.Log.d("TraceletSync", "Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
                 

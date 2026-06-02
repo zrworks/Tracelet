@@ -1119,9 +1119,9 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func getGeofences() throws  -> [CoreGeofence]
     
     /**
-     * Retrieves a batch of location records, up to `limit`.
+     * Retrieves a batch of location records, with optional filtering.
      */
-    func getLocationsBatch(limit: Int32) throws  -> [DbLocationRecord]
+    func getLocationsBatch(query: LocationQuery?) throws  -> [DbLocationRecord]
     
     /**
      * Gets the total count of locations persisted in the database.
@@ -1149,7 +1149,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) throws  -> Int64
+    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?) throws  -> Int64
     
     /**
      * Inserts a log entry into the database.
@@ -1371,13 +1371,13 @@ open func getGeofences()throws  -> [CoreGeofence]  {
 }
     
     /**
-     * Retrieves a batch of location records, up to `limit`.
+     * Retrieves a batch of location records, with optional filtering.
      */
-open func getLocationsBatch(limit: Int32)throws  -> [DbLocationRecord]  {
+open func getLocationsBatch(query: LocationQuery?)throws  -> [DbLocationRecord]  {
     return try  FfiConverterSequenceTypeDbLocationRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
             self.uniffiCloneHandle(),
-        FfiConverterInt32.lower(limit),$0
+        FfiConverterOptionTypeLocationQuery.lower(query),$0
     )
 })
 }
@@ -1445,7 +1445,7 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?)throws  -> Int64  {
+open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?)throws  -> Int64  {
     return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
@@ -1457,7 +1457,8 @@ open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, h
         FfiConverterDouble.lower(altitude),
         FfiConverterBool.lower(isMock),
         FfiConverterString.lower(activity),
-        FfiConverterOptionString.lower(routeContext),$0
+        FfiConverterOptionString.lower(routeContext),
+        FfiConverterOptionString.lower(timestampOverride),$0
     )
 })
 }
@@ -4924,6 +4925,72 @@ public func FfiConverterTypeLocationProcessorResult_lower(_ value: LocationProce
 }
 
 
+public struct LocationQuery: Equatable, Hashable {
+    public var startTimeMs: Int64?
+    public var endTimeMs: Int64?
+    public var limit: Int32?
+    public var offset: Int32?
+    public var orderDescending: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(startTimeMs: Int64?, endTimeMs: Int64?, limit: Int32?, offset: Int32?, orderDescending: Bool?) {
+        self.startTimeMs = startTimeMs
+        self.endTimeMs = endTimeMs
+        self.limit = limit
+        self.offset = offset
+        self.orderDescending = orderDescending
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LocationQuery: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLocationQuery: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LocationQuery {
+        return
+            try LocationQuery(
+                startTimeMs: FfiConverterOptionInt64.read(from: &buf), 
+                endTimeMs: FfiConverterOptionInt64.read(from: &buf), 
+                limit: FfiConverterOptionInt32.read(from: &buf), 
+                offset: FfiConverterOptionInt32.read(from: &buf), 
+                orderDescending: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LocationQuery, into buf: inout [UInt8]) {
+        FfiConverterOptionInt64.write(value.startTimeMs, into: &buf)
+        FfiConverterOptionInt64.write(value.endTimeMs, into: &buf)
+        FfiConverterOptionInt32.write(value.limit, into: &buf)
+        FfiConverterOptionInt32.write(value.offset, into: &buf)
+        FfiConverterOptionBool.write(value.orderDescending, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocationQuery_lift(_ buf: RustBuffer) throws -> LocationQuery {
+    return try FfiConverterTypeLocationQuery.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocationQuery_lower(_ value: LocationQuery) -> RustBuffer {
+    return FfiConverterTypeLocationQuery.lower(value)
+}
+
+
 /**
  * Represents a raw location sample with all its properties formatted for hashing.
  */
@@ -6151,6 +6218,30 @@ fileprivate struct FfiConverterOptionInt32: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionInt64: FfiConverterRustBuffer {
+    typealias SwiftType = Int64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
     typealias SwiftType = Double?
 
@@ -6167,6 +6258,30 @@ fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterDouble.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6263,6 +6378,30 @@ fileprivate struct FfiConverterOptionTypeBudgetAdjustmentEvent: FfiConverterRust
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeBudgetAdjustmentEvent.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeLocationQuery: FfiConverterRustBuffer {
+    typealias SwiftType = LocationQuery?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLocationQuery.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLocationQuery.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6818,7 +6957,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 44952) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 62912) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172) {
@@ -6836,7 +6975,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 31305) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41574) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {

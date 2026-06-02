@@ -930,7 +930,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(`ptr
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_get_geofences(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(`ptr`: Long,`query`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
@@ -942,7 +942,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,`timestampOverride`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_log(`ptr`: Long,`level`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -1278,7 +1278,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 44952.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 62912.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172.toShort()) {
@@ -1296,7 +1296,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 2113.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 31305.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41574.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891.toShort()) {
@@ -2845,9 +2845,9 @@ public interface DatabaseManagerInterface {
     fun `getGeofences`(): List<CoreGeofence>
     
     /**
-     * Retrieves a batch of location records, up to `limit`.
+     * Retrieves a batch of location records, with optional filtering.
      */
-    fun `getLocationsBatch`(`limit`: kotlin.Int): List<DbLocationRecord>
+    fun `getLocationsBatch`(`query`: LocationQuery?): List<DbLocationRecord>
     
     /**
      * Gets the total count of locations persisted in the database.
@@ -2875,7 +2875,7 @@ public interface DatabaseManagerInterface {
     /**
      * Inserts a new location record into the database.
      */
-    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?): kotlin.Long
+    fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long
     
     /**
      * Inserts a log entry into the database.
@@ -3207,15 +3207,15 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
 
     
     /**
-     * Retrieves a batch of location records, up to `limit`.
+     * Retrieves a batch of location records, with optional filtering.
      */
-    @Throws(TraceletException::class)override fun `getLocationsBatch`(`limit`: kotlin.Int): List<DbLocationRecord> {
+    @Throws(TraceletException::class)override fun `getLocationsBatch`(`query`: LocationQuery?): List<DbLocationRecord> {
             return FfiConverterSequenceTypeDbLocationRecord.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(
         it,
-        FfiConverterInt.lower(`limit`),_status)
+        FfiConverterOptionalTypeLocationQuery.lower(`query`),_status)
 }
     }
     )
@@ -3307,13 +3307,13 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     /**
      * Inserts a new location record into the database.
      */
-    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?): kotlin.Long {
+    @Throws(TraceletException::class)override fun `insertLocation`(`lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long {
             return FfiConverterLong.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
         it,
-        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),_status)
+        FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),FfiConverterOptionalString.lower(`timestampOverride`),_status)
 }
     }
     )
@@ -7691,6 +7691,59 @@ public object FfiConverterTypeLocationProcessorResult: FfiConverterRustBuffer<Lo
 
 
 
+data class LocationQuery (
+    var `startTimeMs`: kotlin.Long?
+    , 
+    var `endTimeMs`: kotlin.Long?
+    , 
+    var `limit`: kotlin.Int?
+    , 
+    var `offset`: kotlin.Int?
+    , 
+    var `orderDescending`: kotlin.Boolean?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeLocationQuery: FfiConverterRustBuffer<LocationQuery> {
+    override fun read(buf: ByteBuffer): LocationQuery {
+        return LocationQuery(
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalInt.read(buf),
+            FfiConverterOptionalInt.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: LocationQuery) = (
+            FfiConverterOptionalLong.allocationSize(value.`startTimeMs`) +
+            FfiConverterOptionalLong.allocationSize(value.`endTimeMs`) +
+            FfiConverterOptionalInt.allocationSize(value.`limit`) +
+            FfiConverterOptionalInt.allocationSize(value.`offset`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`orderDescending`)
+    )
+
+    override fun write(value: LocationQuery, buf: ByteBuffer) {
+            FfiConverterOptionalLong.write(value.`startTimeMs`, buf)
+            FfiConverterOptionalLong.write(value.`endTimeMs`, buf)
+            FfiConverterOptionalInt.write(value.`limit`, buf)
+            FfiConverterOptionalInt.write(value.`offset`, buf)
+            FfiConverterOptionalBoolean.write(value.`orderDescending`, buf)
+    }
+}
+
+
+
 /**
  * Represents a raw location sample with all its properties formatted for hashing.
  */
@@ -8547,6 +8600,38 @@ public object FfiConverterOptionalInt: FfiConverterRustBuffer<kotlin.Int?> {
 /**
  * @suppress
  */
+public object FfiConverterOptionalLong: FfiConverterRustBuffer<kotlin.Long?> {
+    override fun read(buf: ByteBuffer): kotlin.Long? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterLong.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Long?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterLong.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Long?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterLong.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalDouble: FfiConverterRustBuffer<kotlin.Double?> {
     override fun read(buf: ByteBuffer): kotlin.Double? {
         if (buf.get().toInt() == 0) {
@@ -8569,6 +8654,38 @@ public object FfiConverterOptionalDouble: FfiConverterRustBuffer<kotlin.Double?>
         } else {
             buf.put(1)
             FfiConverterDouble.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalBoolean: FfiConverterRustBuffer<kotlin.Boolean?> {
+    override fun read(buf: ByteBuffer): kotlin.Boolean? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterBoolean.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Boolean?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterBoolean.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Boolean?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterBoolean.write(value, buf)
         }
     }
 }
@@ -8697,6 +8814,38 @@ public object FfiConverterOptionalTypeBudgetAdjustmentEvent: FfiConverterRustBuf
         } else {
             buf.put(1)
             FfiConverterTypeBudgetAdjustmentEvent.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeLocationQuery: FfiConverterRustBuffer<LocationQuery?> {
+    override fun read(buf: ByteBuffer): LocationQuery? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeLocationQuery.read(buf)
+    }
+
+    override fun allocationSize(value: LocationQuery?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeLocationQuery.allocationSize(value)
+        }
+    }
+
+    override fun write(value: LocationQuery?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeLocationQuery.write(value, buf)
         }
     }
 }

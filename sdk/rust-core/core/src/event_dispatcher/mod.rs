@@ -31,7 +31,7 @@ impl EventDispatcher {
         let route_context = self.state.get_route_context();
 
         // 2. Persist to Database
-        if let Err(e) = self.db.insert_location(lat, lng, accuracy, speed, heading, altitude, is_mock, &activity, route_context) {
+        if let Err(e) = self.db.insert_location(lat, lng, accuracy, speed, heading, altitude, is_mock, &activity, route_context, None) {
             crate::logger::error(&format!("[Rust Core] ❌ Failed to insert location into database: {}", e));
             return false;
         }

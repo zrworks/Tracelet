@@ -1042,9 +1042,23 @@ class TraceletSdk private constructor(private val context: Context) {
     fun getLocations(query: Map<String, Any?>?): List<Map<String, Any?>> {
         if (!isReady) return emptyList()
         val db = rustDatabase ?: return emptyList()
-        val limit = (query?.get("limit") as? Number)?.toInt() ?: 1000
+        
+        val startTimeMs = (query?.get("start") as? Number)?.toLong() ?: (query?.get("from") as? Number)?.toLong()
+        val endTimeMs = (query?.get("end") as? Number)?.toLong() ?: (query?.get("to") as? Number)?.toLong()
+        val limit = (query?.get("limit") as? Number)?.toInt()
+        val offset = (query?.get("offset") as? Number)?.toInt()
+        val orderDescending = (query?.get("order") as? Number)?.toInt()?.let { it == 1 }
+        
+        val rustQuery = uniffi.tracelet_core.LocationQuery(
+            startTimeMs = startTimeMs,
+            endTimeMs = endTimeMs,
+            limit = limit,
+            offset = offset,
+            orderDescending = orderDescending
+        )
+        
         return try {
-            val records = db.getLocationsBatch(limit)
+            val records = db.getLocationsBatch(rustQuery)
             records.map { record ->
                 mapOf(
                     "uuid" to record.id.toString(),
@@ -1128,9 +1142,10 @@ class TraceletSdk private constructor(private val context: Context) {
         val isMock = params["mock"] == true || params["is_mock"] == true
         val activityMap = params["activity"] as? Map<*, *>
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
+        val timestamp = params["timestamp"] as? String
         
         return try {
-            val newRowId = db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext())
+            val newRowId = db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext(), timestamp)
             newRowId.toString()
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")
@@ -1161,7 +1176,13 @@ class TraceletSdk private constructor(private val context: Context) {
             try {
                 val config = state.getConfig()
                 val batchSize = if (config.http.maxBatchSize > 0) config.http.maxBatchSize else 250
-                val records = db.getLocationsBatch(batchSize.toInt())
+                val records = db.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
+                    startTimeMs = null,
+                    endTimeMs = null,
+                    limit = batchSize.toInt(),
+                    offset = null,
+                    orderDescending = null
+                ))
                 if (records.isEmpty()) {
                     mainHandler.post { callback(emptyList()) }
                     return@Thread

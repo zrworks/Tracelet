@@ -1021,17 +1021,14 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     fun getGeofences(): List<Map<String, Any?>> {
-        if (!isReady) return emptyList()
         return geofenceManager.getGeofences()
     }
 
     fun getGeofence(identifier: String): Map<String, Any?>? {
-        if (!isReady) return null
         return geofenceManager.getGeofence(identifier)
     }
 
     fun geofenceExists(identifier: String): Boolean {
-        if (!isReady) return false
         return geofenceManager.geofenceExists(identifier)
     }
 

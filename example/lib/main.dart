@@ -753,6 +753,66 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  /// Verifies if SQLQuery date filters and Carbon Reports are respected.
+  Future<void> _testSqlQueryAndCarbonReport() async {
+    print('--- Starting Test: SQLQuery & Carbon Report ---');
+
+    final now = DateTime.now();
+    final t1 = now.subtract(const Duration(hours: 3));
+    final t2 = now.subtract(const Duration(hours: 2));
+    final t3 = now.subtract(const Duration(hours: 1));
+
+    await tl.Tracelet.insertLocation({
+      'timestamp': t1,
+      'coords': {
+        'latitude': 48.8566,
+        'longitude': 2.3522,
+        'accuracy': 5.0,
+        'speed': 15.0,
+      },
+      'activity': {'type': 'in_vehicle'},
+      'is_moving': true,
+    });
+
+    await tl.Tracelet.insertLocation({
+      'timestamp': t2,
+      'coords': {
+        'latitude': 48.8584,
+        'longitude': 2.2945,
+        'accuracy': 5.0,
+        'speed': 15.0,
+      },
+      'activity': {'type': 'in_vehicle'},
+      'is_moving': true,
+    });
+
+    await tl.Tracelet.insertLocation({
+      'timestamp': t3,
+      'coords': {
+        'latitude': 48.8606,
+        'longitude': 2.3376,
+        'accuracy': 5.0,
+        'speed': 15.0,
+      },
+      'activity': {'type': 'in_vehicle'},
+      'is_moving': true,
+    });
+
+    final query = tl.SQLQuery(start: t2, end: t3);
+    final locations = await tl.Tracelet.getLocations(query);
+
+    print('Locations found for window [T2, T3]: ${locations.length}');
+    for (final loc in locations) {
+      print(' - Point: ${loc.coords.latitude}, ${loc.coords.longitude} at ${loc.timestamp}');
+    }
+
+    final carbonReport = await tl.Tracelet.getCarbonReport({
+      'from': t2.millisecondsSinceEpoch,
+      'to': t3.millisecondsSinceEpoch,
+    });
+    print('Carbon emitted for [T2, T3]: ${carbonReport['totalCarbonGrams']}g');
+  }
+
   Future<void> _start() async {
     try {
       if (!await _ensureBackgroundPermission()) return;
@@ -3713,6 +3773,7 @@ class _DashboardPageState extends State<DashboardPage>
                       _Chip('Get State', Icons.info_outline, _getState),
                       _Chip('Test Logs', Icons.bug_report, _testLogs),
                       _Chip('Test insertLocation', Icons.add_location, _testInsertLocationAndDestroy),
+                      _Chip('Test SQL/Carbon', Icons.date_range, _testSqlQueryAndCarbonReport),
                       _Chip('Live Map', Icons.map, () {
                         Navigator.push(
                           context,

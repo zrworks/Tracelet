@@ -1,7 +1,7 @@
 use rusqlite::{params, Connection};
 use std::sync::{Mutex, RwLock};
-use chrono::Utc;
 use crate::error::TraceletError;
+use chrono::{TimeZone, Utc};
 use aes_gcm::{
     aead::{Aead, KeyInit, generic_array::GenericArray},
     Aes256Gcm, Nonce
@@ -19,6 +19,15 @@ use crate::algorithms::geo_utils::Coordinate;
 pub struct DatabaseManager {
     conn: Mutex<Connection>,
     encryption_key: RwLock<Option<[u8; 32]>>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct LocationQuery {
+    pub start_time_ms: Option<i64>,
+    pub end_time_ms: Option<i64>,
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
+    pub order_descending: Option<bool>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -220,9 +229,9 @@ impl DatabaseManager {
     }
 
     /// Inserts a new location record into the database.
-    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>) -> Result<i64, TraceletError> {
+    pub fn insert_location(&self, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>, timestamp_override: Option<String>) -> Result<i64, TraceletError> {
         let conn = self.conn.lock().unwrap();
-        let timestamp = Utc::now().to_rfc3339();
+        let timestamp = timestamp_override.unwrap_or_else(|| Utc::now().to_rfc3339());
         
         let is_encrypted = self.encryption_key.read().unwrap().is_some();
         if is_encrypted {
@@ -257,12 +266,52 @@ impl DatabaseManager {
         Ok(conn.last_insert_rowid())
     }
 
-    /// Retrieves a batch of location records, up to `limit`.
-    pub fn get_locations_batch(&self, limit: i32) -> Result<Vec<DbLocationRecord>, TraceletError> {
+    /// Retrieves a batch of location records, with optional filtering.
+    pub fn get_locations_batch(&self, query: Option<LocationQuery>) -> Result<Vec<DbLocationRecord>, TraceletError> {
+        use rusqlite::types::Value;
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context FROM location_events ORDER BY id ASC LIMIT ?1").map_err(|e| TraceletError::Database(e.to_string()))?;
         
-        let iter = stmt.query_map([limit], |row| {
+        let mut sql = "SELECT id, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context FROM location_events WHERE 1=1".to_string();
+        let mut params: Vec<Value> = Vec::new();
+        
+        let limit = query.as_ref().and_then(|q| q.limit).unwrap_or(1000);
+        let offset = query.as_ref().and_then(|q| q.offset).unwrap_or(0);
+        let is_desc = query.as_ref().and_then(|q| q.order_descending).unwrap_or(false);
+        
+        if let Some(q) = &query {
+            if let Some(start_ms) = q.start_time_ms {
+                if let Some(dt) = Utc.timestamp_millis_opt(start_ms).single() {
+                    sql.push_str(" AND timestamp >= ?");
+                    params.push(Value::Text(dt.to_rfc3339()));
+                }
+            }
+            if let Some(end_ms) = q.end_time_ms {
+                if let Some(dt) = Utc.timestamp_millis_opt(end_ms).single() {
+                    sql.push_str(" AND timestamp <= ?");
+                    params.push(Value::Text(dt.to_rfc3339()));
+                }
+            }
+        }
+        
+        if is_desc {
+            sql.push_str(" ORDER BY id DESC");
+        } else {
+            sql.push_str(" ORDER BY id ASC");
+        }
+        
+        if limit >= 0 {
+            sql.push_str(" LIMIT ?");
+            params.push(Value::Integer(limit as i64));
+            
+            if offset > 0 {
+                sql.push_str(" OFFSET ?");
+                params.push(Value::Integer(offset as i64));
+            }
+        }
+        
+        let mut stmt = conn.prepare(&sql).map_err(|e| TraceletError::Database(e.to_string()))?;
+        
+        let iter = stmt.query_map(rusqlite::params_from_iter(params), |row| {
             let mut lat: f64 = row.get(2)?;
             let mut lng: f64 = row.get(3)?;
             let mut acc: f64 = row.get(4)?;
@@ -589,9 +638,9 @@ mod tests {
         // Ensure no key is set
         db.set_encryption_key("");
         
-        db.insert_location(37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
+        db.insert_location(37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         
-        let locations = db.get_locations_batch(10).unwrap();
+        let locations = db.get_locations_batch(None).unwrap();
         assert_eq!(locations.len(), 1);
         let loc = &locations[0];
         assert_eq!(loc.latitude, 37.7749);
@@ -607,9 +656,9 @@ mod tests {
         let test_key = "my_super_secret_encryption_key_!";
         db.set_encryption_key(test_key);
         
-        db.insert_location(40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, "running", None).unwrap();
+        db.insert_location(40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, "running", None, None).unwrap();
         
-        let locations = db.get_locations_batch(10).unwrap();
+        let locations = db.get_locations_batch(None).unwrap();
         assert_eq!(locations.len(), 1);
         let loc = &locations[0];
         assert_eq!(loc.latitude, 40.7128);
@@ -624,14 +673,20 @@ mod tests {
         
         // Insert unencrypted
         db.set_encryption_key("");
-        db.insert_location(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, "unencrypted", None).unwrap();
+        db.insert_location(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, "unencrypted", None, None).unwrap();
         
         // Turn encryption ON
         let test_key = "another_secret_key_1234567890!!!";
         db.set_encryption_key(test_key);
-        db.insert_location(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, "encrypted", None).unwrap();
+        db.insert_location(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, "encrypted", None, None).unwrap();
         
-        let locations = db.get_locations_batch(10).unwrap();
+        let locations = db.get_locations_batch(Some(LocationQuery {
+            start_time_ms: None,
+            end_time_ms: None,
+            limit: Some(10),
+            offset: None,
+            order_descending: None,
+        })).unwrap();
         assert_eq!(locations.len(), 2);
         
         // Both should be readable!
@@ -754,9 +809,37 @@ mod tests {
     #[test]
     fn test_insert_location_returns_id() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
-        let id1 = db.insert_location(1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
-        let id2 = db.insert_location(2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None).unwrap();
+        let id1 = db.insert_location(1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id2 = db.insert_location(2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
+    }
+
+    #[test]
+    fn test_location_query_with_timestamp_filtering() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        use chrono::TimeZone;
+        let t1 = chrono::Utc.timestamp_millis_opt(1704103200000).unwrap().to_rfc3339();
+        let t2 = chrono::Utc.timestamp_millis_opt(1704106800000).unwrap().to_rfc3339();
+        let t3 = chrono::Utc.timestamp_millis_opt(1704110400000).unwrap().to_rfc3339();
+        
+        db.insert_location(1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t1.clone())).unwrap();
+        db.insert_location(2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t2.clone())).unwrap();
+        db.insert_location(3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t3.clone())).unwrap();
+
+        // Query between t2 and t3
+        let query = LocationQuery {
+            start_time_ms: Some(1704106800000), // t2
+            end_time_ms: Some(1704110400000),   // t3
+            limit: None,
+            offset: None,
+            order_descending: None,
+        };
+        
+        let locations = db.get_locations_batch(Some(query)).unwrap();
+        assert_eq!(locations.len(), 2);
+        assert_eq!(locations[0].timestamp, t2);
+        assert_eq!(locations[1].timestamp, t3);
     }
 }

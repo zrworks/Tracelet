@@ -807,9 +807,27 @@ public final class TraceletSdk {
     public func getLocations(query: [String: Any]? = nil) -> [[String: Any]] {
         guard isReady else { return [] }
         guard let db = rustDatabase else { return [] }
-        let limit = (query?["limit"] as? NSNumber)?.int32Value ?? 1000
+        
+        let startTimeMs = (query?["start"] as? NSNumber)?.int64Value ?? (query?["from"] as? NSNumber)?.int64Value
+        let endTimeMs = (query?["end"] as? NSNumber)?.int64Value ?? (query?["to"] as? NSNumber)?.int64Value
+        let limit = (query?["limit"] as? NSNumber)?.int32Value
+        let offset = (query?["offset"] as? NSNumber)?.int32Value
+        
+        var orderDescending: Bool? = nil
+        if let order = (query?["order"] as? NSNumber)?.intValue {
+            orderDescending = (order == 1)
+        }
+        
+        let rustQuery = LocationQuery(
+            startTimeMs: startTimeMs,
+            endTimeMs: endTimeMs,
+            limit: limit,
+            offset: offset,
+            orderDescending: orderDescending
+        )
+        
         do {
-            let records = try db.getLocationsBatch(limit: limit)
+            let records = try db.getLocationsBatch(query: rustQuery)
             return records.map { record in
                 return [
                     "uuid": String(record.id),
@@ -914,6 +932,7 @@ public final class TraceletSdk {
         let isMock = params["mock"] as? Bool ?? params["is_mock"] as? Bool ?? false
         let activityMap = params["activity"] as? [String: Any]
         let activity = activityMap?["type"] as? String ?? "unknown"
+        let timestamp = params["timestamp"] as? String
         
         do {
             let newRowId = try db.insertLocation(
@@ -925,7 +944,8 @@ public final class TraceletSdk {
                 altitude: altitude,
                 isMock: isMock,
                 activity: activity,
-                routeContext: rustEngineState?.getRouteContext()
+                routeContext: rustEngineState?.getRouteContext(),
+                timestampOverride: timestamp
             )
             return newRowId.description
         } catch {
@@ -953,7 +973,13 @@ public final class TraceletSdk {
             do {
                 let config = state.getConfig()
                 let batchSize = config.http.maxBatchSize
-                let records = try db.getLocationsBatch(limit: batchSize)
+                let records = try db.getLocationsBatch(query: LocationQuery(
+                    startTimeMs: nil,
+                    endTimeMs: nil,
+                    limit: batchSize,
+                    offset: nil,
+                    orderDescending: nil
+                ))
                 if records.isEmpty {
                     DispatchQueue.main.async { completion?([]) }
                     return

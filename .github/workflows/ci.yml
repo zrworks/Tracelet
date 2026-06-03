@@ -46,6 +46,10 @@ jobs:
         run: melos bootstrap
       - name: Check formatting
         run: melos run format
+      - name: Generate mock env for examples
+        run: |
+          echo "const supabaseUrl = 'https://dummy.supabase.co';" > example_supabase/lib/env.dart
+          echo "const supabaseAnonKey = 'dummy';" >> example_supabase/lib/env.dart
       - name: Analyze
         run: melos run analyze
       - name: Run Rust tests

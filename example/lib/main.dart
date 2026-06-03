@@ -629,7 +629,7 @@ class _DashboardPageState extends State<DashboardPage>
           http: const tl.HttpConfig(
             url: 'http://192.168.20.102:8099/locations',
             // ── New features ──
-            // (HTTP config goes here)
+            autoSyncDelay: 5000,
           ),
           audit: const tl.AuditConfig(enabled: true),
           security: const tl.SecurityConfig(encryptDatabase: true),

@@ -7586,6 +7586,11 @@ data class HttpConfig (
     var `retryBackoffCap`: kotlin.Int
     , 
     /**
+     * Delay in milliseconds before batching rapid location syncs (debounce time).
+     */
+    var `autoSyncDelay`: kotlin.Int
+    , 
+    /**
      * Optional list of PEM or DER encoded certificates for SSL pinning.
      */
     var `sslPinningCertificates`: List<kotlin.String>?
@@ -7614,6 +7619,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
         )
     }
@@ -7628,6 +7634,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.allocationSize(value.`maxRetries`) +
             FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
             FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
+            FfiConverterInt.allocationSize(value.`autoSyncDelay`) +
             FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`)
     )
 
@@ -7641,6 +7648,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.write(value.`maxRetries`, buf)
             FfiConverterInt.write(value.`retryBackoffBase`, buf)
             FfiConverterInt.write(value.`retryBackoffCap`, buf)
+            FfiConverterInt.write(value.`autoSyncDelay`, buf)
             FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
     }
 }

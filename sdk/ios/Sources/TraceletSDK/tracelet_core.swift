@@ -4724,6 +4724,10 @@ public struct HttpConfig: Equatable, Hashable {
      */
     public var retryBackoffCap: Int32
     /**
+     * Delay in milliseconds before batching rapid location syncs (debounce time).
+     */
+    public var autoSyncDelay: Int32
+    /**
      * Optional list of PEM or DER encoded certificates for SSL pinning.
      */
     public var sslPinningCertificates: [String]?
@@ -4759,6 +4763,9 @@ public struct HttpConfig: Equatable, Hashable {
          * Maximum backoff time in milliseconds for exponential retry.
          */retryBackoffCap: Int32, 
         /**
+         * Delay in milliseconds before batching rapid location syncs (debounce time).
+         */autoSyncDelay: Int32, 
+        /**
          * Optional list of PEM or DER encoded certificates for SSL pinning.
          */sslPinningCertificates: [String]?) {
         self.url = url
@@ -4770,6 +4777,7 @@ public struct HttpConfig: Equatable, Hashable {
         self.maxRetries = maxRetries
         self.retryBackoffBase = retryBackoffBase
         self.retryBackoffCap = retryBackoffCap
+        self.autoSyncDelay = autoSyncDelay
         self.sslPinningCertificates = sslPinningCertificates
     }
 
@@ -4798,6 +4806,7 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
                 maxRetries: FfiConverterInt32.read(from: &buf), 
                 retryBackoffBase: FfiConverterInt32.read(from: &buf), 
                 retryBackoffCap: FfiConverterInt32.read(from: &buf), 
+                autoSyncDelay: FfiConverterInt32.read(from: &buf), 
                 sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf)
         )
     }
@@ -4812,6 +4821,7 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.maxRetries, into: &buf)
         FfiConverterInt32.write(value.retryBackoffBase, into: &buf)
         FfiConverterInt32.write(value.retryBackoffCap, into: &buf)
+        FfiConverterInt32.write(value.autoSyncDelay, into: &buf)
         FfiConverterOptionSequenceString.write(value.sslPinningCertificates, into: &buf)
     }
 }

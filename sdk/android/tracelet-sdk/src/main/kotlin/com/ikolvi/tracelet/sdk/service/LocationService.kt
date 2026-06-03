@@ -597,6 +597,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     sdk.insertLocation(location)
                 }
             })
+            
+            // Register SyncProvider if initialized natively
+            sdk.syncProvider?.let { provider ->
+                if (provider is com.ikolvi.tracelet.sdk.location.LocationDataSink) {
+                    engine.registerSink(provider)
+                }
+            }
 
             // Speed, Accelerometer, or Smart motion detection setup
             val motionMode = config.getMotionDetectionMode()

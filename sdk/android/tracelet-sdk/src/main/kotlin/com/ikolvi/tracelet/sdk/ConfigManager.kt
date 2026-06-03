@@ -65,6 +65,7 @@ class ConfigManager(context: Context) {
         const val DEFAULT_MAX_BATCH_SIZE = 250
         const val DEFAULT_AUTO_SYNC = true
         const val DEFAULT_AUTO_SYNC_THRESHOLD = 0
+        const val DEFAULT_AUTO_SYNC_DELAY = 10000
         const val DEFAULT_SYNC_INTERVAL = 0
         const val DEFAULT_HTTP_TIMEOUT = 60000
         const val DEFAULT_HTTP_METHOD = 0 // POST
@@ -516,6 +517,9 @@ class ConfigManager(context: Context) {
 
     fun getAutoSyncThreshold(): Int =
         getInt("autoSyncThreshold", DEFAULT_AUTO_SYNC_THRESHOLD)
+
+    fun getAutoSyncDelay(): Int =
+        getInt("autoSyncDelay", DEFAULT_AUTO_SYNC_DELAY)
 
     fun getSyncInterval(): Int =
         getInt("syncInterval", DEFAULT_SYNC_INTERVAL)

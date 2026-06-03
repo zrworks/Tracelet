@@ -688,6 +688,7 @@ class MotionDetector(
                     consecutiveStillSamples++
                     if (consecutiveStillSamples == stillCount) {
                         Log.d(TAG, "[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
+                        stopAccelerometerMonitoring()
                         startStopTimeoutCountdown()
                     }
                 } else {

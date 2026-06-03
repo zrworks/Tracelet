@@ -175,6 +175,9 @@ pub struct HttpConfig {
     /// Maximum backoff time in milliseconds for exponential retry.
     #[serde(default = "default_retry_backoff_cap")]
     pub retry_backoff_cap: i32,
+    /// Delay in milliseconds before batching rapid location syncs (debounce time).
+    #[serde(default = "default_auto_sync_delay")]
+    pub auto_sync_delay: i32,
     /// Optional list of PEM or DER encoded certificates for SSL pinning.
     #[serde(default)]
     pub ssl_pinning_certificates: Option<Vec<String>>,
@@ -185,6 +188,7 @@ fn default_true() -> bool { true }
 fn default_max_retries() -> i32 { 3 }
 fn default_retry_backoff_base() -> i32 { 1000 }
 fn default_retry_backoff_cap() -> i32 { 10000 }
+fn default_auto_sync_delay() -> i32 { 10000 }
 
 /// Configuration for monitoring geographic boundaries.
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]

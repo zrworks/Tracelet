@@ -58,7 +58,7 @@ class MotionDetectorTest {
     }
 
     @Test
-    fun `sustained stillness starts stop timeout but keeps accelerometer running`() {
+    fun `sustained stillness starts stop timeout and stops accelerometer`() {
         val listener = getAccelerometerListener()
         assertNotNull(listener, "Accelerometer should be listening for stillness")
 
@@ -76,27 +76,9 @@ class MotionDetectorTest {
         // Timeout should be started
         assertNotNull(getStopTimeoutRunnable(), "Timeout should be started after sustained stillness")
         
-        // CRITICAL FIX TEST: Accelerometer should STILL be running!
-        assertNotNull(getAccelerometerListener(), "Accelerometer must NOT be shut down during the stop countdown")
-    }
-
-    @Test
-    fun `motion during stop timeout aborts the stop transition`() {
-        val listener = getAccelerometerListener()!!
-
-        // Send 25 samples to trigger the countdown
-        repeat(25) {
-            sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f))
-        }
-        assertNotNull(getStopTimeoutRunnable(), "Timeout should be started")
-
-        // Now simulate a bump (magnitude > 0.4)
-        // 9.81 + 1.0 = 10.81 (magnitude = 1.0 > 0.4 still threshold)
-        sendSensorEvent(listener, floatArrayOf(0f, 0f, 10.81f))
-
-        // Timeout should be cancelled!
-        assertNull(getStopTimeoutRunnable(), "Timeout should be cancelled because motion resumed")
-        assertTrue(state.isMoving, "State should remain moving")
+        // CRITICAL FIX TEST: Accelerometer should be SHUT DOWN during the stop countdown
+        // to prevent hyper-sensitive false-positive shake events from aborting the timeout!
+        assertNull(getAccelerometerListener(), "Accelerometer must be shut down during the stop countdown")
     }
 
     // =========================================================================

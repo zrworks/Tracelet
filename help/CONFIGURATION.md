@@ -97,6 +97,7 @@ final config = Config(
     batchSync: true,
     maxBatchSize: 250,
     autoSyncThreshold: 0,
+    autoSyncDelay: 10000,
     httpTimeout: 60000,
     locationsOrderDirection: LocationOrderDirection.ascending,
     disableAutoSyncOnCellular: false,
@@ -296,6 +297,7 @@ Configures the native HTTP Sync engine for local database uploads.
 | `batchSync` | `bool` | `false` | Send stored locations in a batch array within a single request. |
 | `maxBatchSize` | `int` | `250` | Maximum locations allowed in a single batch request (-1 for unlimited). |
 | `autoSyncThreshold` | `int` | `0` | Minimum locations required in the database before auto-sync is triggered. |
+| `autoSyncDelay` | `int` | `10000` | Delay in milliseconds to wait before triggering an auto-sync after a location is recorded. |
 | `httpTimeout` | `int` | `60000` | Upload request timeout in milliseconds. |
 | `locationsOrderDirection` | `LocationOrderDirection` | `ascending` | Sort direction for batch payloads: `ascending` (oldest first) or `descending`. |
 | `disableAutoSyncOnCellular` | `bool` | `false` | Restrict sync requests to Wi-Fi networks only. |

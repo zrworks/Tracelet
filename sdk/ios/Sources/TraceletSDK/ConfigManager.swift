@@ -203,6 +203,7 @@ public final class ConfigManager {
     public func getUrl() -> String { cache["url"] as? String ?? "" }
     public func getAutoSync() -> Bool { cache["autoSync"] as? Bool ?? true }
     public func getAutoSyncThreshold() -> Int { (cache["autoSyncThreshold"] as? NSNumber)?.intValue ?? 0 }
+    public func getAutoSyncDelay() -> Int { (cache["autoSyncDelay"] as? NSNumber)?.intValue ?? 10000 }
     public func getSyncInterval() -> Int { (cache["syncInterval"] as? NSNumber)?.intValue ?? 0 }
     public func getBatchSync() -> Bool { cache["batchSync"] as? Bool ?? false }
     public func getMaxBatchSize() -> Int {
@@ -368,6 +369,7 @@ public final class ConfigManager {
             "url": "",
             "autoSync": true,
             "autoSyncThreshold": 0,
+            "autoSyncDelay": 10000,
             "batchSync": false,
             "maxBatchSize": -1,
             "httpRootProperty": "location",

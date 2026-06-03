@@ -182,6 +182,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       final loc = await tl.Tracelet.getLastKnownLocation();
       if (loc != null) {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
+        if (!pos.isSafe) return;
         setState(() {
           _isMock = loc.isMock;
           _currentPosition = pos;
@@ -201,7 +202,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             ),
           );
         });
-        _mapController.move(pos, 16);
+        try {
+          _mapController.move(pos, 16);
+        } catch (_) {}
       }
       final fences = await tl.Tracelet.getGeofences();
       final zones = await tl.Tracelet.getPrivacyZones();
@@ -215,7 +218,10 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         _totalDistance = state.odometer;
         _kalmanEnabled = tl.Tracelet.isKalmanFilterEnabled;
       });
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      print("MapPage ERROR in _loadInitialState: $e");
+      print(stackTrace);
+    }
   }
 
   // ── Subscriptions ──────────────────────────────────────────────────────
@@ -224,6 +230,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     _subs.add(
       tl.Tracelet.onLocation((loc) {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
+        if (!pos.isSafe) return;
         setState(() {
           _isMock = loc.isMock;
           _currentPosition = pos;
@@ -273,6 +280,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     _subs.add(
       tl.Tracelet.onMotionChange((loc) {
         final pos = LatLng(loc.coords.latitude, loc.coords.longitude);
+        if (!pos.isSafe) return;
         setState(() {
           _isMoving = loc.isMoving;
           _isMock = loc.isMock;
@@ -551,11 +559,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         latSum += v.latitude;
         lngSum += v.longitude;
       }
+      final len = _polygonVertices.isNotEmpty ? _polygonVertices.length : 1;
       await tl.Tracelet.addGeofence(
         tl.Geofence(
           identifier: id,
-          latitude: latSum / _polygonVertices.length,
-          longitude: lngSum / _polygonVertices.length,
+          latitude: latSum / len,
+          longitude: lngSum / len,
           radius: 0,
           vertices: _polygonVertices
               .map((v) => [v.latitude, v.longitude])
@@ -597,13 +606,16 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       if (locs.isNotEmpty) {
         final points = locs
             .map((l) => LatLng(l.coords.latitude, l.coords.longitude))
+            .where((p) => p.isSafe)
             .toList();
-        _mapController.fitCamera(
-          CameraFit.bounds(
-            bounds: LatLngBounds.fromPoints(points),
-            padding: const EdgeInsets.all(50),
-          ),
-        );
+        if (points.isNotEmpty) {
+          _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: LatLngBounds.fromPoints(points),
+              padding: const EdgeInsets.all(50),
+            ),
+          );
+        }
         setState(() => _followMode = false);
       }
       if (mounted) {
@@ -985,10 +997,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     if (!_showPrivacyZones || _privacyZones.isEmpty) return [];
     final circles = <CircleMarker>[];
     for (final zone in _privacyZones) {
+      final pos = LatLng(zone.latitude, zone.longitude);
+      if (!pos.isSafe) continue;
       final isExclude = zone.action == tl.PrivacyZoneAction.exclude;
       circles.add(
         CircleMarker(
-          point: LatLng(zone.latitude, zone.longitude),
+          point: pos,
           radius: zone.radius,
           useRadiusInMeter: true,
           color: isExclude
@@ -1026,6 +1040,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         final points = gf.vertices
             .where((v) => v.length >= 2)
             .map((v) => LatLng(v[0], v[1]))
+            .where((p) => p.isSafe)
             .toList();
         if (points.length >= 3) {
           polygons.add(
@@ -1044,9 +1059,11 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           );
         }
       } else {
+        final pos = LatLng(gf.latitude, gf.longitude);
+        if (!pos.isSafe) continue;
         circles.add(
           CircleMarker(
-            point: LatLng(gf.latitude, gf.longitude),
+            point: pos,
             radius: gf.radius,
             useRadiusInMeter: true,
             color: fillColor,
@@ -2509,4 +2526,8 @@ class _MapEvent {
   final String title;
   final String subtitle;
   final DateTime time;
+}
+
+extension SafeLatLng on LatLng {
+  bool get isSafe => latitude.isFinite && longitude.isFinite;
 }

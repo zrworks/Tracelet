@@ -2669,7 +2669,7 @@ protocol TraceletHostApi {
   func addPrivacyZones(zones: [[String?: Any?]?], completion: @escaping (Result<Bool, Error>) -> Void)
   func removePrivacyZone(identifier: String, completion: @escaping (Result<Bool, Error>) -> Void)
   func removePrivacyZones(completion: @escaping (Result<Bool, Error>) -> Void)
-  func getPrivacyZones(completion: @escaping (Result<[[String?: Any?]?], Error>) -> Void)
+  func getPrivacyZones(completion: @escaping (Result<[Any?], Error>) -> Void)
   func isDatabaseEncrypted(completion: @escaping (Result<Bool, Error>) -> Void)
   func encryptDatabase(completion: @escaping (Result<Bool, Error>) -> Void)
   func getAttestationToken(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)

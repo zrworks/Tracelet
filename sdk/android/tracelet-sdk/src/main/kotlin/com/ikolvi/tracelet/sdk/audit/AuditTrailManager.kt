@@ -38,6 +38,10 @@ class AuditTrailManager(
         private const val KEY_LATEST_HASH = "latest_hash"
         private const val SEPARATOR = "|TRACELET_AUDIT|"
         private val HEX_CHARS = "0123456789abcdef".toCharArray()
+
+        /** Bump this whenever the hashing logic changes so stale chains auto-reset. */
+        private const val AUDIT_HASH_VERSION = 3
+        private const val KEY_HASH_VERSION = "audit_hash_version"
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -47,11 +51,24 @@ class AuditTrailManager(
         MessageDigest.getInstance("SHA-256")
     }
 
-    private val engine = uniffi.tracelet_core.AuditTrailEngine(
-        android.os.Build.FINGERPRINT,
-        prefs.getInt(KEY_CHAIN_INDEX, 0),
-        prefs.getString(KEY_LATEST_HASH, null)
-    )
+    private val engine: uniffi.tracelet_core.AuditTrailEngine
+
+    init {
+        // --- Migration: auto-reset chain if hash logic version changed ---
+        val storedVersion = prefs.getInt(KEY_HASH_VERSION, 0)
+        if (storedVersion < AUDIT_HASH_VERSION) {
+            android.util.Log.i("Tracelet", "AUDIT: hash logic upgraded (v$storedVersion → v$AUDIT_HASH_VERSION) — resetting chain")
+            prefs.edit().clear().apply()
+            try { rustDatabase?.clearAuditTrail() } catch (_: Exception) {}
+            prefs.edit().putInt(KEY_HASH_VERSION, AUDIT_HASH_VERSION).apply()
+        }
+
+        engine = uniffi.tracelet_core.AuditTrailEngine(
+            android.os.Build.FINGERPRINT,
+            prefs.getInt(KEY_CHAIN_INDEX, 0),
+            prefs.getString(KEY_LATEST_HASH, null)
+        )
+    }
 
     /** Current chain index (next record will get this index). */
     private var chainIndex: Int
@@ -96,7 +113,7 @@ class AuditTrailManager(
             previousHash,
             chainIndex,
             uniffi.tracelet_core.LocationRecord(
-                uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, odometer, isMoving
+                uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, isMoving
             )
         )
     }
@@ -120,21 +137,36 @@ class AuditTrailManager(
      *         to be merged into the location record, or `null` if audit is disabled.
      */
     fun appendToChain(locationMap: Map<String, Any?>): Map<String, Any?>? {
-        if (!isEnabled()) return null
+        if (!isEnabled()) {
+            android.util.Log.d("Tracelet", "AUDIT: appendToChain — audit disabled, skipping")
+            return null
+        }
 
         val uuid = locationMap["uuid"] as? String ?: return null
-        val latitude = (locationMap["latitude"] as? Number)?.toDouble() ?: 0.0
-        val longitude = (locationMap["longitude"] as? Number)?.toDouble() ?: 0.0
+        
+        // Coordinates are nested inside a "coords" sub-map (from enrichLocation)
+        @Suppress("UNCHECKED_CAST")
+        val coords = locationMap["coords"] as? Map<String, Any?> ?: emptyMap()
+        val latitude = (coords["latitude"] as? Number)?.toDouble()
+            ?: (locationMap["latitude"] as? Number)?.toDouble() ?: 0.0
+        val longitude = (coords["longitude"] as? Number)?.toDouble()
+            ?: (locationMap["longitude"] as? Number)?.toDouble() ?: 0.0
         val timestamp = locationMap["timestamp"]?.toString() ?: ""
-        val accuracy = (locationMap["accuracy"] as? Number)?.toDouble() ?: 0.0
-        val speed = (locationMap["speed"] as? Number)?.toDouble() ?: 0.0
-        val heading = (locationMap["heading"] as? Number)?.toDouble() ?: 0.0
-        val altitude = (locationMap["altitude"] as? Number)?.toDouble() ?: 0.0
-        val odometer = (locationMap["odometer"] as? Number)?.toDouble() ?: 0.0
-        val isMoving = (locationMap["is_moving"] ?: locationMap["isMoving"]) == true
+        val accuracy = (coords["accuracy"] as? Number)?.toDouble()
+            ?: (locationMap["accuracy"] as? Number)?.toDouble() ?: 0.0
+        val speed = (coords["speed"] as? Number)?.toDouble()
+            ?: (locationMap["speed"] as? Number)?.toDouble() ?: 0.0
+        val heading = (coords["heading"] as? Number)?.toDouble()
+            ?: (locationMap["heading"] as? Number)?.toDouble() ?: 0.0
+        val altitude = (coords["altitude"] as? Number)?.toDouble()
+            ?: (locationMap["altitude"] as? Number)?.toDouble() ?: 0.0
+        val odometer = 0.0
+        val activityMap = locationMap["activity"] as? Map<*, *>
+        val activityString = activityMap?.get("type")?.toString() ?: "unknown"
+        val isMoving = activityString != "still"
 
         val loc = uniffi.tracelet_core.LocationRecord(
-            uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, odometer, isMoving
+            uuid, latitude, longitude, timestamp, accuracy, speed, heading, altitude, isMoving
         )
         
         val result = engine.generateNextHash(loc)
@@ -142,6 +174,7 @@ class AuditTrailManager(
         // Store in audit_trail table
         try {
             rustDatabase?.insertAuditTrail(uuid, result.hash, result.previousHash, result.chainIndex)
+            android.util.Log.d("Tracelet", "AUDIT: appended chain index=${result.chainIndex} uuid=$uuid lat=$latitude lng=$longitude")
         } catch (e: Exception) {
             android.util.Log.e("Tracelet", "Failed to persist audit trail to Rust DB", e)
         }
@@ -179,17 +212,9 @@ class AuditTrailManager(
             )
         }
 
-        val locations = rustDatabase?.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
-            startTimeMs = null,
-            endTimeMs = null,
-            limit = 10000,
-            offset = null,
-            orderDescending = null
-        )) ?: emptyList()
-
         // Map sequential audit trail records to AuditRecordWithLocation structures
         val rustRecords = auditRecords.mapIndexed { index, auditRecord ->
-            val location = if (index >= 0 && index < locations.size) locations[index] else null
+            val location = rustDatabase?.getLocationForAudit(auditRecord.uuid)
             val hasLocation = location != null
 
             val loc = if (location != null) {
@@ -203,7 +228,6 @@ class AuditTrailManager(
                     speed = location.speed,
                     heading = location.heading,
                     altitude = location.altitude,
-                    odometer = 0.0, // Default to 0.0 as it is not stored in location_events schema
                     isMoving = location.activity != "still" // Deriving motion state from activity
                 )
             } else null
@@ -220,6 +244,11 @@ class AuditTrailManager(
         // Delegate cryptographic verification to the Rust engine
         val result = engine.verifyChain(rustRecords)
 
+        android.util.Log.i("Tracelet", "AUDIT: Full Audit Trail Dump:")
+        rustRecords.forEach { record ->
+            android.util.Log.i("Tracelet", "AUDIT: Record [index=${record.chainIndex}, uuid=${record.location?.uuid}, hash=${record.hash}, prevHash=${record.previousHash}]")
+        }
+
         val map = mutableMapOf<String, Any?>(
             "isValid" to result.isValid,
             "totalRecords" to result.totalRecords,
@@ -228,6 +257,11 @@ class AuditTrailManager(
         if (result.brokenAtIndex != null) { map["brokenAtIndex"] = result.brokenAtIndex }
         if (result.brokenAtUuid != null) { map["brokenAtUuid"] = result.brokenAtUuid }
         if (result.error != null) { map["error"] = result.error }
+
+        android.util.Log.i(
+            "Tracelet",
+            "AUDIT: verifyChain result: $map"
+        )
 
         return map
     }
@@ -244,15 +278,7 @@ class AuditTrailManager(
         val matchedRecord = auditRecords.find { it.uuid == uuid } ?: return null
         
         // Find the index of the audit record to pair with the location record at the same position
-        val recordIndex = auditRecords.indexOf(matchedRecord)
-        val locations = rustDatabase?.getLocationsBatch(uniffi.tracelet_core.LocationQuery(
-            startTimeMs = null,
-            endTimeMs = null,
-            limit = 10000,
-            offset = null,
-            orderDescending = null
-        )) ?: return null
-        val location = if (recordIndex >= 0 && recordIndex < locations.size) locations[recordIndex] else null
+        val location = rustDatabase?.getLocationForAudit(matchedRecord.uuid)
         
         return mapOf(
             "uuid" to matchedRecord.uuid,
@@ -273,7 +299,8 @@ class AuditTrailManager(
      * Resets the audit chain state (e.g. after [Tracelet.reset()]).
      */
     fun reset() {
-        prefs.edit().clear().apply()
+        prefs.edit().clear().putInt(KEY_HASH_VERSION, AUDIT_HASH_VERSION).apply()
+        try { rustDatabase?.clearAuditTrail() } catch (_: Exception) {}
         engine.resetState()
     }
 }

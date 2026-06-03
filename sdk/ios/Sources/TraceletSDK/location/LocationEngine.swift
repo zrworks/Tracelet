@@ -1260,14 +1260,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             let altitude = coords?["altitude"] as? Double ?? 0.0
             let isMock = location["mock"] as? Bool ?? location["is_mock"] as? Bool ?? false
             
+            let timestamp = location["timestamp"] as? String
+            
             _ = dispatcher.onLocationUpdate(
+                uuid: location["uuid"] as? String,
                 lat: lat,
                 lng: lng,
                 accuracy: accuracy,
                 speed: speed,
                 heading: heading,
                 altitude: altitude,
-                isMock: isMock
+                isMock: isMock,
+                timestamp: timestamp
             )
             
             // Still notify other sinks (like SyncSink) but skip TraceletDatabase to avoid duplicate inserts

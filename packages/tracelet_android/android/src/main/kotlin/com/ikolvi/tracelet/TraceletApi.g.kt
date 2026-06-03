@@ -2835,7 +2835,7 @@ interface TraceletHostApi {
   fun addPrivacyZones(zones: List<Map<String?, Any?>?>, callback: (Result<Boolean>) -> Unit)
   fun removePrivacyZone(identifier: String, callback: (Result<Boolean>) -> Unit)
   fun removePrivacyZones(callback: (Result<Boolean>) -> Unit)
-  fun getPrivacyZones(callback: (Result<List<Map<String?, Any?>?>>) -> Unit)
+  fun getPrivacyZones(callback: (Result<List<Any?>>) -> Unit)
   fun isDatabaseEncrypted(callback: (Result<Boolean>) -> Unit)
   fun encryptDatabase(callback: (Result<Boolean>) -> Unit)
   fun getAttestationToken(callback: (Result<Map<String?, Any?>?>) -> Unit)
@@ -4168,7 +4168,7 @@ interface TraceletHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPrivacyZones$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getPrivacyZones{ result: Result<List<Map<String?, Any?>?>> ->
+            api.getPrivacyZones{ result: Result<List<Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))

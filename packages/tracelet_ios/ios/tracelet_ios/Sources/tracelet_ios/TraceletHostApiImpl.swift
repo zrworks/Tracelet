@@ -773,7 +773,7 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(sdk.removePrivacyZones()))
     }
 
-    func getPrivacyZones(completion: @escaping (Result<[[String?: Any?]?], Error>) -> Void) {
+    func getPrivacyZones(completion: @escaping (Result<[Any?], Error>) -> Void) {
         completion(.success(sdk.getPrivacyZones()))
     }
 

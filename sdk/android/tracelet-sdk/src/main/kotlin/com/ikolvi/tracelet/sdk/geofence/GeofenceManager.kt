@@ -68,7 +68,6 @@ class GeofenceManager(
         if (cached != null) {
             return cached
         }
-        // Fetch all active geofences from the Rust core SQLite database
         val loaded = rustDatabase?.getGeofences() ?: emptyList()
         val mapped = loaded.map { mapFromCoreGeofence(it) }
         cachedGeofences = mapped

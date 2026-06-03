@@ -23,21 +23,41 @@ public final class AuditTrailManager {
     private let defaults = UserDefaults.standard
     private let prefsKey = "com.tracelet.audit"
 
+    /// Bump this version whenever the hashing logic changes.
+    /// On init, if the stored version doesn't match, the chain is
+    /// automatically reset so stale hashes don't cause false "broken" reports.
+    private static let auditHashVersion = 3
+    private static let auditHashVersionKey = "com.tracelet.audit.hashVersion"
+
     public init(database: TraceletDatabase, configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
         self.database = database
         self.configManager = configManager
         self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
-
-        // Restore persisted chain state from local UserDefaults
-        let prefs = defaults.dictionary(forKey: prefsKey) ?? [:]
-        let savedIndex = (prefs["chain_index"] as? NSNumber)?.intValue ?? 0
-        let savedHash = prefs["latest_hash"] as? String
 
         #if canImport(UIKit)
         let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown-device"
         #else
         let vendorId = "mac-host-device"
         #endif
+
+        // --- Migration: auto-reset chain if hash logic version changed ---
+        let storedVersion = defaults.integer(forKey: Self.auditHashVersionKey)
+        if storedVersion < Self.auditHashVersion {
+            NSLog("AuditTrailManager: hash logic upgraded (v\(storedVersion) → v\(Self.auditHashVersion)) — resetting chain")
+            database.deleteAllAuditRecords()
+            try? rustDatabase?.clearAuditTrail()
+            let genesisHash = computeGenesisHash(deviceId: vendorId)
+            defaults.set([
+                "chain_index": 0,
+                "latest_hash": genesisHash,
+            ], forKey: prefsKey)
+            defaults.set(Self.auditHashVersion, forKey: Self.auditHashVersionKey)
+        }
+
+        // Restore persisted chain state from local UserDefaults
+        let prefs = defaults.dictionary(forKey: prefsKey) ?? [:]
+        let savedIndex = (prefs["chain_index"] as? NSNumber)?.intValue ?? 0
+        let savedHash = prefs["latest_hash"] as? String
 
         // Initialize the Rust AuditTrailEngine with the restored state
         self.engine = AuditTrailEngine(
@@ -67,16 +87,12 @@ public final class AuditTrailManager {
 
         let uuid = locationMap["uuid"] as? String ?? ""
         let timestamp = locationMap["timestamp"] as? String ?? ""
-        let odometer = locationMap["odometer"] as? Double ?? 0.0
+        // Odometer is not persisted in location_events, so we must hash it as 0.0 to match verifyChain
+        let odometer = 0.0
 
-        let isMoving: Bool
-        if let moving = locationMap["is_moving"] as? Bool {
-            isMoving = moving
-        } else if let moving = (locationMap["is_moving"] as? NSNumber)?.intValue {
-            isMoving = moving == 1
-        } else {
-            isMoving = false
-        }
+        let activityDict = locationMap["activity"] as? [String: Any]
+        let activityString = activityDict?["type"] as? String ?? "unknown"
+        let isMoving = activityString != "still"
 
         // Reconstruct the LocationRecord FFI structure
         let loc = LocationRecord(
@@ -88,9 +104,10 @@ public final class AuditTrailManager {
             speed: speed,
             heading: heading,
             altitude: altitude,
-            odometer: odometer,
             isMoving: isMoving
         )
+
+        NSLog("AuditTrailManager: appendToChain [uuid=\(uuid), ts=\(timestamp), lat=\(lat), lng=\(lng), speed=\(speed), heading=\(heading), acc=\(accuracy), alt=\(altitude), isMoving=\(isMoving)]")
 
         // Delegate next hash generation to the Rust Core engine
         let result = engine.generateNextHash(loc: loc)
@@ -142,40 +159,22 @@ public final class AuditTrailManager {
         // Map audit blocks to AuditRecordWithLocation structures
         let rustRecords = auditRecords.map { auditRecord -> AuditRecordWithLocation in
             let uuid = auditRecord.uuid
-            let locationFlat = database.getLocationForAudit(uuid: uuid)
-            let hasLocation = locationFlat != nil
+            let location = try? rustDatabase?.getLocationForAudit(uuid: uuid)
+            let hasLocation = location != nil
 
             let loc: LocationRecord?
-            if let flat = locationFlat {
-                let coords = flat["coords"] as? [String: Any]
-                let lat = coords?["latitude"] as? Double ?? flat["latitude"] as? Double ?? 0.0
-                let lng = coords?["longitude"] as? Double ?? flat["longitude"] as? Double ?? 0.0
-                let altitude = coords?["altitude"] as? Double ?? flat["altitude"] as? Double ?? 0.0
-                let speed = coords?["speed"] as? Double ?? flat["speed"] as? Double ?? -1.0
-                let heading = coords?["heading"] as? Double ?? flat["heading"] as? Double ?? -1.0
-                let accuracy = coords?["accuracy"] as? Double ?? flat["accuracy"] as? Double ?? -1.0
-                let timestamp = flat["timestamp"] as? String ?? ""
-                let odometer = flat["odometer"] as? Double ?? 0.0
-                
-                let isMoving: Bool
-                if let moving = flat["is_moving"] as? Bool {
-                    isMoving = moving
-                } else if let moving = (flat["is_moving"] as? NSNumber)?.intValue {
-                    isMoving = moving == 1
-                } else {
-                    isMoving = false
-                }
+            if let flat = location {
+                let isMoving = flat.activity != "still" // Deriving motion state from activity
 
                 loc = LocationRecord(
                     uuid: uuid,
-                    latitude: lat,
-                    longitude: lng,
-                    timestamp: timestamp,
-                    accuracy: accuracy,
-                    speed: speed,
-                    heading: heading,
-                    altitude: altitude,
-                    odometer: odometer,
+                    latitude: flat.latitude,
+                    longitude: flat.longitude,
+                    timestamp: flat.timestamp,
+                    accuracy: flat.accuracy,
+                    speed: flat.speed,
+                    heading: flat.heading,
+                    altitude: flat.altitude,
                     isMoving: isMoving
                 )
             } else {
@@ -194,6 +193,15 @@ public final class AuditTrailManager {
         // Run full cryptographic chain audit verification in Rust Core
         let result = engine.verifyChain(records: rustRecords)
 
+        NSLog("AuditTrailManager: Full Audit Trail Dump:")
+        for record in rustRecords {
+            if let loc = record.location {
+                NSLog("AuditTrailManager: Record [index=\(record.chainIndex), uuid=\(loc.uuid), hash=\(record.hash), prevHash=\(record.previousHash), ts=\(loc.timestamp), speed=\(loc.speed), heading=\(loc.heading), acc=\(loc.accuracy), isMoving=\(loc.isMoving)]")
+            } else {
+                NSLog("AuditTrailManager: Record [index=\(record.chainIndex), NO LOCATION, hash=\(record.hash), prevHash=\(record.previousHash)]")
+            }
+        }
+
         var map: [String: Any] = [
             "is_valid": result.isValid,
             "total_records": result.totalRecords,
@@ -209,6 +217,8 @@ public final class AuditTrailManager {
             map["error"] = err
         }
 
+        NSLog("AuditTrailManager: verifyChain result: \(map)")
+
         return map
     }
 
@@ -217,26 +227,27 @@ public final class AuditTrailManager {
     public func getProof(uuid: String) -> [String: Any]? {
         let auditRecords = (try? rustDatabase?.getAuditTrail()) ?? []
         guard let matchedRecord = auditRecords.first(where: { $0.uuid == uuid }) else { return nil }
-        let location = database.getLocationForAudit(uuid: uuid)
+        let location = try? rustDatabase?.getLocationForAudit(uuid: uuid)
 
         return [
             "uuid": matchedRecord.uuid,
             "hash": matchedRecord.auditHash,
             "previous_hash": matchedRecord.auditPreviousHash,
             "chain_index": Int(matchedRecord.auditChainIndex),
-            "timestamp": location?["timestamp"] as? String ?? "",
-            "latitude": location?["latitude"] as? Double ?? 0.0,
-            "longitude": location?["longitude"] as? Double ?? 0.0,
-            "accuracy": location?["accuracy"] as? Double ?? 0.0,
-            "speed": location?["speed"] as? Double ?? 0.0,
-            "heading": location?["heading"] as? Double ?? 0.0,
-            "altitude": location?["altitude"] as? Double ?? 0.0,
+            "timestamp": location?.timestamp ?? "",
+            "latitude": location?.latitude ?? 0.0,
+            "longitude": location?.longitude ?? 0.0,
+            "accuracy": location?.accuracy ?? 0.0,
+            "speed": location?.speed ?? 0.0,
+            "heading": location?.heading ?? 0.0,
+            "altitude": location?.altitude ?? 0.0,
         ]
     }
 
     /// Resets the cryptographic chain state and clears local logs.
     public func reset() {
         database.deleteAllAuditRecords()
+        try? rustDatabase?.clearAuditTrail()
         engine.resetState()
         
         let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown-device"

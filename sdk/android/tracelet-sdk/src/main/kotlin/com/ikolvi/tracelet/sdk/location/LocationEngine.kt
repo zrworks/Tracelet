@@ -90,7 +90,7 @@ class LocationEngine(
     }
 
     private val fusedClient: TraceletLocationClient =
-        TraceletServices.getProvider().getLocationClient(context)
+        TraceletServices.getProvider(context).getLocationClient(context)
 
     private var trackingCallback: TraceletLocationCallback? = null
 

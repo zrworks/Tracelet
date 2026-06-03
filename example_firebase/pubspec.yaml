@@ -12,7 +12,9 @@ dependencies:
     sdk: flutter
 
   tracelet:
+    path: ../packages/tracelet
   tracelet_firebase:
+    path: ../packages/tracelet_firebase
 
   firebase_core: ^4.9.0
   firebase_auth: ^6.5.1

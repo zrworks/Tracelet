@@ -19,8 +19,14 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.11.1" apply false
-    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+    id("com.android.application") version "8.13.2" apply false
+    id("org.jetbrains.kotlin.android") version "2.3.10" apply false
+}
+
+includeBuild("../../sdk/android") {
+    dependencySubstitution {
+        substitute(module("com.ikolvi:tracelet-sdk")).using(project(":tracelet-sdk"))
+    }
 }
 
 include(":app")

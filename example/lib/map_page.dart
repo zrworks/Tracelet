@@ -219,8 +219,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         _kalmanEnabled = tl.Tracelet.isKalmanFilterEnabled;
       });
     } catch (e, stackTrace) {
-      print("MapPage ERROR in _loadInitialState: $e");
-      print(stackTrace);
+      debugPrint('MapPage ERROR in _loadInitialState: $e');
+      debugPrint(stackTrace.toString());
     }
   }
 

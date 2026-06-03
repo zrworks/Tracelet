@@ -802,16 +802,25 @@ class _DashboardPageState extends State<DashboardPage>
     final query = tl.SQLQuery(start: t2, end: t3);
     final locations = await tl.Tracelet.getLocations(query);
 
-    _addLog('TEST_SQL', 'Locations found for window [T2, T3]: ${locations.length}');
+    _addLog(
+      'TEST_SQL',
+      'Locations found for window [T2, T3]: ${locations.length}',
+    );
     for (final loc in locations) {
-      _addLog('TEST_SQL', ' - Point: ${loc.coords.latitude}, ${loc.coords.longitude} at ${loc.timestamp}');
+      _addLog(
+        'TEST_SQL',
+        ' - Point: ${loc.coords.latitude}, ${loc.coords.longitude} at ${loc.timestamp}',
+      );
     }
 
     final carbonReport = await tl.Tracelet.getCarbonReport({
       'from': t2.millisecondsSinceEpoch,
       'to': t3.millisecondsSinceEpoch,
     });
-    _addLog('TEST_SQL', 'Carbon emitted for [T2, T3]: ${carbonReport['totalCarbonGrams']}g');
+    _addLog(
+      'TEST_SQL',
+      'Carbon emitted for [T2, T3]: ${carbonReport['totalCarbonGrams']}g',
+    );
   }
 
   Future<void> _start() async {
@@ -841,7 +850,9 @@ class _DashboardPageState extends State<DashboardPage>
       _addLog('TEST_LOGS', 'Retrieving logs...');
       final logs = await tl.Tracelet.getLog();
       // Only log the first 200 characters to avoid huge UI stalls if logs are large
-      final displayLogs = logs.length > 500 ? '${logs.substring(0, 500)}...' : logs;
+      final displayLogs = logs.length > 500
+          ? '${logs.substring(0, 500)}...'
+          : logs;
       _addLog('TEST_LOGS', 'Retrieved logs:\n$displayLogs');
     } catch (e) {
       _addLog('ERROR', 'testLogs() failed: $e');
@@ -854,19 +865,21 @@ class _DashboardPageState extends State<DashboardPage>
       _addLog('TEST_INSERT', 'Starting Test: insertLocation Return Value');
       final resultId = await tl.Tracelet.insertLocation({
         'timestamp': DateTime.now().toIso8601String(),
-        'coords': {
-          'latitude': 45.0,
-          'longitude': 5.0,
-          'accuracy': 10.0,
-        },
+        'coords': {'latitude': 45.0, 'longitude': 5.0, 'accuracy': 10.0},
       });
       _addLog('TEST_INSERT', 'Inserted Location ID returned: "$resultId"');
 
-      if (resultId.isNotEmpty && resultId != "success") {
+      if (resultId.isNotEmpty && resultId != 'success') {
         final isDeleted = await tl.Tracelet.destroyLocation(resultId);
-        _addLog('TEST_INSERT', 'Was custom location successfully deleted? $isDeleted');
+        _addLog(
+          'TEST_INSERT',
+          'Was custom location successfully deleted? $isDeleted',
+        );
       } else {
-        _addLog('TEST_INSERT', 'Skipped deletion due to invalid/legacy ID: "$resultId"');
+        _addLog(
+          'TEST_INSERT',
+          'Skipped deletion due to invalid/legacy ID: "$resultId"',
+        );
       }
     } catch (e) {
       _addLog('ERROR', '_testInsertLocationAndDestroy failed: $e');
@@ -3773,8 +3786,16 @@ class _DashboardPageState extends State<DashboardPage>
                       _Chip('Geofences Only', Icons.fence, _startGeofences),
                       _Chip('Get State', Icons.info_outline, _getState),
                       _Chip('Test Logs', Icons.bug_report, _testLogs),
-                      _Chip('Test insertLocation', Icons.add_location, _testInsertLocationAndDestroy),
-                      _Chip('Test SQL/Carbon', Icons.date_range, _testSqlQueryAndCarbonReport),
+                      _Chip(
+                        'Test insertLocation',
+                        Icons.add_location,
+                        _testInsertLocationAndDestroy,
+                      ),
+                      _Chip(
+                        'Test SQL/Carbon',
+                        Icons.date_range,
+                        _testSqlQueryAndCarbonReport,
+                      ),
                       _Chip('Live Map', Icons.map, () {
                         Navigator.push(
                           context,

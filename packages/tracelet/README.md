@@ -20,6 +20,9 @@
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
 > [!IMPORTANT]
+> **Tracelet 3.2.0**: The SQLCipher dependency is no longer required for database encryption (Tracelet Core now natively uses AES-GCM in Rust, reducing APK size by ~16MB). Additionally, HTTP sync logic has been moved to the `tracelet_sync` module, which must now be included if you require network synchronization.
+
+> [!IMPORTANT]
 > **Tracelet 2.0.0 Migration**: This version introduces breaking changes on Android (optional GMS/Enterprise dependencies). See the [Native SDK Guide](../../help/NATIVE-SDK.md) and the new [Rust Core Architecture](../../help/RUST-CORE.md) for installation and internal details.
 
 ---

@@ -78,9 +78,11 @@ class SmartMotionCoordinator(
      * Called when the user manually forces the pace via changePace().
      */
     fun onManualPaceChange(isMoving: Boolean) {
-        coreCoordinator.onAccelStateChange(isMoving)
-        val action = coreCoordinator.onSpeedStateChange(isMoving)
-        handleAction(action)
+        val accelAction = coreCoordinator.onAccelStateChange(isMoving)
+        handleAction(accelAction)
+        
+        val speedAction = coreCoordinator.onSpeedStateChange(isMoving)
+        handleAction(speedAction)
     }
     
     /**

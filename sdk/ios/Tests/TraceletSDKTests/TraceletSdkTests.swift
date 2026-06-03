@@ -237,7 +237,7 @@ final class TraceletSdkTests: XCTestCase {
     // MARK: - Database (in-memory)
 
     func testDatabaseInsertAndRetrieve() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let uuid = db.insertLocation([
             "uuid": "test-uuid-1",
@@ -257,7 +257,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDatabaseCount() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         XCTAssertEqual(db.getLocationCount(), 0)
 
@@ -278,7 +278,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDatabaseDeleteAll() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let _ = db.insertLocation([
             "uuid": "del-1",
@@ -293,7 +293,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDatabaseDeleteByUuid() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let _ = db.insertLocation([
             "uuid": "keep-me",
@@ -314,7 +314,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDatabaseGeofenceCRUD() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let added = db.insertGeofence([
             "identifier": "office",
@@ -342,7 +342,7 @@ final class TraceletSdkTests: XCTestCase {
     /// the Android fix: geofence `extras` must round-trip through the DB as a
     /// Map, not be serialized via a toString()-like fallback.
     func testDatabaseGeofenceExtrasRoundTrip() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let _ = db.insertGeofence([
             "identifier": "extras_zone",
@@ -370,7 +370,7 @@ final class TraceletSdkTests: XCTestCase {
     /// Regression test for iOS parity: location `extras` must also round-trip
     /// faithfully as a Map through the DB.
     func testDatabaseLocationExtrasRoundTrip() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let _ = db.insertLocation([
             "uuid": "extras-loc-1",
@@ -389,7 +389,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDatabaseLogCRUD() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         db.insertLog(level: "info", message: "Test log entry")
         db.insertLog(level: "error", message: "Test error")
@@ -465,7 +465,7 @@ final class TraceletSdkTests: XCTestCase {
     // MARK: - Database — deleteSyncedLocations
 
     func testDeleteSyncedLocationsRemovesOnlySyncedRows() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let uuid1 = db.insertLocation([
             "uuid": "sync-1",
@@ -496,7 +496,7 @@ final class TraceletSdkTests: XCTestCase {
     }
 
     func testDeleteSyncedLocationsReturnsZeroWhenNoneSynced() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         let _ = db.insertLocation([
             "uuid": "not-synced",

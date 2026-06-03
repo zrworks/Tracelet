@@ -304,4 +304,27 @@ mod tests {
         assert_eq!(location.get("uuid").and_then(Value::as_str), Some("test-uuid-1234"));
         assert_eq!(location.get("id").and_then(Value::as_i64), Some(1));
     }
+
+    #[test]
+    fn test_build_sync_payload_merges_route_context_audit_hash() {
+        let config = get_test_config(true);
+        let mut record = get_test_record();
+        
+        // Inject an audit_hash into the route_context (simulating iOS/Android behaviour)
+        record.route_context = Some(r#"{"custom":"{app: tracelet-example}","audit_hash":"hash123","audit_chain_index":42}"#.to_string());
+        
+        let records = vec![record];
+        let payload = SyncManager::build_sync_payload(&config, &records);
+        
+        let locations = payload.get("location").expect("Missing 'location' array in payload")
+            .as_array().expect("'location' should be an array");
+            
+        assert_eq!(locations.len(), 1);
+        let first_loc = &locations[0];
+        
+        // The audit_hash should be merged directly into the location JSON object
+        assert_eq!(first_loc.get("audit_hash").and_then(Value::as_str), Some("hash123"), "audit_hash was not merged into the sync payload!");
+        assert_eq!(first_loc.get("audit_chain_index").and_then(Value::as_i64), Some(42), "audit_chain_index was not merged into the sync payload!");
+        assert_eq!(first_loc.get("custom").and_then(Value::as_str), Some("{app: tracelet-example}"));
+    }
 }

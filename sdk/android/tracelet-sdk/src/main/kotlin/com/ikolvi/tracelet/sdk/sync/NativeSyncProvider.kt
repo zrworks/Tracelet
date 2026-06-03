@@ -48,8 +48,38 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 sdk.logger.debug("NativeSyncProvider: Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
 
-                val count = syncManager.syncBatchBlocking(coreHttp, records)
-                if (count > 0) {
+                val syncConfig = uniffi.tracelet_sync.SyncHttpConfig(
+                    url = coreHttp.url,
+                    method = coreHttp.method,
+                    headers = coreHttp.headers,
+                    batchSync = coreHttp.batchSync,
+                    maxBatchSize = coreHttp.maxBatchSize,
+                    autoSync = coreHttp.autoSync,
+                    maxRetries = coreHttp.maxRetries,
+                    retryBackoffBase = coreHttp.retryBackoffBase,
+                    retryBackoffCap = coreHttp.retryBackoffCap,
+                    sslPinningCertificates = coreHttp.sslPinningCertificates
+                )
+
+                val syncRecords = records.map {
+                    uniffi.tracelet_sync.SyncLocationRecord(
+                        id = it.id,
+                        uuid = it.uuid,
+                        timestamp = it.timestamp,
+                        latitude = it.latitude,
+                        longitude = it.longitude,
+                        accuracy = it.accuracy,
+                        speed = it.speed,
+                        heading = it.heading,
+                        altitude = it.altitude,
+                        isMock = it.isMock,
+                        activity = it.activity,
+                        routeContext = it.routeContext
+                    )
+                }
+
+                val count = syncManager.syncBatchBlocking(syncConfig, syncRecords)
+                if (count > 0U) {
                     records.lastOrNull()?.id?.let { lastId ->
                         db.clearLocationsUpTo(lastId)
                         sdk.logger.info("NativeSyncProvider: Synced and cleared $count locations.")
@@ -62,6 +92,34 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
     }
 
     override fun syncBatchBlocking(config: uniffi.tracelet_core.HttpConfig, records: List<uniffi.tracelet_core.DbLocationRecord>): Long {
-        return syncManager.syncBatchBlocking(config, records).toLong()
+        val syncConfig = uniffi.tracelet_sync.SyncHttpConfig(
+            url = config.url,
+            method = config.method,
+            headers = config.headers,
+            batchSync = config.batchSync,
+            maxBatchSize = config.maxBatchSize,
+            autoSync = config.autoSync,
+            maxRetries = config.maxRetries,
+            retryBackoffBase = config.retryBackoffBase,
+            retryBackoffCap = config.retryBackoffCap,
+            sslPinningCertificates = config.sslPinningCertificates
+        )
+        val syncRecords = records.map {
+            uniffi.tracelet_sync.SyncLocationRecord(
+                id = it.id,
+                uuid = it.uuid,
+                timestamp = it.timestamp,
+                latitude = it.latitude,
+                longitude = it.longitude,
+                accuracy = it.accuracy,
+                speed = it.speed,
+                heading = it.heading,
+                altitude = it.altitude,
+                isMock = it.isMock,
+                activity = it.activity,
+                routeContext = it.routeContext
+            )
+        }
+        return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
     }
 }

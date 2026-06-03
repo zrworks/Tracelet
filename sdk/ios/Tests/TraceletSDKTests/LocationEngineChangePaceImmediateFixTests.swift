@@ -11,7 +11,7 @@ import XCTest
 final class LocationEngineChangePaceImmediateFixTests: XCTestCase {
 
     private func makeEngine() -> (LocationEngine, RecordingLocationManager) {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         let state = StateManager()
         let sender = NoopEventSender()
@@ -19,7 +19,6 @@ final class LocationEngineChangePaceImmediateFixTests: XCTestCase {
             configManager: config,
             stateManager: state,
             eventDispatcher: sender,
-            database: db
         )
         let recorder = RecordingLocationManager()
         engine.locationManager = recorder

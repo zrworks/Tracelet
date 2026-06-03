@@ -780,11 +780,11 @@ class TraceletHostApiImpl: TraceletHostApi {
     // MARK: - Enterprise: Encrypted Database
 
     func isDatabaseEncrypted(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.database.isDatabaseEncrypted()))
+        completion(.success(sdk.isDatabaseEncrypted()))
     }
 
     func encryptDatabase(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(sdk.database.encryptDatabase()))
+        completion(.success(sdk.encryptDatabase()))
     }
 
     // MARK: - Enterprise: Device Attestation

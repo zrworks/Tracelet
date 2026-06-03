@@ -1263,41 +1263,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         // Skip provider change records if disabled
         if event == "providerchange" && configManager.getDisableProviderChangeRecord() { return }
 
-        // Route through Rust PluginEventDispatcher for DB persistence + auto HTTP sync
-        if let dispatcher = rustPluginEventDispatcher {
-            let coords = location["coords"] as? [String: Any]
-            let lat = coords?["latitude"] as? Double ?? 0.0
-            let lng = coords?["longitude"] as? Double ?? 0.0
-            let accuracy = coords?["accuracy"] as? Double ?? 0.0
-            let speed = coords?["speed"] as? Double ?? 0.0
-            let heading = coords?["heading"] as? Double ?? 0.0
-            let altitude = coords?["altitude"] as? Double ?? 0.0
-            let isMock = location["mock"] as? Bool ?? location["is_mock"] as? Bool ?? false
-            
-            let timestamp = location["timestamp"] as? String
-            
-            _ = dispatcher.onLocationUpdate(
-                uuid: location["uuid"] as? String,
-                lat: lat,
-                lng: lng,
-                accuracy: accuracy,
-                speed: speed,
-                heading: heading,
-                altitude: altitude,
-                isMock: isMock,
-                timestamp: timestamp
-            )
-            
-            // Still notify other sinks (like SyncSink) but skip TraceletDatabase to avoid duplicate inserts
-            self.sinks.forEach { sink in
-                if String(describing: type(of: sink)) != "TraceletDatabase" {
-                    sink.insertLocation(location)
-                }
-            }
-        } else {
-            self.sinks.forEach { $0.insertLocation(location) }
-            self.onLocationPersisted?()
-        }
+        // Route through Native Sinks for DB persistence + auto HTTP sync
+        self.sinks.forEach { $0.insertLocation(location) }
 
         // Notify HTTP sync manager (if wired) so auto-sync can fire.
         onLocationPersisted?()

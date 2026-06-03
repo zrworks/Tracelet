@@ -5,7 +5,7 @@ import Foundation
 /// Respects configured log level. Provides getLog, pruneOldLogs, and email export.
 public final class TraceletLogger {
     private let configManager: ConfigManager
-    private let database: TraceletDatabase
+    public var rustDatabase: DatabaseManager? = nil
 
     /// Log levels: OFF(0), ERROR(1), WARNING(2), INFO(3), DEBUG(4), VERBOSE(5)
     enum Level: Int, Comparable {
@@ -38,9 +38,8 @@ public final class TraceletLogger {
         }
     }
 
-    public init(configManager: ConfigManager, database: TraceletDatabase) {
+    public init(configManager: ConfigManager) {
         self.configManager = configManager
-        self.database = database
     }
 
     // MARK: - Logging methods
@@ -73,21 +72,31 @@ public final class TraceletLogger {
 
     // MARK: - Query
 
-    public func getLog(query: [String: Any]? = nil) -> [[String: Any]] {
-        return database.getLogs(query: query)
+    public func getLog(query: [String: Any]? = nil) -> String {
+        do {
+            let limit = (query?["limit"] as? NSNumber)?.int32Value ?? 500
+            let logs = try rustDatabase?.getLogs(limit: limit) ?? []
+            return logs.map { "[\($0.timestamp)] [\($0.level)] \($0.message)" }.joined(separator: "\n")
+        } catch {
+            return "Failed to retrieve logs: \(error.localizedDescription)"
+        }
     }
 
     public func getLogForEmail() -> String {
-        return database.getLogForEmail()
+        return getLog(query: ["limit": 2000])
     }
 
     public func destroyLog() -> Bool {
-        return database.deleteAllLogs()
+        do {
+            try rustDatabase?.clearLogs()
+            return true
+        } catch {
+            return false
+        }
     }
 
     public func pruneOldLogs() {
-        let maxDays = configManager.getLogMaxDays()
-        database.pruneOldLogs(maxDays: maxDays)
+        // Not implemented
     }
 
     // MARK: - Core
@@ -102,6 +111,11 @@ public final class TraceletLogger {
         NSLog("[Tracelet] [\(level.label)] \(message)")
 
         // SQLite log
-        database.insertLog(level: level.label, message: message, source: source)
+        do {
+            try rustDatabase?.insertLog(level: level.label, message: message, source: source)
+        } catch {
+            NSLog("[Tracelet] Failed to persist log to Rust Database: \(error.localizedDescription)")
+        }
     }
 }
+

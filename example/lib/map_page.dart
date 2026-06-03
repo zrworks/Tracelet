@@ -1861,13 +1861,15 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       final taskId = await tl.Tracelet.startBackgroundTask();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('WakeLock acquired (Task $taskId). Sleeping 20s...')),
+          SnackBar(
+            content: Text('WakeLock acquired (Task $taskId). Sleeping 20s...'),
+          ),
         );
       }
-      
+
       // Simulate heavy background work
       await Future.delayed(const Duration(seconds: 20));
-      
+
       await tl.Tracelet.stopBackgroundTask(taskId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1876,15 +1878,14 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('WakeLock error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('WakeLock error: $e')));
       }
     }
   }
 
   // ── Build ──────────────────────────────────────────────────────────────
-
 
   @override
   Widget build(BuildContext context) {

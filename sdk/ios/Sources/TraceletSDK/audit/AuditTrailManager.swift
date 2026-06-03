@@ -15,7 +15,6 @@ import UIKit
 /// and matches each block's UUID with its corresponding spatial coordinates retrieved
 /// from the native SQLite database.
 public final class AuditTrailManager {
-    private let database: TraceletDatabase
     private let configManager: ConfigManager
     private let rustDatabase: DatabaseManager?
     private let engine: AuditTrailEngine
@@ -29,8 +28,7 @@ public final class AuditTrailManager {
     private static let auditHashVersion = 3
     private static let auditHashVersionKey = "com.tracelet.audit.hashVersion"
 
-    public init(database: TraceletDatabase, configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
-        self.database = database
+    public init(configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
         self.configManager = configManager
         self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
 
@@ -44,7 +42,6 @@ public final class AuditTrailManager {
         let storedVersion = defaults.integer(forKey: Self.auditHashVersionKey)
         if storedVersion < Self.auditHashVersion {
             NSLog("AuditTrailManager: hash logic upgraded (v\(storedVersion) → v\(Self.auditHashVersion)) — resetting chain")
-            database.deleteAllAuditRecords()
             try? rustDatabase?.clearAuditTrail()
             let genesisHash = computeGenesisHash(deviceId: vendorId)
             defaults.set([
@@ -111,14 +108,6 @@ public final class AuditTrailManager {
 
         // Delegate next hash generation to the Rust Core engine
         let result = engine.generateNextHash(loc: loc)
-
-        // Double persist: Write to native iOS SQLite DB
-        database.insertAuditRecord(
-            uuid: uuid,
-            hash: result.hash,
-            previousHash: result.previousHash,
-            chainIndex: Int(result.chainIndex)
-        )
 
         // Write to the shared Rust Core SQLite engine
         do {
@@ -246,7 +235,6 @@ public final class AuditTrailManager {
 
     /// Resets the cryptographic chain state and clears local logs.
     public func reset() {
-        database.deleteAllAuditRecords()
         try? rustDatabase?.clearAuditTrail()
         engine.resetState()
         

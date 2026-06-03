@@ -22,6 +22,7 @@ pub struct SyncHttpConfig {
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct SyncLocationRecord {
     pub id: i64,
+    pub uuid: Option<String>,
     pub timestamp: String,
     pub latitude: f64,
     pub longitude: f64,
@@ -97,6 +98,7 @@ impl SyncManager {
             let json_records: Vec<_> = records.iter().map(|r| {
                 let mut base_json = json!({
                     "id": r.id,
+                    "uuid": r.uuid,
                     "timestamp": r.timestamp,
                     "coords": {
                         "latitude": r.latitude,
@@ -129,6 +131,7 @@ impl SyncManager {
             let r = records.last().unwrap();
             let mut base_json = json!({
                 "id": r.id,
+                "uuid": r.uuid,
                 "timestamp": r.timestamp,
                 "coords": {
                     "latitude": r.latitude,

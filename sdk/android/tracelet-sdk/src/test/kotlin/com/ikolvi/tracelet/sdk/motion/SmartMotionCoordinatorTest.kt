@@ -45,7 +45,8 @@ class SmartMotionCoordinatorTest {
         state.isMoving = false
         state.trackingMode = TrackingMode.PERIODIC
 
-        coordinator = SmartMotionCoordinator(context, config, state, eventSender, locationEngine, motionDetector)
+        val logger = mock(com.ikolvi.tracelet.sdk.util.TraceletLogger::class.java)
+        coordinator = SmartMotionCoordinator(context, config, state, eventSender, locationEngine, motionDetector, logger)
         coordinator.syncCurrentMode()
     }
 

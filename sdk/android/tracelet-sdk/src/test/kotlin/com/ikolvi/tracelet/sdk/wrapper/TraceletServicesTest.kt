@@ -17,10 +17,10 @@ class TraceletServicesTest {
     fun testDefaultProviderSelection() {
         // In a Robolectric environment without GMS on the classpath, 
         // it should fall back to AospServicesProvider.
-        val provider = TraceletServices.getProvider()
+        val provider = TraceletServices.getProvider(context)
         assertNotNull(provider)
         
-        if (TraceletServices.isGmsAvailable) {
+        if (TraceletServices.isGmsAvailable(context)) {
             // If GMS happens to be on the classpath in the test environment
             assertIs<PlayServicesProvider>(provider)
         } else {
@@ -38,7 +38,7 @@ class TraceletServicesTest {
         }
 
         TraceletServices.setProvider(customProvider)
-        val provider = TraceletServices.getProvider()
+        val provider = TraceletServices.getProvider(context)
         
         assertIs<TraceletServicesProvider>(provider)
         // Verify it's exactly our custom provider

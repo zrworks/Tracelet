@@ -99,27 +99,43 @@ interface TraceletServicesProvider {
 object TraceletServices {
     private var provider: TraceletServicesProvider? = null
 
-    val isGmsAvailable: Boolean by lazy {
-        try {
+    /**
+     * Checks if GMS classes are compiled in AND if GMS is actually 
+     * active on the physical device at runtime.
+     */
+    fun isGmsAvailable(context: Context): Boolean {
+        return try {
+            // 1. Verify GMS SDK classes are compiled
             Class.forName("com.google.android.gms.location.LocationServices")
-            true
+            
+            // 2. Verify GMS framework is active on the device using Reflection 
+            // to avoid NoClassDefFoundError if play-services-base is excluded
+            val apiAvailabilityClass = Class.forName("com.google.android.gms.common.GoogleApiAvailability")
+            val getInstanceMethod = apiAvailabilityClass.getMethod("getInstance")
+            val availabilityInstance = getInstanceMethod.invoke(null)
+            
+            val isAvailableMethod = apiAvailabilityClass.getMethod("isGooglePlayServicesAvailable", Context::class.java)
+            val resultCode = isAvailableMethod.invoke(availabilityInstance, context) as Int
+            
+            // ConnectionResult.SUCCESS is 0
+            resultCode == 0
         } catch (e: Throwable) {
             false
         }
     }
 
-    fun getInstance(context: Context): TraceletServicesProvider = getProvider()
+    fun getInstance(context: Context): TraceletServicesProvider = getProvider(context)
 
-    fun getProvider(): TraceletServicesProvider {
+    fun getProvider(context: Context): TraceletServicesProvider {
         if (provider == null) {
             provider = try {
-                if (isGmsAvailable) {
-                    Log.i("TraceletServices", "GMS Location classes detected. Attempting to load PlayServicesProvider.")
+                if (isGmsAvailable(context)) {
+                    Log.i("TraceletServices", "GMS Location classes detected & active on device. Loading PlayServicesProvider.")
                     Class.forName("com.ikolvi.tracelet.sdk.wrapper.PlayServicesProvider")
                         .getDeclaredConstructor()
                         .newInstance() as TraceletServicesProvider
                 } else {
-                    Log.i("TraceletServices", "GMS Location NOT detected. Using AOSP fallback.")
+                    Log.i("TraceletServices", "GMS Location NOT available on device. Using AOSP fallback.")
                     AospServicesProvider()
                 }
             } catch (e: Throwable) {

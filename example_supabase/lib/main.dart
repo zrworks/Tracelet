@@ -3,15 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracelet/tracelet.dart';
 import 'package:tracelet_supabase/tracelet_supabase.dart';
 
-// Replace these with your actual Supabase project credentials
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+import 'env.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Initialize Supabase
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+  // 1.5 Sign in anonymously before configuring Tracelet so we have a valid JWT
+  await Supabase.instance.client.auth.signInAnonymously();
 
   // 2. Configure Token Refresh (Crucial for background tracking)
   await TraceletSupabase.configureTokenRefresh(anonKey: supabaseAnonKey);
@@ -61,8 +62,7 @@ class MyApp extends StatelessWidget {
         body: Center(
           child: ElevatedButton(
             onPressed: () async {
-              // Sign in anonymously for testing
-              await Supabase.instance.client.auth.signInAnonymously();
+              // (Already signed in anonymously in main)
 
               // Request location permissions before starting
               await Tracelet.requestLocationAuthorization();

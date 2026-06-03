@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.PowerManager
 import android.util.Log
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import com.ikolvi.tracelet.TlActivity
 import com.ikolvi.tracelet.TlAuthorizationStatus
 import com.ikolvi.tracelet.TlBattery
@@ -46,6 +49,9 @@ class TraceletHostApiImpl(
     }
 
     private val sdk: TraceletSdk get() = TraceletSdk.getInstance(context)
+
+    private val activeWakeLocks = ConcurrentHashMap<Long, PowerManager.WakeLock>()
+    private val nextTaskId = AtomicLong(1)
 
     // =========================================================================
     // Converters: SDK Map → Pigeon types
@@ -787,12 +793,41 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     override fun startBackgroundTask(callback: (Result<Long>) -> Unit) {
-        // Minimal implementation for now
-        callback(Result.success(0L))
+        try {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            if (pm == null) {
+                callback(Result.success(0L))
+                return
+            }
+
+            val taskId = nextTaskId.getAndIncrement()
+            val wakeLock = pm.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK, 
+                "com.tracelet:task:$taskId"
+            )
+            
+            // Acquire with a 30-second absolute timeout to prevent battery drain
+            wakeLock.acquire(30_000L)
+            activeWakeLocks[taskId] = wakeLock
+            
+            Log.d(TAG, "Acquired transient WakeLock for task: $taskId")
+            callback(Result.success(taskId))
+        } catch (e: Exception) {
+            callback(Result.failure(e))
+        }
     }
 
     override fun stopBackgroundTask(taskId: Long, callback: (Result<Long>) -> Unit) {
-        callback(Result.success(taskId))
+        try {
+            val wakeLock = activeWakeLocks.remove(taskId)
+            if (wakeLock != null && wakeLock.isHeld) {
+                wakeLock.release()
+                Log.d(TAG, "Released transient WakeLock for task: $taskId")
+            }
+            callback(Result.success(taskId))
+        } catch (e: Exception) {
+            callback(Result.failure(e))
+        }
     }
 
     // =========================================================================

@@ -117,9 +117,11 @@ object TraceletServices {
             val isAvailableMethod = apiAvailabilityClass.getMethod("isGooglePlayServicesAvailable", Context::class.java)
             val resultCode = isAvailableMethod.invoke(availabilityInstance, context) as Int
             
+            Log.d("TraceletServices", "GooglePlayServices availability check resultCode: $resultCode")
             // ConnectionResult.SUCCESS is 0
             resultCode == 0
         } catch (e: Throwable) {
+            Log.e("TraceletServices", "Exception in isGmsAvailable reflection check: ${e.message}", e)
             false
         }
     }

@@ -25,6 +25,7 @@ pub struct DatabaseManager {
 /// Represents a serialized historical location record fetched from database.
 pub struct DbLocationRecord {
     pub id: i64,
+    pub uuid: Option<String>,
     pub timestamp: String,
     pub latitude: f64,
     pub longitude: f64,
@@ -271,6 +272,7 @@ impl DatabaseManager {
             
             Ok(DbLocationRecord {
                 id: row.get(0)?,
+                uuid: None,
                 timestamp: row.get(1)?,
                 latitude: lat,
                 longitude: lng,

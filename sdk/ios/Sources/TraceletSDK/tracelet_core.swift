@@ -1069,6 +1069,12 @@ public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngi
  */
 public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     
+    /**
+     * Deletes all audit trail records from the database.
+     * Used when the hashing logic changes and old chain data must be discarded.
+     */
+    func clearAuditTrail() throws 
+    
     func clearGeofences() throws 
     
     /**
@@ -1119,13 +1125,15 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func getGeofences() throws  -> [CoreGeofence]
     
     /**
+     * Gets the total count of locations persisted in the database.
+     */
+    func getLocationForAudit(uuid: String) throws  -> DbLocationRecord?
+    
+    /**
      * Retrieves a batch of location records, with optional filtering.
      */
     func getLocationsBatch(query: LocationQuery?) throws  -> [DbLocationRecord]
     
-    /**
-     * Gets the total count of locations persisted in the database.
-     */
     func getLocationsCount() throws  -> Int32
     
     /**
@@ -1149,7 +1157,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?) throws  -> Int64
+    func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?) throws  -> Int64
     
     /**
      * Inserts a log entry into the database.
@@ -1250,6 +1258,17 @@ public convenience init(dbPath: String)throws  {
 
     
 
+    
+    /**
+     * Deletes all audit trail records from the database.
+     * Used when the hashing logic changes and old chain data must be discarded.
+     */
+open func clearAuditTrail()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_audit_trail(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
     
 open func clearGeofences()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(
@@ -1371,6 +1390,18 @@ open func getGeofences()throws  -> [CoreGeofence]  {
 }
     
     /**
+     * Gets the total count of locations persisted in the database.
+     */
+open func getLocationForAudit(uuid: String)throws  -> DbLocationRecord?  {
+    return try  FfiConverterOptionTypeDbLocationRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_location_for_audit(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uuid),$0
+    )
+})
+}
+    
+    /**
      * Retrieves a batch of location records, with optional filtering.
      */
 open func getLocationsBatch(query: LocationQuery?)throws  -> [DbLocationRecord]  {
@@ -1382,9 +1413,6 @@ open func getLocationsBatch(query: LocationQuery?)throws  -> [DbLocationRecord] 
 })
 }
     
-    /**
-     * Gets the total count of locations persisted in the database.
-     */
 open func getLocationsCount()throws  -> Int32  {
     return try  FfiConverterInt32.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_get_locations_count(
@@ -1447,10 +1475,11 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?)throws  -> Int64  {
+open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?, timestampOverride: String?)throws  -> Int64  {
     return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(uuid),
         FfiConverterDouble.lower(lat),
         FfiConverterDouble.lower(lng),
         FfiConverterDouble.lower(acc),
@@ -1835,7 +1864,7 @@ public protocol EventDispatcherProtocol: AnyObject, Sendable {
      * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
      * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
      */
-    func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool)  -> Bool
+    func onLocationUpdate(uuid: String?, lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, timestamp: String?)  -> Bool
     
 }
 open class EventDispatcher: EventDispatcherProtocol, @unchecked Sendable {
@@ -1904,17 +1933,19 @@ public convenience init(db: DatabaseManager, state: EngineState) {
      * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
      * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
      */
-open func onLocationUpdate(lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool) -> Bool  {
+open func onLocationUpdate(uuid: String?, lat: Double, lng: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, timestamp: String?) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(
             self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(uuid),
         FfiConverterDouble.lower(lat),
         FfiConverterDouble.lower(lng),
         FfiConverterDouble.lower(accuracy),
         FfiConverterDouble.lower(speed),
         FfiConverterDouble.lower(heading),
         FfiConverterDouble.lower(altitude),
-        FfiConverterBool.lower(isMock),$0
+        FfiConverterBool.lower(isMock),
+        FfiConverterOptionString.lower(timestamp),$0
     )
 })
 }
@@ -4089,6 +4120,7 @@ public func FfiConverterTypeDbAuditRecord_lower(_ value: DbAuditRecord) -> RustB
  */
 public struct DbLocationRecord: Equatable, Hashable {
     public var id: Int64
+    public var uuid: String?
     public var timestamp: String
     public var latitude: Double
     public var longitude: Double
@@ -4102,8 +4134,9 @@ public struct DbLocationRecord: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: Int64, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) {
+    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) {
         self.id = id
+        self.uuid = uuid
         self.timestamp = timestamp
         self.latitude = latitude
         self.longitude = longitude
@@ -4133,6 +4166,7 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
         return
             try DbLocationRecord(
                 id: FfiConverterInt64.read(from: &buf), 
+                uuid: FfiConverterOptionString.read(from: &buf), 
                 timestamp: FfiConverterString.read(from: &buf), 
                 latitude: FfiConverterDouble.read(from: &buf), 
                 longitude: FfiConverterDouble.read(from: &buf), 
@@ -4148,6 +4182,7 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
 
     public static func write(_ value: DbLocationRecord, into buf: inout [UInt8]) {
         FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterOptionString.write(value.uuid, into: &buf)
         FfiConverterString.write(value.timestamp, into: &buf)
         FfiConverterDouble.write(value.latitude, into: &buf)
         FfiConverterDouble.write(value.longitude, into: &buf)
@@ -5009,12 +5044,11 @@ public struct LocationRecord: Equatable, Hashable {
     public var speed: Double
     public var heading: Double
     public var altitude: Double
-    public var odometer: Double
     public var isMoving: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(uuid: String, latitude: Double, longitude: Double, timestamp: String, accuracy: Double, speed: Double, heading: Double, altitude: Double, odometer: Double, isMoving: Bool) {
+    public init(uuid: String, latitude: Double, longitude: Double, timestamp: String, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMoving: Bool) {
         self.uuid = uuid
         self.latitude = latitude
         self.longitude = longitude
@@ -5023,7 +5057,6 @@ public struct LocationRecord: Equatable, Hashable {
         self.speed = speed
         self.heading = heading
         self.altitude = altitude
-        self.odometer = odometer
         self.isMoving = isMoving
     }
 
@@ -5051,7 +5084,6 @@ public struct FfiConverterTypeLocationRecord: FfiConverterRustBuffer {
                 speed: FfiConverterDouble.read(from: &buf), 
                 heading: FfiConverterDouble.read(from: &buf), 
                 altitude: FfiConverterDouble.read(from: &buf), 
-                odometer: FfiConverterDouble.read(from: &buf), 
                 isMoving: FfiConverterBool.read(from: &buf)
         )
     }
@@ -5065,7 +5097,6 @@ public struct FfiConverterTypeLocationRecord: FfiConverterRustBuffer {
         FfiConverterDouble.write(value.speed, into: &buf)
         FfiConverterDouble.write(value.heading, into: &buf)
         FfiConverterDouble.write(value.altitude, into: &buf)
-        FfiConverterDouble.write(value.odometer, into: &buf)
         FfiConverterBool.write(value.isMoving, into: &buf)
     }
 }
@@ -6392,6 +6423,30 @@ fileprivate struct FfiConverterOptionTypeBudgetAdjustmentEvent: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeDbLocationRecord: FfiConverterRustBuffer {
+    typealias SwiftType = DbLocationRecord?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeDbLocationRecord.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeDbLocationRecord.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeLocationQuery: FfiConverterRustBuffer {
     typealias SwiftType = LocationQuery?
 
@@ -6951,6 +7006,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain() != 38541) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_audit_trail() != 16473) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences() != 43540) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6987,10 +7045,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_geofences() != 31028) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_location_for_audit() != 22657) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch() != 62912) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 8172) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count() != 21495) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_logs() != 48390) {
@@ -7005,7 +7066,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41574) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 24139) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {
@@ -7020,7 +7081,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12952) {
+    if (uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12710) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402) {

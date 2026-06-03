@@ -271,16 +271,21 @@ class TraceletHostApiImpl(
             put("maxRecordsToPersist", c.persistence.maxRecordsToPersist)
             put("disableProviderChangeRecord", c.persistence.disableProviderChangeRecord)
         })
+        put("auditEnabled", c.audit.enabled)
         put("audit", buildMap {
             put("enabled", c.audit.enabled)
             put("hashAlgorithm", c.audit.hashAlgorithm.raw)
         })
+        put("privacyZoneEnabled", c.privacyZone.enabled)
         put("privacyZone", buildMap {
             put("enabled", c.privacyZone.enabled)
         })
+        put("encryptDatabase", c.security.encryptDatabase)
         put("security", buildMap {
             put("encryptDatabase", c.security.encryptDatabase)
         })
+        put("attestationEnabled", c.attestation.enabled)
+        put("attestationRefreshInterval", c.attestation.refreshInterval)
         put("attestation", buildMap {
             put("enabled", c.attestation.enabled)
             put("refreshInterval", c.attestation.refreshInterval)
@@ -874,9 +879,9 @@ class TraceletHostApiImpl(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getPrivacyZones(callback: (Result<List<Map<String?, Any?>?>>) -> Unit) {
+    override fun getPrivacyZones(callback: (Result<List<Any?>>) -> Unit) {
         try {
-            callback(Result.success(sdk.getPrivacyZones() as List<Map<String?, Any?>?>))
+            callback(Result.success(sdk.getPrivacyZones() as List<Any?>))
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 

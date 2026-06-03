@@ -441,6 +441,11 @@ void uniffi_tracelet_core_fn_free_databasemanager(uint64_t handle, RustCallStatu
 uint64_t uniffi_tracelet_core_fn_constructor_databasemanager_new(RustBuffer db_path, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_CLEAR_AUDIT_TRAIL
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_CLEAR_AUDIT_TRAIL
+void uniffi_tracelet_core_fn_method_databasemanager_clear_audit_trail(uint64_t ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_CLEAR_GEOFENCES
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_CLEAR_GEOFENCES
 void uniffi_tracelet_core_fn_method_databasemanager_clear_geofences(uint64_t ptr, RustCallStatus *_Nonnull out_status
@@ -501,6 +506,11 @@ RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_audit_trail(uint64
 RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_geofences(uint64_t ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATION_FOR_AUDIT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATION_FOR_AUDIT
+RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_location_for_audit(uint64_t ptr, RustBuffer uuid, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATIONS_BATCH
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_GET_LOCATIONS_BATCH
 RustBuffer uniffi_tracelet_core_fn_method_databasemanager_get_locations_batch(uint64_t ptr, RustBuffer query, RustCallStatus *_Nonnull out_status
@@ -533,7 +543,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
-int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustBuffer timestamp_override, RustCallStatus *_Nonnull out_status
+int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, RustBuffer uuid, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustBuffer timestamp_override, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOG
@@ -573,7 +583,7 @@ uint64_t uniffi_tracelet_core_fn_constructor_eventdispatcher_new(uint64_t db, ui
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
-int8_t uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(uint64_t ptr, double lat, double lng, double accuracy, double speed, double heading, double altitude, int8_t is_mock, RustCallStatus *_Nonnull out_status
+int8_t uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(uint64_t ptr, RustBuffer uuid, double lat, double lng, double accuracy, double speed, double heading, double altitude, int8_t is_mock, RustBuffer timestamp, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_GEOFENCEEVALUATOR
@@ -1212,6 +1222,12 @@ uint16_t uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_CLEAR_AUDIT_TRAIL
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_CLEAR_AUDIT_TRAIL
+uint16_t uniffi_tracelet_core_checksum_method_databasemanager_clear_audit_trail(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_CLEAR_GEOFENCES
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_CLEAR_GEOFENCES
 uint16_t uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences(void
@@ -1281,6 +1297,12 @@ uint16_t uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail(vo
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_GET_GEOFENCES
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_GET_GEOFENCES
 uint16_t uniffi_tracelet_core_checksum_method_databasemanager_get_geofences(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_GET_LOCATION_FOR_AUDIT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_DATABASEMANAGER_GET_LOCATION_FOR_AUDIT
+uint16_t uniffi_tracelet_core_checksum_method_databasemanager_get_location_for_audit(void
     
 );
 #endif

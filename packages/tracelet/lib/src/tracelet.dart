@@ -1655,24 +1655,6 @@ class Tracelet {
 
     final state = State.fromMap(stateMap);
 
-    // Extract config values from the raw state map for compliance data.
-    final rawConfig = stateMap['config'];
-    final configMap = rawConfig is Map
-        ? Map<String, Object?>.from(rawConfig)
-        : null;
-    final rawGeo = configMap?['geo'];
-    final geoMap = rawGeo is Map ? Map<String, Object?>.from(rawGeo) : null;
-    final rawHttp = configMap?['http'];
-    final httpMap = rawHttp is Map ? Map<String, Object?>.from(rawHttp) : null;
-    final rawAudit = configMap?['audit'];
-    final auditMap = rawAudit is Map
-        ? Map<String, Object?>.from(rawAudit)
-        : null;
-    final rawPersist = configMap?['persistence'];
-    final persistMap = rawPersist is Map
-        ? Map<String, Object?>.from(rawPersist)
-        : null;
-
     // Extract timestamps from oldest/newest records.
     // Android sends timestamps as int (millis), iOS sends as String (ISO8601).
     final oldestRaw = oldestList.isNotEmpty
@@ -1696,8 +1678,8 @@ class Tracelet {
       generatedAt: DateTime.now(),
       totalLocationsStored: count,
       totalLocationsSynced: 0, // Not tracked separately yet
-      maxDaysToPersist: persistMap?['maxDaysToPersist'] as int? ?? -1,
-      maxRecordsToPersist: persistMap?['maxRecordsToPersist'] as int? ?? -1,
+      maxDaysToPersist: activeConfig.persistence.maxDaysToPersist,
+      maxRecordsToPersist: activeConfig.persistence.maxRecordsToPersist,
       oldestRecord: oldestTs,
       newestRecord: newestTs,
       databaseEncrypted: dbEncrypted,
@@ -1705,15 +1687,14 @@ class Tracelet {
       privacyZoneIdentifiers: zones
           .map((z) => z['identifier'] as String? ?? '')
           .toList(),
-      httpSyncUrl: httpMap?['url'] as String?,
-      autoSyncEnabled: httpMap?['autoSync'] as bool? ?? true,
-      auditTrailEnabled: auditMap?['enabled'] as bool? ?? false,
+      httpSyncUrl: activeConfig.http.url,
+      autoSyncEnabled: activeConfig.http.autoSync,
+      auditTrailEnabled: activeConfig.audit.enabled,
       locationPermissionStatus: locationPerm,
       motionPermissionStatus: motionPerm,
-      sparseUpdatesEnabled: geoMap?['enableSparseUpdates'] as bool? ?? false,
+      sparseUpdatesEnabled: activeConfig.geo.enableSparseUpdates,
       kalmanFilterEnabled: activeConfig.geo.filter.useKalmanFilter,
-      deltaCompressionEnabled:
-          httpMap?['enableDeltaCompression'] as bool? ?? false,
+      deltaCompressionEnabled: activeConfig.http.enableDeltaCompression,
       trackingEnabled: state.enabled,
       trackingMode: state.trackingMode.name,
     );

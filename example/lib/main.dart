@@ -632,6 +632,7 @@ class _DashboardPageState extends State<DashboardPage>
             // (HTTP config goes here)
           ),
           audit: const tl.AuditConfig(enabled: true),
+          security: const tl.SecurityConfig(encryptDatabase: true),
           persistence: const tl.PersistenceConfig(
             maxDaysToPersist: 7,
             maxRecordsToPersist: 5000,
@@ -755,7 +756,7 @@ class _DashboardPageState extends State<DashboardPage>
 
   /// Verifies if SQLQuery date filters and Carbon Reports are respected.
   Future<void> _testSqlQueryAndCarbonReport() async {
-    print('--- Starting Test: SQLQuery & Carbon Report ---');
+    _addLog('TEST_SQL', '--- Starting Test: SQLQuery & Carbon Report ---');
 
     final now = DateTime.now();
     final t1 = now.subtract(const Duration(hours: 3));
@@ -801,16 +802,16 @@ class _DashboardPageState extends State<DashboardPage>
     final query = tl.SQLQuery(start: t2, end: t3);
     final locations = await tl.Tracelet.getLocations(query);
 
-    print('Locations found for window [T2, T3]: ${locations.length}');
+    _addLog('TEST_SQL', 'Locations found for window [T2, T3]: ${locations.length}');
     for (final loc in locations) {
-      print(' - Point: ${loc.coords.latitude}, ${loc.coords.longitude} at ${loc.timestamp}');
+      _addLog('TEST_SQL', ' - Point: ${loc.coords.latitude}, ${loc.coords.longitude} at ${loc.timestamp}');
     }
 
     final carbonReport = await tl.Tracelet.getCarbonReport({
       'from': t2.millisecondsSinceEpoch,
       'to': t3.millisecondsSinceEpoch,
     });
-    print('Carbon emitted for [T2, T3]: ${carbonReport['totalCarbonGrams']}g');
+    _addLog('TEST_SQL', 'Carbon emitted for [T2, T3]: ${carbonReport['totalCarbonGrams']}g');
   }
 
   Future<void> _start() async {
@@ -3677,7 +3678,7 @@ class _DashboardPageState extends State<DashboardPage>
         _addLog('AUDIT', 'No locations recorded — nothing to prove');
         return;
       }
-      final uuid = locs.first.uuid;
+      final uuid = locs.last.uuid;
       final proof = await tl.Tracelet.getAuditProof(uuid);
       if (proof != null) {
         _addLog(

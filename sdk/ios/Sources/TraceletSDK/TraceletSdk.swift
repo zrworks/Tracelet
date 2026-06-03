@@ -219,6 +219,7 @@ public final class TraceletSdk {
                     attestation: currentConfig.attestation
                 )
                 try state.updateConfig(newConfig: newConfig)
+                _ = database.encryptDatabase()
             } catch {
                 NSLog("Auto-encrypt database failed: \(error)")
             }
@@ -827,7 +828,7 @@ public final class TraceletSdk {
             let records = try db.getLocationsBatch(query: rustQuery)
             return records.map { record in
                 return [
-                    "uuid": String(record.id),
+                    "uuid": record.uuid ?? String(record.id),
                     "timestamp": record.timestamp,
                     "is_moving": stateManager.isMoving,
                     "odometer": locationEngine.getOdometer(),
@@ -930,9 +931,11 @@ public final class TraceletSdk {
         let activityMap = params["activity"] as? [String: Any]
         let activity = activityMap?["type"] as? String ?? "unknown"
         let timestamp = params["timestamp"] as? String
+        let uuid = params["uuid"] as? String
         
         do {
             let newRowId = try db.insertLocation(
+                uuid: uuid,
                 lat: lat,
                 lng: lng,
                 acc: acc,

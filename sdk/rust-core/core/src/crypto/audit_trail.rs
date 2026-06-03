@@ -12,7 +12,6 @@ pub struct LocationRecord {
     pub speed: f64,
     pub heading: f64,
     pub altitude: f64,
-    pub odometer: f64,
     pub is_moving: bool,
 }
 
@@ -75,7 +74,7 @@ pub fn build_canonical_string(
     loc: LocationRecord,
 ) -> String {
     format!(
-        "{}|TRACELET_AUDIT|{}|{}|{:.6}|{:.6}|{}|{:.2}|{:.2}|{:.2}|{:.2}|{:.2}|{}",
+        "{}|TRACELET_AUDIT|{}|{}|{:.6}|{:.6}|{}|{:.2}|{:.2}|{:.2}|{:.2}|{}",
         previous_hash,
         chain_index,
         loc.uuid,
@@ -86,7 +85,6 @@ pub fn build_canonical_string(
         loc.speed,
         loc.heading,
         loc.altitude,
-        loc.odometer,
         if loc.is_moving { "1" } else { "0" }
     )
 }

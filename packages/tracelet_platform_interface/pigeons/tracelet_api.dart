@@ -863,7 +863,7 @@ abstract class TraceletHostApi {
   bool removePrivacyZones();
 
   @async
-  List<Map<String?, Object?>?> getPrivacyZones();
+  List<Object?> getPrivacyZones();
 
   @async
   bool isDatabaseEncrypted();

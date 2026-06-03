@@ -1058,7 +1058,7 @@ class TraceletSdk private constructor(private val context: Context) {
             val records = db.getLocationsBatch(rustQuery)
             records.map { record ->
                 mapOf(
-                    "uuid" to record.id.toString(),
+                    "uuid" to (record.uuid ?: record.id.toString()),
                     "timestamp" to record.timestamp,
                     "is_moving" to stateManager.isMoving,
                     "odometer" to locationEngine.getOdometer(),
@@ -1140,9 +1140,10 @@ class TraceletSdk private constructor(private val context: Context) {
         val activityMap = params["activity"] as? Map<*, *>
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         val timestamp = params["timestamp"] as? String
+        val uuid = params["uuid"] as? String
         
         return try {
-            val newRowId = db.insertLocation(lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext(), timestamp)
+            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext(), timestamp)
             newRowId.toString()
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")

@@ -65,36 +65,8 @@ impl SyncManager {
 }
 
 impl SyncManager {
-    /// Performs an asynchronous sync of a batch of location records.
-    /// Returns the number of successfully synced records.
-    pub async fn sync_batch(&self, config: &SyncHttpConfig, records: &[SyncLocationRecord]) -> Result<i32, TraceletError> {
-        let url = match &config.url {
-            Some(u) if !u.is_empty() => u,
-            _ => {
-                tracelet_core::logger::warn("[Rust Core] ⚠️ Sync skipped: HTTP sync URL is not configured in EngineConfig.");
-                return Err(TraceletError::Config("HTTP sync URL not configured".into()));
-            }
-        };
-
-        if records.is_empty() {
-            tracelet_core::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty.");
-            return Ok(0);
-        }
-
-        tracelet_core::logger::info(&format!("[Rust Core] 🌐 HTTP Sync batch size: {} record(s). Target URL: {}", records.len(), url));
-
-        // Prepare Headers
-        let mut header_map = HeaderMap::new();
-        header_map.insert("Content-Type", HeaderValue::from_static("application/json"));
-        for (k, v) in &config.headers {
-            if let (Ok(name), Ok(value)) = (HeaderName::from_str(k), HeaderValue::from_str(v)) {
-                header_map.insert(name, value);
-            }
-        }
-
-
-        // Prepare Payload
-        let payload = if config.batch_sync {
+    pub(crate) fn build_sync_payload(config: &SyncHttpConfig, records: &[SyncLocationRecord]) -> serde_json::Value {
+        if config.batch_sync {
             let json_records: Vec<_> = records.iter().map(|r| {
                 let mut base_json = json!({
                     "id": r.id,
@@ -157,7 +129,39 @@ impl SyncManager {
                 }
             }
             json!({ "location": base_json })
+        }
+    }
+
+    /// Performs an asynchronous sync of a batch of location records.
+    /// Returns the number of successfully synced records.
+    pub async fn sync_batch(&self, config: &SyncHttpConfig, records: &[SyncLocationRecord]) -> Result<i32, TraceletError> {
+        let url = match &config.url {
+            Some(u) if !u.is_empty() => u,
+            _ => {
+                tracelet_core::logger::warn("[Rust Core] ⚠️ Sync skipped: HTTP sync URL is not configured in EngineConfig.");
+                return Err(TraceletError::Config("HTTP sync URL not configured".into()));
+            }
         };
+
+        if records.is_empty() {
+            tracelet_core::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty.");
+            return Ok(0);
+        }
+
+        tracelet_core::logger::info(&format!("[Rust Core] 🌐 HTTP Sync batch size: {} record(s). Target URL: {}", records.len(), url));
+
+        // Prepare Headers
+        let mut header_map = HeaderMap::new();
+        header_map.insert("Content-Type", HeaderValue::from_static("application/json"));
+        for (k, v) in &config.headers {
+            if let (Ok(name), Ok(value)) = (HeaderName::from_str(k), HeaderValue::from_str(v)) {
+                header_map.insert(name, value);
+            }
+        }
+
+
+        // Prepare Payload
+        let payload = Self::build_sync_payload(config, records);
 
         let method = if config.method == 1 { Method::PUT } else { Method::POST };
 
@@ -227,5 +231,77 @@ impl SyncManager {
             tokio::time::sleep(Duration::from_millis(delay_ms)).await;
             attempt += 1;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::Value;
+
+    fn get_test_record() -> SyncLocationRecord {
+        SyncLocationRecord {
+            id: 1,
+            uuid: Some("test-uuid-1234".to_string()),
+            timestamp: "2023-01-01T00:00:00Z".to_string(),
+            latitude: 10.0,
+            longitude: 20.0,
+            accuracy: 5.0,
+            speed: 15.0,
+            heading: 90.0,
+            altitude: 100.0,
+            is_mock: false,
+            activity: "moving".to_string(),
+            route_context: None,
+        }
+    }
+
+    fn get_test_config(batch_sync: bool) -> SyncHttpConfig {
+        SyncHttpConfig {
+            url: Some("http://localhost".to_string()),
+            method: 0,
+            headers: HashMap::new(),
+            batch_sync,
+            max_batch_size: 10,
+            auto_sync: true,
+            max_retries: 3,
+            retry_backoff_base: 1000,
+            retry_backoff_cap: 10000,
+            ssl_pinning_certificates: None,
+        }
+    }
+
+    #[test]
+    fn test_build_sync_payload_batch_includes_uuid() {
+        let config = get_test_config(true);
+        let records = vec![get_test_record()];
+        
+        let payload = SyncManager::build_sync_payload(&config, &records);
+        
+        // Assert payload structure for batch
+        let locations = payload.get("location").expect("Missing 'location' array in payload")
+            .as_array().expect("'location' should be an array");
+            
+        assert_eq!(locations.len(), 1);
+        let first_loc = &locations[0];
+        
+        // Assert uuid is mapped correctly
+        assert_eq!(first_loc.get("uuid").and_then(Value::as_str), Some("test-uuid-1234"));
+        assert_eq!(first_loc.get("id").and_then(Value::as_i64), Some(1));
+    }
+
+    #[test]
+    fn test_build_sync_payload_single_includes_uuid() {
+        let config = get_test_config(false);
+        let records = vec![get_test_record()];
+        
+        let payload = SyncManager::build_sync_payload(&config, &records);
+        
+        // Assert payload structure for non-batch
+        let location = payload.get("location").expect("Missing 'location' object in payload");
+            
+        // Assert uuid is mapped correctly
+        assert_eq!(location.get("uuid").and_then(Value::as_str), Some("test-uuid-1234"));
+        assert_eq!(location.get("id").and_then(Value::as_i64), Some(1));
     }
 }

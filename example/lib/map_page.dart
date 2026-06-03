@@ -1856,7 +1856,35 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _testWakeLock() async {
+    try {
+      final taskId = await tl.Tracelet.startBackgroundTask();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('WakeLock acquired (Task $taskId). Sleeping 20s...')),
+        );
+      }
+      
+      // Simulate heavy background work
+      await Future.delayed(const Duration(seconds: 20));
+      
+      await tl.Tracelet.stopBackgroundTask(taskId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('WakeLock released (Task $taskId).')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('WakeLock error: $e')),
+        );
+      }
+    }
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────
+
 
   @override
   Widget build(BuildContext context) {
@@ -1957,6 +1985,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
         ),
         centerTitle: true,
         actions: [
+          // WakeLock test
+          IconButton(
+            tooltip: 'Test Transient WakeLock',
+            icon: const Icon(Icons.lock_clock),
+            onPressed: _testWakeLock,
+          ),
           // Status overlay toggle
           IconButton(
             tooltip: 'Toggle status overlay',

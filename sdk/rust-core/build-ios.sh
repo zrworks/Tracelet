@@ -61,7 +61,8 @@ cp "$OUT_DIR/sync/tracelet_syncFFI.modulemap" "$OUT_DIR/sync/Headers/TraceletSyn
 
 sed -i '' 's/module tracelet_syncFFI/module TraceletSyncFFI/g' "$OUT_DIR/sync/Headers/TraceletSyncFFI/module.modulemap"
 sed -i '' 's/canImport(tracelet_syncFFI)/SWIFT_PACKAGE/g' "$OUT_DIR/sync/tracelet_sync.swift"
-sed -i '' 's/import tracelet_syncFFI/import TraceletSyncFFI\
+sed -i '' 's/import tracelet_syncFFI/import TraceletSyncFFI/g' "$OUT_DIR/sync/tracelet_sync.swift"
+sed -i '' 's/import Foundation/import Foundation\
 import TraceletSDK/g' "$OUT_DIR/sync/tracelet_sync.swift"
 
 mkdir -p "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"

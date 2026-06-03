@@ -151,8 +151,10 @@ impl AuditTrailEngine {
             };
         }
 
-        let state = self.state.lock().unwrap();
-        let mut expected_previous_hash = compute_genesis_hash(state.device_id.clone());
+        let _state = self.state.lock().unwrap();
+        // For a rolling window (where older records are deleted after sync),
+        // we start verifying continuity from the first available record.
+        let mut expected_previous_hash = records[0].previous_hash.clone();
         let mut verified = 0;
 
         for record in &records {

@@ -1142,8 +1142,26 @@ class TraceletSdk private constructor(private val context: Context) {
         val timestamp = params["timestamp"] as? String
         val uuid = params["uuid"] as? String
         
+        var routeContext = rustEngineState?.getRouteContext()
+        val auditHash = params["audit_hash"] as? String
+        if (auditHash != null) {
+            try {
+                val jsonMap = if (routeContext != null) {
+                    org.json.JSONObject(routeContext)
+                } else {
+                    org.json.JSONObject()
+                }
+                jsonMap.put("audit_hash", auditHash)
+                if (params["audit_previous_hash"] != null) jsonMap.put("audit_previous_hash", params["audit_previous_hash"])
+                if (params["audit_chain_index"] != null) jsonMap.put("audit_chain_index", params["audit_chain_index"])
+                routeContext = jsonMap.toString()
+            } catch (e: Exception) {
+                // Ignore and use base route context
+            }
+        }
+        
         return try {
-            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, activity, rustEngineState?.getRouteContext(), timestamp)
+            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, activity, routeContext, timestamp)
             newRowId.toString()
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")

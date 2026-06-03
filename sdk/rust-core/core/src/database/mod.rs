@@ -378,6 +378,7 @@ impl DatabaseManager {
     /// Deletes records up to the given max ID (used after successful sync).
     pub fn clear_locations_up_to(&self, max_id: i64) -> Result<(), TraceletError> {
         let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM audit_trail WHERE uuid IN (SELECT uuid FROM location_events WHERE id <= ?1 AND uuid IS NOT NULL)", params![max_id]).map_err(|e| TraceletError::Database(e.to_string()))?;
         conn.execute("DELETE FROM location_events WHERE id <= ?1", params![max_id]).map_err(|e| TraceletError::Database(e.to_string()))?;
         Ok(())
     }

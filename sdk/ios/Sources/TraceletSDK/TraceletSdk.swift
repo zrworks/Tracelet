@@ -933,6 +933,24 @@ public final class TraceletSdk {
         let timestamp = params["timestamp"] as? String
         let uuid = params["uuid"] as? String
         
+        var routeContext = rustEngineState?.getRouteContext()
+        if let auditHash = params["audit_hash"] as? String {
+            var contextDict: [String: Any] = [:]
+            if let rc = routeContext, let data = rc.data(using: .utf8) {
+                if let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    contextDict = dict
+                }
+            }
+            contextDict["audit_hash"] = auditHash
+            if let prevHash = params["audit_previous_hash"] { contextDict["audit_previous_hash"] = prevHash }
+            if let chainIndex = params["audit_chain_index"] { contextDict["audit_chain_index"] = chainIndex }
+            
+            if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                routeContext = jsonString
+            }
+        }
+        
         do {
             let newRowId = try db.insertLocation(
                 uuid: uuid,
@@ -944,7 +962,7 @@ public final class TraceletSdk {
                 altitude: altitude,
                 isMock: isMock,
                 activity: activity,
-                routeContext: rustEngineState?.getRouteContext(),
+                routeContext: routeContext,
                 timestampOverride: timestamp
             )
             return newRowId.description

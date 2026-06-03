@@ -640,11 +640,14 @@ class Tracelet {
       } else if (ts is String) {
         dt = DateTime.tryParse(ts);
       }
-      
+
       if (dt != null) {
         final utcDt = dt.toUtc();
         // Normalize to RFC3339 exact format to ensure SQLite string comparisons work flawlessly against Rust querying limits.
-        mutableParams['timestamp'] = utcDt.toIso8601String().replaceAll('.000Z', '+00:00').replaceAll('Z', '+00:00');
+        mutableParams['timestamp'] = utcDt
+            .toIso8601String()
+            .replaceAll('.000Z', '+00:00')
+            .replaceAll('Z', '+00:00');
       }
     }
     return _platform.insertLocation(mutableParams);

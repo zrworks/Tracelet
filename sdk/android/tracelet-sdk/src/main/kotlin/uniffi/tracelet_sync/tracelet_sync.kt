@@ -31,14 +31,8 @@ import java.nio.charset.CodingErrorAction
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import uniffi.tracelet_core.DbLocationRecord
-import uniffi.tracelet_core.FfiConverterTypeDbLocationRecord
-import uniffi.tracelet_core.FfiConverterTypeHttpConfig
 import uniffi.tracelet_core.FfiConverterTypeTraceletError
-import uniffi.tracelet_core.HttpConfig
 import uniffi.tracelet_core.TraceletException
-import uniffi.tracelet_core.RustBuffer as RustBufferDbLocationRecord
-import uniffi.tracelet_core.RustBuffer as RustBufferHttpConfig
 import uniffi.tracelet_core.RustBuffer as RustBufferTraceletError
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
@@ -676,7 +670,7 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_tracelet_sync_fn_constructor_syncmanager_new(uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_tracelet_sync_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBufferHttpConfig.ByValue,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_tracelet_sync_fn_method_syncmanager_sync_batch_blocking(`ptr`: Long,`config`: RustBuffer.ByValue,`records`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_tracelet_sync_fn_func_encode_deltas(`batchJson`: RustBuffer.ByValue,`precision`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -802,7 +796,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_sync_checksum_func_encode_deltas() != 5602.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_sync_checksum_method_syncmanager_sync_batch_blocking() != 2357.toShort()) {
+    if (lib.uniffi_tracelet_sync_checksum_method_syncmanager_sync_batch_blocking() != 33021.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_sync_checksum_constructor_syncmanager_new() != 42810.toShort()) {
@@ -968,6 +962,29 @@ private class JavaLangRefCleanable(
 /**
  * @suppress
  */
+public object FfiConverterUInt: FfiConverter<UInt, Int> {
+    override fun lift(value: Int): UInt {
+        return value.toUInt()
+    }
+
+    override fun read(buf: ByteBuffer): UInt {
+        return lift(buf.getInt())
+    }
+
+    override fun lower(value: UInt): Int {
+        return value.toInt()
+    }
+
+    override fun allocationSize(value: UInt) = 4UL
+
+    override fun write(value: UInt, buf: ByteBuffer) {
+        buf.putInt(value.toInt())
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterInt: FfiConverter<Int, Int> {
     override fun lift(value: Int): Int {
         return value
@@ -985,6 +1002,75 @@ public object FfiConverterInt: FfiConverter<Int, Int> {
 
     override fun write(value: Int, buf: ByteBuffer) {
         buf.putInt(value)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterLong: FfiConverter<Long, Long> {
+    override fun lift(value: Long): Long {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Long {
+        return buf.getLong()
+    }
+
+    override fun lower(value: Long): Long {
+        return value
+    }
+
+    override fun allocationSize(value: Long) = 8UL
+
+    override fun write(value: Long, buf: ByteBuffer) {
+        buf.putLong(value)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterDouble: FfiConverter<Double, Double> {
+    override fun lift(value: Double): Double {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Double {
+        return buf.getDouble()
+    }
+
+    override fun lower(value: Double): Double {
+        return value
+    }
+
+    override fun allocationSize(value: Double) = 8UL
+
+    override fun write(value: Double, buf: ByteBuffer) {
+        buf.putDouble(value)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+    override fun lift(value: Byte): Boolean {
+        return value.toInt() != 0
+    }
+
+    override fun read(buf: ByteBuffer): Boolean {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: Boolean): Byte {
+        return if (value) 1.toByte() else 0.toByte()
+    }
+
+    override fun allocationSize(value: Boolean) = 1UL
+
+    override fun write(value: Boolean, buf: ByteBuffer) {
+        buf.put(lower(value))
     }
 }
 
@@ -1147,7 +1233,7 @@ public interface SyncManagerInterface {
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int
+    fun `syncBatchBlocking`(`config`: SyncHttpConfig, `records`: List<SyncLocationRecord>): kotlin.UInt
     
     companion object
 }
@@ -1261,13 +1347,13 @@ open class SyncManager: Disposable, AutoCloseable, SyncManagerInterface
      * Performs a synchronous/blocking sync of a batch of location records.
      * Returns the number of successfully synced records.
      */
-    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: HttpConfig, `records`: List<DbLocationRecord>): kotlin.Int {
-            return FfiConverterInt.lift(
+    @Throws(TraceletException::class)override fun `syncBatchBlocking`(`config`: SyncHttpConfig, `records`: List<SyncLocationRecord>): kotlin.UInt {
+            return FfiConverterUInt.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletExceptionExternalErrorHandler) { _status ->
     UniffiLib.uniffi_tracelet_sync_fn_method_syncmanager_sync_batch_blocking(
         it,
-        FfiConverterTypeHttpConfig.lower(`config`),FfiConverterSequenceTypeDbLocationRecord.lower(`records`),_status)
+        FfiConverterTypeSyncHttpConfig.lower(`config`),FfiConverterSequenceTypeSyncLocationRecord.lower(`records`),_status)
 }
     }
     )
@@ -1314,28 +1400,198 @@ public object FfiConverterTypeSyncManager: FfiConverter<SyncManager, Long> {
 
 
 
+data class SyncHttpConfig (
+    var `url`: kotlin.String?
+    , 
+    var `method`: kotlin.Int
+    , 
+    var `headers`: Map<kotlin.String, kotlin.String>
+    , 
+    var `batchSync`: kotlin.Boolean
+    , 
+    var `maxBatchSize`: kotlin.Int
+    , 
+    var `autoSync`: kotlin.Boolean
+    , 
+    var `maxRetries`: kotlin.Int
+    , 
+    var `retryBackoffBase`: kotlin.Int
+    , 
+    var `retryBackoffCap`: kotlin.Int
+    , 
+    var `sslPinningCertificates`: List<kotlin.String>?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
 
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer<List<DbLocationRecord>> {
-    override fun read(buf: ByteBuffer): List<DbLocationRecord> {
-        val len = buf.getInt()
-        return List<DbLocationRecord>(len) {
-            FfiConverterTypeDbLocationRecord.read(buf)
+public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpConfig> {
+    override fun read(buf: ByteBuffer): SyncHttpConfig {
+        return SyncHttpConfig(
+            FfiConverterOptionalString.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterMapStringString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterOptionalSequenceString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SyncHttpConfig) = (
+            FfiConverterOptionalString.allocationSize(value.`url`) +
+            FfiConverterInt.allocationSize(value.`method`) +
+            FfiConverterMapStringString.allocationSize(value.`headers`) +
+            FfiConverterBoolean.allocationSize(value.`batchSync`) +
+            FfiConverterInt.allocationSize(value.`maxBatchSize`) +
+            FfiConverterBoolean.allocationSize(value.`autoSync`) +
+            FfiConverterInt.allocationSize(value.`maxRetries`) +
+            FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
+            FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`)
+    )
+
+    override fun write(value: SyncHttpConfig, buf: ByteBuffer) {
+            FfiConverterOptionalString.write(value.`url`, buf)
+            FfiConverterInt.write(value.`method`, buf)
+            FfiConverterMapStringString.write(value.`headers`, buf)
+            FfiConverterBoolean.write(value.`batchSync`, buf)
+            FfiConverterInt.write(value.`maxBatchSize`, buf)
+            FfiConverterBoolean.write(value.`autoSync`, buf)
+            FfiConverterInt.write(value.`maxRetries`, buf)
+            FfiConverterInt.write(value.`retryBackoffBase`, buf)
+            FfiConverterInt.write(value.`retryBackoffCap`, buf)
+            FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
+    }
+}
+
+
+
+data class SyncLocationRecord (
+    var `id`: kotlin.Long
+    , 
+    var `uuid`: kotlin.String?
+    , 
+    var `timestamp`: kotlin.String
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `accuracy`: kotlin.Double
+    , 
+    var `speed`: kotlin.Double
+    , 
+    var `heading`: kotlin.Double
+    , 
+    var `altitude`: kotlin.Double
+    , 
+    var `isMock`: kotlin.Boolean
+    , 
+    var `activity`: kotlin.String
+    , 
+    var `routeContext`: kotlin.String?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLocationRecord> {
+    override fun read(buf: ByteBuffer): SyncLocationRecord {
+        return SyncLocationRecord(
+            FfiConverterLong.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SyncLocationRecord) = (
+            FfiConverterLong.allocationSize(value.`id`) +
+            FfiConverterOptionalString.allocationSize(value.`uuid`) +
+            FfiConverterString.allocationSize(value.`timestamp`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterDouble.allocationSize(value.`accuracy`) +
+            FfiConverterDouble.allocationSize(value.`speed`) +
+            FfiConverterDouble.allocationSize(value.`heading`) +
+            FfiConverterDouble.allocationSize(value.`altitude`) +
+            FfiConverterBoolean.allocationSize(value.`isMock`) +
+            FfiConverterString.allocationSize(value.`activity`) +
+            FfiConverterOptionalString.allocationSize(value.`routeContext`)
+    )
+
+    override fun write(value: SyncLocationRecord, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`id`, buf)
+            FfiConverterOptionalString.write(value.`uuid`, buf)
+            FfiConverterString.write(value.`timestamp`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterDouble.write(value.`accuracy`, buf)
+            FfiConverterDouble.write(value.`speed`, buf)
+            FfiConverterDouble.write(value.`heading`, buf)
+            FfiConverterDouble.write(value.`altitude`, buf)
+            FfiConverterBoolean.write(value.`isMock`, buf)
+            FfiConverterString.write(value.`activity`, buf)
+            FfiConverterOptionalString.write(value.`routeContext`, buf)
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
         }
     }
 
-    override fun allocationSize(value: List<DbLocationRecord>): ULong {
-        val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeDbLocationRecord.allocationSize(it) }.sum()
-        return sizeForLength + sizeForItems
-    }
-
-    override fun write(value: List<DbLocationRecord>, buf: ByteBuffer) {
-        buf.putInt(value.size)
-        value.iterator().forEach {
-            FfiConverterTypeDbLocationRecord.write(it, buf)
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
         }
     }
 }
@@ -1343,6 +1599,129 @@ public object FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer<L
 
 
 
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalSequenceString: FfiConverterRustBuffer<List<kotlin.String>?> {
+    override fun read(buf: ByteBuffer): List<kotlin.String>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceString.read(buf)
+    }
+
+    override fun allocationSize(value: List<kotlin.String>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<kotlin.String>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
+    override fun read(buf: ByteBuffer): List<kotlin.String> {
+        val len = buf.getInt()
+        return List<kotlin.String>(len) {
+            FfiConverterString.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.String>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterString.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.String>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterString.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeSyncLocationRecord: FfiConverterRustBuffer<List<SyncLocationRecord>> {
+    override fun read(buf: ByteBuffer): List<SyncLocationRecord> {
+        val len = buf.getInt()
+        return List<SyncLocationRecord>(len) {
+            FfiConverterTypeSyncLocationRecord.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<SyncLocationRecord>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeSyncLocationRecord.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<SyncLocationRecord>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeSyncLocationRecord.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<kotlin.String, kotlin.String>> {
+    override fun read(buf: ByteBuffer): Map<kotlin.String, kotlin.String> {
+        val len = buf.getInt()
+        return buildMap<kotlin.String, kotlin.String>(len) {
+            repeat(len) {
+                val k = FfiConverterString.read(buf)
+                val v = FfiConverterString.read(buf)
+                this[k] = v
+            }
+        }
+    }
+
+    override fun allocationSize(value: Map<kotlin.String, kotlin.String>): ULong {
+        val spaceForMapSize = 4UL
+        val spaceForChildren = value.map { (k, v) ->
+            FfiConverterString.allocationSize(k) +
+            FfiConverterString.allocationSize(v)
+        }.sum()
+        return spaceForMapSize + spaceForChildren
+    }
+
+    override fun write(value: Map<kotlin.String, kotlin.String>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        // The parens on `(k, v)` here ensure we're calling the right method,
+        // which is important for compatibility with older android devices.
+        // Ref https://blog.danlew.net/2017/03/16/kotlin-puzzler-whose-line-is-it-anyways/
+        value.forEach { (k, v) ->
+            FfiConverterString.write(k, buf)
+            FfiConverterString.write(v, buf)
+        }
+    }
+}
 
 
 

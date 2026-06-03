@@ -6,10 +6,10 @@ import XCTest
 final class PrivacyZoneManagerTests: XCTestCase {
 
     private func makeManager(enabled: Bool = true) -> (PrivacyZoneManager, TraceletDatabase) {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         config.setConfig(["privacyZoneEnabled": enabled])
-        return (PrivacyZoneManager(database: db, configManager: config), db)
+        return (PrivacyZoneManager(configManager: config), db)
     }
 
     func testDisabledReturnsNilAction() {
@@ -178,10 +178,10 @@ final class PrivacyZoneManagerTests: XCTestCase {
 final class AuditTrailManagerTests: XCTestCase {
 
     private func makeManager() -> (AuditTrailManager, TraceletDatabase) {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         config.setConfig(["auditEnabled": true])
-        return (AuditTrailManager(database: db, configManager: config), db)
+        return (AuditTrailManager(configManager: config), db)
     }
 
     func testAppendCreatesAuditRecord() {
@@ -246,10 +246,10 @@ final class AuditTrailManagerTests: XCTestCase {
     }
 
     func testDisabledAuditReturnsNil() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         config.setConfig(["auditEnabled": false])
-        let mgr = AuditTrailManager(database: db, configManager: config)
+        let mgr = AuditTrailManager(configManager: config)
 
         let result = mgr.appendToChain(["uuid": "loc-001", "timestamp": "t"])
         XCTAssertNil(result)
@@ -298,8 +298,7 @@ final class TraceletLoggerTests: XCTestCase {
     func testLogLevels() {
         let config = ConfigManager()
         config.setConfig(["logLevel": 5]) // verbose
-        let db = TraceletDatabase(inMemory: true)
-        let logger = TraceletLogger(configManager: config, database: db)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         logger.error("Error message")
         logger.warning("Warning message")
@@ -314,8 +313,7 @@ final class TraceletLoggerTests: XCTestCase {
     func testLogLevelFiltering() {
         let config = ConfigManager()
         config.setConfig(["logLevel": 1]) // only errors
-        let db = TraceletDatabase(inMemory: true)
-        let logger = TraceletLogger(configManager: config, database: db)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         logger.error("Error message")
         logger.info("Info message")
@@ -329,8 +327,7 @@ final class TraceletLoggerTests: XCTestCase {
     func testDestroyLog() {
         let config = ConfigManager()
         config.setConfig(["logLevel": 5])
-        let db = TraceletDatabase(inMemory: true)
-        let logger = TraceletLogger(configManager: config, database: db)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         logger.info("Test")
         XCTAssertGreaterThan(logger.getLog().count, 0)
@@ -342,8 +339,7 @@ final class TraceletLoggerTests: XCTestCase {
     func testLogForEmail() {
         let config = ConfigManager()
         config.setConfig(["logLevel": 5])
-        let db = TraceletDatabase(inMemory: true)
-        let logger = TraceletLogger(configManager: config, database: db)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         logger.info("Email test log")
         let emailStr = logger.getLogForEmail()
@@ -353,8 +349,7 @@ final class TraceletLoggerTests: XCTestCase {
     func testDartLogLevel() {
         let config = ConfigManager()
         config.setConfig(["logLevel": 5])
-        let db = TraceletDatabase(inMemory: true)
-        let logger = TraceletLogger(configManager: config, database: db)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         logger.log(levelString: "ERROR", message: "Dart error")
         logger.log(levelString: "INFO", message: "Dart info")
@@ -517,7 +512,7 @@ final class ConfigManagerExtendedTests: XCTestCase {
 final class DatabaseExtendedTests: XCTestCase {
 
     func testPrivacyZoneCRUD() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let added = db.insertPrivacyZone([
             "identifier": "zone1",
             "latitude": 37.78,
@@ -537,7 +532,7 @@ final class DatabaseExtendedTests: XCTestCase {
     }
 
     func testDeleteAllPrivacyZones() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         _ = db.insertPrivacyZone(["identifier": "a", "latitude": 1.0, "longitude": 2.0, "radius": 100.0, "action": 0])
         _ = db.insertPrivacyZone(["identifier": "b", "latitude": 3.0, "longitude": 4.0, "radius": 200.0, "action": 1])
         XCTAssertEqual(db.getPrivacyZones().count, 2)
@@ -547,7 +542,7 @@ final class DatabaseExtendedTests: XCTestCase {
     }
 
     func testAuditRecordCRUD() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         db.insertAuditRecord(uuid: "loc-1", hash: "abc123", previousHash: "genesis", chainIndex: 0)
 
         let record = db.getAuditRecord(uuid: "loc-1")
@@ -560,7 +555,7 @@ final class DatabaseExtendedTests: XCTestCase {
     }
 
     func testDeleteAllAuditRecords() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         db.insertAuditRecord(uuid: "loc-1", hash: "h1", previousHash: "g", chainIndex: 0)
         db.insertAuditRecord(uuid: "loc-2", hash: "h2", previousHash: "h1", chainIndex: 1)
 
@@ -569,7 +564,7 @@ final class DatabaseExtendedTests: XCTestCase {
     }
 
     func testDatabaseMultipleLocations() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         for i in 0..<10 {
             _ = db.insertLocation([
                 "uuid": "loc-\(i)",
@@ -812,7 +807,7 @@ final class PeriodicSyncContractTests: XCTestCase {
     // MARK: - onLocationPersisted callback property
 
     func testOnLocationPersistedDefaultsToNil() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         let state = StateManager()
         let sender = MockSyncEventSender()
@@ -820,13 +815,12 @@ final class PeriodicSyncContractTests: XCTestCase {
             configManager: config,
             stateManager: state,
             eventDispatcher: sender,
-            database: db
         )
         XCTAssertNil(engine.onLocationPersisted)
     }
 
     func testOnLocationPersistedCanBeSetAndFired() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         let state = StateManager()
         let sender = MockSyncEventSender()
@@ -834,7 +828,6 @@ final class PeriodicSyncContractTests: XCTestCase {
             configManager: config,
             stateManager: state,
             eventDispatcher: sender,
-            database: db
         )
 
         var callbackFired = false
@@ -846,41 +839,38 @@ final class PeriodicSyncContractTests: XCTestCase {
     // MARK: - HttpSyncManager.onLocationInserted threshold
 
     func testHttpSyncManagerCreatesWithoutCrash() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         let sender = MockSyncEventSender()
         let sync = HttpSyncManager(
             configManager: config,
             eventDispatcher: sender,
-            database: db
         )
         // Must not crash
         XCTAssertNotNil(sync)
     }
 
     func testHttpSyncManagerStartDoesNotCrashWithNoUrl() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         // No URL configured — start should be a no-op
         let sender = MockSyncEventSender()
         let sync = HttpSyncManager(
             configManager: config,
             eventDispatcher: sender,
-            database: db
         )
         sync.start()
         // Must not crash
     }
 
     func testOnLocationInsertedDoesNotCrashWithEmptyDb() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         config.setConfig(["url": "http://localhost:9999/locations"])
         let sender = MockSyncEventSender()
         let sync = HttpSyncManager(
             configManager: config,
             eventDispatcher: sender,
-            database: db
         )
         sync.start()
         sync.onLocationInserted()
@@ -890,7 +880,7 @@ final class PeriodicSyncContractTests: XCTestCase {
     // MARK: - onLocationPersisted → HttpSyncManager wiring
 
     func testOnLocationPersistedWiresHttpSync() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         config.setConfig(["url": "http://localhost:9999/locations"])
         let state = StateManager()
@@ -899,12 +889,10 @@ final class PeriodicSyncContractTests: XCTestCase {
             configManager: config,
             stateManager: state,
             eventDispatcher: sender,
-            database: db
         )
         let sync = HttpSyncManager(
             configManager: config,
             eventDispatcher: sender,
-            database: db
         )
         sync.start()
 
@@ -922,7 +910,7 @@ final class PeriodicSyncContractTests: XCTestCase {
     // MARK: - Auto-purge workflow: insert → mark synced → delete synced
 
     func testAutoPurgeWorkflowDeletesSyncedKeepsUnsynced() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
 
         // Insert 3 locations
         let uuid1 = db.insertLocation([
@@ -962,13 +950,12 @@ final class PeriodicSyncContractTests: XCTestCase {
     // MARK: - HttpSyncManager callback wiring after initialize
 
     func testHttpSyncManagerCallbacksCanBeSetAfterInit() {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         let sender = MockSyncEventSender()
         let _ = HttpSyncManager(
             configManager: config,
             eventDispatcher: sender,
-            database: db
         )
 
         // Reset static callbacks to nil before testing

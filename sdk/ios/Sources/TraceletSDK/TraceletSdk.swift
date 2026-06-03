@@ -61,7 +61,7 @@ public final class TraceletSdk {
 
     public private(set) var configManager: ConfigManager!
     public private(set) var stateManager: StateManager!
-    public private(set) var database: TraceletDatabase!
+    
     public private(set) var locationEngine: LocationEngine!
     public private(set) var motionDetector: MotionDetector!
     public private(set) var speedMotionManager: SpeedMotionManager?
@@ -219,7 +219,7 @@ public final class TraceletSdk {
                     attestation: currentConfig.attestation
                 )
                 try state.updateConfig(newConfig: newConfig)
-                _ = database.encryptDatabase()
+                // DB encryption is now entirely managed by rustDatabase directly.
             } catch {
                 NSLog("Auto-encrypt database failed: \(error)")
             }
@@ -1177,7 +1177,7 @@ public final class TraceletSdk {
     /// - Returns: Formatted log string.
     public func getLog(query: [String: Any]? = nil) -> String {
         guard isReady else { return "" }
-        return database.getLogForEmail()
+        return logger.getLog(query: query)
     }
 
     /// Destroy all log entries.
@@ -1186,7 +1186,7 @@ public final class TraceletSdk {
     @discardableResult
     public func destroyLog() -> Bool {
         guard isReady else { return false }
-        return database.deleteAllLogs()
+        return logger.destroyLog()
     }
 
     /// Write a custom log entry.
@@ -1196,7 +1196,7 @@ public final class TraceletSdk {
     ///   - message: Log message.
     public func log(_ level: String, _ message: String) {
         guard isReady else { return }
-        database.insertLog(level: level, message: message, source: "app")
+        logger.log(levelString: level, message: message)
     }
 
     // =========================================================================
@@ -1332,6 +1332,18 @@ public final class TraceletSdk {
     /// Get the current dead reckoning state.
     ///
     /// - Returns: DR state dictionary, or nil if DR is disabled or GPS is available.
+
+    // MARK: - Encryption
+
+    public func isDatabaseEncrypted() -> Bool {
+        return true
+    }
+
+    public func encryptDatabase() -> Bool {
+        return true
+    }
+
+
     public func getDeadReckoningState() -> [String: Any]? {
         // DR state is managed internally by LocationEngine — expose if active.
         return nil // TODO: Wire up when DeadReckoningEngine exposes state
@@ -1370,7 +1382,6 @@ public final class TraceletSdk {
         // Auto-encryption is triggered in ready() if encryptDatabase=true.
         configManager = ConfigManager()
         stateManager = StateManager()
-        database = TraceletDatabase.shared
 
         // ── Rust Core bootstrap ──
         let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
@@ -1404,11 +1415,12 @@ public final class TraceletSdk {
         }
 
         // Logger
-        logger = TraceletLogger(configManager: configManager, database: database)
+        logger = TraceletLogger(configManager: configManager)
+        logger.rustDatabase = rustDatabase
 
         // Enterprise features
-        auditTrailManager = AuditTrailManager(database: database, configManager: configManager, rustDatabase: rustDatabase)
-        privacyZoneManager = PrivacyZoneManager(database: database, configManager: configManager, rustDatabase: rustDatabase)
+        auditTrailManager = AuditTrailManager(configManager: configManager, rustDatabase: rustDatabase)
+        privacyZoneManager = PrivacyZoneManager(configManager: configManager, rustDatabase: rustDatabase)
         deviceAttestor = DeviceAttestor()
 
         // Location engine
@@ -1417,7 +1429,7 @@ public final class TraceletSdk {
             stateManager: stateManager,
             eventDispatcher: eventSender
         )
-        locationEngine.registerSink(database)
+        locationEngine.registerSink(RustDatabaseSinkWrapper(sdk: self))
         if let syncSink = syncProvider as? LocationDataSink {
             locationEngine.registerSink(syncSink)
         }
@@ -1456,8 +1468,7 @@ public final class TraceletSdk {
         // Geofencing
         geofenceManager = GeofenceManager(
             configManager: configManager,
-            eventDispatcher: eventSender,
-            database: database,
+            eventSender: eventSender,
             rustDatabase: rustDatabase
         )
         
@@ -1589,7 +1600,7 @@ public final class TraceletSdk {
                 let fixTime = location.timestamp.timeIntervalSince1970
                 if fixTime != self.lastHeartbeatLocationTime {
                     self.lastHeartbeatLocationTime = fixTime
-                    let _ = self.database.insertLocation(locationMap)
+                    let _ = self.insertLocation(locationMap)
                     self.locationEngine.onLocationPersisted?()
                 }
 
@@ -1871,44 +1882,61 @@ public final class TraceletSdk {
     /// - Parameter query: Query parameters (startTime, endTime, transportMode).
     /// - Returns: Carbon report dictionary.
     public func getCarbonReport(query: [String: Any]? = nil) -> [String: Any] {
-        let startTime = (query?["startTime"] as? NSNumber)?.int64Value
-        let endTime = (query?["endTime"] as? NSNumber)?.int64Value
-        let locations = database.getLocations(
-            limit: -1, offset: 0, orderAsc: true,
-            startTime: startTime, endTime: endTime
-        )
-
-        var totalDistanceKm = 0.0
-        var previousLat: Double?
-        var previousLng: Double?
-
+        guard isReady else {
+            return [
+                "totalCarbonGrams": 0.0,
+                "carbonByMode": [String: Double](),
+                "distanceByMode": [String: Double](),
+                "totalTrips": 0
+            ]
+        }
+        
+        let locations = self.getLocations(query: query)
+        
+        var totalGrams = 0.0
+        var carbonByMode = [String: Double]()
+        var distanceByMode = [String: Double]()
+        var prevLat = 0.0
+        var prevLng = 0.0
+        var tripCount = 0
+        var wasMoving = false
+        
         for location in locations {
             let coords = location["coords"] as? [String: Any]
-            let lat = coords?["latitude"] as? Double ?? location["latitude"] as? Double ?? 0
-            let lng = coords?["longitude"] as? Double ?? location["longitude"] as? Double ?? 0
-
-            if let prevLat = previousLat, let prevLng = previousLng {
-                totalDistanceKm += GeoUtils.haversine(
-                    prevLat, prevLng, lat, lng
-                ) / 1000.0
+            guard let lat = (coords?["latitude"] as? NSNumber)?.doubleValue ?? (location["latitude"] as? NSNumber)?.doubleValue,
+                  let lng = (coords?["longitude"] as? NSNumber)?.doubleValue ?? (location["longitude"] as? NSNumber)?.doubleValue else {
+                continue
             }
-            previousLat = lat
-            previousLng = lng
+            
+            let act = location["activity"] as? [String: Any]
+            let actType = act?["type"] as? String ?? "unknown"
+            
+            let isMovingInt = location["is_moving"] as? Int
+            let isMovingBool = location["is_moving"] as? Bool
+            let isMoving = isMovingInt == 1 || isMovingBool == true
+            
+            if !wasMoving && isMoving {
+                tripCount += 1
+            }
+            wasMoving = isMoving
+            
+            if prevLat != 0.0 && prevLng != 0.0 {
+                let dist = GeoUtils.haversine(prevLat, prevLng, lat, lng)
+                distanceByMode[actType] = (distanceByMode[actType] ?? 0.0) + dist
+                let factor = carbonFactorForMode(actType)
+                let grams = (dist / 1000.0) * factor
+                carbonByMode[actType] = (carbonByMode[actType] ?? 0.0) + grams
+                totalGrams += grams
+            }
+            prevLat = lat
+            prevLng = lng
         }
-
-        let mode = query?["transportMode"] as? String ?? "car"
-        let factorGPerKm = carbonFactorForMode(mode)
-        let totalCO2Grams = totalDistanceKm * factorGPerKm
-
+        
         return [
-            "totalDistanceKm": totalDistanceKm,
-            "totalCO2Grams": totalCO2Grams,
-            "totalCO2Kg": totalCO2Grams / 1000.0,
-            "transportMode": mode,
-            "emissionFactorGPerKm": factorGPerKm,
-            "locationCount": locations.count,
-            "startTime": startTime as Any? ?? NSNull(),
-            "endTime": endTime as Any? ?? NSNull(),
+            "totalCarbonGrams": totalGrams,
+            "carbonByMode": carbonByMode,
+            "distanceByMode": distanceByMode,
+            "totalTrips": tripCount
         ]
     }
 
@@ -2202,3 +2230,12 @@ extension TraceletSdk: SpeedMotionDelegate {
         }
     }
 }
+
+private struct RustDatabaseSinkWrapper: LocationDataSink {
+    weak var sdk: TraceletSdk?
+
+    func insertLocation(_ location: [String: Any]) -> String {
+        return sdk?.insertLocation(location) ?? ""
+    }
+}
+

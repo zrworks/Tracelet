@@ -6,7 +6,7 @@ import XCTest
 final class LocationEngineMockDetectionTests: XCTestCase {
 
     private func makeEngine() -> LocationEngine {
-        let db = TraceletDatabase(inMemory: true)
+        let db = try! DatabaseManager(dbPath: ":memory:")
         let config = ConfigManager()
         
         let _ = config.setConfig([
@@ -22,7 +22,6 @@ final class LocationEngineMockDetectionTests: XCTestCase {
             configManager: config,
             stateManager: state,
             eventDispatcher: sender,
-            database: db
         )
         return engine
     }

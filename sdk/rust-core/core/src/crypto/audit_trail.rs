@@ -226,3 +226,95 @@ impl AuditTrailEngine {
         state.latest_hash = compute_genesis_hash(state.device_id.clone());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dummy_location(uuid: &str) -> LocationRecord {
+        LocationRecord {
+            uuid: uuid.to_string(),
+            latitude: 37.7749,
+            longitude: -122.4194,
+            timestamp: "2024-01-01T00:00:00Z".to_string(),
+            accuracy: 10.0,
+            speed: 0.0,
+            heading: 0.0,
+            altitude: 0.0,
+            is_moving: false,
+        }
+    }
+
+    #[test]
+    fn test_audit_chain_generation() {
+        let engine = AuditTrailEngine::new("device-1".to_string(), 0, None);
+        let loc1 = dummy_location("loc-1");
+        let result1 = engine.generate_next_hash(loc1);
+        
+        assert_eq!(result1.chain_index, 0);
+        let genesis_hash = compute_genesis_hash("device-1".to_string());
+        assert_eq!(result1.previous_hash, genesis_hash);
+        
+        let loc2 = dummy_location("loc-2");
+        let result2 = engine.generate_next_hash(loc2);
+        assert_eq!(result2.chain_index, 1);
+        assert_eq!(result2.previous_hash, result1.hash);
+    }
+
+    #[test]
+    fn test_verify_audit_trail_valid() {
+        let engine = AuditTrailEngine::new("device-1".to_string(), 0, None);
+        let loc1 = dummy_location("loc-1");
+        let result1 = engine.generate_next_hash(loc1.clone());
+        
+        let loc2 = dummy_location("loc-2");
+        let result2 = engine.generate_next_hash(loc2.clone());
+
+        let records = vec![
+            AuditRecordWithLocation {
+                hash: result1.hash.clone(),
+                previous_hash: result1.previous_hash.clone(),
+                chain_index: result1.chain_index,
+                has_location: true,
+                location: Some(loc1),
+            },
+            AuditRecordWithLocation {
+                hash: result2.hash.clone(),
+                previous_hash: result2.previous_hash.clone(),
+                chain_index: result2.chain_index,
+                has_location: true,
+                location: Some(loc2),
+            },
+        ];
+
+        let verification = engine.verify_chain(records);
+        assert!(verification.is_valid);
+        assert_eq!(verification.verified_records, 2);
+    }
+
+    #[test]
+    fn test_tamper_detection() {
+        let engine = AuditTrailEngine::new("device-1".to_string(), 0, None);
+        let loc1 = dummy_location("loc-1");
+        let result1 = engine.generate_next_hash(loc1.clone());
+        
+        // Tamper with the location data
+        let mut tampered_loc = loc1.clone();
+        tampered_loc.latitude = 40.0; // Changed!
+
+        let records = vec![
+            AuditRecordWithLocation {
+                hash: result1.hash.clone(),
+                previous_hash: result1.previous_hash.clone(),
+                chain_index: result1.chain_index,
+                has_location: true,
+                location: Some(tampered_loc),
+            },
+        ];
+
+        let verification = engine.verify_chain(records);
+        assert_eq!(verification.is_valid, false);
+        assert_eq!(verification.broken_at_index, Some(0));
+        assert!(verification.error.unwrap().contains("hash mismatch"));
+    }
+}

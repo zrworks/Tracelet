@@ -945,4 +945,38 @@ mod tests {
         assert_eq!(locations[0].timestamp, t2);
         assert_eq!(locations[1].timestamp, t3);
     }
+
+    #[test]
+    fn test_delete_locations() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        
+        assert_eq!(db.get_locations_count().unwrap(), 2);
+        
+        db.destroy_location(id1).unwrap();
+        assert_eq!(db.get_locations_count().unwrap(), 1);
+        
+        db.destroy_locations().unwrap();
+        assert_eq!(db.get_locations_count().unwrap(), 0);
+    }
+
+    #[test]
+    fn test_delete_synced_locations() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id3 = db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        
+        assert_eq!(db.get_locations_count().unwrap(), 3);
+        
+        // Sync clears up to max ID
+        db.clear_locations_up_to(id2).unwrap();
+        
+        assert_eq!(db.get_locations_count().unwrap(), 1);
+        let remaining = db.get_locations_batch(None).unwrap();
+        assert_eq!(remaining[0].id, id3);
+    }
 }

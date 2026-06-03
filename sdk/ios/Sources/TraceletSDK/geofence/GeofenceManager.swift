@@ -10,7 +10,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private let locationManager: CLLocationManager
     private let configManager: ConfigManager
     private let eventDispatcher: TraceletEventSending
-    private let database: TraceletDatabase
+
 
     /// Maximum number of monitored regions (iOS limit).
     private static let maxRegions = 20
@@ -32,8 +32,6 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private var cachedGeofences: [[String: Any]]?
     private let rustDatabase: DatabaseManager?
 
-    /// Returns the cached geofences. If the cache is invalidated, it queries the shared Rust Core database,
-    /// parses the geofences, and maps them to Swift dictionaries.
     private func getCachedGeofences() -> [[String: Any]] {
         if let cached = cachedGeofences {
             return cached
@@ -46,16 +44,14 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     }
 
     public init(configManager: ConfigManager,
-         eventDispatcher: TraceletEventSending,
-         database: TraceletDatabase,
+         eventSender: TraceletEventSending,
          rustDatabase: DatabaseManager? = nil) {
         self.configManager = configManager
-        self.eventDispatcher = eventDispatcher
-        self.database = database
+        self.eventDispatcher = eventSender
         self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
         self.locationManager = CLLocationManager()
         super.init()
-        locationManager.delegate = self
+        self.locationManager.delegate = self
     }
 
     // MARK: - Add / Remove geofences
@@ -63,8 +59,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     /// Registers a single geofence. Persists to both the native Swift database (for background OS region monitoring)
     /// and the Rust Core SQLite engine, and evaluates local proximity.
     public func addGeofence(_ data: [String: Any]) -> Bool {
-        // Double persist: Write to native iOS DB (keeps CLLocationManager background monitoring active)
-        let _ = database.insertGeofence(data)
+        // We removed native DB double-persist
         
         // Write to the shared Rust Core SQLite engine
         if let identifier = data["identifier"] as? String {
@@ -109,8 +104,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     /// Registers multiple geofences in a single batch transaction.
     public func addGeofences(_ geofences: [[String: Any]]) -> Bool {
-        // Write to native iOS DB in a single SQLite transaction
-        let _ = database.insertGeofencesBatch(geofences)
+        // We removed native DB double-persist
         
         // Write to the shared Rust Core SQLite engine
         for g in geofences {
@@ -159,7 +153,6 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     /// Deletes a specific geofence from both native iOS and shared Rust databases,
     /// and stops monitoring the active region.
     public func removeGeofence(_ identifier: String) -> Bool {
-        let _ = database.deleteGeofence(identifier)
         do {
             try rustDatabase?.deleteGeofence(identifier: identifier)
         } catch {
@@ -178,7 +171,6 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     /// Deletes all registered geofences.
     public func removeGeofences() -> Bool {
-        let _ = database.deleteAllGeofences()
         do {
             try rustDatabase?.clearGeofences()
         } catch {
@@ -240,7 +232,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         // No known location — register all circular geofences (capped at max)
         let maxMonitored = resolveMaxMonitored()
         var count = 0
-        let geofences = database.getGeofences()
+        let geofences = getCachedGeofences()
         for g in geofences {
             if count >= maxMonitored { break }
             let vertices = g["vertices"] as? [[Double]]
@@ -381,7 +373,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         // Fire geofencesChange event (on = activated, off = deactivated)
         let on: [[String: Any]] = toAdd.compactMap { candidateMap[$0] }
         let off: [[String: Any]] = toRemove.map { id in
-            database.getGeofence(id) ?? ["identifier": id]
+            getGeofence(id) ?? ["identifier": id]
         }
         if !on.isEmpty || !off.isEmpty {
             eventDispatcher.sendGeofencesChange(["on": on, "off": off])
@@ -486,7 +478,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         // handles transitions in-app. Skip OS-level events to avoid duplicates.
         if configManager.getGeofenceModeHighAccuracy() { return }
 
-        let geofenceData = database.getGeofence(region.identifier)
+        let geofenceData = getGeofence(region.identifier)
         let location = locationManager.location
 
         var eventData: [String: Any] = [

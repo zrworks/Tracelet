@@ -17,15 +17,13 @@ public final class PrivacyZoneManager {
     public static let actionDegrade  = 1
     public static let actionEventOnly = 2
 
-    private let database: TraceletDatabase
     private let configManager: ConfigManager
     private let rustDatabase: DatabaseManager?
 
     /// In-memory cache of active privacy zones to prevent database queries per location update.
     private var cachedZones: [CorePrivacyZone]?
 
-    public init(database: TraceletDatabase, configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
-        self.database = database
+    public init(configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
         self.configManager = configManager
         self.rustDatabase = rustDatabase ?? (try? DatabaseManager(dbPath: ":memory:"))
     }

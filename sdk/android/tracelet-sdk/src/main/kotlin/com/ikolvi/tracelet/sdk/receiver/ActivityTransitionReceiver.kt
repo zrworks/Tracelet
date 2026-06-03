@@ -36,18 +36,48 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
                 } else {
                     Log.w(TAG, "No active or boot-mode MotionDetector found to handle transition")
                     val state = com.ikolvi.tracelet.sdk.StateManager(context)
-                    if (state.enabled && state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC) {
+                    if (state.enabled) {
                         val extractor = com.ikolvi.tracelet.sdk.wrapper.TraceletServices.getInstance(context).getEventExtractor()
                         val result = extractor.extractActivityTransitionResult(intent)
                         if (result != null) {
                             for (event in result.transitionEvents) {
                                 // 0 = ENTER, 3 = STILL
-                                if (event.transitionType == 0 && event.activityType != 3) {
-                                    Log.d(TAG, "Detected moving transition while in killed periodic mode — waking up SDK!")
-                                    state.isMoving = true
-                                    state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
-                                    LocationService.startFromBoot(context)
-                                    break
+                                if (event.transitionType == 0) {
+                                    if (event.activityType != 3) {
+                                        if (state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC) {
+                                            Log.d(TAG, "Detected moving transition while in killed periodic mode — waking up SDK!")
+                                            state.isMoving = true
+                                            state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
+                                            LocationService.startFromBoot(context)
+                                            break
+                                        }
+                                    } else {
+                                        if (state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS) {
+                                            Log.d(TAG, "Detected STILL transition while in killed continuous mode — switching to stationary!")
+                                            state.isMoving = false
+                                            val configManager = com.ikolvi.tracelet.sdk.ConfigManager.getInstance(context)
+                                            val useForeground = configManager.isForegroundServiceEnabled()
+                                            
+                                            if (configManager.getStationaryTrackingMode() == com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES) {
+                                                state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.GEOFENCES
+                                            } else {
+                                                state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC
+                                                val interval = configManager.getStationaryPeriodicInterval()
+                                                val useExactAlarms = configManager.getPeriodicUseExactAlarms() || interval < 900
+                                                if (useExactAlarms) {
+                                                    com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker.scheduleOneTime(context)
+                                                    com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker.scheduleExactAlarm(context, interval)
+                                                } else {
+                                                    com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker.schedule(context, interval)
+                                                }
+                                            }
+                                            
+                                            if (useForeground) {
+                                                LocationService.startFromBoot(context)
+                                            }
+                                            break
+                                        }
+                                    }
                                 }
                             }
                         }

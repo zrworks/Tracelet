@@ -822,6 +822,7 @@ class TlHttpConfig {
     this.sslPinningCertificates,
     this.httpRootProperty,
     required this.autoSyncThreshold,
+    this.autoSyncDelay,
     required this.httpTimeout,
     required this.locationsOrderDirection,
     this.extras,
@@ -855,6 +856,8 @@ class TlHttpConfig {
 
   int autoSyncThreshold;
 
+  int? autoSyncDelay;
+
   int httpTimeout;
 
   TlLocationOrderDirection locationsOrderDirection;
@@ -886,6 +889,7 @@ class TlHttpConfig {
       sslPinningCertificates,
       httpRootProperty,
       autoSyncThreshold,
+      autoSyncDelay,
       httpTimeout,
       locationsOrderDirection,
       extras,
@@ -916,15 +920,16 @@ class TlHttpConfig {
       sslPinningCertificates: (result[8] as List<Object?>?)?.cast<String?>(),
       httpRootProperty: result[9] as String?,
       autoSyncThreshold: result[10]! as int,
-      httpTimeout: result[11]! as int,
-      locationsOrderDirection: result[12]! as TlLocationOrderDirection,
-      extras: (result[13] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
-      disableAutoSyncOnCellular: result[14]! as bool,
-      maxRetries: result[15]! as int,
-      retryBackoffBase: result[16]! as int,
-      retryBackoffCap: result[17]! as int,
-      enableDeltaCompression: result[18]! as bool,
-      deltaCoordinatePrecision: result[19]! as int,
+      autoSyncDelay: result[11] as int?,
+      httpTimeout: result[12]! as int,
+      locationsOrderDirection: result[13]! as TlLocationOrderDirection,
+      extras: (result[14] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      disableAutoSyncOnCellular: result[15]! as bool,
+      maxRetries: result[16]! as int,
+      retryBackoffBase: result[17]! as int,
+      retryBackoffCap: result[18]! as int,
+      enableDeltaCompression: result[19]! as bool,
+      deltaCoordinatePrecision: result[20]! as int,
     );
   }
 
@@ -948,6 +953,7 @@ class TlHttpConfig {
         _deepEquals(sslPinningCertificates, other.sslPinningCertificates) &&
         _deepEquals(httpRootProperty, other.httpRootProperty) &&
         _deepEquals(autoSyncThreshold, other.autoSyncThreshold) &&
+        _deepEquals(autoSyncDelay, other.autoSyncDelay) &&
         _deepEquals(httpTimeout, other.httpTimeout) &&
         _deepEquals(locationsOrderDirection, other.locationsOrderDirection) &&
         _deepEquals(extras, other.extras) &&

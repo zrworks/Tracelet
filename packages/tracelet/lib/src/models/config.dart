@@ -886,6 +886,7 @@ class HttpConfig {
     this.batchSync = false,
     this.maxBatchSize = 250,
     this.autoSyncThreshold = 0,
+    this.autoSyncDelay = 10000,
     this.httpTimeout = 60000,
     this.locationsOrderDirection = LocationOrderDirection.ascending,
     this.disableAutoSyncOnCellular = false,
@@ -912,6 +913,7 @@ class HttpConfig {
       batchSync: ensureBool(map['batchSync'], fallback: false),
       maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
       autoSyncThreshold: ensureInt(map['autoSyncThreshold'], fallback: 0),
+      autoSyncDelay: ensureInt(map['autoSyncDelay'], fallback: 10000),
       httpTimeout: ensureInt(map['httpTimeout'], fallback: 60000),
       locationsOrderDirection:
           LocationOrderDirection.values[ensureInt(
@@ -949,6 +951,7 @@ class HttpConfig {
     bool? batchSync,
     int? maxBatchSize,
     int? autoSyncThreshold,
+    int? autoSyncDelay,
     int? httpTimeout,
     LocationOrderDirection? locationsOrderDirection,
     bool? disableAutoSyncOnCellular,
@@ -969,6 +972,7 @@ class HttpConfig {
       batchSync: batchSync ?? this.batchSync,
       maxBatchSize: maxBatchSize ?? this.maxBatchSize,
       autoSyncThreshold: autoSyncThreshold ?? this.autoSyncThreshold,
+      autoSyncDelay: autoSyncDelay ?? this.autoSyncDelay,
       httpTimeout: httpTimeout ?? this.httpTimeout,
       locationsOrderDirection:
           locationsOrderDirection ?? this.locationsOrderDirection,
@@ -1020,6 +1024,10 @@ class HttpConfig {
   /// Defaults to `0`.
   final int autoSyncThreshold;
 
+  /// Delay in milliseconds before batching rapid location syncs (debounce time).
+  /// Defaults to `10000` (10 seconds).
+  final int autoSyncDelay;
+
   /// Request timeout in milliseconds.
   /// Defaults to `60000` (60 seconds).
   final int httpTimeout;
@@ -1069,6 +1077,7 @@ class HttpConfig {
     batchSync: batchSync,
     maxBatchSize: maxBatchSize,
     autoSyncThreshold: autoSyncThreshold,
+    autoSyncDelay: autoSyncDelay,
     httpTimeout: httpTimeout,
     locationsOrderDirection:
         TlLocationOrderDirection.values[locationsOrderDirection.index],
@@ -1092,6 +1101,7 @@ class HttpConfig {
       'batchSync': batchSync,
       'maxBatchSize': maxBatchSize,
       'autoSyncThreshold': autoSyncThreshold,
+      'autoSyncDelay': autoSyncDelay,
       'httpTimeout': httpTimeout,
       'locationsOrderDirection': locationsOrderDirection.index,
       'disableAutoSyncOnCellular': disableAutoSyncOnCellular,
@@ -1118,6 +1128,7 @@ class HttpConfig {
           batchSync == other.batchSync &&
           maxBatchSize == other.maxBatchSize &&
           autoSyncThreshold == other.autoSyncThreshold &&
+          autoSyncDelay == other.autoSyncDelay &&
           httpTimeout == other.httpTimeout &&
           locationsOrderDirection == other.locationsOrderDirection &&
           disableAutoSyncOnCellular == other.disableAutoSyncOnCellular &&
@@ -1139,6 +1150,7 @@ class HttpConfig {
     batchSync,
     maxBatchSize,
     autoSyncThreshold,
+    autoSyncDelay,
     httpTimeout,
     locationsOrderDirection,
     disableAutoSyncOnCellular,

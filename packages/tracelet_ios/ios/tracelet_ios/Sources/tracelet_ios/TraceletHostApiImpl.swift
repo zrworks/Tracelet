@@ -93,6 +93,7 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["batchSync"] = c.http.batchSync
         dict["maxBatchSize"] = c.http.maxBatchSize
         dict["autoSyncThreshold"] = c.http.autoSyncThreshold
+        if let autoSyncDelay = c.http.autoSyncDelay { dict["autoSyncDelay"] = autoSyncDelay }
         dict["httpTimeout"] = c.http.httpTimeout
         dict["locationsOrderDirection"] = c.http.locationsOrderDirection.rawValue
         dict["disableAutoSyncOnCellular"] = c.http.disableAutoSyncOnCellular

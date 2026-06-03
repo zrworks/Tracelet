@@ -257,12 +257,13 @@ HttpConfig(
   url: 'https://api.example.com/locations',
   autoSync: true,
   autoSyncThreshold: 10,  // Wait until 10 locations before syncing
+  autoSyncDelay: 10000,   // Delay in ms before dispatching the request
   batchSync: true,
 )
 ```
 
 This is useful for battery savings — instead of one HTTP request per
-location, the engine waits until a threshold is reached.
+location, the engine waits until a threshold is reached or groups rapid updates into a single batch using the debounce delay.
 
 ---
 
@@ -488,6 +489,7 @@ manager — there is no duplication or gap in sync coverage.
 | `maxBatchSize`              | `int`             | `250`      | Max locations per batch                    |
 | `autoSync`                  | `bool`            | `true`     | Auto-sync on each insert                   |
 | `autoSyncThreshold`         | `int`             | `0`        | Min locations before auto-sync             |
+| `autoSyncDelay`             | `int`             | `10000`    | Delay before auto-sync dispatch in ms      |
 | `httpTimeout`               | `int`             | `60000`    | Request timeout in ms                      |
 | `params`                    | `Map`             | `{}`       | Extra body parameters                      |
 | `locationsOrderDirection`   | `LocationOrder`   | `asc`      | Sort order for pending locations           |

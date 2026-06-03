@@ -615,6 +615,9 @@ public final class TraceletSdk {
 
             stateManager.reset()
             configManager.reset(config)
+            tripManager.reset()
+            batteryBudgetEngine?.reset()
+            auditTrailManager?.reset()
             isReady = false
             logger.info("reset() — all subsystems reset")
         }
@@ -2203,6 +2206,7 @@ extension TraceletSdk: SpeedMotionDelegate {
                     maxRetries: Int32(configManager.getMaxRetries()),
                     retryBackoffBase: Int32(configManager.getRetryBackoffBase()),
                     retryBackoffCap: Int32(configManager.getRetryBackoffCap()),
+                    autoSyncDelay: Int32(configManager.getAutoSyncDelay()),
                     sslPinningCertificates: configManager.getSslPinningCertificates().isEmpty ? nil : configManager.getSslPinningCertificates()
                 ),
                 geofence: GeofenceConfig(

@@ -237,6 +237,7 @@ class TlHttpConfig {
     this.sslPinningCertificates,
     this.httpRootProperty,
     this.extras,
+    this.autoSyncDelay,
   });
 
   final String? url;
@@ -250,6 +251,7 @@ class TlHttpConfig {
   final List<String?>? sslPinningCertificates;
   final String? httpRootProperty;
   final int autoSyncThreshold;
+  final int? autoSyncDelay;
   final int httpTimeout;
   final TlLocationOrderDirection locationsOrderDirection;
   final Map<String?, Object?>? extras;

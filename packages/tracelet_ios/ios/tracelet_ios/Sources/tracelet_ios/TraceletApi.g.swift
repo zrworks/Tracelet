@@ -797,6 +797,7 @@ struct TlHttpConfig: Hashable {
   var sslPinningCertificates: [String?]? = nil
   var httpRootProperty: String? = nil
   var autoSyncThreshold: Int64
+  var autoSyncDelay: Int64? = nil
   var httpTimeout: Int64
   var locationsOrderDirection: TlLocationOrderDirection
   var extras: [String?: Any?]? = nil
@@ -821,15 +822,16 @@ struct TlHttpConfig: Hashable {
     let sslPinningCertificates: [String?]? = nilOrValue(pigeonVar_list[8])
     let httpRootProperty: String? = nilOrValue(pigeonVar_list[9])
     let autoSyncThreshold = pigeonVar_list[10] as! Int64
-    let httpTimeout = pigeonVar_list[11] as! Int64
-    let locationsOrderDirection = pigeonVar_list[12] as! TlLocationOrderDirection
-    let extras: [String?: Any?]? = nilOrValue(pigeonVar_list[13])
-    let disableAutoSyncOnCellular = pigeonVar_list[14] as! Bool
-    let maxRetries = pigeonVar_list[15] as! Int64
-    let retryBackoffBase = pigeonVar_list[16] as! Int64
-    let retryBackoffCap = pigeonVar_list[17] as! Int64
-    let enableDeltaCompression = pigeonVar_list[18] as! Bool
-    let deltaCoordinatePrecision = pigeonVar_list[19] as! Int64
+    let autoSyncDelay: Int64? = nilOrValue(pigeonVar_list[11])
+    let httpTimeout = pigeonVar_list[12] as! Int64
+    let locationsOrderDirection = pigeonVar_list[13] as! TlLocationOrderDirection
+    let extras: [String?: Any?]? = nilOrValue(pigeonVar_list[14])
+    let disableAutoSyncOnCellular = pigeonVar_list[15] as! Bool
+    let maxRetries = pigeonVar_list[16] as! Int64
+    let retryBackoffBase = pigeonVar_list[17] as! Int64
+    let retryBackoffCap = pigeonVar_list[18] as! Int64
+    let enableDeltaCompression = pigeonVar_list[19] as! Bool
+    let deltaCoordinatePrecision = pigeonVar_list[20] as! Int64
 
     return TlHttpConfig(
       url: url,
@@ -843,6 +845,7 @@ struct TlHttpConfig: Hashable {
       sslPinningCertificates: sslPinningCertificates,
       httpRootProperty: httpRootProperty,
       autoSyncThreshold: autoSyncThreshold,
+      autoSyncDelay: autoSyncDelay,
       httpTimeout: httpTimeout,
       locationsOrderDirection: locationsOrderDirection,
       extras: extras,
@@ -867,6 +870,7 @@ struct TlHttpConfig: Hashable {
       sslPinningCertificates,
       httpRootProperty,
       autoSyncThreshold,
+      autoSyncDelay,
       httpTimeout,
       locationsOrderDirection,
       extras,
@@ -882,7 +886,7 @@ struct TlHttpConfig: Hashable {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.url, rhs.url) && deepEqualsTraceletApi(lhs.method, rhs.method) && deepEqualsTraceletApi(lhs.headers, rhs.headers) && deepEqualsTraceletApi(lhs.params, rhs.params) && deepEqualsTraceletApi(lhs.autoSync, rhs.autoSync) && deepEqualsTraceletApi(lhs.batchSync, rhs.batchSync) && deepEqualsTraceletApi(lhs.maxBatchSize, rhs.maxBatchSize) && deepEqualsTraceletApi(lhs.sslPinningFingerprints, rhs.sslPinningFingerprints) && deepEqualsTraceletApi(lhs.sslPinningCertificates, rhs.sslPinningCertificates) && deepEqualsTraceletApi(lhs.httpRootProperty, rhs.httpRootProperty) && deepEqualsTraceletApi(lhs.autoSyncThreshold, rhs.autoSyncThreshold) && deepEqualsTraceletApi(lhs.httpTimeout, rhs.httpTimeout) && deepEqualsTraceletApi(lhs.locationsOrderDirection, rhs.locationsOrderDirection) && deepEqualsTraceletApi(lhs.extras, rhs.extras) && deepEqualsTraceletApi(lhs.disableAutoSyncOnCellular, rhs.disableAutoSyncOnCellular) && deepEqualsTraceletApi(lhs.maxRetries, rhs.maxRetries) && deepEqualsTraceletApi(lhs.retryBackoffBase, rhs.retryBackoffBase) && deepEqualsTraceletApi(lhs.retryBackoffCap, rhs.retryBackoffCap) && deepEqualsTraceletApi(lhs.enableDeltaCompression, rhs.enableDeltaCompression) && deepEqualsTraceletApi(lhs.deltaCoordinatePrecision, rhs.deltaCoordinatePrecision)
+    return deepEqualsTraceletApi(lhs.url, rhs.url) && deepEqualsTraceletApi(lhs.method, rhs.method) && deepEqualsTraceletApi(lhs.headers, rhs.headers) && deepEqualsTraceletApi(lhs.params, rhs.params) && deepEqualsTraceletApi(lhs.autoSync, rhs.autoSync) && deepEqualsTraceletApi(lhs.batchSync, rhs.batchSync) && deepEqualsTraceletApi(lhs.maxBatchSize, rhs.maxBatchSize) && deepEqualsTraceletApi(lhs.sslPinningFingerprints, rhs.sslPinningFingerprints) && deepEqualsTraceletApi(lhs.sslPinningCertificates, rhs.sslPinningCertificates) && deepEqualsTraceletApi(lhs.httpRootProperty, rhs.httpRootProperty) && deepEqualsTraceletApi(lhs.autoSyncThreshold, rhs.autoSyncThreshold) && deepEqualsTraceletApi(lhs.autoSyncDelay, rhs.autoSyncDelay) && deepEqualsTraceletApi(lhs.httpTimeout, rhs.httpTimeout) && deepEqualsTraceletApi(lhs.locationsOrderDirection, rhs.locationsOrderDirection) && deepEqualsTraceletApi(lhs.extras, rhs.extras) && deepEqualsTraceletApi(lhs.disableAutoSyncOnCellular, rhs.disableAutoSyncOnCellular) && deepEqualsTraceletApi(lhs.maxRetries, rhs.maxRetries) && deepEqualsTraceletApi(lhs.retryBackoffBase, rhs.retryBackoffBase) && deepEqualsTraceletApi(lhs.retryBackoffCap, rhs.retryBackoffCap) && deepEqualsTraceletApi(lhs.enableDeltaCompression, rhs.enableDeltaCompression) && deepEqualsTraceletApi(lhs.deltaCoordinatePrecision, rhs.deltaCoordinatePrecision)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -898,6 +902,7 @@ struct TlHttpConfig: Hashable {
     deepHashTraceletApi(value: sslPinningCertificates, hasher: &hasher)
     deepHashTraceletApi(value: httpRootProperty, hasher: &hasher)
     deepHashTraceletApi(value: autoSyncThreshold, hasher: &hasher)
+    deepHashTraceletApi(value: autoSyncDelay, hasher: &hasher)
     deepHashTraceletApi(value: httpTimeout, hasher: &hasher)
     deepHashTraceletApi(value: locationsOrderDirection, hasher: &hasher)
     deepHashTraceletApi(value: extras, hasher: &hasher)

@@ -14,8 +14,14 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
     private val syncMutex = Mutex()
     private val syncManager = SyncManager()
 
+    private var syncJob: kotlinx.coroutines.Job? = null
+    private val DEBOUNCE_MS = 10_000L
+
     override fun insertLocation(location: Map<String, Any?>) {
-        scope.launch {
+        val delayMs = sdk.rustEngineState?.getConfig()?.http?.autoSyncDelay?.toLong() ?: 10_000L
+        if (syncJob?.isActive == true) return
+        syncJob = scope.launch {
+            kotlinx.coroutines.delay(delayMs)
             triggerSync()
         }
     }
@@ -84,9 +90,23 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                         db.clearLocationsUpTo(lastId)
                         sdk.logger.info("NativeSyncProvider: Synced and cleared $count locations.")
                     }
+                    sdk.getEventSender().sendHttp(mapOf(
+                        "success" to true,
+                        "status" to 200,
+                        "responseText" to "Synced $count locations",
+                        "isRetry" to false,
+                        "retryCount" to 0
+                    ))
                 }
             } catch (e: Exception) {
                 sdk.logger.error("NativeSyncProvider: Sync failed: ${e.message}")
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to false,
+                    "status" to 0,
+                    "responseText" to (e.message ?: "Unknown error"),
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
             }
         }
     }

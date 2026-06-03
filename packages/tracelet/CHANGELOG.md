@@ -1,6 +1,6 @@
 ## 3.2.0
 
-- **FEAT**: Implement short-lived WakeLocks for transient background tasks (`startBackgroundTask` / `stopBackgroundTask`), improving background execution reliability on Android (matches iOS `beginBackgroundTask`).
+- **FEAT**: Added `autoSyncDelay` to `HttpConfig` — configure the debounce delay in milliseconds before automatically dispatching an HTTP sync request after a location is recorded.
 - **FEAT**: Introduced new `tracelet_sync` package for offline SQLite persistence and automatic HTTP synchronization.
 - **FEAT**: Add reverse geocoding (`resolveAddress`) functionality for automatic address lookups.
 

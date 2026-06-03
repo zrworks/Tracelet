@@ -2059,6 +2059,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     maxRetries = configManager.getMaxRetries(),
                     retryBackoffBase = configManager.getRetryBackoffBase(),
                     retryBackoffCap = configManager.getRetryBackoffCap(),
+                    autoSyncDelay = configManager.getAutoSyncDelay(),
                     sslPinningCertificates = configManager.getSslPinningCertificates().takeIf { it.isNotEmpty() }
                 ),
                 geofence = uniffi.tracelet_core.GeofenceConfig(

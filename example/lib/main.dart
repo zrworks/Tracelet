@@ -627,7 +627,7 @@ class _DashboardPageState extends State<DashboardPage>
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
           http: const tl.HttpConfig(
-            url: 'http://192.168.20.100:8099/locations',
+            url: 'http://192.168.20.102:8099/locations',
             // ── New features ──
             // (HTTP config goes here)
           ),

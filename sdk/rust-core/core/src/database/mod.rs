@@ -290,13 +290,13 @@ impl DatabaseManager {
         if let Some(q) = &query {
             if let Some(start_ms) = q.start_time_ms {
                 if let Some(dt) = Utc.timestamp_millis_opt(start_ms).single() {
-                    sql.push_str(" AND timestamp >= ?");
+                    sql.push_str(" AND julianday(timestamp) >= julianday(?)");
                     params.push(Value::Text(dt.to_rfc3339()));
                 }
             }
             if let Some(end_ms) = q.end_time_ms {
                 if let Some(dt) = Utc.timestamp_millis_opt(end_ms).single() {
-                    sql.push_str(" AND timestamp <= ?");
+                    sql.push_str(" AND julianday(timestamp) <= julianday(?)");
                     params.push(Value::Text(dt.to_rfc3339()));
                 }
             }
@@ -311,11 +311,14 @@ impl DatabaseManager {
         if limit >= 0 {
             sql.push_str(" LIMIT ?");
             params.push(Value::Integer(limit as i64));
-            
-            if offset > 0 {
-                sql.push_str(" OFFSET ?");
-                params.push(Value::Integer(offset as i64));
-            }
+        } else if offset > 0 {
+            // SQLite requires LIMIT to use OFFSET. -1 means no limit.
+            sql.push_str(" LIMIT -1");
+        }
+        
+        if offset > 0 {
+            sql.push_str(" OFFSET ?");
+            params.push(Value::Integer(offset as i64));
         }
         
         let mut stmt = conn.prepare(&sql).map_err(|e| TraceletError::Database(e.to_string()))?;

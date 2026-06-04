@@ -8,7 +8,8 @@ Tracelet ships **three independent distribution channels**:
 
 | Channel | Artifact | Registry | Current Version |
 |---------|----------|----------|-----------------|
-| Android SDK | `com.ikolvi:tracelet-sdk` | Maven Central | See `sdk/android/gradle.properties` |
+| Android SDK (Core) | `com.ikolvi:tracelet-sdk` | Maven Central | See `sdk/android/gradle.properties` |
+| Android SDK (Sync) | `com.ikolvi:tracelet-sync-sdk` | Maven Central | See `sdk/android/gradle.properties` |
 | iOS SDK | `TraceletSDK` | GitHub Release (Bundled in Flutter) | See `TraceletSDK.podspec` |
 | Flutter | 7 federated packages | pub.dev | See `packages/tracelet/pubspec.yaml` |
 
@@ -47,32 +48,24 @@ The native SDKs (Android + iOS) version independently from Flutter packages. Flu
 
 Before triggering a release, update these files manually:
 
-### Flutter packages (all 7 must match)
-- [ ] `packages/tracelet/pubspec.yaml` — bump `version:`
-- [ ] `packages/tracelet_sync/pubspec.yaml` — bump `version:`
-- [ ] `packages/tracelet_platform_interface/pubspec.yaml` — bump `version:`
-- [ ] `packages/tracelet_android/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
-- [ ] `packages/tracelet_android/android/build.gradle` — update `version = "X.Y.Z"` AND update native SDK reference `implementation("com.ikolvi:tracelet-sdk:X.Y.Z")`
-- [ ] `packages/tracelet_ios/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
-- [ ] `packages/tracelet_ios/ios/tracelet_ios.podspec` — update `s.version` AND update native SDK reference `s.dependency 'TraceletSDK', 'X.Y.Z'`
-- [ ] `packages/tracelet_web/pubspec.yaml` — bump `version:` + update `tracelet_platform_interface: ^X.Y.Z`
-- [ ] `packages/tracelet/pubspec.yaml` — update dependencies for `tracelet_android`, `tracelet_ios`, `tracelet_web` to `^X.Y.Z`
-- [ ] `packages/tracelet_doctor/pubspec.yaml` — bump `version:` + update `tracelet: ^X.Y.Z`
-- [ ] All 6 `CHANGELOG.md` files — add entry with `**FEAT**:` / `**FIX**:` / `**PERF**:` prefix
+### Flutter & Native Packages (Automated via Melos)
+- [ ] Run `melos version`
+  - This automatically bumps versions across all Flutter packages.
+  - This automatically generates changelog entries using Conventional Commits.
+  - This triggers the `sync_native_versions.py` post-hook, which:
+    - Bumps `SDK_VERSION` in Android's `gradle.properties`
+    - Bumps iOS Podspec versions
+    - Updates native SDK dependency constraints in Flutter plugins
+    - Injects the generated changelogs into `sdk/android/CHANGELOG.md` and `sdk/ios/CHANGELOG.md`
 
 ### Code Quality & Validation
 - [ ] Run `dart run melos run format:fix` to auto-format all package code
 - [ ] Run `dart run melos run analyze` to ensure zero analysis errors/warnings
 - [ ] Run `dart run melos run test` to confirm all package unit tests pass perfectly
 
-### Android SDK (only if native SDK changed)
-- [ ] `sdk/android/gradle.properties` — update `SDK_VERSION=X.Y.Z`
-- [ ] `sdk/android/CHANGELOG.md`
-
-### iOS SDK (only if native SDK changed)
-- [ ] `TraceletSDK.podspec` (repo root) — update `s.version`
-- [ ] `sdk/ios/TraceletSDK.podspec` — update `s.version` (keep in sync with root)
-- [ ] `sdk/ios/CHANGELOG.md`
+### Native SDKs
+No manual version bumps or changelog edits are required if you ran `melos version`!
+The post-hook automatically syncs everything.
 
 ### Cross-package dependency constraints
 When publishing version X.Y.Z, ensure all `^X.Y.Z` constraints point to the version being published:
@@ -226,10 +219,10 @@ git push origin --tags
 For Flutter packages, Melos can automate version bumps and changelog generation:
 
 ```bash
-melos version   # Interactive — bumps all packages, updates CHANGELOGs
+melos version   # Interactive — bumps all packages, updates CHANGELOGs, and syncs native versions
 ```
 
-This updates all 7 Flutter package versions and cross-references in a single commit. Native SDK versions must still be bumped manually.
+This updates all Flutter package versions, generates CHANGELOGs using Conventional Commits, and automatically runs `scripts/sync_native_versions.py` to sync the Android SDK version, iOS SDK version, and their CHANGELOGs. You do NOT need to bump native versions manually.
 
 To verify and automatically apply code formatting across all packages before release:
 

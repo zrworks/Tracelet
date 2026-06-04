@@ -32,6 +32,8 @@ melos:
     version:
       linkToCommits: true
       workspaceChangelog: true
+      hooks:
+        post: python3 scripts/sync_native_versions.py
 
   scripts:
     analyze:

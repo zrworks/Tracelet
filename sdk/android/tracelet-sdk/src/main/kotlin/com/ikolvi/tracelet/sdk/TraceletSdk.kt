@@ -20,6 +20,7 @@ import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 
 
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
+import com.ikolvi.tracelet.sdk.location.LocationDataSink
 import com.ikolvi.tracelet.sdk.location.LocationEngine
 import com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker
 import com.ikolvi.tracelet.sdk.motion.MotionDetector
@@ -898,11 +899,14 @@ class TraceletSdk private constructor(private val context: Context) {
         val url = configManager.getHttpUrl()
         if (!url.isNullOrEmpty() && syncProvider == null) {
             try {
-                val sink = com.ikolvi.tracelet.sdk.sync.NativeSyncProvider(this)
+                val clazz = Class.forName("com.ikolvi.tracelet.sdk.sync.NativeSyncProvider")
+                val constructor = clazz.getConstructor(TraceletSdk::class.java)
+                val instance = constructor.newInstance(this)
+                val sink = instance as LocationDataSink
                 if (::locationEngine.isInitialized) {
                     locationEngine.registerSink(sink)
                 }
-                syncProvider = sink
+                syncProvider = instance as SyncProvider
                 logger.info("NativeSyncProvider loaded for background sync.")
             } catch (e: Throwable) {
                 logger.warning("⚠️ WARNING [Tracelet]: Failed to load NativeSyncProvider (tracelet_sync may be absent): ${e.message}")

@@ -16,6 +16,9 @@ Latest version: [![Maven Central](https://img.shields.io/maven-central/v/com.iko
 ```kotlin
 dependencies {
     implementation("com.ikolvi:tracelet-sdk:<latest-version>")
+    
+    // Optional: Add HTTP Sync support
+    implementation("com.ikolvi:tracelet-sync-sdk:<latest-version>")
 }
 ```
 
@@ -24,6 +27,9 @@ dependencies {
 ```groovy
 dependencies {
     implementation 'com.ikolvi:tracelet-sdk:<latest-version>'
+    
+    // Optional: Add HTTP Sync support
+    implementation 'com.ikolvi:tracelet-sync-sdk:<latest-version>'
 }
 ```
 
@@ -276,6 +282,7 @@ dependencies {
     implementation("net.zetetic:sqlcipher-android:4.6.1@aar")   // encryption
     implementation("androidx.security:security-crypto:1.1.0")    // encryption key mgmt
     implementation("com.google.android.play:integrity:1.6.0")   // device attestation
+    implementation("com.ikolvi:tracelet-sync-sdk:<latest-version>") // HTTP sync
 }
 ```
 
@@ -521,6 +528,8 @@ sdk.addTypedPrivacyZones(listOf(zone1, zone2, zone3))
 ## HTTP Sync
 
 ```kotlin
+// Note: Requires implementation("com.ikolvi:tracelet-sync-sdk:<latest-version>") in build.gradle
+
 // Manual sync
 sdk.sync()
 

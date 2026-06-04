@@ -24,7 +24,7 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 > **Tracelet 3.2.0**: The SQLCipher dependency is no longer required for database encryption (Tracelet Core now natively uses AES-GCM in Rust, reducing APK size by ~16MB). Additionally, HTTP sync logic has been moved to the `tracelet_sync` module, which must now be included if you require network synchronization.
 
 > [!IMPORTANT]
-> **Tracelet 2.x.x**: Android-specific and iOS-specific settings (including foreground service notification) are now configured via `AndroidConfig` and `IosConfig` sub-objects, not `AppConfig`. See the [Migration Guide](MIGRATION_2.0.md) for the full config schema change.
+> **Tracelet 2.x.x**: Android-specific and iOS-specific settings (including foreground service notification) are now configured via `AndroidConfig` and `IosConfig` sub-objects, not `AppConfig`. See the [Migration Guide](help/MIGRATION_2.0.md) for the full config schema change.
 
 ---
 

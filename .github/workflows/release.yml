@@ -172,7 +172,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   publish-android-sdk:
     name: Publish Android SDK
-    needs: validate
+    needs: [validate, test-flutter-android]
     if: ${{ !inputs.skip_native_sdks }}
     runs-on: ubuntu-latest
     steps:
@@ -312,7 +312,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   publish-ios-sdk:
     name: Publish iOS SDK
-    needs: validate
+    needs: [validate, test-flutter-ios]
     if: ${{ !inputs.skip_native_sdks }}
     runs-on: macos-latest
     outputs:
@@ -402,12 +402,12 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   test-flutter-android:
     name: Test Bundled Android Plugin
-    needs: publish-android-sdk
+    needs: validate
     if: |
       always() &&
       !inputs.skip_flutter &&
       !inputs.skip_native_sdks &&
-      (needs.publish-android-sdk.result == 'success' || needs.publish-android-sdk.outputs.already_published == 'true')
+      needs.validate.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -457,38 +457,58 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   test-flutter-ios:
     name: Test Bundled iOS Plugin
-    needs: publish-ios-sdk
+    needs: validate
     if: |
       always() &&
       !inputs.skip_flutter &&
       !inputs.skip_native_sdks &&
-      (needs.publish-ios-sdk.result == 'success' || needs.publish-ios-sdk.outputs.already_published == 'true')
+      needs.validate.result == 'success'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Download iOS SDK Artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: ios-sdk-artifacts
-          path: tracelet-ios-temp
-
       - name: Download Rust Bindings
         uses: actions/download-artifact@v8
         with:
           name: frb-bindings
           path: packages/tracelet_platform_interface/lib/src/rust/
 
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo binstall -y cargo-expand flutter_rust_bridge_codegen
+      - name: Generate Rust Bindings
+        working-directory: packages/tracelet_platform_interface
+        run: flutter_rust_bridge_codegen generate
+      - name: Install Melos
+        run: dart pub global activate melos
+      - name: Bootstrap
+        run: melos bootstrap
+      - name: Build iOS Rust Core
+        run: ./sdk/rust-core/build-ios.sh
+
+      - name: Package SDK as XCFramework
+        run: |
+          echo "Packaging SDK..."
+          cd sdk/rust-core/out
+          zip -r TraceletCore.xcframework.zip TraceletCore.xcframework
+          zip -r TraceletSyncFFI.xcframework.zip TraceletSyncFFI.xcframework
+          cd ../../..
+
       - name: Bundle iOS SDK into tracelet_ios
         run: |
           echo "Bundling iOS SDK into tracelet_ios plugin..."
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Frameworks
-          unzip -q tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
+          unzip -q sdk/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
           
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
-          cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
+          cp -r sdk/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
           
           echo "Patching tracelet_ios.podspec..."
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
@@ -502,10 +522,8 @@ jobs:
         run: |
           echo "Bundling iOS SDK into tracelet_sync plugin..."
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
-          unzip -q tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
+          unzip -q sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
-          # No podspec patching needed for tracelet_sync because s.vendored_frameworks is already 'TraceletSyncFFI.xcframework'
-          # No Package.swift patching needed unless it references TraceletSDK. Wait, does it?
           perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
 

@@ -2207,9 +2207,17 @@ extension TraceletSdk: SpeedMotionDelegate {
                     retryBackoffBase: Int32(configManager.getRetryBackoffBase()),
                     retryBackoffCap: Int32(configManager.getRetryBackoffCap()),
                     autoSyncDelay: Int32(configManager.getAutoSyncDelay()),
-                    sslPinningCertificates: configManager.getSslPinningCertificates().isEmpty ? nil : configManager.getSslPinningCertificates()
+                    sslPinningCertificates: configManager.getSslPinningCertificates().isEmpty ? nil : configManager.getSslPinningCertificates(),
+                    httpRootProperty: configManager.getHttpRootProperty(),
+                    params: configManager.getHttpParams().mapValues { "\($0)" },
+                    extras: configManager.getHttpExtras().mapValues { "\($0)" },
+                    disableAutoSyncOnCellular: configManager.getDisableAutoSyncOnCellular(),
+                    enableDeltaCompression: configManager.getEnableDeltaCompression(),
+                    deltaCoordinatePrecision: Int32(configManager.getDeltaCoordinatePrecision()),
+                    locationsOrderDirection: Int32(configManager.getLocationsOrderDirection())
                 ),
                 geofence: GeofenceConfig(
+                    geofenceInitialTrigger: configManager.getGeofenceInitialTrigger(),
                     geofenceInitialTriggerEntry: configManager.getGeofenceInitialTriggerEntry(),
                     geofenceProximityRadius: Int32(configManager.getGeofenceProximityRadius())
                 ),

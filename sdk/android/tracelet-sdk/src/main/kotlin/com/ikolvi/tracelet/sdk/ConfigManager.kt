@@ -100,6 +100,7 @@ class ConfigManager(context: Context) {
         // GeofenceConfig defaults
         const val DEFAULT_GEOFENCE_PROXIMITY_RADIUS = 1000
         const val DEFAULT_GEOFENCE_INITIAL_TRIGGER_ENTRY = true
+        const val DEFAULT_GEOFENCE_INITIAL_TRIGGER = true
         const val DEFAULT_GEOFENCE_MODE_KNOCK_OUT = false
 
         // ForegroundServiceConfig defaults
@@ -630,6 +631,9 @@ class ConfigManager(context: Context) {
 
     fun getGeofenceInitialTriggerEntry(): Boolean =
         getBool("geofenceInitialTriggerEntry", DEFAULT_GEOFENCE_INITIAL_TRIGGER_ENTRY)
+
+    fun getGeofenceInitialTrigger(): Boolean =
+        getBool("geofenceInitialTrigger", DEFAULT_GEOFENCE_INITIAL_TRIGGER)
 
     fun getGeofenceModeKnockOut(): Boolean =
         getBool("geofenceModeKnockOut", DEFAULT_GEOFENCE_MODE_KNOCK_OUT)

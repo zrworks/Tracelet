@@ -196,6 +196,7 @@ public final class ConfigManager {
 
     // GeofenceConfig
     public func getGeofenceInitialTriggerEntry() -> Bool { cache["geofenceInitialTriggerEntry"] as? Bool ?? true }
+    public func getGeofenceInitialTrigger() -> Bool { cache["geofenceInitialTrigger"] as? Bool ?? true }
     public func getGeofenceModeKnockOut() -> Bool { cache["geofenceModeKnockOut"] as? Bool ?? false }
     public func getGeofenceModeHighAccuracy() -> Bool { cache["geofenceModeHighAccuracy"] as? Bool ?? false }
 
@@ -229,13 +230,30 @@ public final class ConfigManager {
         return cache["method"] as? String ?? "POST"
     }
     public func getHttpTimeout() -> Int { (cache["httpTimeout"] as? NSNumber)?.intValue ?? 60000 }
-    public func getLocationsOrderDirection() -> String { cache["locationsOrderDirection"] as? String ?? "ASC" }
+    public func getLocationsOrderDirection() -> Int { (cache["locationsOrderDirection"] as? NSNumber)?.intValue ?? 0 }
     public func getDisableAutoSyncOnCellular() -> Bool { cache["disableAutoSyncOnCellular"] as? Bool ?? false }
     public func getMaxRetries() -> Int { (cache["maxRetries"] as? NSNumber)?.intValue ?? 10 }
     public func getRetryBackoffBase() -> Int { (cache["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000 }
     public func getRetryBackoffCap() -> Int { (cache["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000 }
     public func getEnableDeltaCompression() -> Bool { cache["enableDeltaCompression"] as? Bool ?? false }
     public func getDeltaCoordinatePrecision() -> Int { (cache["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 6 }
+    
+    public func getHttpParams() -> [String: Any] {
+        if let params = cache["params"] as? [String: Any] {
+            return params
+        }
+        return [:]
+    }
+
+    public func getHttpExtras() -> [String: Any] {
+        if let extras = cache["httpExtras"] as? [String: Any] {
+            return extras
+        }
+        if let extras = cache["extras"] as? [String: Any] {
+            return extras
+        }
+        return [:]
+    }
 
     // PersistenceConfig
     public func getPersistMode() -> Int { (cache["persistMode"] as? NSNumber)?.intValue ?? 0 }
@@ -374,9 +392,11 @@ public final class ConfigManager {
             "maxBatchSize": -1,
             "httpRootProperty": "location",
             "headers": [:] as [String: String],
+            "params": [:] as [String: Any],
+            "extras": [:] as [String: Any],
             "method": "POST",
             "httpTimeout": 60000,
-            "locationsOrderDirection": "ASC",
+            "locationsOrderDirection": 0,
             "disableAutoSyncOnCellular": false,
             "persistMode": 0,
             "maxDaysToPersist": -1,

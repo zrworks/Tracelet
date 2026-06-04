@@ -19,6 +19,7 @@ for target in "${TARGETS[@]}"; do
 done
 
 echo "Compiling for iOS targets..."
+export RUSTFLAGS="-C embed-bitcode=no"
 cargo build --release --target aarch64-apple-ios
 cargo build --release --target aarch64-apple-ios-sim
 

@@ -212,6 +212,30 @@ void main() {
       expect(fromMap.maxBatchSize, 250);
     });
 
+    test('HttpConfig round-trip preserves httpRootProperty and extras (Issue #107)', () {
+      const config = HttpConfig(
+        httpRootProperty: 'events',
+        extras: {'custom': 123},
+      );
+      final map = config.toMap();
+      expect(map['httpRootProperty'], 'events');
+      final extras = map['extras'] as Map?;
+      expect(extras?['custom'], 123);
+
+      final restored = HttpConfig.fromMap(map);
+      expect(restored.httpRootProperty, 'events');
+      expect(restored.extras?['custom'], 123);
+    });
+
+    test('GeofenceConfig round-trip preserves geofenceInitialTrigger (Issue #107)', () {
+      const config = GeofenceConfig(geofenceInitialTrigger: false);
+      final map = config.toMap();
+      expect(map['geofenceInitialTrigger'], false);
+      
+      final restored = GeofenceConfig.fromMap(map);
+      expect(restored.geofenceInitialTrigger, false);
+    });
+
     test('ForegroundServiceConfig equality includes all fields', () {
       const a = ForegroundServiceConfig(
         channelId: 'ch1',

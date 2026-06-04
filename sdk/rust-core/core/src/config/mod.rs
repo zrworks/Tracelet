@@ -181,7 +181,30 @@ pub struct HttpConfig {
     /// Optional list of PEM or DER encoded certificates for SSL pinning.
     #[serde(default)]
     pub ssl_pinning_certificates: Option<Vec<String>>,
+    /// Custom root property for the HTTP sync payload.
+    #[serde(default)]
+    pub http_root_property: Option<String>,
+    /// Custom query parameters.
+    #[serde(default)]
+    pub params: Option<HashMap<String, String>>,
+    /// Custom JSON fields to inject at the root of the sync payload.
+    #[serde(default)]
+    pub extras: Option<HashMap<String, String>>,
+    /// Disable auto-syncing when on a cellular data network (syncs only on Wi-Fi).
+    #[serde(default)]
+    pub disable_auto_sync_on_cellular: bool,
+    /// Enable delta-encoding compression for batch sync payloads.
+    #[serde(default)]
+    pub enable_delta_compression: bool,
+    /// Coordinate decimal precision for delta compression.
+    #[serde(default = "default_delta_coordinate_precision")]
+    pub delta_coordinate_precision: i32,
+    /// The chronological sort order for synced locations.
+    #[serde(default)]
+    pub locations_order_direction: i32,
 }
+
+fn default_delta_coordinate_precision() -> i32 { 5 }
 
 fn default_max_batch_size() -> i32 { 250 }
 fn default_true() -> bool { true }
@@ -194,6 +217,9 @@ fn default_auto_sync_delay() -> i32 { 10000 }
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]
 #[serde(rename_all = "camelCase")]
 pub struct GeofenceConfig {
+    /// Enable initial trigger evaluation for geofences on registration.
+    #[serde(default = "default_true")]
+    pub geofence_initial_trigger: bool,
     /// If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
     #[serde(default = "default_true")]
     pub geofence_initial_trigger_entry: bool,
@@ -207,6 +233,7 @@ fn default_geofence_proximity_radius() -> i32 { 1000 }
 impl Default for GeofenceConfig {
     fn default() -> Self {
         Self {
+            geofence_initial_trigger: true,
             geofence_initial_trigger_entry: true,
             geofence_proximity_radius: default_geofence_proximity_radius(),
         }

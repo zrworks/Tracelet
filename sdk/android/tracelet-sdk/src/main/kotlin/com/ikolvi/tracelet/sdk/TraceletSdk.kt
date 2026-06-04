@@ -2060,9 +2060,17 @@ class TraceletSdk private constructor(private val context: Context) {
                     retryBackoffBase = configManager.getRetryBackoffBase(),
                     retryBackoffCap = configManager.getRetryBackoffCap(),
                     autoSyncDelay = configManager.getAutoSyncDelay(),
-                    sslPinningCertificates = configManager.getSslPinningCertificates().takeIf { it.isNotEmpty() }
+                    sslPinningCertificates = configManager.getSslPinningCertificates().takeIf { it.isNotEmpty() },
+                    httpRootProperty = configManager.getHttpRootProperty(),
+                    params = HashMap(configManager.getHttpParams().filterValues { it != null }.mapValues { it.value.toString() }),
+                    extras = HashMap(configManager.getHttpExtras().filterValues { it != null }.mapValues { it.value.toString() }),
+                    disableAutoSyncOnCellular = configManager.getDisableAutoSyncOnCellular(),
+                    enableDeltaCompression = configManager.getEnableDeltaCompression(),
+                    deltaCoordinatePrecision = configManager.getDeltaCoordinatePrecision(),
+                    locationsOrderDirection = configManager.getLocationsOrderDirection()
                 ),
                 geofence = uniffi.tracelet_core.GeofenceConfig(
+                    geofenceInitialTrigger = configManager.getGeofenceInitialTrigger(),
                     geofenceInitialTriggerEntry = configManager.getGeofenceInitialTriggerEntry(),
                     geofenceProximityRadius = configManager.getGeofenceProximityRadius()
                 ),

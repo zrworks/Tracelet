@@ -7402,6 +7402,11 @@ public object FfiConverterTypeGeoConfig: FfiConverterRustBuffer<GeoConfig> {
  */
 data class GeofenceConfig (
     /**
+     * Enable initial trigger evaluation for geofences on registration.
+     */
+    var `geofenceInitialTrigger`: kotlin.Boolean
+    , 
+    /**
      * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
      */
     var `geofenceInitialTriggerEntry`: kotlin.Boolean
@@ -7427,16 +7432,19 @@ public object FfiConverterTypeGeofenceConfig: FfiConverterRustBuffer<GeofenceCon
     override fun read(buf: ByteBuffer): GeofenceConfig {
         return GeofenceConfig(
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterInt.read(buf),
         )
     }
 
     override fun allocationSize(value: GeofenceConfig) = (
+            FfiConverterBoolean.allocationSize(value.`geofenceInitialTrigger`) +
             FfiConverterBoolean.allocationSize(value.`geofenceInitialTriggerEntry`) +
             FfiConverterInt.allocationSize(value.`geofenceProximityRadius`)
     )
 
     override fun write(value: GeofenceConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`geofenceInitialTrigger`, buf)
             FfiConverterBoolean.write(value.`geofenceInitialTriggerEntry`, buf)
             FfiConverterInt.write(value.`geofenceProximityRadius`, buf)
     }
@@ -7594,6 +7602,41 @@ data class HttpConfig (
      * Optional list of PEM or DER encoded certificates for SSL pinning.
      */
     var `sslPinningCertificates`: List<kotlin.String>?
+    , 
+    /**
+     * Custom root property for the HTTP sync payload.
+     */
+    var `httpRootProperty`: kotlin.String?
+    , 
+    /**
+     * Custom query parameters.
+     */
+    var `params`: Map<kotlin.String, kotlin.String>?
+    , 
+    /**
+     * Custom JSON fields to inject at the root of the sync payload.
+     */
+    var `extras`: Map<kotlin.String, kotlin.String>?
+    , 
+    /**
+     * Disable auto-syncing when on a cellular data network (syncs only on Wi-Fi).
+     */
+    var `disableAutoSyncOnCellular`: kotlin.Boolean
+    , 
+    /**
+     * Enable delta-encoding compression for batch sync payloads.
+     */
+    var `enableDeltaCompression`: kotlin.Boolean
+    , 
+    /**
+     * Coordinate decimal precision for delta compression.
+     */
+    var `deltaCoordinatePrecision`: kotlin.Int
+    , 
+    /**
+     * The chronological sort order for synced locations.
+     */
+    var `locationsOrderDirection`: kotlin.Int
     
 ){
     
@@ -7621,6 +7664,13 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalMapStringString.read(buf),
+            FfiConverterOptionalMapStringString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
         )
     }
 
@@ -7635,7 +7685,14 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
             FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
             FfiConverterInt.allocationSize(value.`autoSyncDelay`) +
-            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`)
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`) +
+            FfiConverterOptionalString.allocationSize(value.`httpRootProperty`) +
+            FfiConverterOptionalMapStringString.allocationSize(value.`params`) +
+            FfiConverterOptionalMapStringString.allocationSize(value.`extras`) +
+            FfiConverterBoolean.allocationSize(value.`disableAutoSyncOnCellular`) +
+            FfiConverterBoolean.allocationSize(value.`enableDeltaCompression`) +
+            FfiConverterInt.allocationSize(value.`deltaCoordinatePrecision`) +
+            FfiConverterInt.allocationSize(value.`locationsOrderDirection`)
     )
 
     override fun write(value: HttpConfig, buf: ByteBuffer) {
@@ -7650,6 +7707,13 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.write(value.`retryBackoffCap`, buf)
             FfiConverterInt.write(value.`autoSyncDelay`, buf)
             FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
+            FfiConverterOptionalString.write(value.`httpRootProperty`, buf)
+            FfiConverterOptionalMapStringString.write(value.`params`, buf)
+            FfiConverterOptionalMapStringString.write(value.`extras`, buf)
+            FfiConverterBoolean.write(value.`disableAutoSyncOnCellular`, buf)
+            FfiConverterBoolean.write(value.`enableDeltaCompression`, buf)
+            FfiConverterInt.write(value.`deltaCoordinatePrecision`, buf)
+            FfiConverterInt.write(value.`locationsOrderDirection`, buf)
     }
 }
 
@@ -9104,6 +9168,38 @@ public object FfiConverterOptionalSequenceTypeCoordinate: FfiConverterRustBuffer
         } else {
             buf.put(1)
             FfiConverterSequenceTypeCoordinate.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalMapStringString: FfiConverterRustBuffer<Map<kotlin.String, kotlin.String>?> {
+    override fun read(buf: ByteBuffer): Map<kotlin.String, kotlin.String>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterMapStringString.read(buf)
+    }
+
+    override fun allocationSize(value: Map<kotlin.String, kotlin.String>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterMapStringString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: Map<kotlin.String, kotlin.String>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterMapStringString.write(value, buf)
         }
     }
 }

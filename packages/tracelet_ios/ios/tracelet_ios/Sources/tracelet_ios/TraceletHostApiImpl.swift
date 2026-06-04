@@ -89,6 +89,10 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["method"] = c.http.method.rawValue
         if let headers = c.http.headers { dict["headers"] = headers.compactMapValues { $0 } }
         if let params = c.http.params { dict["params"] = params.compactMapValues { $0 } }
+        if let extras = c.http.extras { dict["extras"] = extras.compactMapValues { $0 } }
+        if let rootProp = c.http.httpRootProperty { dict["httpRootProperty"] = rootProp }
+        if let sslFingerprints = c.http.sslPinningFingerprints { dict["sslPinningFingerprints"] = sslFingerprints.compactMap { $0 } }
+        if let sslCertificates = c.http.sslPinningCertificates { dict["sslPinningCertificates"] = sslCertificates.compactMap { $0 } }
         dict["autoSync"] = c.http.autoSync
         dict["batchSync"] = c.http.batchSync
         dict["maxBatchSize"] = c.http.maxBatchSize
@@ -118,6 +122,7 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["disableStopDetection"] = c.motion.disableStopDetection
         dict["stopDetectionDelay"] = c.motion.stopDetectionDelay
         dict["stopOnStationary"] = c.motion.stopOnStationary
+        if let activityTypes = c.motion.activityTypes { dict["activityTypes"] = activityTypes.compactMap { $0?.rawValue } }
         dict["stationaryRadius"] = c.motion.stationaryRadius
         dict["useSignificantChangesOnly"] = c.motion.useSignificantChangesOnly
         dict["shakeThreshold"] = c.motion.shakeThreshold

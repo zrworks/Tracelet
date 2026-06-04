@@ -207,14 +207,17 @@ jobs:
         id: check_published
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          URL="https://repo1.maven.org/maven2/com/ikolvi/tracelet-sdk/${VERSION}/tracelet-sdk-${VERSION}.pom"
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-          if [ "$HTTP_CODE" = "200" ]; then
+          # Check both artifacts — only skip if BOTH are already published
+          CORE_URL="https://repo1.maven.org/maven2/com/ikolvi/tracelet-sdk/${VERSION}/tracelet-sdk-${VERSION}.pom"
+          SYNC_URL="https://repo1.maven.org/maven2/com/ikolvi/tracelet-sync-sdk/${VERSION}/tracelet-sync-sdk-${VERSION}.pom"
+          CORE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$CORE_URL")
+          SYNC_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SYNC_URL")
+          if [ "$CORE_CODE" = "200" ] && [ "$SYNC_CODE" = "200" ]; then
             echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ Version $VERSION already exists on Maven Central — skipping publish"
+            echo "ℹ️ Both tracelet-sdk and tracelet-sync-sdk v$VERSION already exist on Maven Central — skipping publish"
           else
             echo "already_published=false" >> "$GITHUB_OUTPUT"
-            echo "📦 Version $VERSION not found on Maven Central — will publish"
+            echo "📦 Will publish: tracelet-sdk ($CORE_CODE), tracelet-sync-sdk ($SYNC_CODE)"
           fi
 
       - name: Setup Rust
@@ -240,10 +243,10 @@ jobs:
           COUNT=$(nm -D "$SO" | grep -c "frbgen_tracelet")
           echo "✅ Verified $COUNT frbgen_tracelet symbols present in $SO"
 
-      - name: Build release AAR
+      - name: Build release AARs
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
-        run: ./gradlew :tracelet-sdk:assembleRelease
+        run: ./gradlew :tracelet-sdk:assembleRelease :tracelet-sync-sdk:assembleRelease
 
       - name: Build Host Rust Library for Tests
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
@@ -253,15 +256,17 @@ jobs:
       - name: Run unit tests
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
-        run: ./gradlew :tracelet-sdk:testReleaseUnitTest
+        run: ./gradlew :tracelet-sdk:testReleaseUnitTest :tracelet-sync-sdk:testReleaseUnitTest
 
       - name: Publish to local Maven (dry run)
         if: ${{ inputs.dry_run && steps.check_published.outputs.already_published == 'false' }}
         working-directory: sdk/android
         run: |
-          ./gradlew :tracelet-sdk:publishReleasePublicationToMavenLocal
+          ./gradlew :tracelet-sdk:publishReleasePublicationToMavenLocal :tracelet-sync-sdk:publishReleasePublicationToMavenLocal
           echo "📦 Artifacts in local Maven:"
           find ~/.m2/repository/com/ikolvi/tracelet-sdk -type f | sort
+          echo "---"
+          find ~/.m2/repository/com/ikolvi/tracelet-sync-sdk -type f | sort
 
       - name: Publish to Maven Central
         if: ${{ !inputs.dry_run && steps.version.outputs.is_snapshot == 'false' && steps.check_published.outputs.already_published == 'false' }}
@@ -304,7 +309,8 @@ jobs:
           echo "## Android SDK" >> "$GITHUB_STEP_SUMMARY"
           echo "| Property | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| **Artifact** | \`com.ikolvi:tracelet-sdk:${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Core** | \`com.ikolvi:tracelet-sdk:${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Sync** | \`com.ikolvi:tracelet-sync-sdk:${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Dry Run** | ${{ inputs.dry_run }} |" >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────

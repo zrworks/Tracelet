@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "tracelet-sdk-android"
 include(":tracelet-sdk")
+include(":tracelet-sync-sdk")

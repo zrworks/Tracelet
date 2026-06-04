@@ -41,9 +41,13 @@ android {
     publishing {
         singleVariant("release") {
             withSourcesJar()
-            withJavadocJar()
         }
     }
+}
+
+val emptyJavadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    // Empty jar to satisfy Maven Central requirements without triggering Dokka ASM crash
 }
 
 dependencies {
@@ -62,6 +66,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
+                artifact(emptyJavadocJar)
                 groupId = "com.ikolvi"
                 artifactId = "tracelet-sync-sdk"
                 version = project.version.toString()

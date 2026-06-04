@@ -24,9 +24,9 @@ execution for iOS.
   s.libraries = 'sqlite3'
 
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64' }
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.user_target_xcconfig = { 
-    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'DEAD_CODE_STRIPPING' => 'NO'
   }
   s.swift_version = '5.0'

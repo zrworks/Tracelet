@@ -524,7 +524,11 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: cd example && flutter test integration_test
+          script: |
+            cd example
+            flutter build apk --debug
+            adb install -t -g build/app/outputs/flutter-apk/app-debug.apk
+            flutter test integration_test
 
   integration-test-ios:
     name: Integration Tests (iOS)

@@ -470,7 +470,7 @@ jobs:
 
   integration-test-android:
     name: Integration Tests (Android)
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: analyze
     steps:
       - uses: actions/checkout@v5
@@ -497,7 +497,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android, x86_64-unknown-linux-gnu
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android, i686-linux-android
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -519,11 +519,11 @@ jobs:
       - name: Run Integration Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: 29
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
           profile: pixel_6
-          emulator-options: -no-window -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: cd example && flutter test integration_test
 
   integration-test-ios:
@@ -576,4 +576,8 @@ jobs:
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
       - name: Run Integration Tests
         working-directory: example
-        run: flutter test integration_test -d $SIMULATOR_ID
+        run: |
+          flutter build ios --simulator --debug
+          xcrun simctl install $SIMULATOR_ID build/ios/iphonesimulator/Runner.app
+          xcrun simctl privacy $SIMULATOR_ID grant location-always com.ikolvi.tracelet.example || true
+          flutter test integration_test -d $SIMULATOR_ID

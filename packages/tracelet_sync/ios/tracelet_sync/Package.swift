@@ -26,6 +26,9 @@ let package = Package(
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
                 .product(name: "TraceletSDK", package: "TraceletSDK"),
                 "TraceletSyncFFI"
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-Wl,-multiply_defined,suppress"])
             ]
         ),
         .binaryTarget(

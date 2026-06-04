@@ -1,6 +1,7 @@
 package com.ikolvi.tracelet.sdk.wrapper
 
 import android.content.Context
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -12,6 +13,11 @@ import kotlin.test.assertNotNull
 class TraceletServicesTest {
 
     private val context: Context = mock()
+
+    @After
+    fun tearDown() {
+        TraceletServices.setProvider(null)
+    }
 
     @Test
     fun testDefaultProviderSelection() {

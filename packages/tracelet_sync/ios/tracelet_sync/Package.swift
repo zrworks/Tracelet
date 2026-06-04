@@ -28,7 +28,7 @@ let package = Package(
                 "TraceletSyncFFI"
             ],
             linkerSettings: [
-                .unsafeFlags(["-Wl,-multiply_defined,suppress"])
+                .unsafeFlags(["-Wl,-multiply_defined,suppress", "-Wl,-ld_classic"])
             ]
         ),
         .binaryTarget(

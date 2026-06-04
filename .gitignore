@@ -158,3 +158,4 @@ benchmark/benchmark_table.md
 # MCP
 .mcp.json
 sdk/rust-core/benchmark_results.json
+docs/superpowers/

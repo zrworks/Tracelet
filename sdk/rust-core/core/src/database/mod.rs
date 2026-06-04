@@ -951,7 +951,7 @@ mod tests {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
         let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
-        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         
         assert_eq!(db.get_locations_count().unwrap(), 2);
         
@@ -966,7 +966,7 @@ mod tests {
     fn test_delete_synced_locations() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
-        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         let id3 = db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
         

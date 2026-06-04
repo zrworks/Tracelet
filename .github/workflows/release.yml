@@ -449,7 +449,7 @@ jobs:
       - name: Verify FRB Symbols in Release APK
         working-directory: example
         run: |
-          unzip -q build/app/outputs/flutter-apk/app-release.apk -d extracted_apk
+          unzip -q -o build/app/outputs/flutter-apk/app-release.apk -d extracted_apk
           SO="extracted_apk/lib/arm64-v8a/libtracelet_core.so"
           if ! nm -D "$SO" | grep -q "frbgen_tracelet"; then
             echo "❌ ERROR: flutter_rust_bridge symbols were stripped from the Android Release APK!"
@@ -511,7 +511,7 @@ jobs:
         run: |
           echo "Bundling iOS SDK into tracelet_ios plugin..."
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Frameworks
-          unzip -q sdk/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
+          unzip -q -o sdk/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
           
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
           cp -r sdk/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
@@ -528,7 +528,7 @@ jobs:
         run: |
           echo "Bundling iOS SDK into tracelet_sync plugin..."
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
-          unzip -q sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
+          unzip -q -o sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
           perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
@@ -645,7 +645,7 @@ jobs:
         run: |
           echo "Bundling iOS SDK into tracelet_ios plugin..."
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Frameworks
-          unzip -q tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
+          unzip -q -o tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
           
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
           cp -r tracelet-ios-temp/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
@@ -666,7 +666,7 @@ jobs:
         run: |
           echo "Bundling iOS SDK into tracelet_sync plugin..."
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
-          unzip -q tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
+          unzip -q -o tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
           perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true

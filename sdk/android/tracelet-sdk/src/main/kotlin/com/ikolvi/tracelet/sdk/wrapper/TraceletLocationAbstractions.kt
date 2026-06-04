@@ -148,7 +148,7 @@ object TraceletServices {
         return provider!!
     }
 
-    fun setProvider(customProvider: TraceletServicesProvider) {
+    fun setProvider(customProvider: TraceletServicesProvider?) {
         provider = customProvider
     }
 }

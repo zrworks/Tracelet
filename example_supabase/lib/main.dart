@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracelet/tracelet.dart';
 import 'package:tracelet_supabase/tracelet_supabase.dart';
-
-import 'env.dart';
+import 'package:example_supabase/env.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

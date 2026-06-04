@@ -18,6 +18,7 @@ body:
       options:
         - tracelet (Core Plugin)
         - tracelet_doctor
+        - tracelet_sync
         - tracelet_supabase
         - tracelet_firebase
     validations:
@@ -67,10 +68,25 @@ body:
       required: true
 
   - type: textarea
+    id: doctor_json
+    attributes:
+      label: Tracelet Doctor Setup JSON
+      description: Please paste the full JSON setup exported from the `TraceletDoctor` overlay. You can paste multiple JSONs if testing on different setups.
+      placeholder: |
+        {
+          "manufacturer": "Apple",
+          "model": "iPhone",
+          ...
+        }
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
     id: logs
     attributes:
-      label: Logs / Tracelet Doctor Output
-      description: Please paste any relevant console logs, stack traces, or the JSON output from `TraceletDoctor`.
+      label: Logs / Stack Traces
+      description: Please paste any relevant console logs or stack traces.
       render: text
     validations:
       required: false

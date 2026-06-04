@@ -11,7 +11,7 @@ cd "$DIR"
 source ./build-ios-utils.sh
 
 # Target architectures
-TARGETS=("aarch64-apple-ios" "aarch64-apple-ios-sim")
+TARGETS=("aarch64-apple-ios" "aarch64-apple-ios-sim" "x86_64-apple-ios")
 
 # Add rust targets
 for target in "${TARGETS[@]}"; do
@@ -22,11 +22,23 @@ echo "Compiling for iOS targets..."
 export RUSTFLAGS="-C embed-bitcode=no"
 cargo build --release --target aarch64-apple-ios
 cargo build --release --target aarch64-apple-ios-sim
+cargo build --release --target x86_64-apple-ios
 
 echo "Creating XCFrameworks..."
 OUT_DIR="out"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
+
+# Merge simulator architectures
+mkdir -p "$OUT_DIR/sim"
+lipo -create -output "$OUT_DIR/sim/libtracelet_core.a" \
+    target/aarch64-apple-ios-sim/release/libtracelet_core.a \
+    target/x86_64-apple-ios/release/libtracelet_core.a
+
+lipo -create -output "$OUT_DIR/sim/libtracelet_sync.a" \
+    target/aarch64-apple-ios-sim/release/libtracelet_sync.a \
+    target/x86_64-apple-ios/release/libtracelet_sync.a
+
 
 # --- CORE FRAMEWORK ---
 cargo run -p tracelet_core --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_core.a --language swift --out-dir "$OUT_DIR/core"
@@ -49,7 +61,7 @@ cp "$DUMMY_SWIFT_CORE" "../../packages/tracelet_ios/ios/tracelet_ios/Sources/tra
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
 xcodebuild -create-xcframework \
     -library "target/aarch64-apple-ios/release/libtracelet_core.a" -headers "$OUT_DIR/core/Headers" \
-    -library "target/aarch64-apple-ios-sim/release/libtracelet_core.a" -headers "$OUT_DIR/core/Headers" \
+    -library "$OUT_DIR/sim/libtracelet_core.a" -headers "$OUT_DIR/core/Headers" \
     -output "$OUT_DIR/TraceletCore.xcframework"
 
 
@@ -77,7 +89,7 @@ cp "$DUMMY_SWIFT_SYNC" "../../packages/tracelet_sync/ios/tracelet_sync/Sources/t
 rm -rf "$OUT_DIR/TraceletSyncFFI.xcframework"
 xcodebuild -create-xcframework \
     -library "target/aarch64-apple-ios/release/libtracelet_sync.a" -headers "$OUT_DIR/sync/Headers" \
-    -library "target/aarch64-apple-ios-sim/release/libtracelet_sync.a" -headers "$OUT_DIR/sync/Headers" \
+    -library "$OUT_DIR/sim/libtracelet_sync.a" -headers "$OUT_DIR/sync/Headers" \
     -output "$OUT_DIR/TraceletSyncFFI.xcframework"
 
 # Copy the built xcframework to the plugin's ios directory so CocoaPods can vendor it

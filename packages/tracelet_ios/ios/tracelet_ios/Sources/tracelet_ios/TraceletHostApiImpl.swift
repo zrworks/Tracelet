@@ -311,7 +311,9 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     func stop(completion: @escaping (Result<TlState, Error>) -> Void) {
         guard sdk.isReadyState else {
-            completion(.failure(PigeonError(code: "NOT_READY", message: "Call ready() before stop()", details: nil)))
+            completion(.success(TlState(
+                enabled: false, isMoving: false, trackingMode: .location,
+                schedulerEnabled: false, odometer: 0.0, lastLocationTimestamp: nil)))
             return
         }
         let state = sdk.stop()

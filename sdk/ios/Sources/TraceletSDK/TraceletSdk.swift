@@ -1018,26 +1018,7 @@ public final class TraceletSdk {
                     if let lastRecord = successfullySynced.last {
                         try db.clearLocationsUpTo(maxId: lastRecord.id)
                     }
-                    let mapped = successfullySynced.map { record -> [String: Any] in
-                        return [
-                            "uuid": String(record.id),
-                            "timestamp": record.timestamp,
-                            "is_moving": stateManager.isMoving,
-                            "coords": [
-                                "latitude": record.latitude,
-                                "longitude": record.longitude,
-                                "altitude": record.altitude,
-                                "speed": record.speed,
-                                "heading": record.heading,
-                                "accuracy": record.accuracy
-                            ],
-                            "activity": [
-                                "type": record.activity,
-                                "confidence": 100
-                            ]
-                        ]
-                    }
-                    DispatchQueue.main.async { completion?(mapped) }
+                    DispatchQueue.main.async { completion?([]) }
                 } else {
                     DispatchQueue.main.async { completion?([]) }
                 }

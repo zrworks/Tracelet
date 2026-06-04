@@ -824,6 +824,51 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
+  Future<void> _testSqlLimitsAndOffsets() async {
+    _addLog('TEST_SQL', '--- Starting Test: SQLQuery Limit & Offset ---');
+    await tl.Tracelet.destroyLocations();
+    
+    final now = DateTime.now();
+    for (int i = 0; i < 5; i++) {
+      await tl.Tracelet.insertLocation({
+        'timestamp': now.subtract(Duration(hours: 5 - i)),
+        'coords': {
+          'latitude': 48.0 + i,
+          'longitude': 2.0 + i,
+          'accuracy': 5.0,
+          'speed': 15.0,
+        },
+        'activity': {'type': 'in_vehicle'},
+        'is_moving': true,
+      });
+    }
+
+    _addLog('TEST_SQL', 'Inserted 5 locations.');
+
+    // 1. Test limit 2, offset 1, descending
+    final query1 = tl.SQLQuery(
+      limit: 2, 
+      offset: 1, 
+      order: tl.LocationOrderDirection.descending
+    );
+    final results1 = await tl.Tracelet.getLocations(query1);
+    _addLog('TEST_SQL', 'Query 1 (limit 2, offset 1, DESC): got ${results1.length}');
+    for (final loc in results1) {
+      _addLog('TEST_SQL', ' - [Q1] lat: ${loc.coords.latitude}');
+    }
+
+    // 2. Test limit -1 (default), offset 2, ascending
+    final query2 = tl.SQLQuery(
+      offset: 2, 
+      order: tl.LocationOrderDirection.ascending
+    );
+    final results2 = await tl.Tracelet.getLocations(query2);
+    _addLog('TEST_SQL', 'Query 2 (limit -1, offset 2, ASC): got ${results2.length}');
+    for (final loc in results2) {
+      _addLog('TEST_SQL', ' - [Q2] lat: ${loc.coords.latitude}');
+    }
+  }
+
   Future<void> _start() async {
     try {
       if (!await _ensureBackgroundPermission()) return;
@@ -3826,6 +3871,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'Test SQL/Carbon',
                         Icons.date_range,
                         _testSqlQueryAndCarbonReport,
+                      ),
+                      _Chip(
+                        'Test Limits/Offsets',
+                        Icons.sort,
+                        _testSqlLimitsAndOffsets,
                       ),
                       _Chip(
                         'Test HTTP Sync',

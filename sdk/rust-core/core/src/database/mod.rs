@@ -950,6 +950,41 @@ mod tests {
     }
 
     #[test]
+    fn test_location_query_limit_offset() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        for i in 1..=5 {
+            db.insert_location(None, i as f64, i as f64, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        }
+
+        // Test limit and offset
+        let query1 = LocationQuery {
+            start_time_ms: None,
+            end_time_ms: None,
+            limit: Some(2),
+            offset: Some(1),
+            order_descending: Some(true),
+        };
+        let locations1 = db.get_locations_batch(Some(query1)).unwrap();
+        assert_eq!(locations1.len(), 2);
+        assert_eq!(locations1[0].id, 4); // DESC: 5, 4, 3, 2, 1 -> offset 1 -> 4, 3
+        assert_eq!(locations1[1].id, 3);
+
+        // Test limit -1 (default missing limit) with offset
+        let query2 = LocationQuery {
+            start_time_ms: None,
+            end_time_ms: None,
+            limit: Some(-1),
+            offset: Some(2),
+            order_descending: Some(false),
+        };
+        let locations2 = db.get_locations_batch(Some(query2)).unwrap();
+        assert_eq!(locations2.len(), 3); // ASC: 1, 2, 3, 4, 5 -> offset 2 -> 3, 4, 5
+        assert_eq!(locations2[0].id, 3);
+        assert_eq!(locations2[2].id, 5);
+    }
+
+    #[test]
     fn test_delete_locations() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         

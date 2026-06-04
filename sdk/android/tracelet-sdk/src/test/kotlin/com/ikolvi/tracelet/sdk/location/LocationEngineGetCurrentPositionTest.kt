@@ -197,4 +197,46 @@ class LocationEngineGetCurrentPositionTest {
         assertEquals(41.9028, coords["latitude"])
         assertEquals(12.4964, coords["longitude"])
     }
+
+    // =====================================================================
+    // skipCache
+    // =====================================================================
+
+    @Test
+    fun `getLastKnownLocation with skipCache ignores lastLocation cache`() {
+        // Arrange
+        val fallback = Location("test").apply {
+            latitude = 48.8566
+            longitude = 2.3522
+            accuracy = 25f
+            time = System.currentTimeMillis()
+            elapsedRealtimeNanos = android.os.SystemClock.elapsedRealtimeNanos()
+        }
+        val lastLocationField = LocationEngine::class.java.getDeclaredField("lastLocation")
+        lastLocationField.isAccessible = true
+        lastLocationField.set(engine, fallback)
+
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(Location?) -> Unit>(0)
+            val mockLoc = Location("test").apply { 
+                latitude = 1.0
+                longitude = 1.0 
+                time = System.currentTimeMillis()
+                elapsedRealtimeNanos = android.os.SystemClock.elapsedRealtimeNanos()
+            }
+            onSuccess(mockLoc)
+            null
+        }.`when`(mockLocationClient).getLastLocation(any(), any())
+
+        // Act
+        var result: Map<String, Any?>? = null
+        engine.getLastKnownLocation(mapOf("skipCache" to true)) { loc ->
+            result = loc
+        }
+
+        // Assert
+        assertNotNull(result)
+        val coords = result!!["coords"] as Map<*, *>
+        assertEquals(1.0, coords["latitude"])
+    }
 }

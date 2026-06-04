@@ -50,7 +50,7 @@ interface LocationDataSink {
 }
 
 class LocationEngine(
-    private val context: Context,
+    val context: Context,
     private val config: ConfigManager,
     private val state: StateManager,
     var events: TraceletEventSender,
@@ -468,21 +468,25 @@ class LocationEngine(
         }
 
         val persist = options["persist"] as? Boolean ?: false
+        /** Forces the engine to bypass the fast in-memory cache and fetch a fresh location from the provider */
+        val skipCache = options["skipCache"] as? Boolean ?: false
         @Suppress("UNCHECKED_CAST")
         val extras = options["extras"] as? Map<String, Any?> ?: emptyMap()
 
-        // 1. Check our own in-memory cache first (most reliable).
-        val cached = lastLocation
-        if (cached != null) {
-            val enriched = enrichLocation(cached, "getLastKnownLocation").toMutableMap()
-            if (extras.isNotEmpty()) enriched["extras"] = extras
-            resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
-                if (persist) {
-                    onLocationPersisted?.invoke()
+        // 1. Check our own in-memory cache first (most reliable) if allowed.
+        if (!skipCache) {
+            val cached = lastLocation
+            if (cached != null) {
+                val enriched = enrichLocation(cached, "getLastKnownLocation").toMutableMap()
+                if (extras.isNotEmpty()) enriched["extras"] = extras
+                resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
+                    if (persist) {
+                        onLocationPersisted?.invoke()
+                    }
+                    callback(finalEnriched)
                 }
-                callback(finalEnriched)
+                return
             }
-            return
         }
 
         // 2. Try TraceletLocationClient cache.

@@ -101,6 +101,8 @@ class LocationService : Service(), DefaultLifecycleObserver {
         ) {
             stopStationaryTimer()
             engine.stop()
+            // Mark state as stationary so motion change events fire correctly
+            state.isMoving = false
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC
 
             val intervalMs = config.getStationaryPeriodicInterval() * 1000L
@@ -116,7 +118,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
             val runnable = object : Runnable {
                 override fun run() {
-                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy)) { locationMap -> 
+                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy, "skipCache" to true)) { locationMap -> 
                         if (locationMap != null) {
                             val coords = locationMap["coords"] as? Map<*, *>
                             var speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
@@ -168,6 +170,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
                             val enriched = locationMap.toMutableMap()
                             enriched["event"] = "periodic"
                             enriched["odometer"] = state.odometer
+                            
+                            // Insert to DB immediately so it can be synced (crucial for auto-sync in periodic mode)
+                            com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(engine.context).insertLocation(enriched)
+                            
                             engine.events?.sendLocation(enriched)
                             
                             engine.speedMotionSpeedSink?.invoke(speed)
@@ -189,6 +195,8 @@ class LocationService : Service(), DefaultLifecycleObserver {
         fun switchToStationaryGeofences(engine: com.ikolvi.tracelet.sdk.location.LocationEngine, state: StateManager) {
             stopStationaryTimer()
             engine.stop()
+            // Mark state as stationary so motion change events fire correctly
+            state.isMoving = false
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.GEOFENCES
             Log.d(TAG, "switchToStationaryGeofences() — continuous stopped, geofences active")
         }
@@ -198,6 +206,8 @@ class LocationService : Service(), DefaultLifecycleObserver {
          */
         fun switchToContinuous(engine: com.ikolvi.tracelet.sdk.location.LocationEngine, state: StateManager) {
             stopStationaryTimer()
+            // Mark state as moving so motion change events fire correctly
+            state.isMoving = true
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
             engine.start()
             Log.d(TAG, "switchToContinuous() — continuous tracking resumed")

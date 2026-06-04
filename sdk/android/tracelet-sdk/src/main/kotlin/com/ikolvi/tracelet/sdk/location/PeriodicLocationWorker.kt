@@ -194,6 +194,17 @@ class PeriodicLocationWorker(
                 scheduleExactAlarm(applicationContext, interval)
             }
 
+            // CRITICAL FIX: The tracelet_sync plugin delays HTTP syncs by autoSyncDelay.
+            // If we exit immediately, the OS will release the WakeLock and suspend the app,
+            // failing the upload. So we hold the worker alive for (autoSyncDelay + 1) seconds.
+            val traceletSdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
+            val httpConfig = traceletSdk.rustEngineState?.getConfig()?.http
+            if (httpConfig != null && httpConfig.autoSync) {
+                val delayMs = httpConfig.autoSyncDelay.toLong()
+                Log.d(TAG, "Delaying worker exit for ${delayMs + 1000L} ms to allow tracelet_sync background upload...")
+                kotlinx.coroutines.delay(delayMs + 1000L)
+            }
+
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Periodic location work failed: ${e.message}", e)

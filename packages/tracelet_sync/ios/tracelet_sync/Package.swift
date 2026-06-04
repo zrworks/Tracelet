@@ -8,27 +8,29 @@ let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().res
 let traceletRoot = packageDir.appendingPathComponent("../../../..").standardized.path
 
 let package = Package(
-    name: "tracelet_ios",
+    name: "tracelet_sync",
     platforms: [
-        .iOS(.v14)
+        .iOS("14.0")
     ],
     products: [
-        .library(name: "tracelet-ios", targets: ["tracelet_ios"])
+        .library(name: "tracelet-sync", targets: ["tracelet_sync"])
     ],
     dependencies: [
-        // Consumed via Swift Package Manager when imported as a Flutter plugin.
-        // It points to the root of the Tracelet monorepo where the SPM configuration resides.
-        .package(name: "TraceletSDK", path: traceletRoot),
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
+        .package(name: "TraceletSDK", path: traceletRoot)
     ],
     targets: [
         .target(
-            name: "tracelet_ios",
+            name: "tracelet_sync",
             dependencies: [
-                .product(name: "TraceletSDK", package: "TraceletSDK"),
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
-            ],
-            path: "Sources/tracelet_ios"
+                .product(name: "TraceletSDK", package: "TraceletSDK"),
+                "TraceletSyncFFI"
+            ]
+        ),
+        .binaryTarget(
+            name: "TraceletSyncFFI",
+            path: "TraceletSyncFFI.xcframework"
         )
     ]
 )

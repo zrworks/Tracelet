@@ -1205,38 +1205,23 @@ class TraceletSdk private constructor(private val context: Context) {
                 }
                 
                 val count = provider.syncBatchBlocking(config.http, records)
-                if (count > 0) {
+                if (count > 0L) {
                     val syncedCount = count.toInt()
                     val successfullySynced = records.take(syncedCount)
                     successfullySynced.lastOrNull()?.let { lastRecord ->
                         db.clearLocationsUpTo(lastRecord.id)
                     }
-                    val mapped = successfullySynced.map { r ->
-                        mapOf(
-                            "uuid" to r.id.toString(),
-                            "timestamp" to r.timestamp,
-                            "is_moving" to stateManager.isMoving,
-                            "coords" to mapOf(
-                                "latitude" to r.latitude,
-                                "longitude" to r.longitude,
-                                "altitude" to r.altitude,
-                                "speed" to r.speed,
-                                "heading" to r.heading,
-                                "accuracy" to r.accuracy
-                            ),
-                            "activity" to mapOf(
-                                "type" to r.activity,
-                                "confidence" to 100
-                            )
-                        )
-                    }
-                    mainHandler.post { callback(mapped) }
-                } else {
-                    mainHandler.post { callback(emptyList()) }
+                    logger.info("TraceletSdk: Synced and cleared $count locations via SyncProvider.")
+                }
+                
+                mainHandler.post {
+                    callback(emptyList()) // Return empty to indicate native handled it
                 }
             } catch (e: Exception) {
-                logger.error("Sync failed: ${e.message}")
-                mainHandler.post { callback(emptyList()) }
+                logger.error("TraceletSdk: sync failed: \${e.message}")
+                mainHandler.post {
+                    callback(emptyList())
+                }
             }
         }.start()
     }

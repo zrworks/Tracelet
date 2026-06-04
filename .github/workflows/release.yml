@@ -74,6 +74,8 @@ jobs:
       flutter_version: ${{ steps.versions.outputs.flutter }}
       flutter_doctor_version: ${{ steps.versions.outputs.flutter_doctor }}
       flutter_supabase_version: ${{ steps.versions.outputs.flutter_supabase }}
+      android_published: ${{ steps.published_status.outputs.android_published }}
+      ios_published: ${{ steps.published_status.outputs.ios_published }}
     steps:
       - uses: actions/checkout@v5
 
@@ -149,6 +151,32 @@ jobs:
           echo "const supabaseUrl = 'https://dummy.supabase.co';" > example_supabase/lib/env.dart
           echo "const supabaseAnonKey = 'dummy';" >> example_supabase/lib/env.dart
 
+      - name: Check published status
+        id: published_status
+        run: |
+          ANDROID_VERSION="${{ steps.versions.outputs.android_sdk }}"
+          CORE_URL="https://repo1.maven.org/maven2/com/ikolvi/tracelet-sdk/${ANDROID_VERSION}/tracelet-sdk-${ANDROID_VERSION}.pom"
+          SYNC_URL="https://repo1.maven.org/maven2/com/ikolvi/tracelet-sync-sdk/${ANDROID_VERSION}/tracelet-sync-sdk-${ANDROID_VERSION}.pom"
+          CORE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$CORE_URL")
+          SYNC_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SYNC_URL")
+          if [ "$CORE_CODE" = "200" ] && [ "$SYNC_CODE" = "200" ]; then
+            echo "android_published=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ Android SDK already published."
+          else
+            echo "android_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          IOS_VERSION=$(grep '^version:' packages/tracelet_ios/pubspec.yaml | awk '{print $2}')
+          SYNC_VERSION=$(grep '^version:' packages/tracelet_sync/pubspec.yaml | awk '{print $2}')
+          IOS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/api/packages/tracelet_ios/versions/${IOS_VERSION}")
+          SYNC_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/api/packages/tracelet_sync/versions/${SYNC_VERSION}")
+          if [ "$IOS_CODE" = "200" ] && [ "$SYNC_CODE" = "200" ]; then
+            echo "ios_published=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ iOS SDK packages already published."
+          else
+            echo "ios_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Analyze
         run: melos run analyze
       - name: Dry-run pub publish
@@ -173,7 +201,11 @@ jobs:
   publish-android-sdk:
     name: Publish Android SDK
     needs: [validate, test-flutter-android]
-    if: ${{ !inputs.skip_native_sdks }}
+    if: |
+      always() &&
+      !inputs.skip_native_sdks &&
+      needs.validate.result == 'success' &&
+      (needs.test-flutter-android.result == 'success' || needs.test-flutter-android.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -319,7 +351,11 @@ jobs:
   publish-ios-sdk:
     name: Publish iOS SDK
     needs: [validate, test-flutter-ios]
-    if: ${{ !inputs.skip_native_sdks }}
+    if: |
+      always() &&
+      !inputs.skip_native_sdks &&
+      needs.validate.result == 'success' &&
+      (needs.test-flutter-ios.result == 'success' || needs.test-flutter-ios.result == 'skipped')
     runs-on: macos-latest
     outputs:
       already_published: ${{ steps.check_published.outputs.already_published }}
@@ -413,7 +449,8 @@ jobs:
       always() &&
       !inputs.skip_flutter &&
       !inputs.skip_native_sdks &&
-      needs.validate.result == 'success'
+      needs.validate.result == 'success' &&
+      needs.validate.outputs.android_published == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -468,7 +505,8 @@ jobs:
       always() &&
       !inputs.skip_flutter &&
       !inputs.skip_native_sdks &&
-      needs.validate.result == 'success'
+      needs.validate.result == 'success' &&
+      needs.validate.outputs.ios_published == 'false'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5

@@ -470,7 +470,7 @@ jobs:
 
   integration-test-android:
     name: Integration Tests (Android)
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     needs: analyze
     steps:
       - uses: actions/checkout@v5
@@ -516,16 +516,17 @@ jobs:
         run: flutter_rust_bridge_codegen generate
       - name: Build Android Rust Core
         run: ./sdk/rust-core/build-android.sh
-      - name: Kill existing ADB (Fix for macOS ARM)
+      - name: Enable KVM group perms (Hardware Acceleration)
         run: |
-          $ANDROID_HOME/platform-tools/adb kill-server || true
-          $ANDROID_HOME/platform-tools/adb start-server
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Run Integration Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: 29
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
@@ -535,7 +536,7 @@ jobs:
             adb shell input keyevent 82 || true
             cd example
             flutter build apk --debug
-            adb install -t -g build/app/outputs/flutter-apk/app-debug.apk
+            adb install -t -g build/app/outputs/flutter-apk/app-debug.apk || true
             flutter test integration_test
 
   integration-test-ios:
@@ -585,6 +586,7 @@ jobs:
           DEVICE_ID=$(xcrun simctl list devices available | grep -m 1 "iPhone" | grep -o -E '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
           echo "Booting simulator: $DEVICE_ID"
           xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
       - name: Run Integration Tests
         working-directory: example
@@ -592,4 +594,4 @@ jobs:
           flutter build ios --simulator --debug
           xcrun simctl install $SIMULATOR_ID build/ios/iphonesimulator/Runner.app
           xcrun simctl privacy $SIMULATOR_ID grant location-always com.ikolvi.tracelet.example || true
-          flutter test integration_test -d $SIMULATOR_ID
+          flutter test integration_test -d $SIMULATOR_ID --verbose

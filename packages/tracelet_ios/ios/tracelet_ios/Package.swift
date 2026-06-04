@@ -14,7 +14,7 @@ let package = Package(
     dependencies: [
         // Consumed via Swift Package Manager when imported as a Flutter plugin.
         // It points to the root of the Tracelet monorepo where the SPM configuration resides.
-        .package(name: "TraceletSDK", path: "/Users/admin/Documents/Tracelet"),
+        .package(name: "TraceletSDK", path: "../../../.."),
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
     ],
     targets: [

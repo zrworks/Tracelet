@@ -26,6 +26,7 @@ execution for iOS.
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.user_target_xcconfig = { 
+    'OTHER_LDFLAGS' => '$(inherited) -Wl,-multiply_defined,suppress',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'DEAD_CODE_STRIPPING' => 'NO'
   }

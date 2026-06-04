@@ -250,7 +250,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
+				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -444,6 +444,10 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_CODE_SIGN_FLAGS = "$(inherited) --generate-entitlement-der";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Wl,-multiply_defined,suppress",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ikolvi.tracelet.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -628,6 +632,10 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_CODE_SIGN_FLAGS = "$(inherited) --generate-entitlement-der";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Wl,-multiply_defined,suppress",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ikolvi.tracelet.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -652,6 +660,10 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_CODE_SIGN_FLAGS = "$(inherited) --generate-entitlement-der";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Wl,-multiply_defined,suppress",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ikolvi.tracelet.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -696,7 +708,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */ = {
+		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};

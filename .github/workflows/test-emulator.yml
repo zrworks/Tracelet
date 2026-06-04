@@ -1,0 +1,30 @@
+name: Test Android Emulator Boot
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  test-emulator-ubuntu:
+    name: Test Emulator on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            echo "Emulator booted successfully!"
+            adb devices
+            adb shell getprop ro.build.version.sdk

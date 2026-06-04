@@ -13,7 +13,7 @@ A new Flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'connect@ikolvi.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'tracelet_sync/Sources/tracelet_sync/**/*'
+  s.source_files = 'tracelet_sync/Sources/tracelet_sync/**/*.{swift,h}'
   s.public_header_files = 'tracelet_sync/Sources/tracelet_sync/**/*.h', 'tracelet_sync/Sources/tracelet_sync/*.h'
   s.dependency 'Flutter'
   s.dependency 'TraceletSDK'
@@ -32,5 +32,5 @@ A new Flutter plugin project.
   # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
   # plugin's privacy impact, and then uncomment this line. For more information,
   # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'tracelet_sync_privacy' => ['tracelet_sync/Sources/tracelet_sync/PrivacyInfo.xcprivacy']}
+  s.resource_bundles = {'tracelet_sync_privacy' => ['tracelet_sync/Sources/tracelet_sync/PrivacyInfo.xcprivacy']}
 end

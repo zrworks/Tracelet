@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo_anim.webp" alt="Tracelet" width="100%"/>
+  <img src="assets/logo_anim.webp" alt="Tracelet" width="400"/>
 </p>
 
 # Tracelet

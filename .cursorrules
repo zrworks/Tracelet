@@ -1,0 +1,8 @@
+You are working in a Flutter/Dart workspace managed by Melos.
+
+CRITICAL WORKFLOW RULE:
+Before EVERY commit and push, you MUST run the following commands:
+1. `melos run format` or `melos run format:fix`
+2. `melos run analyze`
+
+If these commands fail, you MUST fix the formatting and analyzer errors before committing. Failure to do so will cause the CI workflows to fail.

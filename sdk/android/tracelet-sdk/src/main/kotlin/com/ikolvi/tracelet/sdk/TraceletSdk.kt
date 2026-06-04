@@ -188,6 +188,22 @@ class TraceletSdk private constructor(private val context: Context) {
 
     fun getEventSender(): TraceletEventSender = eventSender
 
+    /**
+     * Safely registers a SyncProvider (like TraceletSyncSink).
+     * This ensures it attaches to the foreground LocationEngine if ready() was called,
+     * OR the background LocationService.bootLocationEngine if the app launched in the background
+     * and ready() was bypassed.
+     */
+    fun registerSyncProvider(provider: SyncProvider) {
+        this.syncProvider = provider
+        if (provider is com.ikolvi.tracelet.sdk.location.LocationDataSink) {
+            if (::locationEngine.isInitialized) {
+                locationEngine.registerSink(provider)
+            }
+            com.ikolvi.tracelet.sdk.service.LocationService.bootLocationEngine?.registerSink(provider)
+        }
+    }
+
     // =========================================================================
     // Initialization
     // =========================================================================
@@ -1126,6 +1142,16 @@ class TraceletSdk private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Caches the timestamp of the last inserted location to prevent duplicate 
+     * DB writes from the same GPS fix (e.g. from PeriodicLocationWorker).
+     */
+    private var lastInsertedTimestamp: String? = null
+
+    /**
+     * Inserts a location record into the Rust database and notifies registered sync sinks.
+     * Prevents duplicate insertions of the exact same GPS fix based on the timestamp.
+     */
     fun insertLocation(params: Map<String, Any?>): String {
         if (!isReady) return ""
         val db = rustDatabase ?: return ""
@@ -1141,6 +1167,12 @@ class TraceletSdk private constructor(private val context: Context) {
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         val timestamp = params["timestamp"] as? String
         val uuid = params["uuid"] as? String
+        
+        // Prevent duplicate insertions of the exact same GPS fix (e.g. from PeriodicLocationWorker)
+        if (timestamp != null && timestamp == lastInsertedTimestamp) {
+            return ""
+        }
+        lastInsertedTimestamp = timestamp
         
         var routeContext = rustEngineState?.getRouteContext()
         val auditHash = params["audit_hash"] as? String
@@ -1162,6 +1194,8 @@ class TraceletSdk private constructor(private val context: Context) {
         
         return try {
             val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, activity, routeContext, timestamp)
+            // Notify the sync plugin so it can trigger auto-sync
+            (syncProvider as? com.ikolvi.tracelet.sdk.location.LocationDataSink)?.insertLocation(params)
             newRowId.toString()
         } catch (e: Exception) {
             logger.error("insertLocation failed: ${e.message}")

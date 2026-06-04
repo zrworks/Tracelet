@@ -178,8 +178,7 @@ class TraceletSyncPlugin : FlutterPlugin, MethodCallHandler {
             val traceletSdk = TraceletSdk.getInstance(context)
             
             val sink = TraceletSyncSink(traceletSdk)
-            traceletSdk.locationEngine?.registerSink(sink)
-            traceletSdk.syncProvider = sink
+            traceletSdk.registerSyncProvider(sink)
             syncSink = sink
             
             android.util.Log.i("TraceletSync", "Sync sink registered!")

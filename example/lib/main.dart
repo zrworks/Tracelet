@@ -622,12 +622,12 @@ class _DashboardPageState extends State<DashboardPage>
           motion: const tl.MotionConfig(
             stopTimeout: 1, // 1 minute for fast stop-timeout testing
             motionDetectionMode: tl.MotionDetectionMode.smart,
-            shakeThreshold: 0.5, // 🚀 NEW: Ultra-sensitive for indoor testing!
+            shakeThreshold: 2, // Increased to 2.0 to prevent ultra-sensitive motion triggering
             speedStationaryDelay: 30, // Make it quicker for demo testing
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
           http: const tl.HttpConfig(
-            url: 'http://192.168.20.102:8099/locations',
+            url: 'http://192.168.20.100:8099/locations',
             // ── New features ──
             autoSyncDelay: 5000,
           ),

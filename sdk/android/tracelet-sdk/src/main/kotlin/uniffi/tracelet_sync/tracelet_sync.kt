@@ -1420,6 +1420,20 @@ data class SyncHttpConfig (
     var `retryBackoffCap`: kotlin.Int
     , 
     var `sslPinningCertificates`: List<kotlin.String>?
+    , 
+    var `httpRootProperty`: kotlin.String?
+    , 
+    var `params`: Map<kotlin.String, kotlin.String>?
+    , 
+    var `extras`: Map<kotlin.String, kotlin.String>?
+    , 
+    var `disableAutoSyncOnCellular`: kotlin.Boolean
+    , 
+    var `enableDeltaCompression`: kotlin.Boolean
+    , 
+    var `deltaCoordinatePrecision`: kotlin.Int
+    , 
+    var `locationsOrderDirection`: kotlin.Int
     
 ){
     
@@ -1446,6 +1460,13 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalMapStringString.read(buf),
+            FfiConverterOptionalMapStringString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
         )
     }
 
@@ -1459,7 +1480,14 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.allocationSize(value.`maxRetries`) +
             FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
             FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
-            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`)
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`) +
+            FfiConverterOptionalString.allocationSize(value.`httpRootProperty`) +
+            FfiConverterOptionalMapStringString.allocationSize(value.`params`) +
+            FfiConverterOptionalMapStringString.allocationSize(value.`extras`) +
+            FfiConverterBoolean.allocationSize(value.`disableAutoSyncOnCellular`) +
+            FfiConverterBoolean.allocationSize(value.`enableDeltaCompression`) +
+            FfiConverterInt.allocationSize(value.`deltaCoordinatePrecision`) +
+            FfiConverterInt.allocationSize(value.`locationsOrderDirection`)
     )
 
     override fun write(value: SyncHttpConfig, buf: ByteBuffer) {
@@ -1473,6 +1501,13 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.write(value.`retryBackoffBase`, buf)
             FfiConverterInt.write(value.`retryBackoffCap`, buf)
             FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
+            FfiConverterOptionalString.write(value.`httpRootProperty`, buf)
+            FfiConverterOptionalMapStringString.write(value.`params`, buf)
+            FfiConverterOptionalMapStringString.write(value.`extras`, buf)
+            FfiConverterBoolean.write(value.`disableAutoSyncOnCellular`, buf)
+            FfiConverterBoolean.write(value.`enableDeltaCompression`, buf)
+            FfiConverterInt.write(value.`deltaCoordinatePrecision`, buf)
+            FfiConverterInt.write(value.`locationsOrderDirection`, buf)
     }
 }
 
@@ -1624,6 +1659,38 @@ public object FfiConverterOptionalSequenceString: FfiConverterRustBuffer<List<ko
         } else {
             buf.put(1)
             FfiConverterSequenceString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalMapStringString: FfiConverterRustBuffer<Map<kotlin.String, kotlin.String>?> {
+    override fun read(buf: ByteBuffer): Map<kotlin.String, kotlin.String>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterMapStringString.read(buf)
+    }
+
+    override fun allocationSize(value: Map<kotlin.String, kotlin.String>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterMapStringString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: Map<kotlin.String, kotlin.String>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterMapStringString.write(value, buf)
         }
     }
 }

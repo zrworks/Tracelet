@@ -64,7 +64,14 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                     maxRetries = coreHttp.maxRetries,
                     retryBackoffBase = coreHttp.retryBackoffBase,
                     retryBackoffCap = coreHttp.retryBackoffCap,
-                    sslPinningCertificates = coreHttp.sslPinningCertificates
+                    sslPinningCertificates = coreHttp.sslPinningCertificates,
+                    httpRootProperty = coreHttp.httpRootProperty,
+                    params = coreHttp.params,
+                    extras = coreHttp.extras,
+                    disableAutoSyncOnCellular = coreHttp.disableAutoSyncOnCellular,
+                    enableDeltaCompression = coreHttp.enableDeltaCompression,
+                    deltaCoordinatePrecision = coreHttp.deltaCoordinatePrecision,
+                    locationsOrderDirection = coreHttp.locationsOrderDirection
                 )
 
                 val syncRecords = records.map {
@@ -122,7 +129,14 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
             maxRetries = config.maxRetries,
             retryBackoffBase = config.retryBackoffBase,
             retryBackoffCap = config.retryBackoffCap,
-            sslPinningCertificates = config.sslPinningCertificates
+            sslPinningCertificates = config.sslPinningCertificates,
+            httpRootProperty = config.httpRootProperty,
+            params = config.params,
+            extras = config.extras,
+            disableAutoSyncOnCellular = config.disableAutoSyncOnCellular,
+            enableDeltaCompression = config.enableDeltaCompression,
+            deltaCoordinatePrecision = config.deltaCoordinatePrecision,
+            locationsOrderDirection = config.locationsOrderDirection
         )
         val syncRecords = records.map {
             uniffi.tracelet_sync.SyncLocationRecord(

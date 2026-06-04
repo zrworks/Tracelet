@@ -4497,6 +4497,10 @@ public func FfiConverterTypeGeoConfig_lower(_ value: GeoConfig) -> RustBuffer {
  */
 public struct GeofenceConfig: Equatable, Hashable {
     /**
+     * Enable initial trigger evaluation for geofences on registration.
+     */
+    public var geofenceInitialTrigger: Bool
+    /**
      * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
      */
     public var geofenceInitialTriggerEntry: Bool
@@ -4509,11 +4513,15 @@ public struct GeofenceConfig: Equatable, Hashable {
     // declare one manually.
     public init(
         /**
+         * Enable initial trigger evaluation for geofences on registration.
+         */geofenceInitialTrigger: Bool, 
+        /**
          * If true, fires an entry trigger immediately if the device is already inside the geofence when registered.
          */geofenceInitialTriggerEntry: Bool, 
         /**
          * The radius (in meters) for loading geofences from the database into the active monitoring queue.
          */geofenceProximityRadius: Int32) {
+        self.geofenceInitialTrigger = geofenceInitialTrigger
         self.geofenceInitialTriggerEntry = geofenceInitialTriggerEntry
         self.geofenceProximityRadius = geofenceProximityRadius
     }
@@ -4534,12 +4542,14 @@ public struct FfiConverterTypeGeofenceConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GeofenceConfig {
         return
             try GeofenceConfig(
+                geofenceInitialTrigger: FfiConverterBool.read(from: &buf), 
                 geofenceInitialTriggerEntry: FfiConverterBool.read(from: &buf), 
                 geofenceProximityRadius: FfiConverterInt32.read(from: &buf)
         )
     }
 
     public static func write(_ value: GeofenceConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.geofenceInitialTrigger, into: &buf)
         FfiConverterBool.write(value.geofenceInitialTriggerEntry, into: &buf)
         FfiConverterInt32.write(value.geofenceProximityRadius, into: &buf)
     }
@@ -4731,6 +4741,34 @@ public struct HttpConfig: Equatable, Hashable {
      * Optional list of PEM or DER encoded certificates for SSL pinning.
      */
     public var sslPinningCertificates: [String]?
+    /**
+     * Custom root property for the HTTP sync payload.
+     */
+    public var httpRootProperty: String?
+    /**
+     * Custom query parameters.
+     */
+    public var params: [String: String]?
+    /**
+     * Custom JSON fields to inject at the root of the sync payload.
+     */
+    public var extras: [String: String]?
+    /**
+     * Disable auto-syncing when on a cellular data network (syncs only on Wi-Fi).
+     */
+    public var disableAutoSyncOnCellular: Bool
+    /**
+     * Enable delta-encoding compression for batch sync payloads.
+     */
+    public var enableDeltaCompression: Bool
+    /**
+     * Coordinate decimal precision for delta compression.
+     */
+    public var deltaCoordinatePrecision: Int32
+    /**
+     * The chronological sort order for synced locations.
+     */
+    public var locationsOrderDirection: Int32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -4767,7 +4805,28 @@ public struct HttpConfig: Equatable, Hashable {
          */autoSyncDelay: Int32, 
         /**
          * Optional list of PEM or DER encoded certificates for SSL pinning.
-         */sslPinningCertificates: [String]?) {
+         */sslPinningCertificates: [String]?, 
+        /**
+         * Custom root property for the HTTP sync payload.
+         */httpRootProperty: String?, 
+        /**
+         * Custom query parameters.
+         */params: [String: String]?, 
+        /**
+         * Custom JSON fields to inject at the root of the sync payload.
+         */extras: [String: String]?, 
+        /**
+         * Disable auto-syncing when on a cellular data network (syncs only on Wi-Fi).
+         */disableAutoSyncOnCellular: Bool, 
+        /**
+         * Enable delta-encoding compression for batch sync payloads.
+         */enableDeltaCompression: Bool, 
+        /**
+         * Coordinate decimal precision for delta compression.
+         */deltaCoordinatePrecision: Int32, 
+        /**
+         * The chronological sort order for synced locations.
+         */locationsOrderDirection: Int32) {
         self.url = url
         self.method = method
         self.headers = headers
@@ -4779,6 +4838,13 @@ public struct HttpConfig: Equatable, Hashable {
         self.retryBackoffCap = retryBackoffCap
         self.autoSyncDelay = autoSyncDelay
         self.sslPinningCertificates = sslPinningCertificates
+        self.httpRootProperty = httpRootProperty
+        self.params = params
+        self.extras = extras
+        self.disableAutoSyncOnCellular = disableAutoSyncOnCellular
+        self.enableDeltaCompression = enableDeltaCompression
+        self.deltaCoordinatePrecision = deltaCoordinatePrecision
+        self.locationsOrderDirection = locationsOrderDirection
     }
 
     
@@ -4807,7 +4873,14 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
                 retryBackoffBase: FfiConverterInt32.read(from: &buf), 
                 retryBackoffCap: FfiConverterInt32.read(from: &buf), 
                 autoSyncDelay: FfiConverterInt32.read(from: &buf), 
-                sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf)
+                sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf), 
+                httpRootProperty: FfiConverterOptionString.read(from: &buf), 
+                params: FfiConverterOptionDictionaryStringString.read(from: &buf), 
+                extras: FfiConverterOptionDictionaryStringString.read(from: &buf), 
+                disableAutoSyncOnCellular: FfiConverterBool.read(from: &buf), 
+                enableDeltaCompression: FfiConverterBool.read(from: &buf), 
+                deltaCoordinatePrecision: FfiConverterInt32.read(from: &buf), 
+                locationsOrderDirection: FfiConverterInt32.read(from: &buf)
         )
     }
 
@@ -4823,6 +4896,13 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.retryBackoffCap, into: &buf)
         FfiConverterInt32.write(value.autoSyncDelay, into: &buf)
         FfiConverterOptionSequenceString.write(value.sslPinningCertificates, into: &buf)
+        FfiConverterOptionString.write(value.httpRootProperty, into: &buf)
+        FfiConverterOptionDictionaryStringString.write(value.params, into: &buf)
+        FfiConverterOptionDictionaryStringString.write(value.extras, into: &buf)
+        FfiConverterBool.write(value.disableAutoSyncOnCellular, into: &buf)
+        FfiConverterBool.write(value.enableDeltaCompression, into: &buf)
+        FfiConverterInt32.write(value.deltaCoordinatePrecision, into: &buf)
+        FfiConverterInt32.write(value.locationsOrderDirection, into: &buf)
     }
 }
 
@@ -6593,6 +6673,30 @@ fileprivate struct FfiConverterOptionSequenceTypeCoordinate: FfiConverterRustBuf
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterSequenceTypeCoordinate.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionDictionaryStringString: FfiConverterRustBuffer {
+    typealias SwiftType = [String: String]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterDictionaryStringString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterDictionaryStringString.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }

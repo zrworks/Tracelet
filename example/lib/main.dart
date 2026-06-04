@@ -886,6 +886,37 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  // ── Custom Http Sync Test ──────────────────────────────────────────────
+  Future<void> _testHttpSync() async {
+    try {
+      _addLog('TEST_HTTP', 'Configuring custom HTTP Sync properties...');
+      await tl.Tracelet.setConfig(
+        const tl.Config(
+          http: tl.HttpConfig(
+            url: 'http://192.168.20.100:8099/locations', 
+            httpRootProperty: 'location_data',
+            params: {'user_id': 'ikolvi_tester', 'device': 'example_app'},
+            extras: {'session_key': 'super-secret-token'},
+            locationsOrderDirection: tl.LocationOrderDirection.descending,
+            enableDeltaCompression: false,
+          ),
+        ),
+      );
+      
+      _addLog('TEST_HTTP', 'Inserting mock location to trigger sync...');
+      await tl.Tracelet.insertLocation({
+        'timestamp': DateTime.now().toIso8601String(),
+        'coords': {'latitude': 10.0, 'longitude': 20.0, 'accuracy': 5.0},
+      });
+      
+      _addLog('TEST_HTTP', 'Syncing now...');
+      await tl.Tracelet.sync();
+      _addLog('TEST_HTTP', 'Sync triggered. Check test_server logs!');
+    } catch (e) {
+      _addLog('ERROR', '_testHttpSync failed: $e');
+    }
+  }
+
   /// Safely stop tracking — checks state before calling stop().
   ///
   /// Uses [tl.Tracelet.getState] to check if tracking is enabled before
@@ -3795,6 +3826,11 @@ class _DashboardPageState extends State<DashboardPage>
                         'Test SQL/Carbon',
                         Icons.date_range,
                         _testSqlQueryAndCarbonReport,
+                      ),
+                      _Chip(
+                        'Test HTTP Sync',
+                        Icons.cloud_upload,
+                        _testHttpSync,
                       ),
                       _Chip('Live Map', Icons.map, () {
                         Navigator.push(

@@ -65,9 +65,6 @@ dependencies {
     // WorkManager for reliable background scheduling
     implementation("androidx.work:work-runtime-ktx:2.11.1")
 
-    // OkHttp for HTTP sync
-    implementation("com.squareup.okhttp3:okhttp:5.3.2")
-    implementation("com.squareup.okhttp3:okhttp-tls:5.3.2")
 
 
 
@@ -84,8 +81,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-service:2.10.0")
     implementation("androidx.lifecycle:lifecycle-process:2.10.0")
 
-    // JSON
-    implementation("org.json:json:20251224")
+    testImplementation("org.json:json:20251224")
 
     // Testing
     testImplementation("org.jetbrains.kotlin:kotlin-test")

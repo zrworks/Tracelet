@@ -882,6 +882,8 @@ class HttpConfig {
     this.method = HttpMethod.post,
     this.headers,
     this.params,
+    this.extras,
+    this.httpRootProperty = 'location',
     this.autoSync = true,
     this.batchSync = false,
     this.maxBatchSize = 250,
@@ -909,6 +911,8 @@ class HttpConfig {
           ).clamp(0, HttpMethod.values.length - 1)],
       headers: (map['headers'] as Map?)?.cast<String, String>(),
       params: (map['params'] as Map?)?.cast<String, Object?>(),
+      extras: (map['extras'] as Map?)?.cast<String, Object?>(),
+      httpRootProperty: map['httpRootProperty'] as String? ?? 'location',
       autoSync: ensureBool(map['autoSync'], fallback: true),
       batchSync: ensureBool(map['batchSync'], fallback: false),
       maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
@@ -947,6 +951,8 @@ class HttpConfig {
     HttpMethod? method,
     Map<String, String>? headers,
     Map<String, Object?>? params,
+    Map<String, Object?>? extras,
+    String? httpRootProperty,
     bool? autoSync,
     bool? batchSync,
     int? maxBatchSize,
@@ -968,6 +974,8 @@ class HttpConfig {
       method: method ?? this.method,
       headers: headers ?? this.headers,
       params: params ?? this.params,
+      extras: extras ?? this.extras,
+      httpRootProperty: httpRootProperty ?? this.httpRootProperty,
       autoSync: autoSync ?? this.autoSync,
       batchSync: batchSync ?? this.batchSync,
       maxBatchSize: maxBatchSize ?? this.maxBatchSize,
@@ -1007,6 +1015,14 @@ class HttpConfig {
   /// Custom query parameters or extra JSON fields to send with each sync payload.
   /// Defaults to `null`.
   final Map<String, Object?>? params;
+
+  /// Custom JSON fields to inject at the root of the sync payload.
+  /// Defaults to `null`.
+  final Map<String, Object?>? extras;
+
+  /// The root JSON property name for the array of locations in the sync payload.
+  /// Defaults to `'location'`.
+  final String? httpRootProperty;
 
   /// Whether to auto-sync locations immediately when they are recorded/inserted into the database.
   /// Defaults to `true`.
@@ -1073,6 +1089,8 @@ class HttpConfig {
     method: TlHttpMethod.values[method.index],
     headers: headers,
     params: params,
+    extras: extras,
+    httpRootProperty: httpRootProperty,
     autoSync: autoSync,
     batchSync: batchSync,
     maxBatchSize: maxBatchSize,
@@ -1097,6 +1115,8 @@ class HttpConfig {
       'method': method.index,
       'headers': headers,
       'params': params,
+      'extras': extras,
+      'httpRootProperty': httpRootProperty,
       'autoSync': autoSync,
       'batchSync': batchSync,
       'maxBatchSize': maxBatchSize,
@@ -1124,6 +1144,8 @@ class HttpConfig {
           method == other.method &&
           headers == other.headers &&
           params == other.params &&
+          extras == other.extras &&
+          httpRootProperty == other.httpRootProperty &&
           autoSync == other.autoSync &&
           batchSync == other.batchSync &&
           maxBatchSize == other.maxBatchSize &&
@@ -1141,11 +1163,13 @@ class HttpConfig {
           _listEquals(sslPinningCertificates, other.sslPinningCertificates);
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     url,
     method,
     headers,
     params,
+    extras,
+    httpRootProperty,
     autoSync,
     batchSync,
     maxBatchSize,
@@ -1161,7 +1185,7 @@ class HttpConfig {
     deltaCoordinatePrecision,
     sslPinningFingerprints,
     sslPinningCertificates,
-  );
+  ]);
 }
 
 // NOTE: Sub-configs like LoggerConfig, MotionConfig, etc. are omitted for brevity
@@ -1634,6 +1658,7 @@ class GeofenceConfig {
   const GeofenceConfig({
     this.geofenceModeHighAccuracy = false,
     this.geofenceInitialTriggerEntry = true,
+    this.geofenceInitialTrigger = true,
     this.geofenceProximityRadius = 1000,
   });
 
@@ -1645,6 +1670,10 @@ class GeofenceConfig {
       ),
       geofenceInitialTriggerEntry: ensureBool(
         map['geofenceInitialTriggerEntry'],
+        fallback: true,
+      ),
+      geofenceInitialTrigger: ensureBool(
+        map['geofenceInitialTrigger'],
         fallback: true,
       ),
       geofenceProximityRadius: ensureInt(
@@ -1662,6 +1691,10 @@ class GeofenceConfig {
   /// Defaults to `true`.
   final bool geofenceInitialTriggerEntry;
 
+  /// Enable initial trigger evaluation for geofences on registration.
+  /// Defaults to `true`.
+  final bool geofenceInitialTrigger;
+
   /// The radius (in meters) for proximity-based geofence loading.
   /// Only geofences within this distance are actively registered with the OS.
   /// Defaults to `1000`.
@@ -1671,6 +1704,7 @@ class GeofenceConfig {
     return <String, Object?>{
       'geofenceModeHighAccuracy': geofenceModeHighAccuracy,
       'geofenceInitialTriggerEntry': geofenceInitialTriggerEntry,
+      'geofenceInitialTrigger': geofenceInitialTrigger,
       'geofenceProximityRadius': geofenceProximityRadius,
     };
   }
@@ -1679,7 +1713,7 @@ class GeofenceConfig {
     geofenceModeHighAccuracy: geofenceModeHighAccuracy,
     geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
     geofenceProximityRadius: geofenceProximityRadius,
-    geofenceInitialTrigger: true,
+    geofenceInitialTrigger: geofenceInitialTrigger,
   );
 
   @override
@@ -1689,12 +1723,14 @@ class GeofenceConfig {
           runtimeType == other.runtimeType &&
           geofenceModeHighAccuracy == other.geofenceModeHighAccuracy &&
           geofenceInitialTriggerEntry == other.geofenceInitialTriggerEntry &&
+          geofenceInitialTrigger == other.geofenceInitialTrigger &&
           geofenceProximityRadius == other.geofenceProximityRadius;
 
   @override
   int get hashCode => Object.hash(
     geofenceModeHighAccuracy,
     geofenceInitialTriggerEntry,
+    geofenceInitialTrigger,
     geofenceProximityRadius,
   );
 }

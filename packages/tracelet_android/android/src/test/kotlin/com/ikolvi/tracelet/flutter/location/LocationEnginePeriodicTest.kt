@@ -7,12 +7,15 @@ import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.model.TrackingMode
-import com.ikolvi.tracelet.sdk.db.TraceletDatabase
+import uniffi.tracelet_core.DatabaseManager
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import kotlin.test.Test
+import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Tests for [LocationEngine] periodic tracking lifecycle.
@@ -31,6 +34,8 @@ import kotlin.test.assertTrue
  * Full lifecycle integration tests (with real FusedLocationProvider)
  * run on-device in `example/integration_test/`.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 internal class LocationEnginePeriodicTest {
 
     /**
@@ -188,18 +193,37 @@ internal class LocationEnginePeriodicTest {
         Mockito.verify(events).sendLocation(locationMap)
     }
 
-    // ── TraceletDatabase mock wiring ──────────────────────────────────────
+    // ── DatabaseManager mock wiring ──────────────────────────────────────
 
     @Test
     fun database_insertLocation_canBeMocked() {
-        val db = Mockito.mock(TraceletDatabase::class.java)
-        val locationMap = mapOf<String, Any?>(
-            "uuid" to "test-uuid",
-            "latitude" to 37.7749,
-            "longitude" to -122.4194,
+        val db = Mockito.mock(DatabaseManager::class.java)
+        
+        db.insertLocation(
+            "test-uuid",
+            37.7749,
+            -122.4194,
+            10.0,
+            0.0,
+            0.0,
+            0.0,
+            false,
+            "still",
+            null,
+            null
         )
-
-        db.insertLocation(locationMap)
-        Mockito.verify(db).insertLocation(locationMap)
+        Mockito.verify(db).insertLocation(
+            "test-uuid",
+            37.7749,
+            -122.4194,
+            10.0,
+            0.0,
+            0.0,
+            0.0,
+            false,
+            "still",
+            null,
+            null
+        )
     }
 }

@@ -17,6 +17,13 @@ pub struct SyncHttpConfig {
     pub retry_backoff_base: i32,
     pub retry_backoff_cap: i32,
     pub ssl_pinning_certificates: Option<Vec<String>>,
+    pub http_root_property: Option<String>,
+    pub params: Option<HashMap<String, String>>,
+    pub extras: Option<HashMap<String, String>>,
+    pub disable_auto_sync_on_cellular: bool,
+    pub enable_delta_compression: bool,
+    pub delta_coordinate_precision: i32,
+    pub locations_order_direction: i32,
 }
 
 #[derive(uniffi::Record, Debug, Clone)]
@@ -66,7 +73,7 @@ impl SyncManager {
 
 impl SyncManager {
     pub(crate) fn build_sync_payload(config: &SyncHttpConfig, records: &[SyncLocationRecord]) -> serde_json::Value {
-        if config.batch_sync {
+        let mut payload = if config.batch_sync {
             let json_records: Vec<_> = records.iter().map(|r| {
                 let mut base_json = json!({
                     "id": r.id,
@@ -97,7 +104,10 @@ impl SyncManager {
                 }
                 base_json
             }).collect();
-            json!({ "location": json_records })
+            let root_key = config.http_root_property.as_deref().unwrap_or("location");
+            let mut map = serde_json::Map::new();
+            map.insert(root_key.to_string(), serde_json::Value::Array(json_records));
+            serde_json::Value::Object(map)
         } else {
             // For non-batch, just send the latest record
             let r = records.last().unwrap();
@@ -128,8 +138,33 @@ impl SyncManager {
                     }
                 }
             }
-            json!({ "location": base_json })
+            let root_key = config.http_root_property.as_deref().unwrap_or("location");
+            let mut map = serde_json::Map::new();
+            map.insert(root_key.to_string(), base_json);
+            serde_json::Value::Object(map)
+        };
+
+        // Attach params and extras to the root of the payload
+        if let Some(obj) = payload.as_object_mut() {
+            if let Some(params) = &config.params {
+                let mut params_obj = serde_json::Map::new();
+                for (k, v) in params {
+                    let parsed_val = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                    params_obj.insert(k.clone(), parsed_val);
+                }
+                obj.insert("params".to_string(), serde_json::Value::Object(params_obj));
+            }
+            if let Some(extras) = &config.extras {
+                let mut extras_obj = serde_json::Map::new();
+                for (k, v) in extras {
+                    let parsed_val = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                    extras_obj.insert(k.clone(), parsed_val);
+                }
+                obj.insert("extras".to_string(), serde_json::Value::Object(extras_obj));
+            }
         }
+        
+        payload
     }
 
     /// Performs an asynchronous sync of a batch of location records.
@@ -268,6 +303,13 @@ mod tests {
             retry_backoff_base: 1000,
             retry_backoff_cap: 10000,
             ssl_pinning_certificates: None,
+            http_root_property: None,
+            params: None,
+            extras: None,
+            disable_auto_sync_on_cellular: false,
+            enable_delta_compression: false,
+            delta_coordinate_precision: 5,
+            locations_order_direction: 0,
         }
     }
 
@@ -326,5 +368,25 @@ mod tests {
         assert_eq!(first_loc.get("audit_hash").and_then(Value::as_str), Some("hash123"), "audit_hash was not merged into the sync payload!");
         assert_eq!(first_loc.get("audit_chain_index").and_then(Value::as_i64), Some(42), "audit_chain_index was not merged into the sync payload!");
         assert_eq!(first_loc.get("custom").and_then(Value::as_str), Some("{app: tracelet-example}"));
+    }
+
+    #[test]
+    fn test_build_sync_payload_uses_custom_root_property_and_extras() {
+        let mut config = get_test_config(true); // uses "events" and extras
+        config.http_root_property = Some("events".to_string());
+        config.extras = Some(HashMap::from([("custom_meta".to_string(), "123".to_string())]));
+        let records = vec![get_test_record()];
+        
+        let payload = SyncManager::build_sync_payload(&config, &records);
+        
+        // Assert payload uses custom root "events" instead of "location"
+        let locations = payload.get("events").expect("Missing custom root 'events' array in payload")
+            .as_array().expect("'events' should be an array");
+            
+        assert_eq!(locations.len(), 1);
+        
+        // Assert extras are attached at the root level of the payload as an object
+        let extras = payload.get("extras").expect("Missing 'extras' object in payload");
+        assert_eq!(extras.get("custom_meta").and_then(serde_json::Value::as_i64), Some(123), "extras were not attached to the payload!");
     }
 }

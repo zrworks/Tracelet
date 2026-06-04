@@ -44,17 +44,36 @@ Future<void> main(List<String> args) async {
       '── Request #$requestCount [$timestamp] '
       '${request.method} ${request.uri.path} ──',
     );
+    
+    if (request.uri.queryParameters.isNotEmpty) {
+      stdout.writeln('  Query Params: ${request.uri.queryParameters}');
+    }
 
     if (body.isNotEmpty) {
       try {
         final json = jsonDecode(body) as Map<String, dynamic>;
-        final location = json['location'];
+        
+        dynamic locationData;
+        if (json.containsKey('location')) {
+           locationData = json['location'];
+        } else if (json.containsKey('location_data')) {
+           locationData = json['location_data'];
+        } else if (json.isNotEmpty) {
+           locationData = json.values.first; // Fallback to first value
+        }
 
-        if (location is Map) {
-          _printLocation(location, requestCount);
-        } else if (location is List) {
-          stdout.writeln('  Batch of ${location.length} locations:');
-          for (final (i, loc) in location.indexed) {
+        if (json.containsKey('params')) {
+          stdout.writeln('  Root Params: ${jsonEncode(json['params'])}');
+        }
+        if (json.containsKey('extras')) {
+          stdout.writeln('  Root Extras: ${jsonEncode(json['extras'])}');
+        }
+
+        if (locationData is Map) {
+          _printLocation(locationData, requestCount);
+        } else if (locationData is List) {
+          stdout.writeln('  Batch of ${locationData.length} locations:');
+          for (final (i, loc) in locationData.indexed) {
             _printLocation(loc as Map, requestCount, index: i);
           }
         } else {

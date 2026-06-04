@@ -598,6 +598,7 @@ jobs:
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
           unzip -q -o sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
+          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*//g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
           perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
 
@@ -742,6 +743,7 @@ jobs:
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
           unzip -q -o tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
+          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*//g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
           perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           

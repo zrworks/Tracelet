@@ -150,7 +150,7 @@ void main() {
       payloadString = await requestController.stream.first.timeout(
         const Duration(seconds: 10),
       );
-      payload = jsonDecode(payloadString);
+
       expect(
         payloadString,
         contains('background-uuid'),

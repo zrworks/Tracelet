@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -144,19 +145,15 @@ jobs:
           print(f'Pruned {pruned} older benchmark entries, keeping the latest 50 releases')
           "
 
-      - name: Commit benchmark results
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Only commit if BENCHMARK.md changed
-          if git diff --quiet BENCHMARK.md; then
-            echo "No benchmark changes to commit"
-          else
-            git add BENCHMARK.md
-            git commit -m "chore(ci): update benchmark results [skip ci]"
-            git push
-          fi
+      - name: Create Pull Request for Benchmark Results
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(ci): update benchmark results [skip ci]"
+          branch: ci/update-benchmarks
+          title: "chore(ci): update benchmark results"
+          body: "Automated PR to update BENCHMARK.md with the latest performance numbers."
+          labels: "performance, automated-pr"
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v7

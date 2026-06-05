@@ -4,7 +4,7 @@
 
 ## 3.2.1
 
-- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 3.2.0
 

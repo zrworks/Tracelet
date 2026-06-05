@@ -4,7 +4,7 @@
 
 ## 3.2.1
 
-- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 3.2.0
 
@@ -136,7 +136,7 @@
 
 ## 1.8.7
 
-- **CHORE**: Re-release — 1.8.6 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 1.8.6
 

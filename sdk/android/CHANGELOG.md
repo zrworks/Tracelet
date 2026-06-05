@@ -4,7 +4,7 @@
 
 ## 3.2.1
 
-- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 3.1.8
 
@@ -121,7 +121,7 @@
 
 ## 1.0.7
 
-- **CHORE**: Re-release — 1.0.6 was published alongside partially-released Flutter packages.
+- **CHORE**: Sync release versions with Flutter package updates.
 
 ## 1.0.6
 

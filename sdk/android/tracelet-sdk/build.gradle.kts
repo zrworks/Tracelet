@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("signing")
+    id("com.vanniktech.maven.publish.base") version "0.30.0"
 }
 
 group = "com.ikolvi"
@@ -144,8 +145,12 @@ afterEvaluate {
             }
         }
 
-        // Repository is managed by io.github.gradle-nexus.publish-plugin in root build.gradle.kts.
-        // Use: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+        // Use vanniktech for actual upload to Central Portal
+        // Run: ./gradlew publishAndReleaseToMavenCentral
+    }
+
+    mavenPublishing {
+        publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     }
 
     signing {

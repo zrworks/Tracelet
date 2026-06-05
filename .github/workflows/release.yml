@@ -368,7 +368,7 @@ jobs:
       !inputs.skip_native_sdks &&
       needs.validate.result == 'success' &&
       (needs.test-flutter-ios.result == 'success' || needs.test-flutter-ios.result == 'skipped')
-    runs-on: macos-15
+    runs-on: macos-latest
     outputs:
       already_published: ${{ steps.check_published.outputs.already_published }}
     steps:
@@ -531,7 +531,7 @@ jobs:
       !inputs.skip_native_sdks &&
       needs.validate.result == 'success' &&
       needs.validate.outputs.ios_published == 'false'
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2

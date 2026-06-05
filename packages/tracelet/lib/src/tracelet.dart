@@ -165,9 +165,28 @@ class Tracelet {
   /// Returns `false` on web (headless isolates not supported).
   static bool get isHeadlessRegistered => _headlessRegistered;
 
-  /// Initialize the plugin and bind the native lifecycle.
+  /// Ensures the Rust core is initialized before calling Rust-backed algorithms.
+  static Future<void> _ensureRustLibInitialized() async {
+    try {
+      // ignore: invalid_use_of_internal_member
+      if (!RustLib.instance.initialized) {
+        await initializeRustLib();
+      }
+    } catch (e) {
+      if (e is StateError &&
+          (e.message.contains('already initialized') ||
+              e.message.contains('initialize flutter_rust_bridge twice'))) {
+        // Ignored if already initialized concurrently
+      } else {
+        rethrow;
+      }
+    }
+  }
+
+  /// Initialize the plugin and apply the [Config].
   ///
-  /// This should be the first method called before [start] or [startGeofences].
+  /// This must be called before [start] to configure the plugin's behavior.
+  /// It returns the current [State] of the plugin.
   ///
   /// ```dart
   /// final state = await Tracelet.ready(Config(
@@ -176,13 +195,7 @@ class Tracelet {
   /// print('Enabled: ${state.enabled}');
   /// ```
   static Future<State> ready(Config config) async {
-    try {
-      await initializeRustLib();
-    } catch (e) {
-      // Ignored if already initialized, otherwise print error
-      // ignore: avoid_print
-      print('Tracelet: initializeRustLib warning: $e');
-    }
+    await _ensureRustLibInitialized();
     _currentConfig = config;
 
     _geofenceEvaluator.clear();
@@ -205,6 +218,7 @@ class Tracelet {
   ///
   /// Returns the updated [State] after starting.
   static Future<State> start() async {
+    await _ensureRustLibInitialized();
     final result = await _platform.start();
 
     // Start internal trip detection subscriptions.
@@ -220,6 +234,7 @@ class Tracelet {
   ///
   /// Returns the updated [State] after stopping.
   static Future<State> stop() async {
+    await _ensureRustLibInitialized();
     final result = await _platform.stop();
 
     // Stop trip detection and reset.

@@ -15,5 +15,6 @@ export 'src/method_channel_tracelet.dart'; // Legacy, kept for backward compat
 export 'src/pigeon_event_receiver.dart';
 export 'src/pigeon_tracelet.dart';
 export 'src/rust_loader/rust_loader.dart';
+export 'src/rust/frb_generated.dart' show RustLib;
 export 'src/tracelet_platform.dart';
 export 'src/types/types.dart';

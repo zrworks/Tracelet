@@ -2100,9 +2100,9 @@ extension TraceletSdk: SpeedMotionDelegate {
     public func switchToStationaryGeofences() {
         if configManager.getMotionDetectionMode() == .smart {
             smartMotionCoordinator.onSpeedStateChange(isMoving: false)
-            return
+        } else {
+            switchToStationaryGeofencesForce()
         }
-        switchToStationaryGeofencesForce()
     }
 
     public func switchToStationaryGeofencesForce() {

@@ -445,15 +445,33 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         let distanceFilter = configManager.getDistanceFilter()
         let isSpeedMode = configManager.getMotionDetectionMode() == .speed
-        locationManager.distanceFilter = (distanceFilter > 0 && !isSpeedMode) ? distanceFilter : kCLDistanceFilterNone
+        if isStopTimeoutActive {
+            locationManager.distanceFilter = kCLDistanceFilterNone
+        } else {
+            locationManager.distanceFilter = (distanceFilter > 0 && !isSpeedMode) ? distanceFilter : kCLDistanceFilterNone
+        }
 
         locationManager.activityType = configManager.getActivityType()
     }
 
+    private var activeStopTimeouts: Set<String> = []
+
+    /// Tracks whether a stop timeout is currently active.
+    public var isStopTimeoutActive: Bool {
+        return !activeStopTimeouts.isEmpty
+    }
+
     /// Overrides the distance filter temporarily.
     /// Used by TraceletSdk to keep the app awake during the stop timeout by forcing continuous GPS updates.
-    public func overrideDistanceFilter(forStopTimeout: Bool) {
+    public func overrideDistanceFilter(forStopTimeout: Bool, source: String = "Unknown") {
         if forStopTimeout {
+            activeStopTimeouts.insert(source)
+        } else {
+            activeStopTimeouts.remove(source)
+        }
+        
+        let isActive = isStopTimeoutActive
+        if isActive {
             // If preventSuspend is enabled, the app is already kept alive via 
             // audio session. Overriding the GPS to continuous is redundant 
             // and wastes battery.

@@ -6,6 +6,8 @@ public protocol SpeedMotionDelegate: AnyObject {
     func switchToContinuous()
     func switchToStationaryPeriodic()
     func switchToStationaryGeofences()
+    func speedMotionDidStartSlowing()
+    func speedMotionDidCancelSlowing()
     /// Emit a speed-motion state change event to Dart.
     func emitSpeedMotionEvent(state: Int, previousState: Int, trackingMode: Int)
 }
@@ -130,6 +132,10 @@ public final class SpeedMotionManager {
             
             if state == .stationary {
                 switchToStationary()
+            } else if state == .slowing {
+                NSLog("[SpeedMotion] start: restored SLOWING state, restarting timer")
+                delegate?.speedMotionDidStartSlowing()
+                startSlowingTimer()
             }
         }
     }
@@ -151,6 +157,7 @@ public final class SpeedMotionManager {
             stopSlowingTimer()
             let previousState = state
             state = .moving
+            if previousState == .slowing { delegate?.speedMotionDidCancelSlowing() }
             
             if state != previousState {
                 persistState()
@@ -163,6 +170,7 @@ public final class SpeedMotionManager {
             stopSlowingTimer()
             let previousState = state
             state = .stationary
+            if previousState == .slowing { delegate?.speedMotionDidCancelSlowing() }
             
             if state != previousState {
                 persistState()
@@ -218,6 +226,8 @@ public final class SpeedMotionManager {
                   speed, speedMovingThreshold)
             startSlowingTimer()
             
+            delegate?.speedMotionDidStartSlowing()
+            
             if state != previousState {
                 persistState()
                 emitEvent(previous: previousState, current: state)
@@ -239,6 +249,7 @@ public final class SpeedMotionManager {
                     self.state = .stationary
                     self.wakeCount = 0
                     self.lowSpeedCount = 0
+                    self.delegate?.speedMotionDidCancelSlowing()
                     self.switchToStationary()
                     
                     if self.state != previousState {
@@ -277,6 +288,8 @@ public final class SpeedMotionManager {
             NSLog("[SpeedMotion] SLOWING -> MOVING (speed=%.2f >= threshold=%.2f)",
                   speed, speedMovingThreshold)
                   
+            delegate?.speedMotionDidCancelSlowing()
+            
             if state != previousState {
                 persistState()
                 emitEvent(previous: previousState, current: state)
@@ -295,6 +308,7 @@ public final class SpeedMotionManager {
             NSLog("[SpeedMotion] SLOWING -> STATIONARY (elapsed=%.0fs >= delay=%ds, lowCount=%d)",
                   elapsed, speedStationaryDelay, lowSpeedCount)
 
+            delegate?.speedMotionDidCancelSlowing()
             switchToStationary()
             
             if state != previousState {

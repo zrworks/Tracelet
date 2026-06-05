@@ -46,8 +46,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
         
         let instance = TraceletIosPlugin()
         
-        let preventStrip = ProcessInfo.processInfo.environment["PREVENT_STRIP"] == "1"
-        if preventStrip { instance.dummyMethodToEnforceBundling() }
+        TraceletCoreDummy.enforceBundling()
 
         // ── Primary instance guard ───────────────────────────────────────
         // When a background FlutterEngine is created (by Firebase background

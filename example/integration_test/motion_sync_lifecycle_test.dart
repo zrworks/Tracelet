@@ -49,7 +49,7 @@ void main() {
         Config(
           http: HttpConfig(
             url: 'http://127.0.0.1:$port/sync',
-            autoSync: true,
+
             autoSyncDelay: 1000,
             batchSync: true,
             maxBatchSize: 1, // trigger immediately

@@ -28,6 +28,61 @@
 
 # Changelog
 
+## 3.2.1
+
+- **CHORE**: Align federated package versions and include additional patch updates.
+
+## 2026-05-31
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.2.0`](#tracelet---v320)
+ - [`tracelet_platform_interface` - `v3.2.0`](#tracelet_platform_interface---v320)
+ - [`tracelet_android` - `v3.2.0`](#tracelet_android---v320)
+ - [`tracelet_ios` - `v3.2.0`](#tracelet_ios---v320)
+ - [`tracelet_web` - `v3.2.0`](#tracelet_web---v320)
+ - [`tracelet_doctor` - `v3.2.0`](#tracelet_doctor---v320)
+ - [`tracelet_firebase` - `v3.2.0`](#tracelet_firebase---v320)
+ - [`tracelet_supabase` - `v3.2.0`](#tracelet_supabase---v320)
+
+---
+
+#### `tracelet` - `v3.2.0`
+
+ - **FEAT**: Implement short-lived WakeLocks for transient background tasks (`startBackgroundTask` / `stopBackgroundTask`), improving background execution reliability on Android (matches iOS `beginBackgroundTask`).
+ - **FEAT**: The SQLCipher dependency is no longer required for database encryption (Tracelet Core now natively uses AES-GCM in Rust, reducing APK size by ~16MB).
+ - **FEAT**: HTTP sync logic has been moved to the `tracelet_sync` module, which must now be included if you require network synchronization.
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_platform_interface` - `v3.2.0`
+
+ - **FIX**(web): safe BigInt to int casting for rust bridge 64-bit integers. ([2e592b34](https://github.com/Ikolvi/Tracelet/commit/2e592b344ecc242d03e3c4f840d1f1380d6fecd0))
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_android` - `v3.2.0`
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_ios` - `v3.2.0`
+
+ - **FEAT**: Add reverse geocoding functionality. ([0fe7b89a](https://github.com/Ikolvi/Tracelet/commit/0fe7b89aad0e22ea28cf81dd81723a534300c175))
+
+#### `tracelet_web` - `v3.2.0`
+
+#### `tracelet_doctor` - `v3.2.0`
+
+#### `tracelet_firebase` - `v3.2.0`
+
+#### `tracelet_supabase` - `v3.2.0`
+
 ## 3.0.1
 
 - **CHORE**: Version bump for monorepo consistency with Flutter plugins (resolves SPM FlutterFramework missing dependency in wrapper).

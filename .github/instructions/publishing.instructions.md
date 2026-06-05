@@ -93,20 +93,8 @@ Never publish with stale constraints pointing to older versions.
   - Sub: `sdk/ios/TraceletSDK.podspec` → `s.version = 'X.Y.Z'`
   - Changelog: `sdk/ios/CHANGELOG.md`
 
-## Git Tag Convention
-| Component | Format | Example |
-|-----------|--------|---------|
-| Android SDK | `sdk-android-vX.Y.Z` | `sdk-android-v1.0.1` |
-| iOS SDK | `sdk-ios-vX.Y.Z` | `sdk-ios-v1.0.1` |
-| Flutter interface | `tracelet_platform_interface-vX.Y.Z` | `tracelet_platform_interface-v1.8.1` |
-| Flutter Android | `tracelet_android-vX.Y.Z` | `tracelet_android-v1.8.1` |
-| Flutter iOS | `tracelet_ios-vX.Y.Z` | `tracelet_ios-v1.8.1` |
-| Flutter Web | `tracelet_web-vX.Y.Z` | `tracelet_web-v1.8.1` |
-| Flutter app-facing | `tracelet-vX.Y.Z` | `tracelet-v1.8.1` |
-| Flutter sync | `tracelet_sync-vX.Y.Z` | `tracelet_sync-v1.8.1` |
-| Flutter supabase | `tracelet_supabase-vX.Y.Z` | `tracelet_supabase-v1.8.1` |
-| Flutter firebase | `tracelet_firebase-vX.Y.Z` | `tracelet_firebase-v1.8.1` |
-| Flutter doctor | `tracelet_doctor-vX.Y.Z` | `tracelet_doctor-v1.8.1` |
+## Git Tags
+Git Tags are no longer manually created. The automated release workflow skips creating tags for Flutter packages to prevent discrepancies. Do not run any commands (like `melos version`) that auto-generate git tags.
 
 ## Automated Release
 Trigger via GitHub Actions: `.github/workflows/release.yml` → Run workflow.

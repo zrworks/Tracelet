@@ -926,10 +926,10 @@ jobs:
             # Create GitHub Releases for tracelet_ios and tracelet_sync with attached binaries
             if [ "${{ inputs.publish_core_flutter }}" = "true" ] && [[ " $NEW_TAGS " =~ " tracelet_ios-v${VERSION} " ]]; then
               echo "Creating GitHub Release for tracelet_ios..."
-              if [ -f "tracelet-ios-temp/sdk/rust-core/out/TraceletCore.xcframework.zip" ]; then
-                gh release create "tracelet_ios-v${VERSION}" --title "Release tracelet_ios v${VERSION}" --notes "Tracelet iOS SDK v${VERSION}" "tracelet-ios-temp/sdk/rust-core/out/TraceletCore.xcframework.zip"
+              if [ -f "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip" ]; then
+                gh release create "tracelet_ios-v${VERSION}" --title "Release tracelet_ios v${VERSION}" --notes "Tracelet iOS SDK v${VERSION}" "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip"
               else
-                echo "⚠️ tracelet-ios-temp/sdk/rust-core/out/TraceletCore.xcframework.zip not found! Cannot attach to release."
+                echo "⚠️ tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip not found! Cannot attach to release."
                 # We still create the release without assets if it was skipped (already published)
                 gh release create "tracelet_ios-v${VERSION}" --title "Release tracelet_ios v${VERSION}" --notes "Tracelet iOS SDK v${VERSION}"
               fi
@@ -937,10 +937,10 @@ jobs:
 
             if [ "${{ inputs.publish_tracelet_sync }}" = "true" ] && [[ " $NEW_TAGS " =~ " tracelet_sync-v${SYNC_VERSION} " ]]; then
               echo "Creating GitHub Release for tracelet_sync..."
-              if [ -f "tracelet-ios-temp/sdk/rust-core/out/TraceletSyncFFI.xcframework.zip" ]; then
-                gh release create "tracelet_sync-v${SYNC_VERSION}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}" "tracelet-ios-temp/sdk/rust-core/out/TraceletSyncFFI.xcframework.zip"
+              if [ -f "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip" ]; then
+                gh release create "tracelet_sync-v${SYNC_VERSION}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}" "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip"
               else
-                echo "⚠️ tracelet-ios-temp/sdk/rust-core/out/TraceletSyncFFI.xcframework.zip not found! Cannot attach to release."
+                echo "⚠️ tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip not found! Cannot attach to release."
                 gh release create "tracelet_sync-v${SYNC_VERSION}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}"
               fi
             fi

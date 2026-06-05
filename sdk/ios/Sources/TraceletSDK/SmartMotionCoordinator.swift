@@ -73,9 +73,11 @@ public class TraceletSmartMotionCoordinator {
     
     /// Called when the user manually forces the pace via changePace().
     public func onManualPaceChange(isMoving: Bool) {
-        _ = coreCoordinator?.onAccelStateChange(isMoving: isMoving)
-        if let action = coreCoordinator?.onSpeedStateChange(isMoving: isMoving) {
-            handleAction(action)
+        if let accelAction = coreCoordinator?.onAccelStateChange(isMoving: isMoving) {
+            handleAction(accelAction)
+        }
+        if let speedAction = coreCoordinator?.onSpeedStateChange(isMoving: isMoving) {
+            handleAction(speedAction)
         }
     }
     

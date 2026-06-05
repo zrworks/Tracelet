@@ -631,6 +631,9 @@ class TraceletSdk private constructor(private val context: Context) {
             speedMotionManager.start(forceMoving = shouldForceMoving)
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
             
+            // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
+            speedMotionManager.onLocation(locationEngine.lastEffectiveSpeed)
+            
             if (shouldForceMoving) {
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
@@ -640,6 +643,9 @@ class TraceletSdk private constructor(private val context: Context) {
         } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
             speedMotionManager.start(forceMoving = shouldForceMoving)
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
+            
+            // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
+            speedMotionManager.onLocation(locationEngine.lastEffectiveSpeed)
             
             if (shouldForceMoving) {
                 val locationMap = locationEngine.getLastLocation()?.let {

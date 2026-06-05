@@ -14,6 +14,10 @@ import 'package:tracelet/tracelet.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  setUpAll(() async {
+    await Tracelet.ready(const Config());
+  });
+
   group('BatteryBudgetEngine — Construction', () {
     testWidgets('can be instantiated with default parameters', (tester) async {
       final engine = BatteryBudgetEngine();

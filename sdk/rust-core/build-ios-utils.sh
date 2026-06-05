@@ -48,9 +48,10 @@ generate_dummy_symbols() {
     local DUMMY_SWIFT_OUT=$2
     local EXTENSION_NAME=$3
 
-    # Extract symbols for flutter_rust_bridge ONLY. We skip uniffi symbols because UniFFI generates Swift wrappers that already reference them directly.
-    # Using @_silgen_name on uniffi symbols conflicts with their declarations in the C header imported via the module map.
-    local NM_OUTPUT=$(nm -g "$LIB_PATH" 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
+    local NM_OUTPUT=""
+    if [ "$EXTENSION_NAME" = "TraceletCore" ]; then
+        NM_OUTPUT=$(nm -g "$LIB_PATH" 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
+    fi
 
     echo "import Foundation" > "$DUMMY_SWIFT_OUT"
     echo "" >> "$DUMMY_SWIFT_OUT"

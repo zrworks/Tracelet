@@ -586,6 +586,16 @@ jobs:
           
           echo "Patching tracelet_ios.podspec..."
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
+          
+          echo "Removing SPM Package.swift and stripping import TraceletSDK..."
+          rm -f packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          find packages/tracelet_ios/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK//g' {} +
+          
+          echo "Removing root TraceletSDK.podspec to prevent CocoaPods double-linking..."
+          rm -f TraceletSDK.podspec
+          rm -f sdk/ios/TraceletSDK.podspec
+          
+          echo "✅ iOS Bundle complete. tracelet_ios is now self-contained."
 
       - name: Bundle iOS SDK into tracelet_sync
         run: |
@@ -593,7 +603,14 @@ jobs:
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
           unzip -q -o sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
-          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*//g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
+          echo "Patching tracelet_sync.podspec to depend on tracelet_ios..."
+          perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.dependency '\''tracelet_ios'\''/g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
+          
+          echo "Removing SPM Package.swift and renaming import TraceletSDK..."
+          rm -f packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
+          find packages/tracelet_sync/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK/import tracelet_ios/g' {} +
+          
+          echo "✅ iOS Bundle complete. tracelet_sync is now self-contained."
 
       - name: Build example iOS
         working-directory: example

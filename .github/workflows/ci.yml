@@ -234,7 +234,7 @@ jobs:
 
   build-ios:
     name: Build iOS
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: analyze
     steps:
       - uses: actions/checkout@v5

@@ -148,10 +148,12 @@ git push origin --tags
 For Flutter packages, Melos can automate version bumps and changelog generation:
 
 ```bash
-melos version   # Interactive — bumps all packages, updates CHANGELOGs, and syncs native versions
+melos version --no-git-tag-version
 ```
 
-This updates all Flutter package versions, generates CHANGELOGs using Conventional Commits, and automatically runs `scripts/sync_native_versions.py` to sync the Android SDK version, iOS SDK version, and their CHANGELOGs. You do NOT need to bump native versions manually.
+**CRITICAL**: Do NOT create git tags manually or allow `melos` to create them! The GitHub Action is exclusively responsible for creating all tags during the automated release process. If you create and push tags manually, the Action will assume the release is already fully published and will skip uploading the `.zip` artifacts to GitHub Releases!
+
+This command updates all Flutter package versions, generates CHANGELOGs using Conventional Commits, and automatically runs `scripts/sync_native_versions.py` to sync the Android SDK version, iOS SDK version, and their CHANGELOGs. You do NOT need to bump native versions manually.
 
 To verify and automatically apply code formatting across all packages before release:
 

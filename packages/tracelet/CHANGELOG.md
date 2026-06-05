@@ -1,6 +1,6 @@
 ## 3.2.2
 
-- **CHORE**: Re-release — 3.2.1 was partially published with broken Swift Package Manager dependencies.
+- **CHORE**: Sync release versions across all federated packages and update Swift Package Manager configuration.
 
 ## 3.2.1
 

@@ -98,7 +98,7 @@ void main() {
       var payloadString = await requestController.stream.first.timeout(
         const Duration(seconds: 10),
       );
-      var payload = jsonDecode(payloadString);
+
       expect(
         payloadString,
         contains('foreground-uuid'),

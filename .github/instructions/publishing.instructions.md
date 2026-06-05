@@ -80,6 +80,9 @@ tracelet_web: ^X.Y.Z
 
 # tracelet_sync/pubspec.yaml, tracelet_supabase/pubspec.yaml, tracelet_firebase/pubspec.yaml, tracelet_doctor/pubspec.yaml
 tracelet: ^X.Y.Z
+
+# tracelet_supabase/pubspec.yaml, tracelet_firebase/pubspec.yaml
+tracelet_sync: ^X.Y.Z
 ```
 Never publish with stale constraints pointing to older versions.
 
@@ -139,7 +142,26 @@ git push origin --tags
 - **pub.dev dep resolution fails**: Publish in order; `^X.Y.Z` must reference already-published versions.
 - **Maven Central stuck**: Run `closeAndReleaseSonatypeStagingRepository` separately.
 - **CocoaPods 409**: Version exists — bump `s.version`.
-- **Use `melos version`** to automate Flutter version bumps + changelog generation.
+
+## Version Bumping & Quality Verification with Melos
+
+For Flutter packages, Melos can automate version bumps and changelog generation:
+
+```bash
+melos version   # Interactive — bumps all packages, updates CHANGELOGs, and syncs native versions
+```
+
+This updates all Flutter package versions, generates CHANGELOGs using Conventional Commits, and automatically runs `scripts/sync_native_versions.py` to sync the Android SDK version, iOS SDK version, and their CHANGELOGs. You do NOT need to bump native versions manually.
+
+To verify and automatically apply code formatting across all packages before release:
+
+```bash
+# Fix and apply formatting across all packages
+dart run melos run format:fix
+
+# Verify that formatting is completely correct
+dart run melos run format
+```
 
 ## Native Binary Artifacts & Codegen
 - **iOS XCFramework**: Pushed as a `.zip` file directly to the **GitHub Release** (created by the `publish-ios-sdk` job). CocoaPods downloads this zip via the URL in the `.podspec`.

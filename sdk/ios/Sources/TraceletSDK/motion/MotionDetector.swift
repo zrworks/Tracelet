@@ -155,21 +155,19 @@ public final class MotionDetector {
             }
         }
 
-        // Accelerometer fallback for stillness detection
-        if stateManager.isMoving {
-            if motionManager.isAccelerometerAvailable {
-                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-                consecutiveStillSamples = 0
-                let accelQueue = OperationQueue()
-                accelQueue.name = "com.tracelet.accelerometer.fallback"
-                accelQueue.qualityOfService = .utility
-                motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
-                    guard let self = self, let data = data, error == nil else { return }
-                    self.handleAccelerometerData(data)
-                }
-                NSLog("[Tracelet] Accelerometer stillness fallback started (threshold=%.3f, samples=%d)",
-                      configManager.getStillThreshold(), configManager.getStillSampleCount())
+        // Accelerometer fallback for stillness and shake detection
+        if motionManager.isAccelerometerAvailable {
+            motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+            consecutiveStillSamples = 0
+            let accelQueue = OperationQueue()
+            accelQueue.name = "com.tracelet.accelerometer.fallback"
+            accelQueue.qualityOfService = .utility
+            motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                guard let self = self, let data = data, error == nil else { return }
+                self.handleAccelerometerData(data)
             }
+            NSLog("[Tracelet] Accelerometer fallback started (threshold=%.3f, samples=%d)",
+                  configManager.getStillThreshold(), configManager.getStillSampleCount())
         }
     }
 
@@ -469,27 +467,18 @@ public final class MotionDetector {
                 return // Full stop — no further monitoring
             }
 
-        // In accelerometer-only mode, we always restart monitoring for the new state.
-        // In full mode, we only start accelerometer monitoring when transitioning 
-        // to `moving`, to provide a reliable hardware fallback for stillness detection
-        // in case Activity Recognition fails to send an update.
         if self.isRunning {
-            if self.isAccelerometerOnlyMode || isMoving {
-                self.motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-                self.consecutiveStillSamples = 0
-                if self.motionManager.isAccelerometerAvailable {
-                    // Use a background queue for stillness detection
-                    let accelQueue = OperationQueue()
-                    accelQueue.name = "com.tracelet.accelerometer.fallback"
-                    accelQueue.qualityOfService = .utility
-                    self.motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
-                        guard let self = self, let data = data, error == nil else { return }
-                        self.handleAccelerometerData(data)
-                    }
+            self.motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+            self.consecutiveStillSamples = 0
+            if self.motionManager.isAccelerometerAvailable {
+                // Use a background queue for stillness/shake detection
+                let accelQueue = OperationQueue()
+                accelQueue.name = "com.tracelet.accelerometer.fallback"
+                accelQueue.qualityOfService = .utility
+                self.motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                    guard let self = self, let data = data, error == nil else { return }
+                    self.handleAccelerometerData(data)
                 }
-            } else {
-                // In full mode, stop the accelerometer when stationary to save battery
-                self.motionManager.stopAccelerometerUpdates()
             }
         }
         }
@@ -509,20 +498,16 @@ public final class MotionDetector {
         }
         
         if isRunning {
-            if isAccelerometerOnlyMode || isMoving {
-                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-                consecutiveStillSamples = 0
-                if motionManager.isAccelerometerAvailable {
-                    let accelQueue = OperationQueue()
-                    accelQueue.name = "com.tracelet.accelerometer.fallback"
-                    accelQueue.qualityOfService = .utility
-                    motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
-                        guard let self = self, let data = data, error == nil else { return }
-                        self.handleAccelerometerData(data)
-                    }
+            motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+            consecutiveStillSamples = 0
+            if motionManager.isAccelerometerAvailable {
+                let accelQueue = OperationQueue()
+                accelQueue.name = "com.tracelet.accelerometer.fallback"
+                accelQueue.qualityOfService = .utility
+                motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                    guard let self = self, let data = data, error == nil else { return }
+                    self.handleAccelerometerData(data)
                 }
-            } else {
-                motionManager.stopAccelerometerUpdates()
             }
         }
     }

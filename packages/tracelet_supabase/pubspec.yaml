@@ -1,7 +1,7 @@
 name: tracelet_supabase
 description: >-
   Supabase adapter for Tracelet. Automatically configures Tracelet's native HTTP sync to push locations to Supabase and manages background auth token refresh.
-version: 3.2.3
+version: 3.2.4
 topics:
   - supabase
   - location
@@ -30,8 +30,8 @@ platforms:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: ^3.2.3
-  tracelet_sync: ^3.2.3
+  tracelet: ^3.2.4
+  tracelet_sync: ^3.2.4
   supabase_flutter: '^2.12.4'
 
   meta: any

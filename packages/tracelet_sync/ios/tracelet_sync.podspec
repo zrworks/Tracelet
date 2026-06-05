@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'tracelet_sync'
-  s.version          = '3.2.2'
+  s.version = '3.2.4'
   s.summary          = 'iOS implementation of the Tracelet Sync plugin.'
   s.description      = <<-DESC
 A new Flutter plugin project.

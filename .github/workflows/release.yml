@@ -750,7 +750,7 @@ jobs:
           echo "Removing local TraceletSDK SPM reference and injecting GitHub Release URL for TraceletCore binary..."
           # Update Podspec
           perl -pi -e "s|s.dependency 'TraceletSDK'.*|s.vendored_frameworks = 'TraceletCore.xcframework'|g" packages/tracelet_ios/ios/tracelet_ios.podspec
-          perl -pi -e "s|s.source           = \{ :path => '.' \}|s.source = \{ :http => 'https://github.com/Ikolvi/Tracelet/releases/download/tracelet_ios-v\$\{VERSION\}/TraceletCore.xcframework.zip' \}|g" packages/tracelet_ios/ios/tracelet_ios.podspec
+          perl -pi -e "s|s.source           = \\{ :path => '.' \\}|s.source = \\{ :http => 'https://github.com/Ikolvi/Tracelet/releases/download/tracelet_ios-v${VERSION}/TraceletCore.xcframework.zip' \\}|g" packages/tracelet_ios/ios/tracelet_ios.podspec
           
           # Update Package.swift
           CORE_CHECKSUM="${{ needs.publish-ios-sdk.outputs.core_checksum }}"
@@ -786,7 +786,7 @@ jobs:
           
           # Update Podspec
           perl -pi -e 's|s\.dependency '\''TraceletSDK'\''.*|s.dependency '\''tracelet_ios'\''|g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
-          perl -pi -e "s|s.source           = \{ :path => '.' \}|s.source = \{ :http => 'https://github.com/Ikolvi/Tracelet/releases/download/tracelet_sync-v\$\{SYNC_VERSION\}/TraceletSyncFFI.xcframework.zip' \}|g" packages/tracelet_sync/ios/tracelet_sync.podspec
+          perl -pi -e "s|s.source           = \\{ :path => '.' \\}|s.source = \\{ :http => 'https://github.com/Ikolvi/Tracelet/releases/download/tracelet_sync-v${SYNC_VERSION}/TraceletSyncFFI.xcframework.zip' \\}|g" packages/tracelet_sync/ios/tracelet_sync.podspec
           
           # Update Package.swift
           perl -pi -e 's/\.package\(name: "TraceletSDK".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift

@@ -623,8 +623,8 @@ jobs:
           echo "Extracting expected FRB symbols from static library..."
           EXPECTED_SYMBOLS=$(nm -g ../sdk/rust-core/target/aarch64-apple-ios/release/libtracelet_core.a 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
           
-          echo "Dumping Runner symbols..."
-          nm -g build/ios/iphoneos/Runner.app/Runner > runner_symbols.txt
+          echo "Dumping symbols from all binaries in Runner.app..."
+          find build/ios/iphoneos/Runner.app -type f -perm +111 -exec nm -g {} 2>/dev/null \; > runner_symbols.txt
           
           echo "Verifying symbols in Release build..."
           MISSING_SYMBOLS=0

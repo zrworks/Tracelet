@@ -792,7 +792,7 @@ jobs:
           perl -pi -e 's/\.package\(name: "TraceletSDK".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift
           perl -pi -e 's/\.product\(name: "TraceletSDK".*/.product(name: "tracelet-ios", package: "tracelet_ios"),/g' packages/tracelet_sync/ios/tracelet_sync/Package.swift
           
-          perl -pi -e "s|path: \"TraceletSyncFFI.xcframework\"|url: \"https://github.com/Ikolvi/Tracelet/releases/download/tracelet_sync-v\$\{SYNC_VERSION\}/TraceletSyncFFI.xcframework.zip\", checksum: \"\$\{SYNC_CHECKSUM\}\"|g" packages/tracelet_sync/ios/tracelet_sync/Package.swift
+          perl -pi -e "s|path: \"TraceletSyncFFI.xcframework\"|url: \"https://github.com/Ikolvi/Tracelet/releases/download/tracelet_sync-v${SYNC_VERSION}/TraceletSyncFFI.xcframework.zip\", checksum: \"${SYNC_CHECKSUM}\"|g" packages/tracelet_sync/ios/tracelet_sync/Package.swift
           
           echo "Renaming import TraceletSDK to import tracelet_ios..."
           find packages/tracelet_sync/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK/import tracelet_ios/g' {} +

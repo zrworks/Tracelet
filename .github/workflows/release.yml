@@ -368,7 +368,7 @@ jobs:
       !inputs.skip_native_sdks &&
       needs.validate.result == 'success' &&
       (needs.test-flutter-ios.result == 'success' || needs.test-flutter-ios.result == 'skipped')
-    runs-on: macos-latest
+    runs-on: macos-15
     outputs:
       already_published: ${{ steps.check_published.outputs.already_published }}
     steps:
@@ -531,7 +531,7 @@ jobs:
       !inputs.skip_native_sdks &&
       needs.validate.result == 'success' &&
       needs.validate.outputs.ios_published == 'false'
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
@@ -586,11 +586,6 @@ jobs:
           
           echo "Patching tracelet_ios.podspec..."
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
-          
-          echo "Patching tracelet_ios/Package.swift for SPM..."
-          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)/"TraceletCore"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          perl -pi -e 's/        \)/        ),\n        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
 
       - name: Bundle iOS SDK into tracelet_sync
         run: |
@@ -599,8 +594,6 @@ jobs:
           unzip -q -o sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*//g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
-          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
-          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
 
       - name: Build example iOS
         working-directory: example
@@ -726,9 +719,7 @@ jobs:
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
           
           echo "Patching tracelet_ios/Package.swift for SPM..."
-          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)/"TraceletCore"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
-          perl -pi -e 's/        \)/        ),\n        .binaryTarget(name: "TraceletCore", path: "Frameworks\/TraceletCore.xcframework")/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/path: traceletRoot/url: "https:\/\/github.com\/Ikolvi\/Tracelet.git", exact: "'${VERSION}'"/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
 
           
           echo "✅ iOS Bundle complete. tracelet_ios now contains pre-compiled Rust Core."
@@ -741,8 +732,9 @@ jobs:
           unzip -q -o tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
           
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*//g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
-          perl -pi -e 's/.*\.package\(url: "https:\/\/github.com\/Ikolvi\/Tracelet.git".*//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
-          perl -pi -e 's/\.product\(name: "TraceletSDK", package: "Tracelet"\)//g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
+          
+          echo "Patching tracelet_sync/Package.swift for SPM..."
+          perl -pi -e 's/path: traceletRoot/url: "https:\/\/github.com\/Ikolvi\/Tracelet.git", exact: "'${VERSION}'"/g' packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
           
           echo "✅ iOS Bundle complete. tracelet_sync now contains pre-compiled TraceletSyncFFI."
 

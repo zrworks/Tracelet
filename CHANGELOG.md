@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 3.2.1
+
+- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+
 ## 2026-05-31
 
 ### Changes

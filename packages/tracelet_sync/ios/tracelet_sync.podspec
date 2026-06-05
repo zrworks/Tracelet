@@ -4,8 +4,8 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'tracelet_sync'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '3.2.1'
+  s.summary          = 'iOS implementation of the Tracelet Sync plugin.'
   s.description      = <<-DESC
 A new Flutter plugin project.
                        DESC
@@ -16,7 +16,7 @@ A new Flutter plugin project.
   s.source_files = 'tracelet_sync/Sources/tracelet_sync/**/*.{swift,h}'
   s.public_header_files = 'tracelet_sync/Sources/tracelet_sync/**/*.h', 'tracelet_sync/Sources/tracelet_sync/*.h'
   s.dependency 'Flutter'
-  s.dependency 'TraceletSDK'
+  s.dependency 'TraceletSDK', '3.2.1'
   s.platform = :ios, '14.0'
   s.vendored_frameworks = 'tracelet_sync/TraceletSyncFFI.xcframework'
 

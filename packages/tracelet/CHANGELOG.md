@@ -1,3 +1,7 @@
+## 3.2.1
+
+- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+
 ## 3.2.0
 
 - **FEAT**: Added `autoSyncDelay` to `HttpConfig` — configure the debounce delay in milliseconds before automatically dispatching an HTTP sync request after a location is recorded.

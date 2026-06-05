@@ -1,3 +1,7 @@
+## 3.2.1
+
+- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+
 ## 3.2.0
 
 - **FEAT**(ios): Add reverse geocoding functionality.

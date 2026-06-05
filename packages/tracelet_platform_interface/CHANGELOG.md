@@ -1,3 +1,7 @@
+## 3.2.1
+
+- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+
 ## 3.2.0
 
 - **FIX**(web): safe BigInt to int casting for rust bridge 64-bit integers.

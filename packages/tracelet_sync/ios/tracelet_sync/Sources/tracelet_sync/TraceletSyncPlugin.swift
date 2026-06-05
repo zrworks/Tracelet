@@ -190,6 +190,8 @@ public class TraceletSyncPlugin: NSObject, FlutterPlugin {
     let channel = FlutterMethodChannel(name: "tracelet_sync", binaryMessenger: registrar.messenger())
     let instance = TraceletSyncPlugin()
     
+    TraceletSyncFFIDummy.enforceBundling()
+    
     let sink = TraceletSyncSink()
     TraceletSdk.shared.locationEngine.registerSink(sink)
     TraceletSdk.shared.syncProvider = sink

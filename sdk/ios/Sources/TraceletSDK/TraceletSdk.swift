@@ -287,7 +287,7 @@ public final class TraceletSdk {
         
         smartMotionCoordinator.syncCurrentMode()
 
-        let shouldForceMoving = !isResume || stateManager.isMoving
+        let shouldForceMoving = !isResume && stateManager.isMoving
 
         if !isResume && wasTracking {
             _ = changePace(shouldForceMoving)
@@ -1440,10 +1440,10 @@ public final class TraceletSdk {
             self?.handleMotionStateChange(isMoving)
         }
         motionDetector.onStopTimeoutStarted = { [weak self] in
-            self?.locationEngine.overrideDistanceFilter(forStopTimeout: true)
+            self?.locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "MotionDetector")
         }
         motionDetector.onStopTimeoutCancelled = { [weak self] in
-            self?.locationEngine.overrideDistanceFilter(forStopTimeout: false)
+            self?.locationEngine.overrideDistanceFilter(forStopTimeout: false, source: "MotionDetector")
         }
         motionDetector.onStopRequested = { [weak self] in
             self?.stop()
@@ -2136,6 +2136,14 @@ extension TraceletSdk: SpeedMotionDelegate {
                 stop()
             }
         }
+    }
+
+    public func speedMotionDidStartSlowing() {
+        locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "SpeedMotionManager")
+    }
+
+    public func speedMotionDidCancelSlowing() {
+        locationEngine.overrideDistanceFilter(forStopTimeout: false, source: "SpeedMotionManager")
     }
 
     public func emitSpeedMotionEvent(state: Int, previousState: Int, trackingMode: Int) {

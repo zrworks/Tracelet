@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
 import 'package:tracelet_doctor/tracelet_doctor.dart';
 import 'package:tracelet_example/map_page.dart';
+import 'package:tracelet_example/issue_115_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Headless background callback — MUST be a top-level function.
@@ -3843,6 +3844,34 @@ class _DashboardPageState extends State<DashboardPage>
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               children: [
+                // ── Prominent Test Button ──
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const Issue115Page(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.bug_report),
+                    label: const Text(
+                      'Issues Test',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
                 // ── Init ──
                 if (!_isReady)
                   Padding(
@@ -3853,9 +3882,7 @@ class _DashboardPageState extends State<DashboardPage>
                       label: const Text('Initialize Tracelet'),
                     ),
                   ),
-
                 if (_isReady) ...[
-                  // ── Lifecycle ──
                   _Section(
                     title: 'Lifecycle',
                     color: cs.primary,

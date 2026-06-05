@@ -26,32 +26,37 @@ import Foundation
 @_silgen_name("frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart") func dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart()
 @_silgen_name("store_dart_post_cobject") func dummy_TraceletCore_store_dart_post_cobject()
 
+public var _TraceletCore_dummy_sink: [Any] = []
+
 public struct TraceletCoreDummy {
     public static func enforceBundling() {
-        dummy_TraceletCore_frb_create_shutdown_callback()
-        dummy_TraceletCore_frb_dart_fn_deliver_output()
-        dummy_TraceletCore_frb_dart_opaque_dart2rust_encode()
-        dummy_TraceletCore_frb_dart_opaque_drop_thread_box_persistent_handle()
-        dummy_TraceletCore_frb_dart_opaque_rust2dart_decode()
-        dummy_TraceletCore_frb_free_wire_sync_rust2dart_dco()
-        dummy_TraceletCore_frb_free_wire_sync_rust2dart_sse()
-        dummy_TraceletCore_frb_get_rust_content_hash()
-        dummy_TraceletCore_frb_init_frb_dart_api_dl()
-        dummy_TraceletCore_frb_pde_ffi_dispatcher_primary()
-        dummy_TraceletCore_frb_pde_ffi_dispatcher_sync()
-        dummy_TraceletCore_frb_rust_vec_u8_free()
-        dummy_TraceletCore_frb_rust_vec_u8_new()
-        dummy_TraceletCore_frb_rust_vec_u8_resize()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart()
-        dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart()
-        dummy_TraceletCore_store_dart_post_cobject()
+        let dummyArray: [Any] = [
+            dummy_TraceletCore_frb_create_shutdown_callback as Any,
+            dummy_TraceletCore_frb_dart_fn_deliver_output as Any,
+            dummy_TraceletCore_frb_dart_opaque_dart2rust_encode as Any,
+            dummy_TraceletCore_frb_dart_opaque_drop_thread_box_persistent_handle as Any,
+            dummy_TraceletCore_frb_dart_opaque_rust2dart_decode as Any,
+            dummy_TraceletCore_frb_free_wire_sync_rust2dart_dco as Any,
+            dummy_TraceletCore_frb_free_wire_sync_rust2dart_sse as Any,
+            dummy_TraceletCore_frb_get_rust_content_hash as Any,
+            dummy_TraceletCore_frb_init_frb_dart_api_dl as Any,
+            dummy_TraceletCore_frb_pde_ffi_dispatcher_primary as Any,
+            dummy_TraceletCore_frb_pde_ffi_dispatcher_sync as Any,
+            dummy_TraceletCore_frb_rust_vec_u8_free as Any,
+            dummy_TraceletCore_frb_rust_vec_u8_new as Any,
+            dummy_TraceletCore_frb_rust_vec_u8_resize as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerBatteryBudgetEngineDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRTreeDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerScheduleParserDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSmartMotionCoordinatorDart as Any,
+            dummy_TraceletCore_frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart as Any,
+            dummy_TraceletCore_store_dart_post_cobject as Any,
+        ]
+        _TraceletCore_dummy_sink = dummyArray
     }
 }

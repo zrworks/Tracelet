@@ -58,12 +58,16 @@ generate_dummy_symbols() {
         echo "@_silgen_name(\"$symbol\") func dummy_${EXTENSION_NAME}_$symbol()" >> "$DUMMY_SWIFT_OUT"
     done
     echo "" >> "$DUMMY_SWIFT_OUT"
-    
+    echo "public var _${EXTENSION_NAME}_dummy_sink: [Any] = []" >> "$DUMMY_SWIFT_OUT"
+    echo "" >> "$DUMMY_SWIFT_OUT"
     echo "public struct ${EXTENSION_NAME}Dummy {" >> "$DUMMY_SWIFT_OUT"
     echo "    public static func enforceBundling() {" >> "$DUMMY_SWIFT_OUT"
+    echo "        let dummyArray: [Any] = [" >> "$DUMMY_SWIFT_OUT"
     for symbol in $NM_OUTPUT; do
-        echo "        dummy_${EXTENSION_NAME}_$symbol()" >> "$DUMMY_SWIFT_OUT"
+        echo "            dummy_${EXTENSION_NAME}_$symbol as Any," >> "$DUMMY_SWIFT_OUT"
     done
+    echo "        ]" >> "$DUMMY_SWIFT_OUT"
+    echo "        _${EXTENSION_NAME}_dummy_sink = dummyArray" >> "$DUMMY_SWIFT_OUT"
     echo "    }" >> "$DUMMY_SWIFT_OUT"
     echo "}" >> "$DUMMY_SWIFT_OUT"
 }

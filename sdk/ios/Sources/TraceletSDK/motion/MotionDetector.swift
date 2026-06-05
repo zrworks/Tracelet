@@ -28,8 +28,14 @@ public final class MotionDetector {
     private lazy var activityManager = CMMotionActivityManager()
     private lazy var pedometer = CMPedometer()
 
-    // Accelerometer-only mode (permission-free)
     private let motionManager = CMMotionManager()
+    
+    private lazy var accelQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.tracelet.accelerometer.fallback"
+        queue.qualityOfService = .utility
+        return queue
+    }()
 
     private var isRunning = false
     private var isFullModeStarted = false
@@ -159,10 +165,7 @@ public final class MotionDetector {
         if motionManager.isAccelerometerAvailable {
             motionManager.accelerometerUpdateInterval = 1.0 / 10.0
             consecutiveStillSamples = 0
-            let accelQueue = OperationQueue()
-            accelQueue.name = "com.tracelet.accelerometer.fallback"
-            accelQueue.qualityOfService = .utility
-            motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+            motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
                 guard let self = self, let data = data, error == nil else { return }
                 self.handleAccelerometerData(data)
             }
@@ -195,10 +198,7 @@ public final class MotionDetector {
         consecutiveStillSamples = 0
 
         // Deliver to a background queue to avoid blocking the main thread.
-        let accelQueue = OperationQueue()
-        accelQueue.name = "com.tracelet.accelerometer"
-        accelQueue.qualityOfService = .utility
-        motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+        motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
             guard let self = self, let data = data, error == nil else { return }
             self.handleAccelerometerData(data)
         }
@@ -398,10 +398,7 @@ public final class MotionDetector {
                 motionManager.accelerometerUpdateInterval = 1.0 / 10.0
                 consecutiveStillSamples = 0
                 if motionManager.isAccelerometerAvailable {
-                    let accelQueue = OperationQueue()
-                    accelQueue.name = "com.tracelet.accelerometer.fallback"
-                    accelQueue.qualityOfService = .utility
-                    motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                    motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
                         guard let self = self, let data = data, error == nil else { return }
                         self.handleAccelerometerData(data)
                     }
@@ -472,10 +469,7 @@ public final class MotionDetector {
             self.consecutiveStillSamples = 0
             if self.motionManager.isAccelerometerAvailable {
                 // Use a background queue for stillness/shake detection
-                let accelQueue = OperationQueue()
-                accelQueue.name = "com.tracelet.accelerometer.fallback"
-                accelQueue.qualityOfService = .utility
-                self.motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                self.motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
                     guard let self = self, let data = data, error == nil else { return }
                     self.handleAccelerometerData(data)
                 }
@@ -501,10 +495,7 @@ public final class MotionDetector {
             motionManager.accelerometerUpdateInterval = 1.0 / 10.0
             consecutiveStillSamples = 0
             if motionManager.isAccelerometerAvailable {
-                let accelQueue = OperationQueue()
-                accelQueue.name = "com.tracelet.accelerometer.fallback"
-                accelQueue.qualityOfService = .utility
-                motionManager.startAccelerometerUpdates(to: accelQueue) { [weak self] data, error in
+                motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
                     guard let self = self, let data = data, error == nil else { return }
                     self.handleAccelerometerData(data)
                 }

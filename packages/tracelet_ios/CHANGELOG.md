@@ -1,3 +1,9 @@
+## 3.2.3
+
+- **FIX**: Force speed motion manager to evaluate initial speed on Android to prevent the state machine from being permanently stuck in `MOVING` when indoors ([#115](https://github.com/Ikolvi/Tracelet/issues/115)).
+- **FIX**: Resolve `flutter_rust_bridge has not been initialized` crash by ensuring the Rust core is instantiated and initialized before accessing methods ([#116](https://github.com/Ikolvi/Tracelet/issues/116)).
+- **CHORE**: Sync release versions across all packages.
+
 ## 3.2.2
 
 - **CHORE**: Sync release versions across all federated packages and update Swift Package Manager configuration.

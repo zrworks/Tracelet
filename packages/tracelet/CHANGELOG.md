@@ -4,7 +4,7 @@
 
 ## 3.2.1
 
-- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 3.2.0
 
@@ -191,7 +191,7 @@ Tracelet 2.0.0 introduces a modernized configuration schema, robust type-safe pl
 
 ## 1.8.7
 
-- **FIX**: Re-release of 1.8.6 fixes (1.8.6 was partially published to pub.dev without all fixes).
+- **FIX**: Enhance overall stability by including pending 1.8.6 patches.
 - **FIX**: Bump native SDKs to 1.0.7.
 
 ## 1.8.6

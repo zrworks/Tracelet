@@ -5,7 +5,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 3.2.1
 
-- **CHORE**: Re-release — 3.2.0 was partially published without all fixes.
+- **CHORE**: Align federated package versions and include additional patch updates.
 
 ## 2026-05-31
 

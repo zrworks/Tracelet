@@ -18,7 +18,7 @@ void main() {
     setUp(() async {
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       requestController = StreamController<String>.broadcast();
-      
+
       server.listen((req) async {
         final content = await utf8.decoder.bind(req).join();
         requestController.add(content);
@@ -39,7 +39,9 @@ void main() {
       await requestController.close();
     });
 
-    testWidgets('State changes and auto-sync in FOREGROUND and BACKGROUND', (tester) async {
+    testWidgets('State changes and auto-sync in FOREGROUND and BACKGROUND', (
+      tester,
+    ) async {
       final port = server.port;
 
       // 1. Initialize Tracelet with auto-sync pointing to our local server
@@ -68,13 +70,17 @@ void main() {
       await Tracelet.start();
 
       // ---- FOREGROUND STATE TESTING ----
-      
+
       // Force moving state
       await Tracelet.changePace(true);
       await Future.delayed(const Duration(seconds: 1)); // allow state to update
-      
+
       var state = await Tracelet.getState();
-      expect(state.isMoving, isTrue, reason: 'changePace(true) should transition state to MOVING');
+      expect(
+        state.isMoving,
+        isTrue,
+        reason: 'changePace(true) should transition state to MOVING',
+      );
 
       // Insert a mock location to trigger auto-sync in foreground
       await Tracelet.insertLocation({
@@ -93,17 +99,25 @@ void main() {
         const Duration(seconds: 10),
       );
       var payload = jsonDecode(payloadString);
-      expect(payloadString, contains('foreground-uuid'), reason: 'Foreground sync should deliver the location');
+      expect(
+        payloadString,
+        contains('foreground-uuid'),
+        reason: 'Foreground sync should deliver the location',
+      );
 
       // Force stationary state
       await Tracelet.changePace(false);
       await Future.delayed(const Duration(seconds: 1));
-      
+
       state = await Tracelet.getState();
-      expect(state.isMoving, isFalse, reason: 'changePace(false) should transition state to STATIONARY');
+      expect(
+        state.isMoving,
+        isFalse,
+        reason: 'changePace(false) should transition state to STATIONARY',
+      );
 
       // ---- BACKGROUND STATE TESTING ----
-      
+
       // Simulate app going to background
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await Future.delayed(const Duration(seconds: 1));
@@ -111,9 +125,14 @@ void main() {
       // Force moving state while in background
       await Tracelet.changePace(true);
       await Future.delayed(const Duration(seconds: 1));
-      
+
       state = await Tracelet.getState();
-      expect(state.isMoving, isTrue, reason: 'State should be able to transition to MOVING while in background');
+      expect(
+        state.isMoving,
+        isTrue,
+        reason:
+            'State should be able to transition to MOVING while in background',
+      );
 
       // Insert a mock location to trigger auto-sync in background
       await Tracelet.insertLocation({
@@ -132,18 +151,27 @@ void main() {
         const Duration(seconds: 10),
       );
       payload = jsonDecode(payloadString);
-      expect(payloadString, contains('background-uuid'), reason: 'Background auto-sync should deliver the location');
+      expect(
+        payloadString,
+        contains('background-uuid'),
+        reason: 'Background auto-sync should deliver the location',
+      );
 
       // Simulate app returning to foreground
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      
+
       // ---- KILLED STATE CONFIGURATION CHECK ----
-      
+
       // While we cannot test a true OS-level process kill in Flutter Integration Tests,
       // we can verify that the stopOnTerminate flag is correctly bound to the state,
       // which is the prerequisite for native killed-state persistence and background job execution.
       state = await Tracelet.getState();
-      expect(state.config?.app.stopOnTerminate, isFalse, reason: 'stopOnTerminate=false must be correctly registered for killed-state auto-sync to function');
+      expect(
+        state.config?.app.stopOnTerminate,
+        isFalse,
+        reason:
+            'stopOnTerminate=false must be correctly registered for killed-state auto-sync to function',
+      );
     });
   });
 }

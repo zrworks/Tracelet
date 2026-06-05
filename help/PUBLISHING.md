@@ -143,15 +143,7 @@ git push origin --tags
 - **Maven Central stuck**: Run `closeAndReleaseSonatypeStagingRepository` separately.
 - **CocoaPods 409**: Version exists — bump `s.version`.
 
-## Version Bumping & Quality Verification with Melos
-
-For Flutter packages, Melos can automate version bumps and changelog generation:
-
-```bash
-melos version   # Interactive — bumps all packages, updates CHANGELOGs, and syncs native versions
-```
-
-This updates all Flutter package versions, generates CHANGELOGs using Conventional Commits, and automatically runs `scripts/sync_native_versions.py` to sync the Android SDK version, iOS SDK version, and their CHANGELOGs. You do NOT need to bump native versions manually.
+## Quality Verification with Melos
 
 To verify and automatically apply code formatting across all packages before release:
 

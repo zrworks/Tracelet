@@ -1,3 +1,7 @@
+## 3.2.6
+
+**PERF**: Optimize database timestamp queries for O(log N) fast filtering and resolve precision bugs (Issue #119).
+
 ## 3.2.5
 - **FIX**: Resolved iOS accelerometer sensitivity mismatch (stationary lock) by normalizing incoming m/s² thresholds to g-force expected by CMMotionManager.
 - **FIX**: Unify motion detection initial state and resume behavior across Android and iOS, preventing incorrect forced states on app launch and correctly resuming saved states.

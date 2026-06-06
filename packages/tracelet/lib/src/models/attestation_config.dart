@@ -97,6 +97,7 @@ class AttestationConfig {
     };
   }
 
+  /// Documentation for TlAttestationConfig.
   TlAttestationConfig toTlConfig() =>
       TlAttestationConfig(enabled: enabled, refreshInterval: refreshInterval);
 

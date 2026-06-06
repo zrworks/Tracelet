@@ -51,6 +51,7 @@ enum PrivacyZoneAction {
 /// ```
 @immutable
 class PrivacyZone {
+  /// Documentation for PrivacyZone.
   const PrivacyZone({
     required this.identifier,
     required this.latitude,

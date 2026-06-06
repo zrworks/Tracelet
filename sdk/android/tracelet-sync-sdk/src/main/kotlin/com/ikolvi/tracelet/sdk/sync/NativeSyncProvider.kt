@@ -211,7 +211,7 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
         }
 
         val interceptor = sdk.dartSyncInterceptor
-        android.util.Log.d("TraceletSync", "Interceptor is $interceptor")
+        sdk.logger.debug("NativeSyncProvider: Interceptor is $interceptor")
         if (interceptor != null) {
             val recordMaps = records.map { record ->
                 mapOf(
@@ -230,11 +230,11 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 )
             }
             val customBody = interceptor.requestSyncBody(recordMaps)
-            android.util.Log.d("TraceletSync", "Custom body is $customBody")
+            sdk.logger.debug("NativeSyncProvider: Custom body is $customBody")
             if (customBody != null) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
-                    android.util.Log.d("TraceletSync", "Fallback HTTP success: $success")
+                    sdk.logger.debug("NativeSyncProvider: Fallback HTTP success: $success")
                     if (success) records.size.toLong() else 0L
                 }
             }
@@ -299,7 +299,7 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 }
             } catch (e: Exception) {
                 sdk.logger.error("HTTP Sync failed: ${e.message}")
-                android.util.Log.e("TraceletSync", "executeFallbackHttpSync Exception", e)
+                sdk.logger.error("NativeSyncProvider: executeFallbackHttpSync Exception: ${e.message}")
                 if (attempt < maxRetries) {
                     kotlinx.coroutines.delay(1000L * (attempt + 1))
                 }

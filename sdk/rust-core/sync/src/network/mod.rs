@@ -107,12 +107,14 @@ impl ServerCertVerifier for FingerprintVerifier {
         
         let hash_hex = hex::encode(hash.as_slice());
 
+        let pinned_hex: Vec<String> = self.pinned_fingerprints.iter().map(|fp| hex::encode(fp)).collect();
+
         // Check if computed fingerprint matches any pinned fingerprint
         if self.pinned_fingerprints.iter().any(|fp| fp.as_slice() == hash.as_slice()) {
             Ok(ServerCertVerified::assertion())
         } else {
-            tracelet_core::logger::error(&format!("[Rust Core] ❌ SSL Pinning Error: Certificate fingerprint {} did not match any pinned fingerprints", hash_hex));
-            Err(RustlsError::General("Server certificate fingerprint mismatch".to_string()))
+            tracelet_core::logger::error(&format!("[Rust Core] ❌ SSL Pinning Error: Certificate fingerprint {} did not match any pinned fingerprints: {:?}", hash_hex, pinned_hex));
+            Err(RustlsError::General(format!("Server certificate fingerprint mismatch. Expected one of {:?}, got {}", pinned_hex, hash_hex)))
         }
     }
 

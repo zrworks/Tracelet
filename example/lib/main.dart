@@ -6,6 +6,7 @@ import 'package:tracelet/tracelet.dart' as tl;
 import 'package:tracelet_doctor/tracelet_doctor.dart';
 import 'package:tracelet_example/map_page.dart';
 import 'package:tracelet_example/issues_page.dart';
+import 'package:tracelet_example/scanner_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Headless background callback — MUST be a top-level function.
@@ -628,8 +629,10 @@ class _DashboardPageState extends State<DashboardPage>
             speedStationaryDelay: 30, // Make it quicker for demo testing
             stationaryPeriodicInterval: 60, // Quick checks when stationary
           ),
-          http: const tl.HttpConfig(
-            url: 'http://192.168.20.100:8099/locations',
+          http: tl.HttpConfig(
+            url:
+                tl.Tracelet.activeConfig.http.url ??
+                'http://192.168.20.100:8099/locations',
             // ── New features ──
             autoSyncDelay: 5000,
           ),
@@ -941,12 +944,14 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       _addLog('TEST_HTTP', 'Configuring custom HTTP Sync properties...');
       await tl.Tracelet.setConfig(
-        const tl.Config(
+        tl.Config(
           http: tl.HttpConfig(
-            url: 'http://192.168.20.100:8099/locations',
+            url:
+                tl.Tracelet.activeConfig.http.url ??
+                'http://192.168.20.100:8099/locations',
             httpRootProperty: 'location_data',
-            params: {'user_id': 'ikolvi_tester', 'device': 'example_app'},
-            extras: {'session_key': 'super-secret-token'},
+            params: const {'user_id': 'ikolvi_tester', 'device': 'example_app'},
+            extras: const {'session_key': 'super-secret-token'},
             locationsOrderDirection: tl.LocationOrderDirection.descending,
           ),
         ),
@@ -3864,6 +3869,33 @@ class _DashboardPageState extends State<DashboardPage>
                     icon: const Icon(Icons.bug_report),
                     label: const Text(
                       'Issues Test',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                // ── Scan Server QR Button ──
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ScannerPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text(
+                      'Scan Server QR',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

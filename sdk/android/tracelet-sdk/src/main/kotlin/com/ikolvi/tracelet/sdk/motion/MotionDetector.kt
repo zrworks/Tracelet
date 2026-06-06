@@ -540,10 +540,13 @@ class MotionDetector(
                 // Frozen check
                 if (x == lastX && y == lastY && z == lastZ) {
                     consecutiveFrozenCount++
-                    if (consecutiveFrozenCount >= 5) {
+                    if (consecutiveFrozenCount == 5 || consecutiveFrozenCount % 10000 == 0) {
                         Log.w(TAG, "[SHAKE] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
                     }
                 } else {
+                    if (consecutiveFrozenCount >= 5) {
+                        Log.d(TAG, "[SHAKE] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
+                    }
                     consecutiveFrozenCount = 0
                 }
                 lastX = x
@@ -556,10 +559,14 @@ class MotionDetector(
                     maxMagLast10 = absMag
                 }
 
-                // Log every 10th sample to avoid spam but show sensor details
-                if (sampleCount % 10 == 1) {
+                // Log periodically to avoid spam but show sensor details
+                val isFrozen = consecutiveFrozenCount >= 5
+                val logInterval = if (isFrozen) 5000 else 50
+                if (sampleCount % logInterval == 1) {
                     Log.d(TAG, "[SHAKE] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, threshold=$shakeThreshold, raw=[$x, $y, $z]")
-                    // Reset max mag for the next window
+                }
+                // Always reset max mag every 10 samples
+                if (sampleCount % 10 == 0) {
                     maxMagLast10 = 0.0
                 }
 
@@ -661,10 +668,13 @@ class MotionDetector(
                 // Frozen check
                 if (x == lastX && y == lastY && z == lastZ) {
                     consecutiveFrozenCount++
-                    if (consecutiveFrozenCount >= 5) {
+                    if (consecutiveFrozenCount == 5 || consecutiveFrozenCount % 10000 == 0) {
                         Log.w(TAG, "[STILLNESS] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
                     }
                 } else {
+                    if (consecutiveFrozenCount >= 5) {
+                        Log.d(TAG, "[STILLNESS] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
+                    }
                     consecutiveFrozenCount = 0
                 }
                 lastX = x
@@ -677,10 +687,14 @@ class MotionDetector(
                     maxMagLast10 = absMag
                 }
 
-                // Log every 10th sample
-                if (sampleCount % 10 == 1) {
+                // Log periodically to avoid spam but show sensor details
+                val isFrozen = consecutiveFrozenCount >= 5
+                val logInterval = if (isFrozen) 5000 else 50
+                if (sampleCount % logInterval == 1) {
                     Log.d(TAG, "[STILLNESS] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, still=$consecutiveStillSamples/$stillCount, raw=[$x, $y, $z]")
-                    // Reset max mag for next window
+                }
+                // Always reset max mag every 10 samples
+                if (sampleCount % 10 == 0) {
                     maxMagLast10 = 0.0
                 }
 

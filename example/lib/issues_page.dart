@@ -21,7 +21,7 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 120];
+  final List<int> _allIssues = [115, 117, 118, 119, 120];
 
   @override
   void initState() {
@@ -303,6 +303,56 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 119 ====
+  Future<void> _testIssue119() async {
+    _setStatus(119, 'Testing Issue 119 (Timestamp Integer Filter)...');
+    try {
+      await Tracelet.destroyLocations();
+
+      final t1 = DateTime.now().millisecondsSinceEpoch - 5000;
+      await Tracelet.insertLocation({
+        'latitude': 10.0,
+        'longitude': 10.0,
+        'timestamp': t1,
+      });
+
+      final t2 = DateTime.now().millisecondsSinceEpoch;
+      await Tracelet.insertLocation({
+        'latitude': 20.0,
+        'longitude': 20.0,
+        'timestamp': t2,
+      });
+
+      final t3 = DateTime.now().millisecondsSinceEpoch + 5000;
+      await Tracelet.insertLocation({
+        'latitude': 30.0,
+        'longitude': 30.0,
+        'timestamp': t3,
+      });
+
+      final locations = await Tracelet.getLocations(
+        SQLQuery(
+          start: DateTime.fromMillisecondsSinceEpoch(t2 - 50),
+          end: DateTime.fromMillisecondsSinceEpoch(t2 + 50),
+        ),
+      );
+
+      if (locations.length == 1 && locations.first.coords.latitude == 20.0) {
+        _setStatus(
+          119,
+          '✅ SUCCESS: Query correctly filtered using integer timestamp index. Found exactly 1 location in range.',
+        );
+      } else {
+        _setStatus(
+          119,
+          '❌ FAILED: Expected 1 location but got ${locations.length}. Time filtering failed.',
+        );
+      }
+    } catch (e) {
+      _setStatus(119, '❌ FAILED: Issue 119 Error: $e');
+    }
+  }
+
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
       _scrollTo(issue);
@@ -315,6 +365,8 @@ class _IssuesPageState extends State<IssuesPage> {
         await Future.delayed(const Duration(seconds: 2));
       } else if (issue == 118) {
         await _runIssue118All();
+      } else if (issue == 119) {
+        await _testIssue119();
       } else if (issue == 120) {
         await _testIssue120();
       }
@@ -498,6 +550,19 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _testIssue120,
                       icon: const Icon(Icons.sync_problem),
                       label: const Text('Test Config Parity'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 119,
+                  title: 'Database Timestamp Optimization',
+                  description:
+                      'Verifies that timestamp_ms filters properly constrain results for O(log N) DB query performance.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue119,
+                      icon: const Icon(Icons.timer),
+                      label: const Text('Test Timestamp Filter'),
                     ),
                   ],
                 ),

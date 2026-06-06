@@ -17,6 +17,7 @@ pub struct SyncHttpConfig {
     pub retry_backoff_base: i32,
     pub retry_backoff_cap: i32,
     pub ssl_pinning_certificates: Option<Vec<String>>,
+    pub ssl_pinning_fingerprints: Option<Vec<String>>,
     pub http_root_property: Option<String>,
     pub params: Option<HashMap<String, String>>,
     pub extras: Option<HashMap<String, String>>,
@@ -68,6 +69,69 @@ impl SyncManager {
             .map_err(|e| TraceletError::Network(e.to_string()))?;
         let res = rt.block_on(self.sync_batch(&config, &records))?;
         Ok(res as u32)
+    }
+}
+
+use rustls::client::danger::{ServerCertVerified, ServerCertVerifier, HandshakeSignatureValid};
+use rustls::pki_types::{ServerName, CertificateDer, UnixTime};
+use rustls::{DigitallySignedStruct, Error as RustlsError};
+use std::sync::Arc;
+use sha2::{Digest, Sha256};
+
+#[derive(Debug)]
+struct FingerprintVerifier {
+    pinned_fingerprints: Vec<Vec<u8>>,
+    default_verifier: Arc<dyn ServerCertVerifier>,
+}
+
+impl ServerCertVerifier for FingerprintVerifier {
+    fn verify_server_cert(
+        &self,
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        server_name: &ServerName<'_>,
+        ocsp_response: &[u8],
+        now: UnixTime,
+    ) -> Result<ServerCertVerified, RustlsError> {
+        // Run standard chain verification first
+        self.default_verifier.verify_server_cert(end_entity, intermediates, server_name, ocsp_response, now)?;
+
+        // Compute SHA-256 fingerprint of the end-entity certificate
+        let mut hasher = Sha256::new();
+        hasher.update(end_entity.as_ref());
+        let hash = hasher.finalize();
+        
+        let hash_hex = hex::encode(hash.as_slice());
+
+        // Check if computed fingerprint matches any pinned fingerprint
+        if self.pinned_fingerprints.iter().any(|fp| fp.as_slice() == hash.as_slice()) {
+            Ok(ServerCertVerified::assertion())
+        } else {
+            tracelet_core::logger::error(&format!("[Rust Core] ❌ SSL Pinning Error: Certificate fingerprint {} did not match any pinned fingerprints", hash_hex));
+            Err(RustlsError::General("Server certificate fingerprint mismatch".to_string()))
+        }
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, RustlsError> {
+        self.default_verifier.verify_tls12_signature(message, cert, dss)
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, RustlsError> {
+        self.default_verifier.verify_tls13_signature(message, cert, dss)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
+        self.default_verifier.supported_verify_schemes()
     }
 }
 
@@ -202,21 +266,74 @@ impl SyncManager {
 
         // Handle SSL Pinning dynamically if configured
         let mut active_client = self.client.clone();
-        if let Some(certs) = &config.ssl_pinning_certificates {
-            if !certs.is_empty() {
-                let mut builder = Client::builder()
-                    .timeout(Duration::from_secs(60))
-                    .tls_built_in_root_certs(false); // Force strict pinning
+        
+        let has_certs = config.ssl_pinning_certificates.as_ref().map_or(false, |c| !c.is_empty());
+        let has_fingerprints = config.ssl_pinning_fingerprints.as_ref().map_or(false, |f| !f.is_empty());
 
+        if has_certs || has_fingerprints {
+            let mut root_cert_store = rustls::RootCertStore::empty();
+            let mut custom_certs_added = false;
+
+            if let Some(certs) = &config.ssl_pinning_certificates {
                 for cert_str in certs {
-                    if let Ok(cert) = reqwest::Certificate::from_pem(cert_str.as_bytes()) {
-                        builder = builder.add_root_certificate(cert);
-                    } else if let Ok(cert) = reqwest::Certificate::from_der(cert_str.as_bytes()) {
-                        builder = builder.add_root_certificate(cert);
+                    let mut reader = std::io::Cursor::new(cert_str.as_bytes());
+                    let mut parsed = false;
+                    for item in rustls_pemfile::certs(&mut reader) {
+                        if let Ok(cert) = item {
+                            if let Ok(_) = root_cert_store.add(cert) {
+                                custom_certs_added = true;
+                                parsed = true;
+                            }
+                        }
+                    }
+                    if !parsed {
+                        // Attempt raw DER fallback
+                        if let Ok(_) = root_cert_store.add(rustls::pki_types::CertificateDer::from(cert_str.as_bytes().to_vec())) {
+                            custom_certs_added = true;
+                        }
                     }
                 }
-                active_client = builder.build().unwrap_or_else(|_| self.client.clone());
             }
+            
+            // If no valid custom certs were added (or none were provided), use system/webpki roots
+            if !custom_certs_added {
+                root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+            }
+
+            let default_verifier = rustls::client::WebPkiServerVerifier::builder(Arc::new(root_cert_store))
+                .build()
+                .unwrap();
+
+            let verifier: Arc<dyn ServerCertVerifier> = if has_fingerprints {
+                let mut decoded_fingerprints = Vec::new();
+                if let Some(fps) = &config.ssl_pinning_fingerprints {
+                    for fp in fps {
+                        // Support both raw hex and hex with colons (e.g. AA:BB:CC)
+                        let clean_fp = fp.replace(":", "").to_lowercase();
+                        if let Ok(decoded) = hex::decode(&clean_fp) {
+                            decoded_fingerprints.push(decoded);
+                        }
+                    }
+                }
+                
+                Arc::new(FingerprintVerifier {
+                    pinned_fingerprints: decoded_fingerprints,
+                    default_verifier,
+                })
+            } else {
+                default_verifier
+            };
+
+            let rustls_config = rustls::ClientConfig::builder()
+                .dangerous()
+                .with_custom_certificate_verifier(verifier)
+                .with_no_client_auth();
+
+            active_client = Client::builder()
+                .timeout(Duration::from_secs(60))
+                .use_preconfigured_tls(rustls_config)
+                .build()
+                .unwrap_or_else(|_| self.client.clone());
         }
 
         let max_retries = if config.max_retries < 0 { 0 } else { config.max_retries as u32 };
@@ -303,6 +420,7 @@ mod tests {
             retry_backoff_base: 1000,
             retry_backoff_cap: 10000,
             ssl_pinning_certificates: None,
+            ssl_pinning_fingerprints: None,
             http_root_property: None,
             params: None,
             extras: None,

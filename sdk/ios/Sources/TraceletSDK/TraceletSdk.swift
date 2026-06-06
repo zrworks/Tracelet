@@ -2225,6 +2225,7 @@ extension TraceletSdk: SpeedMotionDelegate {
                     retryBackoffCap: Int32(configManager.getRetryBackoffCap()),
                     autoSyncDelay: Int32(configManager.getAutoSyncDelay()),
                     sslPinningCertificates: configManager.getSslPinningCertificates().isEmpty ? nil : configManager.getSslPinningCertificates(),
+                    sslPinningFingerprints: configManager.getSslPinningFingerprints().isEmpty ? nil : configManager.getSslPinningFingerprints(),
                     httpRootProperty: configManager.getHttpRootProperty(),
                     params: configManager.getHttpParams().mapValues { "\($0)" },
                     extras: configManager.getHttpExtras().mapValues { "\($0)" },

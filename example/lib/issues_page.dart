@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
 class IssuesPage extends StatefulWidget {
@@ -126,10 +127,7 @@ class _IssuesPageState extends State<IssuesPage> {
   Future<void> _testIssue120() async {
     setState(() => _status = 'Testing Issue 120 (Rust Parity)...');
     try {
-      if (!Platform.isAndroid) {
-        setState(() => _status = 'Parity test is Android-only.');
-        return;
-      }
+      // Both Android and iOS now support the debug parity method channel
 
       const channel = MethodChannel('com.tracelet/debug');
       final result = await channel.invokeMapMethod<String, dynamic>(
@@ -159,6 +157,97 @@ class _IssuesPageState extends State<IssuesPage> {
       setState(() => _status = 'Issue 120 Error: ${e.message}');
     } catch (e) {
       setState(() => _status = 'Issue 120 Error: $e');
+    }
+  }
+
+  Future<void> _testIssue118Valid() async {
+    setState(() => _status = 'Testing Issue 118 (Valid SSL Pinning)...');
+    try {
+      // Dynamically fetch the real certificate fingerprint of jsonplaceholder
+      final socket = await SecureSocket.connect(
+        'jsonplaceholder.typicode.com',
+        443,
+      );
+      final cert = socket.peerCertificate;
+      if (cert == null) {
+        setState(
+          () => _status = 'Issue 118 Error: Could not get peer certificate',
+        );
+        return;
+      }
+      final validFingerprint = sha256
+          .convert(cert.der)
+          .toString()
+          .toUpperCase();
+      socket.destroy();
+
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: 'https://jsonplaceholder.typicode.com/posts',
+            autoSync: false,
+            sslPinningFingerprints: [validFingerprint],
+          ),
+        ),
+      );
+
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'test-issue-118-valid',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 37.7749, longitude: -122.4194, accuracy: 10),
+        ).toMap(),
+      );
+
+      await Tracelet.sync();
+
+      setState(
+        () => _status =
+            '✅ SUCCESS: Valid fingerprint allowed sync ($validFingerprint).',
+      );
+    } catch (e) {
+      setState(() => _status = '❌ FAILED: Valid fingerprint was blocked! $e');
+    }
+  }
+
+  Future<void> _testIssue118Invalid() async {
+    setState(() => _status = 'Testing Issue 118 (Invalid SSL Pinning)...');
+    try {
+      await Tracelet.ready(
+        const Config(
+          http: HttpConfig(
+            url: 'https://jsonplaceholder.typicode.com/posts',
+            autoSync: false,
+            // Completely fake fingerprint
+            sslPinningFingerprints: [
+              'AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55',
+            ],
+          ),
+        ),
+      );
+
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'test-issue-118-invalid',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 37.7749, longitude: -122.4194, accuracy: 10),
+        ).toMap(),
+      );
+
+      await Tracelet.sync();
+
+      setState(
+        () => _status = '❌ FAILED: Invalid fingerprint somehow allowed sync!',
+      );
+    } catch (e) {
+      setState(
+        () => _status =
+            '✅ SUCCESS: Invalid fingerprint successfully blocked sync!',
+      );
     }
   }
 
@@ -206,6 +295,30 @@ class _IssuesPageState extends State<IssuesPage> {
               onPressed: _testIssue117,
               icon: const Icon(Icons.cloud_sync),
               label: const Text('Test Custom Sync Body (Issue 117)'),
+            ),
+
+            const Divider(height: 48),
+
+            const Text(
+              'Issue #118: SSL Pinning Fingerprints',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Verifies that sync correctly validates against SHA-256 certificate fingerprints and blocks invalid connections natively.',
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _testIssue118Valid,
+              icon: const Icon(Icons.lock_open),
+              label: const Text('Test Valid Fingerprint (Issue 118)'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _testIssue118Invalid,
+              icon: const Icon(Icons.lock),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              label: const Text('Test Invalid Fingerprint (Issue 118)'),
             ),
 
             const Divider(height: 48),

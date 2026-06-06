@@ -298,6 +298,9 @@ pub struct HttpConfig {
     /// Optional list of PEM or DER encoded certificates for SSL pinning.
     #[serde(default)]
     pub ssl_pinning_certificates: Option<Vec<String>>,
+    /// Optional list of SHA-256 fingerprints (hex encoded) for SSL pinning.
+    #[serde(default)]
+    pub ssl_pinning_fingerprints: Option<Vec<String>>,
     /// Custom root property for the HTTP sync payload.
     #[serde(default)]
     pub http_root_property: Option<String>,

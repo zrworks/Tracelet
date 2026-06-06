@@ -1421,6 +1421,8 @@ data class SyncHttpConfig (
     , 
     var `sslPinningCertificates`: List<kotlin.String>?
     , 
+    var `sslPinningFingerprints`: List<kotlin.String>?
+    , 
     var `httpRootProperty`: kotlin.String?
     , 
     var `params`: Map<kotlin.String, kotlin.String>?
@@ -1460,6 +1462,7 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
+            FfiConverterOptionalSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalMapStringString.read(buf),
             FfiConverterOptionalMapStringString.read(buf),
@@ -1481,6 +1484,7 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.allocationSize(value.`retryBackoffBase`) +
             FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
             FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`) +
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningFingerprints`) +
             FfiConverterOptionalString.allocationSize(value.`httpRootProperty`) +
             FfiConverterOptionalMapStringString.allocationSize(value.`params`) +
             FfiConverterOptionalMapStringString.allocationSize(value.`extras`) +
@@ -1501,6 +1505,7 @@ public object FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer<SyncHttpCon
             FfiConverterInt.write(value.`retryBackoffBase`, buf)
             FfiConverterInt.write(value.`retryBackoffCap`, buf)
             FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
+            FfiConverterOptionalSequenceString.write(value.`sslPinningFingerprints`, buf)
             FfiConverterOptionalString.write(value.`httpRootProperty`, buf)
             FfiConverterOptionalMapStringString.write(value.`params`, buf)
             FfiConverterOptionalMapStringString.write(value.`extras`, buf)

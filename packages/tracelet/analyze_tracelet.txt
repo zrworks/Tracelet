@@ -1,0 +1,52 @@
+Analyzing tracelet...
+
+   info - lib/src/models/android_config.dart:62:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/android_config.dart:193:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/android_config.dart:208:35 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/android_config.dart:242:27 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/android_config.dart:344:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/attestation_config.dart:100:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/audit_config.dart:111:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:145:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:276:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:286:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:343:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:383:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:407:21 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:480:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:650:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:732:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:743:21 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:770:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:837:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:880:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:904:22 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:949:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1112:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1196:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1197:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1203:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1215:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1235:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1243:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1263:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1264:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1291:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1534:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1563:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1657:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1658:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1665:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1703:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1712:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1739:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1740:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1747:29 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1779:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/config.dart:1788:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/privacy_zone.dart:54:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/privacy_zone_config.dart:17:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/privacy_zone_config.dart:44:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/models/security_config.dart:92:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+
+48 issues found.

@@ -1,0 +1,244 @@
+melos run analyze
+  └> melos exec --concurrency 4 -- "dart analyze --fatal-infos ."
+     └> RUNNING
+
+$ melos exec
+  └> dart analyze --fatal-infos .
+     └> RUNNING (in 12 packages)
+
+--------------------------------------------------------------------------------
+[example_firebase]: Analyzing ....
+[example_supabase]: Analyzing ....
+[tracelet_android]: Analyzing ....
+[tracelet]: Analyzing ....
+[example_firebase]: No issues found!
+[example_supabase]: No issues found!
+[tracelet_android]: No issues found!
+[tracelet]: 
+[tracelet]:    info - lib/src/models/android_config.dart:62:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/android_config.dart:193:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/android_config.dart:208:35 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/android_config.dart:242:27 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/android_config.dart:344:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/attestation_config.dart:100:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/audit_config.dart:111:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:145:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:276:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:286:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:343:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:383:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:407:21 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:480:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:650:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:732:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:743:21 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:770:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:837:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:880:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:904:22 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:949:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1112:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1196:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1197:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1203:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1215:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1235:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1243:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1263:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1264:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1291:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1534:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1563:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1657:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1658:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1665:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1703:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1712:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1739:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1740:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1747:29 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1779:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/config.dart:1788:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/privacy_zone.dart:54:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/privacy_zone_config.dart:17:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/privacy_zone_config.dart:44:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]:    info - lib/src/models/security_config.dart:92:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet]: 
+[tracelet]: 48 issues found.
+[tracelet_doctor]: Analyzing ....
+[tracelet_example]: Analyzing ....
+[tracelet_firebase]: Analyzing ....
+[tracelet_ios]: Analyzing ....
+[tracelet_doctor]: No issues found!
+[tracelet_firebase]: 
+[tracelet_firebase]:    info - lib/src/tracelet_firebase_config.dart:75:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_firebase]: 
+[tracelet_firebase]: 1 issue found.
+[tracelet_platform_interface]: Analyzing ....
+[tracelet_ios]: No issues found!
+[tracelet_supabase]: Analyzing ....
+[tracelet_example]: No issues found!
+[tracelet_sync]: Analyzing ....
+[tracelet_web]: Analyzing ....
+[tracelet_supabase]: 
+[tracelet_supabase]:    info - lib/src/tracelet_supabase_config.dart:91:25 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_supabase]: 
+[tracelet_supabase]: 1 issue found.
+[tracelet_sync]: 
+[tracelet_sync]:    info - lib/tracelet_sync.dart:3:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_sync]: 
+[tracelet_sync]: 1 issue found.
+[tracelet_web]: 
+[tracelet_web]:    info - lib/src/web_carbon_engine.dart:10:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_carbon_engine.dart:19:32 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:64:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:65:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:67:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:69:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:71:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:72:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:74:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:75:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:76:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:77:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:78:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:80:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:81:22 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:83:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:85:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:92:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:96:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:102:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:108:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:114:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:118:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:124:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:130:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:134:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:138:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:146:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:152:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:156:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_event_dispatcher.dart:181:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:14:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:37:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:66:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:73:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:82:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:93:30 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:97:25 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_geofence_engine.dart:101:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:15:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:36:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:40:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:44:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:48:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_http_engine.dart:107:38 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:19:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:67:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:103:12 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:104:12 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:105:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:106:29 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:112:32 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:219:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:228:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:246:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:258:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:273:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_location_engine.dart:287:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:17:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:142:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:158:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:178:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:180:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:186:32 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:203:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:220:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:234:12 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_permissions_engine.dart:279:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:12:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:19:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:29:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:36:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:42:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_privacy_engine.dart:47:38 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:27:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:52:38 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:103:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:134:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:140:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:148:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:154:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:197:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:209:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:213:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:222:32 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]:    info - lib/src/web_storage_engine.dart:273:33 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_web]: 
+[tracelet_web]: 86 issues found.
+[tracelet_platform_interface]: 
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:8:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:28:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:46:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:54:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:58:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:62:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:71:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:72:11 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:73:12 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/battery_budget_engine.dart:75:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/carbon_estimator.dart:17:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/carbon_estimator.dart:40:24 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/geofence_evaluator.dart:6:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/rtree.dart:7:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/rtree.dart:12:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/rtree.dart:13:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/rtree.dart:14:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/rtree.dart:15:10 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/schedule_parser.dart:92:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/schedule_parser.dart:101:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/schedule_parser.dart:105:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/schedule_parser.dart:107:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/schedule_parser.dart:109:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:7:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:13:40 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:15:12 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:17:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:76:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/algorithms/trip_manager.dart:99:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:44:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:45:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:54:37 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:56:37 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:58:31 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:59:38 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:61:32 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:62:27 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:63:23 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:64:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:65:41 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:67:20 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:68:22 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:69:36 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_event_receiver.dart:71:26 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/pigeon_tracelet.dart:14:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/rust_loader/rust_loader_io.dart:8:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/rust_loader/rust_loader_unsupported.dart:1:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]:    info - lib/src/rust_loader/rust_loader_web.dart:1:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+[tracelet_platform_interface]: 
+[tracelet_platform_interface]: 48 issues found.
+--------------------------------------------------------------------------------
+
+$ melos exec
+  └> dart analyze --fatal-infos .
+     └> FAILED (in 6 packages)
+        └> tracelet (with exit code 1)
+        └> tracelet_firebase (with exit code 1)
+        └> tracelet_supabase (with exit code 1)
+        └> tracelet_sync (with exit code 1)
+        └> tracelet_web (with exit code 1)
+        └> tracelet_platform_interface (with exit code 1)
+
+analyze
+  └> FAILED

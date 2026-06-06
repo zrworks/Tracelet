@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class LocalTestServer {
-  static final LocalTestServer instance = LocalTestServer._();
   LocalTestServer._();
+  static final LocalTestServer instance = LocalTestServer._();
 
   HttpServer? _server;
   int _requestCount = 0;
@@ -32,7 +32,7 @@ class LocalTestServer {
       _addLog('Waiting for location sync requests...');
       _addLog('');
 
-      _server!.listen((request) => _handleRequest(request));
+      _server!.listen(_handleRequest);
     } catch (e) {
       _addLog('Failed to start server: $e');
     }
@@ -78,7 +78,7 @@ class LocalTestServer {
       if (data.containsKey('locations')) {
         final locs = data['locations'] as List;
         _addLog('Received ${locs.length} locations');
-        for (var l in locs) {
+        for (final l in locs) {
           final lat = l['coords']['latitude'];
           final lng = l['coords']['longitude'];
           _addLog('  📍 $lat, $lng');

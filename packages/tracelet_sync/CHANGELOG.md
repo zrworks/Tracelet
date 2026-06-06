@@ -1,6 +1,11 @@
 ## 3.2.6
 
-**PERF**: Optimize database timestamp queries for O(log N) fast filtering and resolve precision bugs (Issue #119).
+- **PERF**: Optimize database timestamp queries for O(log N) fast filtering and resolve precision bugs (Issue #119).
+- **FEAT**: Implement `sslPinningFingerprints` natively across iOS and Android with Rust configs.
+- **FIX**: Include pinned fingerprints in SSL verification error logs and messages.
+- **FIX**: Rate limit Android MotionDetector logcat flooding during stillness (Issue #121).
+- **FIX**: Resolve race conditions in tests for Issue 118.
+- **REFACTOR**: Update integration test to use Config.fromMap for comprehensive Tracelet configuration testing.
 
 ## 3.2.4
 

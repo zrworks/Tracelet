@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+/// Natively bridges the Tracelet Sync engine to the core location engine.
 class TraceletSync {
   static const MethodChannel _channel = MethodChannel('tracelet_sync');
 

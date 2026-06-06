@@ -87,6 +87,7 @@ class TraceletSupabase {
     await Tracelet.registerHeadlessHeadersCallback(_headlessTokenRefresh);
   }
 
+  /// Refreshes the active Supabase session and returns the new access token.
   @visibleForTesting
   static Future<String> refreshSessionAndGetToken({
     required String anonKey,

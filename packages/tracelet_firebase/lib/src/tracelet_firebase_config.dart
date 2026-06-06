@@ -71,6 +71,7 @@ class TraceletFirebase {
     await Tracelet.registerHeadlessHeadersCallback(_headlessTokenRefresh);
   }
 
+  /// Refreshes the Firebase ID token and updates the Tracelet config with the new token.
   @visibleForTesting
   static Future<void> refreshAndUpdateConfig({FirebaseAuth? auth}) async {
     final authInstance = auth ?? FirebaseAuth.instance;

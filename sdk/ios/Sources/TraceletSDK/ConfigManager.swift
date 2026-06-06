@@ -175,20 +175,21 @@ public final class ConfigManager {
 
     /// Shake threshold (gravity-subtracted magnitude).
     ///
-    /// iOS accelerometer data is processed as `sqrt(x²+y²+z²) - 1.0`,
-    /// yielding gravity-subtracted values in g-force units.
-    /// Default 0.35 is tuned for CoreMotion's clean, high-precision output.
-    /// Do NOT divide by 9.81 — the handler already works in g-force space.
+    /// Dart sends this value in m/s². We divide by 9.81 to convert to g-force.
     public func getShakeThreshold() -> Double {
-        cache["shakeThreshold"] as? Double ?? 0.35
+        if let val = cache["shakeThreshold"] as? Double {
+            return val / 9.81
+        }
+        return 0.35
     }
     /// Still threshold (gravity-subtracted magnitude).
     ///
-    /// Samples with `abs(magnitude) < stillThreshold` count as "still".
-    /// Default 0.15 is tuned for CoreMotion. Higher than Android's equivalent
-    /// because we operate in g-force space directly.
+    /// Dart sends this value in m/s². We divide by 9.81 to convert to g-force.
     public func getStillThreshold() -> Double {
-        cache["stillThreshold"] as? Double ?? 0.15
+        if let val = cache["stillThreshold"] as? Double {
+            return val / 9.81
+        }
+        return 0.15
     }
     /// Consecutive still samples needed before triggering stillness.
     /// At 10 Hz, 30 samples ≈ 3 seconds of sustained stillness.

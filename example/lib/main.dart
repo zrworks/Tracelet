@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
 import 'package:tracelet_doctor/tracelet_doctor.dart';
 import 'package:tracelet_example/map_page.dart';
-import 'package:tracelet_example/issue_115_page.dart';
+import 'package:tracelet_example/issues_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Headless background callback — MUST be a top-level function.
@@ -3857,7 +3857,7 @@ class _DashboardPageState extends State<DashboardPage>
                       Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => const Issue115Page(),
+                          builder: (_) => const IssuesPage(),
                         ),
                       );
                     },

@@ -37,6 +37,7 @@ import com.ikolvi.tracelet.sdk.util.OemCompat
 import com.ikolvi.tracelet.sdk.util.SoundManager
 import com.ikolvi.tracelet.sdk.util.TraceletLogger
 import com.ikolvi.tracelet.sdk.util.TraceletPermissionManager
+import com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor
 
 /**
  * Main entry point for the Tracelet Background Geolocation SDK (Android).
@@ -141,6 +142,7 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     var syncProvider: SyncProvider? = null
+    var dartSyncInterceptor: DartSyncInterceptor? = null
 
     private var heartbeatRunnable: Runnable? = null
     private var stopAfterElapsedRunnable: Runnable? = null
@@ -1165,7 +1167,7 @@ class TraceletSdk private constructor(private val context: Context) {
     fun insertLocation(params: Map<String, Any?>): String {
         if (!isReady) return ""
         val db = rustDatabase ?: return ""
-        val coords = params["coords"] as? Map<*, *> ?: return ""
+        val coords = (params["coords"] as? Map<*, *>) ?: params
         val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0
         val lng = (coords["longitude"] as? Number)?.toDouble() ?: 0.0
         val acc = (coords["accuracy"] as? Number)?.toDouble() ?: 0.0

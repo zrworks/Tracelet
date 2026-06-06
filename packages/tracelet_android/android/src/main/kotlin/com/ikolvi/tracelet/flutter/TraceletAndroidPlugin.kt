@@ -62,7 +62,8 @@ class MultiEventSender : com.ikolvi.tracelet.sdk.TraceletEventSender {
 class TraceletAndroidPlugin :
     FlutterPlugin,
     ActivityAware,
-    PluginRegistry.RequestPermissionsResultListener {
+    PluginRegistry.RequestPermissionsResultListener,
+    com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor {
 
     companion object {
         private const val TAG = "TraceletAndroidPlugin"
@@ -124,6 +125,8 @@ class TraceletAndroidPlugin :
 
             val mainHandler = Handler(Looper.getMainLooper())
             syncBodyChannel = MethodChannel(binding.binaryMessenger, "com.tracelet/sync_body")
+
+            sdk.dartSyncInterceptor = this
 
             eventDispatcher.headlessFallback = { eventName, eventData ->
                 if (hs.isRegistered()) {
@@ -235,7 +238,9 @@ class TraceletAndroidPlugin :
         return sdk.handlePermissionResult(requestCode, permissions, grantResults)
     }
 
-    private fun requestTokenRefreshFromDart(handler: Handler): Boolean {
+    override fun requestTokenRefresh(): Boolean {
+        if (!isEngineAttached && headlessService?.isRegistered() != true) return false
+        val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var success = false
         handler.post {
@@ -252,7 +257,9 @@ class TraceletAndroidPlugin :
         return success
     }
 
-    private fun requestFreshHeadersFromDart(handler: Handler): Boolean {
+    override fun requestFreshHeaders(): Boolean {
+        if (!isEngineAttached && headlessService?.isRegistered() != true) return false
+        val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var success = false
         handler.post {
@@ -269,7 +276,9 @@ class TraceletAndroidPlugin :
         return success
     }
 
-    private fun requestSyncBodyFromDart(handler: Handler, locations: List<Map<String, Any?>>): String? {
+    override fun requestSyncBody(locations: List<Map<String, Any?>>): String? {
+        if (!isEngineAttached && headlessService?.isRegistered() != true) return null
+        val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var body: String? = null
         handler.post {

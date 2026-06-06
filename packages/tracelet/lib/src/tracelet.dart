@@ -831,25 +831,6 @@ class Tracelet {
   /// Platform channels return `Map<Object?, Object?>` which can contain
   /// nested maps (e.g. `extras`). A shallow `Map.from` only casts the
   /// top level, leaving nested maps untyped.
-  static Map<String, Object?> _deepCastMap(Map<Object?, Object?> source) {
-    return source.map((key, value) {
-      final castKey = key?.toString() ?? '';
-      if (value is Map) {
-        return MapEntry(castKey, _deepCastMap(value.cast<Object?, Object?>()));
-      }
-      if (value is List) {
-        return MapEntry(
-          castKey,
-          value
-              .map(
-                (e) => e is Map ? _deepCastMap(e.cast<Object?, Object?>()) : e,
-              )
-              .toList(),
-        );
-      }
-      return MapEntry(castKey, value);
-    });
-  }
 
   /// Register a custom sync body builder for foreground sync.
   ///
@@ -884,11 +865,13 @@ class Tracelet {
     }
   }
 
-  /// Sets up the MethodChannel handler for native → Dart sync body requests.
+  /// Sets up the MethodChannel handler for native → Dart callbacks.
   ///
-  /// Called once when [setSyncBodyBuilder] is first invoked. The native side
-  /// invokes `buildSyncBody` on this channel with the locations batch, and
-  /// this handler returns the JSON-encoded custom body.
+  /// This channel (`com.tracelet/sync_body`) handles several reverse
+  /// invocations from native code:
+  /// - `buildSyncBody`: Invokes the custom [setSyncBodyBuilder] callback.
+  /// - `requestFreshHeaders`: Invokes the [setHeadersCallback] callback.
+  /// - `requestTokenRefresh`: Invokes the [setTokenRefreshCallback] callback.
   static void _ensureSyncBodyChannel() {
     if (_syncBodyChannelReady) return;
     _syncBodyChannelReady = true;
@@ -896,20 +879,19 @@ class Tracelet {
     const channel = MethodChannel('com.tracelet/sync_body');
     channel.setMethodCallHandler((MethodCall call) async {
       if (call.method == 'buildSyncBody') {
-        final builder = _syncBodyBuilder;
-        if (builder == null) return null;
-
-        final rawLocations = call.arguments;
-        if (rawLocations is! List) return null;
-
-        final locations = rawLocations
-            .whereType<Map>()
-            .map(_deepCastMap)
-            .toList();
-
-        final body = await builder(SyncBodyContext(locations: locations));
-        // Return JSON-encoded string for native to use as request body
-        return jsonEncode(body);
+        try {
+          if (_syncBodyBuilder == null) return null;
+          final rawLocations = call.arguments as List<dynamic>? ?? [];
+          final locations = rawLocations
+              .map((e) => Map<String, Object?>.from(e as Map))
+              .toList();
+          final body = await _syncBodyBuilder!(
+            SyncBodyContext(locations: locations),
+          );
+          return jsonEncode(body);
+        } catch (e) {
+          return null;
+        }
       }
       if (call.method == 'requestFreshHeaders') {
         final callback = _headersCallback;

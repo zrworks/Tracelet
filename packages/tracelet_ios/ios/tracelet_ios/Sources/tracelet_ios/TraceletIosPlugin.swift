@@ -13,7 +13,7 @@ import TraceletSDK
 /// - Killed-state auto-resume via `UIApplicationDelegate`
 ///
 /// All tracking logic lives in the standalone ``TraceletSdk`` (SPM package).
-public class TraceletIosPlugin: NSObject, FlutterPlugin {
+public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
 
     /// Timeout for Dart callback round-trips (headers refresh, sync body).
     private static let dartCallbackTimeout: TimeInterval = 10.0
@@ -34,6 +34,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
     private var eventDispatcher: PluginEventDispatcher!
     private var headlessRunner: HeadlessRunner!
+    private var syncBodyChannel: FlutterMethodChannel!
 
     /// Shorthand for the SDK singleton.
     private var sdk: TraceletSdk { TraceletSdk.shared }
@@ -78,6 +79,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
 
             // Inject Flutter PluginEventDispatcher as the SDK's event sender
             TraceletSdk.shared.setEventSender(instance.eventDispatcher)
+            
+            // Set up sync body channel
+            instance.syncBodyChannel = FlutterMethodChannel(name: "com.tracelet/sync_body", binaryMessenger: registrar.messenger())
+            TraceletSdk.shared.dartSyncInterceptor = instance
 
             // Initialize SDK subsystems so httpSyncManager (and others) exist
             // before we wire callbacks below. Without this, the optional-chaining
@@ -155,5 +160,68 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin {
     public func applicationWillTerminate(_ application: UIApplication) {
         NSLog("[Tracelet] applicationWillTerminate: ensuring significant location monitoring persists")
         sdk.onAppWillTerminate()
+    }
+
+    // MARK: - DartSyncInterceptor
+
+    public func requestTokenRefresh() -> Bool {
+        if TraceletIosPlugin.primaryInstance == nil && !headlessRunner.isRegistered() {
+            return false
+        }
+        let semaphore = DispatchSemaphore(value: 0)
+        var success = false
+        DispatchQueue.main.async {
+            self.syncBodyChannel.invokeMethod("requestTokenRefresh", arguments: nil) { result in
+                if let res = result as? Bool {
+                    success = res
+                }
+                semaphore.signal()
+            }
+        }
+        _ = semaphore.wait(timeout: .now() + TraceletIosPlugin.dartCallbackTimeout)
+        return success
+    }
+
+    public func requestFreshHeaders() -> Bool {
+        if TraceletIosPlugin.primaryInstance == nil && !headlessRunner.isRegistered() {
+            return false
+        }
+        let semaphore = DispatchSemaphore(value: 0)
+        var success = false
+        DispatchQueue.main.async {
+            self.syncBodyChannel.invokeMethod("requestFreshHeaders", arguments: nil) { result in
+                if let res = result as? Bool {
+                    success = res
+                }
+                semaphore.signal()
+            }
+        }
+        _ = semaphore.wait(timeout: .now() + TraceletIosPlugin.dartCallbackTimeout)
+        return success
+    }
+
+    public func requestSyncBody(locations: [[String: Any]]) -> String? {
+        if TraceletIosPlugin.primaryInstance == nil && !headlessRunner.isRegistered() {
+            return "{\"error\": \"PRIMARY_INSTANCE_NIL\"}"
+        }
+        let semaphore = DispatchSemaphore(value: 0)
+        var body: String? = nil
+        DispatchQueue.main.async {
+            self.syncBodyChannel.invokeMethod("buildSyncBody", arguments: locations) { result in
+                if let res = result as? String {
+                    body = res
+                } else if let flutterError = result as? FlutterError {
+                    body = "{\"error\": \"FLUTTER_ERROR\", \"msg\": \"\(flutterError.message ?? "")\"}"
+                } else {
+                    body = "{\"error\": \"INVALID_TYPE\"}"
+                }
+                semaphore.signal()
+            }
+        }
+        let res = semaphore.wait(timeout: .now() + TraceletIosPlugin.dartCallbackTimeout)
+        if res == .timedOut {
+            return "{\"error\": \"TIMEOUT\"}"
+        }
+        return body
     }
 }

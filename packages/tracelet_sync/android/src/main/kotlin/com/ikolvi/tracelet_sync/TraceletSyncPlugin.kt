@@ -160,7 +160,98 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                 routeContext = it.routeContext
             )
         }
+        val interceptor = sdk.dartSyncInterceptor
+        android.util.Log.d("TraceletSync", "TraceletSyncPlugin Interceptor is $interceptor")
+        if (interceptor != null) {
+            val recordMaps = records.map { record ->
+                mapOf(
+                    "id" to record.id,
+                    "uuid" to record.uuid,
+                    "timestamp" to record.timestamp,
+                    "latitude" to record.latitude,
+                    "longitude" to record.longitude,
+                    "accuracy" to record.accuracy,
+                    "speed" to record.speed,
+                    "heading" to record.heading,
+                    "altitude" to record.altitude,
+                    "isMock" to record.isMock,
+                    "activity" to record.activity,
+                    "routeContext" to record.routeContext
+                )
+            }
+            android.util.Log.d("TraceletSync", "Calling requestSyncBody on interceptor with ${recordMaps.size} records")
+            val customBody = interceptor.requestSyncBody(recordMaps)
+            android.util.Log.d("TraceletSync", "requestSyncBody returned: $customBody")
+            if (customBody != null) {
+                return kotlinx.coroutines.runBlocking {
+                    val success = executeFallbackHttpSync(config, customBody, interceptor)
+                    android.util.Log.d("TraceletSync", "executeFallbackHttpSync success: $success")
+                    if (success) records.size.toLong() else 0L
+                }
+            }
+        }
+
         return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+    }
+
+    private suspend fun executeFallbackHttpSync(
+        coreHttp: uniffi.tracelet_core.HttpConfig,
+        customBody: String,
+        interceptor: com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor?
+    ): Boolean {
+        var currentHeaders = coreHttp.headers
+        val maxRetries = coreHttp.maxRetries.toInt()
+        
+        for (attempt in 0..maxRetries) {
+            try {
+                val url = java.net.URL(coreHttp.url)
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = if (coreHttp.method.toInt() == 1) "PUT" else "POST"
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.connectTimeout = 15000
+                conn.readTimeout = 15000
+
+                if (currentHeaders.isNotEmpty()) {
+                    try {
+                        val headersMap = org.json.JSONObject(currentHeaders)
+                        val iter = headersMap.keys()
+                        while (iter.hasNext()) {
+                            val key = iter.next()
+                            conn.setRequestProperty(key, headersMap.getString(key))
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("TraceletSync", "Failed to parse HTTP headers: ${e.message}")
+                    }
+                }
+
+                conn.outputStream.use { os ->
+                    val input = customBody.toByteArray(kotlin.text.Charsets.UTF_8)
+                    os.write(input, 0, input.size)
+                }
+
+                val status = conn.responseCode
+                conn.disconnect()
+                
+                if (status in 200..299) {
+                    return true
+                } else if (status == 401 && interceptor != null) {
+                    if (interceptor.requestTokenRefresh()) {
+                        val newConfig = sdk.rustEngineState?.getConfig()?.http
+                        if (newConfig != null) {
+                            currentHeaders = newConfig.headers
+                        }
+                        continue
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TraceletSync", "HTTP Sync failed: ${e.message}")
+            }
+            if (attempt < maxRetries) {
+                kotlinx.coroutines.delay(1000L * (attempt + 1))
+            }
+        }
+        return false
     }
 }
 

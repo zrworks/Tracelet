@@ -37,12 +37,20 @@ actor SyncCoordinator {
         
         do {
             let coreHttp = state.getConfig().http
-            guard let url = coreHttp.url, !url.isEmpty else { return }
-            guard coreHttp.autoSync else { return }
+            
+            // 1. Request Fresh Headers
+            let interceptor = TraceletSdk.shared.dartSyncInterceptor
+            if interceptor?.requestFreshHeaders() == true {
+                NSLog("[TraceletSync] Headers refreshed via Dart interceptor")
+            }
+            
+            let updatedHttp = state.getConfig().http
+            guard let url = updatedHttp.url, !url.isEmpty else { return }
+            guard updatedHttp.autoSync else { return }
             
             NSLog("[TraceletSync] Triggering sync to URL: \(url)")
             
-            let limit: Int32 = coreHttp.maxBatchSize > 0 ? coreHttp.maxBatchSize : 250
+            let limit: Int32 = updatedHttp.maxBatchSize > 0 ? updatedHttp.maxBatchSize : 250
             let coreRecords = try db.getLocationsBatch(query: LocationQuery(
                 startTimeMs: nil,
                 endTimeMs: nil,
@@ -70,24 +78,73 @@ actor SyncCoordinator {
                 )
             }
             
+            let syncRecordsMap: [[String: Any]] = coreRecords.map { r in
+                var dict: [String: Any] = [
+                    "timestamp": r.timestamp,
+                    "latitude": r.latitude,
+                    "longitude": r.longitude,
+                    "accuracy": r.accuracy,
+                    "speed": r.speed,
+                    "heading": r.heading,
+                    "altitude": r.altitude,
+                    "isMock": r.isMock,
+                    "activity": r.activity
+                ]
+                if let uuid = r.uuid { dict["uuid"] = uuid }
+                if let routeContext = r.routeContext { dict["routeContext"] = routeContext }
+                return dict
+            }
+            
+            NSLog("[TraceletSync] interceptor is \(interceptor == nil ? "nil" : "NOT nil")")
+
+            if interceptor == nil {
+                let _ = await executeFallbackHttpSync(coreHttp: updatedHttp, customBody: "{\"error\": \"INTERCEPTOR_IS_NIL\"}", interceptor: nil)
+            } else if let customBody = interceptor?.requestSyncBody(locations: syncRecordsMap) {
+                NSLog("[TraceletSync] customBody from interceptor: \(customBody)")
+                let success = await executeFallbackHttpSync(coreHttp: updatedHttp, customBody: customBody, interceptor: interceptor)
+                if success {
+                    if let lastId = coreRecords.last?.id {
+                        try? db.clearLocationsUpTo(maxId: lastId)
+                        NSLog("[TraceletSync] Synced and cleared \(coreRecords.count) locations via custom body fallback.")
+                    }
+                    TraceletSdk.shared.getEventSender().sendHttp([
+                        "success": true,
+                        "status": 200,
+                        "responseText": "Synced \(coreRecords.count) locations via custom body",
+                        "isRetry": false,
+                        "retryCount": 0
+                    ])
+                } else {
+                    NSLog("[TraceletSync] Custom body sync failed")
+                    TraceletSdk.shared.getEventSender().sendHttp([
+                        "success": false,
+                        "status": 0,
+                        "responseText": "Custom body sync failed",
+                        "isRetry": false,
+                        "retryCount": 0
+                    ])
+                }
+                return
+            }
+
             let syncHttp = tracelet_sync.SyncHttpConfig(
-                url: coreHttp.url,
-                method: coreHttp.method,
-                headers: coreHttp.headers,
-                batchSync: coreHttp.batchSync,
-                maxBatchSize: coreHttp.maxBatchSize,
-                autoSync: coreHttp.autoSync,
-                maxRetries: coreHttp.maxRetries,
-                retryBackoffBase: coreHttp.retryBackoffBase,
-                retryBackoffCap: coreHttp.retryBackoffCap,
-                sslPinningCertificates: coreHttp.sslPinningCertificates,
-                httpRootProperty: coreHttp.httpRootProperty,
-                params: coreHttp.params,
-                extras: coreHttp.extras,
-                disableAutoSyncOnCellular: coreHttp.disableAutoSyncOnCellular,
-                enableDeltaCompression: coreHttp.enableDeltaCompression,
-                deltaCoordinatePrecision: coreHttp.deltaCoordinatePrecision,
-                locationsOrderDirection: coreHttp.locationsOrderDirection
+                url: updatedHttp.url,
+                method: updatedHttp.method,
+                headers: updatedHttp.headers,
+                batchSync: updatedHttp.batchSync,
+                maxBatchSize: updatedHttp.maxBatchSize,
+                autoSync: updatedHttp.autoSync,
+                maxRetries: updatedHttp.maxRetries,
+                retryBackoffBase: updatedHttp.retryBackoffBase,
+                retryBackoffCap: updatedHttp.retryBackoffCap,
+                sslPinningCertificates: updatedHttp.sslPinningCertificates,
+                httpRootProperty: updatedHttp.httpRootProperty,
+                params: updatedHttp.params,
+                extras: updatedHttp.extras,
+                disableAutoSyncOnCellular: updatedHttp.disableAutoSyncOnCellular,
+                enableDeltaCompression: updatedHttp.enableDeltaCompression,
+                deltaCoordinatePrecision: updatedHttp.deltaCoordinatePrecision,
+                locationsOrderDirection: updatedHttp.locationsOrderDirection
             )
             
             let syncManager = SyncManager()
@@ -128,6 +185,49 @@ actor SyncCoordinator {
             ])
         }
     }
+
+    func executeFallbackHttpSync(coreHttp: HttpConfig, customBody: String, interceptor: DartSyncInterceptor?) async -> Bool {
+        var currentHeaders = coreHttp.headers
+        let maxRetries = Int(coreHttp.maxRetries)
+        
+        for attempt in 0...maxRetries {
+            guard let urlStr = coreHttp.url, let url = URL(string: urlStr) else { return false }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = coreHttp.method == 1 ? "PUT" : "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.timeoutInterval = 15.0
+            
+            for (k, v) in currentHeaders {
+                request.setValue(v, forHTTPHeaderField: k)
+            }
+            
+            request.httpBody = customBody.data(using: .utf8)
+            
+            do {
+                let (_, response) = try await URLSession.shared.data(for: request)
+                if let httpResponse = response as? HTTPURLResponse {
+                    if (200...299).contains(httpResponse.statusCode) {
+                        return true
+                    } else if httpResponse.statusCode == 401, let interceptor = interceptor {
+                        if interceptor.requestTokenRefresh() {
+                            if let newConfig = TraceletSdk.shared.rustEngineState?.getConfig().http {
+                                currentHeaders = newConfig.headers
+                            }
+                            continue
+                        }
+                    }
+                }
+            } catch {
+                NSLog("[TraceletSync] Fallback sync error: \(error)")
+            }
+            
+            if attempt < maxRetries {
+                try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * (attempt + 1)))
+            }
+        }
+        return false
+    }
 }
 
 class TraceletSyncSink: LocationDataSink, SyncProvider {
@@ -159,6 +259,51 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
             )
         }
         
+        // INTERCEPTOR LOGIC
+        if let interceptor = TraceletSdk.shared.dartSyncInterceptor {
+            if interceptor.requestFreshHeaders() {
+                NSLog("[TraceletSync] Headers refreshed in syncBatchBlocking")
+            }
+            let updatedHttp = TraceletSdk.shared.rustEngineState?.getConfig().http ?? config
+            
+            let syncRecordsMap: [[String: Any]] = records.map { r in
+                var dict: [String: Any] = [
+                    "timestamp": r.timestamp,
+                    "latitude": r.latitude,
+                    "longitude": r.longitude,
+                    "accuracy": r.accuracy,
+                    "speed": r.speed,
+                    "heading": r.heading,
+                    "altitude": r.altitude,
+                    "isMock": r.isMock,
+                    "activity": r.activity
+                ]
+                if let uuid = r.uuid { dict["uuid"] = uuid }
+                if let routeContext = r.routeContext { dict["routeContext"] = routeContext }
+                return dict
+            }
+            
+            if let customBody = interceptor.requestSyncBody(locations: syncRecordsMap) {
+                NSLog("[TraceletSync] customBody from interceptor (syncBatchBlocking): \(customBody)")
+                let sem = DispatchSemaphore(value: 0)
+                var fallbackSuccess = false
+                
+                Task {
+                    fallbackSuccess = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: customBody, interceptor: interceptor)
+                    sem.signal()
+                }
+                
+                sem.wait()
+                
+                if fallbackSuccess {
+                    return UInt32(records.count)
+                } else {
+                    NSLog("[TraceletSync] Custom body sync failed in syncBatchBlocking")
+                    return 0
+                }
+            }
+        }
+
         let syncHttp = tracelet_sync.SyncHttpConfig(
             url: config.url,
             method: config.method,

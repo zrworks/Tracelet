@@ -24,7 +24,7 @@ class WebStorageEngine {
   int _maxRecords = 10000;
   int _maxLogDays = 7;
 
-  /// Documentation for applyConfig.
+  /// Applies the given configuration to the storage engine.
   void applyConfig(Map<String, Object?> config) {
     final persistence = config['persistence'];
     if (persistence is Map) {
@@ -50,7 +50,7 @@ class WebStorageEngine {
   // Location persistence
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<List<Map<String,.
+  /// Retrieves persisted locations, optionally filtered and sorted.
   Future<List<Map<String, Object?>>> getLocations([
     Map<String, Object?>? query,
   ]) async {
@@ -102,7 +102,7 @@ class WebStorageEngine {
     return materialized;
   }
 
-  /// Documentation for Future<int>.
+  /// Returns the total number of persisted locations, optionally filtered.
   Future<int> getCount([Map<String, Object?>? query]) async {
     if (query == null || query.isEmpty) {
       return _locations.length;
@@ -134,14 +134,14 @@ class WebStorageEngine {
     return null;
   }
 
-  /// Documentation for Future<bool>.
+  /// Deletes all persisted locations.
   Future<bool> destroyLocations() async {
     _locations.clear();
     _lastHash = '';
     return true;
   }
 
-  /// Documentation for Future<int>.
+  /// Deletes all persisted locations that have already been synced.
   Future<int> destroySyncedLocations() async {
     final before = _locations.length;
     _locations.removeWhere(
@@ -150,14 +150,14 @@ class WebStorageEngine {
     return before - _locations.length;
   }
 
-  /// Documentation for Future<bool>.
+  /// Deletes a specific location by its UUID.
   Future<bool> destroyLocation(String uuid) async {
     final before = _locations.length;
     _locations.removeWhere((loc) => loc['uuid'] == uuid);
     return _locations.length < before;
   }
 
-  /// Documentation for Future<String>.
+  /// Inserts a new location into the store and returns its UUID.
   Future<String> insertLocation(Map<String, Object?> params) async {
     final uuid = params['uuid'] as String? ?? generateUuid();
     final record = Map<String, Object?>.from(params);
@@ -201,7 +201,7 @@ class WebStorageEngine {
   // Log persistence
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<bool>.
+  /// Appends a new log message.
   Future<bool> log(String level, String message) async {
     final ts = DateTime.now().toIso8601String();
     _logs.add('[$ts] [$level] $message');
@@ -214,12 +214,12 @@ class WebStorageEngine {
     return true;
   }
 
-  /// Documentation for Future<String>.
+  /// Retrieves the full log string, optionally filtered.
   Future<String> getLog([Map<String, Object?>? query]) async {
     return _logs.join('\n');
   }
 
-  /// Documentation for Future<bool>.
+  /// Deletes all logs.
   Future<bool> destroyLog() async {
     _logs.clear();
     return true;
@@ -229,7 +229,7 @@ class WebStorageEngine {
   // Audit Trail
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<Map<String,.
+  /// Verifies the cryptographic integrity of the audit trail.
   Future<Map<String, Object?>> verifyAuditTrail() async {
     if (!_auditEnabled) {
       return <String, Object?>{
@@ -281,7 +281,7 @@ class WebStorageEngine {
     };
   }
 
-  /// Documentation for Future<Map<String,.
+  /// Retrieves the audit proof for a specific location.
   Future<Map<String, Object?>?> getAuditProof(String uuid) async {
     try {
       final loc = _locations.firstWhere((element) => element['uuid'] == uuid);

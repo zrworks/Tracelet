@@ -97,7 +97,7 @@ class AttestationConfig {
     };
   }
 
-  /// Documentation for TlAttestationConfig.
+  /// Converts to Pigeon [TlAttestationConfig].
   TlAttestationConfig toTlConfig() =>
       TlAttestationConfig(enabled: enabled, refreshInterval: refreshInterval);
 

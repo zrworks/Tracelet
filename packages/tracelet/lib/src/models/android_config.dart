@@ -59,7 +59,7 @@ class AndroidConfig {
     );
   }
 
-  /// Documentation for AndroidConfig.
+  /// Creates a copy of this [AndroidConfig] with the given fields replaced with the new values.
   AndroidConfig copyWith({
     int? locationUpdateInterval,
     int? fastestLocationUpdateInterval,
@@ -191,7 +191,7 @@ class AndroidConfig {
 /// Configuration for the Android foreground service notification.
 @immutable
 class ForegroundServiceConfig {
-  /// Documentation for ForegroundServiceConfig.
+  /// Creates a new [ForegroundServiceConfig] with optional overrides.
   const ForegroundServiceConfig({
     this.enabled = true,
     this.channelId = 'tracelet_channel',
@@ -207,7 +207,7 @@ class ForegroundServiceConfig {
     this.actions = const <String>[],
   });
 
-  /// Documentation for factory.
+  /// Creates a [ForegroundServiceConfig] from a map.
   factory ForegroundServiceConfig.fromMap(Map<String, Object?> map) {
     final rawActions = map['actions'];
     final actionsList = <String>[];
@@ -242,7 +242,7 @@ class ForegroundServiceConfig {
     );
   }
 
-  /// Documentation for ForegroundServiceConfig.
+  /// Creates a copy of this [ForegroundServiceConfig] with the given fields replaced with the new values.
   ForegroundServiceConfig copyWith({
     bool? enabled,
     String? channelId,
@@ -345,7 +345,7 @@ class ForegroundServiceConfig {
     actions: actions,
   );
 
-  /// Documentation for Map<String,.
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'enabled': enabled,

@@ -14,7 +14,7 @@ import 'package:web/web.dart' as web;
 /// `Notification.permission` for notification permission, and
 /// `navigator.onLine` + events for connectivity tracking.
 class WebPermissionsEngine {
-  /// Documentation for WebPermissionsEngine.
+  /// Initializes the web permissions engine.
   WebPermissionsEngine(this._events);
 
   final WebEventDispatcher _events;
@@ -140,7 +140,7 @@ class WebPermissionsEngine {
   // Notification permission
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<int>.
+  /// Queries the current notification permission status.
   Future<int> getNotificationPermissionStatus() async {
     try {
       final permission = web.Notification.permission;
@@ -157,7 +157,7 @@ class WebPermissionsEngine {
     }
   }
 
-  /// Documentation for Future<int>.
+  /// Requests permission to display notifications.
   Future<int> requestNotificationPermission() async {
     try {
       final result = await web.Notification.requestPermission().toDart;
@@ -178,17 +178,17 @@ class WebPermissionsEngine {
   // Motion permission (stub — no web equivalent for most browsers)
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<int>.
+  /// Queries the motion permission status (stub for Web).
   Future<int> getMotionPermissionStatus() async => 3; // always (granted)
 
-  /// Documentation for Future<int>.
+  /// Requests motion permission (stub for Web).
   Future<int> requestMotionPermission() async => 3; // always (granted)
 
   // ---------------------------------------------------------------------------
   // Provider state
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<Map<String,.
+  /// Gets the current state of location providers and permissions.
   Future<Map<String, Object?>> getProviderState() async {
     final permStatus = await getPermissionStatus();
     final isOnline = web.window.navigator.onLine;
@@ -206,7 +206,7 @@ class WebPermissionsEngine {
   // Device info
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Map<String,.
+  /// Retrieves device and browser information.
   Map<String, Object?> getDeviceInfo() {
     final ua = web.window.navigator.userAgent;
     final platform = web.window.navigator.platform;
@@ -224,7 +224,7 @@ class WebPermissionsEngine {
   // Sensors
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Map<String,.
+  /// Retrieves available device sensors.
   Map<String, Object?> getSensors() {
     return <String, Object?>{
       'platform': 'web',
@@ -239,7 +239,7 @@ class WebPermissionsEngine {
   // Connectivity
   // ---------------------------------------------------------------------------
 
-  /// Documentation for isConnected.
+  /// Whether the device currently has an active network connection.
   bool get isConnected => web.window.navigator.onLine;
 
   // ---------------------------------------------------------------------------
@@ -285,7 +285,7 @@ class WebPermissionsEngine {
     return '';
   }
 
-  /// Documentation for dispose.
+  /// Cleans up resources.
   void dispose() {
     stopConnectivityMonitoring();
   }

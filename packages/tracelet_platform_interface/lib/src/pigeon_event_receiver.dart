@@ -43,7 +43,7 @@ class PigeonEventReceiver implements TraceletEventApi {
 
   /// Stream of raw location updates.
   Stream<TlLocation> get locationEvents => _locationCtrl.stream;
-  
+
   /// Stream of locations recorded specifically at the moment motion state changes.
   Stream<TlLocation> get motionChangeEvents => _motionChangeCtrl.stream;
 
@@ -57,44 +57,44 @@ class PigeonEventReceiver implements TraceletEventApi {
   /// Stream of activity change events (e.g., walking, running, driving).
   Stream<TlActivityChangeEvent> get activityChangeEvents =>
       _activityChangeCtrl.stream;
-      
+
   /// Stream of location provider state changes (e.g., GPS enabled/disabled).
   Stream<TlProviderChangeEvent> get providerChangeEvents =>
       _providerChangeCtrl.stream;
-      
+
   /// Stream of geofence crossing events (ENTER/EXIT).
   Stream<TlGeofenceEvent> get geofenceEvents => _geofenceCtrl.stream;
-  
+
   /// Stream fired when the list of actively monitored geofences changes.
   Stream<TlGeofencesChangeEvent> get geofencesChangeEvents =>
       _geofencesChangeCtrl.stream;
-      
+
   /// Stream of periodic heartbeat events to verify SDK background liveliness.
   Stream<TlHeartbeatEvent> get heartbeatEvents => _heartbeatCtrl.stream;
-  
+
   /// Stream of HTTP sync success/failure events.
   Stream<TlHttpEvent> get httpEvents => _httpCtrl.stream;
-  
+
   /// Stream of scheduling transitions (started/stopped by schedule).
   Stream<TlState> get scheduleEvents => _scheduleCtrl.stream;
-  
+
   /// Stream fired when OS battery saver mode turns on/off.
   Stream<bool> get powerSaveChangeEvents => _powerSaveChangeCtrl.stream;
-  
+
   /// Stream of network connectivity state changes.
   Stream<TlConnectivityChangeEvent> get connectivityChangeEvents =>
       _connectivityChangeCtrl.stream;
-      
+
   /// Stream fired when the Tracelet SDK becomes enabled or disabled.
   Stream<bool> get enabledChangeEvents => _enabledChangeCtrl.stream;
-  
+
   /// Stream of custom notification action button clicks.
   Stream<String> get notificationActionEvents => _notificationActionCtrl.stream;
-  
+
   /// Stream of HTTP authorization requests (e.g., 401 errors requiring token refresh).
   Stream<TlAuthorizationEvent> get authorizationEvents =>
       _authorizationCtrl.stream;
-      
+
   /// Stream of high-frequency locations from `watchPosition`.
   Stream<TlLocation> get watchPositionEvents => _watchPositionCtrl.stream;
 

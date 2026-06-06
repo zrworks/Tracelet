@@ -108,7 +108,7 @@ class AuditConfig {
     };
   }
 
-  /// Documentation for TlAuditConfig.
+  /// Converts to Pigeon [TlAuditConfig].
   TlAuditConfig toTlConfig() => TlAuditConfig(
     enabled: enabled,
     hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],

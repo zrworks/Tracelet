@@ -16,7 +16,7 @@ import 'package:web/web.dart' as web;
 /// **foreground-only** — the Web Geolocation API does not function in
 /// background tabs or Service Workers.
 class WebLocationEngine {
-  /// Documentation for WebLocationEngine.
+  /// Initializes the web location engine.
   WebLocationEngine(this._events, this._geofenceEngine, this._privacyEngine);
 
   final WebEventDispatcher _events;
@@ -65,7 +65,7 @@ class WebLocationEngine {
   // Configuration
   // ---------------------------------------------------------------------------
 
-  /// Documentation for applyConfig.
+  /// Applies location-related configuration settings.
   void applyConfig(Map<String, Object?> config) {
     final geo = config['geo'];
     if (geo is Map) {
@@ -102,23 +102,23 @@ class WebLocationEngine {
   // Getters
   // ---------------------------------------------------------------------------
 
-  /// Documentation for isTracking.
+  /// Whether continuous location tracking is currently active.
   bool get isTracking => _isTracking;
 
-  /// Documentation for isMoving.
+  /// Whether the device is currently moving according to motion detection rules.
   bool get isMoving => _isMoving;
 
-  /// Documentation for odometer.
+  /// The total accumulated distance in meters.
   double get odometer => _odometer;
 
-  /// Documentation for lastLocation.
+  /// The most recently recorded location fix.
   Map<String, Object?>? get lastLocation => _lastLocation;
 
   // ---------------------------------------------------------------------------
   // One-shot position
   // ---------------------------------------------------------------------------
 
-  /// Documentation for Future<Map<String,.
+  /// Retrieves a single, one-shot location fix.
   Future<Map<String, Object?>> getCurrentPosition(
     Map<String, Object?> options,
   ) {
@@ -226,7 +226,7 @@ class WebLocationEngine {
   // Continuous tracking (start/stop)
   // ---------------------------------------------------------------------------
 
-  /// Documentation for startTracking.
+  /// Starts continuous location tracking and heartbeat.
   void startTracking() {
     if (_isTracking) return;
     _isTracking = true;
@@ -236,7 +236,7 @@ class WebLocationEngine {
     _startHeartbeat();
   }
 
-  /// Documentation for stopTracking.
+  /// Stops continuous location tracking and heartbeat.
   void stopTracking() {
     if (!_isTracking) return;
     _isTracking = false;
@@ -255,7 +255,7 @@ class WebLocationEngine {
   // watchPosition / stopWatchPosition (user-facing API)
   // ---------------------------------------------------------------------------
 
-  /// Documentation for addWatch.
+  /// Registers a new active watch for continuous location updates.
   int addWatch(Map<String, Object?> options) {
     final id = _nextWatchId++;
     _activeWatches[id] = true;
@@ -268,7 +268,7 @@ class WebLocationEngine {
     return id;
   }
 
-  /// Documentation for removeWatch.
+  /// Removes an active watch by its ID.
   bool removeWatch(int watchId) {
     final removed = _activeWatches.remove(watchId) != null;
 
@@ -284,7 +284,7 @@ class WebLocationEngine {
   // Pace / odometer
   // ---------------------------------------------------------------------------
 
-  /// Documentation for changePace.
+  /// Manually overrides the device's moving state.
   bool changePace(bool isMoving) {
     _isMoving = isMoving;
     if (isMoving) {
@@ -299,7 +299,7 @@ class WebLocationEngine {
     return true;
   }
 
-  /// Documentation for Map<String,.
+  /// Manually overrides the accumulated odometer value.
   Map<String, Object?> setOdometer(double value) {
     _odometer = value;
     return _lastLocation ?? _emptyLocation();

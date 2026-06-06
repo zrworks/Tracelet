@@ -61,56 +61,56 @@ class WebEventDispatcher {
   // Public streams
   // ---------------------------------------------------------------------------
 
-  /// Documentation for onLocation.
+  /// Stream of continuous location updates.
   Stream<Map<String, Object?>> get onLocation => _locationController.stream;
 
-  /// Documentation for onMotionChange.
+  /// Stream of device motion state changes.
   Stream<Map<String, Object?>> get onMotionChange =>
       _motionChangeController.stream;
 
-  /// Documentation for onActivityChange.
+  /// Stream of activity recognition changes.
   Stream<Map<String, Object?>> get onActivityChange =>
       _activityChangeController.stream;
 
-  /// Documentation for onProviderChange.
+  /// Stream of location provider state changes.
   Stream<Map<String, Object?>> get onProviderChange =>
       _providerChangeController.stream;
 
-  /// Documentation for onGeofence.
+  /// Stream of geofence transition events.
   Stream<Map<String, Object?>> get onGeofence => _geofenceController.stream;
 
-  /// Documentation for onGeofencesChange.
+  /// Stream of changes to registered geofences.
   Stream<Map<String, Object?>> get onGeofencesChange =>
       _geofencesChangeController.stream;
 
-  /// Documentation for onHeartbeat.
+  /// Stream of heartbeat events.
   Stream<Map<String, Object?>> get onHeartbeat => _heartbeatController.stream;
 
-  /// Documentation for onHttp.
+  /// Stream of HTTP sync events.
   Stream<Map<String, Object?>> get onHttp => _httpController.stream;
 
-  /// Documentation for onSchedule.
+  /// Stream of schedule state changes.
   Stream<Map<String, Object?>> get onSchedule => _scheduleController.stream;
 
-  /// Documentation for onPowerSaveChange.
+  /// Stream of power save mode changes.
   Stream<bool> get onPowerSaveChange => _powerSaveChangeController.stream;
 
-  /// Documentation for onConnectivityChange.
+  /// Stream of network connectivity changes.
   Stream<Map<String, Object?>> get onConnectivityChange =>
       _connectivityChangeController.stream;
 
-  /// Documentation for onEnabledChange.
+  /// Stream of plugin enabled state changes.
   Stream<bool> get onEnabledChange => _enabledChangeController.stream;
 
-  /// Documentation for onNotificationAction.
+  /// Stream of notification action button clicks.
   Stream<String> get onNotificationAction =>
       _notificationActionController.stream;
 
-  /// Documentation for onAuthorization.
+  /// Stream of authorization events.
   Stream<Map<String, Object?>> get onAuthorization =>
       _authorizationController.stream;
 
-  /// Documentation for onWatchPosition.
+  /// Stream of continuous location updates requested via watchPosition.
   Stream<Map<String, Object?>> get onWatchPosition =>
       _watchPositionController.stream;
 
@@ -118,62 +118,62 @@ class WebEventDispatcher {
   // Emit methods
   // ---------------------------------------------------------------------------
 
-  /// Documentation for emitLocation.
+  /// Broadcasts a location update.
   void emitLocation(Map<String, Object?> location) {
     if (!_locationController.isClosed) _locationController.add(location);
   }
 
-  /// Documentation for emitMotionChange.
+  /// Broadcasts a motion state change.
   void emitMotionChange(Map<String, Object?> location) {
     if (!_motionChangeController.isClosed) {
       _motionChangeController.add(location);
     }
   }
 
-  /// Documentation for emitActivityChange.
+  /// Broadcasts an activity change.
   void emitActivityChange(Map<String, Object?> event) {
     if (!_activityChangeController.isClosed) {
       _activityChangeController.add(event);
     }
   }
 
-  /// Documentation for emitProviderChange.
+  /// Broadcasts a provider state change.
   void emitProviderChange(Map<String, Object?> event) {
     if (!_providerChangeController.isClosed) {
       _providerChangeController.add(event);
     }
   }
 
-  /// Documentation for emitGeofence.
+  /// Broadcasts a geofence transition.
   void emitGeofence(Map<String, Object?> event) {
     if (!_geofenceController.isClosed) _geofenceController.add(event);
   }
 
-  /// Documentation for emitGeofencesChange.
+  /// Broadcasts a geofence registration change.
   void emitGeofencesChange(Map<String, Object?> event) {
     if (!_geofencesChangeController.isClosed) {
       _geofencesChangeController.add(event);
     }
   }
 
-  /// Documentation for emitHeartbeat.
+  /// Broadcasts a heartbeat event.
   void emitHeartbeat(Map<String, Object?> location) {
     if (!_heartbeatController.isClosed) {
       _heartbeatController.add(<String, Object?>{'location': location});
     }
   }
 
-  /// Documentation for emitHttp.
+  /// Broadcasts an HTTP sync event.
   void emitHttp(Map<String, Object?> event) {
     if (!_httpController.isClosed) _httpController.add(event);
   }
 
-  /// Documentation for emitSchedule.
+  /// Broadcasts a schedule state change.
   void emitSchedule(Map<String, Object?> state) {
     if (!_scheduleController.isClosed) _scheduleController.add(state);
   }
 
-  /// Documentation for emitConnectivityChange.
+  /// Broadcasts a connectivity change.
   void emitConnectivityChange(bool connected) {
     if (!_connectivityChangeController.isClosed) {
       _connectivityChangeController.add(<String, Object?>{
@@ -182,19 +182,19 @@ class WebEventDispatcher {
     }
   }
 
-  /// Documentation for emitEnabledChange.
+  /// Broadcasts an enabled state change.
   void emitEnabledChange(bool enabled) {
     if (!_enabledChangeController.isClosed) {
       _enabledChangeController.add(enabled);
     }
   }
 
-  /// Documentation for emitAuthorization.
+  /// Broadcasts an authorization event.
   void emitAuthorization(Map<String, Object?> event) {
     if (!_authorizationController.isClosed) _authorizationController.add(event);
   }
 
-  /// Documentation for emitWatchPosition.
+  /// Broadcasts a watchPosition location update.
   void emitWatchPosition(Map<String, Object?> location) {
     if (!_watchPositionController.isClosed) {
       _watchPositionController.add(location);
@@ -220,7 +220,7 @@ class WebEventDispatcher {
   // Dispose
   // ---------------------------------------------------------------------------
 
-  /// Documentation for dispose.
+  /// Closes all active event streams.
   void dispose() {
     _locationController.close();
     _motionChangeController.close();

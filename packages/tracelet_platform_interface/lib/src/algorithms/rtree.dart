@@ -10,16 +10,16 @@ class RTreeBBox {
   /// Create a bbox that contains a single point.
   factory RTreeBBox.fromPoint(double lat, double lng) =>
       RTreeBBox(lat, lng, lat, lng);
-      
+
   /// The minimum latitude.
   double minLat;
-  
+
   /// The minimum longitude.
   double minLng;
-  
+
   /// The maximum latitude.
   double maxLat;
-  
+
   /// The maximum longitude.
   double maxLng;
 

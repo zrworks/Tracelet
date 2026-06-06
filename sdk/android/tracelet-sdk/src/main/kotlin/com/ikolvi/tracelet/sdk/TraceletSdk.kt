@@ -1264,7 +1264,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     callback(emptyList()) // Return empty to indicate native handled it
                 }
             } catch (e: Exception) {
-                logger.error("TraceletSdk: sync failed: \${e.message}")
+                logger.error("TraceletSdk: sync failed: ${e.message}")
                 mainHandler.post {
                     callback(emptyList())
                 }

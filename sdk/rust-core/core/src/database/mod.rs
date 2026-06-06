@@ -1,7 +1,7 @@
 use rusqlite::{params, Connection};
 use std::sync::{Mutex, RwLock};
 use crate::error::TraceletError;
-use chrono::{TimeZone, Utc};
+use chrono::Utc;
 use aes_gcm::{
     aead::{Aead, KeyInit, generic_array::GenericArray},
     Aes256Gcm, Nonce
@@ -94,7 +94,8 @@ impl DatabaseManager {
                 is_mock INTEGER NOT NULL,
                 activity TEXT NOT NULL,
                 encrypted_payload BLOB,
-                route_context TEXT
+                route_context TEXT,
+                timestamp_ms INTEGER DEFAULT 0
             )",
             [],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
@@ -175,6 +176,11 @@ impl DatabaseManager {
         let _ = conn.execute("ALTER TABLE privacy_zones ADD COLUMN pz_action INTEGER NOT NULL DEFAULT 0", []);
         let _ = conn.execute("ALTER TABLE privacy_zones ADD COLUMN pz_degraded_accuracy REAL DEFAULT 1000.0", []);
 
+        // Migrate and backfill timestamp_ms
+        let _ = conn.execute("ALTER TABLE location_events ADD COLUMN timestamp_ms INTEGER DEFAULT 0", []);
+        let _ = conn.execute("UPDATE location_events SET timestamp_ms = CAST((julianday(timestamp) - 2440587.5) * 86400000 AS INTEGER) WHERE timestamp_ms IS NULL OR timestamp_ms = 0", []);
+        let _ = conn.execute("CREATE INDEX IF NOT EXISTS idx_location_events_timestamp_ms ON location_events(timestamp_ms)", []);
+
         Ok(Self {
             conn: Mutex::new(conn),
             encryption_key: RwLock::new(None),
@@ -240,7 +246,17 @@ impl DatabaseManager {
     /// Inserts a new location record into the database.
     pub fn insert_location(&self, uuid: Option<String>, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>, timestamp_override: Option<String>) -> Result<i64, TraceletError> {
         let conn = self.conn.lock().unwrap();
-        let timestamp = timestamp_override.unwrap_or_else(|| Utc::now().to_rfc3339());
+        
+        let (timestamp, timestamp_ms) = if let Some(override_ts) = timestamp_override {
+            let parsed_ms = match chrono::DateTime::parse_from_rfc3339(&override_ts) {
+                Ok(dt) => dt.timestamp_millis(),
+                Err(_) => Utc::now().timestamp_millis(), // Fallback if invalid string
+            };
+            (override_ts, parsed_ms)
+        } else {
+            let now = Utc::now();
+            (now.to_rfc3339(), now.timestamp_millis())
+        };
         
         let is_encrypted = self.encryption_key.read().unwrap().is_some();
         if is_encrypted {
@@ -257,9 +273,9 @@ impl DatabaseManager {
             });
             if let Some(payload) = self.encrypt_payload(record.to_string().as_bytes()) {
                 conn.execute(
-                    "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context)
-                     VALUES (?1, ?2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?3, ?4)",
-                    params![uuid, timestamp, payload, route_context],
+                    "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context, timestamp_ms)
+                     VALUES (?1, ?2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?3, ?4, ?5)",
+                    params![uuid, timestamp, payload, route_context, timestamp_ms],
                 ).map_err(|e| TraceletError::Database(e.to_string()))?;
                 return Ok(conn.last_insert_rowid());
             }
@@ -267,9 +283,9 @@ impl DatabaseManager {
         
         // Fallback or unencrypted
         conn.execute(
-            "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, ?11)",
-            params![uuid, timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity, route_context],
+            "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context, timestamp_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, ?11, ?12)",
+            params![uuid, timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity, route_context, timestamp_ms],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
         
         Ok(conn.last_insert_rowid())
@@ -289,16 +305,12 @@ impl DatabaseManager {
         
         if let Some(q) = &query {
             if let Some(start_ms) = q.start_time_ms {
-                if let Some(dt) = Utc.timestamp_millis_opt(start_ms).single() {
-                    sql.push_str(" AND julianday(timestamp) >= julianday(?)");
-                    params.push(Value::Text(dt.to_rfc3339()));
-                }
+                sql.push_str(" AND timestamp_ms >= ?");
+                params.push(Value::Integer(start_ms));
             }
             if let Some(end_ms) = q.end_time_ms {
-                if let Some(dt) = Utc.timestamp_millis_opt(end_ms).single() {
-                    sql.push_str(" AND julianday(timestamp) <= julianday(?)");
-                    params.push(Value::Text(dt.to_rfc3339()));
-                }
+                sql.push_str(" AND timestamp_ms <= ?");
+                params.push(Value::Integer(end_ms));
             }
         }
         
@@ -797,6 +809,33 @@ mod tests {
         
         assert_eq!(locations[1].latitude, 2.0);
         assert_eq!(locations[1].activity, "encrypted");
+    }
+
+    #[test]
+    fn test_timestamp_ms_query() {
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        
+        let t1 = Utc::now().timestamp_millis() - 10000;
+        let t2 = Utc::now().timestamp_millis();
+        let t3 = Utc::now().timestamp_millis() + 10000;
+
+        // Directly insert via raw SQL to override timestamp_ms for rigorous testing
+        let conn = db.conn.lock().unwrap();
+        conn.execute("INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, timestamp_ms) VALUES ('', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 't1', ?1)", params![t1]).unwrap();
+        conn.execute("INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, timestamp_ms) VALUES ('', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 't2', ?1)", params![t2]).unwrap();
+        conn.execute("INSERT INTO location_events (timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, timestamp_ms) VALUES ('', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 't3', ?1)", params![t3]).unwrap();
+        drop(conn);
+
+        let locations = db.get_locations_batch(Some(LocationQuery {
+            start_time_ms: Some(t2 - 100),
+            end_time_ms: Some(t2 + 100),
+            limit: None,
+            offset: None,
+            order_descending: None,
+        })).unwrap();
+
+        assert_eq!(locations.len(), 1);
+        assert_eq!(locations[0].activity, "t2");
     }
 
     #[test]

@@ -883,7 +883,8 @@ class Tracelet {
           if (_syncBodyBuilder == null) return null;
           final rawLocations = call.arguments as List<dynamic>? ?? [];
           final locations = rawLocations
-              .map((e) => Map<String, Object?>.from(e as Map))
+              .whereType<Map<Object?, Object?>>()
+              .map(_deepCastMap)
               .toList();
           final body = await _syncBodyBuilder!(
             SyncBodyContext(locations: locations),
@@ -2356,4 +2357,28 @@ void _headlessCallbackDispatcher() {
 
   // Signal to the native side that the isolate is ready.
   channel.invokeMethod<void>('initialized');
+}
+
+// =============================================================================
+// MethodChannel Data Helpers
+// =============================================================================
+
+/// Performs a deep cast of a dynamic map to `Map<String, Object?>`.
+///
+/// Native `MethodChannel` payloads decode objects dynamically as
+/// `Map<Object?, Object?>`. This ensures all nested structures conform to
+/// string-keyed maps for reliable JSON encoding or Dart-side access.
+Map<String, Object?> _deepCastMap(Map<Object?, Object?> map) {
+  return map.map((key, value) => MapEntry(key.toString(), _deepCast(value)));
+}
+
+/// Recursively deep casts lists and maps.
+Object? _deepCast(Object? value) {
+  if (value is Map) {
+    return _deepCastMap(value);
+  } else if (value is List) {
+    return value.map(_deepCast).toList();
+  } else {
+    return value;
+  }
 }

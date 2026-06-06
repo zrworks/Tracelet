@@ -2118,6 +2118,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     retryBackoffCap = configManager.getRetryBackoffCap(),
                     autoSyncDelay = configManager.getAutoSyncDelay(),
                     sslPinningCertificates = configManager.getSslPinningCertificates().takeIf { it.isNotEmpty() },
+                    sslPinningFingerprints = configManager.getSslPinningFingerprints().takeIf { it.isNotEmpty() },
                     httpRootProperty = configManager.getHttpRootProperty(),
                     params = HashMap(configManager.getHttpParams().filterValues { it != null }.mapValues { it.value.toString() }),
                     extras = HashMap(configManager.getHttpExtras().filterValues { it != null }.mapValues { it.value.toString() }),

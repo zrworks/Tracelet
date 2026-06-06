@@ -4842,6 +4842,10 @@ public struct HttpConfig: Equatable, Hashable {
      */
     public var sslPinningCertificates: [String]?
     /**
+     * Optional list of SHA-256 fingerprints (hex encoded) for SSL pinning.
+     */
+    public var sslPinningFingerprints: [String]?
+    /**
      * Custom root property for the HTTP sync payload.
      */
     public var httpRootProperty: String?
@@ -4907,6 +4911,9 @@ public struct HttpConfig: Equatable, Hashable {
          * Optional list of PEM or DER encoded certificates for SSL pinning.
          */sslPinningCertificates: [String]?, 
         /**
+         * Optional list of SHA-256 fingerprints (hex encoded) for SSL pinning.
+         */sslPinningFingerprints: [String]?, 
+        /**
          * Custom root property for the HTTP sync payload.
          */httpRootProperty: String?, 
         /**
@@ -4938,6 +4945,7 @@ public struct HttpConfig: Equatable, Hashable {
         self.retryBackoffCap = retryBackoffCap
         self.autoSyncDelay = autoSyncDelay
         self.sslPinningCertificates = sslPinningCertificates
+        self.sslPinningFingerprints = sslPinningFingerprints
         self.httpRootProperty = httpRootProperty
         self.params = params
         self.extras = extras
@@ -4974,6 +4982,7 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
                 retryBackoffCap: FfiConverterInt32.read(from: &buf), 
                 autoSyncDelay: FfiConverterInt32.read(from: &buf), 
                 sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf), 
+                sslPinningFingerprints: FfiConverterOptionSequenceString.read(from: &buf), 
                 httpRootProperty: FfiConverterOptionString.read(from: &buf), 
                 params: FfiConverterOptionDictionaryStringString.read(from: &buf), 
                 extras: FfiConverterOptionDictionaryStringString.read(from: &buf), 
@@ -4996,6 +5005,7 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.retryBackoffCap, into: &buf)
         FfiConverterInt32.write(value.autoSyncDelay, into: &buf)
         FfiConverterOptionSequenceString.write(value.sslPinningCertificates, into: &buf)
+        FfiConverterOptionSequenceString.write(value.sslPinningFingerprints, into: &buf)
         FfiConverterOptionString.write(value.httpRootProperty, into: &buf)
         FfiConverterOptionDictionaryStringString.write(value.params, into: &buf)
         FfiConverterOptionDictionaryStringString.write(value.extras, into: &buf)

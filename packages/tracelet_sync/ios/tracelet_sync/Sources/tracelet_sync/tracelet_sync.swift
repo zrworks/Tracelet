@@ -691,6 +691,7 @@ public struct SyncHttpConfig: Equatable, Hashable {
     public var retryBackoffBase: Int32
     public var retryBackoffCap: Int32
     public var sslPinningCertificates: [String]?
+    public var sslPinningFingerprints: [String]?
     public var httpRootProperty: String?
     public var params: [String: String]?
     public var extras: [String: String]?
@@ -701,7 +702,7 @@ public struct SyncHttpConfig: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(url: String?, method: Int32, headers: [String: String], batchSync: Bool, maxBatchSize: Int32, autoSync: Bool, maxRetries: Int32, retryBackoffBase: Int32, retryBackoffCap: Int32, sslPinningCertificates: [String]?, httpRootProperty: String?, params: [String: String]?, extras: [String: String]?, disableAutoSyncOnCellular: Bool, enableDeltaCompression: Bool, deltaCoordinatePrecision: Int32, locationsOrderDirection: Int32) {
+    public init(url: String?, method: Int32, headers: [String: String], batchSync: Bool, maxBatchSize: Int32, autoSync: Bool, maxRetries: Int32, retryBackoffBase: Int32, retryBackoffCap: Int32, sslPinningCertificates: [String]?, sslPinningFingerprints: [String]?, httpRootProperty: String?, params: [String: String]?, extras: [String: String]?, disableAutoSyncOnCellular: Bool, enableDeltaCompression: Bool, deltaCoordinatePrecision: Int32, locationsOrderDirection: Int32) {
         self.url = url
         self.method = method
         self.headers = headers
@@ -712,6 +713,7 @@ public struct SyncHttpConfig: Equatable, Hashable {
         self.retryBackoffBase = retryBackoffBase
         self.retryBackoffCap = retryBackoffCap
         self.sslPinningCertificates = sslPinningCertificates
+        self.sslPinningFingerprints = sslPinningFingerprints
         self.httpRootProperty = httpRootProperty
         self.params = params
         self.extras = extras
@@ -747,6 +749,7 @@ public struct FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer {
                 retryBackoffBase: FfiConverterInt32.read(from: &buf), 
                 retryBackoffCap: FfiConverterInt32.read(from: &buf), 
                 sslPinningCertificates: FfiConverterOptionSequenceString.read(from: &buf), 
+                sslPinningFingerprints: FfiConverterOptionSequenceString.read(from: &buf), 
                 httpRootProperty: FfiConverterOptionString.read(from: &buf), 
                 params: FfiConverterOptionDictionaryStringString.read(from: &buf), 
                 extras: FfiConverterOptionDictionaryStringString.read(from: &buf), 
@@ -768,6 +771,7 @@ public struct FfiConverterTypeSyncHttpConfig: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.retryBackoffBase, into: &buf)
         FfiConverterInt32.write(value.retryBackoffCap, into: &buf)
         FfiConverterOptionSequenceString.write(value.sslPinningCertificates, into: &buf)
+        FfiConverterOptionSequenceString.write(value.sslPinningFingerprints, into: &buf)
         FfiConverterOptionString.write(value.httpRootProperty, into: &buf)
         FfiConverterOptionDictionaryStringString.write(value.params, into: &buf)
         FfiConverterOptionDictionaryStringString.write(value.extras, into: &buf)

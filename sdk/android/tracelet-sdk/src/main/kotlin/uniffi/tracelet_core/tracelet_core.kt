@@ -7684,6 +7684,11 @@ data class HttpConfig (
     var `sslPinningCertificates`: List<kotlin.String>?
     , 
     /**
+     * Optional list of SHA-256 fingerprints (hex encoded) for SSL pinning.
+     */
+    var `sslPinningFingerprints`: List<kotlin.String>?
+    , 
+    /**
      * Custom root property for the HTTP sync payload.
      */
     var `httpRootProperty`: kotlin.String?
@@ -7744,6 +7749,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
+            FfiConverterOptionalSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalMapStringString.read(buf),
             FfiConverterOptionalMapStringString.read(buf),
@@ -7766,6 +7772,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.allocationSize(value.`retryBackoffCap`) +
             FfiConverterInt.allocationSize(value.`autoSyncDelay`) +
             FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningCertificates`) +
+            FfiConverterOptionalSequenceString.allocationSize(value.`sslPinningFingerprints`) +
             FfiConverterOptionalString.allocationSize(value.`httpRootProperty`) +
             FfiConverterOptionalMapStringString.allocationSize(value.`params`) +
             FfiConverterOptionalMapStringString.allocationSize(value.`extras`) +
@@ -7787,6 +7794,7 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterInt.write(value.`retryBackoffCap`, buf)
             FfiConverterInt.write(value.`autoSyncDelay`, buf)
             FfiConverterOptionalSequenceString.write(value.`sslPinningCertificates`, buf)
+            FfiConverterOptionalSequenceString.write(value.`sslPinningFingerprints`, buf)
             FfiConverterOptionalString.write(value.`httpRootProperty`, buf)
             FfiConverterOptionalMapStringString.write(value.`params`, buf)
             FfiConverterOptionalMapStringString.write(value.`extras`, buf)

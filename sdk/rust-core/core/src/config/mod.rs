@@ -82,6 +82,36 @@ pub struct GeoConfig {
     /// Distance threshold (in meters) used to calculate sparse update eligibility.
     #[serde(default = "default_sparse_distance_threshold")]
     pub sparse_distance_threshold: f64,
+    /// Auto-stop tracking after this many minutes.
+    #[serde(default = "default_stop_after_elapsed_minutes")]
+    pub stop_after_elapsed_minutes: i32,
+    /// Maximum monitored geofences.
+    #[serde(default = "default_max_monitored_geofences")]
+    pub max_monitored_geofences: i32,
+    /// Periodic location interval.
+    #[serde(default = "default_periodic_location_interval")]
+    pub periodic_location_interval: i32,
+    /// Periodic desired accuracy.
+    #[serde(default = "default_periodic_desired_accuracy")]
+    pub periodic_desired_accuracy: i32,
+    /// Sparse max idle seconds.
+    #[serde(default = "default_sparse_max_idle_seconds")]
+    pub sparse_max_idle_seconds: i32,
+    /// Battery budget per hour.
+    #[serde(default)]
+    pub battery_budget_per_hour: f64,
+    /// Enable dead reckoning.
+    #[serde(default)]
+    pub enable_dead_reckoning: bool,
+    /// Dead reckoning activation delay.
+    #[serde(default)]
+    pub dead_reckoning_activation_delay: i32,
+    /// Dead reckoning max duration.
+    #[serde(default)]
+    pub dead_reckoning_max_duration: i32,
+    /// Resolve address.
+    #[serde(default)]
+    pub resolve_address: bool,
 }
 
 fn default_desired_accuracy() -> i32 { 0 } // High
@@ -90,6 +120,11 @@ fn default_stationary_radius() -> f64 { 25.0 }
 fn default_location_timeout() -> i32 { 60 }
 fn default_elasticity_multiplier() -> f64 { 1.0 }
 fn default_sparse_distance_threshold() -> f64 { 50.0 }
+fn default_stop_after_elapsed_minutes() -> i32 { -1 }
+fn default_max_monitored_geofences() -> i32 { -1 }
+fn default_periodic_location_interval() -> i32 { 900 }
+fn default_periodic_desired_accuracy() -> i32 { 1 }
+fn default_sparse_max_idle_seconds() -> i32 { 300 }
 
 impl Default for GeoConfig {
     fn default() -> Self {
@@ -104,6 +139,16 @@ impl Default for GeoConfig {
             enable_timestamp_meta: false,
             enable_sparse_updates: false,
             sparse_distance_threshold: default_sparse_distance_threshold(),
+            stop_after_elapsed_minutes: default_stop_after_elapsed_minutes(),
+            max_monitored_geofences: default_max_monitored_geofences(),
+            periodic_location_interval: default_periodic_location_interval(),
+            periodic_desired_accuracy: default_periodic_desired_accuracy(),
+            sparse_max_idle_seconds: default_sparse_max_idle_seconds(),
+            battery_budget_per_hour: 0.0,
+            enable_dead_reckoning: false,
+            dead_reckoning_activation_delay: 0,
+            dead_reckoning_max_duration: 0,
+            resolve_address: false,
         }
     }
 }
@@ -127,11 +172,67 @@ pub struct MotionConfig {
     /// Accelerometer threshold (G-force) required to wake the device from a stationary state.
     #[serde(default = "default_shake_threshold")]
     pub shake_threshold: f64,
+    /// Is currently moving.
+    #[serde(default)]
+    pub is_moving: bool,
+    /// Activity recognition interval.
+    #[serde(default = "default_activity_recognition_interval")]
+    pub activity_recognition_interval: i32,
+    /// Minimum confidence for activity.
+    #[serde(default = "default_min_activity_confidence")]
+    pub minimum_activity_recognition_confidence: i32,
+    /// Delay before stop detection.
+    #[serde(default)]
+    pub stop_detection_delay: i32,
+    /// Stop on stationary.
+    #[serde(default)]
+    pub stop_on_stationary: bool,
+    /// Stationary radius.
+    #[serde(default = "default_stationary_radius")]
+    pub stationary_radius: f64,
+    /// Use significant changes only.
+    #[serde(default)]
+    pub use_significant_changes_only: bool,
+    /// Still threshold.
+    #[serde(default = "default_still_threshold")]
+    pub still_threshold: f64,
+    /// Still sample count.
+    #[serde(default = "default_still_sample_count")]
+    pub still_sample_count: i32,
+    /// Motion detection mode.
+    #[serde(default)]
+    pub motion_detection_mode: i32,
+    /// Speed moving threshold.
+    #[serde(default = "default_speed_moving_threshold")]
+    pub speed_moving_threshold: f64,
+    /// Speed stationary delay.
+    #[serde(default = "default_speed_stationary_delay")]
+    pub speed_stationary_delay: i32,
+    /// Stationary tracking mode.
+    #[serde(default)]
+    pub stationary_tracking_mode: i32,
+    /// Stationary periodic interval.
+    #[serde(default = "default_stationary_periodic_interval")]
+    pub stationary_periodic_interval: i32,
+    /// Stationary periodic accuracy.
+    #[serde(default)]
+    pub stationary_periodic_accuracy: i32,
+    /// Speed wake confirm count.
+    #[serde(default = "default_speed_wake_confirm_count")]
+    pub speed_wake_confirm_count: i32,
 }
 
 fn default_stop_timeout() -> i32 { 5 }
 fn default_motion_trigger_delay() -> i32 { 0 }
 fn default_shake_threshold() -> f64 { 2.5 }
+fn default_activity_recognition_interval() -> i32 { 1000 }
+fn default_min_activity_confidence() -> i32 { 75 }
+fn default_still_threshold() -> f64 { 0.4 }
+fn default_still_sample_count() -> i32 { 25 }
+fn default_speed_moving_threshold() -> f64 { 1.5 }
+fn default_speed_stationary_delay() -> i32 { 180 }
+fn default_stationary_periodic_interval() -> i32 { 120 }
+fn default_speed_wake_confirm_count() -> i32 { 1 }
 
 impl Default for MotionConfig {
     fn default() -> Self {
@@ -141,6 +242,22 @@ impl Default for MotionConfig {
             disable_motion_activity_updates: false,
             disable_stop_detection: false,
             shake_threshold: default_shake_threshold(),
+            is_moving: false,
+            activity_recognition_interval: default_activity_recognition_interval(),
+            minimum_activity_recognition_confidence: default_min_activity_confidence(),
+            stop_detection_delay: 0,
+            stop_on_stationary: false,
+            stationary_radius: default_stationary_radius(),
+            use_significant_changes_only: false,
+            still_threshold: default_still_threshold(),
+            still_sample_count: default_still_sample_count(),
+            motion_detection_mode: 0,
+            speed_moving_threshold: default_speed_moving_threshold(),
+            speed_stationary_delay: default_speed_stationary_delay(),
+            stationary_tracking_mode: 0,
+            stationary_periodic_interval: default_stationary_periodic_interval(),
+            stationary_periodic_accuracy: 0,
+            speed_wake_confirm_count: default_speed_wake_confirm_count(),
         }
     }
 }

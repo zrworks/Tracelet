@@ -7339,6 +7339,56 @@ data class GeoConfig (
      * Distance threshold (in meters) used to calculate sparse update eligibility.
      */
     var `sparseDistanceThreshold`: kotlin.Double
+    , 
+    /**
+     * Auto-stop tracking after this many minutes.
+     */
+    var `stopAfterElapsedMinutes`: kotlin.Int
+    , 
+    /**
+     * Maximum monitored geofences.
+     */
+    var `maxMonitoredGeofences`: kotlin.Int
+    , 
+    /**
+     * Periodic location interval.
+     */
+    var `periodicLocationInterval`: kotlin.Int
+    , 
+    /**
+     * Periodic desired accuracy.
+     */
+    var `periodicDesiredAccuracy`: kotlin.Int
+    , 
+    /**
+     * Sparse max idle seconds.
+     */
+    var `sparseMaxIdleSeconds`: kotlin.Int
+    , 
+    /**
+     * Battery budget per hour.
+     */
+    var `batteryBudgetPerHour`: kotlin.Double
+    , 
+    /**
+     * Enable dead reckoning.
+     */
+    var `enableDeadReckoning`: kotlin.Boolean
+    , 
+    /**
+     * Dead reckoning activation delay.
+     */
+    var `deadReckoningActivationDelay`: kotlin.Int
+    , 
+    /**
+     * Dead reckoning max duration.
+     */
+    var `deadReckoningMaxDuration`: kotlin.Int
+    , 
+    /**
+     * Resolve address.
+     */
+    var `resolveAddress`: kotlin.Boolean
     
 ){
     
@@ -7365,6 +7415,16 @@ public object FfiConverterTypeGeoConfig: FfiConverterRustBuffer<GeoConfig> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterDouble.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
         )
     }
 
@@ -7378,7 +7438,17 @@ public object FfiConverterTypeGeoConfig: FfiConverterRustBuffer<GeoConfig> {
             FfiConverterBoolean.allocationSize(value.`enableAdaptiveMode`) +
             FfiConverterBoolean.allocationSize(value.`enableTimestampMeta`) +
             FfiConverterBoolean.allocationSize(value.`enableSparseUpdates`) +
-            FfiConverterDouble.allocationSize(value.`sparseDistanceThreshold`)
+            FfiConverterDouble.allocationSize(value.`sparseDistanceThreshold`) +
+            FfiConverterInt.allocationSize(value.`stopAfterElapsedMinutes`) +
+            FfiConverterInt.allocationSize(value.`maxMonitoredGeofences`) +
+            FfiConverterInt.allocationSize(value.`periodicLocationInterval`) +
+            FfiConverterInt.allocationSize(value.`periodicDesiredAccuracy`) +
+            FfiConverterInt.allocationSize(value.`sparseMaxIdleSeconds`) +
+            FfiConverterDouble.allocationSize(value.`batteryBudgetPerHour`) +
+            FfiConverterBoolean.allocationSize(value.`enableDeadReckoning`) +
+            FfiConverterInt.allocationSize(value.`deadReckoningActivationDelay`) +
+            FfiConverterInt.allocationSize(value.`deadReckoningMaxDuration`) +
+            FfiConverterBoolean.allocationSize(value.`resolveAddress`)
     )
 
     override fun write(value: GeoConfig, buf: ByteBuffer) {
@@ -7392,6 +7462,16 @@ public object FfiConverterTypeGeoConfig: FfiConverterRustBuffer<GeoConfig> {
             FfiConverterBoolean.write(value.`enableTimestampMeta`, buf)
             FfiConverterBoolean.write(value.`enableSparseUpdates`, buf)
             FfiConverterDouble.write(value.`sparseDistanceThreshold`, buf)
+            FfiConverterInt.write(value.`stopAfterElapsedMinutes`, buf)
+            FfiConverterInt.write(value.`maxMonitoredGeofences`, buf)
+            FfiConverterInt.write(value.`periodicLocationInterval`, buf)
+            FfiConverterInt.write(value.`periodicDesiredAccuracy`, buf)
+            FfiConverterInt.write(value.`sparseMaxIdleSeconds`, buf)
+            FfiConverterDouble.write(value.`batteryBudgetPerHour`, buf)
+            FfiConverterBoolean.write(value.`enableDeadReckoning`, buf)
+            FfiConverterInt.write(value.`deadReckoningActivationDelay`, buf)
+            FfiConverterInt.write(value.`deadReckoningMaxDuration`, buf)
+            FfiConverterBoolean.write(value.`resolveAddress`, buf)
     }
 }
 
@@ -8039,6 +8119,86 @@ data class MotionConfig (
      * Accelerometer threshold (G-force) required to wake the device from a stationary state.
      */
     var `shakeThreshold`: kotlin.Double
+    , 
+    /**
+     * Is currently moving.
+     */
+    var `isMoving`: kotlin.Boolean
+    , 
+    /**
+     * Activity recognition interval.
+     */
+    var `activityRecognitionInterval`: kotlin.Int
+    , 
+    /**
+     * Minimum confidence for activity.
+     */
+    var `minimumActivityRecognitionConfidence`: kotlin.Int
+    , 
+    /**
+     * Delay before stop detection.
+     */
+    var `stopDetectionDelay`: kotlin.Int
+    , 
+    /**
+     * Stop on stationary.
+     */
+    var `stopOnStationary`: kotlin.Boolean
+    , 
+    /**
+     * Stationary radius.
+     */
+    var `stationaryRadius`: kotlin.Double
+    , 
+    /**
+     * Use significant changes only.
+     */
+    var `useSignificantChangesOnly`: kotlin.Boolean
+    , 
+    /**
+     * Still threshold.
+     */
+    var `stillThreshold`: kotlin.Double
+    , 
+    /**
+     * Still sample count.
+     */
+    var `stillSampleCount`: kotlin.Int
+    , 
+    /**
+     * Motion detection mode.
+     */
+    var `motionDetectionMode`: kotlin.Int
+    , 
+    /**
+     * Speed moving threshold.
+     */
+    var `speedMovingThreshold`: kotlin.Double
+    , 
+    /**
+     * Speed stationary delay.
+     */
+    var `speedStationaryDelay`: kotlin.Int
+    , 
+    /**
+     * Stationary tracking mode.
+     */
+    var `stationaryTrackingMode`: kotlin.Int
+    , 
+    /**
+     * Stationary periodic interval.
+     */
+    var `stationaryPeriodicInterval`: kotlin.Int
+    , 
+    /**
+     * Stationary periodic accuracy.
+     */
+    var `stationaryPeriodicAccuracy`: kotlin.Int
+    , 
+    /**
+     * Speed wake confirm count.
+     */
+    var `speedWakeConfirmCount`: kotlin.Int
     
 ){
     
@@ -8060,6 +8220,22 @@ public object FfiConverterTypeMotionConfig: FfiConverterRustBuffer<MotionConfig>
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
         )
     }
 
@@ -8068,7 +8244,23 @@ public object FfiConverterTypeMotionConfig: FfiConverterRustBuffer<MotionConfig>
             FfiConverterInt.allocationSize(value.`motionTriggerDelay`) +
             FfiConverterBoolean.allocationSize(value.`disableMotionActivityUpdates`) +
             FfiConverterBoolean.allocationSize(value.`disableStopDetection`) +
-            FfiConverterDouble.allocationSize(value.`shakeThreshold`)
+            FfiConverterDouble.allocationSize(value.`shakeThreshold`) +
+            FfiConverterBoolean.allocationSize(value.`isMoving`) +
+            FfiConverterInt.allocationSize(value.`activityRecognitionInterval`) +
+            FfiConverterInt.allocationSize(value.`minimumActivityRecognitionConfidence`) +
+            FfiConverterInt.allocationSize(value.`stopDetectionDelay`) +
+            FfiConverterBoolean.allocationSize(value.`stopOnStationary`) +
+            FfiConverterDouble.allocationSize(value.`stationaryRadius`) +
+            FfiConverterBoolean.allocationSize(value.`useSignificantChangesOnly`) +
+            FfiConverterDouble.allocationSize(value.`stillThreshold`) +
+            FfiConverterInt.allocationSize(value.`stillSampleCount`) +
+            FfiConverterInt.allocationSize(value.`motionDetectionMode`) +
+            FfiConverterDouble.allocationSize(value.`speedMovingThreshold`) +
+            FfiConverterInt.allocationSize(value.`speedStationaryDelay`) +
+            FfiConverterInt.allocationSize(value.`stationaryTrackingMode`) +
+            FfiConverterInt.allocationSize(value.`stationaryPeriodicInterval`) +
+            FfiConverterInt.allocationSize(value.`stationaryPeriodicAccuracy`) +
+            FfiConverterInt.allocationSize(value.`speedWakeConfirmCount`)
     )
 
     override fun write(value: MotionConfig, buf: ByteBuffer) {
@@ -8077,6 +8269,22 @@ public object FfiConverterTypeMotionConfig: FfiConverterRustBuffer<MotionConfig>
             FfiConverterBoolean.write(value.`disableMotionActivityUpdates`, buf)
             FfiConverterBoolean.write(value.`disableStopDetection`, buf)
             FfiConverterDouble.write(value.`shakeThreshold`, buf)
+            FfiConverterBoolean.write(value.`isMoving`, buf)
+            FfiConverterInt.write(value.`activityRecognitionInterval`, buf)
+            FfiConverterInt.write(value.`minimumActivityRecognitionConfidence`, buf)
+            FfiConverterInt.write(value.`stopDetectionDelay`, buf)
+            FfiConverterBoolean.write(value.`stopOnStationary`, buf)
+            FfiConverterDouble.write(value.`stationaryRadius`, buf)
+            FfiConverterBoolean.write(value.`useSignificantChangesOnly`, buf)
+            FfiConverterDouble.write(value.`stillThreshold`, buf)
+            FfiConverterInt.write(value.`stillSampleCount`, buf)
+            FfiConverterInt.write(value.`motionDetectionMode`, buf)
+            FfiConverterDouble.write(value.`speedMovingThreshold`, buf)
+            FfiConverterInt.write(value.`speedStationaryDelay`, buf)
+            FfiConverterInt.write(value.`stationaryTrackingMode`, buf)
+            FfiConverterInt.write(value.`stationaryPeriodicInterval`, buf)
+            FfiConverterInt.write(value.`stationaryPeriodicAccuracy`, buf)
+            FfiConverterInt.write(value.`speedWakeConfirmCount`, buf)
     }
 }
 

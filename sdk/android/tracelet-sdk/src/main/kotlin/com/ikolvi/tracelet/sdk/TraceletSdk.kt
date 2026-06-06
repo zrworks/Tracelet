@@ -255,10 +255,10 @@ class TraceletSdk private constructor(private val context: Context) {
             rustDatabase = db
             rustEngineState = state
             rustEventDispatcher = dispatcher
-            android.util.Log.i("Tracelet", "Rust Core initialized: $dbPath")
+            logger.info("Rust Core initialized: $dbPath")
             syncConfigToRustFlat()
         } catch (e: Exception) {
-            android.util.Log.e("Tracelet", "Failed to initialize Rust Core: ${e.message}")
+            logger.error("Failed to initialize Rust Core: ${e.message}")
         }
 
         // Enterprise
@@ -1820,7 +1820,7 @@ class TraceletSdk private constructor(private val context: Context) {
         heartbeatRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
-                android.util.Log.d("Tracelet", "Heartbeat fired")
+                logger.debug("Heartbeat fired")
                 val cached = locationEngine.getLastGpsLocation()
                 if (cached != null) {
                     // Build enriched location map with UUID, battery, etc.
@@ -1840,11 +1840,11 @@ class TraceletSdk private constructor(private val context: Context) {
 
                     // Always send the event so Dart/Flutter UI stays alive
                     eventSender.sendHeartbeat(mapOf("location" to locationData))
-                    android.util.Log.d("Tracelet",
+                    logger.debug(
                         "Heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, accuracy=${cached.accuracy}m")
                 } else {
                     if (configManager.isDebug()) {
-                        android.util.Log.d("Tracelet", "Heartbeat: no cached location, skipping")
+                        logger.debug("Heartbeat: no cached location, skipping")
                     }
                 }
                 mainHandler.postDelayed(this, intervalSeconds * 1000L)
@@ -2071,14 +2071,40 @@ class TraceletSdk private constructor(private val context: Context) {
                     enableAdaptiveMode = configManager.getEnableAdaptiveMode(),
                     enableTimestampMeta = configManager.getEnableTimestampMeta(),
                     enableSparseUpdates = configManager.getEnableSparseUpdates(),
-                    sparseDistanceThreshold = configManager.getSparseDistanceThreshold()
+                    sparseDistanceThreshold = configManager.getSparseDistanceThreshold(),
+                    stopAfterElapsedMinutes = configManager.getStopAfterElapsedMinutes(),
+                    maxMonitoredGeofences = configManager.getMaxMonitoredGeofences(),
+                    periodicLocationInterval = configManager.getPeriodicLocationInterval(),
+                    periodicDesiredAccuracy = configManager.getPeriodicDesiredAccuracy(),
+                    sparseMaxIdleSeconds = configManager.getSparseMaxIdleSeconds(),
+                    batteryBudgetPerHour = configManager.getBatteryBudgetPerHour(),
+                    enableDeadReckoning = configManager.getEnableDeadReckoning(),
+                    deadReckoningActivationDelay = configManager.getDeadReckoningActivationDelay(),
+                    deadReckoningMaxDuration = configManager.getDeadReckoningMaxDuration(),
+                    resolveAddress = configManager.getResolveAddress()
                 ),
                 motion = uniffi.tracelet_core.MotionConfig(
                     stopTimeout = configManager.getStopTimeout(),
                     motionTriggerDelay = configManager.getMotionTriggerDelay(),
                     disableMotionActivityUpdates = configManager.isMotionActivityUpdatesDisabled(),
                     disableStopDetection = configManager.getDisableStopDetection(),
-                    shakeThreshold = configManager.getShakeThreshold()
+                    shakeThreshold = configManager.getShakeThreshold(),
+                    isMoving = configManager.getIsMoving(),
+                    activityRecognitionInterval = configManager.getActivityRecognitionInterval(),
+                    minimumActivityRecognitionConfidence = configManager.getMinimumActivityRecognitionConfidence(),
+                    stopDetectionDelay = configManager.getStopDetectionDelay(),
+                    stopOnStationary = configManager.getStopOnStationary(),
+                    stationaryRadius = configManager.getStationaryRadius(),
+                    useSignificantChangesOnly = false,
+                    stillThreshold = configManager.getStillThreshold(),
+                    stillSampleCount = configManager.getStillSampleCount(),
+                    motionDetectionMode = configManager.getMotionDetectionMode().value,
+                    speedMovingThreshold = configManager.getSpeedMovingThreshold(),
+                    speedStationaryDelay = configManager.getSpeedStationaryDelay(),
+                    stationaryTrackingMode = configManager.getStationaryTrackingMode().value,
+                    stationaryPeriodicInterval = configManager.getStationaryPeriodicInterval(),
+                    stationaryPeriodicAccuracy = configManager.getStationaryPeriodicAccuracy(),
+                    speedWakeConfirmCount = configManager.getSpeedWakeConfirmCount()
                 ),
                 http = uniffi.tracelet_core.HttpConfig(
                     url = configManager.getHttpUrl(),
@@ -2120,9 +2146,9 @@ class TraceletSdk private constructor(private val context: Context) {
                 )
             )
             state.updateConfig(newConfig)
-            android.util.Log.d("Tracelet", "Successfully synchronized ConfigManager state to Rust Core.")
+            logger.info("Successfully synchronized ConfigManager state to Rust Core.")
         } catch (e: Exception) {
-            android.util.Log.e("Tracelet", "Failed to sync config to Rust Core: ${e.message}")
+            logger.error("Failed to sync config to Rust Core: ${e.message}")
         }
     }
 }

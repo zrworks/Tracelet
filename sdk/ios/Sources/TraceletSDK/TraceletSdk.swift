@@ -48,6 +48,8 @@ public final class TraceletSdk {
         }
     }
 
+    public var dartSyncInterceptor: DartSyncInterceptor? = nil
+
     // MARK: - Delegate
 
     /// Delegate that receives all tracking events (location, motion, geofence, etc.).

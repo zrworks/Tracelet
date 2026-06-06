@@ -8,6 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, TraceletSdk.SyncProvider {
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -39,6 +42,12 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
             }
 
             try {
+                // 1. Request Fresh Headers
+                val interceptor = sdk.dartSyncInterceptor
+                if (interceptor?.requestFreshHeaders() == true) {
+                    sdk.logger.debug("NativeSyncProvider: Headers refreshed via Dart interceptor")
+                }
+
                 val coreHttp = state.getConfig().http
                 sdk.logger.debug("NativeSyncProvider: coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
                 if (coreHttp.url.isNullOrEmpty() || !coreHttp.autoSync) return
@@ -53,6 +62,52 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 ))
                 sdk.logger.debug("NativeSyncProvider: Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
+
+                // Prepare maps for Dart interceptor
+                val recordsMap = records.map {
+                    mapOf(
+                        "uuid" to it.uuid,
+                        "timestamp" to it.timestamp,
+                        "latitude" to it.latitude,
+                        "longitude" to it.longitude,
+                        "accuracy" to it.accuracy,
+                        "speed" to it.speed,
+                        "heading" to it.heading,
+                        "altitude" to it.altitude,
+                        "isMock" to it.isMock,
+                        "activity" to it.activity,
+                        "routeContext" to it.routeContext
+                    )
+                }
+
+                val customBody = interceptor?.requestSyncBody(recordsMap)
+
+                if (customBody != null) {
+                    val success = executeFallbackHttpSync(coreHttp, customBody, interceptor)
+                    if (success) {
+                        records.lastOrNull()?.id?.let { lastId ->
+                            db.clearLocationsUpTo(lastId)
+                            sdk.logger.info("NativeSyncProvider: Synced and cleared ${records.size} locations via custom body fallback.")
+                        }
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to true,
+                            "status" to 200,
+                            "responseText" to "Synced ${records.size} locations via custom body",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                    } else {
+                        sdk.logger.error("NativeSyncProvider: Custom body sync failed")
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to false,
+                            "status" to 0,
+                            "responseText" to "Custom body sync failed",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                    }
+                    return
+                }
 
                 val syncConfig = uniffi.tracelet_sync.SyncHttpConfig(
                     url = coreHttp.url,
@@ -154,6 +209,102 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 routeContext = it.routeContext
             )
         }
+
+        val interceptor = sdk.dartSyncInterceptor
+        android.util.Log.d("TraceletSync", "Interceptor is $interceptor")
+        if (interceptor != null) {
+            val recordMaps = records.map { record ->
+                mapOf(
+                    "id" to record.id,
+                    "uuid" to record.uuid,
+                    "timestamp" to record.timestamp,
+                    "latitude" to record.latitude,
+                    "longitude" to record.longitude,
+                    "accuracy" to record.accuracy,
+                    "speed" to record.speed,
+                    "heading" to record.heading,
+                    "altitude" to record.altitude,
+                    "isMock" to record.isMock,
+                    "activity" to record.activity,
+                    "routeContext" to record.routeContext
+                )
+            }
+            val customBody = interceptor.requestSyncBody(recordMaps)
+            android.util.Log.d("TraceletSync", "Custom body is $customBody")
+            if (customBody != null) {
+                return kotlinx.coroutines.runBlocking {
+                    val success = executeFallbackHttpSync(config, customBody, interceptor)
+                    android.util.Log.d("TraceletSync", "Fallback HTTP success: $success")
+                    if (success) records.size.toLong() else 0L
+                }
+            }
+        }
+
         return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+    }
+
+    private suspend fun executeFallbackHttpSync(
+        coreHttp: uniffi.tracelet_core.HttpConfig,
+        customBody: String,
+        interceptor: DartSyncInterceptor?
+    ): Boolean {
+        var currentHeaders = coreHttp.headers
+        val maxRetries = coreHttp.maxRetries.toInt()
+        
+        for (attempt in 0..maxRetries) {
+            try {
+                val url = URL(coreHttp.url)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = if (coreHttp.method.toInt() == 1) "PUT" else "POST"
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.connectTimeout = 15000
+                conn.readTimeout = 15000
+
+                if (currentHeaders.isNotEmpty()) {
+                    try {
+                        val headersMap = JSONObject(currentHeaders)
+                        val iter = headersMap.keys()
+                        while (iter.hasNext()) {
+                            val key = iter.next()
+                            conn.setRequestProperty(key, headersMap.getString(key))
+                        }
+                    } catch (e: Exception) {
+                        sdk.logger.error("Failed to parse HTTP headers: ${e.message}")
+                    }
+                }
+
+                conn.outputStream.use { os ->
+                    val input = customBody.toByteArray(Charsets.UTF_8)
+                    os.write(input, 0, input.size)
+                }
+
+                val status = conn.responseCode
+                conn.disconnect()
+                
+                if (status in 200..299) {
+                    return true
+                } else if (status == 401 && interceptor != null) {
+                    if (interceptor.requestTokenRefresh()) {
+                        val newConfig = sdk.rustEngineState?.getConfig()?.http
+                        if (newConfig != null) {
+                            currentHeaders = newConfig.headers
+                        }
+                        continue 
+                    }
+                }
+                
+                if (attempt < maxRetries) {
+                    kotlinx.coroutines.delay(1000L * (attempt + 1))
+                }
+            } catch (e: Exception) {
+                sdk.logger.error("HTTP Sync failed: ${e.message}")
+                android.util.Log.e("TraceletSync", "executeFallbackHttpSync Exception", e)
+                if (attempt < maxRetries) {
+                    kotlinx.coroutines.delay(1000L * (attempt + 1))
+                }
+            }
+        }
+        return false
     }
 }

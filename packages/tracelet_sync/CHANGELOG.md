@@ -1,3 +1,7 @@
+## 3.2.6
+
+**PERF**: Optimize database timestamp queries for O(log N) fast filtering and resolve precision bugs (Issue #119).
+
 ## 3.2.4
 
 * **FIX**(ios): safely resolve dynamic symbols when `use_frameworks! :linkage => :dynamic` is used.

@@ -12,6 +12,7 @@ import 'package:web/web.dart' as web;
 ///
 /// Uploads persisted locations to the configured server endpoint.
 class WebHttpEngine {
+  /// Documentation for WebHttpEngine.
   WebHttpEngine(this._events, this._storage);
 
   final WebEventDispatcher _events;
@@ -33,18 +34,22 @@ class WebHttpEngine {
   Map<String, String> _dynamicHeaders = <String, String>{};
   Map<String, Object?>? _routeContext;
 
+  /// Documentation for setDynamicHeaders.
   void setDynamicHeaders(Map<String, String> headers) {
     _dynamicHeaders = headers;
   }
 
+  /// Documentation for setRouteContext.
   void setRouteContext(Map<String, Object?> context) {
     _routeContext = context;
   }
 
+  /// Documentation for clearRouteContext.
   void clearRouteContext() {
     _routeContext = null;
   }
 
+  /// Documentation for applyConfig.
   void applyConfig(Map<String, Object?> config) {
     final http = config['http'];
     if (http is Map) {
@@ -104,6 +109,7 @@ class WebHttpEngine {
   // Sync
   // ---------------------------------------------------------------------------
 
+  /// Documentation for Future<List<Map<String,.
   Future<List<Map<String, Object?>>> sync() async {
     if (_url.isEmpty) {
       _events.log('warning', '[HTTP] No URL configured for sync');

@@ -9,6 +9,7 @@ class WebPrivacyEngine {
   final List<Map<String, Object?>> _zones = [];
   bool _enabled = false;
 
+  /// Documentation for applyConfig.
   void applyConfig(Map<String, Object?> config) {
     final privacyZone = config['privacyZone'];
     if (privacyZone is Map) {
@@ -16,6 +17,7 @@ class WebPrivacyEngine {
     }
   }
 
+  /// Documentation for Future<bool>.
   Future<bool> addPrivacyZone(Map<String, Object?> zone) async {
     final identifier = zone['identifier'] as String?;
     if (identifier == null) return false;
@@ -26,6 +28,7 @@ class WebPrivacyEngine {
     return true;
   }
 
+  /// Documentation for Future<bool>.
   Future<bool> addPrivacyZones(List<Map<String, Object?>> zones) async {
     for (final zone in zones) {
       await addPrivacyZone(zone);
@@ -33,17 +36,20 @@ class WebPrivacyEngine {
     return true;
   }
 
+  /// Documentation for Future<bool>.
   Future<bool> removePrivacyZone(String identifier) async {
     final before = _zones.length;
     _zones.removeWhere((z) => z['identifier'] == identifier);
     return _zones.length < before;
   }
 
+  /// Documentation for Future<bool>.
   Future<bool> removePrivacyZones() async {
     _zones.clear();
     return true;
   }
 
+  /// Documentation for Future<List<Map<String,.
   Future<List<Map<String, Object?>>> getPrivacyZones() async {
     return List<Map<String, Object?>>.from(_zones);
   }

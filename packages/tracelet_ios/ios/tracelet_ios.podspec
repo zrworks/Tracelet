@@ -27,12 +27,14 @@ execution for iOS.
   s.pod_target_xcconfig = { 
     'DEFINES_MODULE' => 'YES', 
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
-    'DEAD_CODE_STRIPPING' => 'NO'
+    'OTHER_LDFLAGS' => '$(inherited) -Wl,-multiply_defined,suppress -Wl,-ld_classic',
+    'STRIP_STYLE' => 'non-global'
   }
   s.user_target_xcconfig = { 
     'OTHER_LDFLAGS' => '$(inherited) -Wl,-multiply_defined,suppress -Wl,-ld_classic',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
-    'DEAD_CODE_STRIPPING' => 'NO'
+    'DEAD_CODE_STRIPPING' => 'NO',
+    'STRIP_STYLE' => 'non-global'
   }
   s.swift_version = '5.0'
 

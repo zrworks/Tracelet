@@ -287,7 +287,7 @@ public final class TraceletSdk {
         
         smartMotionCoordinator.syncCurrentMode()
 
-        let shouldForceMoving = !isResume && stateManager.isMoving
+        let shouldForceMoving = stateManager.isMoving
 
         if !isResume && wasTracking {
             _ = changePace(shouldForceMoving)
@@ -1812,9 +1812,9 @@ public final class TraceletSdk {
             }
             let motionMode = configManager.getMotionDetectionMode()
             if motionMode == .speed {
-                startSpeedMotionManager(forceMoving: true)
+                startSpeedMotionManager(forceMoving: stateManager.isMoving)
             } else if motionMode == .smart {
-                startSpeedMotionManager(forceMoving: true)
+                startSpeedMotionManager(forceMoving: stateManager.isMoving)
                 motionDetector.start()
             } else {
                 motionDetector.start()

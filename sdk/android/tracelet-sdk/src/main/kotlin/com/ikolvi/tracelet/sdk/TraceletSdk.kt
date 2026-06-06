@@ -604,7 +604,7 @@ class TraceletSdk private constructor(private val context: Context) {
             stateManager.isMoving = configManager.getIsMoving()
         }
 
-        val shouldForceMoving = !isResume || stateManager.isMoving
+        val shouldForceMoving = stateManager.isMoving
 
         if (!isResume && isTracking) {
             changePace(shouldForceMoving)

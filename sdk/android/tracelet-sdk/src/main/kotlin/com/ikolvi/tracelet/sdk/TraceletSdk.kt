@@ -293,7 +293,7 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // Motion detector
         motionDetector = MotionDetector(
-            context, configManager, stateManager, eventSender
+            context, configManager, stateManager, eventSender, logger
         )
         motionDetector.onMotionStateChanged = { isMoving ->
             handleMotionStateChange(isMoving)

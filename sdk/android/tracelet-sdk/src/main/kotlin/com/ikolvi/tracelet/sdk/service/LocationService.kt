@@ -663,7 +663,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     }
                 } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
                     val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
-                        ctx, config, state, eventSender
+                        ctx, config, state, eventSender, sdk.logger
                     )
                     bootMotionDetector = detector
 
@@ -761,7 +761,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 } else {
                     // Accelerometer / Activity Recognition only
                     val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
-                        ctx, config, state, eventSender
+                        ctx, config, state, eventSender, sdk.logger
                     )
                     bootMotionDetector = detector
                     detector.onMotionStateChanged = { isMoving ->

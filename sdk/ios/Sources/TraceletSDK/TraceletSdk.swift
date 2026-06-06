@@ -1436,7 +1436,8 @@ public final class TraceletSdk {
         motionDetector = MotionDetector(
             configManager: configManager,
             stateManager: stateManager,
-            eventDispatcher: eventSender
+            eventDispatcher: eventSender,
+            logger: logger
         )
         motionDetector.onMotionStateChanged = { [weak self] isMoving in
             self?.handleMotionStateChange(isMoving)

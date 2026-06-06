@@ -448,19 +448,59 @@ data class MotionConfig(
     )
 }
 
-data class GeofenceConfig(val geofenceProximityRadius: Int = 1000) {
-    companion object { fun fromMap(m: Map<String, Any?>) = GeofenceConfig(geofenceProximityRadius = (m["geofenceProximityRadius"] as? Number)?.toInt() ?: 1000) }
-    fun toMap(): Map<String, Any?> = mapOf("geofenceProximityRadius" to geofenceProximityRadius)
+data class GeofenceConfig(
+    val geofenceModeHighAccuracy: Boolean = false,
+    val geofenceInitialTriggerEntry: Boolean = true,
+    val geofenceInitialTrigger: Boolean = true,
+    val geofenceProximityRadius: Int = 1000
+) {
+    companion object { 
+        fun fromMap(m: Map<String, Any?>) = GeofenceConfig(
+            geofenceModeHighAccuracy = m["geofenceModeHighAccuracy"] as? Boolean ?: false,
+            geofenceInitialTriggerEntry = m["geofenceInitialTriggerEntry"] as? Boolean ?: true,
+            geofenceInitialTrigger = m["geofenceInitialTrigger"] as? Boolean ?: true,
+            geofenceProximityRadius = (m["geofenceProximityRadius"] as? Number)?.toInt() ?: 1000
+        )
+    }
+    fun toMap(): Map<String, Any?> = mapOf(
+        "geofenceModeHighAccuracy" to geofenceModeHighAccuracy, "geofenceInitialTriggerEntry" to geofenceInitialTriggerEntry,
+        "geofenceInitialTrigger" to geofenceInitialTrigger, "geofenceProximityRadius" to geofenceProximityRadius
+    )
 }
 
-data class PersistenceConfig(val maxDaysToPersist: Int = -1) {
-    companion object { fun fromMap(m: Map<String, Any?>) = PersistenceConfig(maxDaysToPersist = (m["maxDaysToPersist"] as? Number)?.toInt() ?: -1) }
-    fun toMap(): Map<String, Any?> = mapOf("maxDaysToPersist" to maxDaysToPersist)
+data class PersistenceConfig(
+    val maxDaysToPersist: Int = 1,
+    val maxRecordsToPersist: Int = -1,
+    val persistMode: PersistMode = PersistMode.ALL,
+    val disableProviderChangeRecord: Boolean = false
+) {
+    companion object { 
+        fun fromMap(m: Map<String, Any?>) = PersistenceConfig(
+            maxDaysToPersist = (m["maxDaysToPersist"] as? Number)?.toInt() ?: 1,
+            maxRecordsToPersist = (m["maxRecordsToPersist"] as? Number)?.toInt() ?: -1,
+            persistMode = PersistMode.fromValue((m["persistMode"] as? Number)?.toInt() ?: 0),
+            disableProviderChangeRecord = m["disableProviderChangeRecord"] as? Boolean ?: false
+        )
+    }
+    fun toMap(): Map<String, Any?> = mapOf(
+        "maxDaysToPersist" to maxDaysToPersist, "maxRecordsToPersist" to maxRecordsToPersist,
+        "persistMode" to persistMode.value, "disableProviderChangeRecord" to disableProviderChangeRecord
+    )
 }
 
-data class AuditConfig(val enabled: Boolean = false) {
-    companion object { fun fromMap(m: Map<String, Any?>) = AuditConfig(enabled = m["enabled"] as? Boolean ?: false) }
-    fun toMap(): Map<String, Any?> = mapOf("enabled" to enabled)
+data class AuditConfig(
+    val enabled: Boolean = false,
+    val hashAlgorithm: HashAlgorithm = HashAlgorithm.SHA256,
+    val includeExtrasInHash: Boolean = false
+) {
+    companion object { 
+        fun fromMap(m: Map<String, Any?>) = AuditConfig(
+            enabled = m["enabled"] as? Boolean ?: false,
+            hashAlgorithm = HashAlgorithm.fromValue((m["hashAlgorithm"] as? Number)?.toInt() ?: 0),
+            includeExtrasInHash = m["includeExtrasInHash"] as? Boolean ?: false
+        )
+    }
+    fun toMap(): Map<String, Any?> = mapOf("enabled" to enabled, "hashAlgorithm" to hashAlgorithm.value, "includeExtrasInHash" to includeExtrasInHash)
 }
 
 data class PrivacyZoneConfig(val enabled: Boolean = false) {
@@ -468,12 +508,30 @@ data class PrivacyZoneConfig(val enabled: Boolean = false) {
     fun toMap(): Map<String, Any?> = mapOf("enabled" to enabled)
 }
 
-data class SecurityConfig(val encryptDatabase: Boolean = false) {
-    companion object { fun fromMap(m: Map<String, Any?>) = SecurityConfig(encryptDatabase = m["encryptDatabase"] as? Boolean ?: false) }
-    fun toMap(): Map<String, Any?> = mapOf("encryptDatabase" to encryptDatabase)
+data class SecurityConfig(
+    val encryptDatabase: Boolean = false,
+    val encryptionKey: String? = null
+) {
+    companion object { 
+        fun fromMap(m: Map<String, Any?>) = SecurityConfig(
+            encryptDatabase = m["encryptDatabase"] as? Boolean ?: false,
+            encryptionKey = m["encryptionKey"] as? String
+        )
+    }
+    fun toMap(): Map<String, Any?> = mapOf("encryptDatabase" to encryptDatabase, "encryptionKey" to encryptionKey)
 }
 
-data class AttestationConfig(val enabled: Boolean = false) {
-    companion object { fun fromMap(m: Map<String, Any?>) = AttestationConfig(enabled = m["enabled"] as? Boolean ?: false) }
-    fun toMap(): Map<String, Any?> = mapOf("enabled" to enabled)
+data class AttestationConfig(
+    val enabled: Boolean = false,
+    val refreshInterval: Int = 3600,
+    val verificationUrl: String? = null
+) {
+    companion object { 
+        fun fromMap(m: Map<String, Any?>) = AttestationConfig(
+            enabled = m["enabled"] as? Boolean ?: false,
+            refreshInterval = (m["refreshInterval"] as? Number)?.toInt() ?: 3600,
+            verificationUrl = m["verificationUrl"] as? String
+        )
+    }
+    fun toMap(): Map<String, Any?> = mapOf("enabled" to enabled, "refreshInterval" to refreshInterval, "verificationUrl" to verificationUrl)
 }

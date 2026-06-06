@@ -14,9 +14,9 @@ import android.hardware.TriggerEventListener
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
+import com.ikolvi.tracelet.sdk.util.TraceletLogger
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.wrapper.TraceletActivityRecognitionClient
 import com.ikolvi.tracelet.sdk.wrapper.TraceletActivityTransition
@@ -48,6 +48,7 @@ class MotionDetector(
     private val config: ConfigManager,
     private val state: StateManager,
     var events: TraceletEventSender,
+    private val logger: TraceletLogger,
     private val activityClient: TraceletActivityRecognitionClient = TraceletServices.getInstance(context).getActivityRecognitionClient(context),
 ) {
     private val extractor = TraceletServices.getInstance(context).getEventExtractor()
@@ -164,26 +165,26 @@ class MotionDetector(
      * sensor only — no permissions required.
      */
     fun start() {
-        Log.d(TAG, "start() called — isRunning=$isRunning, isAccelOnlyMode=$isAccelerometerOnlyMode, state.isMoving=${state.isMoving}, isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
+        logger.debug("start() called — isRunning=$isRunning, isAccelOnlyMode=$isAccelerometerOnlyMode, state.isMoving=${state.isMoving}, isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
         if (isRunning) {
-            Log.d(TAG, "start() SKIPPED — already running")
+            logger.debug("start() SKIPPED — already running")
             return
         }
         isRunning = true
         if (isAccelerometerOnlyMode) {
-            Log.d(TAG, "start() → startAccelerometerOnlyMode()")
+            logger.debug("start() → startAccelerometerOnlyMode()")
             startAccelerometerOnlyMode()
         } else {
-            Log.d(TAG, "start() → startFullMode()")
+            logger.debug("start() → startFullMode()")
             startFullMode()
         }
     }
 
     /** Stop all motion detection and clean up resources. */
     fun stop() {
-        Log.d(TAG, "stop() called — isRunning=$isRunning")
+        logger.debug("stop() called — isRunning=$isRunning")
         if (!isRunning) {
-            Log.d(TAG, "stop() SKIPPED — not running")
+            logger.debug("stop() SKIPPED — not running")
             return
         }
         isRunning = false
@@ -191,7 +192,7 @@ class MotionDetector(
         cancelStopTimeout()
         stopAccelerometerMonitoring()
         cancelSignificantMotionListener()
-        Log.d(TAG, "stop() complete")
+        logger.debug("stop() complete")
     }
 
     /**
@@ -209,20 +210,20 @@ class MotionDetector(
      * continuously at the kernel level regardless of isMoving state.
      */
     fun onManualPaceChange(isMoving: Boolean) {
-        Log.d(TAG, "onManualPaceChange($isMoving) called — isRunning=$isRunning, isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}, state.isMoving=${state.isMoving}")
+        logger.debug("onManualPaceChange($isMoving) called — isRunning=$isRunning, isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}, state.isMoving=${state.isMoving}")
         if (isMoving) {
-            Log.d(TAG, "onManualPaceChange: MOVING — stopping stationary sensors, starting stillness monitoring")
+            logger.debug("onManualPaceChange: MOVING — stopping stationary sensors, starting stillness monitoring")
             stopAccelerometerMonitoring()
             cancelSignificantMotionListener()
             cancelStopTimeout()
             startAccelerometerStillnessMonitoring()
         } else {
-            Log.d(TAG, "onManualPaceChange: STATIONARY — stopping stillness monitoring, starting shake+sigMotion")
+            logger.debug("onManualPaceChange: STATIONARY — stopping stillness monitoring, starting shake+sigMotion")
             stopAccelerometerMonitoring()
             cancelStopTimeout()
             startAccelerometerMonitoring()
             startSignificantMotionListener()
-            Log.d(TAG, "onManualPaceChange: DONE — isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
+            logger.debug("onManualPaceChange: DONE — isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
         }
     }
 
@@ -246,15 +247,15 @@ class MotionDetector(
     // =========================================================================
 
     private fun startFullMode() {
-        Log.d(TAG, "startFullMode() — state.isMoving=${state.isMoving}")
+        logger.debug("startFullMode() — state.isMoving=${state.isMoving}")
         registerActivityTransitions()
 
         if (!state.isMoving) {
-            Log.d(TAG, "startFullMode: STATIONARY — starting shake+sigMotion monitoring")
+            logger.debug("startFullMode: STATIONARY — starting shake+sigMotion monitoring")
             startAccelerometerMonitoring()
             startSignificantMotionListener()
         } else {
-            Log.d(TAG, "startFullMode: MOVING — starting stillness monitoring")
+            logger.debug("startFullMode: MOVING — starting stillness monitoring")
             startAccelerometerStillnessMonitoring()
         }
     }
@@ -270,13 +271,13 @@ class MotionDetector(
      * Stationary state: significant-motion trigger + accelerometer shake detect.
      */
     private fun startAccelerometerOnlyMode() {
-        Log.d(TAG, "startAccelerometerOnlyMode() — state.isMoving=${state.isMoving}")
+        logger.debug("startAccelerometerOnlyMode() — state.isMoving=${state.isMoving}")
 
         if (state.isMoving) {
-            Log.d(TAG, "startAccelerometerOnlyMode: MOVING — starting stillness monitoring")
+            logger.debug("startAccelerometerOnlyMode: MOVING — starting stillness monitoring")
             startAccelerometerStillnessMonitoring()
         } else {
-            Log.d(TAG, "startAccelerometerOnlyMode: STATIONARY — starting shake+sigMotion")
+            logger.debug("startAccelerometerOnlyMode: STATIONARY — starting shake+sigMotion")
             startAccelerometerMonitoring()
             startSignificantMotionListener()
         }
@@ -309,10 +310,10 @@ class MotionDetector(
                 request = request,
                 pendingIntent = transitionPendingIntent!!,
                 onSuccess = {
-                    Log.d(TAG, "Activity transition updates registered with static receiver")
+                    logger.debug("Activity transition updates registered with static receiver")
                 },
                 onFailure = { e ->
-                    Log.w(TAG, "Failed to register activity transitions: ${e.message}")
+                    logger.warning("Failed to register activity transitions: ${e.message}")
                     // Fallback: start accelerometer-only if AT API fails
                     if (!isMonitoringAccelerometer && !state.isMoving) {
                         startAccelerometerMonitoring()
@@ -320,7 +321,7 @@ class MotionDetector(
                 }
             )
         } catch (e: SecurityException) {
-            Log.w(TAG, "ACTIVITY_RECOGNITION permission not granted — " +
+            logger.warning("ACTIVITY_RECOGNITION permission not granted — " +
                     "falling back to accelerometer-only: ${e.message}")
             // Graceful degradation: use accelerometer instead
             startAccelerometerOnlyMode()
@@ -333,7 +334,7 @@ class MotionDetector(
                 pendingIntent = pi,
                 onSuccess = { },
                 onFailure = { e ->
-                    Log.w(TAG, "Failed to remove activity transitions: ${e.message}")
+                    logger.warning("Failed to remove activity transitions: ${e.message}")
                 }
             )
         }
@@ -410,15 +411,15 @@ class MotionDetector(
         val timeoutMs = config.getStopTimeout() * 60 * 1000L
         val stopDetectionDelayMs = config.getStopDetectionDelay() * 1000L
         val totalDelayMs = timeoutMs + stopDetectionDelayMs
-        Log.d(TAG, "startStopTimeoutCountdown() — timeoutMs=$timeoutMs, delayMs=$stopDetectionDelayMs, totalMs=$totalDelayMs")
+        logger.debug("startStopTimeoutCountdown() — timeoutMs=$timeoutMs, delayMs=$stopDetectionDelayMs, totalMs=$totalDelayMs")
         if (totalDelayMs <= 0) {
-            Log.d(TAG, "startStopTimeoutCountdown() — totalDelay<=0, immediate declareStationary()")
+            logger.debug("startStopTimeoutCountdown() — totalDelay<=0, immediate declareStationary()")
             declareStationary()
             return
         }
 
         stopTimeoutRunnable = Runnable {
-            Log.d(TAG, "stopTimeout FIRED — declaring stationary")
+            logger.debug("stopTimeout FIRED — declaring stationary")
             declareStationary()
         }
         mainHandler.postDelayed(stopTimeoutRunnable!!, totalDelayMs)
@@ -428,7 +429,7 @@ class MotionDetector(
         val had = stopTimeoutRunnable != null
         stopTimeoutRunnable?.let { mainHandler.removeCallbacks(it) }
         stopTimeoutRunnable = null
-        if (had) Log.d(TAG, "cancelStopTimeout() — cancelled pending timeout")
+        if (had) logger.debug("cancelStopTimeout() — cancelled pending timeout")
     }
 
     // =========================================================================
@@ -436,29 +437,29 @@ class MotionDetector(
     // =========================================================================
 
     private fun declareStationary() {
-        Log.d(TAG, "declareStationary() called — state.isMoving=${state.isMoving}, onMotionStateChanged=${onMotionStateChanged != null}")
+        logger.debug("declareStationary() called — state.isMoving=${state.isMoving}, onMotionStateChanged=${onMotionStateChanged != null}")
         if (!state.isMoving) {
-            Log.d(TAG, "declareStationary() SKIPPED — already stationary")
+            logger.debug("declareStationary() SKIPPED — already stationary")
             return
         }
         state.isMoving = false
-        Log.d(TAG, "declareStationary() → invoking onMotionStateChanged(false)")
+        logger.debug("declareStationary() → invoking onMotionStateChanged(false)")
         onMotionStateChanged?.invoke(false)
 
         if (config.getStopOnStationary()) {
-            Log.d(TAG, "declareStationary() → stopOnStationary=true, invoking onStopRequested")
+            logger.debug("declareStationary() → stopOnStationary=true, invoking onStopRequested")
             onStopRequested?.invoke()
             return
         }
 
-        Log.d(TAG, "declareStationary() → starting shake+sigMotion monitoring for wake-up")
+        logger.debug("declareStationary() → starting shake+sigMotion monitoring for wake-up")
         startAccelerometerMonitoring()
         startSignificantMotionListener()
-        Log.d(TAG, "declareStationary() DONE — isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
+        logger.debug("declareStationary() DONE — isMonitoringAccel=$isMonitoringAccelerometer, sigMotionListener=${significantMotionListener != null}")
     }
 
     private fun declareMoving() {
-        Log.d(TAG, "declareMoving() called — state.isMoving=${state.isMoving}, onMotionStateChanged=${onMotionStateChanged != null}")
+        logger.debug("declareMoving() called — state.isMoving=${state.isMoving}, onMotionStateChanged=${onMotionStateChanged != null}")
         state.isMoving = true
         stopAccelerometerMonitoring()
         cancelSignificantMotionListener()
@@ -466,21 +467,21 @@ class MotionDetector(
 
         val delay = config.getMotionTriggerDelay().toLong()
         if (delay > 0) {
-            Log.d(TAG, "declareMoving() → delayed dispatch (${delay}ms)")
+            logger.debug("declareMoving() → delayed dispatch (${delay}ms)")
             mainHandler.postDelayed({
                 if (state.isMoving) {
-                    Log.d(TAG, "declareMoving() → delayed onMotionStateChanged(true) firing now")
+                    logger.debug("declareMoving() → delayed onMotionStateChanged(true) firing now")
                     onMotionStateChanged?.invoke(true)
                 } else {
-                    Log.d(TAG, "declareMoving() → delayed callback SKIPPED — state.isMoving is now false")
+                    logger.debug("declareMoving() → delayed callback SKIPPED — state.isMoving is now false")
                 }
             }, delay)
         } else {
-            Log.d(TAG, "declareMoving() → invoking onMotionStateChanged(true) immediately")
+            logger.debug("declareMoving() → invoking onMotionStateChanged(true) immediately")
             onMotionStateChanged?.invoke(true)
         }
 
-        Log.d(TAG, "declareMoving() → starting stillness monitoring")
+        logger.debug("declareMoving() → starting stillness monitoring")
         startAccelerometerStillnessMonitoring()
     }
 
@@ -499,28 +500,28 @@ class MotionDetector(
      * which is acceptable for the stationary→moving transition.
      */
     private fun startAccelerometerMonitoring() {
-        Log.d(TAG, "startAccelerometerMonitoring() [SHAKE] called — isMonitoringAccel=$isMonitoringAccelerometer")
+        logger.debug("startAccelerometerMonitoring() [SHAKE] called — isMonitoringAccel=$isMonitoringAccelerometer")
         if (isMonitoringAccelerometer) {
-            Log.w(TAG, "startAccelerometerMonitoring() [SHAKE] SKIPPED — already monitoring!")
+            logger.warning("startAccelerometerMonitoring() [SHAKE] SKIPPED — already monitoring!")
             return
         }
         val sm = obtainSensorManager()
         if (sm == null) {
-            Log.e(TAG, "startAccelerometerMonitoring() [SHAKE] FAILED — SensorManager is null!")
+            logger.error("startAccelerometerMonitoring() [SHAKE] FAILED — SensorManager is null!")
             return
         }
         val accelerometer = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         if (accelerometer == null) {
-            Log.w(TAG, "Accelerometer sensor not available — relying on significant-motion sensor only")
+            logger.warning("Accelerometer sensor not available — relying on significant-motion sensor only")
             startSignificantMotionListener()
             return
         }
 
         // Log sensor details
-        Log.d(TAG, "Accelerometer details: name=${accelerometer.name}, vendor=${accelerometer.vendor}, version=${accelerometer.version}, power=${accelerometer.power}mA, resolution=${accelerometer.resolution}m/s²")
+        logger.debug("Accelerometer details: name=${accelerometer.name}, vendor=${accelerometer.vendor}, version=${accelerometer.version}, power=${accelerometer.power}mA, resolution=${accelerometer.resolution}m/s²")
 
         val shakeThreshold = config.getShakeThreshold()
-        Log.d(TAG, "startAccelerometerMonitoring() [SHAKE] registering listener — shakeThreshold=$shakeThreshold")
+        logger.debug("startAccelerometerMonitoring() [SHAKE] registering listener — shakeThreshold=$shakeThreshold")
         accelerometerListener = object : SensorEventListener {
             private var sampleCount = 0
             private var lastX = 0f
@@ -541,11 +542,11 @@ class MotionDetector(
                 if (x == lastX && y == lastY && z == lastZ) {
                     consecutiveFrozenCount++
                     if (consecutiveFrozenCount == 5 || consecutiveFrozenCount % 10000 == 0) {
-                        Log.w(TAG, "[SHAKE] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
+                        logger.warning("[SHAKE] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
                     }
                 } else {
                     if (consecutiveFrozenCount >= 5) {
-                        Log.d(TAG, "[SHAKE] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
+                        logger.debug("[SHAKE] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
                     }
                     consecutiveFrozenCount = 0
                 }
@@ -563,7 +564,7 @@ class MotionDetector(
                 val isFrozen = consecutiveFrozenCount >= 5
                 val logInterval = if (isFrozen) 5000 else 50
                 if (sampleCount % logInterval == 1) {
-                    Log.d(TAG, "[SHAKE] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, threshold=$shakeThreshold, raw=[$x, $y, $z]")
+                    logger.debug("[SHAKE] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, threshold=$shakeThreshold, raw=[$x, $y, $z]")
                 }
                 // Always reset max mag every 10 samples
                 if (sampleCount % 10 == 0) {
@@ -571,7 +572,7 @@ class MotionDetector(
                 }
 
                 if (absMag > shakeThreshold) {
-                    Log.d(TAG, "[SHAKE] ★★★ SHAKE DETECTED! mag=${String.format("%.3f", magnitude)} > threshold=$shakeThreshold (raw=[$x, $y, $z]) → declareMoving()")
+                    logger.debug("[SHAKE] ★★★ SHAKE DETECTED! mag=${String.format("%.3f", magnitude)} > threshold=$shakeThreshold (raw=[$x, $y, $z]) → declareMoving()")
                     stopAccelerometerMonitoring()
                     declareMoving()
                 }
@@ -586,22 +587,22 @@ class MotionDetector(
             SENSOR_BATCH_LATENCY_US
         )
         isMonitoringAccelerometer = success
-        Log.d(TAG, "startAccelerometerMonitoring() [SHAKE] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")
+        logger.debug("startAccelerometerMonitoring() [SHAKE] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")
         if (!success) {
-            Log.e(TAG, "startAccelerometerMonitoring() [SHAKE] FAILED to register sensor listener!")
+            logger.error("startAccelerometerMonitoring() [SHAKE] FAILED to register sensor listener!")
         }
     }
 
     private fun stopAccelerometerMonitoring() {
-        Log.d(TAG, "stopAccelerometerMonitoring() called — isMonitoringAccel=$isMonitoringAccelerometer")
+        logger.debug("stopAccelerometerMonitoring() called — isMonitoringAccel=$isMonitoringAccelerometer")
         if (!isMonitoringAccelerometer) {
-            Log.d(TAG, "stopAccelerometerMonitoring() SKIPPED — not monitoring")
+            logger.debug("stopAccelerometerMonitoring() SKIPPED — not monitoring")
             return
         }
         accelerometerListener?.let { sensorManager?.unregisterListener(it) }
         accelerometerListener = null
         isMonitoringAccelerometer = false
-        Log.d(TAG, "stopAccelerometerMonitoring() DONE — unregistered")
+        logger.debug("stopAccelerometerMonitoring() DONE — unregistered")
     }
 
     // =========================================================================
@@ -620,34 +621,34 @@ class MotionDetector(
      * inherently tolerant of delayed delivery.
      */
     private fun startAccelerometerStillnessMonitoring() {
-        Log.d(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] called — isMonitoringAccel=$isMonitoringAccelerometer")
+        logger.debug("startAccelerometerStillnessMonitoring() [STILLNESS] called — isMonitoringAccel=$isMonitoringAccelerometer")
         if (isMonitoringAccelerometer) {
-            Log.w(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] SKIPPED — already monitoring!")
+            logger.warning("startAccelerometerStillnessMonitoring() [STILLNESS] SKIPPED — already monitoring!")
             return
         }
         if (config.getDisableStopDetection()) {
-            Log.d(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] SKIPPED — stopDetection disabled")
+            logger.debug("startAccelerometerStillnessMonitoring() [STILLNESS] SKIPPED — stopDetection disabled")
             return
         }
 
         val sm = obtainSensorManager()
         if (sm == null) {
-            Log.e(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] FAILED — SensorManager is null!")
+            logger.error("startAccelerometerStillnessMonitoring() [STILLNESS] FAILED — SensorManager is null!")
             return
         }
         val accelerometer = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         if (accelerometer == null) {
-            Log.w(TAG, "Accelerometer not available — cannot monitor for stillness")
+            logger.warning("Accelerometer not available — cannot monitor for stillness")
             return
         }
         consecutiveStillSamples = 0
 
         // Log sensor details
-        Log.d(TAG, "Accelerometer details (stillness): name=${accelerometer.name}, vendor=${accelerometer.vendor}, version=${accelerometer.version}, power=${accelerometer.power}mA, resolution=${accelerometer.resolution}m/s²")
+        logger.debug("Accelerometer details (stillness): name=${accelerometer.name}, vendor=${accelerometer.vendor}, version=${accelerometer.version}, power=${accelerometer.power}mA, resolution=${accelerometer.resolution}m/s²")
 
         val stillThreshold = config.getStillThreshold()
         val stillCount = config.getStillSampleCount()
-        Log.d(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] registering — stillThreshold=$stillThreshold, stillCount=$stillCount")
+        logger.debug("startAccelerometerStillnessMonitoring() [STILLNESS] registering — stillThreshold=$stillThreshold, stillCount=$stillCount")
 
         accelerometerListener = object : SensorEventListener {
             private var sampleCount = 0
@@ -669,11 +670,11 @@ class MotionDetector(
                 if (x == lastX && y == lastY && z == lastZ) {
                     consecutiveFrozenCount++
                     if (consecutiveFrozenCount == 5 || consecutiveFrozenCount % 10000 == 0) {
-                        Log.w(TAG, "[STILLNESS] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
+                        logger.warning("[STILLNESS] WARNING: Accelerometer values are 100% frozen! consecutiveFrozenCount=$consecutiveFrozenCount, x=$x, y=$y, z=$z. OS background sensor throttling might be active.")
                     }
                 } else {
                     if (consecutiveFrozenCount >= 5) {
-                        Log.d(TAG, "[STILLNESS] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
+                        logger.debug("[STILLNESS] Accelerometer unfrozen after $consecutiveFrozenCount frozen samples.")
                     }
                     consecutiveFrozenCount = 0
                 }
@@ -691,7 +692,7 @@ class MotionDetector(
                 val isFrozen = consecutiveFrozenCount >= 5
                 val logInterval = if (isFrozen) 5000 else 50
                 if (sampleCount % logInterval == 1) {
-                    Log.d(TAG, "[STILLNESS] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, still=$consecutiveStillSamples/$stillCount, raw=[$x, $y, $z]")
+                    logger.debug("[STILLNESS] sample #$sampleCount: current_mag=${String.format("%.3f", magnitude)}, max_mag_last_10=${String.format("%.3f", maxMagLast10)}, still=$consecutiveStillSamples/$stillCount, raw=[$x, $y, $z]")
                 }
                 // Always reset max mag every 10 samples
                 if (sampleCount % 10 == 0) {
@@ -701,13 +702,13 @@ class MotionDetector(
                 if (absMag < stillThreshold) {
                     consecutiveStillSamples++
                     if (consecutiveStillSamples == stillCount) {
-                        Log.d(TAG, "[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
+                        logger.debug("[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
                         stopAccelerometerMonitoring()
                         startStopTimeoutCountdown()
                     }
                 } else {
                     if (consecutiveStillSamples >= stillCount) {
-                        Log.d(TAG, "[STILLNESS] Motion resumed during stop-timeout (mag=${String.format("%.3f", magnitude)} >= threshold=$stillThreshold) → cancelStopTimeout()")
+                        logger.debug("[STILLNESS] Motion resumed during stop-timeout (mag=${String.format("%.3f", magnitude)} >= threshold=$stillThreshold) → cancelStopTimeout()")
                         cancelStopTimeout()
                     }
                     consecutiveStillSamples = 0
@@ -723,9 +724,9 @@ class MotionDetector(
             STILLNESS_BATCH_LATENCY_US
         )
         isMonitoringAccelerometer = success
-        Log.d(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")
+        logger.debug("startAccelerometerStillnessMonitoring() [STILLNESS] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")
         if (!success) {
-            Log.e(TAG, "startAccelerometerStillnessMonitoring() [STILLNESS] FAILED to register sensor listener!")
+            logger.error("startAccelerometerStillnessMonitoring() [STILLNESS] FAILED to register sensor listener!")
         }
     }
 
@@ -747,49 +748,49 @@ class MotionDetector(
      * No permissions required — this is a hardware sensor API.
      */
     private fun startSignificantMotionListener() {
-        Log.d(TAG, "startSignificantMotionListener() called — existing=${significantMotionListener != null}")
+        logger.debug("startSignificantMotionListener() called — existing=${significantMotionListener != null}")
         if (significantMotionListener != null) {
-            Log.d(TAG, "startSignificantMotionListener() SKIPPED — already listening")
+            logger.debug("startSignificantMotionListener() SKIPPED — already listening")
             return
         }
         val sm = obtainSensorManager()
         if (sm == null) {
-            Log.e(TAG, "startSignificantMotionListener() FAILED — SensorManager is null!")
+            logger.error("startSignificantMotionListener() FAILED — SensorManager is null!")
             return
         }
         val sigMotionSensor = sm.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
         if (sigMotionSensor == null) {
-            Log.w(TAG, "startSignificantMotionListener() FAILED — TYPE_SIGNIFICANT_MOTION sensor not available!")
+            logger.warning("startSignificantMotionListener() FAILED — TYPE_SIGNIFICANT_MOTION sensor not available!")
             return
         }
 
         // Log significant motion details
-        Log.d(TAG, "Significant motion details: name=${sigMotionSensor.name}, vendor=${sigMotionSensor.vendor}, version=${sigMotionSensor.version}, power=${sigMotionSensor.power}mA")
+        logger.debug("Significant motion details: name=${sigMotionSensor.name}, vendor=${sigMotionSensor.vendor}, version=${sigMotionSensor.version}, power=${sigMotionSensor.power}mA")
 
         significantMotionListener = object : TriggerEventListener() {
             override fun onTrigger(event: TriggerEvent?) {
-                Log.d(TAG, "★★★ SIGNIFICANT MOTION TRIGGERED! — declaring moving")
+                logger.debug("★★★ SIGNIFICANT MOTION TRIGGERED! — declaring moving")
                 significantMotionListener = null
                 declareMoving()
             }
         }
 
         val success = sm.requestTriggerSensor(significantMotionListener, sigMotionSensor)
-        Log.d(TAG, "startSignificantMotionListener() registered — success=$success, sensor=${sigMotionSensor.name}")
+        logger.debug("startSignificantMotionListener() registered — success=$success, sensor=${sigMotionSensor.name}")
         if (!success) {
-            Log.e(TAG, "startSignificantMotionListener() FAILED to register significant motion sensor!")
+            logger.error("startSignificantMotionListener() FAILED to register significant motion sensor!")
             significantMotionListener = null
         }
     }
 
     private fun cancelSignificantMotionListener() {
-        Log.d(TAG, "cancelSignificantMotionListener() called — existing=${significantMotionListener != null}")
+        logger.debug("cancelSignificantMotionListener() called — existing=${significantMotionListener != null}")
         significantMotionListener?.let { listener ->
             val sm = obtainSensorManager()
             val sensor = sm?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
             if (sm != null && sensor != null) {
                 sm.cancelTriggerSensor(listener, sensor)
-                Log.d(TAG, "cancelSignificantMotionListener() — trigger sensor cancelled")
+                logger.debug("cancelSignificantMotionListener() — trigger sensor cancelled")
             }
         }
         significantMotionListener = null

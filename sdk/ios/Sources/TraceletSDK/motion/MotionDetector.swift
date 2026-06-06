@@ -22,6 +22,7 @@ public final class MotionDetector {
     private let configManager: ConfigManager
     private let stateManager: StateManager
     private let eventDispatcher: TraceletEventSending
+    private let logger: TraceletLogger
 
     // Full mode (permission-required) — lazily initialized so they are
     // never allocated in accelerometer-only mode (I-L1).
@@ -93,10 +94,12 @@ public final class MotionDetector {
 
     public init(configManager: ConfigManager,
          stateManager: StateManager,
-         eventDispatcher: TraceletEventSending) {
+         eventDispatcher: TraceletEventSending,
+         logger: TraceletLogger) {
         self.configManager = configManager
         self.stateManager = stateManager
         self.eventDispatcher = eventDispatcher
+        self.logger = logger
     }
 
     // MARK: - Start / Stop
@@ -139,7 +142,7 @@ public final class MotionDetector {
 
     private func startFullMode() {
         guard CMMotionActivityManager.isActivityAvailable() else {
-            NSLog("[Tracelet] Motion activity not available — falling back to accelerometer-only")
+            logger.debug("Motion activity not available — falling back to accelerometer-only")
             startAccelerometerOnlyMode()
             return
         }
@@ -169,8 +172,8 @@ public final class MotionDetector {
                 guard let self = self, let data = data, error == nil else { return }
                 self.handleAccelerometerData(data)
             }
-            NSLog("[Tracelet] Accelerometer fallback started (threshold=%.3f, samples=%d)",
-                  configManager.getStillThreshold(), configManager.getStillSampleCount())
+            logger.debug(String(format: "Accelerometer fallback started (threshold=%.3f, samples=%d)",
+                  configManager.getStillThreshold(), configManager.getStillSampleCount()))
         }
     }
 
@@ -184,10 +187,10 @@ public final class MotionDetector {
     /// Uses `CMMotionManager.startAccelerometerUpdates()` which does NOT require
     /// `NSMotionUsageDescription` — it accesses raw hardware sensor data only.
     private func startAccelerometerOnlyMode() {
-        NSLog("[Tracelet] Starting accelerometer-only mode (no Motion & Fitness permission)")
+        logger.debug("Starting accelerometer-only mode (no Motion & Fitness permission)")
 
         guard motionManager.isAccelerometerAvailable else {
-            NSLog("[Tracelet] Accelerometer not available on this device")
+            logger.debug("Accelerometer not available on this device")
             return
         }
 
@@ -221,14 +224,14 @@ public final class MotionDetector {
                 consecutiveStillSamples += 1
                 if consecutiveStillSamples == configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
-                    NSLog("[Tracelet-Motion] Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
-                          consecutiveStillSamples)
+                    logger.debug(String(format: "Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
+                          consecutiveStillSamples))
                     // Do NOT stop accelerometer updates so we can abort if motion resumes!
                     startStopTimeoutCountdown()
                 }
             } else {
                 if consecutiveStillSamples >= configManager.getStillSampleCount() {
-                    NSLog("[Tracelet-Motion] Accelerometer broke stillness — aborting stop-timeout countdown")
+                    logger.debug("Accelerometer broke stillness — aborting stop-timeout countdown")
                     handleMovingDetected()
                 }
                 consecutiveStillSamples = 0
@@ -236,7 +239,7 @@ public final class MotionDetector {
         } else {
             // Currently stationary — detect shake/movement
             if abs(magnitude) > configManager.getShakeThreshold() {
-                NSLog("[Tracelet-Motion] Accelerometer detected SHAKE (magnitude: %.2f), triggering moving", abs(magnitude))
+                logger.debug(String(format: "Accelerometer detected SHAKE (magnitude: %.2f), triggering moving", abs(magnitude)))
                 motionManager.stopAccelerometerUpdates()
                 handleMovingDetected()
             }
@@ -319,10 +322,10 @@ public final class MotionDetector {
     private func handleActivityUpdate(_ activity: CMMotionActivity) {
         // Motion state detection
         if activity.stationary {
-            NSLog("[Tracelet-Motion] handleActivityUpdate: detected STATIONARY activity")
+            logger.debug("handleActivityUpdate: detected STATIONARY activity")
             handleStationaryDetected()
         } else if activity.walking || activity.running || activity.cycling || activity.automotive {
-            NSLog("[Tracelet-Motion] handleActivityUpdate: detected MOVING activity (walking:\(activity.walking) running:\(activity.running) cycling:\(activity.cycling) automotive:\(activity.automotive))")
+            logger.debug("handleActivityUpdate: detected MOVING activity (walking:\(activity.walking) running:\(activity.running) cycling:\(activity.cycling) automotive:\(activity.automotive))")
             handleMovingDetected()
         }
 
@@ -373,7 +376,7 @@ public final class MotionDetector {
 
     private func handleMovingDetected() {
         if stopTimerWorkItem != nil {
-            NSLog("[Tracelet-Motion] handleMovingDetected: Cancelling stopTimerWorkItem due to movement")
+            logger.debug("handleMovingDetected: Cancelling stopTimerWorkItem due to movement")
             stopTimerWorkItem?.cancel()
             stopTimerWorkItem = nil
             onStopTimeoutCancelled?()
@@ -382,12 +385,12 @@ public final class MotionDetector {
         if !stateManager.isMoving {
             let delay = configManager.getMotionTriggerDelay()
             if delay > 0 {
-                NSLog("[Tracelet-Motion] handleMovingDetected: starting moving delay of \(delay)s")
+                logger.debug("handleMovingDetected: starting moving delay of \(delay)s")
                 DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delay)) { [weak self] in
                     self?.triggerMotionChange(isMoving: true)
                 }
             } else {
-                NSLog("[Tracelet-Motion] handleMovingDetected: triggering isMoving=true immediately")
+                logger.debug("handleMovingDetected: triggering isMoving=true immediately")
                 triggerMotionChange(isMoving: true)
             }
         } else {
@@ -410,10 +413,10 @@ public final class MotionDetector {
     private func handleStationaryDetected() {
         guard stateManager.isMoving else { return }
         guard !configManager.getDisableStopDetection() else {
-            NSLog("[Tracelet-Motion] handleStationaryDetected: stop detection disabled in config")
+            logger.debug("handleStationaryDetected: stop detection disabled in config")
             return
         }
-        NSLog("[Tracelet-Motion] handleStationaryDetected: stationary detected, starting countdown")
+        logger.debug("handleStationaryDetected: stationary detected, starting countdown")
         startStopTimeoutCountdown()
     }
 
@@ -423,7 +426,7 @@ public final class MotionDetector {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             if self.stopTimerWorkItem != nil {
-                NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Timer is already running")
+                logger.debug("startStopTimeoutCountdown: Timer is already running")
                 return
             }
 
@@ -431,17 +434,17 @@ public final class MotionDetector {
             let stopDetectionDelay = self.configManager.getStopDetectionDelay()
             let totalDelay = TimeInterval(stopTimeout * 60 + stopDetectionDelay)
             guard totalDelay > 0 else {
-                NSLog("[Tracelet-Motion] startStopTimeoutCountdown: totalDelay <= 0, stopping immediately")
+                logger.debug("startStopTimeoutCountdown: totalDelay <= 0, stopping immediately")
                 self.triggerMotionChange(isMoving: false)
                 return
             }
 
-            NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Starting timer for \(totalDelay) seconds")
+            logger.debug("startStopTimeoutCountdown: Starting timer for \(totalDelay) seconds")
             self.onStopTimeoutStarted?()
 
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
-                NSLog("[Tracelet-Motion] startStopTimeoutCountdown: Timer FIRED! Transitioning to STATIONARY")
+                logger.debug("startStopTimeoutCountdown: Timer FIRED! Transitioning to STATIONARY")
                 self.onStopTimeoutCancelled?()
                 self.triggerMotionChange(isMoving: false)
             }
@@ -483,7 +486,7 @@ public final class MotionDetector {
     public func onManualPaceChange(_ isMoving: Bool) {
         if isMoving {
             if stopTimerWorkItem != nil {
-                NSLog("[Tracelet-Motion] onManualPaceChange(true): Cancelling stopTimerWorkItem")
+                logger.debug("onManualPaceChange(true): Cancelling stopTimerWorkItem")
                 stopTimerWorkItem?.cancel()
                 stopTimerWorkItem = nil
                 onStopTimeoutCancelled?()

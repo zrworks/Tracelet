@@ -328,7 +328,7 @@ class TraceletConfigTest {
     @Test
     fun `default PersistenceConfig toMap`() {
         val map = PersistenceConfig().toMap()
-        assertEquals(-1, map["maxDaysToPersist"])
+        assertEquals(1, map["maxDaysToPersist"])
     }
 
     // =========================================================================
@@ -598,7 +598,7 @@ class TraceletConfigTest {
 
     @Test
     fun `GeofenceConfig fromMap round-trip`() {
-        val original = GeofenceConfig(geofenceProximityRadius = 5000)
+        val original = GeofenceConfig(geofenceProximityRadius = 5000, geofenceInitialTrigger = false)
         assertEquals(original, GeofenceConfig.fromMap(original.toMap()))
     }
 

@@ -21,7 +21,7 @@ public final class ConfigManager {
     public func setConfig(_ config: [String: Any]) -> [String: Any] {
         // Dart sends a nested structure: {geo: {...}, app: {...}, http: {...}, ...}
         // Flatten known section sub-maps into the top level first.
-        let sectionKeys: Set<String> = ["geo", "app", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone"]
+        let sectionKeys: Set<String> = ["geo", "app", "http", "logger", "motion", "geofence", "persistence"]
         var flat: [String: Any] = [:]
         for (key, value) in config {
             if sectionKeys.contains(key), let sub = value as? [String: Any] {
@@ -268,21 +268,48 @@ public final class ConfigManager {
     public func getLogMaxDays() -> Int { (cache["logMaxDays"] as? NSNumber)?.intValue ?? 3 }
 
     // AuditConfig (Enterprise)
-    public func getAuditEnabled() -> Bool { cache["auditEnabled"] as? Bool ?? cache["enabled"] as? Bool ?? false }
-    public func getAuditHashAlgorithm() -> String { cache["hashAlgorithm"] as? String ?? "SHA-256" }
-    public func getAuditIncludeExtrasInHash() -> Bool { cache["includeExtrasInHash"] as? Bool ?? false }
+    public func getAuditEnabled() -> Bool {
+        if let audit = cache["audit"] as? [String: Any], let enabled = audit["enabled"] as? Bool { return enabled }
+        return cache["auditEnabled"] as? Bool ?? cache["enabled"] as? Bool ?? false
+    }
+    public func getAuditHashAlgorithm() -> String {
+        if let audit = cache["audit"] as? [String: Any], let alg = audit["hashAlgorithm"] as? String { return alg }
+        return cache["hashAlgorithm"] as? String ?? "SHA-256"
+    }
+    public func getAuditIncludeExtrasInHash() -> Bool {
+        if let audit = cache["audit"] as? [String: Any], let inc = audit["includeExtrasInHash"] as? Bool { return inc }
+        return cache["includeExtrasInHash"] as? Bool ?? false
+    }
 
     // PrivacyZoneConfig (Enterprise)
-    public func getPrivacyZoneEnabled() -> Bool { cache["privacyZoneEnabled"] as? Bool ?? false }
+    public func getPrivacyZoneEnabled() -> Bool {
+        if let pz = cache["privacyZone"] as? [String: Any], let enabled = pz["enabled"] as? Bool { return enabled }
+        return cache["privacyZoneEnabled"] as? Bool ?? false
+    }
 
     // SecurityConfig (Enterprise)
-    public func getEncryptDatabase() -> Bool { cache["encryptDatabase"] as? Bool ?? false }
-    public func getEncryptionKey() -> String? { cache["encryptionKey"] as? String }
+    public func getEncryptDatabase() -> Bool {
+        if let sec = cache["security"] as? [String: Any], let enc = sec["encryptDatabase"] as? Bool { return enc }
+        return cache["encryptDatabase"] as? Bool ?? false
+    }
+    public func getEncryptionKey() -> String? {
+        if let sec = cache["security"] as? [String: Any], let key = sec["encryptionKey"] as? String { return key }
+        return cache["encryptionKey"] as? String
+    }
 
     // AttestationConfig (Enterprise)
-    public func getAttestationEnabled() -> Bool { cache["attestationEnabled"] as? Bool ?? false }
-    public func getAttestationRefreshInterval() -> Int { (cache["attestationRefreshInterval"] as? NSNumber)?.intValue ?? 3600 }
-    public func getAttestationVerificationUrl() -> String? { cache["attestationVerificationUrl"] as? String }
+    public func getAttestationEnabled() -> Bool {
+        if let att = cache["attestation"] as? [String: Any], let enabled = att["enabled"] as? Bool { return enabled }
+        return cache["attestationEnabled"] as? Bool ?? false
+    }
+    public func getAttestationRefreshInterval() -> Int {
+        if let att = cache["attestation"] as? [String: Any], let interval = (att["refreshInterval"] as? NSNumber)?.intValue { return interval }
+        return (cache["attestationRefreshInterval"] as? NSNumber)?.intValue ?? 3600
+    }
+    public func getAttestationVerificationUrl() -> String? {
+        if let att = cache["attestation"] as? [String: Any], let url = att["verificationUrl"] as? String { return url }
+        return cache["attestationVerificationUrl"] as? String
+    }
 
     // RemoteConfig (Enterprise)
     public func getRemoteConfigUrl() -> String? {

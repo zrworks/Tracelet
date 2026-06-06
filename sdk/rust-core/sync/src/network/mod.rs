@@ -52,6 +52,10 @@ pub struct SyncManager {
 impl SyncManager {
     #[uniffi::constructor]
     pub fn new() -> Self {
+        // Explicitly initialize the CryptoProvider to prevent crashes when both
+        // aws-lc-rs and ring features might be enabled simultaneously by reqwest/rustls.
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        
         Self {
             client: Client::builder()
                 .timeout(Duration::from_secs(60))
@@ -333,7 +337,10 @@ impl SyncManager {
                 .timeout(Duration::from_secs(60))
                 .use_preconfigured_tls(rustls_config)
                 .build()
-                .unwrap_or_else(|_| self.client.clone());
+                .map_err(|e| {
+                    tracelet_core::logger::error(&format!("[Rust Core] ❌ Failed to build custom TLS client: {}", e));
+                    TraceletError::Network(format!("Failed to build custom TLS client: {}", e))
+                })?;
         }
 
         let max_retries = if config.max_retries < 0 { 0 } else { config.max_retries as u32 };

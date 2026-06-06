@@ -4387,6 +4387,46 @@ public struct GeoConfig: Equatable, Hashable {
      * Distance threshold (in meters) used to calculate sparse update eligibility.
      */
     public var sparseDistanceThreshold: Double
+    /**
+     * Auto-stop tracking after this many minutes.
+     */
+    public var stopAfterElapsedMinutes: Int32
+    /**
+     * Maximum monitored geofences.
+     */
+    public var maxMonitoredGeofences: Int32
+    /**
+     * Periodic location interval.
+     */
+    public var periodicLocationInterval: Int32
+    /**
+     * Periodic desired accuracy.
+     */
+    public var periodicDesiredAccuracy: Int32
+    /**
+     * Sparse max idle seconds.
+     */
+    public var sparseMaxIdleSeconds: Int32
+    /**
+     * Battery budget per hour.
+     */
+    public var batteryBudgetPerHour: Double
+    /**
+     * Enable dead reckoning.
+     */
+    public var enableDeadReckoning: Bool
+    /**
+     * Dead reckoning activation delay.
+     */
+    public var deadReckoningActivationDelay: Int32
+    /**
+     * Dead reckoning max duration.
+     */
+    public var deadReckoningMaxDuration: Int32
+    /**
+     * Resolve address.
+     */
+    public var resolveAddress: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -4420,7 +4460,37 @@ public struct GeoConfig: Equatable, Hashable {
          */enableSparseUpdates: Bool, 
         /**
          * Distance threshold (in meters) used to calculate sparse update eligibility.
-         */sparseDistanceThreshold: Double) {
+         */sparseDistanceThreshold: Double, 
+        /**
+         * Auto-stop tracking after this many minutes.
+         */stopAfterElapsedMinutes: Int32, 
+        /**
+         * Maximum monitored geofences.
+         */maxMonitoredGeofences: Int32, 
+        /**
+         * Periodic location interval.
+         */periodicLocationInterval: Int32, 
+        /**
+         * Periodic desired accuracy.
+         */periodicDesiredAccuracy: Int32, 
+        /**
+         * Sparse max idle seconds.
+         */sparseMaxIdleSeconds: Int32, 
+        /**
+         * Battery budget per hour.
+         */batteryBudgetPerHour: Double, 
+        /**
+         * Enable dead reckoning.
+         */enableDeadReckoning: Bool, 
+        /**
+         * Dead reckoning activation delay.
+         */deadReckoningActivationDelay: Int32, 
+        /**
+         * Dead reckoning max duration.
+         */deadReckoningMaxDuration: Int32, 
+        /**
+         * Resolve address.
+         */resolveAddress: Bool) {
         self.desiredAccuracy = desiredAccuracy
         self.distanceFilter = distanceFilter
         self.stationaryRadius = stationaryRadius
@@ -4431,6 +4501,16 @@ public struct GeoConfig: Equatable, Hashable {
         self.enableTimestampMeta = enableTimestampMeta
         self.enableSparseUpdates = enableSparseUpdates
         self.sparseDistanceThreshold = sparseDistanceThreshold
+        self.stopAfterElapsedMinutes = stopAfterElapsedMinutes
+        self.maxMonitoredGeofences = maxMonitoredGeofences
+        self.periodicLocationInterval = periodicLocationInterval
+        self.periodicDesiredAccuracy = periodicDesiredAccuracy
+        self.sparseMaxIdleSeconds = sparseMaxIdleSeconds
+        self.batteryBudgetPerHour = batteryBudgetPerHour
+        self.enableDeadReckoning = enableDeadReckoning
+        self.deadReckoningActivationDelay = deadReckoningActivationDelay
+        self.deadReckoningMaxDuration = deadReckoningMaxDuration
+        self.resolveAddress = resolveAddress
     }
 
     
@@ -4458,7 +4538,17 @@ public struct FfiConverterTypeGeoConfig: FfiConverterRustBuffer {
                 enableAdaptiveMode: FfiConverterBool.read(from: &buf), 
                 enableTimestampMeta: FfiConverterBool.read(from: &buf), 
                 enableSparseUpdates: FfiConverterBool.read(from: &buf), 
-                sparseDistanceThreshold: FfiConverterDouble.read(from: &buf)
+                sparseDistanceThreshold: FfiConverterDouble.read(from: &buf), 
+                stopAfterElapsedMinutes: FfiConverterInt32.read(from: &buf), 
+                maxMonitoredGeofences: FfiConverterInt32.read(from: &buf), 
+                periodicLocationInterval: FfiConverterInt32.read(from: &buf), 
+                periodicDesiredAccuracy: FfiConverterInt32.read(from: &buf), 
+                sparseMaxIdleSeconds: FfiConverterInt32.read(from: &buf), 
+                batteryBudgetPerHour: FfiConverterDouble.read(from: &buf), 
+                enableDeadReckoning: FfiConverterBool.read(from: &buf), 
+                deadReckoningActivationDelay: FfiConverterInt32.read(from: &buf), 
+                deadReckoningMaxDuration: FfiConverterInt32.read(from: &buf), 
+                resolveAddress: FfiConverterBool.read(from: &buf)
         )
     }
 
@@ -4473,6 +4563,16 @@ public struct FfiConverterTypeGeoConfig: FfiConverterRustBuffer {
         FfiConverterBool.write(value.enableTimestampMeta, into: &buf)
         FfiConverterBool.write(value.enableSparseUpdates, into: &buf)
         FfiConverterDouble.write(value.sparseDistanceThreshold, into: &buf)
+        FfiConverterInt32.write(value.stopAfterElapsedMinutes, into: &buf)
+        FfiConverterInt32.write(value.maxMonitoredGeofences, into: &buf)
+        FfiConverterInt32.write(value.periodicLocationInterval, into: &buf)
+        FfiConverterInt32.write(value.periodicDesiredAccuracy, into: &buf)
+        FfiConverterInt32.write(value.sparseMaxIdleSeconds, into: &buf)
+        FfiConverterDouble.write(value.batteryBudgetPerHour, into: &buf)
+        FfiConverterBool.write(value.enableDeadReckoning, into: &buf)
+        FfiConverterInt32.write(value.deadReckoningActivationDelay, into: &buf)
+        FfiConverterInt32.write(value.deadReckoningMaxDuration, into: &buf)
+        FfiConverterBool.write(value.resolveAddress, into: &buf)
     }
 }
 
@@ -5300,6 +5400,70 @@ public struct MotionConfig: Equatable, Hashable {
      * Accelerometer threshold (G-force) required to wake the device from a stationary state.
      */
     public var shakeThreshold: Double
+    /**
+     * Is currently moving.
+     */
+    public var isMoving: Bool
+    /**
+     * Activity recognition interval.
+     */
+    public var activityRecognitionInterval: Int32
+    /**
+     * Minimum confidence for activity.
+     */
+    public var minimumActivityRecognitionConfidence: Int32
+    /**
+     * Delay before stop detection.
+     */
+    public var stopDetectionDelay: Int32
+    /**
+     * Stop on stationary.
+     */
+    public var stopOnStationary: Bool
+    /**
+     * Stationary radius.
+     */
+    public var stationaryRadius: Double
+    /**
+     * Use significant changes only.
+     */
+    public var useSignificantChangesOnly: Bool
+    /**
+     * Still threshold.
+     */
+    public var stillThreshold: Double
+    /**
+     * Still sample count.
+     */
+    public var stillSampleCount: Int32
+    /**
+     * Motion detection mode.
+     */
+    public var motionDetectionMode: Int32
+    /**
+     * Speed moving threshold.
+     */
+    public var speedMovingThreshold: Double
+    /**
+     * Speed stationary delay.
+     */
+    public var speedStationaryDelay: Int32
+    /**
+     * Stationary tracking mode.
+     */
+    public var stationaryTrackingMode: Int32
+    /**
+     * Stationary periodic interval.
+     */
+    public var stationaryPeriodicInterval: Int32
+    /**
+     * Stationary periodic accuracy.
+     */
+    public var stationaryPeriodicAccuracy: Int32
+    /**
+     * Speed wake confirm count.
+     */
+    public var speedWakeConfirmCount: Int32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -5318,12 +5482,76 @@ public struct MotionConfig: Equatable, Hashable {
          */disableStopDetection: Bool, 
         /**
          * Accelerometer threshold (G-force) required to wake the device from a stationary state.
-         */shakeThreshold: Double) {
+         */shakeThreshold: Double, 
+        /**
+         * Is currently moving.
+         */isMoving: Bool, 
+        /**
+         * Activity recognition interval.
+         */activityRecognitionInterval: Int32, 
+        /**
+         * Minimum confidence for activity.
+         */minimumActivityRecognitionConfidence: Int32, 
+        /**
+         * Delay before stop detection.
+         */stopDetectionDelay: Int32, 
+        /**
+         * Stop on stationary.
+         */stopOnStationary: Bool, 
+        /**
+         * Stationary radius.
+         */stationaryRadius: Double, 
+        /**
+         * Use significant changes only.
+         */useSignificantChangesOnly: Bool, 
+        /**
+         * Still threshold.
+         */stillThreshold: Double, 
+        /**
+         * Still sample count.
+         */stillSampleCount: Int32, 
+        /**
+         * Motion detection mode.
+         */motionDetectionMode: Int32, 
+        /**
+         * Speed moving threshold.
+         */speedMovingThreshold: Double, 
+        /**
+         * Speed stationary delay.
+         */speedStationaryDelay: Int32, 
+        /**
+         * Stationary tracking mode.
+         */stationaryTrackingMode: Int32, 
+        /**
+         * Stationary periodic interval.
+         */stationaryPeriodicInterval: Int32, 
+        /**
+         * Stationary periodic accuracy.
+         */stationaryPeriodicAccuracy: Int32, 
+        /**
+         * Speed wake confirm count.
+         */speedWakeConfirmCount: Int32) {
         self.stopTimeout = stopTimeout
         self.motionTriggerDelay = motionTriggerDelay
         self.disableMotionActivityUpdates = disableMotionActivityUpdates
         self.disableStopDetection = disableStopDetection
         self.shakeThreshold = shakeThreshold
+        self.isMoving = isMoving
+        self.activityRecognitionInterval = activityRecognitionInterval
+        self.minimumActivityRecognitionConfidence = minimumActivityRecognitionConfidence
+        self.stopDetectionDelay = stopDetectionDelay
+        self.stopOnStationary = stopOnStationary
+        self.stationaryRadius = stationaryRadius
+        self.useSignificantChangesOnly = useSignificantChangesOnly
+        self.stillThreshold = stillThreshold
+        self.stillSampleCount = stillSampleCount
+        self.motionDetectionMode = motionDetectionMode
+        self.speedMovingThreshold = speedMovingThreshold
+        self.speedStationaryDelay = speedStationaryDelay
+        self.stationaryTrackingMode = stationaryTrackingMode
+        self.stationaryPeriodicInterval = stationaryPeriodicInterval
+        self.stationaryPeriodicAccuracy = stationaryPeriodicAccuracy
+        self.speedWakeConfirmCount = speedWakeConfirmCount
     }
 
     
@@ -5346,7 +5574,23 @@ public struct FfiConverterTypeMotionConfig: FfiConverterRustBuffer {
                 motionTriggerDelay: FfiConverterInt32.read(from: &buf), 
                 disableMotionActivityUpdates: FfiConverterBool.read(from: &buf), 
                 disableStopDetection: FfiConverterBool.read(from: &buf), 
-                shakeThreshold: FfiConverterDouble.read(from: &buf)
+                shakeThreshold: FfiConverterDouble.read(from: &buf), 
+                isMoving: FfiConverterBool.read(from: &buf), 
+                activityRecognitionInterval: FfiConverterInt32.read(from: &buf), 
+                minimumActivityRecognitionConfidence: FfiConverterInt32.read(from: &buf), 
+                stopDetectionDelay: FfiConverterInt32.read(from: &buf), 
+                stopOnStationary: FfiConverterBool.read(from: &buf), 
+                stationaryRadius: FfiConverterDouble.read(from: &buf), 
+                useSignificantChangesOnly: FfiConverterBool.read(from: &buf), 
+                stillThreshold: FfiConverterDouble.read(from: &buf), 
+                stillSampleCount: FfiConverterInt32.read(from: &buf), 
+                motionDetectionMode: FfiConverterInt32.read(from: &buf), 
+                speedMovingThreshold: FfiConverterDouble.read(from: &buf), 
+                speedStationaryDelay: FfiConverterInt32.read(from: &buf), 
+                stationaryTrackingMode: FfiConverterInt32.read(from: &buf), 
+                stationaryPeriodicInterval: FfiConverterInt32.read(from: &buf), 
+                stationaryPeriodicAccuracy: FfiConverterInt32.read(from: &buf), 
+                speedWakeConfirmCount: FfiConverterInt32.read(from: &buf)
         )
     }
 
@@ -5356,6 +5600,22 @@ public struct FfiConverterTypeMotionConfig: FfiConverterRustBuffer {
         FfiConverterBool.write(value.disableMotionActivityUpdates, into: &buf)
         FfiConverterBool.write(value.disableStopDetection, into: &buf)
         FfiConverterDouble.write(value.shakeThreshold, into: &buf)
+        FfiConverterBool.write(value.isMoving, into: &buf)
+        FfiConverterInt32.write(value.activityRecognitionInterval, into: &buf)
+        FfiConverterInt32.write(value.minimumActivityRecognitionConfidence, into: &buf)
+        FfiConverterInt32.write(value.stopDetectionDelay, into: &buf)
+        FfiConverterBool.write(value.stopOnStationary, into: &buf)
+        FfiConverterDouble.write(value.stationaryRadius, into: &buf)
+        FfiConverterBool.write(value.useSignificantChangesOnly, into: &buf)
+        FfiConverterDouble.write(value.stillThreshold, into: &buf)
+        FfiConverterInt32.write(value.stillSampleCount, into: &buf)
+        FfiConverterInt32.write(value.motionDetectionMode, into: &buf)
+        FfiConverterDouble.write(value.speedMovingThreshold, into: &buf)
+        FfiConverterInt32.write(value.speedStationaryDelay, into: &buf)
+        FfiConverterInt32.write(value.stationaryTrackingMode, into: &buf)
+        FfiConverterInt32.write(value.stationaryPeriodicInterval, into: &buf)
+        FfiConverterInt32.write(value.stationaryPeriodicAccuracy, into: &buf)
+        FfiConverterInt32.write(value.speedWakeConfirmCount, into: &buf)
     }
 }
 

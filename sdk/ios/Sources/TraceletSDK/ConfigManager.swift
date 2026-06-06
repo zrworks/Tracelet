@@ -171,6 +171,7 @@ public final class ConfigManager {
         return .periodic
     }
     public func getStationaryPeriodicInterval() -> Int { (cache["stationaryPeriodicInterval"] as? NSNumber)?.intValue ?? 120 }
+    public func getStationaryPeriodicAccuracy() -> Int { (cache["stationaryPeriodicAccuracy"] as? NSNumber)?.intValue ?? 1 }
     public func getSpeedWakeConfirmCount() -> Int { (cache["speedWakeConfirmCount"] as? NSNumber)?.intValue ?? 1 }
 
     /// Shake threshold (gravity-subtracted magnitude).

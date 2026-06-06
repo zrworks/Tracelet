@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
 class IssuesPage extends StatefulWidget {
@@ -122,6 +123,45 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  Future<void> _testIssue120() async {
+    setState(() => _status = 'Testing Issue 120 (Rust Parity)...');
+    try {
+      if (!Platform.isAndroid) {
+        setState(() => _status = 'Parity test is Android-only.');
+        return;
+      }
+
+      const channel = MethodChannel('com.tracelet/debug');
+      final result = await channel.invokeMapMethod<String, dynamic>(
+        'debugVerifyRustParity',
+      );
+
+      if (result == null) {
+        setState(() => _status = 'Error: Null result from debug channel.');
+        return;
+      }
+
+      final missingGeo = List<String>.from(result['missingGeo'] as List);
+      final missingMotion = List<String>.from(result['missingMotion'] as List);
+
+      if (missingGeo.isEmpty && missingMotion.isEmpty) {
+        setState(
+          () => _status =
+              '✅ SUCCESS: All configuration properties are aligned with the Rust Core.',
+        );
+      } else {
+        setState(
+          () => _status =
+              '❌ FAILED: Missing properties.\nGeo: $missingGeo\nMotion: $missingMotion',
+        );
+      }
+    } on PlatformException catch (e) {
+      setState(() => _status = 'Issue 120 Error: ${e.message}');
+    } catch (e) {
+      setState(() => _status = 'Issue 120 Error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,6 +206,23 @@ class _IssuesPageState extends State<IssuesPage> {
               onPressed: _testIssue117,
               icon: const Icon(Icons.cloud_sync),
               label: const Text('Test Custom Sync Body (Issue 117)'),
+            ),
+
+            const Divider(height: 48),
+
+            const Text(
+              'Issue #120: Rust Core Parity',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Verifies that UniFFI Rust classes have all properties required by the Dart Config models to prevent silent dropping during serialization.',
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _testIssue120,
+              icon: const Icon(Icons.sync_problem),
+              label: const Text('Test Config Parity (Issue 120)'),
             ),
 
             const SizedBox(height: 48),

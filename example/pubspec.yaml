@@ -23,6 +23,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  mobile_scanner: ^7.2.0
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   integration_test:

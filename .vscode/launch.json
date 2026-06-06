@@ -67,6 +67,22 @@
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}/example_firebase",
       "flutterMode": "debug"
+    },
+    {
+      "name": "Test Server (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_test_server.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "Test Server (Release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_test_server.dart",
+      "cwd": "${workspaceFolder}/example",
+      "flutterMode": "release"
     }
   ]
 }

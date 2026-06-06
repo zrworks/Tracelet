@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'local_test_server.dart';
+import 'package:tracelet_example/local_test_server.dart';
 
 class ServerLogsPage extends StatefulWidget {
   const ServerLogsPage({super.key});
@@ -37,9 +37,7 @@ class _ServerLogsPageState extends State<ServerLogsPage> {
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             tooltip: 'Clear Logs',
-            onPressed: () {
-              LocalTestServer.instance.clearLogs();
-            },
+            onPressed: LocalTestServer.instance.clearLogs,
           ),
         ],
       ),
@@ -54,7 +52,7 @@ class _ServerLogsPageState extends State<ServerLogsPage> {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () async {
-                      await LocalTestServer.instance.start(port: 8099);
+                      await LocalTestServer.instance.start();
                       setState(() {});
                     },
                     icon: const Icon(Icons.play_arrow),
@@ -89,7 +87,6 @@ class _ServerLogsPageState extends State<ServerLogsPage> {
                                   padding: const EdgeInsets.all(8),
                                   child: QrImageView(
                                     data: 'http://$ip:8099/locations',
-                                    version: QrVersions.auto,
                                     size: 200,
                                   ),
                                 ),

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:tracelet_platform_interface/src/rust/frb_generated.dart';
 
+/// Initializes the Rust core library.
 Future<void> initializeRustLib() async {
   ExternalLibrary? lib;
   if (Platform.isIOS) {

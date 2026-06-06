@@ -4,16 +4,20 @@ import 'package:tracelet_platform_interface/src/rust/api_dart/trip.dart';
 
 /// Rust-powered TripManager.
 class TripManager {
+  /// Creates a [TripManager] instance that tracks geographical trips.
   TripManager() {
     if (!kIsWeb) {
       _inner = TripManagerDart();
     }
   }
   TripManagerDart? _inner;
+  /// Callback fired when a trip is completed, returning the trip summary.
   void Function(Map<String, Object?>)? onTripEnd;
 
+  /// Returns true if a trip is currently being tracked.
   bool get isTripActive => _inner?.isTripActive() ?? false;
 
+  /// Feeds motion state changes to the engine to start or stop a trip.
   void onMotionStateChanged({
     required bool isMoving,
     double? latitude,
@@ -73,6 +77,7 @@ class TripManager {
     }
   }
 
+  /// Feeds a new location waypoint into the active trip.
   void onLocationReceived({
     required double latitude,
     required double longitude,
@@ -96,6 +101,7 @@ class TripManager {
     );
   }
 
+  /// Resets the trip manager, clearing any active trips.
   void reset() {
     _inner?.reset();
   }

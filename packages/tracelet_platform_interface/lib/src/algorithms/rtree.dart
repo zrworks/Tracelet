@@ -4,14 +4,23 @@ import 'package:tracelet_platform_interface/src/algorithms/geo_utils.dart';
 
 /// Axis-aligned bounding box for R-tree nodes.
 class RTreeBBox {
+  /// Creates an [RTreeBBox] with explicit min and max coordinates.
   RTreeBBox(this.minLat, this.minLng, this.maxLat, this.maxLng);
 
   /// Create a bbox that contains a single point.
   factory RTreeBBox.fromPoint(double lat, double lng) =>
       RTreeBBox(lat, lng, lat, lng);
+      
+  /// The minimum latitude.
   double minLat;
+  
+  /// The minimum longitude.
   double minLng;
+  
+  /// The maximum latitude.
   double maxLat;
+  
+  /// The maximum longitude.
   double maxLng;
 
   /// Expand this bbox to contain [other].

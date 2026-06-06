@@ -3,6 +3,7 @@ import 'package:tracelet_platform_interface/src/algorithms/rtree.dart';
 
 /// A single geofence state transition detected by [GeofenceEvaluator].
 class GeofenceTransition {
+  /// Creates a new [GeofenceTransition] containing details about the crossing.
   const GeofenceTransition({
     required this.identifier,
     required this.action,

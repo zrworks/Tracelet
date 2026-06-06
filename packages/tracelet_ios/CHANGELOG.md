@@ -1,3 +1,8 @@
+## 3.2.5
+- **FIX**: Resolved iOS accelerometer sensitivity mismatch (stationary lock) by normalizing incoming m/s² thresholds to g-force expected by CMMotionManager.
+- **FIX**: Unify motion detection initial state and resume behavior across Android and iOS, preventing incorrect forced states on app launch and correctly resuming saved states.
+- **FIX**: Resolved `flutter_rust_bridge` dynamic library load failures on release builds for users without `use_frameworks!` by preserving global symbols during Xcode stripping.
+
 ## 3.2.4
 
 * **FIX**(ios): safely resolve dynamic symbols when `use_frameworks! :linkage => :dynamic` is used.

@@ -14,6 +14,8 @@ const Map<String, double> kDefaultEmissionFactors = <String, double>{
 
 /// Per-trip carbon summary emitted when a trip ends.
 class TripCarbonSummary {
+  /// Creates a [TripCarbonSummary] containing statistics about distance
+  /// and carbon emissions categorized by transport mode.
   const TripCarbonSummary({
     required this.totalCarbonGrams,
     required this.totalDistanceMeters,
@@ -37,6 +39,7 @@ class TripCarbonSummary {
   /// The transport mode that covered the most distance.
   final String dominantMode;
 
+  /// Converts the summary into a JSON-compatible map.
   Map<String, Object?> toMap() => <String, Object?>{
     'totalCarbonGrams': totalCarbonGrams,
     'totalDistanceMeters': totalDistanceMeters,

@@ -11,6 +11,7 @@ import 'package:tracelet_platform_interface/src/types/enums.dart';
 /// All streaming events are received via [TraceletEventApi] (Pigeon FlutterApi)
 /// and exposed as typed [Stream]s through [PigeonEventReceiver].
 class PigeonTracelet extends TraceletPlatform {
+  /// Creates a [PigeonTracelet] with optional overrides for the HostApi and EventReceiver.
   PigeonTracelet({TraceletHostApi? api, PigeonEventReceiver? eventReceiver})
     : _api = api ?? TraceletHostApi(),
       _events = eventReceiver ?? PigeonEventReceiver();

@@ -456,50 +456,50 @@ public struct TraceletMotionConfig {
 
 // MARK: - TraceletGeofenceConfig
 public struct TraceletGeofenceConfig {
-    public var geofenceModeHighAccuracy: Bool, geofenceInitialTriggerEntry: Bool, geofenceProximityRadius: Int
-    public init(geofenceModeHighAccuracy: Bool = false, geofenceInitialTriggerEntry: Bool = true, geofenceProximityRadius: Int = 1000) { self.geofenceModeHighAccuracy = geofenceModeHighAccuracy; self.geofenceInitialTriggerEntry = geofenceInitialTriggerEntry; self.geofenceProximityRadius = geofenceProximityRadius }
-    public func toMap() -> [String: Any] { ["geofenceModeHighAccuracy": geofenceModeHighAccuracy, "geofenceInitialTriggerEntry": geofenceInitialTriggerEntry, "geofenceProximityRadius": geofenceProximityRadius] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletGeofenceConfig { TraceletGeofenceConfig(geofenceModeHighAccuracy: map["geofenceModeHighAccuracy"] as? Bool ?? false, geofenceInitialTriggerEntry: map["geofenceInitialTriggerEntry"] as? Bool ?? true, geofenceProximityRadius: (map["geofenceProximityRadius"] as? NSNumber)?.intValue ?? 1000) }
+    public var geofenceModeHighAccuracy: Bool, geofenceInitialTriggerEntry: Bool, geofenceInitialTrigger: Bool, geofenceProximityRadius: Int
+    public init(geofenceModeHighAccuracy: Bool = false, geofenceInitialTriggerEntry: Bool = true, geofenceInitialTrigger: Bool = true, geofenceProximityRadius: Int = 1000) { self.geofenceModeHighAccuracy = geofenceModeHighAccuracy; self.geofenceInitialTriggerEntry = geofenceInitialTriggerEntry; self.geofenceInitialTrigger = geofenceInitialTrigger; self.geofenceProximityRadius = geofenceProximityRadius }
+    public func toMap() -> [String: Any] { ["geofenceModeHighAccuracy": geofenceModeHighAccuracy, "geofenceInitialTriggerEntry": geofenceInitialTriggerEntry, "geofenceInitialTrigger": geofenceInitialTrigger, "geofenceProximityRadius": geofenceProximityRadius] }
+    public static func fromMap(_ map: [String: Any]) -> TraceletGeofenceConfig { TraceletGeofenceConfig(geofenceModeHighAccuracy: map["geofenceModeHighAccuracy"] as? Bool ?? false, geofenceInitialTriggerEntry: map["geofenceInitialTriggerEntry"] as? Bool ?? true, geofenceInitialTrigger: map["geofenceInitialTrigger"] as? Bool ?? true, geofenceProximityRadius: (map["geofenceProximityRadius"] as? NSNumber)?.intValue ?? 1000) }
 }
 
 // MARK: - TraceletPersistenceConfig
 public struct TraceletPersistenceConfig {
-    public var maxDaysToPersist: Int, maxRecordsToPersist: Int, persistMode: TraceletPersistMode
-    public init(maxDaysToPersist: Int = 1, maxRecordsToPersist: Int = -1, persistMode: TraceletPersistMode = .all) { self.maxDaysToPersist = maxDaysToPersist; self.maxRecordsToPersist = maxRecordsToPersist; self.persistMode = persistMode }
-    public func toMap() -> [String: Any] { ["maxDaysToPersist": maxDaysToPersist, "maxRecordsToPersist": maxRecordsToPersist, "persistMode": persistMode.rawValue] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletPersistenceConfig { TraceletPersistenceConfig(maxDaysToPersist: (map["maxDaysToPersist"] as? NSNumber)?.intValue ?? 1, maxRecordsToPersist: (map["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1, persistMode: TraceletPersistMode(rawValue: (map["persistMode"] as? NSNumber)?.intValue ?? 0) ?? .all) }
+    public var maxDaysToPersist: Int, maxRecordsToPersist: Int, persistMode: TraceletPersistMode, disableProviderChangeRecord: Bool
+    public init(maxDaysToPersist: Int = 1, maxRecordsToPersist: Int = -1, persistMode: TraceletPersistMode = .all, disableProviderChangeRecord: Bool = false) { self.maxDaysToPersist = maxDaysToPersist; self.maxRecordsToPersist = maxRecordsToPersist; self.persistMode = persistMode; self.disableProviderChangeRecord = disableProviderChangeRecord }
+    public func toMap() -> [String: Any] { ["maxDaysToPersist": maxDaysToPersist, "maxRecordsToPersist": maxRecordsToPersist, "persistMode": persistMode.rawValue, "disableProviderChangeRecord": disableProviderChangeRecord] }
+    public static func fromMap(_ map: [String: Any]) -> TraceletPersistenceConfig { TraceletPersistenceConfig(maxDaysToPersist: (map["maxDaysToPersist"] as? NSNumber)?.intValue ?? 1, maxRecordsToPersist: (map["maxRecordsToPersist"] as? NSNumber)?.intValue ?? -1, persistMode: TraceletPersistMode(rawValue: (map["persistMode"] as? NSNumber)?.intValue ?? 0) ?? .all, disableProviderChangeRecord: map["disableProviderChangeRecord"] as? Bool ?? false) }
 }
 
 // MARK: - TraceletAuditConfig
 public struct TraceletAuditConfig {
-    public var enableAuditTrail: Bool, auditHashAlgorithm: TraceletHashAlgorithm
-    public init(enableAuditTrail: Bool = false, auditHashAlgorithm: TraceletHashAlgorithm = .sha256) { self.enableAuditTrail = enableAuditTrail; self.auditHashAlgorithm = auditHashAlgorithm }
-    public func toMap() -> [String: Any] { ["enableAuditTrail": enableAuditTrail, "auditHashAlgorithm": auditHashAlgorithm.rawValue] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletAuditConfig { TraceletAuditConfig(enableAuditTrail: map["enableAuditTrail"] as? Bool ?? false, auditHashAlgorithm: TraceletHashAlgorithm(rawValue: (map["auditHashAlgorithm"] as? NSNumber)?.intValue ?? 0) ?? .sha256) }
+    public var enabled: Bool, hashAlgorithm: TraceletHashAlgorithm, includeExtrasInHash: Bool
+    public init(enabled: Bool = false, hashAlgorithm: TraceletHashAlgorithm = .sha256, includeExtrasInHash: Bool = false) { self.enabled = enabled; self.hashAlgorithm = hashAlgorithm; self.includeExtrasInHash = includeExtrasInHash }
+    public func toMap() -> [String: Any] { ["enabled": enabled, "hashAlgorithm": hashAlgorithm.rawValue, "includeExtrasInHash": includeExtrasInHash] }
+    public static func fromMap(_ map: [String: Any]) -> TraceletAuditConfig { TraceletAuditConfig(enabled: map["enabled"] as? Bool ?? false, hashAlgorithm: TraceletHashAlgorithm(rawValue: (map["hashAlgorithm"] as? NSNumber)?.intValue ?? 0) ?? .sha256, includeExtrasInHash: map["includeExtrasInHash"] as? Bool ?? false) }
 }
 
 // MARK: - TraceletPrivacyZoneConfig
 public struct TraceletPrivacyZoneConfig {
-    public var enablePrivacyZones: Bool
-    public init(enablePrivacyZones: Bool = false) { self.enablePrivacyZones = enablePrivacyZones }
-    public func toMap() -> [String: Any] { ["enablePrivacyZones": enablePrivacyZones] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletPrivacyZoneConfig { TraceletPrivacyZoneConfig(enablePrivacyZones: map["enablePrivacyZones"] as? Bool ?? false) }
+    public var enabled: Bool
+    public init(enabled: Bool = false) { self.enabled = enabled }
+    public func toMap() -> [String: Any] { ["enabled": enabled] }
+    public static func fromMap(_ map: [String: Any]) -> TraceletPrivacyZoneConfig { TraceletPrivacyZoneConfig(enabled: map["enabled"] as? Bool ?? false) }
 }
 
 // MARK: - TraceletSecurityConfig
 public struct TraceletSecurityConfig {
-    public var encryptDatabase: Bool
-    public init(encryptDatabase: Bool = false) { self.encryptDatabase = encryptDatabase }
-    public func toMap() -> [String: Any] { ["encryptDatabase": encryptDatabase] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletSecurityConfig { TraceletSecurityConfig(encryptDatabase: map["encryptDatabase"] as? Bool ?? false) }
+    public var encryptDatabase: Bool, encryptionKey: String?
+    public init(encryptDatabase: Bool = false, encryptionKey: String? = nil) { self.encryptDatabase = encryptDatabase; self.encryptionKey = encryptionKey }
+    public func toMap() -> [String: Any] { ["encryptDatabase": encryptDatabase, "encryptionKey": encryptionKey as Any] }
+    public static func fromMap(_ map: [String: Any]) -> TraceletSecurityConfig { TraceletSecurityConfig(encryptDatabase: map["encryptDatabase"] as? Bool ?? false, encryptionKey: map["encryptionKey"] as? String) }
 }
 
 // MARK: - TraceletAttestationConfig
 public struct TraceletAttestationConfig {
-    public var enableDeviceAttestation: Bool, attestationVendor: String?, attestationProject: String?
-    public init(enableDeviceAttestation: Bool = false, attestationVendor: String? = nil, attestationProject: String? = nil) { self.enableDeviceAttestation = enableDeviceAttestation; self.attestationVendor = attestationVendor; self.attestationProject = attestationProject }
-    public func toMap() -> [String: Any] { var map: [String: Any] = ["enableDeviceAttestation": enableDeviceAttestation]; if let v = attestationVendor { map["attestationVendor"] = v }; if let p = attestationProject { map["attestationProject"] = p }; return map }
-    public static func fromMap(_ map: [String: Any]) -> TraceletAttestationConfig { TraceletAttestationConfig(enableDeviceAttestation: map["enableDeviceAttestation"] as? Bool ?? false, attestationVendor: map["attestationVendor"] as? String, attestationProject: map["attestationProject"] as? String) }
+    public var enabled: Bool, refreshInterval: Int?, verificationUrl: String?
+    public init(enabled: Bool = false, refreshInterval: Int? = nil, verificationUrl: String? = nil) { self.enabled = enabled; self.refreshInterval = refreshInterval; self.verificationUrl = verificationUrl }
+    public func toMap() -> [String: Any] { var map: [String: Any] = ["enabled": enabled]; if let r = refreshInterval { map["refreshInterval"] = r }; if let u = verificationUrl { map["verificationUrl"] = u }; return map }
+    public static func fromMap(_ map: [String: Any]) -> TraceletAttestationConfig { TraceletAttestationConfig(enabled: map["enabled"] as? Bool ?? false, refreshInterval: map["refreshInterval"] as? Int, verificationUrl: map["verificationUrl"] as? String) }
 }
 
 // MARK: - TraceletConfig Extension for Profiles

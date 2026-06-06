@@ -53,7 +53,8 @@ class MotionDetectorTest {
         
         state.isMoving = true // Start in moving state
 
-        detector = MotionDetector(context, config, state, events)
+        val logger = com.ikolvi.tracelet.sdk.util.TraceletLogger(context, config)
+        detector = MotionDetector(context, config, state, events, logger)
         detector.start()
     }
 

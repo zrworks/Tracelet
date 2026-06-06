@@ -364,46 +364,61 @@ class ConfigManager(context: Context) {
     // ---------------------------------------------------------------------------
 
     fun getAuditEnabled(): Boolean {
-        val v = configCache["auditEnabled"]
-        if (v is Boolean) return v
-        return getBool("enabled", DEFAULT_AUDIT_ENABLED)
+        (configCache["audit"] as? Map<*, *>)?.let { if (it["enabled"] is Boolean) return it["enabled"] as Boolean }
+        return getBool("auditEnabled", getBool("enabled", DEFAULT_AUDIT_ENABLED))
     }
 
-    fun getAuditHashAlgorithm(): String =
-        getString("hashAlgorithm", DEFAULT_AUDIT_HASH_ALGORITHM)
+    fun getAuditHashAlgorithm(): String {
+        (configCache["audit"] as? Map<*, *>)?.let { if (it["hashAlgorithm"] is String) return it["hashAlgorithm"] as String }
+        return getString("hashAlgorithm", DEFAULT_AUDIT_HASH_ALGORITHM)
+    }
 
-    fun getAuditIncludeExtrasInHash(): Boolean =
-        getBool("includeExtrasInHash", DEFAULT_AUDIT_INCLUDE_EXTRAS_IN_HASH)
+    fun getAuditIncludeExtrasInHash(): Boolean {
+        (configCache["audit"] as? Map<*, *>)?.let { if (it["includeExtrasInHash"] is Boolean) return it["includeExtrasInHash"] as Boolean }
+        return getBool("includeExtrasInHash", DEFAULT_AUDIT_INCLUDE_EXTRAS_IN_HASH)
+    }
 
     // ---------------------------------------------------------------------------
     // Typed Getters (PrivacyZoneConfig — Enterprise)
     // ---------------------------------------------------------------------------
 
-    fun getPrivacyZoneEnabled(): Boolean =
-        getBool("privacyZoneEnabled", DEFAULT_PRIVACY_ZONE_ENABLED)
+    fun getPrivacyZoneEnabled(): Boolean {
+        (configCache["privacyZone"] as? Map<*, *>)?.let { if (it["enabled"] is Boolean) return it["enabled"] as Boolean }
+        return getBool("privacyZoneEnabled", DEFAULT_PRIVACY_ZONE_ENABLED)
+    }
 
     // ---------------------------------------------------------------------------
     // Typed Getters (SecurityConfig — Enterprise)
     // ---------------------------------------------------------------------------
 
-    fun getEncryptDatabase(): Boolean =
-        getBool("encryptDatabase", DEFAULT_ENCRYPT_DATABASE)
+    fun getEncryptDatabase(): Boolean {
+        (configCache["security"] as? Map<*, *>)?.let { if (it["encryptDatabase"] is Boolean) return it["encryptDatabase"] as Boolean }
+        return getBool("encryptDatabase", DEFAULT_ENCRYPT_DATABASE)
+    }
 
-    fun getEncryptionKey(): String? =
-        configCache["encryptionKey"] as? String
+    fun getEncryptionKey(): String? {
+        (configCache["security"] as? Map<*, *>)?.let { if (it["encryptionKey"] is String) return it["encryptionKey"] as String }
+        return configCache["encryptionKey"] as? String
+    }
 
     // ---------------------------------------------------------------------------
     // Typed Getters (AttestationConfig — Enterprise)
     // ---------------------------------------------------------------------------
 
-    fun getAttestationEnabled(): Boolean =
-        getBool("attestationEnabled", DEFAULT_ATTESTATION_ENABLED)
+    fun getAttestationEnabled(): Boolean {
+        (configCache["attestation"] as? Map<*, *>)?.let { if (it["enabled"] is Boolean) return it["enabled"] as Boolean }
+        return getBool("attestationEnabled", DEFAULT_ATTESTATION_ENABLED)
+    }
 
-    fun getAttestationRefreshInterval(): Int =
-        getInt("attestationRefreshInterval", DEFAULT_ATTESTATION_REFRESH_INTERVAL)
+    fun getAttestationRefreshInterval(): Int {
+        (configCache["attestation"] as? Map<*, *>)?.let { if (it["refreshInterval"] is Number) return (it["refreshInterval"] as Number).toInt() }
+        return getInt("attestationRefreshInterval", DEFAULT_ATTESTATION_REFRESH_INTERVAL)
+    }
 
-    fun getAttestationVerificationUrl(): String? =
-        configCache["attestationVerificationUrl"] as? String
+    fun getAttestationVerificationUrl(): String? {
+        (configCache["attestation"] as? Map<*, *>)?.let { if (it["verificationUrl"] is String) return it["verificationUrl"] as String }
+        return configCache["attestationVerificationUrl"] as? String
+    }
 
     // ---------------------------------------------------------------------------
     // Typed Getters (Remote Config — Enterprise)

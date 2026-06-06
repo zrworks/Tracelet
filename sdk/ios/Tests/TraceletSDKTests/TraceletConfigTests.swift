@@ -75,7 +75,7 @@ final class TraceletConfigTests: XCTestCase {
     }
 
     func testGeofenceConfig() {
-        let config = TraceletGeofenceConfig(geofenceInitialTriggerEntry: false, geofenceProximityRadius: 5000)
+        let config = TraceletGeofenceConfig(geofenceInitialTriggerEntry: false, geofenceInitialTrigger: true, geofenceProximityRadius: 5000)
         let map = config.toMap()
         XCTAssertEqual(map["geofenceProximityRadius"] as? Int, 5000)
         
@@ -85,7 +85,7 @@ final class TraceletConfigTests: XCTestCase {
     }
 
     func testPersistenceConfig() {
-        let config = TraceletPersistenceConfig(maxDaysToPersist: 14, maxRecordsToPersist: 5000, persistMode: .location)
+        let config = TraceletPersistenceConfig(maxDaysToPersist: 14, maxRecordsToPersist: 5000, persistMode: .location, disableProviderChangeRecord: true)
         let map = config.toMap()
         XCTAssertEqual(map["maxDaysToPersist"] as? Int, 14)
         XCTAssertEqual(map["persistMode"] as? Int, TraceletPersistMode.location.rawValue)
@@ -96,32 +96,35 @@ final class TraceletConfigTests: XCTestCase {
     }
 
     func testAuditConfig() {
-        let config = TraceletAuditConfig(enableAuditTrail: true, auditHashAlgorithm: .sha512)
+        let config = TraceletAuditConfig(enabled: true, hashAlgorithm: .sha512, includeExtrasInHash: true)
         let map = config.toMap()
-        XCTAssertEqual(map["enableAuditTrail"] as? Bool, true)
-        XCTAssertEqual(map["auditHashAlgorithm"] as? Int, TraceletHashAlgorithm.sha512.rawValue)
+        XCTAssertEqual(map["enabled"] as? Bool, true)
+        XCTAssertEqual(map["hashAlgorithm"] as? Int, TraceletHashAlgorithm.sha512.rawValue)
+        XCTAssertEqual(map["includeExtrasInHash"] as? Bool, true)
         
         let restored = TraceletAuditConfig.fromMap(map)
-        XCTAssertEqual(restored.enableAuditTrail, true)
-        XCTAssertEqual(restored.auditHashAlgorithm, .sha512)
+        XCTAssertEqual(restored.enabled, true)
+        XCTAssertEqual(restored.hashAlgorithm, .sha512)
+        XCTAssertEqual(restored.includeExtrasInHash, true)
     }
 
     func testPrivacyZoneConfig() {
-        let config = TraceletPrivacyZoneConfig(enablePrivacyZones: true)
+        let config = TraceletPrivacyZoneConfig(enabled: true)
         let map = config.toMap()
-        XCTAssertEqual(map["enablePrivacyZones"] as? Bool, true)
+        XCTAssertEqual(map["enabled"] as? Bool, true)
         
         let restored = TraceletPrivacyZoneConfig.fromMap(map)
-        XCTAssertEqual(restored.enablePrivacyZones, true)
+        XCTAssertEqual(restored.enabled, true)
     }
 
     func testAttestationConfig() {
-        let config = TraceletAttestationConfig(enableDeviceAttestation: true)
+        let config = TraceletAttestationConfig(enabled: true, refreshInterval: 7200, verificationUrl: "https://test")
         let map = config.toMap()
-        XCTAssertEqual(map["enableDeviceAttestation"] as? Bool, true)
+        XCTAssertEqual(map["enabled"] as? Bool, true)
         
         let restored = TraceletAttestationConfig.fromMap(map)
-        XCTAssertEqual(restored.enableDeviceAttestation, true)
+        XCTAssertEqual(restored.enabled, true)
+        XCTAssertEqual(restored.refreshInterval, 7200)
     }
 
     func testConfigFromMapWithNSNumberValues() {

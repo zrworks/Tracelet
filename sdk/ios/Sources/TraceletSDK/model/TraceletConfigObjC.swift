@@ -681,6 +681,8 @@ public final class TraceletHttpConfigObjC: NSObject {
     public let batchSync: Bool
     public let maxBatchSize: Int
     public let autoSync: Bool
+    public let sslPinningCertificates: [String]?
+    public let sslPinningFingerprints: [String]?
 
     public init(
         url: String? = nil,
@@ -689,7 +691,9 @@ public final class TraceletHttpConfigObjC: NSObject {
         params: [String: Any] = [:],
         batchSync: Bool = false,
         maxBatchSize: Int = 250,
-        autoSync: Bool = true
+        autoSync: Bool = true,
+        sslPinningCertificates: [String]? = nil,
+        sslPinningFingerprints: [String]? = nil
     ) {
         self.url = url
         self.method = method
@@ -698,6 +702,8 @@ public final class TraceletHttpConfigObjC: NSObject {
         self.batchSync = batchSync
         self.maxBatchSize = maxBatchSize
         self.autoSync = autoSync
+        self.sslPinningCertificates = sslPinningCertificates
+        self.sslPinningFingerprints = sslPinningFingerprints
     }
 
     public func toMap() -> [String: Any] {
@@ -710,6 +716,8 @@ public final class TraceletHttpConfigObjC: NSObject {
             "autoSync": autoSync,
         ]
         if let u = url { map["url"] = u }
+        if let certs = sslPinningCertificates { map["sslPinningCertificates"] = certs }
+        if let fps = sslPinningFingerprints { map["sslPinningFingerprints"] = fps }
         return map
     }
 
@@ -721,7 +729,9 @@ public final class TraceletHttpConfigObjC: NSObject {
             batchSync: batchSync,
             maxBatchSize: maxBatchSize,
             autoSync: autoSync,
-            params: params
+            params: params,
+            sslPinningCertificates: sslPinningCertificates ?? [],
+            sslPinningFingerprints: sslPinningFingerprints ?? []
         )
     }
 
@@ -733,7 +743,9 @@ public final class TraceletHttpConfigObjC: NSObject {
             params: map["params"] as? [String: Any] ?? [:],
             batchSync: map["batchSync"] as? Bool ?? false,
             maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250,
-            autoSync: map["autoSync"] as? Bool ?? true
+            autoSync: map["autoSync"] as? Bool ?? true,
+            sslPinningCertificates: map["sslPinningCertificates"] as? [String],
+            sslPinningFingerprints: map["sslPinningFingerprints"] as? [String]
         )
     }
 }
@@ -939,8 +951,8 @@ public final class TraceletAuditConfigObjC: NSObject {
 
     public func toSwift() -> TraceletAuditConfig {
         TraceletAuditConfig(
-            enableAuditTrail: enabled,
-            auditHashAlgorithm: TraceletHashAlgorithm(rawValue: hashAlgorithm) ?? .sha256
+            enabled: enabled,
+            hashAlgorithm: TraceletHashAlgorithm(rawValue: hashAlgorithm) ?? .sha256
         )
     }
 
@@ -969,7 +981,7 @@ public final class TraceletPrivacyZoneConfigObjC: NSObject {
     }
 
     public func toSwift() -> TraceletPrivacyZoneConfig {
-        TraceletPrivacyZoneConfig(enablePrivacyZones: enabled)
+        TraceletPrivacyZoneConfig(enabled: enabled)
     }
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletPrivacyZoneConfigObjC {
@@ -1021,7 +1033,7 @@ public final class TraceletAttestationConfigObjC: NSObject {
     }
 
     public func toSwift() -> TraceletAttestationConfig {
-        TraceletAttestationConfig(enableDeviceAttestation: enabled)
+        TraceletAttestationConfig(enabled: enabled, refreshInterval: refreshInterval)
     }
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletAttestationConfigObjC {

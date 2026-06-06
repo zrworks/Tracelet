@@ -142,6 +142,7 @@ class Config {
   /// **Enterprise** — Device integrity attestation.
   final AttestationConfig attestation;
 
+  /// Documentation for Config.
   Config copyWith({
     GeoConfig? geo,
     AppConfig? app,
@@ -273,6 +274,7 @@ class Config {
 /// GPS filtering and smoothing options.
 @immutable
 class LocationFilter {
+  /// Documentation for LocationFilter.
   const LocationFilter({
     this.trackingAccuracyThreshold = 100,
     this.maxImpliedSpeed = 80,
@@ -283,6 +285,7 @@ class LocationFilter {
     this.useKalmanFilter = false,
   });
 
+  /// Documentation for factory.
   factory LocationFilter.fromMap(Map<String, Object?> map) {
     return LocationFilter(
       trackingAccuracyThreshold: ensureInt(
@@ -340,6 +343,7 @@ class LocationFilter {
     useKalmanFilter: useKalmanFilter,
   );
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'trackingAccuracyThreshold': trackingAccuracyThreshold,
@@ -380,6 +384,7 @@ class LocationFilter {
 /// Shared location accuracy and sampling settings.
 @immutable
 class GeoConfig {
+  /// Documentation for GeoConfig.
   const GeoConfig({
     this.desiredAccuracy = DesiredAccuracy.high,
     this.distanceFilter = 10.0,
@@ -404,6 +409,7 @@ class GeoConfig {
     this.resolveAddress = false,
   });
 
+  /// Documentation for factory.
   factory GeoConfig.fromMap(Map<String, Object?> map) {
     return GeoConfig(
       desiredAccuracy:
@@ -477,6 +483,7 @@ class GeoConfig {
     );
   }
 
+  /// Documentation for GeoConfig.
   GeoConfig copyWith({
     DesiredAccuracy? desiredAccuracy,
     double? distanceFilter,
@@ -647,6 +654,7 @@ class GeoConfig {
     resolveAddress: resolveAddress,
   );
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'desiredAccuracy': desiredAccuracy.index,
@@ -729,6 +737,7 @@ class GeoConfig {
 /// Shared application lifecycle and scheduling settings.
 @immutable
 class AppConfig {
+  /// Documentation for AppConfig.
   const AppConfig({
     this.stopOnTerminate = true,
     this.startOnBoot = false,
@@ -740,6 +749,7 @@ class AppConfig {
     this.remoteConfigRefreshInterval = 1440,
   });
 
+  /// Documentation for factory.
   factory AppConfig.fromMap(Map<String, Object?> map) {
     final rawSchedule = map['schedule'];
     final scheduleList = <String>[];
@@ -767,6 +777,7 @@ class AppConfig {
     );
   }
 
+  /// Documentation for AppConfig.
   AppConfig copyWith({
     bool? stopOnTerminate,
     bool? startOnBoot,
@@ -834,6 +845,7 @@ class AppConfig {
     remoteConfigRefreshInterval: remoteConfigRefreshInterval,
   );
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'stopOnTerminate': stopOnTerminate,
@@ -877,6 +889,7 @@ class AppConfig {
 /// HTTP sync settings.
 @immutable
 class HttpConfig {
+  /// Documentation for HttpConfig.
   const HttpConfig({
     this.url,
     this.method = HttpMethod.post,
@@ -901,6 +914,7 @@ class HttpConfig {
     this.sslPinningCertificates,
   });
 
+  /// Documentation for factory.
   factory HttpConfig.fromMap(Map<String, Object?> map) {
     return HttpConfig(
       url: map['url'] as String?,
@@ -946,6 +960,7 @@ class HttpConfig {
     );
   }
 
+  /// Documentation for HttpConfig.
   HttpConfig copyWith({
     String? url,
     HttpMethod? method,
@@ -1109,6 +1124,7 @@ class HttpConfig {
     sslPinningCertificates: sslPinningCertificates,
   );
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'url': url,
@@ -1193,13 +1209,16 @@ class HttpConfig {
 // For now, only the core configs are mapped to TlConfig in Pigeon.
 
 @immutable
+/// Documentation for LoggerConfig.
 class LoggerConfig {
+  /// Documentation for LoggerConfig.
   const LoggerConfig({
     this.logLevel = LogLevel.info,
     this.logMaxDays = 3,
     this.debug = false,
   });
 
+  /// Documentation for factory.
   factory LoggerConfig.fromMap(Map<String, Object?> map) {
     return LoggerConfig(
       logLevel:
@@ -1212,6 +1231,7 @@ class LoggerConfig {
     );
   }
 
+  /// Documentation for LoggerConfig.
   LoggerConfig copyWith({LogLevel? logLevel, int? logMaxDays, bool? debug}) {
     return LoggerConfig(
       logLevel: logLevel ?? this.logLevel,
@@ -1232,6 +1252,7 @@ class LoggerConfig {
   /// and verbose local logging). Defaults to `false`.
   final bool debug;
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'logLevel': logLevel.index,
@@ -1240,6 +1261,7 @@ class LoggerConfig {
     };
   }
 
+  /// Documentation for TlLoggerConfig.
   TlLoggerConfig toTlConfig() => TlLoggerConfig(
     logLevel: TlLogLevel.values[logLevel.index],
     logMaxDays: logMaxDays,
@@ -1260,7 +1282,9 @@ class LoggerConfig {
 }
 
 @immutable
+/// Documentation for MotionConfig.
 class MotionConfig {
+  /// Documentation for MotionConfig.
   const MotionConfig({
     this.stopTimeout = 5,
     this.motionTriggerDelay = 0,
@@ -1288,6 +1312,7 @@ class MotionConfig {
        assert(speedWakeConfirmCount >= 1, 'speedWakeConfirmCount must be >= 1'),
        assert(speedMovingThreshold > 0, 'speedMovingThreshold must be > 0');
 
+  /// Documentation for factory.
   factory MotionConfig.fromMap(Map<String, Object?> map) {
     // Parse activityTypes from the map if present.
     final rawActivityTypes = map['activityTypes'];
@@ -1531,6 +1556,7 @@ class MotionConfig {
     return StationaryTrackingMode.periodic;
   }
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'stopTimeout': stopTimeout,
@@ -1560,6 +1586,7 @@ class MotionConfig {
     };
   }
 
+  /// Documentation for TlMotionConfig.
   TlMotionConfig toTlConfig() => TlMotionConfig(
     stopTimeout: stopTimeout,
     motionTriggerDelay: motionTriggerDelay,
@@ -1654,7 +1681,9 @@ class MotionConfig {
 }
 
 @immutable
+/// Documentation for GeofenceConfig.
 class GeofenceConfig {
+  /// Documentation for GeofenceConfig.
   const GeofenceConfig({
     this.geofenceModeHighAccuracy = false,
     this.geofenceInitialTriggerEntry = true,
@@ -1662,6 +1691,7 @@ class GeofenceConfig {
     this.geofenceProximityRadius = 1000,
   });
 
+  /// Documentation for factory.
   factory GeofenceConfig.fromMap(Map<String, Object?> map) {
     return GeofenceConfig(
       geofenceModeHighAccuracy: ensureBool(
@@ -1700,6 +1730,7 @@ class GeofenceConfig {
   /// Defaults to `1000`.
   final int geofenceProximityRadius;
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'geofenceModeHighAccuracy': geofenceModeHighAccuracy,
@@ -1709,6 +1740,7 @@ class GeofenceConfig {
     };
   }
 
+  /// Documentation for TlGeofenceConfig.
   TlGeofenceConfig toTlConfig() => TlGeofenceConfig(
     geofenceModeHighAccuracy: geofenceModeHighAccuracy,
     geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
@@ -1736,7 +1768,9 @@ class GeofenceConfig {
 }
 
 @immutable
+/// Documentation for PersistenceConfig.
 class PersistenceConfig {
+  /// Documentation for PersistenceConfig.
   const PersistenceConfig({
     this.maxDaysToPersist = 1,
     this.maxRecordsToPersist = -1,
@@ -1744,6 +1778,7 @@ class PersistenceConfig {
     this.disableProviderChangeRecord = false,
   });
 
+  /// Documentation for factory.
   factory PersistenceConfig.fromMap(Map<String, Object?> map) {
     return PersistenceConfig(
       maxDaysToPersist: ensureInt(map['maxDaysToPersist'], fallback: 1),
@@ -1776,6 +1811,7 @@ class PersistenceConfig {
   /// Defaults to `false`.
   final bool disableProviderChangeRecord;
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'maxDaysToPersist': maxDaysToPersist,
@@ -1785,6 +1821,7 @@ class PersistenceConfig {
     };
   }
 
+  /// Documentation for TlPersistenceConfig.
   TlPersistenceConfig toTlConfig() => TlPersistenceConfig(
     persistMode: TlPersistMode.values[persistMode.index],
     maxDaysToPersist: maxDaysToPersist,

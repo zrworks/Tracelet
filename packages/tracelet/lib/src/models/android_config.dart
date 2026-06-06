@@ -59,6 +59,7 @@ class AndroidConfig {
     );
   }
 
+  /// Documentation for AndroidConfig.
   AndroidConfig copyWith({
     int? locationUpdateInterval,
     int? fastestLocationUpdateInterval,
@@ -190,6 +191,7 @@ class AndroidConfig {
 /// Configuration for the Android foreground service notification.
 @immutable
 class ForegroundServiceConfig {
+  /// Documentation for ForegroundServiceConfig.
   const ForegroundServiceConfig({
     this.enabled = true,
     this.channelId = 'tracelet_channel',
@@ -205,6 +207,7 @@ class ForegroundServiceConfig {
     this.actions = const <String>[],
   });
 
+  /// Documentation for factory.
   factory ForegroundServiceConfig.fromMap(Map<String, Object?> map) {
     final rawActions = map['actions'];
     final actionsList = <String>[];
@@ -239,6 +242,7 @@ class ForegroundServiceConfig {
     );
   }
 
+  /// Documentation for ForegroundServiceConfig.
   ForegroundServiceConfig copyWith({
     bool? enabled,
     String? channelId,
@@ -341,6 +345,7 @@ class ForegroundServiceConfig {
     actions: actions,
   );
 
+  /// Documentation for Map<String,.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'enabled': enabled,

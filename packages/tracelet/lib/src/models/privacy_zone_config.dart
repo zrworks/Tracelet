@@ -14,6 +14,7 @@ import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 /// ```
 @immutable
 class PrivacyZoneConfig {
+  /// Documentation for PrivacyZoneConfig.
   const PrivacyZoneConfig({this.enabled = false});
 
   /// Creates a [PrivacyZoneConfig] from a platform map.
@@ -41,6 +42,7 @@ class PrivacyZoneConfig {
     return <String, Object?>{'privacyZoneEnabled': enabled};
   }
 
+  /// Documentation for TlPrivacyZoneConfig.
   TlPrivacyZoneConfig toTlConfig() => TlPrivacyZoneConfig(enabled: enabled);
 
   @override

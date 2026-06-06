@@ -89,6 +89,7 @@ class SecurityConfig {
     };
   }
 
+  /// Documentation for TlSecurityConfig.
   TlSecurityConfig toTlConfig() =>
       TlSecurityConfig(encryptDatabase: encryptDatabase);
 

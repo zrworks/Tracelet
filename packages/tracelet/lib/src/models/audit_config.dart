@@ -108,6 +108,7 @@ class AuditConfig {
     };
   }
 
+  /// Documentation for TlAuditConfig.
   TlAuditConfig toTlConfig() => TlAuditConfig(
     enabled: enabled,
     hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],

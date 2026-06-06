@@ -7,6 +7,7 @@ import 'package:tracelet_web/src/web_storage_engine.dart';
 /// Iterates over persisted locations to estimate carbon emissions based on
 /// distance traveled and inferred activity type (defaulting to driving on web).
 class WebCarbonEngine {
+  /// Documentation for WebCarbonEngine.
   WebCarbonEngine(this._storage);
 
   final WebStorageEngine _storage;
@@ -16,6 +17,7 @@ class WebCarbonEngine {
   static const double _drivingFactor = 120;
   static const double _unknownFactor = 120;
 
+  /// Documentation for Future<Map<String,.
   Future<Map<String, Object?>> getCarbonReport([
     Map<String, Object?>? query,
   ]) async {

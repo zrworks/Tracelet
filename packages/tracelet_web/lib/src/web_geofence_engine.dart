@@ -11,6 +11,7 @@ import 'package:tracelet_web/src/web_event_dispatcher.dart';
 /// transitions in Dart by checking the distance from the current position to
 /// each registered geofence on every location fix.
 class WebGeofenceEngine {
+  /// Documentation for WebGeofenceEngine.
   WebGeofenceEngine(this._events);
 
   final WebEventDispatcher _events;
@@ -34,6 +35,7 @@ class WebGeofenceEngine {
   // CRUD
   // ---------------------------------------------------------------------------
 
+  /// Documentation for addGeofence.
   bool addGeofence(Map<String, Object?> geofence) {
     final id = geofence['identifier'] as String?;
     if (id == null || id.isEmpty) return false;
@@ -63,6 +65,7 @@ class WebGeofenceEngine {
     return true;
   }
 
+  /// Documentation for addGeofences.
   bool addGeofences(List<Map<String, Object?>> geofences) {
     for (final g in geofences) {
       addGeofence(g);
@@ -70,6 +73,7 @@ class WebGeofenceEngine {
     return true;
   }
 
+  /// Documentation for removeGeofence.
   bool removeGeofence(String identifier) {
     _geofences.remove(identifier);
     _cachedVertices.remove(identifier);
@@ -79,6 +83,7 @@ class WebGeofenceEngine {
     return true;
   }
 
+  /// Documentation for removeGeofences.
   bool removeGeofences() {
     _geofences.clear();
     _cachedVertices.clear();
@@ -90,14 +95,17 @@ class WebGeofenceEngine {
     return true;
   }
 
+  /// Documentation for List<Map<String,.
   List<Map<String, Object?>> getGeofences() {
     return _geofences.values.toList();
   }
 
+  /// Documentation for Map<String,.
   Map<String, Object?>? getGeofence(String identifier) {
     return _geofences[identifier];
   }
 
+  /// Documentation for geofenceExists.
   bool geofenceExists(String identifier) {
     return _geofences.containsKey(identifier);
   }

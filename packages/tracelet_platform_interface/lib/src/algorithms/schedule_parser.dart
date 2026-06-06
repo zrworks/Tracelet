@@ -100,21 +100,21 @@ class ScheduleWindow {
   /// 1 (Monday) to 7 (Sunday).
   /// The start day, where 1 = Monday and 7 = Sunday.
   final int dayStart;
-  
+
   /// The end day, where 1 = Monday and 7 = Sunday.
   final int dayEnd;
 
   /// Minutes since midnight.
   /// The starting time in minutes since midnight.
   final int startMinutes;
-  
+
   /// The ending time in minutes since midnight.
   final int endMinutes;
 
   /// Formats the [startMinutes] into a HH:MM string.
   String get startTime =>
       '${(startMinutes ~/ 60).toString().padLeft(2, '0')}:${(startMinutes % 60).toString().padLeft(2, '0')}';
-      
+
   /// Formats the [endMinutes] into a HH:MM string.
   String get endTime =>
       '${(endMinutes ~/ 60).toString().padLeft(2, '0')}:${(endMinutes % 60).toString().padLeft(2, '0')}';

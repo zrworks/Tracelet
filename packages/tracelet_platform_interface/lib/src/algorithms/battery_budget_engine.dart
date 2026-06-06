@@ -89,10 +89,10 @@ class BatteryBudgetEngine {
 
   /// The current dynamic distance filter applied by the engine.
   double get distanceFilter => _inner?.getDistanceFilter() ?? 10.0;
-  
+
   /// The current dynamic accuracy index applied by the engine.
   int get accuracyIndex => _inner?.getAccuracyIndex() ?? 0;
-  
+
   /// The current dynamic periodic interval applied by the engine.
   int? get periodicInterval => _inner?.getPeriodicInterval();
 

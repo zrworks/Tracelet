@@ -11,6 +11,7 @@ class TripManager {
     }
   }
   TripManagerDart? _inner;
+
   /// Callback fired when a trip is completed, returning the trip summary.
   void Function(Map<String, Object?>)? onTripEnd;
 

@@ -89,7 +89,7 @@ class SecurityConfig {
     };
   }
 
-  /// Documentation for TlSecurityConfig.
+  /// Converts to Pigeon [TlSecurityConfig].
   TlSecurityConfig toTlConfig() =>
       TlSecurityConfig(encryptDatabase: encryptDatabase);
 

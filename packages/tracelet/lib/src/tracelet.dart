@@ -177,6 +177,8 @@ class Tracelet {
           (e.message.contains('already initialized') ||
               e.message.contains('initialize flutter_rust_bridge twice'))) {
         // Ignored if already initialized concurrently
+      } else if (e.toString().contains('Failed to load dynamic library')) {
+        // Ignored in tests where the rust dynamic library isn't built
       } else {
         rethrow;
       }

@@ -48,10 +48,7 @@ generate_dummy_symbols() {
     local DUMMY_SWIFT_OUT=$2
     local EXTENSION_NAME=$3
 
-    local NM_OUTPUT=""
-    if [ "$EXTENSION_NAME" = "TraceletCore" ]; then
-        NM_OUTPUT=$(nm -g "$LIB_PATH" 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
-    fi
+    local NM_OUTPUT=$(nm -g "$LIB_PATH" 2>/dev/null | grep -E " T _frb| T _store_dart" | awk '{print $3}' | sed 's/^_//' | sort | uniq)
 
     echo "import Foundation" > "$DUMMY_SWIFT_OUT"
     echo "" >> "$DUMMY_SWIFT_OUT"
@@ -62,6 +59,7 @@ generate_dummy_symbols() {
     echo "public var _${EXTENSION_NAME}_dummy_sink: [Any] = []" >> "$DUMMY_SWIFT_OUT"
     echo "" >> "$DUMMY_SWIFT_OUT"
     echo "public struct ${EXTENSION_NAME}Dummy {" >> "$DUMMY_SWIFT_OUT"
+    echo "    @inline(never)" >> "$DUMMY_SWIFT_OUT"
     echo "    public static func enforceBundling() {" >> "$DUMMY_SWIFT_OUT"
     echo "        let dummyArray: [Any] = [" >> "$DUMMY_SWIFT_OUT"
     for symbol in $NM_OUTPUT; do
@@ -69,6 +67,9 @@ generate_dummy_symbols() {
     done
     echo "        ]" >> "$DUMMY_SWIFT_OUT"
     echo "        _${EXTENSION_NAME}_dummy_sink = dummyArray" >> "$DUMMY_SWIFT_OUT"
+    echo "        if ProcessInfo.processInfo.environment[\"DEBUG_DUMMY_FRB\"] != nil {" >> "$DUMMY_SWIFT_OUT"
+    echo "            print(_${EXTENSION_NAME}_dummy_sink)" >> "$DUMMY_SWIFT_OUT"
+    echo "        }" >> "$DUMMY_SWIFT_OUT"
     echo "    }" >> "$DUMMY_SWIFT_OUT"
     echo "}" >> "$DUMMY_SWIFT_OUT"
 }

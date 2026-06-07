@@ -12,7 +12,9 @@ Future<void> initializeRustLib() async {
     lib = _loadIosLibrary();
   } else if (Platform.isAndroid) {
     // In Android, TraceletCore is loaded by JNI (System.loadLibrary) before Tracelet.ready() is called.
-    lib = ExternalLibrary.process(iKnowHowToUseIt: true);
+    // However, JNI loads libraries with RTLD_LOCAL, meaning symbols are not globally visible.
+    // We MUST explicitly open the library to resolve symbols reliably.
+    lib = ExternalLibrary.open('libtracelet_core.so');
   } else if (Platform.isMacOS) {
     // For local tests running on macOS host, resolve relative to the current script
     var rootDir = Directory.current.path;

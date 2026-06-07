@@ -1,3 +1,8 @@
+## 3.2.7
+
+- **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in release builds.
+- **FIX**(android): implement OEM hardening mitigations and introduce `showPowerManager` to handle aggressive battery restrictions on specific OEM devices.
+
 ## 3.2.6
 
 - **PERF**: Optimize database timestamp queries for O(log N) fast filtering and resolve precision bugs (Issue #119).

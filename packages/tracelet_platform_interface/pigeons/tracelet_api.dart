@@ -838,6 +838,9 @@ abstract class TraceletHostApi {
   bool openOemSettings(String label);
 
   @async
+  bool showPowerManager();
+
+  @async
   String getLog(Map<String?, Object?>? query);
 
   @async

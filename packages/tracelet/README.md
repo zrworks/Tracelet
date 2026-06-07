@@ -213,6 +213,23 @@ iOS permissions are declared in `Info.plist`, not merged from plugin manifests. 
 | `NSLocationAlwaysAndWhenInUseUsageDescription` | Required for background location. Without it, the OS won't show the "Always" option. |
 | `UIBackgroundModes` → `location` | Without this, iOS suspends location updates immediately when backgrounded. |
 
+## OEM Compatibility (Chinese Manufacturers)
+
+Devices from Huawei, Xiaomi, OnePlus, Samsung, Oppo, and Vivo ship with custom power management that aggressively kills background apps. Tracelet automatically applies mitigations (such as force-enabling foreground services on restricted OEMs and utilizing OEM-safe Wakelock tags).
+
+You can also use the **Settings Health API** to prompt users to whitelist the app manually:
+
+```dart
+final health = await tl.Tracelet.getSettingsHealth();
+if (health['isAggressiveOem'] == true) {
+  // Automatically opens the manufacturer-specific settings screen 
+  // (e.g. Xiaomi Autostart, Huawei App Launch, etc.)
+  await tl.Tracelet.showPowerManager();
+}
+```
+
+See the [OEM Compatibility Guide](https://github.com/Ikolvi/Tracelet/blob/main/help/OEM-COMPATIBILITY.md) for full details on manufacturer-specific behaviors.
+
 ## Documentation
 
 ### Kalman Filter GPS Smoothing

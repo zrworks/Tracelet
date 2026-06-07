@@ -1290,6 +1290,28 @@ class Tracelet {
     return _platform.openOemSettings(label);
   }
 
+  /// Launch the OEM-specific power manager / battery optimization screen.
+  ///
+  /// Iterates through known manufacturer-specific settings intents and
+  /// launches the first available one. This is the primary way to direct
+  /// users to manually whitelist the app on aggressive OEMs (Vivo, Oppo,
+  /// Xiaomi, Huawei, etc.).
+  ///
+  /// Returns `true` if a screen was launched successfully, `false` if no
+  /// known screen was found for this device or the intent failed.
+  ///
+  /// On iOS and Web, always returns `false`.
+  ///
+  /// ```dart
+  /// final launched = await Tracelet.showPowerManager();
+  /// if (launched) {
+  ///   print('User is reviewing power settings.');
+  /// }
+  /// ```
+  static Future<bool> showPowerManager() {
+    return _platform.showPowerManager();
+  }
+
   // ---------------------------------------------------------------------------
   // Background Tasks
   // ---------------------------------------------------------------------------

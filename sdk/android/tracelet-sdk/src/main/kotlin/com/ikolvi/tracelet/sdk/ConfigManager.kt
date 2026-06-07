@@ -2,6 +2,7 @@ package com.ikolvi.tracelet.sdk
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.ikolvi.tracelet.sdk.util.OemCompat
 import org.json.JSONObject
 
 /**
@@ -287,8 +288,10 @@ class ConfigManager(context: Context) {
     fun getAllowIdenticalLocations(): Boolean =
         getBool("allowIdenticalLocations", DEFAULT_ALLOW_IDENTICAL_LOCATIONS)
 
-    fun getGeofenceModeHighAccuracy(): Boolean =
-        getBool("geofenceModeHighAccuracy", DEFAULT_GEOFENCE_MODE_HIGH_ACCURACY)
+    fun getGeofenceModeHighAccuracy(): Boolean {
+        val configured = getBool("geofenceModeHighAccuracy", DEFAULT_GEOFENCE_MODE_HIGH_ACCURACY)
+        return if (isRestrictedOem()) true else configured
+    }
 
     fun getMaxMonitoredGeofences(): Int =
         getInt("maxMonitoredGeofences", DEFAULT_MAX_MONITORED_GEOFENCES)
@@ -303,8 +306,10 @@ class ConfigManager(context: Context) {
     fun getPeriodicDesiredAccuracy(): Int =
         getInt("periodicDesiredAccuracy", DEFAULT_PERIODIC_DESIRED_ACCURACY)
 
-    fun getPeriodicUseForegroundService(): Boolean =
-        getBool("periodicUseForegroundService", DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE)
+    fun getPeriodicUseForegroundService(): Boolean {
+        val configured = getBool("periodicUseForegroundService", DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE)
+        return if (isRestrictedOem()) true else configured
+    }
 
     fun getPeriodicUseExactAlarms(): Boolean =
         getBool("periodicUseExactAlarms", DEFAULT_PERIODIC_USE_EXACT_ALARMS)
@@ -466,8 +471,10 @@ class ConfigManager(context: Context) {
     }
 
     // ForegroundService config
-    fun isForegroundServiceEnabled(): Boolean =
-        getBool("fg_enabled", DEFAULT_FG_ENABLED)
+    fun isForegroundServiceEnabled(): Boolean {
+        val configured = getBool("fg_enabled", DEFAULT_FG_ENABLED)
+        return if (isRestrictedOem()) true else configured
+    }
 
     fun getFgChannelId(): String =
         getString("fg_channelId", DEFAULT_CHANNEL_ID)
@@ -759,6 +766,8 @@ class ConfigManager(context: Context) {
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
+
+    fun isRestrictedOem(): Boolean = OemCompat.isAggressiveOem
 
     private fun getInt(key: String, default: Int): Int {
         val value = configCache[key]

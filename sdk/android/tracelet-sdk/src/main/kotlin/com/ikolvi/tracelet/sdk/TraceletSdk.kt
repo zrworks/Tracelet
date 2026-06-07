@@ -1566,6 +1566,10 @@ class TraceletSdk private constructor(private val context: Context) {
         return OemCompat.openOemSettingsScreen(context, label)
     }
 
+    fun showPowerManager(): Boolean {
+        return OemCompat.showPowerManager(context)
+    }
+
     // =========================================================================
     // Enterprise: Audit Trail
     // =========================================================================

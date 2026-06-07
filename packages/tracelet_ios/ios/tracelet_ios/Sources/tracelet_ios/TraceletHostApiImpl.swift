@@ -663,6 +663,10 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(false)) // N/A on iOS
     }
 
+    func showPowerManager(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false)) // N/A on iOS
+    }
+
     // MARK: - Logging
 
     func getLog(query: [String?: Any?]?, completion: @escaping (Result<String, Error>) -> Void) {

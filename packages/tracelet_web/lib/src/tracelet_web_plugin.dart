@@ -588,6 +588,9 @@ class TraceletWebPlugin extends TraceletPlatform {
   @override
   Future<bool> openOemSettings(String label) async => false;
 
+  @override
+  Future<bool> showPowerManager() async => false;
+
   // ---------------------------------------------------------------------------
   // Background Tasks (stubs — no background execution on web)
   // ---------------------------------------------------------------------------

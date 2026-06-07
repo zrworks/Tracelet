@@ -2665,6 +2665,7 @@ protocol TraceletHostApi {
   func getSensors(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
   func getSettingsHealth(completion: @escaping (Result<[String?: Any?], Error>) -> Void)
   func openOemSettings(label: String, completion: @escaping (Result<Bool, Error>) -> Void)
+  func showPowerManager(completion: @escaping (Result<Bool, Error>) -> Void)
   func getLog(query: [String?: Any?]?, completion: @escaping (Result<String, Error>) -> Void)
   func destroyLog(completion: @escaping (Result<Bool, Error>) -> Void)
   func emailLog(email: String, completion: @escaping (Result<Bool, Error>) -> Void)
@@ -3646,6 +3647,21 @@ class TraceletHostApiSetup {
       }
     } else {
       openOemSettingsChannel.setMessageHandler(nil)
+    }
+    let showPowerManagerChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showPowerManager\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      showPowerManagerChannel.setMessageHandler { _, reply in
+        api.showPowerManager { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      showPowerManagerChannel.setMessageHandler(nil)
     }
     let getLogChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLog\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

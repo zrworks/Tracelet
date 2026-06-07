@@ -104,6 +104,17 @@ Each entry in `oemSettingsScreens` has:
 
 ### Open OEM Settings
 
+You can use the `showPowerManager` convenience method to automatically iterate and open the first available manufacturer-specific screen:
+
+```dart
+final opened = await Tracelet.showPowerManager();
+if (!opened) {
+  print('Settings screen not available on this device.');
+}
+```
+
+Alternatively, you can manually open a specific screen by label:
+
 ```dart
 final health = await Tracelet.getSettingsHealth();
 final screens = health['oemSettingsScreens'] as List? ?? [];
@@ -187,6 +198,11 @@ final health = await Tracelet.getSettingsHealth();
 
 if (health['isAggressiveOem'] == true) {
   final rating = health['aggressionRating'] as int;
+  
+  // You can automatically launch the first available screen:
+  // await Tracelet.showPowerManager();
+  
+  // Or handle screens individually:
   final screens = health['oemSettingsScreens'] as List? ?? [];
 
   // Show a "Device Health" card with manufacturer-specific guidance
@@ -197,7 +213,7 @@ if (health['isAggressiveOem'] == true) {
 
     // Show each setting with an "Open" button
     // When tapped:
-    await Tracelet.openOemSettings(label);
+    // await Tracelet.openOemSettings(label);
   }
 }
 ```

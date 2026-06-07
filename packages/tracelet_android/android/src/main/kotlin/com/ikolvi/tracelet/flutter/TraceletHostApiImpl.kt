@@ -739,6 +739,12 @@ class TraceletHostApiImpl(
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
+    override fun showPowerManager(callback: (Result<Boolean>) -> Unit) {
+        try {
+            callback(Result.success(sdk.showPowerManager()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
     // =========================================================================
     // Logging
     // =========================================================================

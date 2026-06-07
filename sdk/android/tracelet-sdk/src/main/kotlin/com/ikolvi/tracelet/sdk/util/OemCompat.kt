@@ -339,6 +339,34 @@ object OemCompat {
     }
 
     // =========================================================================
+    // Show Power Manager
+    // =========================================================================
+
+    /**
+     * Convenience method to launch the power manager.
+     *
+     * Iterates through known OEM settings screens and launches the first
+     * resolvable one. This is the primary way to direct users to the
+     * correct manufacturer-specific battery/autostart settings screen.
+     *
+     * @return `true` if a settings screen was successfully launched
+     */
+    fun showPowerManager(context: Context): Boolean {
+        val screens = getOemSettingsScreens(context)
+        for (screen in screens) {
+            val intent = screen.intent ?: continue
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to launch power manager screen '${screen.label}': ${e.message}")
+            }
+        }
+        return false
+    }
+
+    // =========================================================================
     // Settings health check
     // =========================================================================
 

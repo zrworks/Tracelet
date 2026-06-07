@@ -2830,6 +2830,7 @@ interface TraceletHostApi {
   fun getSensors(callback: (Result<Map<String?, Any?>>) -> Unit)
   fun getSettingsHealth(callback: (Result<Map<String?, Any?>>) -> Unit)
   fun openOemSettings(label: String, callback: (Result<Boolean>) -> Unit)
+  fun showPowerManager(callback: (Result<Boolean>) -> Unit)
   fun getLog(query: Map<String?, Any?>?, callback: (Result<String>) -> Unit)
   fun destroyLog(callback: (Result<Boolean>) -> Unit)
   fun emailLog(email: String, callback: (Result<Boolean>) -> Unit)
@@ -3981,6 +3982,24 @@ interface TraceletHostApi {
             val args = message as List<Any?>
             val labelArg = args[0] as String
             api.openOemSettings(labelArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showPowerManager$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.showPowerManager{ result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))

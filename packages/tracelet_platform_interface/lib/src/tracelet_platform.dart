@@ -491,6 +491,20 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('openOemSettings() has not been implemented.');
   }
 
+  /// Launch the OEM-specific power manager / battery optimization screen.
+  ///
+  /// Iterates through known manufacturer-specific settings intents and
+  /// launches the first available one. This is the primary way to direct
+  /// users to manually whitelist the app on aggressive OEMs.
+  ///
+  /// Returns `true` if a screen was launched, `false` if no known
+  /// screen was found for this device.
+  ///
+  /// On iOS and Web, always returns `false`.
+  Future<bool> showPowerManager() {
+    throw UnimplementedError('showPowerManager() has not been implemented.');
+  }
+
   // ---------------------------------------------------------------------------
   // Background Tasks
   // ---------------------------------------------------------------------------

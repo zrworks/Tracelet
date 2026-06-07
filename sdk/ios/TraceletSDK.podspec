@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.vendored_frameworks = '../rust-core/out/TraceletCore.xcframework'
   s.libraries        = 'sqlite3'
   s.user_target_xcconfig = {
-    'OTHER_LDFLAGS' => '-force_load "${PODS_XCFRAMEWORKS_BUILD_DIR}/TraceletSDK/libtracelet_core.a"'
+    'OTHER_LDFLAGS' => '-force_load "${PODS_XCFRAMEWORKS_BUILD_DIR}/TraceletSDK/libtracelet_core.a"',
+    'STRIP_INSTALLED_PRODUCT' => 'NO'
   }
 end

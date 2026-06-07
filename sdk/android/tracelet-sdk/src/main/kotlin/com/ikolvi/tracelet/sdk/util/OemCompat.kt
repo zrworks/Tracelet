@@ -31,21 +31,29 @@ object OemCompat {
     // =========================================================================
 
     /** Normalized lowercase manufacturer string. */
-    val manufacturer: String = Build.MANUFACTURER.lowercase()
+    val manufacturer: String
+        get() = Build.MANUFACTURER.lowercase()
 
     private val huaweiNames = setOf("huawei", "honor")
     private val xiaomiNames = setOf("xiaomi", "redmi", "poco")
     private val oppoNames = setOf("oppo", "realme")
 
-    val isHuawei: Boolean = manufacturer in huaweiNames
-    val isXiaomi: Boolean = manufacturer in xiaomiNames
-    val isSamsung: Boolean = manufacturer == "samsung"
-    val isOnePlus: Boolean = manufacturer == "oneplus"
-    val isOppo: Boolean = manufacturer in oppoNames
-    val isVivo: Boolean = manufacturer == "vivo"
+    val isHuawei: Boolean
+        get() = manufacturer in huaweiNames
+    val isXiaomi: Boolean
+        get() = manufacturer in xiaomiNames
+    val isSamsung: Boolean
+        get() = manufacturer == "samsung"
+    val isOnePlus: Boolean
+        get() = manufacturer == "oneplus"
+    val isOppo: Boolean
+        get() = manufacturer in oppoNames
+    val isVivo: Boolean
+        get() = manufacturer == "vivo"
 
     /** True if the device is from an OEM known for aggressive background killing. */
-    val isAggressiveOem: Boolean = isHuawei || isXiaomi || isSamsung || isOnePlus || isOppo || isVivo
+    val isAggressiveOem: Boolean
+        get() = isHuawei || isXiaomi || isSamsung || isOnePlus || isOppo || isVivo
 
     /**
      * Returns an OEM aggression rating (1-5 scale, matching dontkillmyapp.com).

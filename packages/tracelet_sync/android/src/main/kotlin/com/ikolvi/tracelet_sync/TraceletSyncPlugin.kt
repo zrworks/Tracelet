@@ -34,19 +34,19 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
     
     private suspend fun triggerSync() {
         syncMutex.withLock {
-            android.util.Log.d("TraceletSync", "triggerSync started")
+            sdk.logger.debug("triggerSync started")
             val db = sdk.rustDatabase ?: run {
-                android.util.Log.e("TraceletSync", "rustDatabase is null")
+                sdk.logger.error("rustDatabase is null")
                 return
             }
             val state = sdk.rustEngineState ?: run {
-                android.util.Log.e("TraceletSync", "rustEngineState is null")
+                sdk.logger.error("rustEngineState is null")
                 return
             }
             
             try {
                 val coreHttp = state.getConfig().http
-                android.util.Log.d("TraceletSync", "coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
+                sdk.logger.debug("coreHttp config: url=${coreHttp.url}, autoSync=${coreHttp.autoSync}")
                 if (coreHttp.url.isNullOrEmpty() || !coreHttp.autoSync) return
                 
                 val limit = if (coreHttp.maxBatchSize > 0) coreHttp.maxBatchSize else 250
@@ -57,52 +57,14 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                     offset = null,
                     orderDescending = null
                 ))
-                android.util.Log.d("TraceletSync", "Found ${records.size} locations in DB")
+                sdk.logger.debug("Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
                 
-                val syncConfig = uniffi.tracelet_sync.SyncHttpConfig(
-                    url = coreHttp.url,
-                    method = coreHttp.method,
-                    headers = coreHttp.headers,
-                    batchSync = coreHttp.batchSync,
-                    maxBatchSize = coreHttp.maxBatchSize,
-                    autoSync = coreHttp.autoSync,
-                    maxRetries = coreHttp.maxRetries,
-                    retryBackoffBase = coreHttp.retryBackoffBase,
-                    retryBackoffCap = coreHttp.retryBackoffCap,
-                    sslPinningCertificates = coreHttp.sslPinningCertificates,
-                    sslPinningFingerprints = coreHttp.sslPinningFingerprints,
-                    httpRootProperty = coreHttp.httpRootProperty,
-                    params = coreHttp.params,
-                    extras = coreHttp.extras,
-                    disableAutoSyncOnCellular = coreHttp.disableAutoSyncOnCellular,
-                    enableDeltaCompression = coreHttp.enableDeltaCompression,
-                    deltaCoordinatePrecision = coreHttp.deltaCoordinatePrecision,
-                    locationsOrderDirection = coreHttp.locationsOrderDirection
-                )
-
-                val syncRecords = records.map {
-                    uniffi.tracelet_sync.SyncLocationRecord(
-                        id = it.id,
-                        uuid = it.uuid,
-                        timestamp = it.timestamp,
-                        latitude = it.latitude,
-                        longitude = it.longitude,
-                        accuracy = it.accuracy,
-                        speed = it.speed,
-                        heading = it.heading,
-                        altitude = it.altitude,
-                        isMock = it.isMock,
-                        activity = it.activity,
-                        routeContext = it.routeContext
-                    )
-                }
-
-                val count = syncManager.syncBatchBlocking(syncConfig, syncRecords)
-                if (count > 0U) {
+                val count = syncBatchBlocking(coreHttp, records)
+                if (count > 0L) {
                     records.lastOrNull()?.id?.let { lastId ->
                         db.clearLocationsUpTo(lastId)
-                        android.util.Log.i("TraceletSync", "Synced and cleared $count locations.")
+                        sdk.logger.info("Synced and cleared $count locations.")
                     }
                     sdk.getEventSender().sendHttp(mapOf(
                         "success" to true,
@@ -113,7 +75,7 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                     ))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("TraceletSync", "Sync failed: ${e.message}")
+                sdk.logger.error("Sync failed: ${e.message}")
                 sdk.getEventSender().sendHttp(mapOf(
                     "success" to false,
                     "status" to 0,
@@ -163,7 +125,7 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
             )
         }
         val interceptor = sdk.dartSyncInterceptor
-        android.util.Log.d("TraceletSync", "TraceletSyncPlugin Interceptor is $interceptor")
+        sdk.logger.debug("TraceletSyncPlugin Interceptor is $interceptor")
         if (interceptor != null) {
             val recordMaps = records.map { record ->
                 mapOf(
@@ -181,13 +143,13 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                     "routeContext" to record.routeContext
                 )
             }
-            android.util.Log.d("TraceletSync", "Calling requestSyncBody on interceptor with ${recordMaps.size} records")
+            sdk.logger.debug("Calling requestSyncBody on interceptor with ${recordMaps.size} records")
             val customBody = interceptor.requestSyncBody(recordMaps)
-            android.util.Log.d("TraceletSync", "requestSyncBody returned: $customBody")
+            sdk.logger.debug("requestSyncBody returned: $customBody")
             if (customBody != null) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
-                    android.util.Log.d("TraceletSync", "executeFallbackHttpSync success: $success")
+                    sdk.logger.debug("executeFallbackHttpSync success: $success")
                     if (success) records.size.toLong() else 0L
                 }
             }
@@ -216,14 +178,11 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
 
                 if (currentHeaders.isNotEmpty()) {
                     try {
-                        val headersMap = org.json.JSONObject(currentHeaders)
-                        val iter = headersMap.keys()
-                        while (iter.hasNext()) {
-                            val key = iter.next()
-                            conn.setRequestProperty(key, headersMap.getString(key))
+                        currentHeaders.forEach { (key, value) ->
+                            conn.setRequestProperty(key, value)
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("TraceletSync", "Failed to parse HTTP headers: ${e.message}")
+                        sdk.logger.error("Failed to set HTTP headers: ${e.message}")
                     }
                 }
 
@@ -247,7 +206,7 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("TraceletSync", "HTTP Sync failed: ${e.message}")
+                sdk.logger.error("HTTP Sync failed: ${e.message}")
             }
             if (attempt < maxRetries) {
                 kotlinx.coroutines.delay(1000L * (attempt + 1))
@@ -274,9 +233,10 @@ class TraceletSyncPlugin : FlutterPlugin, MethodCallHandler {
             traceletSdk.registerSyncProvider(sink)
             syncSink = sink
             
-            android.util.Log.i("TraceletSync", "Sync sink registered!")
+            traceletSdk.logger.info("Sync sink registered!")
         } catch (e: Exception) {
-            android.util.Log.e("TraceletSync", "Failed to init sync engine: ${e.message}")
+            val ctx = binding.applicationContext
+            TraceletSdk.getInstance(ctx).logger.error("Failed to init sync engine: ${e.message}")
         }
     }
 

@@ -77,10 +77,8 @@ class TraceletSdk private constructor(private val context: Context) {
     // can do post-init wiring (e.g. connecting headless callbacks)
     // =========================================================================
 
-    lateinit var configManager: ConfigManager
-        internal set
-    lateinit var stateManager: StateManager
-        internal set
+    val configManager: ConfigManager by lazy { ConfigManager.getInstance(context) }
+    val stateManager: StateManager by lazy { StateManager(context) }
 
     lateinit var locationEngine: LocationEngine
         internal set
@@ -95,8 +93,7 @@ class TraceletSdk private constructor(private val context: Context) {
 
     lateinit var scheduleManager: ScheduleManager
         internal set
-    lateinit var logger: TraceletLogger
-        internal set
+    val logger: TraceletLogger by lazy { TraceletLogger(context, configManager) }
     lateinit var soundManager: SoundManager
         internal set
     lateinit var permissionManager: TraceletPermissionManager
@@ -224,12 +221,7 @@ class TraceletSdk private constructor(private val context: Context) {
             getInstance(ctx).getEventSender()
         }
 
-        // Persistence
-        configManager = ConfigManager.getInstance(context)
-        stateManager = StateManager(context)
-
-        // Logger
-        logger = TraceletLogger(context, configManager)
+        // Persistence and Logger are now lazy properties.
 
         // ── Rust Core bootstrap ──
         val dbDir = context.filesDir.resolve("tracelet")

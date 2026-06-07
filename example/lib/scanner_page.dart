@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:tracelet/tracelet.dart' as tl;
 
@@ -25,7 +26,19 @@ class _ScannerPageState extends State<ScannerPage> {
       final newConfig = currentConfig.copyWith(
         http: currentConfig.http.copyWith(url: url),
       );
-      await tl.Tracelet.setConfig(newConfig);
+      // setConfig() requires the engine to already be initialized via ready().
+      // If the user scans the QR before starting tracking, iOS throws
+      // PlatformException(NOT_READY) (Android silently no-ops). In that case,
+      // fall back to ready() so the scanned URL is actually applied.
+      try {
+        await tl.Tracelet.setConfig(newConfig);
+      } on PlatformException catch (e) {
+        if (e.code == 'NOT_READY') {
+          await tl.Tracelet.ready(newConfig);
+        } else {
+          rethrow;
+        }
+      }
 
       // 2. Send a dummy HTTP POST ping to the server to verify connection
       final httpClient = HttpClient();

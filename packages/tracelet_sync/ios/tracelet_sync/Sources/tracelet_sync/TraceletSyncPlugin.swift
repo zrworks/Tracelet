@@ -6,7 +6,7 @@ actor SyncCoordinator {
     private var isSyncing = false
     private var syncTask: Task<Void, Never>?
     
-    func scheduleSync() {
+    func scheduleSync(sink: TraceletSyncSink) {
         let delayMs = TraceletSdk.shared.rustEngineState?.getConfig().http.autoSyncDelay ?? 10000
         let delayNanos = UInt64(delayMs) * 1_000_000
         
@@ -20,12 +20,12 @@ actor SyncCoordinator {
         syncTask = Task {
             try? await Task.sleep(nanoseconds: delayNanos)
             self.syncTask = nil
-            await self.triggerSync()
+            await self.triggerSync(sink: sink)
             BackgroundTaskHelper.shared.end(bgTaskId)
         }
     }
     
-    func triggerSync() async {
+    func triggerSync(sink: TraceletSyncSink) async {
         guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
@@ -36,19 +36,11 @@ actor SyncCoordinator {
         }
         
         do {
-            let coreHttp = state.getConfig().http
-            
-            // 1. Request Fresh Headers
-            let interceptor = TraceletSdk.shared.dartSyncInterceptor
-            if interceptor?.requestFreshHeaders() == true {
-                NSLog("[TraceletSync] Headers refreshed via Dart interceptor")
-            }
-            
             let updatedHttp = state.getConfig().http
             guard let url = updatedHttp.url, !url.isEmpty else { return }
             guard updatedHttp.autoSync else { return }
             
-            NSLog("[TraceletSync] Triggering sync to URL: \(url)")
+            TraceletSdk.shared.logger.debug("Triggering sync to URL: \(url)")
             
             let limit: Int32 = updatedHttp.maxBatchSize > 0 ? updatedHttp.maxBatchSize : 250
             let coreRecords = try db.getLocationsBatch(query: LocationQuery(
@@ -58,113 +50,15 @@ actor SyncCoordinator {
                 offset: nil,
                 orderDescending: nil
             ))
-            NSLog("[TraceletSync] Found \(coreRecords.count) locations in DB.")
+            TraceletSdk.shared.logger.debug("Found \(coreRecords.count) locations in DB.")
             if coreRecords.isEmpty { return }
             
-            let syncRecords: [tracelet_sync.SyncLocationRecord] = coreRecords.map { r in
-                tracelet_sync.SyncLocationRecord(
-                    id: r.id,
-                    uuid: r.uuid,
-                    timestamp: r.timestamp,
-                    latitude: r.latitude,
-                    longitude: r.longitude,
-                    accuracy: r.accuracy,
-                    speed: r.speed,
-                    heading: r.heading,
-                    altitude: r.altitude,
-                    isMock: r.isMock,
-                    activity: r.activity,
-                    routeContext: r.routeContext
-                )
-            }
-            
-            let syncRecordsMap: [[String: Any]] = coreRecords.map { r in
-                var dict: [String: Any] = [
-                    "timestamp": r.timestamp,
-                    "latitude": r.latitude,
-                    "longitude": r.longitude,
-                    "accuracy": r.accuracy,
-                    "speed": r.speed,
-                    "heading": r.heading,
-                    "altitude": r.altitude,
-                    "isMock": r.isMock,
-                    "activity": r.activity
-                ]
-                if let uuid = r.uuid { dict["uuid"] = uuid }
-                if let routeContext = r.routeContext { dict["routeContext"] = routeContext }
-                return dict
-            }
-            
-            NSLog("[TraceletSync] interceptor is \(interceptor == nil ? "nil" : "NOT nil")")
-
-            if interceptor == nil {
-                let _ = await executeFallbackHttpSync(coreHttp: updatedHttp, customBody: "{\"error\": \"INTERCEPTOR_IS_NIL\"}", interceptor: nil)
-            } else if let customBody = interceptor?.requestSyncBody(locations: syncRecordsMap) {
-                NSLog("[TraceletSync] customBody from interceptor: \(customBody)")
-                let success = await executeFallbackHttpSync(coreHttp: updatedHttp, customBody: customBody, interceptor: interceptor)
-                if success {
-                    if let lastId = coreRecords.last?.id {
-                        try? db.clearLocationsUpTo(maxId: lastId)
-                        NSLog("[TraceletSync] Synced and cleared \(coreRecords.count) locations via custom body fallback.")
-                    }
-                    TraceletSdk.shared.getEventSender().sendHttp([
-                        "success": true,
-                        "status": 200,
-                        "responseText": "Synced \(coreRecords.count) locations via custom body",
-                        "isRetry": false,
-                        "retryCount": 0
-                    ])
-                } else {
-                    NSLog("[TraceletSync] Custom body sync failed")
-                    TraceletSdk.shared.getEventSender().sendHttp([
-                        "success": false,
-                        "status": 0,
-                        "responseText": "Custom body sync failed",
-                        "isRetry": false,
-                        "retryCount": 0
-                    ])
-                }
-                return
-            }
-
-            let syncHttp = tracelet_sync.SyncHttpConfig(
-                url: updatedHttp.url,
-                method: updatedHttp.method,
-                headers: updatedHttp.headers,
-                batchSync: updatedHttp.batchSync,
-                maxBatchSize: updatedHttp.maxBatchSize,
-                autoSync: updatedHttp.autoSync,
-                maxRetries: updatedHttp.maxRetries,
-                retryBackoffBase: updatedHttp.retryBackoffBase,
-                retryBackoffCap: updatedHttp.retryBackoffCap,
-                sslPinningCertificates: updatedHttp.sslPinningCertificates,
-                sslPinningFingerprints: updatedHttp.sslPinningFingerprints,
-                httpRootProperty: updatedHttp.httpRootProperty,
-                params: updatedHttp.params,
-                extras: updatedHttp.extras,
-                disableAutoSyncOnCellular: updatedHttp.disableAutoSyncOnCellular,
-                enableDeltaCompression: updatedHttp.enableDeltaCompression,
-                deltaCoordinatePrecision: updatedHttp.deltaCoordinatePrecision,
-                locationsOrderDirection: updatedHttp.locationsOrderDirection
-            )
-            
-            let syncManager = SyncManager()
-            
-            // OFF-LOAD TO GCD THREAD SO IT DOESN'T BLOCK SWIFT CONCURRENCY THREAD POOL
-            let count = try await withCheckedThrowingContinuation { continuation in
-                DispatchQueue.global(qos: .utility).async {
-                    do {
-                        let c = try syncManager.syncBatchBlocking(config: syncHttp, records: syncRecords)
-                        continuation.resume(returning: c)
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
-            }
+            // Call syncBatchBlocking which handles the interceptor fallback logic
+            let count = try sink.syncBatchBlocking(config: updatedHttp, records: coreRecords)
             
             if count > 0, let lastId = coreRecords.last?.id {
                 try db.clearLocationsUpTo(maxId: lastId)
-                NSLog("[TraceletSync] Synced and cleared \(count) locations.")
+                TraceletSdk.shared.logger.debug("Synced and cleared \(count) locations.")
                 TraceletSdk.shared.getEventSender().sendHttp([
                     "success": true,
                     "status": 200,
@@ -173,10 +67,10 @@ actor SyncCoordinator {
                     "retryCount": 0
                 ])
             } else {
-                NSLog("[TraceletSync] No locations synced or count was 0.")
+                TraceletSdk.shared.logger.debug("No locations synced or count was 0.")
             }
         } catch {
-            NSLog("[TraceletSync] Sync failed with error: \(error)")
+            TraceletSdk.shared.logger.debug("Sync failed with error: \(error)")
             TraceletSdk.shared.getEventSender().sendHttp([
                 "success": false,
                 "status": 0,
@@ -220,7 +114,7 @@ actor SyncCoordinator {
                     }
                 }
             } catch {
-                NSLog("[TraceletSync] Fallback sync error: \(error)")
+                TraceletSdk.shared.logger.debug("Fallback sync error: \(error)")
             }
             
             if attempt < maxRetries {
@@ -237,7 +131,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
     @discardableResult
     func insertLocation(_ location: [String: Any]) -> String {
         Task {
-            await coordinator.scheduleSync()
+            await coordinator.scheduleSync(sink: self)
         }
         return ""
     }
@@ -263,7 +157,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
         // INTERCEPTOR LOGIC
         if let interceptor = TraceletSdk.shared.dartSyncInterceptor {
             if interceptor.requestFreshHeaders() {
-                NSLog("[TraceletSync] Headers refreshed in syncBatchBlocking")
+                TraceletSdk.shared.logger.debug("Headers refreshed in syncBatchBlocking")
             }
             let updatedHttp = TraceletSdk.shared.rustEngineState?.getConfig().http ?? config
             
@@ -285,7 +179,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
             }
             
             if let customBody = interceptor.requestSyncBody(locations: syncRecordsMap) {
-                NSLog("[TraceletSync] customBody from interceptor (syncBatchBlocking): \(customBody)")
+                TraceletSdk.shared.logger.debug("customBody from interceptor (syncBatchBlocking): \(customBody)")
                 let sem = DispatchSemaphore(value: 0)
                 var fallbackSuccess = false
                 
@@ -299,7 +193,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 if fallbackSuccess {
                     return UInt32(records.count)
                 } else {
-                    NSLog("[TraceletSync] Custom body sync failed in syncBatchBlocking")
+                    TraceletSdk.shared.logger.debug("Custom body sync failed in syncBatchBlocking")
                     return 0
                 }
             }

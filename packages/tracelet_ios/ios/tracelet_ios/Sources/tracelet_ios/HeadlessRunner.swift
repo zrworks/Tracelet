@@ -108,7 +108,7 @@ final class HeadlessRunner: HeadlessDispatching {
         let dispatchId = defaults.integer(forKey: "com.tracelet.headless.headlessHeaders_dispatchId")
         let registrationId = defaults.integer(forKey: "com.tracelet.headless.headlessHeaders_registrationId")
         guard dispatchId != 0, registrationId != 0 else {
-            NSLog("[Tracelet] No headless headers callback registered")
+            TraceletSdk.shared.logger.debug("No headless headers callback registered")
             return false
         }
 
@@ -135,10 +135,10 @@ final class HeadlessRunner: HeadlessDispatching {
         headersRefreshSemaphore = nil
 
         if result == .success {
-            NSLog("[Tracelet] Headers refresh completed by headless callback")
+            TraceletSdk.shared.logger.debug("Headers refresh completed by headless callback")
             return true
         } else {
-            NSLog("[Tracelet] Headers refresh timed out after \(timeout)s")
+            TraceletSdk.shared.logger.debug("Headers refresh timed out after \(timeout)s")
             return false
         }
     }
@@ -160,12 +160,12 @@ final class HeadlessRunner: HeadlessDispatching {
         let dispatchId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_dispatchId")
         let registrationId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_registrationId")
         guard dispatchId != 0, registrationId != 0 else {
-            NSLog("[Tracelet] No headless sync body callback registered")
+            TraceletSdk.shared.logger.debug("No headless sync body callback registered")
             return nil
         }
 
         guard !Thread.isMainThread else {
-            NSLog("[Tracelet] requestCustomSyncBody must not be called on the main thread")
+            TraceletSdk.shared.logger.debug("requestCustomSyncBody must not be called on the main thread")
             return nil
         }
 
@@ -195,10 +195,10 @@ final class HeadlessRunner: HeadlessDispatching {
         syncBodyResponse = nil
 
         if result == .success {
-            NSLog("[Tracelet] Sync body build completed by headless callback")
+            TraceletSdk.shared.logger.debug("Sync body build completed by headless callback")
             return response
         } else {
-            NSLog("[Tracelet] Sync body build timed out after \(timeout)s")
+            TraceletSdk.shared.logger.debug("Sync body build timed out after \(timeout)s")
             return nil
         }
     }
@@ -219,12 +219,12 @@ final class HeadlessRunner: HeadlessDispatching {
         }
         
         guard registrationId != 0 else {
-            NSLog("[Tracelet] No headless callback registered")
+            TraceletSdk.shared.logger.debug("No headless callback registered")
             return
         }
 
         guard let callback = FlutterCallbackCache.lookupCallbackInformation(Int64(registrationId)) else {
-            NSLog("[Tracelet] Failed to find callback for registration ID: \(registrationId)")
+            TraceletSdk.shared.logger.debug("Failed to find callback for registration ID: \(registrationId)")
             return
         }
 
@@ -237,7 +237,7 @@ final class HeadlessRunner: HeadlessDispatching {
         )
 
         guard success else {
-            NSLog("[Tracelet] Failed to start headless engine")
+            TraceletSdk.shared.logger.debug("Failed to start headless engine")
             self.engine = nil
             return
         }

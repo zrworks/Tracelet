@@ -21,7 +21,7 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 119, 120];
+  final List<int> _allIssues = [115, 117, 118, 119, 120, 124];
 
   @override
   void initState() {
@@ -353,6 +353,115 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 124: Timeout Bug ====
+  Future<void> _testIssue124Timeout() async {
+    _setStatus(124, 'Testing Issue 124 (Timeout Bug)...');
+    try {
+      final currentUrl = Tracelet.activeConfig.http.url;
+      if (currentUrl == null || currentUrl.isEmpty) {
+        _setStatus(124, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
+
+      await Tracelet.destroyLocations();
+
+      // Register the custom body builder
+      Tracelet.setSyncBodyBuilder((context) async {
+        return {'issue_124_test': true, 'points': context.locations};
+      });
+
+      // Enable autoSync with a 5 second delay
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: currentUrl,
+            autoSyncDelay: 5000,
+            headers: const {'X-Test-Header': 'issue124-value'},
+          ),
+        ),
+      );
+
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'test-timeout-124',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 37.7749, longitude: -122.4194, accuracy: 10),
+        ).toMap(),
+      );
+
+      _setStatus(
+        124,
+        '✅ Location inserted! The app will now exit to detach the UI. Check Logcat in 10-15 seconds for the TIMEOUT error!',
+      );
+
+      // Programmatically exit the app (like pressing the Back button).
+      // This detaches the Flutter Engine but keeps the Background Service alive!
+      await Future.delayed(const Duration(seconds: 2));
+      SystemNavigator.pop();
+    } catch (e) {
+      _setStatus(124, '❌ FAILED: Issue 124 Error: $e');
+    }
+  }
+
+  // ==== ISSUE 124: Header Parse Crash ====
+  Future<void> _testIssue124HeaderCrash() async {
+    _setStatus(124, 'Testing Issue 124 (Header Parse Crash)...');
+    try {
+      final currentUrl = Tracelet.activeConfig.http.url;
+      if (currentUrl == null || currentUrl.isEmpty) {
+        _setStatus(124, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
+
+      await Tracelet.destroyLocations();
+
+      // Register the custom body builder
+      Tracelet.setSyncBodyBuilder((context) async {
+        return {'issue_124_test': true, 'points': context.locations};
+      });
+
+      // We trigger sync manually while the app is in the FOREGROUND.
+      // This will successfully get the body, but then crash when parsing the header
+      // (Note: Modern Android devices might not crash, but you'll see the headers missing in the server).
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: currentUrl,
+            autoSync: false,
+            headers: const {'X-Test-Header': 'issue124-value'},
+          ),
+        ),
+      );
+
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'test-header-crash-124',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 37.7749, longitude: -122.4194, accuracy: 10),
+        ).toMap(),
+      );
+
+      _setStatus(
+        124,
+        '✅ Location inserted! Triggering foreground sync in 2 seconds...',
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+      await Tracelet.sync();
+
+      _setStatus(
+        124,
+        '✅ Sync completed! Check your test server logs to see if the custom header was received.',
+      );
+    } catch (e) {
+      _setStatus(124, '❌ FAILED: Issue 124 Error: $e');
+    }
+  }
+
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
       _scrollTo(issue);
@@ -369,6 +478,8 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue119();
       } else if (issue == 120) {
         await _testIssue120();
+      } else if (issue == 124) {
+        await _testIssue124HeaderCrash();
       }
       await Future.delayed(const Duration(seconds: 2));
     }
@@ -563,6 +674,27 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _testIssue119,
                       icon: const Icon(Icons.timer),
                       label: const Text('Test Timestamp Filter'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 124,
+                  title: 'Header Parsing & Fallback',
+                  description:
+                      'Reproduces the Header Parse Crash and Headless Timeout bugs.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue124HeaderCrash,
+                      icon: const Icon(Icons.http),
+                      label: const Text('Reproduce Header Crash'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _testIssue124Timeout,
+                      icon: const Icon(Icons.timer_off),
+                      label: const Text('Reproduce Timeout Bug'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                     ),
                   ],
                 ),

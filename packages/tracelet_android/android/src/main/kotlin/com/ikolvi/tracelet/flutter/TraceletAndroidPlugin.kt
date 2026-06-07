@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.TraceletSdk
 import com.ikolvi.tracelet.TraceletHostApi
@@ -103,11 +102,11 @@ class TraceletAndroidPlugin :
         val isFirst = count == 1
         val isPrimaryCandidate = primaryInstance == null
         
-        Log.d(TAG, "onAttachedToEngine: engineCount=$count, isFirst=$isFirst, isPrimaryCandidate=$isPrimaryCandidate")
+        sdk.logger.debug("onAttachedToEngine: engineCount=$count, isFirst=$isFirst, isPrimaryCandidate=$isPrimaryCandidate")
 
         if (isPrimaryCandidate) {
             primaryInstance = this
-            Log.d(TAG, "onAttachedToEngine: setting as PRIMARY instance")
+            sdk.logger.debug("onAttachedToEngine: setting as PRIMARY instance")
 
             eventDispatcher = EventDispatcher()
             eventDispatcher.register(binding.binaryMessenger)
@@ -145,7 +144,7 @@ class TraceletAndroidPlugin :
             }
         } else {
             // Secondary engine (e.g. headless isolate or EngineGroup overlay)
-            Log.d(TAG, "onAttachedToEngine: secondary engine attach")
+            sdk.logger.debug("onAttachedToEngine: secondary engine attach")
             
             // We still need an EventDispatcher for this engine if it wants to receive events in the foreground
             eventDispatcher = EventDispatcher()
@@ -170,13 +169,13 @@ class TraceletAndroidPlugin :
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         val count = attachedEngineCount.decrementAndGet()
-        Log.d(TAG, "onDetachedFromEngine: remainingEngines=$count")
+        sdk.logger.debug("onDetachedFromEngine: remainingEngines=$count")
         
         isEngineAttached = false
         TraceletHostApi.setUp(binding.binaryMessenger, null)
 
         if (primaryInstance === this) {
-            Log.d(TAG, "onDetachedFromEngine: primary instance detaching")
+            sdk.logger.debug("onDetachedFromEngine: primary instance detaching")
             primaryInstance = null
             syncBodyChannel = null
             
@@ -184,11 +183,11 @@ class TraceletAndroidPlugin :
             // Otherwise, we must NOT destroy the SDK because secondary engines might still be using it!
             globalEventSender.remove(eventDispatcher)
             if (count == 0) {
-                Log.d(TAG, "onDetachedFromEngine: last engine detached, destroying SDK")
+                sdk.logger.debug("onDetachedFromEngine: last engine detached, destroying SDK")
                 eventDispatcher.unregister()
                 sdk.destroyAll()
             } else {
-                Log.d(TAG, "onDetachedFromEngine: secondary engines still active, SDK preserved")
+                sdk.logger.debug("onDetachedFromEngine: secondary engines still active, SDK preserved")
                 // We should probably promote another instance to primaryInstance here if needed.
                 // But for Tracelet, the first one is usually the main one.
             }
@@ -196,35 +195,35 @@ class TraceletAndroidPlugin :
             globalEventSender.remove(eventDispatcher)
             eventDispatcher.unregister()
             if (count == 0) {
-                Log.d(TAG, "onDetachedFromEngine: secondary engine was last, destroying SDK")
+                sdk.logger.debug("onDetachedFromEngine: secondary engine was last, destroying SDK")
                 sdk.destroyAll()
             }
         }
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        Log.d(TAG, "onAttachedToActivity")
+        sdk.logger.debug("onAttachedToActivity")
         activityBinding = binding
         binding.addRequestPermissionsResultListener(this)
         sdk.activity = binding.activity
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        Log.d(TAG, "onDetachedFromActivityForConfigChanges")
+        sdk.logger.debug("onDetachedFromActivityForConfigChanges")
         activityBinding?.removeRequestPermissionsResultListener(this)
         activityBinding = null
         sdk.activity = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        Log.d(TAG, "onReattachedToActivityForConfigChanges")
+        sdk.logger.debug("onReattachedToActivityForConfigChanges")
         activityBinding = binding
         binding.addRequestPermissionsResultListener(this)
         sdk.activity = binding.activity
     }
 
     override fun onDetachedFromActivity() {
-        Log.d(TAG, "onDetachedFromActivity")
+        sdk.logger.debug("onDetachedFromActivity")
         activityBinding?.removeRequestPermissionsResultListener(this)
         activityBinding = null
         sdk.activity = null
@@ -239,7 +238,14 @@ class TraceletAndroidPlugin :
     }
 
     override fun requestTokenRefresh(): Boolean {
-        if (!isEngineAttached && headlessService?.isRegistered() != true) return false
+        sdk.logger.debug("requestTokenRefresh called. isEngineAttached=$isEngineAttached")
+        if (!isEngineAttached) {
+            if (headlessService?.isRegistered() != true) return false
+            sdk.logger.debug("requestTokenRefresh: Engine detached, routing to HeadlessTaskService")
+            // Note: If HeadlessTaskService doesn't have a specific token refresh method,
+            // we can route it to headers refresh, as they are essentially the same headless callback layer.
+            return headlessService?.requestHeadersRefresh(10000L) ?: false
+        }
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var success = false
@@ -253,12 +259,18 @@ class TraceletAndroidPlugin :
                 override fun notImplemented() { latch.countDown() }
             })
         }
-        latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val awaited = latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        if (!awaited) sdk.logger.error("requestTokenRefresh: TIMEOUT waiting for Dart callback")
         return success
     }
 
     override fun requestFreshHeaders(): Boolean {
-        if (!isEngineAttached && headlessService?.isRegistered() != true) return false
+        sdk.logger.debug("requestFreshHeaders called. isEngineAttached=$isEngineAttached")
+        if (!isEngineAttached) {
+            if (headlessService?.isRegistered() != true) return false
+            sdk.logger.debug("requestFreshHeaders: Engine detached, routing to HeadlessTaskService")
+            return headlessService?.requestHeadersRefresh(10000L) ?: false
+        }
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var success = false
@@ -272,26 +284,37 @@ class TraceletAndroidPlugin :
                 override fun notImplemented() { latch.countDown() }
             })
         }
-        latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val awaited = latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        if (!awaited) sdk.logger.error("requestFreshHeaders: TIMEOUT waiting for Dart callback")
         return success
     }
 
     override fun requestSyncBody(locations: List<Map<String, Any?>>): String? {
-        if (!isEngineAttached && headlessService?.isRegistered() != true) return null
+        sdk.logger.debug("requestSyncBody called with ${locations.size} locations. isEngineAttached=$isEngineAttached")
+        if (!isEngineAttached) {
+            if (headlessService?.isRegistered() != true) return null
+            sdk.logger.debug("requestSyncBody: Engine detached, routing to HeadlessTaskService")
+            return headlessService?.requestCustomSyncBody(locations, 10000L)
+        }
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var body: String? = null
         handler.post {
             syncBodyChannel?.invokeMethod("buildSyncBody", locations, object : MethodChannel.Result {
                 override fun success(result: Any?) {
+                    sdk.logger.debug("requestSyncBody: MethodChannel success")
                     body = result as? String
                     latch.countDown()
                 }
-                override fun error(code: String, msg: String?, details: Any?) { latch.countDown() }
+                override fun error(code: String, msg: String?, details: Any?) { 
+                    sdk.logger.error("requestSyncBody: error: $msg")
+                    latch.countDown() 
+                }
                 override fun notImplemented() { latch.countDown() }
             })
         }
-        latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val awaited = latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        if (!awaited) sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms")
         return body
     }
 }

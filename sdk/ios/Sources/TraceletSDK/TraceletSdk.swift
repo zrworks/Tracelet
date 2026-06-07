@@ -831,32 +831,36 @@ public final class TraceletSdk {
         
         do {
             let records = try db.getLocationsBatch(query: rustQuery)
-            return records.map { record in
-                return [
-                    "uuid": record.uuid ?? String(record.id),
-                    "timestamp": record.timestamp,
-                    "is_moving": stateManager.isMoving,
-                    "odometer": locationEngine.getOdometer(),
-                    "event": "location",
-                    "mock": record.isMock,
-                    "coords": [
-                        "latitude": record.latitude,
-                        "longitude": record.longitude,
-                        "altitude": record.altitude,
-                        "speed": record.speed,
-                        "heading": record.heading,
-                        "accuracy": record.accuracy
-                    ],
-                    "activity": [
-                        "type": record.activity,
-                        "confidence": 100
-                    ]
-                ]
-            }
+            return records.map { mapRecordToLocation($0) }
         } catch {
             NSLog("getLocations failed: \(error)")
             return []
         }
+    }
+
+    /// Canonical mapping of a persisted `DbLocationRecord` into the nested
+    /// location schema used by `onLocation` and `getLocations`.
+    ///
+    /// Single source of truth so every consumer (getLocations + the sync
+    /// interceptor sink) emits an identical shape and restores
+    /// `route_context` / audit-hash metadata (Issue #126). See `LocationMapper`.
+    public func mapRecordToLocation(_ record: DbLocationRecord) -> [String: Any] {
+        return LocationMapper.buildLocationMap(
+            id: record.id,
+            uuid: record.uuid,
+            timestamp: record.timestamp,
+            latitude: record.latitude,
+            longitude: record.longitude,
+            altitude: record.altitude,
+            speed: record.speed,
+            heading: record.heading,
+            accuracy: record.accuracy,
+            isMock: record.isMock,
+            activity: record.activity,
+            routeContext: record.routeContext,
+            isMoving: record.isMoving,
+            odometer: locationEngine.getOdometer()
+        )
     }
 
     /// Get the count of stored locations.
@@ -933,6 +937,7 @@ public final class TraceletSdk {
         let heading = coords["heading"] as? Double ?? 0.0
         let altitude = coords["altitude"] as? Double ?? 0.0
         let isMock = params["mock"] as? Bool ?? params["is_mock"] as? Bool ?? false
+        let isMoving = params["is_moving"] as? Bool ?? false
         let activityMap = params["activity"] as? [String: Any]
         let activity = activityMap?["type"] as? String ?? "unknown"
         let timestamp = params["timestamp"] as? String
@@ -966,6 +971,7 @@ public final class TraceletSdk {
                 heading: heading,
                 altitude: altitude,
                 isMock: isMock,
+                isMoving: isMoving,
                 activity: activity,
                 routeContext: routeContext,
                 timestampOverride: timestamp

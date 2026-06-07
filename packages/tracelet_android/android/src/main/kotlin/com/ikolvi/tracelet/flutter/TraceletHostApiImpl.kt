@@ -326,6 +326,10 @@ class TraceletHostApiImpl(
     }
 
     override fun start(callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before start()", null)))
+            return
+        }
         try {
             val err = sdk.start()
             if (err != null) callback(Result.failure(wrapException(err)))
@@ -341,6 +345,10 @@ class TraceletHostApiImpl(
     }
 
     override fun startGeofences(callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before startGeofences()", null)))
+            return
+        }
         try {
             val err = sdk.startGeofences()
             if (err != null) callback(Result.failure(wrapException(err)))
@@ -349,6 +357,10 @@ class TraceletHostApiImpl(
     }
 
     override fun startPeriodic(callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before startPeriodic()", null)))
+            return
+        }
         try {
             val err = sdk.startPeriodic()
             if (err != null) callback(Result.failure(wrapException(err)))
@@ -379,6 +391,10 @@ class TraceletHostApiImpl(
     }
 
     override fun reset(config: TlConfig?, callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before reset()", null)))
+            return
+        }
         try {
             sdk.reset(config?.let { tlConfigToSdkMap(it) })
             callback(Result.success(mapToTlState(sdk.getState())))
@@ -391,6 +407,10 @@ class TraceletHostApiImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun getCurrentPosition(options: TlCurrentPositionOptions, callback: (Result<TlLocation>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before getCurrentPosition()", null)))
+            return
+        }
         try {
             sdk.getCurrentPosition(tlOptionsToMap(options)) { loc ->
                 if (loc != null) callback(Result.success(mapToTlLocation(loc as Map<String, Any?>)))
@@ -423,6 +443,10 @@ class TraceletHostApiImpl(
     }
 
     override fun changePace(isMoving: Boolean, callback: (Result<Boolean>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before changePace()", null)))
+            return
+        }
         try {
             sdk.changePace(isMoving)
             callback(Result.success(true))
@@ -794,6 +818,10 @@ class TraceletHostApiImpl(
     // =========================================================================
 
     override fun startSchedule(callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before startSchedule()", null)))
+            return
+        }
         try {
             sdk.startSchedule()
             callback(Result.success(mapToTlState(sdk.getState())))
@@ -801,6 +829,10 @@ class TraceletHostApiImpl(
     }
 
     override fun stopSchedule(callback: (Result<TlState>) -> Unit) {
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before stopSchedule()", null)))
+            return
+        }
         try {
             sdk.stopSchedule()
             callback(Result.success(mapToTlState(sdk.getState())))

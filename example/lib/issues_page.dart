@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 119, 120, 124];
+  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 126];
 
   @override
   void initState() {
@@ -462,6 +463,77 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 126 ====
+  // Verifies DB-sourced locations passed to setSyncBodyBuilder use the SAME
+  // nested schema as live onLocation events (nested coords/activity/battery)
+  // and preserve route_context — instead of a flat map with a String activity.
+  Future<void> _testIssue126() async {
+    _setStatus(126, 'Testing Issue 126 (Schema alignment)...');
+    try {
+      await Tracelet.destroyLocations();
+      await Tracelet.clearRouteContext();
+      await Tracelet.setRouteContext(const RouteContext(taskId: 'task-126'));
+
+      final captured = Completer<List<Map<String, Object?>>>();
+      Tracelet.setSyncBodyBuilder((context) async {
+        if (!captured.isCompleted) captured.complete(context.locations);
+        return {'status': 'intercepted'};
+      });
+
+      await Tracelet.ready(
+        const Config(
+          http: HttpConfig(url: 'http://127.0.0.1:8126/sync', autoSync: false),
+        ),
+      );
+
+      await Tracelet.insertLocation({
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'coords': {'latitude': 48.8566, 'longitude': 2.3522, 'accuracy': 5.0},
+        'activity': {'type': 'walking', 'confidence': 100},
+      });
+
+      await Tracelet.sync();
+      final locations = await captured.future.timeout(
+        const Duration(seconds: 10),
+      );
+      Tracelet.setSyncBodyBuilder(null);
+
+      if (locations.isEmpty) {
+        _setStatus(126, '❌ FAILED: no locations passed to the sync builder.');
+        return;
+      }
+      final first = locations.first;
+      final coordsNested = first['coords'] is Map;
+      final activityNested = first['activity'] is Map;
+      final flatLatitude = first.containsKey('latitude');
+      final stringActivity = first['activity'] is String;
+      final extras = first['extras'] as Map?;
+      final routeContext = extras?['route_context'] as Map?;
+      final routeOk =
+          routeContext != null && routeContext['taskId'] == 'task-126';
+
+      if (coordsNested &&
+          activityNested &&
+          !flatLatitude &&
+          !stringActivity &&
+          routeOk) {
+        _setStatus(
+          126,
+          '✅ SUCCESS: nested coords/activity + route_context preserved.',
+        );
+      } else {
+        _setStatus(
+          126,
+          '❌ FAILED: coordsNested=$coordsNested activityNested=$activityNested '
+          'flatLatitude=$flatLatitude stringActivity=$stringActivity '
+          'routeContextPreserved=$routeOk',
+        );
+      }
+    } catch (e) {
+      _setStatus(126, '❌ FAILED: Issue 126 Error: $e');
+    }
+  }
+
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
       _scrollTo(issue);
@@ -480,6 +552,8 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue120();
       } else if (issue == 124) {
         await _testIssue124HeaderCrash();
+      } else if (issue == 126) {
+        await _testIssue126();
       }
       await Future.delayed(const Duration(seconds: 2));
     }
@@ -695,6 +769,21 @@ class _IssuesPageState extends State<IssuesPage> {
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.red,
                       ),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 126,
+                  title: 'Sync Payload Schema Alignment',
+                  description:
+                      'Verifies DB-sourced locations passed to setSyncBodyBuilder '
+                      'use the same nested schema as live onLocation events '
+                      '(nested coords/activity/battery) and preserve route_context.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue126,
+                      icon: const Icon(Icons.schema),
+                      label: const Text('Test Schema Alignment'),
                     ),
                   ],
                 ),

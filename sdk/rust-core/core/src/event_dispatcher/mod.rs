@@ -17,7 +17,7 @@ impl EventDispatcher {
 
     /// Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
     /// Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
-    pub fn on_location_update(&self, uuid: Option<String>, lat: f64, lng: f64, accuracy: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, timestamp: Option<String>) -> bool {
+    pub fn on_location_update(&self, uuid: Option<String>, lat: f64, lng: f64, accuracy: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, is_moving: bool, timestamp: Option<String>) -> bool {
         let config = self.state.get_config();
         crate::logger::info(&format!("[Rust Core] 📍 on_location_update received: ({}, {}), acc={:.1}m, speed={:.2}m/s, heading={:.1}°", lat, lng, accuracy, speed, heading));
 
@@ -31,7 +31,7 @@ impl EventDispatcher {
         let route_context = self.state.get_route_context();
 
         // 2. Persist to Database
-        if let Err(e) = self.db.insert_location(uuid, lat, lng, accuracy, speed, heading, altitude, is_mock, &activity, route_context, timestamp) {
+        if let Err(e) = self.db.insert_location(uuid, lat, lng, accuracy, speed, heading, altitude, is_mock, is_moving, &activity, route_context, timestamp) {
             crate::logger::error(&format!("[Rust Core] ❌ Failed to insert location into database: {}", e));
             return false;
         }

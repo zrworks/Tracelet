@@ -63,22 +63,9 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 sdk.logger.debug("NativeSyncProvider: Found ${records.size} locations in DB")
                 if (records.isEmpty()) return
 
-                // Prepare maps for Dart interceptor
-                val recordsMap = records.map {
-                    mapOf(
-                        "uuid" to it.uuid,
-                        "timestamp" to it.timestamp,
-                        "latitude" to it.latitude,
-                        "longitude" to it.longitude,
-                        "accuracy" to it.accuracy,
-                        "speed" to it.speed,
-                        "heading" to it.heading,
-                        "altitude" to it.altitude,
-                        "isMock" to it.isMock,
-                        "activity" to it.activity,
-                        "routeContext" to it.routeContext
-                    )
-                }
+                // Prepare maps for Dart interceptor (Issue #126: nested schema
+                // matching onLocation/getLocations, not a flat map).
+                val recordsMap = records.map { sdk.mapRecordToLocation(it) }
 
                 val customBody = interceptor?.requestSyncBody(recordsMap)
 
@@ -215,22 +202,8 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
         val interceptor = sdk.dartSyncInterceptor
         sdk.logger.debug("NativeSyncProvider: Interceptor is $interceptor")
         if (interceptor != null) {
-            val recordMaps = records.map { record ->
-                mapOf(
-                    "id" to record.id,
-                    "uuid" to record.uuid,
-                    "timestamp" to record.timestamp,
-                    "latitude" to record.latitude,
-                    "longitude" to record.longitude,
-                    "accuracy" to record.accuracy,
-                    "speed" to record.speed,
-                    "heading" to record.heading,
-                    "altitude" to record.altitude,
-                    "isMock" to record.isMock,
-                    "activity" to record.activity,
-                    "routeContext" to record.routeContext
-                )
-            }
+            // Issue #126: nested schema matching onLocation/getLocations.
+            val recordMaps = records.map { sdk.mapRecordToLocation(it) }
             val customBody = interceptor.requestSyncBody(recordMaps)
             sdk.logger.debug("NativeSyncProvider: Custom body is $customBody")
             if (customBody != null) {

@@ -43,6 +43,7 @@ pub struct DbLocationRecord {
     pub heading: f64,
     pub altitude: f64,
     pub is_mock: bool,
+    pub is_moving: bool,
     pub activity: String,
     pub route_context: Option<String>,
 }
@@ -92,6 +93,7 @@ impl DatabaseManager {
                 heading REAL NOT NULL,
                 altitude REAL NOT NULL,
                 is_mock INTEGER NOT NULL,
+                is_moving INTEGER NOT NULL DEFAULT 0,
                 activity TEXT NOT NULL,
                 encrypted_payload BLOB,
                 route_context TEXT,
@@ -164,6 +166,7 @@ impl DatabaseManager {
 
         // Add encrypted_payload column if it doesn't exist (for seamless migration)
         let _ = conn.execute("ALTER TABLE location_events ADD COLUMN uuid TEXT", []);
+        let _ = conn.execute("ALTER TABLE location_events ADD COLUMN is_moving INTEGER NOT NULL DEFAULT 0", []);
         let _ = conn.execute("ALTER TABLE location_events ADD COLUMN encrypted_payload BLOB", []);
         let _ = conn.execute("ALTER TABLE location_events ADD COLUMN route_context TEXT", []);
         let _ = conn.execute("ALTER TABLE geofences ADD COLUMN encrypted_payload BLOB", []);
@@ -244,7 +247,7 @@ impl DatabaseManager {
     }
 
     /// Inserts a new location record into the database.
-    pub fn insert_location(&self, uuid: Option<String>, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, activity: &str, route_context: Option<String>, timestamp_override: Option<String>) -> Result<i64, TraceletError> {
+    pub fn insert_location(&self, uuid: Option<String>, lat: f64, lng: f64, acc: f64, speed: f64, heading: f64, altitude: f64, is_mock: bool, is_moving: bool, activity: &str, route_context: Option<String>, timestamp_override: Option<String>) -> Result<i64, TraceletError> {
         let conn = self.conn.lock().unwrap();
         
         let (timestamp, timestamp_ms) = if let Some(override_ts) = timestamp_override {
@@ -268,13 +271,14 @@ impl DatabaseManager {
                 "heading": heading,
                 "altitude": altitude,
                 "is_mock": is_mock,
+                "is_moving": is_moving,
                 "activity": activity,
                 "route_context": route_context
             });
             if let Some(payload) = self.encrypt_payload(record.to_string().as_bytes()) {
                 conn.execute(
-                    "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context, timestamp_ms)
-                     VALUES (?1, ?2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, '', ?3, ?4, ?5)",
+                    "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, is_moving, activity, encrypted_payload, route_context, timestamp_ms)
+                     VALUES (?1, ?2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, '', ?3, ?4, ?5)",
                     params![uuid, timestamp, payload, route_context, timestamp_ms],
                 ).map_err(|e| TraceletError::Database(e.to_string()))?;
                 return Ok(conn.last_insert_rowid());
@@ -283,9 +287,9 @@ impl DatabaseManager {
         
         // Fallback or unencrypted
         conn.execute(
-            "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context, timestamp_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, ?11, ?12)",
-            params![uuid, timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, activity, route_context, timestamp_ms],
+            "INSERT INTO location_events (uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, is_moving, activity, encrypted_payload, route_context, timestamp_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, NULL, ?12, ?13)",
+            params![uuid, timestamp, lat, lng, acc, speed, heading, altitude, if is_mock { 1 } else { 0 }, if is_moving { 1 } else { 0 }, activity, route_context, timestamp_ms],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
         
         Ok(conn.last_insert_rowid())
@@ -296,7 +300,7 @@ impl DatabaseManager {
         use rusqlite::types::Value;
         let conn = self.conn.lock().unwrap();
         
-        let mut sql = "SELECT id, uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context FROM location_events WHERE 1=1".to_string();
+        let mut sql = "SELECT id, uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, is_moving, activity, encrypted_payload, route_context FROM location_events WHERE 1=1".to_string();
         let mut params: Vec<Value> = Vec::new();
         
         let limit = query.as_ref().and_then(|q| q.limit).unwrap_or(1000);
@@ -343,10 +347,11 @@ impl DatabaseManager {
             let mut heading: f64 = row.get(7)?;
             let mut altitude: f64 = row.get(8)?;
             let mut is_mock_val: i32 = row.get(9)?;
-            let mut activity_val: String = row.get(10)?;
+            let mut is_moving_val: i32 = row.get(10)?;
+            let mut activity_val: String = row.get(11)?;
             
-            let encrypted_payload: Option<Vec<u8>> = row.get(11).unwrap_or(None);
-            let mut route_context: Option<String> = row.get(12).unwrap_or(None);
+            let encrypted_payload: Option<Vec<u8>> = row.get(12).unwrap_or(None);
+            let mut route_context: Option<String> = row.get(13).unwrap_or(None);
             
             
             if let Some(payload_bytes) = encrypted_payload {
@@ -359,6 +364,7 @@ impl DatabaseManager {
                         heading = json["heading"].as_f64().unwrap_or(0.0);
                         altitude = json["altitude"].as_f64().unwrap_or(0.0);
                         if let Some(is_mock) = json.get("is_mock").and_then(|v| v.as_bool()) { is_mock_val = if is_mock { 1 } else { 0 }; }
+                        if let Some(is_moving) = json.get("is_moving").and_then(|v| v.as_bool()) { is_moving_val = if is_moving { 1 } else { 0 }; }
                         if let Some(activity) = json.get("activity").and_then(|v| v.as_str()) { activity_val = activity.to_string(); }
                         if let Some(rc) = json.get("route_context").and_then(|v| v.as_str()) { route_context = Some(rc.to_string()); }
                     }
@@ -376,6 +382,7 @@ impl DatabaseManager {
                 heading,
                 altitude,
                 is_mock: is_mock_val != 0,
+                is_moving: is_moving_val != 0,
                 activity: activity_val,
                 route_context,
             })
@@ -409,7 +416,7 @@ impl DatabaseManager {
     /// Gets the total count of locations persisted in the database.
     pub fn get_location_for_audit(&self, uuid: &str) -> Result<Option<DbLocationRecord>, TraceletError> {
         let conn = self.conn.lock().unwrap();
-        let sql = "SELECT id, uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, activity, encrypted_payload, route_context FROM location_events WHERE uuid = ?1 LIMIT 1";
+        let sql = "SELECT id, uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, is_moving, activity, encrypted_payload, route_context FROM location_events WHERE uuid = ?1 LIMIT 1";
         
         let mut stmt = conn.prepare(sql).map_err(|e| TraceletError::Database(e.to_string()))?;
         
@@ -421,10 +428,11 @@ impl DatabaseManager {
             let mut heading: f64 = row.get(7)?;
             let mut altitude: f64 = row.get(8)?;
             let mut is_mock_val: i32 = row.get(9)?;
-            let mut activity_val: String = row.get(10)?;
+            let mut is_moving_val: i32 = row.get(10)?;
+            let mut activity_val: String = row.get(11)?;
             
-            let encrypted_payload: Option<Vec<u8>> = row.get(11).unwrap_or(None);
-            let mut route_context: Option<String> = row.get(12).unwrap_or(None);
+            let encrypted_payload: Option<Vec<u8>> = row.get(12).unwrap_or(None);
+            let mut route_context: Option<String> = row.get(13).unwrap_or(None);
             
             if let Some(payload_bytes) = encrypted_payload {
                 if let Some(plaintext) = self.decrypt_payload(&payload_bytes) {
@@ -436,6 +444,7 @@ impl DatabaseManager {
                         heading = json["heading"].as_f64().unwrap_or(0.0);
                         altitude = json["altitude"].as_f64().unwrap_or(0.0);
                         if let Some(is_mock) = json.get("is_mock").and_then(|v| v.as_bool()) { is_mock_val = if is_mock { 1 } else { 0 }; }
+                        if let Some(is_moving) = json.get("is_moving").and_then(|v| v.as_bool()) { is_moving_val = if is_moving { 1 } else { 0 }; }
                         if let Some(activity) = json.get("activity").and_then(|v| v.as_str()) { activity_val = activity.to_string(); }
                         if let Some(rc) = json.get("route_context").and_then(|v| v.as_str()) { route_context = Some(rc.to_string()); }
                     }
@@ -453,6 +462,7 @@ impl DatabaseManager {
                 heading,
                 altitude,
                 is_mock: is_mock_val != 0,
+                is_moving: is_moving_val != 0,
                 activity: activity_val,
                 route_context,
             })
@@ -752,7 +762,7 @@ mod tests {
         // Ensure no key is set
         db.set_encryption_key("");
         
-        db.insert_location(None, 37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        db.insert_location(None, 37.7749, -122.4194, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
         
         let locations = db.get_locations_batch(None).unwrap();
         assert_eq!(locations.len(), 1);
@@ -770,7 +780,7 @@ mod tests {
         let test_key = "my_super_secret_encryption_key_!";
         db.set_encryption_key(test_key);
         
-        db.insert_location(None, 40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, "running", None, None).unwrap();
+        db.insert_location(None, 40.7128, -74.0060, 5.0, 0.0, 0.0, 10.0, true, true, "running", None, None).unwrap();
         
         let locations = db.get_locations_batch(None).unwrap();
         assert_eq!(locations.len(), 1);
@@ -787,12 +797,12 @@ mod tests {
         
         // Insert unencrypted
         db.set_encryption_key("");
-        db.insert_location(None, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, "unencrypted", None, None).unwrap();
+        db.insert_location(None, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, false, false, "unencrypted", None, None).unwrap();
         
         // Turn encryption ON
         let test_key = "another_secret_key_1234567890!!!";
         db.set_encryption_key(test_key);
-        db.insert_location(None, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, "encrypted", None, None).unwrap();
+        db.insert_location(None, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, false, false, "encrypted", None, None).unwrap();
         
         let locations = db.get_locations_batch(Some(LocationQuery {
             start_time_ms: None,
@@ -954,8 +964,8 @@ mod tests {
     #[test]
     fn test_insert_location_returns_id() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
-        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
-        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
+        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
     }
@@ -969,9 +979,9 @@ mod tests {
         let t2 = chrono::Utc.timestamp_millis_opt(1704106800000).unwrap().to_rfc3339();
         let t3 = chrono::Utc.timestamp_millis_opt(1704110400000).unwrap().to_rfc3339();
         
-        db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t1.clone())).unwrap();
-        db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t2.clone())).unwrap();
-        db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, Some(t3.clone())).unwrap();
+        db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, Some(t1.clone())).unwrap();
+        db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, Some(t2.clone())).unwrap();
+        db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, Some(t3.clone())).unwrap();
 
         // Query between t2 and t3
         let query = LocationQuery {
@@ -993,7 +1003,7 @@ mod tests {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
         for i in 1..=5 {
-            db.insert_location(None, i as f64, i as f64, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+            db.insert_location(None, i as f64, i as f64, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
         }
 
         // Test limit and offset
@@ -1027,8 +1037,8 @@ mod tests {
     fn test_delete_locations() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
-        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
-        db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        let id1 = db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
+        db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
         
         assert_eq!(db.get_locations_count().unwrap(), 2);
         
@@ -1043,9 +1053,9 @@ mod tests {
     fn test_delete_synced_locations() {
         let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
         
-        db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
-        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
-        let id3 = db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, "walking", None, None).unwrap();
+        db.insert_location(None, 1.0, 1.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
+        let id2 = db.insert_location(None, 2.0, 2.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
+        let id3 = db.insert_location(None, 3.0, 3.0, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None).unwrap();
         
         assert_eq!(db.get_locations_count().unwrap(), 3);
         

@@ -42,6 +42,67 @@ create_framework() {
 EOF
 }
 
+# Wraps a DYNAMIC library (.dylib) into a shallow iOS .framework.
+#
+# Shipping the Rust core as a dynamic framework (instead of a static .a) keeps
+# the FRB/uniffi symbols in the framework's OWN embedded, code-signed binary.
+# They are therefore never removed by the consuming app's archive strip
+# (STRIP_INSTALLED_PRODUCT=YES, STRIP_STYLE=all) and do not need to be exported
+# from the app executable. The Dart loader opens it directly via
+# ExternalLibrary.open('<NAME>.framework/<NAME>'). This is the iOS analogue of
+# the Android ExternalLibrary.open(...) path and is the only delivery that is
+# robust under Swift Package Manager (which cannot set the consumer app's
+# STRIP_INSTALLED_PRODUCT build setting).
+create_dynamic_framework() {
+    local NAME=$1
+    local DYLIB=$2
+    local HEADERS=$3
+    local OUT=$4
+
+    local FWK="$OUT/$NAME.framework"
+    rm -rf "$FWK"
+    mkdir -p "$FWK/Headers"
+    mkdir -p "$FWK/Modules"
+
+    cp "$DYLIB" "$FWK/$NAME"
+    # The install name must be @rpath-relative so the framework resolves when
+    # embedded under <App>.app/Frameworks/<NAME>.framework/<NAME>.
+    install_name_tool -id "@rpath/$NAME.framework/$NAME" "$FWK/$NAME"
+    cp "$HEADERS"/*.h "$FWK/Headers/"
+    cp "$HEADERS"/module.modulemap "$FWK/Modules/module.modulemap"
+    # A module bundled inside a .framework must be declared as a `framework
+    # module` so Clang resolves the header from the framework's Headers/
+    # directory. A bare `module` declaration triggers
+    # -Wincomplete-framework-module-declaration and then "header not found",
+    # breaking `import TraceletCore`.
+    sed -i '' 's/^module /framework module /' "$FWK/Modules/module.modulemap"
+
+    cat <<EOF > "$FWK/Info.plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>$NAME</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.ikolvi.$NAME</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$NAME</string>
+    <key>CFBundlePackageType</key>
+    <string>FMWK</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>MinimumOSVersion</key>
+    <string>14.0</string>
+</dict>
+</plist>
+EOF
+}
+
 # Generates dummy Swift methods for exported Rust symbols to prevent Dead Code Stripping in Xcode.
 generate_dummy_symbols() {
     local LIB_PATH=$1

@@ -39,6 +39,17 @@ lipo -create -output "$OUT_DIR/sim/libtracelet_sync.a" \
     target/aarch64-apple-ios-sim/release/libtracelet_sync.a \
     target/x86_64-apple-ios/release/libtracelet_sync.a
 
+# Merge simulator architectures for the DYNAMIC libraries (cdylib). These are
+# packaged into dynamic frameworks below so the Rust symbols survive the
+# consuming app's archive strip (see create_dynamic_framework).
+lipo -create -output "$OUT_DIR/sim/libtracelet_core.dylib" \
+    target/aarch64-apple-ios-sim/release/libtracelet_core.dylib \
+    target/x86_64-apple-ios/release/libtracelet_core.dylib
+
+lipo -create -output "$OUT_DIR/sim/libtracelet_sync.dylib" \
+    target/aarch64-apple-ios-sim/release/libtracelet_sync.dylib \
+    target/x86_64-apple-ios/release/libtracelet_sync.dylib
+
 
 # --- CORE FRAMEWORK ---
 cargo run -p tracelet_core --features=uniffi/cli --bin uniffi-bindgen generate --library target/aarch64-apple-ios/release/libtracelet_core.a --language swift --out-dir "$OUT_DIR/core"
@@ -59,9 +70,14 @@ generate_dummy_symbols "target/aarch64-apple-ios/release/libtracelet_core.a" "$D
 cp "$DUMMY_SWIFT_CORE" "../../packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/"
 
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
+# Package the cdylib as a dynamic framework per slice so the FRB symbols live in
+# the framework's own embedded/signed binary (strip-proof; loaded via
+# ExternalLibrary.open('TraceletCore.framework/TraceletCore')).
+create_dynamic_framework "TraceletCore" "target/aarch64-apple-ios/release/libtracelet_core.dylib" "$OUT_DIR/core/Headers/TraceletCore" "$OUT_DIR/fwk/device"
+create_dynamic_framework "TraceletCore" "$OUT_DIR/sim/libtracelet_core.dylib" "$OUT_DIR/core/Headers/TraceletCore" "$OUT_DIR/fwk/sim"
 xcodebuild -create-xcframework \
-    -library "target/aarch64-apple-ios/release/libtracelet_core.a" -headers "$OUT_DIR/core/Headers" \
-    -library "$OUT_DIR/sim/libtracelet_core.a" -headers "$OUT_DIR/core/Headers" \
+    -framework "$OUT_DIR/fwk/device/TraceletCore.framework" \
+    -framework "$OUT_DIR/fwk/sim/TraceletCore.framework" \
     -output "$OUT_DIR/TraceletCore.xcframework"
 
 
@@ -87,9 +103,13 @@ generate_dummy_symbols "target/aarch64-apple-ios/release/libtracelet_sync.a" "$D
 cp "$DUMMY_SWIFT_SYNC" "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"
 
 rm -rf "$OUT_DIR/TraceletSyncFFI.xcframework"
+# Same dynamic-framework packaging as TraceletCore — keeps sync FRB symbols in
+# the framework's own embedded/signed binary (strip-proof).
+create_dynamic_framework "TraceletSyncFFI" "target/aarch64-apple-ios/release/libtracelet_sync.dylib" "$OUT_DIR/sync/Headers/TraceletSyncFFI" "$OUT_DIR/fwk-sync/device"
+create_dynamic_framework "TraceletSyncFFI" "$OUT_DIR/sim/libtracelet_sync.dylib" "$OUT_DIR/sync/Headers/TraceletSyncFFI" "$OUT_DIR/fwk-sync/sim"
 xcodebuild -create-xcframework \
-    -library "target/aarch64-apple-ios/release/libtracelet_sync.a" -headers "$OUT_DIR/sync/Headers" \
-    -library "$OUT_DIR/sim/libtracelet_sync.a" -headers "$OUT_DIR/sync/Headers" \
+    -framework "$OUT_DIR/fwk-sync/device/TraceletSyncFFI.framework" \
+    -framework "$OUT_DIR/fwk-sync/sim/TraceletSyncFFI.framework" \
     -output "$OUT_DIR/TraceletSyncFFI.xcframework"
 
 # Copy the built xcframework to the plugin's ios directory so CocoaPods can vendor it
@@ -98,11 +118,20 @@ cp -R "$OUT_DIR/TraceletSyncFFI.xcframework" "../../packages/tracelet_sync/ios/t
 
 
 # --- SYMBOL VERIFICATION ---
-echo "Verifying symbols for TraceletCore..."
-if nm -gU "$OUT_DIR/TraceletCore.xcframework/ios-arm64/libtracelet_core.a" 2>/dev/null | grep -i 'reqwest'; then
+CORE_BIN="$OUT_DIR/TraceletCore.xcframework/ios-arm64/TraceletCore.framework/TraceletCore"
+echo "Verifying TraceletCore.framework is a dynamic library that exports FRB symbols..."
+if ! file "$CORE_BIN" | grep -q 'dynamically linked shared library'; then
+    echo "❌ ERROR: TraceletCore is not a dynamic library — it would be stripped from archived apps!"
+    exit 1
+fi
+if ! nm -gU "$CORE_BIN" 2>/dev/null | grep -q '_frb_get_rust_content_hash'; then
+    echo "❌ ERROR: frb_get_rust_content_hash not exported from TraceletCore.framework!"
+    exit 1
+fi
+if nm -gU "$CORE_BIN" 2>/dev/null | grep -i 'reqwest'; then
     echo "❌ ERROR: Heavy dependencies leaked into TraceletCore!"
     exit 1
 fi
-echo "✅ TraceletCore symbol verification passed. No heavy dependencies found."
+echo "✅ TraceletCore symbol verification passed (dynamic + FRB symbols exported, no heavy deps)."
 
 echo "✅ iOS build complete."

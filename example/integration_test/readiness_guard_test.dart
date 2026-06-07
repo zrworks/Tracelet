@@ -24,12 +24,21 @@ void main() {
     }
 
     testWidgets('start', (_) => expectNotReady(Tracelet.start));
-    testWidgets('startGeofences', (_) => expectNotReady(Tracelet.startGeofences));
+    testWidgets(
+      'startGeofences',
+      (_) => expectNotReady(Tracelet.startGeofences),
+    );
     testWidgets('startPeriodic', (_) => expectNotReady(Tracelet.startPeriodic));
     testWidgets('startSchedule', (_) => expectNotReady(Tracelet.startSchedule));
     testWidgets('stopSchedule', (_) => expectNotReady(Tracelet.stopSchedule));
-    testWidgets('changePace', (_) => expectNotReady(() => Tracelet.changePace(true)));
+    testWidgets(
+      'changePace',
+      (_) => expectNotReady(() => Tracelet.changePace(true)),
+    );
     testWidgets('reset', (_) => expectNotReady(Tracelet.reset));
-    testWidgets('getCurrentPosition', (_) => expectNotReady(Tracelet.getCurrentPosition));
+    testWidgets(
+      'getCurrentPosition',
+      (_) => expectNotReady(Tracelet.getCurrentPosition),
+    );
   });
 }

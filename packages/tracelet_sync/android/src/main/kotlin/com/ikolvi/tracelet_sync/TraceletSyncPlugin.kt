@@ -127,22 +127,11 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
         val interceptor = sdk.dartSyncInterceptor
         sdk.logger.debug("TraceletSyncPlugin Interceptor is $interceptor")
         if (interceptor != null) {
-            val recordMaps = records.map { record ->
-                mapOf(
-                    "id" to record.id,
-                    "uuid" to record.uuid,
-                    "timestamp" to record.timestamp,
-                    "latitude" to record.latitude,
-                    "longitude" to record.longitude,
-                    "accuracy" to record.accuracy,
-                    "speed" to record.speed,
-                    "heading" to record.heading,
-                    "altitude" to record.altitude,
-                    "isMock" to record.isMock,
-                    "activity" to record.activity,
-                    "routeContext" to record.routeContext
-                )
-            }
+            // Issue #126: emit the SAME nested schema as onLocation/getLocations
+            // (nested coords/activity/battery + route_context) so the Dart
+            // custom-body builder receives a consistent shape instead of a flat
+            // map with a raw String activity.
+            val recordMaps = records.map { sdk.mapRecordToLocation(it) }
             sdk.logger.debug("Calling requestSyncBody on interceptor with ${recordMaps.size} records")
             val customBody = interceptor.requestSyncBody(recordMaps)
             sdk.logger.debug("requestSyncBody returned: $customBody")

@@ -1076,32 +1076,39 @@ class TraceletSdk private constructor(private val context: Context) {
         
         return try {
             val records = db.getLocationsBatch(rustQuery)
-            records.map { record ->
-                mapOf(
-                    "uuid" to (record.uuid ?: record.id.toString()),
-                    "timestamp" to record.timestamp,
-                    "is_moving" to stateManager.isMoving,
-                    "odometer" to locationEngine.getOdometer(),
-                    "event" to "location",
-                    "mock" to record.isMock,
-                    "coords" to mapOf(
-                        "latitude" to record.latitude,
-                        "longitude" to record.longitude,
-                        "altitude" to record.altitude,
-                        "speed" to record.speed,
-                        "heading" to record.heading,
-                        "accuracy" to record.accuracy
-                    ),
-                    "activity" to mapOf(
-                        "type" to record.activity,
-                        "confidence" to 100
-                    )
-                )
-            }
+            records.map { mapRecordToLocation(it) }
         } catch (e: Exception) {
             logger.error("getLocations failed: ${e.message}")
             emptyList()
         }
+    }
+
+    /**
+     * Canonical mapping of a persisted [uniffi.tracelet_core.DbLocationRecord]
+     * into the nested location schema used by `onLocation` and `getLocations`.
+     *
+     * Single source of truth so every consumer (getLocations + the sync
+     * interceptor sinks) emits an identical shape and restores
+     * `route_context` / audit-hash metadata (Issue #126). See [LocationMapper].
+     */
+    fun mapRecordToLocation(record: uniffi.tracelet_core.DbLocationRecord): Map<String, Any?> {
+        val odometer = if (::locationEngine.isInitialized) locationEngine.getOdometer() else 0.0
+        return com.ikolvi.tracelet.sdk.location.LocationMapper.buildLocationMap(
+            id = record.id,
+            uuid = record.uuid,
+            timestamp = record.timestamp,
+            latitude = record.latitude,
+            longitude = record.longitude,
+            altitude = record.altitude,
+            speed = record.speed,
+            heading = record.heading,
+            accuracy = record.accuracy,
+            isMock = record.isMock,
+            activity = record.activity,
+            routeContext = record.routeContext,
+            isMoving = record.isMoving,
+            odometer = odometer,
+        )
     }
 
     fun getCount(query: Map<String, Any?>?): Int {
@@ -1167,6 +1174,7 @@ class TraceletSdk private constructor(private val context: Context) {
         val heading = (coords["heading"] as? Number)?.toDouble() ?: 0.0
         val altitude = (coords["altitude"] as? Number)?.toDouble() ?: 0.0
         val isMock = params["mock"] == true || params["is_mock"] == true
+        val isMoving = params["is_moving"] == true
         val activityMap = params["activity"] as? Map<*, *>
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         val timestamp = params["timestamp"] as? String
@@ -1197,7 +1205,7 @@ class TraceletSdk private constructor(private val context: Context) {
         }
         
         return try {
-            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, activity, routeContext, timestamp)
+            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp)
             // Notify the sync plugin so it can trigger auto-sync
             (syncProvider as? com.ikolvi.tracelet.sdk.location.LocationDataSink)?.insertLocation(params)
             newRowId.toString()

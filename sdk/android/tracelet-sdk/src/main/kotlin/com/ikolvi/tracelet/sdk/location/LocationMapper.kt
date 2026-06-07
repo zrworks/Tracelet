@@ -1,0 +1,109 @@
+package com.ikolvi.tracelet.sdk.location
+
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Single source of truth for converting a persisted location record into the
+ * nested location schema emitted by `onLocation` and `getLocations`.
+ *
+ * Issue #126: the sync interceptor sinks (`TraceletSyncSink`, `NativeSyncProvider`)
+ * previously built a flat map with a raw `String` `activity`, diverging from the
+ * live nested schema and forcing developers to write conditional parsing
+ * (and crashing code that assumed the nested shape). Routing every DB-sourced
+ * map through this mapper guarantees an identical shape everywhere and restores
+ * `route_context` / audit-hash metadata that `getLocations` used to drop.
+ */
+object LocationMapper {
+
+    /**
+     * Builds the canonical nested location map from raw record fields.
+     *
+     * `route_context` (a JSON string persisted with the record) is split:
+     * audit fields (`audit_hash`, `audit_previous_hash`, `audit_chain_index`)
+     * are promoted to top-level keys so they populate `Location.auditHash` etc.,
+     * while the remaining fields are nested under `extras.route_context` so they
+     * surface as `Location.extras['route_context']`.
+     */
+    fun buildLocationMap(
+        id: Long,
+        uuid: String?,
+        timestamp: String,
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        speed: Double,
+        heading: Double,
+        accuracy: Double,
+        isMock: Boolean,
+        activity: String,
+        routeContext: String?,
+        isMoving: Boolean,
+        odometer: Double,
+    ): Map<String, Any?> {
+        val map = mutableMapOf<String, Any?>(
+            "uuid" to (uuid ?: id.toString()),
+            "timestamp" to timestamp,
+            "is_moving" to isMoving,
+            "odometer" to odometer,
+            "event" to "location",
+            "mock" to isMock,
+            "coords" to mapOf(
+                "latitude" to latitude,
+                "longitude" to longitude,
+                "altitude" to altitude,
+                "speed" to speed,
+                "heading" to heading,
+                "accuracy" to accuracy,
+            ),
+            "activity" to mapOf(
+                "type" to activity,
+                "confidence" to 100,
+            ),
+            "battery" to mapOf(
+                "level" to -1.0,
+                "isCharging" to false,
+            ),
+        )
+        applyRouteContext(map, routeContext)
+        return map
+    }
+
+    private fun applyRouteContext(map: MutableMap<String, Any?>, routeContext: String?) {
+        val raw = routeContext?.takeIf { it.isNotBlank() } ?: return
+        val json = try {
+            JSONObject(raw)
+        } catch (_: Exception) {
+            return
+        }
+        val extrasRouteContext = mutableMapOf<String, Any?>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            when (val key = keys.next()) {
+                "audit_hash" -> map["audit_hash"] = json.optString(key)
+                "audit_previous_hash" -> map["audit_previous_hash"] = json.optString(key)
+                "audit_chain_index" -> map["audit_chain_index"] = json.optInt(key)
+                else -> extrasRouteContext[key] = jsonToKotlin(json.get(key))
+            }
+        }
+        if (extrasRouteContext.isNotEmpty()) {
+            map["extras"] = mapOf("route_context" to extrasRouteContext)
+        }
+    }
+
+    /** Recursively converts org.json values into plain Kotlin so the map is MethodChannel-safe. */
+    private fun jsonToKotlin(value: Any?): Any? = when (value) {
+        is JSONObject -> {
+            val m = mutableMapOf<String, Any?>()
+            val it = value.keys()
+            while (it.hasNext()) {
+                val k = it.next()
+                m[k] = jsonToKotlin(value.get(k))
+            }
+            m
+        }
+        is JSONArray -> (0 until value.length()).map { jsonToKotlin(value.get(it)) }
+        JSONObject.NULL -> null
+        else -> value
+    }
+}

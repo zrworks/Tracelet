@@ -64,6 +64,8 @@ concurrency:
 env:
   FLUTTER_CHANNEL: stable
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: "true"
 
 # ─────────────────────────────────────────────────────────────
 # Job 1: Pre-flight validation
@@ -94,11 +96,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
@@ -269,12 +268,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
-      - name: Cache Rust
+      - name: Setup sccache
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-ndk
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: cargo install cargo-ndk
@@ -410,12 +406,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
-      - name: Cache Rust
+      - name: Setup sccache
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Build iOS Rust Core
         if: ${{ steps.check_published.outputs.already_published == 'false' }}
         run: ./sdk/rust-core/build-ios.sh
@@ -504,11 +497,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen & cargo-ndk
@@ -568,11 +558,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install flutter_rust_bridge_codegen
         run: cargo binstall -y --force cargo-expand flutter_rust_bridge_codegen
       - name: Generate Rust Bindings
@@ -700,11 +687,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            sdk/rust-core
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash

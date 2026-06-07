@@ -11,7 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  FLUTTER_CHANNEL: stable
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: "true"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
@@ -38,11 +41,8 @@ jobs:
         run: dart pub global activate melos
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen
@@ -77,11 +77,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Run Rust tests
         working-directory: sdk/rust-core
         run: cargo test
@@ -123,11 +120,8 @@ jobs:
         run: dart pub global activate melos
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen
@@ -188,11 +182,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen & cargo-ndk
@@ -258,11 +249,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen
@@ -350,11 +338,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "sdk/rust-core -> target"
-          cache-on-failure: "true"
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install cargo-binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
       - name: Install flutter_rust_bridge_codegen

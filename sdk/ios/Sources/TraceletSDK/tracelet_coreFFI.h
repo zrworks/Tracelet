@@ -543,7 +543,7 @@ void uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOCATION
-int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, RustBuffer uuid, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, RustBuffer activity, RustBuffer route_context, RustBuffer timestamp_override, RustCallStatus *_Nonnull out_status
+int64_t uniffi_tracelet_core_fn_method_databasemanager_insert_location(uint64_t ptr, RustBuffer uuid, double lat, double lng, double acc, double speed, double heading, double altitude, int8_t is_mock, int8_t is_moving, RustBuffer activity, RustBuffer route_context, RustBuffer timestamp_override, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_DATABASEMANAGER_INSERT_LOG
@@ -583,7 +583,7 @@ uint64_t uniffi_tracelet_core_fn_constructor_eventdispatcher_new(uint64_t db, ui
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_EVENTDISPATCHER_ON_LOCATION_UPDATE
-int8_t uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(uint64_t ptr, RustBuffer uuid, double lat, double lng, double accuracy, double speed, double heading, double altitude, int8_t is_mock, RustBuffer timestamp, RustCallStatus *_Nonnull out_status
+int8_t uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(uint64_t ptr, RustBuffer uuid, double lat, double lng, double accuracy, double speed, double heading, double altitude, int8_t is_mock, int8_t is_moving, RustBuffer timestamp, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_GEOFENCEEVALUATOR

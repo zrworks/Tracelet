@@ -161,21 +161,12 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
             }
             let updatedHttp = TraceletSdk.shared.rustEngineState?.getConfig().http ?? config
             
-            let syncRecordsMap: [[String: Any]] = records.map { r in
-                var dict: [String: Any] = [
-                    "timestamp": r.timestamp,
-                    "latitude": r.latitude,
-                    "longitude": r.longitude,
-                    "accuracy": r.accuracy,
-                    "speed": r.speed,
-                    "heading": r.heading,
-                    "altitude": r.altitude,
-                    "isMock": r.isMock,
-                    "activity": r.activity
-                ]
-                if let uuid = r.uuid { dict["uuid"] = uuid }
-                if let routeContext = r.routeContext { dict["routeContext"] = routeContext }
-                return dict
+            // Issue #126: emit the SAME nested schema as onLocation/getLocations
+            // (nested coords/activity/battery + route_context) so the Dart
+            // custom-body builder receives a consistent shape instead of a flat
+            // map with a raw String activity.
+            let syncRecordsMap: [[String: Any]] = records.map {
+                TraceletSdk.shared.mapRecordToLocation($0)
             }
             
             if let customBody = interceptor.requestSyncBody(locations: syncRecordsMap) {

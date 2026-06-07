@@ -950,7 +950,7 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`vertices`: RustBuffer.ByValue,`extras`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`uuid`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,`timestampOverride`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_location(`ptr`: Long,`uuid`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`acc`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`isMoving`: Byte,`activity`: RustBuffer.ByValue,`routeContext`: RustBuffer.ByValue,`timestampOverride`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_log(`ptr`: Long,`level`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -966,7 +966,7 @@ external fun uniffi_tracelet_core_fn_free_eventdispatcher(`handle`: Long,uniffi_
 ): Unit
 external fun uniffi_tracelet_core_fn_constructor_eventdispatcher_new(`db`: Long,`state`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
-external fun uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(`ptr`: Long,`uuid`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`accuracy`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`timestamp`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(`ptr`: Long,`uuid`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`accuracy`: Double,`speed`: Double,`heading`: Double,`altitude`: Double,`isMock`: Byte,`isMoving`: Byte,`timestamp`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
 external fun uniffi_tracelet_core_fn_clone_geofenceevaluator(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1310,7 +1310,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 24139.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26324.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891.toShort()) {
@@ -1325,7 +1325,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12710.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update() != 12158.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_geofenceevaluator_clear() != 7402.toShort()) {
@@ -2897,7 +2897,7 @@ public interface DatabaseManagerInterface {
     /**
      * Inserts a new location record into the database.
      */
-    fun `insertLocation`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long
+    fun `insertLocation`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `isMoving`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long
     
     /**
      * Inserts a log entry into the database.
@@ -3360,13 +3360,13 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     /**
      * Inserts a new location record into the database.
      */
-    @Throws(TraceletException::class)override fun `insertLocation`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long {
+    @Throws(TraceletException::class)override fun `insertLocation`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `acc`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `isMoving`: kotlin.Boolean, `activity`: kotlin.String, `routeContext`: kotlin.String?, `timestampOverride`: kotlin.String?): kotlin.Long {
             return FfiConverterLong.lift(
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_location(
         it,
-        FfiConverterOptionalString.lower(`uuid`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),FfiConverterOptionalString.lower(`timestampOverride`),_status)
+        FfiConverterOptionalString.lower(`uuid`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`acc`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterBoolean.lower(`isMoving`),FfiConverterString.lower(`activity`),FfiConverterOptionalString.lower(`routeContext`),FfiConverterOptionalString.lower(`timestampOverride`),_status)
 }
     }
     )
@@ -4006,7 +4006,7 @@ public interface EventDispatcherInterface {
      * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
      * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
      */
-    fun `onLocationUpdate`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `timestamp`: kotlin.String?): kotlin.Boolean
+    fun `onLocationUpdate`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `isMoving`: kotlin.Boolean, `timestamp`: kotlin.String?): kotlin.Boolean
     
     companion object
 }
@@ -4119,13 +4119,13 @@ open class EventDispatcher: Disposable, AutoCloseable, EventDispatcherInterface
     /**
      * Primary entry point for Native Shells (Android/iOS) to feed OS locations into the Rust Core.
      * Returns true if the location was accepted and processed, false if discarded (e.g., due to accuracy filter).
-     */override fun `onLocationUpdate`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `timestamp`: kotlin.String?): kotlin.Boolean {
+     */override fun `onLocationUpdate`(`uuid`: kotlin.String?, `lat`: kotlin.Double, `lng`: kotlin.Double, `accuracy`: kotlin.Double, `speed`: kotlin.Double, `heading`: kotlin.Double, `altitude`: kotlin.Double, `isMock`: kotlin.Boolean, `isMoving`: kotlin.Boolean, `timestamp`: kotlin.String?): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_eventdispatcher_on_location_update(
         it,
-        FfiConverterOptionalString.lower(`uuid`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`accuracy`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterOptionalString.lower(`timestamp`),_status)
+        FfiConverterOptionalString.lower(`uuid`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterDouble.lower(`accuracy`),FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`altitude`),FfiConverterBoolean.lower(`isMock`),FfiConverterBoolean.lower(`isMoving`),FfiConverterOptionalString.lower(`timestamp`),_status)
 }
     }
     )
@@ -7122,6 +7122,8 @@ data class DbLocationRecord (
     , 
     var `isMock`: kotlin.Boolean
     , 
+    var `isMoving`: kotlin.Boolean
+    , 
     var `activity`: kotlin.String
     , 
     var `routeContext`: kotlin.String?
@@ -7151,6 +7153,7 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -7167,6 +7170,7 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.allocationSize(value.`heading`) +
             FfiConverterDouble.allocationSize(value.`altitude`) +
             FfiConverterBoolean.allocationSize(value.`isMock`) +
+            FfiConverterBoolean.allocationSize(value.`isMoving`) +
             FfiConverterString.allocationSize(value.`activity`) +
             FfiConverterOptionalString.allocationSize(value.`routeContext`)
     )
@@ -7182,6 +7186,7 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterDouble.write(value.`heading`, buf)
             FfiConverterDouble.write(value.`altitude`, buf)
             FfiConverterBoolean.write(value.`isMock`, buf)
+            FfiConverterBoolean.write(value.`isMoving`, buf)
             FfiConverterString.write(value.`activity`, buf)
             FfiConverterOptionalString.write(value.`routeContext`, buf)
     }

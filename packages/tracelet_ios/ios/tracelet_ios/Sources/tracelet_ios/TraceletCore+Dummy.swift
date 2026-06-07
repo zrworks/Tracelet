@@ -29,6 +29,7 @@ import Foundation
 public var _TraceletCore_dummy_sink: [Any] = []
 
 public struct TraceletCoreDummy {
+    @inline(never)
     public static func enforceBundling() {
         let dummyArray: [Any] = [
             dummy_TraceletCore_frb_create_shutdown_callback as Any,
@@ -58,5 +59,8 @@ public struct TraceletCoreDummy {
             dummy_TraceletCore_store_dart_post_cobject as Any,
         ]
         _TraceletCore_dummy_sink = dummyArray
+        if ProcessInfo.processInfo.environment["DEBUG_DUMMY_FRB"] != nil {
+            print(_TraceletCore_dummy_sink)
+        }
     }
 }

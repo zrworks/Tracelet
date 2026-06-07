@@ -37,6 +37,8 @@
 	<string>Tracelet needs your location to track your route.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Motion detection allows battery-efficient tracking by pausing GPS when stationary.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan QR codes for server configuration.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

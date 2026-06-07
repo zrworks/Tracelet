@@ -114,9 +114,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
 
             registrar.addApplicationDelegate(instance)
 
-            NSLog("[Tracelet] register: primary instance — SDK initialized, callbacks wired")
+            TraceletSdk.shared.logger.debug("register: primary instance — SDK initialized, callbacks wired")
         } else {
-            NSLog("[Tracelet] register: secondary instance — skipping SDK init & callback wiring")
+            TraceletSdk.shared.logger.debug("register: secondary instance — skipping SDK init & callback wiring")
         }
 
         // Register Pigeon-generated type-safe API on EVERY engine so host
@@ -127,16 +127,16 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     }
 
     public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
-        NSLog("[Tracelet] detachFromEngine")
+        TraceletSdk.shared.logger.debug("detachFromEngine")
         TraceletHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: nil)
 
         if TraceletIosPlugin.primaryInstance === self {
             TraceletIosPlugin.primaryInstance = nil
 
             sdk.destroyAll()
-            NSLog("[Tracelet] detachFromEngine: primary instance — destroyAll() called")
+            TraceletSdk.shared.logger.debug("detachFromEngine: primary instance — destroyAll() called")
         } else {
-            NSLog("[Tracelet] detachFromEngine: secondary instance — skipping SDK destroy")
+            TraceletSdk.shared.logger.debug("detachFromEngine: secondary instance — skipping SDK destroy")
         }
     }
 
@@ -147,9 +147,9 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
         didFinishLaunchingWithOptions launchOptions: [AnyHashable: Any]? = nil
     ) -> Bool {
         let launchedForLocation = (launchOptions?[UIApplication.LaunchOptionsKey.location] as? Bool) == true
-        NSLog("[Tracelet] didFinishLaunchingWithOptions: launchedForLocation=\(launchedForLocation)")
+        TraceletSdk.shared.logger.debug("didFinishLaunchingWithOptions: launchedForLocation=\(launchedForLocation)")
         if launchedForLocation {
-            NSLog("[Tracelet] Killed-state relaunch detected — calling autoResumeTracking()")
+            TraceletSdk.shared.logger.debug("Killed-state relaunch detected — calling autoResumeTracking()")
             sdk.autoResumeTracking()
         }
         return true
@@ -158,7 +158,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     // MARK: - UIApplicationDelegate (will terminate)
 
     public func applicationWillTerminate(_ application: UIApplication) {
-        NSLog("[Tracelet] applicationWillTerminate: ensuring significant location monitoring persists")
+        TraceletSdk.shared.logger.debug("applicationWillTerminate: ensuring significant location monitoring persists")
         sdk.onAppWillTerminate()
     }
 
@@ -183,8 +183,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     }
 
     public func requestFreshHeaders() -> Bool {
-        if TraceletIosPlugin.primaryInstance == nil && !headlessRunner.isRegistered() {
-            return false
+        if TraceletIosPlugin.primaryInstance == nil {
+            if !headlessRunner.isRegistered() { return false }
+            TraceletSdk.shared.logger.debug("requestFreshHeaders: primary instance nil, routing to HeadlessRunner")
+            return headlessRunner.requestHeadersRefresh(timeout: TraceletIosPlugin.dartCallbackTimeout)
         }
         let semaphore = DispatchSemaphore(value: 0)
         var success = false
@@ -201,8 +203,10 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     }
 
     public func requestSyncBody(locations: [[String: Any]]) -> String? {
-        if TraceletIosPlugin.primaryInstance == nil && !headlessRunner.isRegistered() {
-            return "{\"error\": \"PRIMARY_INSTANCE_NIL\"}"
+        if TraceletIosPlugin.primaryInstance == nil {
+            if !headlessRunner.isRegistered() { return "{\"error\": \"PRIMARY_INSTANCE_NIL\"}" }
+            TraceletSdk.shared.logger.debug("requestSyncBody: primary instance nil, routing to HeadlessRunner")
+            return headlessRunner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
         }
         let semaphore = DispatchSemaphore(value: 0)
         var body: String? = nil

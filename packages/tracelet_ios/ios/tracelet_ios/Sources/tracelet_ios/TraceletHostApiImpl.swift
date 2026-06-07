@@ -521,13 +521,13 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func requestPermission(completion: @escaping (Result<TlAuthorizationStatus, Error>) -> Void) {
-        NSLog("[Tracelet] requestPermission called")
+        TraceletSdk.shared.logger.debug("requestPermission called")
         DispatchQueue.main.async {
             let requestAlways = self.sdk.configManager.getLocationAuthorizationRequest() == "Always"
             self.sdk.permissionManager.requestPermission(requestAlways: requestAlways) { status in
                 let statusInt = status as? Int ?? 0
                 let result = self.intToAuthStatus(statusInt)
-                NSLog("[Tracelet] requestPermission result: \(statusInt) -> \(result)")
+                TraceletSdk.shared.logger.debug("requestPermission result: \(statusInt) -> \(result)")
                 completion(.success(result))
             }
         }
@@ -584,21 +584,21 @@ class TraceletHostApiImpl: TraceletHostApi {
             completion(.success(.notDetermined))
             return
         }
-        NSLog("[Tracelet] requestMotionPermission called")
+        TraceletSdk.shared.logger.debug("requestMotionPermission called")
         DispatchQueue.main.async {
             detector.requestMotionPermission { status in
-                NSLog("[Tracelet] requestMotionPermission result: \(status)")
+                TraceletSdk.shared.logger.debug("requestMotionPermission result: \(status)")
                 completion(.success(self.intToMotionStatus(status)))
             }
         }
     }
 
     func requestTemporaryFullAccuracy(purpose: String, completion: @escaping (Result<Int64, Error>) -> Void) {
-        NSLog("[Tracelet] requestTemporaryFullAccuracy called for purpose: \(purpose)")
+        TraceletSdk.shared.logger.debug("requestTemporaryFullAccuracy called for purpose: \(purpose)")
         DispatchQueue.main.async {
             let result = self.sdk.permissionManager.requestTemporaryFullAccuracy(purposeKey: purpose)
             let resInt = result as? Int ?? 0
-            NSLog("[Tracelet] requestTemporaryFullAccuracy result: \(resInt)")
+            TraceletSdk.shared.logger.debug("requestTemporaryFullAccuracy result: \(resInt)")
             completion(.success(Int64(resInt)))
         }
     }

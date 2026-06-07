@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
-import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import com.ikolvi.tracelet.TlActivity
@@ -305,7 +304,7 @@ class TraceletHostApiImpl(
     }
 
     private fun wrapException(err: String): FlutterError {
-        Log.e(TAG, "SDK operation failed: $err")
+        sdk.logger.error("SDK operation failed: $err")
         return FlutterError(err, "Tracelet SDK error: $err", null)
     }
 
@@ -365,6 +364,14 @@ class TraceletHostApiImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun setConfig(config: TlConfig, callback: (Result<TlState>) -> Unit) {
+        // Match iOS: surface NOT_READY instead of silently returning a default
+        // state when setConfig() is called before ready(). Keeps the Flutter
+        // plugin behavior identical across platforms so callers can rely on the
+        // PlatformException(NOT_READY) signal everywhere.
+        if (!sdk.isReady) {
+            callback(Result.failure(FlutterError("NOT_READY", "Call ready() before setConfig()", null)))
+            return
+        }
         try {
             val state = sdk.setConfig(tlConfigToSdkMap(config))
             callback(Result.success(mapToTlState(state as Map<String, Any?>)))
@@ -822,7 +829,7 @@ class TraceletHostApiImpl(
             wakeLock.acquire(30_000L)
             activeWakeLocks[taskId] = wakeLock
             
-            Log.d(TAG, "Acquired transient WakeLock for task: $taskId")
+            sdk.logger.debug("Acquired transient WakeLock for task: $taskId")
             callback(Result.success(taskId))
         } catch (e: Exception) {
             callback(Result.failure(e))
@@ -834,7 +841,7 @@ class TraceletHostApiImpl(
             val wakeLock = activeWakeLocks.remove(taskId)
             if (wakeLock != null && wakeLock.isHeld) {
                 wakeLock.release()
-                Log.d(TAG, "Released transient WakeLock for task: $taskId")
+                sdk.logger.debug("Released transient WakeLock for task: $taskId")
             }
             callback(Result.success(taskId))
         } catch (e: Exception) {

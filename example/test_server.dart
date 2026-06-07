@@ -30,6 +30,19 @@ Future<void> main(List<String> args) async {
   stdout.writeln('║  Press Ctrl+C to stop.                              ║');
   stdout.writeln('╚══════════════════════════════════════════════════════╝');
   stdout.writeln();
+
+  try {
+    // Automatically generate a scannable QR code right in the terminal!
+    final result = await Process.run('curl', ['-s', 'qrenco.de/http://$localIp:$port/locations']);
+    if (result.stdout.toString().isNotEmpty) {
+      stdout.writeln(result.stdout);
+      stdout.writeln('^ Scan the QR Code above with the Example app! ^');
+    }
+  } catch (_) {
+    // Ignore if curl fails
+  }
+
+  stdout.writeln();
   stdout.writeln('Waiting for location sync requests...');
   stdout.writeln();
 
@@ -48,6 +61,11 @@ Future<void> main(List<String> args) async {
     if (request.uri.queryParameters.isNotEmpty) {
       stdout.writeln('  Query Params: ${request.uri.queryParameters}');
     }
+
+    stdout.writeln('  Headers:');
+    request.headers.forEach((name, values) {
+      stdout.writeln('    $name: ${values.join(', ')}');
+    });
 
     if (body.isNotEmpty) {
       try {

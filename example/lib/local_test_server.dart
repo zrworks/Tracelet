@@ -18,6 +18,11 @@ class LocalTestServer {
   Future<void> start({int port = 8099}) async {
     if (isRunning) return;
 
+    if (kIsWeb) {
+      _addLog('Failed to start server: Local Test Server cannot run on Web.');
+      return;
+    }
+
     try {
       _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
       final localIp = await getLocalIp();

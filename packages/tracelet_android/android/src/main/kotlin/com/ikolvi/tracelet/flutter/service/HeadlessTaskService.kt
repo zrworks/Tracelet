@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
+import com.ikolvi.tracelet.sdk.TraceletSdk
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.HeadersRefreshable
 import com.ikolvi.tracelet.sdk.HeadlessDispatcher
@@ -75,7 +75,7 @@ class HeadlessTaskService(
             .putLong(type.regKey, registrationCallbackId)
             .putLong(type.dispatchKey, dispatchCallbackId)
             .apply()
-        Log.d(TAG, "Headless callbacks registered ($type): reg=$registrationCallbackId, dispatch=$dispatchCallbackId")
+        TraceletSdk.getInstance(context).logger.debug("Headless callbacks registered ($type): reg=$registrationCallbackId, dispatch=$dispatchCallbackId")
     }
 
     /** Returns whether headless task is registered. */
@@ -136,14 +136,14 @@ class HeadlessTaskService(
         val dispatchId = prefs.getLong("headlessHeaders_dispatchId", -1L)
         val registrationId = prefs.getLong("headlessHeaders_registrationId", -1L)
         if (dispatchId == -1L || registrationId == -1L) {
-            Log.w(TAG, "No headless headers callback registered")
+            TraceletSdk.getInstance(context).logger.warning("No headless headers callback registered")
             return false
         }
 
         // Guard: blocking the main thread would deadlock because the Dart
         // MethodChannel response also needs the main thread.
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.e(TAG, "requestHeadersRefresh() must not be called on the main thread — would deadlock")
+            TraceletSdk.getInstance(context).logger.error("requestHeadersRefresh() must not be called on the main thread — would deadlock")
             return false
         }
 
@@ -167,9 +167,9 @@ class HeadlessTaskService(
         return try {
             val result = latch.await(timeoutMs, TimeUnit.MILLISECONDS)
             if (result) {
-                Log.d(TAG, "Headers refresh completed by headless callback")
+                TraceletSdk.getInstance(context).logger.debug("Headers refresh completed by headless callback")
             } else {
-                Log.w(TAG, "Headers refresh timed out after ${timeoutMs}ms")
+                TraceletSdk.getInstance(context).logger.warning("Headers refresh timed out after ${timeoutMs}ms")
             }
             result
         } finally {
@@ -198,12 +198,12 @@ class HeadlessTaskService(
         val dispatchId = prefs.getLong("headlessSyncBody_dispatchId", -1L)
         val registrationId = prefs.getLong("headlessSyncBody_registrationId", -1L)
         if (dispatchId == -1L || registrationId == -1L) {
-            Log.w(TAG, "No headless sync body callback registered")
+            TraceletSdk.getInstance(context).logger.warning("No headless sync body callback registered")
             return null
         }
 
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.e(TAG, "requestCustomSyncBody() must not be called on the main thread — would deadlock")
+            TraceletSdk.getInstance(context).logger.error("requestCustomSyncBody() must not be called on the main thread — would deadlock")
             return null
         }
 
@@ -229,10 +229,10 @@ class HeadlessTaskService(
         return try {
             val completed = latch.await(timeoutMs, TimeUnit.MILLISECONDS)
             if (completed) {
-                Log.d(TAG, "Sync body build completed by headless callback")
+                TraceletSdk.getInstance(context).logger.debug("Sync body build completed by headless callback")
                 synchronized(syncBodyLock) { syncBodyResponse }
             } else {
-                Log.w(TAG, "Sync body build timed out after ${timeoutMs}ms")
+                TraceletSdk.getInstance(context).logger.warning("Sync body build timed out after ${timeoutMs}ms")
                 null
             }
         } finally {
@@ -262,7 +262,7 @@ class HeadlessTaskService(
         }
 
         if (registrationCallbackId == -1L) {
-            Log.w(TAG, "No headless callbacks registered")
+            TraceletSdk.getInstance(context).logger.warning("No headless callbacks registered")
             pendingEvents.clear()
             return
         }
@@ -322,12 +322,12 @@ class HeadlessTaskService(
                             DartExecutor.DartCallback(context.assets, loader.findAppBundlePath(), callbackInfo)
                         )
                     } else {
-                        Log.e(TAG, "Could not find callback info for ID: $registrationCallbackId")
+                        TraceletSdk.getInstance(context).logger.error("Could not find callback info for ID: $registrationCallbackId")
                         destroy()
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to create headless FlutterEngine: ${e.message}")
+                TraceletSdk.getInstance(context).logger.error("Failed to create headless FlutterEngine: ${e.message}")
                 destroy()
             }
         }

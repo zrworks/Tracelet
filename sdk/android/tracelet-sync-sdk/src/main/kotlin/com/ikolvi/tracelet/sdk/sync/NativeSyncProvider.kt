@@ -265,14 +265,11 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
 
                 if (currentHeaders.isNotEmpty()) {
                     try {
-                        val headersMap = JSONObject(currentHeaders)
-                        val iter = headersMap.keys()
-                        while (iter.hasNext()) {
-                            val key = iter.next()
-                            conn.setRequestProperty(key, headersMap.getString(key))
+                        currentHeaders.forEach { (key, value) ->
+                            conn.setRequestProperty(key, value)
                         }
                     } catch (e: Exception) {
-                        sdk.logger.error("Failed to parse HTTP headers: ${e.message}")
+                        android.util.Log.e("NativeSyncProvider", "Failed to set HTTP headers: ${e.message}", e)
                     }
                 }
 

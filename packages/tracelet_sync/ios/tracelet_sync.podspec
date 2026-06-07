@@ -16,7 +16,7 @@ A new Flutter plugin project.
   s.source_files = 'tracelet_sync/Sources/tracelet_sync/**/*.{swift,h}'
   s.public_header_files = 'tracelet_sync/Sources/tracelet_sync/**/*.h', 'tracelet_sync/Sources/tracelet_sync/*.h'
   s.dependency 'Flutter'
-  s.dependency 'TraceletSDK', '3.2.6'
+  s.dependency 'TraceletSDK', '3.2.7'
   s.platform = :ios, '14.0'
   s.vendored_frameworks = 'tracelet_sync/TraceletSyncFFI.xcframework'
 

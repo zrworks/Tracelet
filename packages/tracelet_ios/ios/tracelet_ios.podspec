@@ -34,7 +34,8 @@ execution for iOS.
     'OTHER_LDFLAGS' => '$(inherited) -Wl,-multiply_defined,suppress -Wl,-ld_classic',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'DEAD_CODE_STRIPPING' => 'NO',
-    'STRIP_STYLE' => 'non-global'
+    'STRIP_STYLE' => 'non-global',
+    'STRIP_INSTALLED_PRODUCT' => 'NO'
   }
   s.swift_version = '5.0'
 

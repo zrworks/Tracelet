@@ -30,13 +30,16 @@ public final class MotionDetector {
     private lazy var pedometer = CMPedometer()
 
     private let motionManager = CMMotionManager()
-    
-    private lazy var accelQueue: OperationQueue = {
-        let queue = OperationQueue()
-        queue.name = "com.tracelet.accelerometer.fallback"
-        queue.qualityOfService = .utility
-        return queue
-    }()
+
+    /// Serial queue for pull-model accelerometer sampling and the stationary
+    /// duty cycle. Replaces per-sample OperationQueue push delivery (#130).
+    private let motionQueue = DispatchQueue(label: "com.tracelet.motion", qos: .utility)
+
+    /// Pull-model sampler timer for the MOVING state (reads accelerometerData @10Hz).
+    private var movingSampler: DispatchSourceTimer?
+
+    /// Duty-cycle timer for the accelerometer-only STATIONARY state.
+    private var dutyCycleTimer: DispatchSourceTimer?
 
     private var isRunning = false
     private var isFullModeStarted = false
@@ -72,6 +75,11 @@ public final class MotionDetector {
     ///
     /// - SeeAlso: Android `MotionDetector.SHAKE_THRESHOLD` (2.5)
     private static let shakeThreshold: Double = 0.35
+
+    /// Accel-only STATIONARY duty cycle (#130): sample a short burst, then idle.
+    /// Burst long enough to catch sustained motion; period bounds resume latency.
+    private static let dutyBurstSeconds: TimeInterval = 1.5   // ~15 samples @10Hz
+    private static let dutyPeriodSeconds: TimeInterval = 10.0 // worst-case resume latency
 
     private var consecutiveStillSamples = 0
 
@@ -126,7 +134,9 @@ public final class MotionDetector {
             isFullModeStarted = false
         }
 
-        // Accelerometer-only mode cleanup
+        // Sampler / duty-cycle cleanup, then power down the sensor.
+        stopMovingSampler()
+        stopDutyCycle()
         motionManager.stopAccelerometerUpdates()
 
         // Shared cleanup
@@ -164,15 +174,12 @@ public final class MotionDetector {
             }
         }
 
-        // Accelerometer fallback for stillness and shake detection
-        if motionManager.isAccelerometerAvailable {
-            motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-            consecutiveStillSamples = 0
-            motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
-                guard let self = self, let data = data, error == nil else { return }
-                self.handleAccelerometerData(data)
-            }
-            logger.debug(String(format: "Accelerometer fallback started (threshold=%.3f, samples=%d)",
+        // Accelerometer is only needed for stillness detection while MOVING.
+        // While stationary, CMMotionActivityManager (above) wakes us on the next
+        // moving activity, so we keep the sensor off to save power (#130).
+        if motionManager.isAccelerometerAvailable, stateManager.isMoving {
+            startMovingSampler()
+            logger.verbose(String(format: "Accelerometer sampler started (threshold=%.3f, samples=%d)",
                   configManager.getStillThreshold(), configManager.getStillSampleCount()))
         }
     }
@@ -187,28 +194,95 @@ public final class MotionDetector {
     /// Uses `CMMotionManager.startAccelerometerUpdates()` which does NOT require
     /// `NSMotionUsageDescription` — it accesses raw hardware sensor data only.
     private func startAccelerometerOnlyMode() {
-        logger.debug("Starting accelerometer-only mode (no Motion & Fitness permission)")
+        logger.verbose("Starting accelerometer-only mode (no Motion & Fitness permission)")
 
         guard motionManager.isAccelerometerAvailable else {
             logger.debug("Accelerometer not available on this device")
             return
         }
 
-        // 10Hz is sufficient for motion detection and far more battery-
-        // efficient than 50Hz. At 50Hz the CPU wakes 50×/sec for negligible
-        // detection improvement (I-H1).
-        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-        consecutiveStillSamples = 0
-
-        // Deliver to a background queue to avoid blocking the main thread.
-        motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
-            guard let self = self, let data = data, error == nil else { return }
-            self.handleAccelerometerData(data)
+        if stateManager.isMoving {
+            // Moving → continuous stillness detection.
+            startMovingSampler()
+        } else {
+            // Stationary → duty-cycled bursts instead of continuous polling, so
+            // the CPU stays idle between bursts (#130).
+            startDutyCycle()
         }
     }
 
-    private func handleAccelerometerData(_ data: CMAccelerometerData) {
-        handleAcceleration(data.acceleration)
+    // MARK: - Pull-model sampling (moving state) & duty cycle (stationary)
+
+    /// Starts pull-model accelerometer sampling for stillness/shake detection.
+    /// Reads `motionManager.accelerometerData` on `motionQueue` at 10Hz instead
+    /// of pushing every sample through an OperationQueue (#130).
+    private func startMovingSampler() {
+        guard motionManager.isAccelerometerAvailable else { return }
+        stopDutyCycle()
+        consecutiveStillSamples = 0
+        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+        if !motionManager.isAccelerometerActive {
+            motionManager.startAccelerometerUpdates()   // no handler → pull model
+        }
+        movingSampler?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: motionQueue)
+        timer.schedule(deadline: .now() + 0.1, repeating: 0.1)   // 10Hz
+        timer.setEventHandler { [weak self] in
+            guard let self = self, let data = self.motionManager.accelerometerData else { return }
+            self.handleAcceleration(data.acceleration)
+        }
+        timer.resume()
+        movingSampler = timer
+    }
+
+    private func stopMovingSampler() {
+        movingSampler?.cancel()
+        movingSampler = nil
+    }
+
+    /// Starts the STATIONARY duty cycle (accel-only mode): a short accelerometer
+    /// burst every `dutyPeriodSeconds`, with the sensor powered down in between.
+    private func startDutyCycle() {
+        guard isAccelerometerOnlyMode, motionManager.isAccelerometerAvailable else { return }
+        stopMovingSampler()
+        dutyCycleTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: motionQueue)
+        timer.schedule(deadline: .now() + MotionDetector.dutyPeriodSeconds,
+                       repeating: MotionDetector.dutyPeriodSeconds)
+        timer.setEventHandler { [weak self] in self?.runDutyBurst() }
+        timer.resume()
+        dutyCycleTimer = timer
+    }
+
+    private func stopDutyCycle() {
+        dutyCycleTimer?.cancel()
+        dutyCycleTimer = nil
+    }
+
+    /// One duty-cycle burst: power the sensor on and sample for `dutyBurstSeconds`.
+    private func runDutyBurst() {
+        guard isRunning, !stateManager.isMoving else { return }
+        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+        if !motionManager.isAccelerometerActive {
+            motionManager.startAccelerometerUpdates()
+        }
+        sampleBurst(until: DispatchTime.now() + MotionDetector.dutyBurstSeconds)
+    }
+
+    /// Recursively reads samples on `motionQueue` until the burst window ends or
+    /// motion is declared, then powers the sensor down until the next period.
+    private func sampleBurst(until deadline: DispatchTime) {
+        guard isRunning, !stateManager.isMoving, DispatchTime.now() < deadline else {
+            // Burst over (still stationary) → idle the sensor until next period.
+            if !stateManager.isMoving { motionManager.stopAccelerometerUpdates() }
+            return
+        }
+        if let data = motionManager.accelerometerData {
+            handleAcceleration(data.acceleration)   // may declare moving on shake
+        }
+        motionQueue.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.sampleBurst(until: deadline)
+        }
     }
 
     // Internal for testing
@@ -224,14 +298,14 @@ public final class MotionDetector {
                 consecutiveStillSamples += 1
                 if consecutiveStillSamples == configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
-                    logger.debug(String(format: "Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
+                    logger.verbose(String(format: "Accelerometer detected sustained stillness (%d samples), starting stop-timeout",
                           consecutiveStillSamples))
-                    // Do NOT stop accelerometer updates so we can abort if motion resumes!
+                    // Keep the sampler running so we can abort if motion resumes.
                     startStopTimeoutCountdown()
                 }
             } else {
                 if consecutiveStillSamples >= configManager.getStillSampleCount() {
-                    logger.debug("Accelerometer broke stillness — aborting stop-timeout countdown")
+                    logger.verbose("Accelerometer broke stillness — aborting stop-timeout countdown")
                     handleMovingDetected()
                 }
                 consecutiveStillSamples = 0
@@ -239,8 +313,8 @@ public final class MotionDetector {
         } else {
             // Currently stationary — detect shake/movement
             if abs(magnitude) > configManager.getShakeThreshold() {
-                logger.debug(String(format: "Accelerometer detected SHAKE (magnitude: %.2f), triggering moving", abs(magnitude)))
-                motionManager.stopAccelerometerUpdates()
+                logger.verbose(String(format: "Accelerometer detected SHAKE (magnitude: %.2f), triggering moving", abs(magnitude)))
+                stopDutyCycle()
                 handleMovingDetected()
             }
         }
@@ -322,10 +396,10 @@ public final class MotionDetector {
     private func handleActivityUpdate(_ activity: CMMotionActivity) {
         // Motion state detection
         if activity.stationary {
-            logger.debug("handleActivityUpdate: detected STATIONARY activity")
+            logger.verbose("handleActivityUpdate: detected STATIONARY activity")
             handleStationaryDetected()
         } else if activity.walking || activity.running || activity.cycling || activity.automotive {
-            logger.debug("handleActivityUpdate: detected MOVING activity (walking:\(activity.walking) running:\(activity.running) cycling:\(activity.cycling) automotive:\(activity.automotive))")
+            logger.verbose("handleActivityUpdate: detected MOVING activity (walking:\(activity.walking) running:\(activity.running) cycling:\(activity.cycling) automotive:\(activity.automotive))")
             handleMovingDetected()
         }
 
@@ -394,18 +468,10 @@ public final class MotionDetector {
                 triggerMotionChange(isMoving: true)
             }
         } else {
-            // Already moving. If the accelerometer was stopped because it previously
-            // detected stillness (but the timer was just invalidated by this moving blip),
-            // we must restart the accelerometer to continue monitoring for stillness.
+            // Already moving — ensure the stillness sampler is running (it may
+            // have been torn down when stillness was previously detected).
             if isRunning {
-                motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-                consecutiveStillSamples = 0
-                if motionManager.isAccelerometerAvailable {
-                    motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
-                        guard let self = self, let data = data, error == nil else { return }
-                        self.handleAccelerometerData(data)
-                    }
-                }
+                startMovingSampler()
             }
         }
     }
@@ -467,17 +533,26 @@ public final class MotionDetector {
                 return // Full stop — no further monitoring
             }
 
-        if self.isRunning {
-            self.motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-            self.consecutiveStillSamples = 0
-            if self.motionManager.isAccelerometerAvailable {
-                // Use a background queue for stillness/shake detection
-                self.motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
-                    guard let self = self, let data = data, error == nil else { return }
-                    self.handleAccelerometerData(data)
+            if !isMoving {
+                // Entered STATIONARY — stop the high-rate sampler. Full mode
+                // wakes via CMMotionActivityManager; accel-only mode duty-cycles.
+                self.stopMovingSampler()
+                guard self.isRunning else {
+                    self.motionManager.stopAccelerometerUpdates()
+                    return
                 }
+                if self.isAccelerometerOnlyMode {
+                    self.startDutyCycle()
+                } else {
+                    self.motionManager.stopAccelerometerUpdates()
+                }
+                return
             }
-        }
+
+            // Entered MOVING — (re)start the pull-model stillness sampler.
+            if self.isRunning {
+                self.startMovingSampler()
+            }
         }
     }
 
@@ -493,15 +568,19 @@ public final class MotionDetector {
             }
             consecutiveStillSamples = 0
         }
-        
-        if isRunning {
-            motionManager.accelerometerUpdateInterval = 1.0 / 10.0
-            consecutiveStillSamples = 0
-            if motionManager.isAccelerometerAvailable {
-                motionManager.startAccelerometerUpdates(to: self.accelQueue) { [weak self] data, error in
-                    guard let self = self, let data = data, error == nil else { return }
-                    self.handleAccelerometerData(data)
-                }
+
+        guard isRunning else { return }
+        if isMoving {
+            // Moving → continuous stillness sampler.
+            startMovingSampler()
+        } else {
+            // Stationary → stop the sampler; accel-only mode duty-cycles, full
+            // mode relies on CMMotionActivityManager.
+            stopMovingSampler()
+            if isAccelerometerOnlyMode {
+                startDutyCycle()
+            } else {
+                motionManager.stopAccelerometerUpdates()
             }
         }
     }

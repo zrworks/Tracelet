@@ -40,13 +40,15 @@ object LocationMapper {
         routeContext: String?,
         isMoving: Boolean,
         odometer: Double,
+        eventType: String = "location",
+        eventPayload: String? = null,
     ): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>(
             "uuid" to (uuid ?: id.toString()),
             "timestamp" to timestamp,
             "is_moving" to isMoving,
             "odometer" to odometer,
-            "event" to "location",
+            "event" to eventType,
             "mock" to isMock,
             "coords" to mapOf(
                 "latitude" to latitude,
@@ -65,6 +67,15 @@ object LocationMapper {
                 "isCharging" to false,
             ),
         )
+        
+        if (eventType == "geofence" && !eventPayload.isNullOrBlank()) {
+            try {
+                map["geofence"] = jsonToKotlin(JSONObject(eventPayload))
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+        
         applyRouteContext(map, routeContext)
         return map
     }

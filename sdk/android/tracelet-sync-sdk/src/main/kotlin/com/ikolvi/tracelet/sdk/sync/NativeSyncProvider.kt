@@ -68,8 +68,16 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 val recordsMap = records.map { sdk.mapRecordToLocation(it) }
 
                 val customBody = interceptor?.requestSyncBody(recordsMap)
+                if (interceptor != null && customBody == null) {
+                    // A builder is registered but it timed out or threw
+                    // (requestSyncBody returns the sentinel, not null, when no
+                    // builder exists). Abort instead of posting an error object
+                    // or the default payload.
+                    sdk.logger.error("NativeSyncProvider: custom sync body failed to build; aborting sync")
+                    return
+                }
 
-                if (customBody != null) {
+                if (customBody != null && customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                     val success = executeFallbackHttpSync(coreHttp, customBody, interceptor)
                     if (success) {
                         records.lastOrNull()?.id?.let { lastId ->
@@ -206,13 +214,19 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
             val recordMaps = records.map { sdk.mapRecordToLocation(it) }
             val customBody = interceptor.requestSyncBody(recordMaps)
             sdk.logger.debug("NativeSyncProvider: Custom body is $customBody")
-            if (customBody != null) {
+            if (customBody == null) {
+                // Builder registered but failed → abort (0 = nothing synced).
+                sdk.logger.error("NativeSyncProvider: custom sync body failed to build; aborting sync")
+                return 0L
+            }
+            if (customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
                     sdk.logger.debug("NativeSyncProvider: Fallback HTTP success: $success")
                     if (success) records.size.toLong() else 0L
                 }
             }
+            // sentinel → no builder → fall through to the default sync below.
         }
 
         return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()

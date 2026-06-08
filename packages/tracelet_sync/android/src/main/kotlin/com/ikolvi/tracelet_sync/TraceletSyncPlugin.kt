@@ -8,6 +8,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 import com.ikolvi.tracelet.sdk.TraceletSdk
 import com.ikolvi.tracelet.sdk.location.LocationDataSink
+import com.ikolvi.tracelet.sdk.sync.NO_SYNC_BODY_BUILDER_SENTINEL
 import uniffi.tracelet_sync.SyncManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,13 +136,19 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
             sdk.logger.debug("Calling requestSyncBody on interceptor with ${recordMaps.size} records")
             val customBody = interceptor.requestSyncBody(recordMaps)
             sdk.logger.debug("requestSyncBody returned: $customBody")
-            if (customBody != null) {
+            if (customBody == null) {
+                // Builder registered but failed → abort (0 = nothing synced).
+                sdk.logger.error("Custom sync body failed to build; aborting sync")
+                return 0L
+            }
+            if (customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
                     sdk.logger.debug("executeFallbackHttpSync success: $success")
                     if (success) records.size.toLong() else 0L
                 }
             }
+            // sentinel → no builder → fall through to the default sync below.
         }
 
         return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()

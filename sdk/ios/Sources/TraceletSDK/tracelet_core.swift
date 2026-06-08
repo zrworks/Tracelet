@@ -1157,7 +1157,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?) throws  -> Int64
+    func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?) throws  -> Int64
     
     /**
      * Inserts a log entry into the database.
@@ -1475,7 +1475,7 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?)throws  -> Int64  {
+open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?)throws  -> Int64  {
     return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
@@ -1490,7 +1490,9 @@ open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, s
         FfiConverterBool.lower(isMoving),
         FfiConverterString.lower(activity),
         FfiConverterOptionString.lower(routeContext),
-        FfiConverterOptionString.lower(timestampOverride),$0
+        FfiConverterOptionString.lower(timestampOverride),
+        FfiConverterOptionString.lower(eventType),
+        FfiConverterOptionString.lower(eventPayload),$0
     )
 })
 }
@@ -4134,10 +4136,26 @@ public struct DbLocationRecord: Equatable, Hashable {
     public var isMoving: Bool
     public var activity: String
     public var routeContext: String?
+    /**
+     * Event type for this record: "location" (default) or "geofence" (#128).
+     */
+    public var eventType: String
+    /**
+     * Optional JSON payload with event-specific data (e.g. geofence identifier
+     * and action). `None` for plain location records.
+     */
+    public var eventPayload: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?) {
+    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, 
+        /**
+         * Event type for this record: "location" (default) or "geofence" (#128).
+         */eventType: String, 
+        /**
+         * Optional JSON payload with event-specific data (e.g. geofence identifier
+         * and action). `None` for plain location records.
+         */eventPayload: String?) {
         self.id = id
         self.uuid = uuid
         self.timestamp = timestamp
@@ -4151,6 +4169,8 @@ public struct DbLocationRecord: Equatable, Hashable {
         self.isMoving = isMoving
         self.activity = activity
         self.routeContext = routeContext
+        self.eventType = eventType
+        self.eventPayload = eventPayload
     }
 
     
@@ -4181,7 +4201,9 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
                 isMock: FfiConverterBool.read(from: &buf), 
                 isMoving: FfiConverterBool.read(from: &buf), 
                 activity: FfiConverterString.read(from: &buf), 
-                routeContext: FfiConverterOptionString.read(from: &buf)
+                routeContext: FfiConverterOptionString.read(from: &buf), 
+                eventType: FfiConverterString.read(from: &buf), 
+                eventPayload: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -4199,6 +4221,8 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
         FfiConverterBool.write(value.isMoving, into: &buf)
         FfiConverterString.write(value.activity, into: &buf)
         FfiConverterOptionString.write(value.routeContext, into: &buf)
+        FfiConverterString.write(value.eventType, into: &buf)
+        FfiConverterOptionString.write(value.eventPayload, into: &buf)
     }
 }
 
@@ -7456,7 +7480,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 26324) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 14450) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {

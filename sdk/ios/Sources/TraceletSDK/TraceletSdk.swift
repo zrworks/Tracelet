@@ -859,7 +859,9 @@ public final class TraceletSdk {
             activity: record.activity,
             routeContext: record.routeContext,
             isMoving: record.isMoving,
-            odometer: locationEngine.getOdometer()
+            odometer: locationEngine.getOdometer(),
+            eventType: record.eventType,
+            eventPayload: record.eventPayload
         )
     }
 
@@ -922,6 +924,10 @@ public final class TraceletSdk {
         }
     }
 
+    /// Caches the timestamp of the last inserted location to prevent duplicate 
+    /// DB writes from the same GPS fix.
+    private var lastInsertedTimestamp: String? = nil
+
     /// Insert a custom location into the store.
     ///
     /// - Parameter params: Location data dictionary.
@@ -936,12 +942,27 @@ public final class TraceletSdk {
         let speed = coords["speed"] as? Double ?? 0.0
         let heading = coords["heading"] as? Double ?? 0.0
         let altitude = coords["altitude"] as? Double ?? 0.0
-        let isMock = params["mock"] as? Bool ?? params["is_mock"] as? Bool ?? false
+        let isMock = (params["mock"] as? Bool) ?? (params["is_mock"] as? Bool) ?? false
         let isMoving = params["is_moving"] as? Bool ?? false
         let activityMap = params["activity"] as? [String: Any]
         let activity = activityMap?["type"] as? String ?? "unknown"
         let timestamp = params["timestamp"] as? String
         let uuid = params["uuid"] as? String
+        
+        let eventType = params["event"] as? String ?? "location"
+        var eventPayload: String? = params["event_payload"] as? String
+        if eventPayload == nil, let geofenceData = params["geofence"] as? [String: Any] {
+            if let jsonData = try? JSONSerialization.data(withJSONObject: geofenceData, options: []),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                eventPayload = jsonString
+            }
+        }
+        
+        // Prevent duplicate insertions of the exact same GPS fix
+        if eventType == "location", let ts = timestamp, ts == lastInsertedTimestamp {
+            return ""
+        }
+        if eventType == "location" { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
         if let auditHash = params["audit_hash"] as? String {
@@ -974,8 +995,14 @@ public final class TraceletSdk {
                 isMoving: isMoving,
                 activity: activity,
                 routeContext: routeContext,
-                timestampOverride: timestamp
+                timestampOverride: timestamp,
+                eventType: eventType,
+                eventPayload: eventPayload
             )
+            // Notify the sync plugin so it can trigger auto-sync
+            if let sink = syncProvider as? LocationDataSink {
+                sink.insertLocation(params)
+            }
             return newRowId.description
         } catch {
             NSLog("insertLocation failed: \(error)")
@@ -1464,6 +1491,9 @@ public final class TraceletSdk {
             eventSender: eventSender,
             rustDatabase: rustDatabase
         )
+        geofenceManager.onGeofenceEvent = { [weak self] eventData in
+            let _ = self?.insertLocation(eventData)
+        }
         
         // Smart motion coordinator
         smartMotionCoordinator = TraceletSmartMotionCoordinator(sdk: self)

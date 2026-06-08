@@ -813,6 +813,47 @@ jobs:
           echo "Renaming import TraceletSDK to import tracelet_ios..."
           find packages/tracelet_sync/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK/import tracelet_ios/g' {} +
 
+      # ── Publish the iOS binaries to GitHub Releases BEFORE pub.dev ──
+      # SPM consumers resolve TraceletCore / TraceletSyncFFI through the GitHub
+      # Release URL baked into Package.swift. That asset MUST exist before the
+      # package goes live on pub.dev — otherwise SPM resolution 404s, and since a
+      # pub.dev version can never be replaced, the package would be permanently
+      # broken for SPM. Tags/URLs use each package's OWN version (decoupled from
+      # the umbrella `tracelet` version) so they always match the Package.swift URL.
+      - name: Publish iOS binary GitHub Releases (pre pub.dev)
+        if: ${{ !inputs.dry_run && !inputs.skip_native_sdks && needs.publish-ios-sdk.outputs.already_published == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IOS_VERSION=$(grep '^version:' packages/tracelet_ios/pubspec.yaml | awk '{print $2}')
+          SYNC_VERSION=$(grep '^version:' packages/tracelet_sync/pubspec.yaml | awk '{print $2}')
+
+          if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
+            IOS_TAG="tracelet_ios-v${IOS_VERSION}"
+            if gh release view "$IOS_TAG" >/dev/null 2>&1; then
+              echo "ℹ️ Release $IOS_TAG already exists — skipping"
+            elif [ -f "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip" ]; then
+              gh release create "$IOS_TAG" --target "${{ github.sha }}" --title "Release tracelet_ios v${IOS_VERSION}" --notes "Tracelet iOS SDK v${IOS_VERSION}" "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip"
+              echo "✅ Created $IOS_TAG with TraceletCore.xcframework.zip (SPM binary live before pub.dev publish)"
+            else
+              echo "❌ TraceletCore.xcframework.zip not found — refusing to publish tracelet_ios without its SPM binary."
+              exit 1
+            fi
+          fi
+
+          if [ "${{ inputs.publish_tracelet_sync }}" = "true" ]; then
+            SYNC_TAG="tracelet_sync-v${SYNC_VERSION}"
+            if gh release view "$SYNC_TAG" >/dev/null 2>&1; then
+              echo "ℹ️ Release $SYNC_TAG already exists — skipping"
+            elif [ -f "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip" ]; then
+              gh release create "$SYNC_TAG" --target "${{ github.sha }}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}" "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip"
+              echo "✅ Created $SYNC_TAG with TraceletSyncFFI.xcframework.zip (SPM binary live before pub.dev publish)"
+            else
+              echo "❌ TraceletSyncFFI.xcframework.zip not found — refusing to publish tracelet_sync without its SPM binary."
+              exit 1
+            fi
+          fi
+
       # ── Setup pub.dev credentials ──
       - name: Setup pub.dev credentials
         if: ${{ !inputs.dry_run }}
@@ -867,8 +908,10 @@ jobs:
           CREATED=0
           NEW_TAGS=""
 
+          # tracelet_ios is tagged + released earlier (Publish iOS binary GitHub
+          # Releases) at its OWN version, so it is intentionally omitted here.
           if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then
-            PACKAGES="tracelet_platform_interface tracelet_android tracelet_ios tracelet_web tracelet"
+            PACKAGES="tracelet_platform_interface tracelet_android tracelet_web tracelet"
             for pkg in $PACKAGES; do
               TAG="${pkg}-v${VERSION}"
               if git rev-parse "$TAG" >/dev/null 2>&1; then
@@ -895,18 +938,8 @@ jobs:
             fi
           fi
           
-          if [ "${{ inputs.publish_tracelet_sync }}" = "true" ]; then
-            SYNC_VERSION=$(grep '^version:' packages/tracelet_sync/pubspec.yaml | awk '{print $2}')
-            SYNC_TAG="tracelet_sync-v${SYNC_VERSION}"
-            if git rev-parse "$SYNC_TAG" >/dev/null 2>&1; then
-              echo "ℹ️ Tag $SYNC_TAG already exists — skipping"
-            else
-              git tag "$SYNC_TAG" -m "Release tracelet_sync v${SYNC_VERSION}"
-              echo "🏷️ Tagged: $SYNC_TAG"
-              CREATED=$((CREATED + 1))
-              NEW_TAGS="$NEW_TAGS $SYNC_TAG"
-            fi
-          fi
+          # tracelet_sync is tagged + released earlier (Publish iOS binary GitHub
+          # Releases) at its OWN version, so it is intentionally omitted here.
 
           if [ "${{ inputs.publish_tracelet_firebase }}" = "true" ]; then
             FIREBASE_VERSION=$(grep '^version:' packages/tracelet_firebase/pubspec.yaml | awk '{print $2}')
@@ -934,31 +967,11 @@ jobs:
             fi
           fi
 
+          # NOTE: tracelet_ios / tracelet_sync GitHub Releases (with the SPM
+          # xcframework binaries) are created earlier, before pub.dev publish, by
+          # the "Publish iOS binary GitHub Releases (pre pub.dev)" step.
           if [ "$CREATED" -gt 0 ]; then
             git push origin $NEW_TAGS
-            
-            # Create GitHub Releases for tracelet_ios and tracelet_sync with attached binaries
-            if [ "${{ inputs.publish_core_flutter }}" = "true" ] && [[ " $NEW_TAGS " =~ " tracelet_ios-v${VERSION} " ]]; then
-              echo "Creating GitHub Release for tracelet_ios..."
-              if [ -f "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip" ]; then
-                gh release create "tracelet_ios-v${VERSION}" --title "Release tracelet_ios v${VERSION}" --notes "Tracelet iOS SDK v${VERSION}" "tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip"
-              else
-                echo "⚠️ tracelet-ios-temp/rust-core/out/TraceletCore.xcframework.zip not found! Cannot attach to release."
-                # We still create the release without assets if it was skipped (already published)
-                gh release create "tracelet_ios-v${VERSION}" --title "Release tracelet_ios v${VERSION}" --notes "Tracelet iOS SDK v${VERSION}"
-              fi
-            fi
-
-            if [ "${{ inputs.publish_tracelet_sync }}" = "true" ] && [[ " $NEW_TAGS " =~ " tracelet_sync-v${SYNC_VERSION} " ]]; then
-              echo "Creating GitHub Release for tracelet_sync..."
-              if [ -f "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip" ]; then
-                gh release create "tracelet_sync-v${SYNC_VERSION}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}" "tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip"
-              else
-                echo "⚠️ tracelet-ios-temp/rust-core/out/TraceletSyncFFI.xcframework.zip not found! Cannot attach to release."
-                gh release create "tracelet_sync-v${SYNC_VERSION}" --title "Release tracelet_sync v${SYNC_VERSION}" --notes "Tracelet Sync iOS SDK v${SYNC_VERSION}"
-              fi
-            fi
-            
           else
             echo "ℹ️ All tags already existed — no push needed"
           fi

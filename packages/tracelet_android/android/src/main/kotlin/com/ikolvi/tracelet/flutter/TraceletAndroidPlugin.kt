@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.TraceletSdk
+import com.ikolvi.tracelet.sdk.sync.NO_SYNC_BODY_BUILDER_SENTINEL
 import com.ikolvi.tracelet.TraceletHostApi
 import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -289,12 +290,21 @@ class TraceletAndroidPlugin :
         return success
     }
 
+    /**
+     * Returns the custom JSON body, [NO_SYNC_BODY_BUILDER_SENTINEL] when no
+     * builder is registered, or `null` when a registered builder failed (timed
+     * out or threw). Must never return an error object as a body — that was the
+     * Issue #125 bug.
+     */
     override fun requestSyncBody(locations: List<Map<String, Any?>>): String? {
         sdk.logger.debug("requestSyncBody called with ${locations.size} locations. isEngineAttached=$isEngineAttached")
         if (!isEngineAttached) {
-            if (headlessService?.isRegistered() != true) return null
+            // Background/killed: route to the headless service, which returns the
+            // sentinel when no headless builder is registered and `null` only
+            // when a registered one fails.
+            val hs = headlessService ?: return NO_SYNC_BODY_BUILDER_SENTINEL
             sdk.logger.debug("requestSyncBody: Engine detached, routing to HeadlessTaskService")
-            return headlessService?.requestCustomSyncBody(locations, 10000L)
+            return hs.requestCustomSyncBody(locations, 10000L)
         }
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
@@ -302,19 +312,29 @@ class TraceletAndroidPlugin :
         handler.post {
             syncBodyChannel?.invokeMethod("buildSyncBody", locations, object : MethodChannel.Result {
                 override fun success(result: Any?) {
-                    sdk.logger.debug("requestSyncBody: MethodChannel success")
+                    // String = sentinel or real body; null = a registered builder
+                    // threw on the Dart side → leave body null so we abort.
                     body = result as? String
                     latch.countDown()
                 }
-                override fun error(code: String, msg: String?, details: Any?) { 
+                override fun error(code: String, msg: String?, details: Any?) {
+                    // Channel error → abort (leave body null).
                     sdk.logger.error("requestSyncBody: error: $msg")
-                    latch.countDown() 
+                    latch.countDown()
                 }
-                override fun notImplemented() { latch.countDown() }
+                override fun notImplemented() {
+                    // No Dart handler = no builder → fall through to default sync.
+                    body = NO_SYNC_BODY_BUILDER_SENTINEL
+                    latch.countDown()
+                }
             })
         }
         val awaited = latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
-        if (!awaited) sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms")
+        if (!awaited) {
+            // Timed out waiting for Dart → abort (null).
+            sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms")
+            return null
+        }
         return body
     }
 }

@@ -8,6 +8,7 @@ import com.ikolvi.tracelet.sdk.TraceletSdk
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.HeadersRefreshable
 import com.ikolvi.tracelet.sdk.HeadlessDispatcher
+import com.ikolvi.tracelet.sdk.sync.NO_SYNC_BODY_BUILDER_SENTINEL
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.loader.FlutterLoader
@@ -198,11 +199,14 @@ class HeadlessTaskService(
         val dispatchId = prefs.getLong("headlessSyncBody_dispatchId", -1L)
         val registrationId = prefs.getLong("headlessSyncBody_registrationId", -1L)
         if (dispatchId == -1L || registrationId == -1L) {
+            // No headless builder registered → sentinel so the sync provider
+            // falls through to the default payload rather than aborting.
             TraceletSdk.getInstance(context).logger.warning("No headless sync body callback registered")
-            return null
+            return NO_SYNC_BODY_BUILDER_SENTINEL
         }
 
         if (Looper.myLooper() == Looper.getMainLooper()) {
+            // A builder is registered but we cannot run it here → abort (null).
             TraceletSdk.getInstance(context).logger.error("requestCustomSyncBody() must not be called on the main thread — would deadlock")
             return null
         }

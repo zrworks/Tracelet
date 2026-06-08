@@ -202,29 +202,44 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
         return success
     }
 
+    /// Returns the custom JSON body, ``traceletNoSyncBodyBuilderSentinel`` when
+    /// no builder is registered, or `nil` when a registered builder failed
+    /// (timed out or threw). Must never return an error object as a body —
+    /// that was the Issue #125 bug.
     public func requestSyncBody(locations: [[String: Any]]) -> String? {
         if TraceletIosPlugin.primaryInstance == nil {
-            if !headlessRunner.isRegistered() { return "{\"error\": \"PRIMARY_INSTANCE_NIL\"}" }
+            // Background/killed: no foreground engine. Route to the headless
+            // runner, which returns the sentinel when no headless sync-body
+            // builder is registered and `nil` only when a registered one fails.
+            guard let runner = headlessRunner else { return traceletNoSyncBodyBuilderSentinel }
             TraceletSdk.shared.logger.debug("requestSyncBody: primary instance nil, routing to HeadlessRunner")
-            return headlessRunner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
+            return runner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
         }
         let semaphore = DispatchSemaphore(value: 0)
         var body: String? = nil
         DispatchQueue.main.async {
             self.syncBodyChannel.invokeMethod("buildSyncBody", arguments: locations) { result in
-                if let res = result as? String {
+                switch result {
+                case let res as String:
+                    // Real JSON body or the no-builder sentinel — passed through
+                    // verbatim for the sync provider to interpret.
                     body = res
-                } else if let flutterError = result as? FlutterError {
-                    body = "{\"error\": \"FLUTTER_ERROR\", \"msg\": \"\(flutterError.message ?? "")\"}"
-                } else {
-                    body = "{\"error\": \"INVALID_TYPE\"}"
+                case nil:
+                    // Dart returned null: a registered builder threw → abort.
+                    TraceletSdk.shared.logger.error("requestSyncBody: builder returned null; aborting sync")
+                    body = nil
+                default:
+                    // FlutterMethodNotImplemented (no Dart handler = no builder)
+                    // or a channel error → treat as "no builder", fall through.
+                    body = traceletNoSyncBodyBuilderSentinel
                 }
                 semaphore.signal()
             }
         }
         let res = semaphore.wait(timeout: .now() + TraceletIosPlugin.dartCallbackTimeout)
         if res == .timedOut {
-            return "{\"error\": \"TIMEOUT\"}"
+            TraceletSdk.shared.logger.error("requestSyncBody: timed out; aborting sync")
+            return nil
         }
         return body
     }

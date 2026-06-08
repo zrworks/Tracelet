@@ -825,6 +825,13 @@ class Tracelet {
   static Future<Map<String, Object?>> Function(SyncBodyContext)?
   _syncBodyBuilder;
 
+  /// Returned from the native `buildSyncBody` call when no custom builder is
+  /// registered, so native can distinguish "no builder → use default payload"
+  /// from "builder failed → abort the sync". Must match the native sentinels
+  /// (`traceletNoSyncBodyBuilderSentinel` / `NO_SYNC_BODY_BUILDER_SENTINEL`).
+  static const String _noSyncBodyBuilderSentinel =
+      '__tracelet_no_sync_body_builder__';
+
   /// Whether the native sync body MethodChannel handler has been set up.
   static bool _syncBodyChannelReady = false;
 
@@ -881,8 +888,12 @@ class Tracelet {
     const channel = MethodChannel('com.tracelet/sync_body');
     channel.setMethodCallHandler((MethodCall call) async {
       if (call.method == 'buildSyncBody') {
+        // No builder registered → return the sentinel so native falls through
+        // to the default payload. `null` is reserved for the failure case below
+        // so native can tell "no builder" apart from "builder failed" and abort
+        // only on the latter (Issue #125).
+        if (_syncBodyBuilder == null) return _noSyncBodyBuilderSentinel;
         try {
-          if (_syncBodyBuilder == null) return null;
           final rawLocations = call.arguments as List<dynamic>? ?? [];
           final locations = rawLocations
               .whereType<Map<Object?, Object?>>()
@@ -893,6 +904,8 @@ class Tracelet {
           );
           return jsonEncode(body);
         } catch (e) {
+          // A registered builder threw: return null so native aborts the sync
+          // instead of posting an error object or the default payload.
           return null;
         }
       }

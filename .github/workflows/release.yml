@@ -582,40 +582,70 @@ jobs:
 
       - name: Bundle iOS SDK into tracelet_ios
         run: |
-          echo "Bundling iOS SDK into tracelet_ios plugin..."
+          echo "Bundling iOS SDK into tracelet_ios plugin (self-contained, SPM)..."
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Frameworks
           unzip -q -o sdk/rust-core/out/TraceletCore.xcframework.zip -d packages/tracelet_ios/ios/tracelet_ios/Frameworks/
-          
+
           mkdir -p packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK
           cp -r sdk/ios/Sources/TraceletSDK/* packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/TraceletSDK/
-          
-          echo "Patching tracelet_ios.podspec..."
+
+          echo "Patching tracelet_ios.podspec to vendor the dynamic framework (CocoaPods fallback only)..."
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.vendored_frameworks = '\''tracelet_ios\/Frameworks\/TraceletCore.xcframework'\''/g' packages/tracelet_ios/ios/tracelet_ios.podspec
-          
-          echo "Removing SPM Package.swift and stripping import TraceletSDK..."
-          rm -f packages/tracelet_ios/ios/tracelet_ios/Package.swift
+
+          # Keep Package.swift and point it at a LOCAL TraceletCore binaryTarget. This mirrors
+          # the published SPM config (publish-flutter job) but with a local path instead of a
+          # GitHub Release URL, so the bundled plugin builds via Swift Package Manager — the
+          # path that correctly links the dynamic framework. Deleting Package.swift would force
+          # the CocoaPods-only path, which cannot resolve the dynamic framework's symbols at
+          # link time (TraceletCore is a dynamic framework for strip-proofing, Issues #116/#123/#124).
+          echo "Patching Package.swift to a local TraceletCore binaryTarget..."
+          perl -pi -e 's/\.package\(name: "TraceletSDK".*//g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          perl -pi -e 's/\.product\(name: "TraceletSDK".*/"TraceletCore",/g' packages/tracelet_ios/ios/tracelet_ios/Package.swift
+          cat <<'EOF' >> packages/tracelet_ios/ios/tracelet_ios/Package.swift
+
+          extension Package {
+              func addLocalBinary() {
+                  targets.append(
+                      .binaryTarget(
+                          name: "TraceletCore",
+                          path: "Frameworks/TraceletCore.xcframework"
+                      )
+                  )
+              }
+          }
+          package.addLocalBinary()
+          EOF
+
+          echo "Stripping import TraceletSDK (the core is now provided directly by TraceletCore)..."
           find packages/tracelet_ios/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK//g' {} +
-          
-          echo "Removing root TraceletSDK.podspec to prevent CocoaPods double-linking..."
+
+          echo "Removing TraceletSDK podspecs so neither SPM nor CocoaPods double-links the core..."
           rm -f TraceletSDK.podspec
           rm -f sdk/ios/TraceletSDK.podspec
-          
-          echo "✅ iOS Bundle complete. tracelet_ios is now self-contained."
+
+          echo "✅ iOS Bundle complete. tracelet_ios is now self-contained (SPM local binaryTarget)."
 
       - name: Bundle iOS SDK into tracelet_sync
         run: |
-          echo "Bundling iOS SDK into tracelet_sync plugin..."
+          echo "Bundling iOS SDK into tracelet_sync plugin (self-contained, SPM)..."
           mkdir -p packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework
           unzip -q -o sdk/rust-core/out/TraceletSyncFFI.xcframework.zip -d packages/tracelet_sync/ios/tracelet_sync/
-          
-          echo "Patching tracelet_sync.podspec to depend on tracelet_ios..."
+
+          echo "Patching tracelet_sync.podspec to depend on tracelet_ios (CocoaPods fallback only)..."
           perl -pi -e 's/s\.dependency '\''TraceletSDK'\''.*/s.dependency '\''tracelet_ios'\''/g' packages/tracelet_sync/ios/tracelet_sync.podspec 2>/dev/null || true
-          
-          echo "Removing SPM Package.swift and renaming import TraceletSDK..."
-          rm -f packages/tracelet_sync/ios/tracelet_sync/Package.swift 2>/dev/null || true
+
+          # Keep Package.swift. Mirror the published SPM config (publish-flutter job): depend on
+          # the local tracelet_ios package (which carries the TraceletCore dynamic framework) and
+          # keep the local TraceletSyncFFI binaryTarget. The cross-plugin path is the monorepo
+          # layout (../../../tracelet_ios/ios/tracelet_ios) rather than the published flat layout.
+          echo "Patching Package.swift to depend on the local tracelet_ios package..."
+          perl -pi -e 's/\.package\(name: "TraceletSDK".*/.package(name: "tracelet_ios", path: "..\/..\/..\/tracelet_ios\/ios\/tracelet_ios"),/g' packages/tracelet_sync/ios/tracelet_sync/Package.swift
+          perl -pi -e 's/\.product\(name: "TraceletSDK".*/.product(name: "tracelet-ios", package: "tracelet_ios"),/g' packages/tracelet_sync/ios/tracelet_sync/Package.swift
+
+          echo "Renaming import TraceletSDK to import tracelet_ios..."
           find packages/tracelet_sync/ios -type f -name "*.swift" -exec perl -pi -e 's/import TraceletSDK/import tracelet_ios/g' {} +
-          
-          echo "✅ iOS Bundle complete. tracelet_sync is now self-contained."
+
+          echo "✅ iOS Bundle complete. tracelet_sync is now self-contained (SPM local tracelet_ios + TraceletSyncFFI)."
 
       - name: Build example iOS
         working-directory: example

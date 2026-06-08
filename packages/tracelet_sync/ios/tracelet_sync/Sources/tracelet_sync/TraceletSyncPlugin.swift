@@ -67,7 +67,19 @@ actor SyncCoordinator {
                     "retryCount": 0
                 ])
             } else {
+                // count == 0 with a non-empty batch means the sync attempt
+                // failed (e.g. unreachable endpoint or aborted custom body).
+                // Emit a failure event so it is observable via onHttp — matching
+                // the Android NativeSyncProvider behaviour — instead of failing
+                // silently.
                 TraceletSdk.shared.logger.debug("No locations synced or count was 0.")
+                TraceletSdk.shared.getEventSender().sendHttp([
+                    "success": false,
+                    "status": 0,
+                    "responseText": "Sync attempt synced 0 locations",
+                    "isRetry": false,
+                    "retryCount": 0
+                ])
             }
         } catch {
             TraceletSdk.shared.logger.debug("Sync failed with error: \(error)")
@@ -81,7 +93,13 @@ actor SyncCoordinator {
         }
     }
 
-    func executeFallbackHttpSync(coreHttp: HttpConfig, customBody: String, interceptor: DartSyncInterceptor?) async -> Bool {
+    // `nonisolated` is required: this is awaited from a `Task` while
+    // `syncBatchBlocking` blocks the actor's executor on a semaphore during the
+    // auto-sync path. If it were actor-isolated, that Task could never enter the
+    // (blocked) actor and the semaphore would never be signaled — a deadlock
+    // that silently killed custom-body auto-sync on iOS. It touches no actor
+    // state, so isolation is unnecessary.
+    nonisolated func executeFallbackHttpSync(coreHttp: HttpConfig, customBody: String, interceptor: DartSyncInterceptor?) async -> Bool {
         var currentHeaders = coreHttp.headers
         let maxRetries = Int(coreHttp.maxRetries)
         
@@ -169,18 +187,27 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 TraceletSdk.shared.mapRecordToLocation($0)
             }
             
-            if let customBody = interceptor.requestSyncBody(locations: syncRecordsMap) {
-                TraceletSdk.shared.logger.debug("customBody from interceptor (syncBatchBlocking): \(customBody)")
+            let customBody = interceptor.requestSyncBody(locations: syncRecordsMap)
+            if customBody == nil {
+                // A builder is registered but it timed out or threw.
+                // requestSyncBody returns the sentinel (not nil) when no builder
+                // exists, so nil here unambiguously means failure: abort the sync
+                // rather than posting an error object or the default payload.
+                TraceletSdk.shared.logger.error("Custom sync body failed to build; aborting sync.")
+                return 0
+            }
+            if let body = customBody, body != traceletNoSyncBodyBuilderSentinel {
+                TraceletSdk.shared.logger.debug("customBody from interceptor (syncBatchBlocking): \(body)")
                 let sem = DispatchSemaphore(value: 0)
                 var fallbackSuccess = false
-                
+
                 Task {
-                    fallbackSuccess = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: customBody, interceptor: interceptor)
+                    fallbackSuccess = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: body, interceptor: interceptor)
                     sem.signal()
                 }
-                
+
                 sem.wait()
-                
+
                 if fallbackSuccess {
                     return UInt32(records.count)
                 } else {
@@ -188,6 +215,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                     return 0
                 }
             }
+            // sentinel → no builder → fall through to the default sync below.
         }
 
         let syncHttp = tracelet_sync.SyncHttpConfig(

@@ -7,6 +7,11 @@ public final class TraceletLogger {
     private let configManager: ConfigManager
     public var rustDatabase: DatabaseManager? = nil
 
+    /// Serial queue for log persistence so callers (including high-frequency
+    /// motion callbacks) never block on a synchronous SQLite write. Serial
+    /// execution preserves persisted log ordering (#130).
+    private let persistQueue = DispatchQueue(label: "com.tracelet.logger.persist")
+
     /// Log levels: OFF(0), ERROR(1), WARNING(2), INFO(3), DEBUG(4), VERBOSE(5)
     enum Level: Int, Comparable {
         case off = 0, error = 1, warning = 2, info = 3, debug = 4, verbose = 5
@@ -56,12 +61,15 @@ public final class TraceletLogger {
         log(.info, message)
     }
 
-    public func debug(_ message: String) {
-        log(.debug, message)
+    /// `@autoclosure` so the message — including any `String(format:…)` — is
+    /// only built when the level passes the configured threshold. Avoids
+    /// formatting cost on filtered hot-path logs (#130).
+    public func debug(_ message: @autoclosure () -> String) {
+        log(.debug, message())
     }
 
-    public func verbose(_ message: String) {
-        log(.verbose, message)
+    public func verbose(_ message: @autoclosure () -> String) {
+        log(.verbose, message())
     }
 
     /// Log from Dart side with string level.
@@ -101,20 +109,27 @@ public final class TraceletLogger {
 
     // MARK: - Core
 
-    private func log(_ level: Level, _ message: String, source: String = "plugin") {
+    private func log(_ level: Level, _ message: @autoclosure () -> String, source: String = "plugin") {
         let configLevel = Level(rawValue: configManager.getLogLevel()) ?? .verbose
 
-        // Skip if level is above configured threshold
+        // Skip if level is above configured threshold — message() is never
+        // evaluated, so filtered hot-path logs cost nothing to format.
         guard level.rawValue <= configLevel.rawValue, level != .off else { return }
 
-        // Console log
-        NSLog("[Tracelet] [\(level.label)] \(message)")
+        let built = message()
 
-        // SQLite log
-        do {
-            try rustDatabase?.insertLog(level: level.label, message: message, source: source)
-        } catch {
-            NSLog("[Tracelet] Failed to persist log to Rust Database: \(error.localizedDescription)")
+        // Console log
+        NSLog("[Tracelet] [\(level.label)] \(built)")
+
+        // SQLite log — persisted off the caller thread so motion callbacks (and
+        // any other hot path) never block on a synchronous DB write (#130).
+        let db = rustDatabase
+        persistQueue.async {
+            do {
+                try db?.insertLog(level: level.label, message: built, source: source)
+            } catch {
+                NSLog("[Tracelet] Failed to persist log to Rust Database: \(error.localizedDescription)")
+            }
         }
     }
 }

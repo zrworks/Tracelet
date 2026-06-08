@@ -7,6 +7,7 @@ final class MotionDetectorTests: XCTestCase {
     var configManager: ConfigManager!
     var stateManager: StateManager!
     var eventDispatcher: DummyEventDispatcher!
+    var logger: TraceletLogger!
     var detector: MotionDetector!
 
     override func setUp() {
@@ -17,20 +18,26 @@ final class MotionDetectorTests: XCTestCase {
         stateManager = StateManager()
         eventDispatcher = DummyEventDispatcher()
 
-        // Force accelerometer-only mode with 1-min timeout
-        configManager.setConfig([
+        // Force accelerometer-only mode with a 1-min timeout. Seed the still
+        // threshold/sample-count so the state-machine assertions below are
+        // deterministic regardless of config defaults.
+        _ = configManager.setConfig([
             "motion": [
                 "disableMotionActivityUpdates": true,
-                "stopTimeout": 1
+                "stopTimeout": 1,
+                "stillThreshold": 0.15,
+                "stillSampleCount": 50
             ]
         ])
 
         stateManager.isMoving = true
 
+        logger = TraceletLogger(configManager: configManager)
         detector = MotionDetector(
             configManager: configManager,
             stateManager: stateManager,
-            eventDispatcher: eventDispatcher
+            eventDispatcher: eventDispatcher,
+            logger: logger
         )
         detector.start()
     }
@@ -102,6 +109,43 @@ final class MotionDetectorTests: XCTestCase {
             cancelExpectation.fulfill()
         }
         wait(for: [cancelExpectation], timeout: 1.0)
+    }
+
+    /// Issue #130: while stationary, a shake-magnitude sample must declare
+    /// moving. This exercises the stationary branch that now stops the duty
+    /// cycle (instead of the old continuous accelerometer) before resuming.
+    func testShakeWhileStationaryDeclaresMoving() {
+        stateManager.isMoving = false   // enter STATIONARY
+
+        // magnitude = sqrt(0+0+2.0^2) - 1.0 = 1.0, well above the shake threshold.
+        let shake = CMAcceleration(x: 0, y: 0, z: 2.0)
+        detector.handleAcceleration(shake)
+
+        let exp = XCTestExpectation(description: "moving declared after shake")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            XCTAssertTrue(self.stateManager.isMoving,
+                          "A shake while stationary should declare moving")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+    }
+
+    /// Issue #130: a still sample below the shake threshold while stationary
+    /// must NOT declare moving (no spurious wakeups from minor noise).
+    func testSmallNoiseWhileStationaryStaysStationary() {
+        stateManager.isMoving = false   // enter STATIONARY
+
+        // magnitude = sqrt(1.05^2) - 1.0 = 0.05, below the 0.15 shake threshold.
+        let noise = CMAcceleration(x: 0, y: 0, z: 1.05)
+        for _ in 0..<10 { detector.handleAcceleration(noise) }
+
+        let exp = XCTestExpectation(description: "remains stationary")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            XCTAssertFalse(self.stateManager.isMoving,
+                           "Sub-threshold noise must not wake the detector")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
     }
 }
 

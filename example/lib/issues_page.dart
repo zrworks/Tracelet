@@ -22,7 +22,7 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 126];
+  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 125, 126];
 
   @override
   void initState() {
@@ -463,6 +463,42 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 125 ====
+  Future<void> _testIssue125() async {
+    _setStatus(125, 'Testing Issue 125 (Timeout Payload Abort)...');
+    try {
+      await Tracelet.stop();
+      await Tracelet.destroyLocations();
+
+      // Register a custom body builder that intentionally hangs to force a native timeout
+      Tracelet.setSyncBodyBuilder((context) async {
+        await Future.delayed(const Duration(seconds: 15));
+        return {'custom': true};
+      });
+
+      await Tracelet.ready(
+        const Config(
+          http: HttpConfig(
+            url: 'http://127.0.0.1:8125/issue125',
+            autoSyncDelay: 1000,
+          ),
+        ),
+      );
+
+      await Tracelet.insertLocation({
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'coords': {'latitude': 10.0, 'longitude': 20.0, 'accuracy': 5.0},
+      });
+
+      _setStatus(
+        125,
+        'Mock location inserted. Check logs — sync should abort after ~10s timeout with no error payload posted.',
+      );
+    } catch (e) {
+      _setStatus(125, '❌ FAILED: Issue 125 Error: $e');
+    }
+  }
+
   // ==== ISSUE 126 ====
   // Verifies DB-sourced locations passed to setSyncBodyBuilder use the SAME
   // nested schema as live onLocation events (nested coords/activity/battery)
@@ -552,6 +588,8 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue120();
       } else if (issue == 124) {
         await _testIssue124HeaderCrash();
+      } else if (issue == 125) {
+        await _testIssue125();
       } else if (issue == 126) {
         await _testIssue126();
       }
@@ -769,6 +807,19 @@ class _IssuesPageState extends State<IssuesPage> {
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.red,
                       ),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 125,
+                  title: 'Timeout Payload Abort',
+                  description:
+                      'Verifies that if the custom sync body builder times out, the native SDK aborts the sync and does NOT post an error payload to the backend.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue125,
+                      icon: const Icon(Icons.timer_off),
+                      label: const Text('Test Timeout Abort'),
                     ),
                   ],
                 ),

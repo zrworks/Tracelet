@@ -160,11 +160,14 @@ final class HeadlessRunner: HeadlessDispatching {
         let dispatchId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_dispatchId")
         let registrationId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_registrationId")
         guard dispatchId != 0, registrationId != 0 else {
+            // No headless builder registered → sentinel so the sync provider
+            // falls through to the default payload rather than aborting.
             TraceletSdk.shared.logger.debug("No headless sync body callback registered")
-            return nil
+            return traceletNoSyncBodyBuilderSentinel
         }
 
         guard !Thread.isMainThread else {
+            // A builder is registered but we cannot run it here → abort (nil).
             TraceletSdk.shared.logger.debug("requestCustomSyncBody must not be called on the main thread")
             return nil
         }

@@ -1,3 +1,8 @@
+## 3.2.8
+
+- **FIX**: Persist geofence ENTER/EXIT events in offline queue and auto-sync to server — events were previously dispatched to the app but never stored in the local SQLite database (Issue #128).
+- **FIX**: Structured event envelope (`event_type`, `event_payload`) for geofence events round-trips correctly through `getLocations()` and `insertLocation()`.
+
 ## 3.2.7
 
 - **FIX**(ios): prevent dead code stripping of flutter_rust_bridge symbols in release builds.

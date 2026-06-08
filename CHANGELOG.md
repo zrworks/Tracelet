@@ -1,3 +1,9 @@
+## 3.2.9
+
+- **FIX**(ios): Remove `TraceletCore+Dummy.swift` / `TraceletSyncFFI+Dummy.swift` — `@_silgen_name` declarations from the old static library model caused "Undefined symbol" linker errors after the static→dynamic xcframework migration.
+- **FIX**(android): Catch `ForegroundServiceStartNotAllowedException` in `LocationService.start()` so calling `ready()` from the background on Android 12+ no longer crashes the host app; the foreground service start is deferred until the app returns to foreground.
+
+
 # Change Log
 
 All notable changes to this project will be documented in this file.
@@ -216,4 +222,3 @@ Packages with dependency updates only:
 #### `tracelet_ios` - `v2.0.7`
 
  - **FIX**(interface): correct intToAuthStatus permission index mappings ([[#80](https://github.com/Ikolvi/Tracelet/issues/80)](https://github.com/Ikolvi/Tracelet/issues/80)). ([8cfd7f51](https://github.com/Ikolvi/Tracelet/commit/8cfd7f5150791063bc1286c5c185d01f1d3fc306))
-

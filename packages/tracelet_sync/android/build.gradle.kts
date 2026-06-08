@@ -72,8 +72,8 @@ kotlin {
 }
 
 dependencies {
-    compileOnly("com.ikolvi:tracelet-sdk:3.2.8")
-    implementation("com.ikolvi:tracelet-sync-sdk:3.2.8")
+    compileOnly("com.ikolvi:tracelet-sdk:3.2.9")
+    implementation("com.ikolvi:tracelet-sync-sdk:3.2.9")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }

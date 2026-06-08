@@ -65,9 +65,13 @@ sed -i '' 's/import tracelet_coreFFI/import TraceletCore/g' "$OUT_DIR/core/trace
 cp "$OUT_DIR/core/tracelet_core.swift" "../../sdk/ios/Sources/TraceletSDK/"
 cp "$OUT_DIR/core/tracelet_coreFFI.h" "../../sdk/ios/Sources/TraceletSDK/"
 
-DUMMY_SWIFT_CORE="$OUT_DIR/core/TraceletCore+Dummy.swift"
-generate_dummy_symbols "target/aarch64-apple-ios/release/libtracelet_core.a" "$DUMMY_SWIFT_CORE" "TraceletCore"
-cp "$DUMMY_SWIFT_CORE" "../../packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/"
+# NOTE: No +Dummy.swift is generated. The Rust core now ships as a DYNAMIC
+# framework and the Dart loader opens it at runtime via
+# ExternalLibrary.open('TraceletCore.framework/TraceletCore'). The old dummy
+# @_silgen_name declarations were only needed to stop Xcode dead-stripping the
+# FRB symbols from the APP binary under the static-.a/DynamicLibrary.process()
+# model. Under the dynamic framework they create build-time UNDEFINED references
+# to symbols that no longer live in the app binary — breaking the iOS link.
 
 rm -rf "$OUT_DIR/TraceletCore.xcframework"
 # Package the cdylib as a dynamic framework per slice so the FRB symbols live in
@@ -98,9 +102,9 @@ mkdir -p "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"
 cp "$OUT_DIR/sync/tracelet_sync.swift" "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"
 cp "$OUT_DIR/sync/tracelet_syncFFI.h" "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"
 
-DUMMY_SWIFT_SYNC="$OUT_DIR/sync/TraceletSyncFFI+Dummy.swift"
-generate_dummy_symbols "target/aarch64-apple-ios/release/libtracelet_sync.a" "$DUMMY_SWIFT_SYNC" "TraceletSyncFFI"
-cp "$DUMMY_SWIFT_SYNC" "../../packages/tracelet_sync/ios/tracelet_sync/Sources/tracelet_sync/"
+# No +Dummy.swift — see the TraceletCore note above. TraceletSyncFFI also ships
+# as a dynamic framework and is opened at runtime, so the dummy symbol-retention
+# hack is obsolete and would break the link.
 
 rm -rf "$OUT_DIR/TraceletSyncFFI.xcframework"
 # Same dynamic-framework packaging as TraceletCore — keeps sync FRB symbols in

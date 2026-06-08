@@ -226,11 +226,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
             val intent = Intent(context, LocationService::class.java).apply {
                 action = ACTION_START
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            startForegroundServiceSafely(context.applicationContext, intent, isBoot = false)
         }
 
         /** Start from BootReceiver with the boot flag for native tracking. */
@@ -239,10 +235,72 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 action = ACTION_START
                 putExtra(EXTRA_BOOT_START, true)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            startForegroundServiceSafely(context.applicationContext, intent, isBoot = true)
+        }
+
+        // Pending deferred-start observer (one-shot). See startForegroundServiceSafely.
+        @Volatile
+        private var deferredStartObserver: DefaultLifecycleObserver? = null
+
+        /**
+         * Starts the location foreground service without ever crashing the host app.
+         *
+         * On Android 12+ (API 31), calling [Context.startForegroundService] while the
+         * app is in the background throws [android.app.ForegroundServiceStartNotAllowedException]
+         * (an [IllegalStateException]). This happens, for example, when `ready()` is
+         * invoked from a background isolate and auto-resumes tracking. We catch it so
+         * the exception never propagates through Pigeon as an unhandled PlatformException,
+         * and we register a one-shot ProcessLifecycle observer to retry the start the
+         * next time the process moves to the foreground.
+         */
+        private fun startForegroundServiceSafely(appContext: Context, intent: Intent, isBoot: Boolean) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    appContext.startForegroundService(intent)
+                } else {
+                    appContext.startService(intent)
+                }
+            } catch (e: IllegalStateException) {
+                // Android 12+ background foreground-service start restriction.
+                Log.w(TAG, "startForegroundService blocked (app likely backgrounded on Android 12+): ${e.message}. Deferring until foreground.")
+                scheduleDeferredStart(appContext, isBoot)
+            }
+        }
+
+        /**
+         * Registers a one-shot [ProcessLifecycleOwner] observer that retries the
+         * foreground-service start once the app is in the foreground. If the app is
+         * already foregrounded, androidx Lifecycle replays `onStart` immediately, so
+         * the retry happens right away. The retry does NOT re-schedule on failure,
+         * preventing any retry loop.
+         */
+        private fun scheduleDeferredStart(appContext: Context, isBoot: Boolean) {
+            Handler(Looper.getMainLooper()).post {
+                deferredStartObserver?.let {
+                    ProcessLifecycleOwner.get().lifecycle.removeObserver(it)
+                }
+                val observer = object : DefaultLifecycleObserver {
+                    override fun onStart(owner: LifecycleOwner) {
+                        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
+                        deferredStartObserver = null
+                        val retryIntent = Intent(appContext, LocationService::class.java).apply {
+                            action = ACTION_START
+                            if (isBoot) putExtra(EXTRA_BOOT_START, true)
+                        }
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                appContext.startForegroundService(retryIntent)
+                            } else {
+                                appContext.startService(retryIntent)
+                            }
+                            Log.d(TAG, "Deferred foreground-service start succeeded after returning to foreground")
+                        } catch (e: IllegalStateException) {
+                            Log.w(TAG, "Deferred foreground-service start still blocked: ${e.message}")
+                        }
+                    }
+                }
+                deferredStartObserver = observer
+                ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
             }
         }
 

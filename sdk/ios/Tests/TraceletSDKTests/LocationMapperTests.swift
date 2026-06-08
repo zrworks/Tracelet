@@ -109,4 +109,21 @@ final class LocationMapperTests: XCTestCase {
         let map = sampleMap(routeContext: "not-json")
         XCTAssertNil(map["extras"])
     }
+
+    func testEventTypeAndPayloadSplice() {
+        let map = LocationMapper.buildLocationMap(
+            id: 99,
+            uuid: "uuid-99",
+            timestamp: "2026-06-08T10:00:00Z",
+            latitude: 0, longitude: 0, altitude: 0, speed: 0, heading: 0, accuracy: 0,
+            isMock: false, activity: "still", routeContext: nil, isMoving: false, odometer: 0,
+            eventType: "geofence",
+            eventPayload: #"{"identifier":"zone-1","action":"ENTER"}"#
+        )
+        XCTAssertEqual(map["event"] as? String, "geofence")
+        let geofenceMap = map["geofence"] as? [String: Any]
+        XCTAssertNotNil(geofenceMap)
+        XCTAssertEqual(geofenceMap?["identifier"] as? String, "zone-1")
+        XCTAssertEqual(geofenceMap?["action"] as? String, "ENTER")
+    }
 }

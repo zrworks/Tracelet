@@ -10,8 +10,13 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     private let locationManager: CLLocationManager
     private let configManager: ConfigManager
     private let eventDispatcher: TraceletEventSending
-
-
+    public var onGeofenceEvent: (([String: Any]) -> Void)?
+    
+    private let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
     /// Maximum number of monitored regions (iOS limit).
     private static let maxRegions = 20
 
@@ -274,16 +279,24 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         for t in transitions {
             let gfMap = geofenceMapById[t.identifier]
             let eventData: [String: Any] = [
-                "identifier": t.identifier,
-                "action": t.action,
-                "location": [
-                    "coords": [
-                        "latitude": latitude,
-                        "longitude": longitude,
-                    ],
+                "uuid": UUID().uuidString,
+                "event": "geofence",
+                "timestamp": isoFormatter.string(from: Date()),
+                "coords": [
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "accuracy": 0.0,
+                    "speed": 0.0,
+                    "heading": 0.0,
+                    "altitude": 0.0,
                 ],
-                "extras": gfMap?["extras"] ?? [:] as [String: Any],
+                "geofence": [
+                    "identifier": t.identifier,
+                    "action": t.action,
+                    "extras": gfMap?["extras"] ?? [:] as [String: Any],
+                ]
             ]
+            onGeofenceEvent?(eventData)
             eventDispatcher.sendGeofence(eventData)
 
             switch t.action {
@@ -481,22 +494,29 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         let geofenceData = getGeofence(region.identifier)
         let location = locationManager.location
 
+        let lat = location?.coordinate.latitude ?? region.center.latitude
+        let lng = location?.coordinate.longitude ?? region.center.longitude
+
         var eventData: [String: Any] = [
-            "identifier": region.identifier,
-            "action": action,
-            "location": [
-                "coords": [
-                    "latitude": location?.coordinate.latitude ?? region.center.latitude,
-                    "longitude": location?.coordinate.longitude ?? region.center.longitude,
-                ],
+            "uuid": UUID().uuidString,
+            "event": "geofence",
+            "timestamp": isoFormatter.string(from: Date()),
+            "coords": [
+                "latitude": lat,
+                "longitude": lng,
+                "accuracy": 0.0,
+                "speed": 0.0,
+                "heading": 0.0,
+                "altitude": 0.0,
             ],
-            "extras": geofenceData?["extras"] ?? [:] as [String: Any],
+            "geofence": [
+                "identifier": region.identifier,
+                "action": action,
+                "extras": geofenceData?["extras"] ?? [:] as [String: Any],
+            ]
         ]
 
-        if let g = geofenceData {
-            eventData["geofence"] = g
-        }
-
+        onGeofenceEvent?(eventData)
         eventDispatcher.sendGeofence(eventData)
 
         // Also fire geofencesChange with correct on/off arrays

@@ -39,6 +39,7 @@ class GeofenceManager(
     private val rustDatabase: uniffi.tracelet_core.DatabaseManager? = null,
     private val geofencingClient: TraceletGeofencingClient = TraceletServices.getInstance(context).getGeofencingClient(context),
 ) {
+    var onGeofenceEvent: ((Map<String, Any?>) -> Unit)? = null
     companion object {
         private const val TAG = "GeofenceManager"
         const val ACTION_GEOFENCE_EVENT = "com.tracelet.ACTION_GEOFENCE_EVENT"
@@ -284,16 +285,25 @@ class GeofenceManager(
             val storedGf = getGeofence(identifier)
 
             val eventData = mapOf(
-                "identifier" to identifier,
-                "action" to action,
-                "location" to mapOf(
-                    "coords" to mapOf(
-                        "latitude" to latitude,
-                        "longitude" to longitude,
-                    )
+                "uuid" to java.util.UUID.randomUUID().toString(),
+                "event" to "geofence",
+                "timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()),
+                "coords" to mapOf(
+                    "latitude" to latitude,
+                    "longitude" to longitude,
+                    "accuracy" to 0.0,
+                    "speed" to 0.0,
+                    "heading" to 0.0,
+                    "altitude" to 0.0
                 ),
-                "extras" to storedGf?.get("extras"),
+                "geofence" to mapOf(
+                    "identifier" to identifier,
+                    "action" to action,
+                    "extras" to storedGf?.get("extras")
+                )
             )
+
+            onGeofenceEvent?.invoke(eventData)
             events.sendGeofence(eventData)
 
             // Knock-out mode: remove geofence after EXIT
@@ -345,16 +355,25 @@ class GeofenceManager(
         for (t in transitions) {
             val gfMap = geofenceMapById[t.identifier]
             val eventData = mapOf(
-                "identifier" to t.identifier,
-                "action" to t.action,
-                "location" to mapOf(
-                    "coords" to mapOf(
-                        "latitude" to latitude,
-                        "longitude" to longitude,
-                    )
+                "uuid" to java.util.UUID.randomUUID().toString(),
+                "event" to "geofence",
+                "timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()),
+                "coords" to mapOf(
+                    "latitude" to latitude,
+                    "longitude" to longitude,
+                    "accuracy" to 0.0,
+                    "speed" to 0.0,
+                    "heading" to 0.0,
+                    "altitude" to 0.0
                 ),
-                "extras" to gfMap?.get("extras"),
+                "geofence" to mapOf(
+                    "identifier" to t.identifier,
+                    "action" to t.action,
+                    "extras" to gfMap?.get("extras")
+                )
             )
+            
+            onGeofenceEvent?.invoke(eventData)
             events.sendGeofence(eventData)
 
             when (t.action) {

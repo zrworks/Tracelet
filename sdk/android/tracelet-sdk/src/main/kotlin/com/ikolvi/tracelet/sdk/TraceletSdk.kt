@@ -395,7 +395,11 @@ class TraceletSdk private constructor(private val context: Context) {
         // Geofencing
         geofenceManager = GeofenceManager(
             context, configManager, eventSender, rustDatabase
-        )
+        ).apply {
+            onGeofenceEvent = { eventMap ->
+                insertLocation(eventMap)
+            }
+        }
         GeofenceBroadcastReceiver.geofenceManager = geofenceManager
 
         // Schedule
@@ -1108,6 +1112,8 @@ class TraceletSdk private constructor(private val context: Context) {
             routeContext = record.routeContext,
             isMoving = record.isMoving,
             odometer = odometer,
+            eventType = record.eventType,
+            eventPayload = record.eventPayload,
         )
     }
 
@@ -1179,12 +1185,15 @@ class TraceletSdk private constructor(private val context: Context) {
         val activity = (activityMap?.get("type") as? String) ?: "unknown"
         val timestamp = params["timestamp"] as? String
         val uuid = params["uuid"] as? String
+        val eventType = (params["event"] as? String) ?: "location"
+        val eventPayload: String? = (params["event_payload"] as? String)
+            ?: (params["geofence"] as? Map<*, *>)?.let { org.json.JSONObject(it as Map<String, Any?>).toString() }
         
         // Prevent duplicate insertions of the exact same GPS fix (e.g. from PeriodicLocationWorker)
-        if (timestamp != null && timestamp == lastInsertedTimestamp) {
+        if (eventType == "location" && timestamp != null && timestamp == lastInsertedTimestamp) {
             return ""
         }
-        lastInsertedTimestamp = timestamp
+        if (eventType == "location") { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
         val auditHash = params["audit_hash"] as? String
@@ -1205,7 +1214,7 @@ class TraceletSdk private constructor(private val context: Context) {
         }
         
         return try {
-            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp)
+            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp, eventType, eventPayload)
             // Notify the sync plugin so it can trigger auto-sync
             (syncProvider as? com.ikolvi.tracelet.sdk.location.LocationDataSink)?.insertLocation(params)
             newRowId.toString()

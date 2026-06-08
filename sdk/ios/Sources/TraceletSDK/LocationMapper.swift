@@ -32,14 +32,16 @@ public enum LocationMapper {
         activity: String,
         routeContext: String?,
         isMoving: Bool,
-        odometer: Double
+        odometer: Double,
+        eventType: String? = nil,
+        eventPayload: String? = nil
     ) -> [String: Any] {
         var map: [String: Any] = [
             "uuid": uuid ?? String(id),
             "timestamp": timestamp,
             "is_moving": isMoving,
             "odometer": odometer,
-            "event": "location",
+            "event": eventType ?? "location",
             "mock": isMock,
             "coords": [
                 "latitude": latitude,
@@ -58,6 +60,14 @@ public enum LocationMapper {
                 "isCharging": false,
             ],
         ]
+        
+        if let eventType = eventType, eventType != "location", let payload = eventPayload {
+            if let data = payload.data(using: .utf8),
+               let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                map[eventType] = json
+            }
+        }
+        
         applyRouteContext(&map, routeContext)
         return map
     }

@@ -631,7 +631,7 @@ class _DashboardPageState extends State<DashboardPage>
                     channelName: 'Tracelet Demo Background',
                     notificationPriority: tl.NotificationPriority.high,
                     showNotificationOnPauseOnly:
-                        false, // ✨ New Feature: Smart Visibility
+                        true, // ✨ New Feature: Smart Visibility — hide while app is foregrounded
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms

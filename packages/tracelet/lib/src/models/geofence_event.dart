@@ -48,7 +48,8 @@ class GeofenceEvent {
 
     // Location: the flat shape wraps the location under 'location'; the
     // structured payload exposes the coords at the top-level 'coords'.
-    final locationMap = safeMap(map['location']) ??
+    final locationMap =
+        safeMap(map['location']) ??
         (map['coords'] != null
             ? <String, Object?>{'coords': map['coords']}
             : const <String, Object?>{});

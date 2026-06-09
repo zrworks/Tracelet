@@ -8,10 +8,7 @@ void main() {
     'uuid': 'abc-123',
     'event': 'geofence',
     'timestamp': '2026-06-09T00:00:00.000Z',
-    'coords': <String, Object?>{
-      'latitude': 12.345,
-      'longitude': 67.89,
-    },
+    'coords': <String, Object?>{'latitude': 12.345, 'longitude': 67.89},
     'geofence': <String, Object?>{
       'identifier': 'office',
       'action': action,
@@ -19,30 +16,33 @@ void main() {
     },
   };
 
-  group('GeofenceEvent.fromMap — structured (headless/killed-state) payload', () {
-    test('EXIT is not mislabeled as ENTER', () {
-      final event = GeofenceEvent.fromMap(structuredPayload('EXIT'));
-      expect(event.action, GeofenceAction.exit);
-      expect(event.identifier, 'office');
-      expect(event.location.coords.latitude, 12.345);
-      expect(event.location.coords.longitude, 67.89);
-      expect(event.extras['tier'], 'gold');
-    });
+  group(
+    'GeofenceEvent.fromMap — structured (headless/killed-state) payload',
+    () {
+      test('EXIT is not mislabeled as ENTER', () {
+        final event = GeofenceEvent.fromMap(structuredPayload('EXIT'));
+        expect(event.action, GeofenceAction.exit);
+        expect(event.identifier, 'office');
+        expect(event.location.coords.latitude, 12.345);
+        expect(event.location.coords.longitude, 67.89);
+        expect(event.extras['tier'], 'gold');
+      });
 
-    test('ENTER maps to enter', () {
-      expect(
-        GeofenceEvent.fromMap(structuredPayload('ENTER')).action,
-        GeofenceAction.enter,
-      );
-    });
+      test('ENTER maps to enter', () {
+        expect(
+          GeofenceEvent.fromMap(structuredPayload('ENTER')).action,
+          GeofenceAction.enter,
+        );
+      });
 
-    test('DWELL maps to dwell', () {
-      expect(
-        GeofenceEvent.fromMap(structuredPayload('DWELL')).action,
-        GeofenceAction.dwell,
-      );
-    });
-  });
+      test('DWELL maps to dwell', () {
+        expect(
+          GeofenceEvent.fromMap(structuredPayload('DWELL')).action,
+          GeofenceAction.dwell,
+        );
+      });
+    },
+  );
 
   group('GeofenceEvent.fromMap — flat (foreground) payload', () {
     test('EXIT still maps to exit', () {

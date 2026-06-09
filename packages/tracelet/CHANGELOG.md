@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **FIX**: Custom sync-body builder now falls back to the headless engine on timeout (instead of aborting the sync) on both Android and iOS — fixes location sync stopping after a few minutes in the background when using `setSyncBodyBuilder` (Issue #134).
+
 ## 3.2.10
 
  - **FIX**: streamline geofence event payload handling in fromMap method.

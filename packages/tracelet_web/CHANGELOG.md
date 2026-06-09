@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **CHORE**: Version bump to align with 3.2.11 platform release.
+
 ## 3.2.10
 
 - **FIX**(ios): Remove `TraceletCore+Dummy.swift` / `TraceletSyncFFI+Dummy.swift` — `@_silgen_name` declarations from the old static library model caused "Undefined symbol" linker errors after the static→dynamic xcframework migration.

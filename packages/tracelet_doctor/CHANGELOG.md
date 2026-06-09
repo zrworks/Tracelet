@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **CHORE**: Version bump to align with 3.2.11 platform release.
+
 ## 3.2.10
 
  - Update a dependency to the latest release.

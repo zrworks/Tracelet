@@ -1,13 +1,58 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+## 2026-06-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.2.10`](#tracelet---v3210)
+ - [`tracelet_android` - `v3.2.10`](#tracelet_android---v3210)
+ - [`tracelet_ios` - `v3.2.10`](#tracelet_ios---v3210)
+ - [`tracelet_sync` - `v3.2.10`](#tracelet_sync---v3210)
+ - [`tracelet_doctor` - `v3.2.10`](#tracelet_doctor---v3210)
+ - [`tracelet_supabase` - `v3.2.10`](#tracelet_supabase---v3210)
+ - [`tracelet_firebase` - `v3.2.10`](#tracelet_firebase---v3210)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_sync` - `v3.2.10`
+ - `tracelet_doctor` - `v3.2.10`
+ - `tracelet_supabase` - `v3.2.10`
+ - `tracelet_firebase` - `v3.2.10`
+
+---
+
+#### `tracelet` - `v3.2.10`
+
+ - **FIX**: streamline geofence event payload handling in fromMap method.
+ - **FIX**: ensure geofence action (ENTER/EXIT/DWELL) is correctly parsed from nested payloads on all platforms and update CI to scan dynamic frameworks for symbols.
+
+#### `tracelet_android` - `v3.2.10`
+
+ - **FIX**: ensure geofence action (ENTER/EXIT/DWELL) is correctly parsed from nested payloads on all platforms and update CI to scan dynamic frameworks for symbols.
+
+#### `tracelet_ios` - `v3.2.10`
+
+ - **FIX**: ensure geofence action (ENTER/EXIT/DWELL) is correctly parsed from nested payloads on all platforms and update CI to scan dynamic frameworks for symbols.
+
 ## 3.2.9
 
 - **FIX**(ios): Remove `TraceletCore+Dummy.swift` / `TraceletSyncFFI+Dummy.swift` — `@_silgen_name` declarations from the old static library model caused "Undefined symbol" linker errors after the static→dynamic xcframework migration.
 - **FIX**(android): Catch `ForegroundServiceStartNotAllowedException` in `LocationService.start()` so calling `ready()` from the background on Android 12+ no longer crashes the host app; the foreground service start is deferred until the app returns to foreground.
 
 
-# Change Log
-
-All notable changes to this project will be documented in this file.
-See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
 ## 3.2.1
 

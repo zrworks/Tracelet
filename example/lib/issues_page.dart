@@ -22,7 +22,9 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 125, 126];
+  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 125, 126, 134];
+
+  bool _isIssue134Tracking = false;
 
   @override
   void initState() {
@@ -570,8 +572,80 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 134: Background auto-sync stalls while moving ====
+  // Reproduces the reporter's setup: continuous real-GPS tracking + autoSync to
+  // the scanned backend, with a custom sync-body builder that mirrors their
+  // shape ({ location: [...], is_live_ping: false, extras }). The point is to
+  // observe whether on-the-fly background sync keeps firing while moving, or
+  // stalls / emits "synced 0 locations" once the app is backgrounded.
+  Future<void> _startIssue134Repro() async {
+    _setStatus(134, 'Starting Issue 134 repro...');
+    try {
+      final scannedUrl = Tracelet.activeConfig.http.url;
+      if (scannedUrl == null || scannedUrl.isEmpty) {
+        _setStatus(134, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
+
+      await Tracelet.requestLocationAuthorization();
+
+      // Reporter's custom body shape (3.2.8). If this builder ever throws, the
+      // native side returns null → aborts the sync → "synced 0 locations".
+      Tracelet.setSyncBodyBuilder((context) async {
+        return {
+          'location': context.locations,
+          'is_live_ping': false,
+          'extras': {'source': 'issue134-repro'},
+        };
+      });
+
+      await Tracelet.ready(
+        Config(
+          motion: const MotionConfig(
+            motionDetectionMode: MotionDetectionMode.smart,
+          ),
+          http: HttpConfig(
+            url: scannedUrl,
+            autoSyncDelay: 5000,
+          ),
+        ),
+      );
+
+      final state = await Tracelet.start();
+      setState(() {
+        _isIssue134Tracking = state.enabled;
+      });
+      _setStatus(
+        134,
+        '✅ Tracking started with autoSync → $scannedUrl.\n'
+        'Now BACKGROUND the app (do NOT kill it) and move/drive.\n'
+        'Watch your test server: locations should keep arriving every few '
+        'seconds. If they stop after a couple of minutes — or you see '
+        '"synced 0 locations" in the logs — the bug reproduced.',
+      );
+    } catch (e) {
+      _setStatus(134, '❌ FAILED: Issue 134 Error: $e');
+    }
+  }
+
+  Future<void> _stopIssue134Repro() async {
+    try {
+      await Tracelet.stop();
+      Tracelet.setSyncBodyBuilder(null);
+      setState(() {
+        _isIssue134Tracking = false;
+      });
+      _setStatus(134, 'Tracking stopped.');
+    } catch (e) {
+      _setStatus(134, '❌ Error stopping: $e');
+    }
+  }
+
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
+      // Issue 134 is a manual, long-running background repro — not part of the
+      // automated sweep.
+      if (issue == 134) continue;
       _scrollTo(issue);
       if (issue == 115) {
         await _startIssue115Tracking();
@@ -820,6 +894,32 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _testIssue125,
                       icon: const Icon(Icons.timer_off),
                       label: const Text('Test Timeout Abort'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 134,
+                  title: 'Background Auto-Sync Stalls',
+                  description:
+                      'Reproduces the reporter setup: continuous GPS tracking + '
+                      'autoSync to the scanned backend with a custom sync-body '
+                      'builder. Start, then background the app (do NOT kill it) '
+                      'and move — watch the test server to see if on-the-fly '
+                      'sync keeps firing or stalls ("synced 0 locations").',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue134Tracking
+                          ? null
+                          : _startIssue134Repro,
+                      icon: const Icon(Icons.directions_car),
+                      label: const Text('Start Repro'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue134Tracking
+                          ? _stopIssue134Repro
+                          : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
                     ),
                   ],
                 ),

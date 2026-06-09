@@ -236,8 +236,18 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
         }
         let res = semaphore.wait(timeout: .now() + TraceletIosPlugin.dartCallbackTimeout)
         if res == .timedOut {
-            TraceletSdk.shared.logger.error("requestSyncBody: timed out; aborting sync")
-            return nil
+            // The foreground Dart isolate didn't answer in time. This usually
+            // means the app is backgrounded/suspended when the auto-sync fires —
+            // it is NOT the same as "the builder ran and failed". So fall back to
+            // the headless runner (its own engine, built for background) instead
+            // of aborting the sync outright (Issue #134).
+            TraceletSdk.shared.logger.error("requestSyncBody: timed out; falling back to headless")
+            guard let runner = headlessRunner else { return nil }
+            let headlessBody = runner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
+            // Sentinel = no headless builder registered. Don't post the default
+            // body when a foreground custom builder exists — abort (nil) and let
+            // the batch retry on the next sync.
+            return headlessBody == traceletNoSyncBodyBuilderSentinel ? nil : headlessBody
         }
         return body
     }

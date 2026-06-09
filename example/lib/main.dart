@@ -47,13 +47,34 @@ void headlessHeadersCallback(tl.HeadlessEvent event) {
   });
 }
 
-/// Headless sync body builder — produces a custom HTTP body when the app
-/// is killed and the native sync engine uploads locations in the background.
+/// Headless sync body builder — produces a custom HTTP body when the native
+/// sync engine uploads locations in the background (app killed, OR backgrounded
+/// with the foreground isolate suspended — the Issue #134 fallback path).
+///
+/// It MUST hand the body back via [tl.Tracelet.setSyncBodyResponse]; otherwise
+/// the native side times out and aborts the sync. This mirrors the foreground
+/// builder shape so the backend receives the same payload either way.
 @pragma('vm:entry-point')
 void headlessSyncBodyBuilder(tl.HeadlessEvent event) {
+  unawaited(_handleHeadlessSyncBody(event));
+}
+
+Future<void> _handleHeadlessSyncBody(tl.HeadlessEvent event) async {
   debugPrint('[Headless] Sync body builder invoked');
-  // In production, return your custom JSON structure.
-  // The native side will use this as the request body.
+  final rawLocations = event.event['locations'];
+  final locations = <Map<String, Object?>>[];
+  if (rawLocations is List) {
+    for (final item in rawLocations) {
+      if (item is Map) {
+        locations.add(item.map((k, v) => MapEntry(k.toString(), v)));
+      }
+    }
+  }
+  await tl.Tracelet.setSyncBodyResponse({
+    'location': locations,
+    'is_live_ping': false,
+    'extras': {'source': 'issue134-headless'},
+  });
 }
 
 void main() {
@@ -610,7 +631,7 @@ class _DashboardPageState extends State<DashboardPage>
                     channelName: 'Tracelet Demo Background',
                     notificationPriority: tl.NotificationPriority.high,
                     showNotificationOnPauseOnly:
-                        true, // ✨ New Feature: Smart Visibility
+                        false, // ✨ New Feature: Smart Visibility
                   )
                 : const tl.ForegroundServiceConfig(enabled: false),
             scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms

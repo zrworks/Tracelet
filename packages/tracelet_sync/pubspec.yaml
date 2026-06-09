@@ -1,6 +1,6 @@
 name: tracelet_sync
 description: Offline SQLite persistence and automatic HTTP synchronization engine for Tracelet.
-version: 3.2.10
+version: 3.2.11
 homepage: https://github.com/ikolvi/tracelet
 repository: https://github.com/ikolvi/tracelet/tree/main/packages/tracelet_sync
 funding:
@@ -17,7 +17,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: ^3.2.10
+  tracelet: ^3.2.11
 
 dev_dependencies:
   flutter_test:

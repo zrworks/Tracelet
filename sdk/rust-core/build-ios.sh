@@ -138,4 +138,8 @@ if nm -gU "$CORE_BIN" 2>/dev/null | grep -i 'reqwest'; then
 fi
 echo "✅ TraceletCore symbol verification passed (dynamic + FRB symbols exported, no heavy deps)."
 
+# Surface sccache effectiveness (compile requests / cache hits / misses). Guarded
+# so local builds without sccache still succeed under `set -e`.
+command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
+
 echo "✅ iOS build complete."

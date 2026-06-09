@@ -58,4 +58,8 @@ cargo run -p tracelet_sync --features=uniffi/cli --bin sync-uniffi-bindgen gener
 mkdir -p "$KOTLIN_OUT_DIR_SYNC"
 cp "$TEMP_OUT/uniffi/tracelet_sync/tracelet_sync.kt" "$KOTLIN_OUT_DIR_SYNC/"
 
+# Surface sccache effectiveness (compile requests / cache hits / misses). Guarded
+# so local builds without sccache still succeed under `set -e`.
+command -v sccache >/dev/null 2>&1 && sccache --show-stats || true
+
 echo "✅ Android build complete. Libraries placed in $OUT_DIR_CORE and $OUT_DIR_SYNC, Kotlin bindings placed in main/kotlin/uniffi"

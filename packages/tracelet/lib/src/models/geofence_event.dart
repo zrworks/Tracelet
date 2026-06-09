@@ -18,8 +18,23 @@ class GeofenceEvent {
   });
 
   /// Creates a [GeofenceEvent] from a platform map.
+  ///
+  /// Accepts two shapes:
+  ///  * **Flat** — `{identifier, action, location, extras}`, produced by the
+  ///    foreground Pigeon event streams.
+  ///  * **Structured** — the SDK's raw payload as delivered to a headless
+  ///    (killed-state) isolate, where the geofence fields are nested under
+  ///    `'geofence'` and the location coords are at the top-level `'coords'`.
+  ///
+  /// Handling both is essential: a headless geofence event parsed as the flat
+  /// shape would read `null` for every field and silently default to
+  /// [GeofenceAction.enter], so EXIT transitions in the background would look
+  /// like ENTER (or be dropped entirely).
   factory GeofenceEvent.fromMap(Map<String, Object?> map) {
-    final actionRaw = map['action'];
+    // In the structured payload the geofence fields live under 'geofence'.
+    final source = safeMap(map['geofence']) ?? map;
+
+    final actionRaw = source['action'];
     var action = GeofenceAction.enter;
     if (actionRaw is int) {
       action = GeofenceAction
@@ -31,11 +46,16 @@ class GeofenceEvent {
       );
     }
 
-    final locationMap = safeMap(map['location']) ?? const <String, Object?>{};
-    final extrasRaw = map['extras'];
+    // Location: the flat shape wraps the location under 'location'; the
+    // structured payload exposes the coords at the top-level 'coords'.
+    final locationMap = safeMap(map['location']) ??
+        (map['coords'] != null
+            ? <String, Object?>{'coords': map['coords']}
+            : const <String, Object?>{});
+    final extrasRaw = source['extras'];
 
     return GeofenceEvent(
-      identifier: map['identifier'] as String? ?? '',
+      identifier: source['identifier'] as String? ?? '',
       action: action,
       location: Location.fromMap(locationMap),
       extras: extrasRaw is Map

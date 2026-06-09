@@ -75,21 +75,38 @@ public final class PluginEventDispatcher: NSObject, TraceletEventSending {
 
     public func sendGeofence(_ data: [String: Any]) {
         guard let api = eventApi else { return fallback("geofence", data) }
-        let locMap = data["location"] as? [String: Any] ?? [:]
-        let actionStr = (data["action"] as? String ?? "ENTER").uppercased()
+        let event = makeGeofenceEvent(data)
+        DispatchQueue.main.async { api.onGeofence(event: event) { _ in } }
+    }
+
+    /// Maps the SDK's geofence payload to the Pigeon `TlGeofenceEvent`.
+    ///
+    /// The SDK emits a structured payload: identifier/action/extras nested under
+    /// `"geofence"`, with the location coords at the top-level `"coords"`. The
+    /// legacy flat shape (fields at the top level, location under `"location"`)
+    /// is also accepted as a fallback.
+    ///
+    /// Exposed (internal) for testing — guards the regression where a nested
+    /// `action` (e.g. `EXIT`) was read from the wrong key and silently defaulted
+    /// to `ENTER`, so every transition reached Dart as `ENTER`.
+    func makeGeofenceEvent(_ data: [String: Any]) -> TlGeofenceEvent {
+        let gf = data["geofence"] as? [String: Any] ?? data
+        let actionStr = (gf["action"] as? String ?? "ENTER").uppercased()
         let action: TlGeofenceAction
         switch actionStr {
         case "EXIT": action = .exit
         case "DWELL": action = .dwell
         default: action = .enter
         }
-        let event = TlGeofenceEvent(
-            identifier: data["identifier"] as? String ?? "",
+        // mapToTlLocation reads ["coords"]: the structured payload already has it at
+        // the top level; the legacy shape wrapped it under "location".
+        let locSource = data["location"] as? [String: Any] ?? data
+        return TlGeofenceEvent(
+            identifier: gf["identifier"] as? String ?? "",
             action: action,
-            location: mapToTlLocation(locMap),
-            extras: data["extras"] as? [String?: Any?]
+            location: mapToTlLocation(locSource),
+            extras: gf["extras"] as? [String?: Any?]
         )
-        DispatchQueue.main.async { api.onGeofence(event: event) { _ in } }
     }
 
     public func sendGeofencesChange(_ data: [String: Any]) {

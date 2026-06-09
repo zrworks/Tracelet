@@ -208,7 +208,10 @@ internal class LocationEnginePeriodicTest {
             0.0,
             0.0,
             false,
+            false,
             "still",
+            null,
+            null,
             null,
             null
         )
@@ -221,7 +224,10 @@ internal class LocationEnginePeriodicTest {
             0.0,
             0.0,
             false,
+            false,
             "still",
+            null,
+            null,
             null,
             null
         )

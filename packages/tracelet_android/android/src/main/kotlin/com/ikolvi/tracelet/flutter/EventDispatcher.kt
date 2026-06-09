@@ -132,25 +132,43 @@ class EventDispatcher : TraceletEventSender {
     override fun sendGeofence(data: Map<String, Any?>) {
         val api = eventApi
         if (api != null) {
-            @Suppress("UNCHECKED_CAST")
-            val locMap = data["location"] as? Map<String, Any?> ?: emptyMap()
-            val actionStr = (data["action"] as? String ?: "ENTER").uppercase()
-            val action = when (actionStr) {
-                "EXIT" -> TlGeofenceAction.EXIT
-                "DWELL" -> TlGeofenceAction.DWELL
-                else -> TlGeofenceAction.ENTER
-            }
-            @Suppress("UNCHECKED_CAST")
-            val event = TlGeofenceEvent(
-                identifier = data["identifier"] as? String ?: "",
-                action = action,
-                location = mapToTlLocation(locMap),
-                extras = data["extras"] as? Map<String?, Any?>,
-            )
+            val event = buildGeofenceEvent(data)
             postToMain { api.onGeofence(event) {} }
         } else {
             fallback("geofence", data)
         }
+    }
+
+    /**
+     * Maps the SDK's geofence payload to the Pigeon [TlGeofenceEvent].
+     *
+     * The SDK emits a structured payload: identifier/action/extras nested under
+     * `"geofence"`, with the location coords at the top-level `"coords"`. The
+     * legacy flat shape (fields at the top level, location under `"location"`)
+     * is also accepted as a fallback.
+     *
+     * Visible for testing — guards the regression where a nested `action`
+     * (e.g. `EXIT`) was read from the wrong key and silently defaulted to
+     * `ENTER`, so every transition reached Dart as `ENTER`.
+     */
+    @Suppress("UNCHECKED_CAST")
+    internal fun buildGeofenceEvent(data: Map<String, Any?>): TlGeofenceEvent {
+        val gf = data["geofence"] as? Map<String, Any?> ?: data
+        val actionStr = (gf["action"] as? String ?: "ENTER").uppercase()
+        val action = when (actionStr) {
+            "EXIT" -> TlGeofenceAction.EXIT
+            "DWELL" -> TlGeofenceAction.DWELL
+            else -> TlGeofenceAction.ENTER
+        }
+        // mapToTlLocation reads ["coords"]: the structured payload already has it
+        // at the top level; the legacy shape wrapped it under "location".
+        val locSource = data["location"] as? Map<String, Any?> ?: data
+        return TlGeofenceEvent(
+            identifier = gf["identifier"] as? String ?: "",
+            action = action,
+            location = mapToTlLocation(locSource),
+            extras = gf["extras"] as? Map<String?, Any?>,
+        )
     }
 
     @Suppress("UNCHECKED_CAST")

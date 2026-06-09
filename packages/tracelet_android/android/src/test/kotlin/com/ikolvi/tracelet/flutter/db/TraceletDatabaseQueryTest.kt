@@ -36,9 +36,12 @@ class TraceletDatabaseQueryTest {
             heading = 0.0,
             altitude = 0.0,
             isMock = false,
+            isMoving = false,
             activity = "still",
             routeContext = null,
-            timestampOverride = java.time.Instant.ofEpochMilli(timestamp).toString()
+            timestampOverride = java.time.Instant.ofEpochMilli(timestamp).toString(),
+            eventType = null,
+            eventPayload = null
         )
     }
 

@@ -604,10 +604,7 @@ class _IssuesPageState extends State<IssuesPage> {
           motion: const MotionConfig(
             motionDetectionMode: MotionDetectionMode.smart,
           ),
-          http: HttpConfig(
-            url: scannedUrl,
-            autoSyncDelay: 5000,
-          ),
+          http: HttpConfig(url: scannedUrl, autoSyncDelay: 5000),
         ),
       );
 

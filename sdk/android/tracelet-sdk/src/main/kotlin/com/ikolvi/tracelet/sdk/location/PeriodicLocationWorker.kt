@@ -206,6 +206,14 @@ class PeriodicLocationWorker(
             }
 
             Result.success()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Cooperative cancellation — not a failure. Typically the SDK
+            // switched from PERIODIC to CONTINUOUS mode (ready()/start()) and
+            // cancelled this periodic job while we were holding it open for the
+            // sync delay above. Never swallow CancellationException; let it
+            // propagate so WorkManager records the work as cancelled cleanly.
+            Log.d(TAG, "Periodic location work cancelled")
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Periodic location work failed: ${e.message}", e)
             Result.retry()

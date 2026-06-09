@@ -149,7 +149,12 @@ void _printLocation(Map<dynamic, dynamic> loc, int reqNum, {int? index}) {
   if (speed != null) stdout.write(', speed=$speed');
   if (accuracy != null) stdout.write(', acc=$accuracy');
   if (isMoving != null) stdout.write(', moving=$isMoving');
-  if (uuid != '') stdout.write(', uuid=${uuid.toString().substring(0, 8)}...');
+  if (uuid != '') {
+    final uuidStr = uuid.toString();
+    final shortUuid =
+        uuidStr.length > 8 ? '${uuidStr.substring(0, 8)}...' : uuidStr;
+    stdout.write(', uuid=$shortUuid');
+  }
   
   // Find custom keys injected by routeContext
   final standardKeys = {'latitude', 'lat', 'longitude', 'lng', 'lon', 'speed', 'timestamp', 'uuid', 'accuracy', 'is_moving', 'isMoving', 'coords', 'activity', 'id', 'is_mock'};

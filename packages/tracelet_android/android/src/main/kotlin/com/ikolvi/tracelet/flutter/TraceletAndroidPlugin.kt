@@ -331,9 +331,21 @@ class TraceletAndroidPlugin :
         }
         val awaited = latch.await(DART_CALLBACK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
         if (!awaited) {
-            // Timed out waiting for Dart → abort (null).
-            sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms")
-            return null
+            // The foreground Dart isolate didn't answer in time. This usually
+            // means the app is backgrounding/suspended or the main thread is
+            // janky when an auto-sync fires — it is NOT the same as "the builder
+            // ran and failed". So don't abort outright: fall back to the headless
+            // engine, which has its own isolate and is built for background work
+            // (Issue #134).
+            sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms; falling back to headless")
+            val hs = headlessService ?: return null
+            val headlessBody = hs.requestCustomSyncBody(locations, DART_CALLBACK_TIMEOUT_MS)
+            // The headless runner returns the sentinel when no headless builder is
+            // registered. We must NOT post the default body in that case (a
+            // foreground custom builder IS registered, so default would be the
+            // wrong shape), so abort (null) and leave the batch for the next
+            // sync attempt.
+            return if (headlessBody == NO_SYNC_BODY_BUILDER_SENTINEL) null else headlessBody
         }
         return body
     }

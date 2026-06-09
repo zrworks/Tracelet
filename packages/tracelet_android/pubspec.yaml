@@ -1,6 +1,6 @@
 name: tracelet_android
 description: Android implementation of the Tracelet background geolocation plugin.
-version: 3.2.9
+version: 3.2.10
 topics:
   - location
   - background

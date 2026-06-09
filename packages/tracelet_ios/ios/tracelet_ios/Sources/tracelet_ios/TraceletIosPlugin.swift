@@ -47,8 +47,6 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
         
         let instance = TraceletIosPlugin()
         
-        TraceletCoreDummy.enforceBundling()
-
         // ── Primary instance guard ───────────────────────────────────────
         // When a background FlutterEngine is created (by Firebase background
         // messaging, WorkManager, or any other plugin that spawns a background

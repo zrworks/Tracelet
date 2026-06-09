@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **CHORE**: Version bump to align with 3.2.11 platform release.
+
 ## 3.2.10
 
  - **FIX**: streamline geofence event payload handling in fromMap method.

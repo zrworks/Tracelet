@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **FIX**(android): Handle cooperative coroutine cancellation in `PeriodicLocationWorker` — cancellation is no longer logged as an error and is correctly re-thrown so WorkManager records the work as cancelled cleanly.
+
 ## 3.2.10
 
 - **FIX**(ios): Remove `TraceletCore+Dummy.swift` / `TraceletSyncFFI+Dummy.swift` — `@_silgen_name` declarations from the old static library model caused "Undefined symbol" linker errors after the static→dynamic xcframework migration.

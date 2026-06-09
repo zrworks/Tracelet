@@ -1,3 +1,7 @@
+## 3.2.11
+
+- **FIX**(android): Fall back to the headless engine when a custom sync-body round-trip times out, instead of aborting the sync. Fixes location sync stopping after a few minutes while the app is backgrounded (Issue #134).
+
 ## 3.2.10
 
  - **FIX**: ensure geofence action (ENTER/EXIT/DWELL) is correctly parsed from nested payloads on all platforms and update CI to scan dynamic frameworks for symbols.

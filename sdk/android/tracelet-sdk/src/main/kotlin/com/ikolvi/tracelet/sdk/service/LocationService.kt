@@ -229,13 +229,24 @@ class LocationService : Service(), DefaultLifecycleObserver {
             startForegroundServiceSafely(context.applicationContext, intent, isBoot = false)
         }
 
-        /** Start from BootReceiver with the boot flag for native tracking. */
-        fun startFromBoot(context: Context) {
+        /**
+         * Start from BootReceiver with the boot flag for native tracking.
+         *
+         * Returns `true` if the foreground service start was dispatched, or
+         * `false` if the platform refused it (Android 12+ background start
+         * restriction — e.g. Android 14 disallows starting a `location`-type
+         * foreground service from `BOOT_COMPLETED`). On `false` the caller MUST
+         * fall back to a background-eligible mechanism (WorkManager/AlarmManager);
+         * unlike the foreground [start] path, the boot start is NOT deferred until
+         * the app returns to the foreground, because after a reboot the user never
+         * opens the app and tracking would otherwise never resume.
+         */
+        fun startFromBoot(context: Context): Boolean {
             val intent = Intent(context, LocationService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_BOOT_START, true)
             }
-            startForegroundServiceSafely(context.applicationContext, intent, isBoot = true)
+            return startForegroundServiceSafely(context.applicationContext, intent, isBoot = true)
         }
 
         // Pending deferred-start observer (one-shot). See startForegroundServiceSafely.
@@ -253,17 +264,28 @@ class LocationService : Service(), DefaultLifecycleObserver {
          * and we register a one-shot ProcessLifecycle observer to retry the start the
          * next time the process moves to the foreground.
          */
-        private fun startForegroundServiceSafely(appContext: Context, intent: Intent, isBoot: Boolean) {
-            try {
+        private fun startForegroundServiceSafely(appContext: Context, intent: Intent, isBoot: Boolean): Boolean {
+            return try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     appContext.startForegroundService(intent)
                 } else {
                     appContext.startService(intent)
                 }
+                true
             } catch (e: IllegalStateException) {
                 // Android 12+ background foreground-service start restriction.
-                Log.w(TAG, "startForegroundService blocked (app likely backgrounded on Android 12+): ${e.message}. Deferring until foreground.")
-                scheduleDeferredStart(appContext, isBoot)
+                if (isBoot) {
+                    // Boot path: deferring until the app is foregrounded is useless
+                    // here — after a reboot the user never opens the app, so the
+                    // deferred start would never fire and tracking would silently
+                    // never resume. Report the failure so BootReceiver can fall
+                    // back to a background-eligible mechanism (WorkManager/alarms).
+                    Log.w(TAG, "Boot foreground-service start blocked (Android 12+ background restriction): ${e.message}. Caller will fall back to WorkManager.")
+                } else {
+                    Log.w(TAG, "startForegroundService blocked (app likely backgrounded on Android 12+): ${e.message}. Deferring until foreground.")
+                    scheduleDeferredStart(appContext, isBoot)
+                }
+                false
             }
         }
 

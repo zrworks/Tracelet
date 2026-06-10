@@ -653,7 +653,7 @@ class _DashboardPageState extends State<DashboardPage>
           http: tl.HttpConfig(
             url:
                 tl.Tracelet.activeConfig.http.url ??
-                'http://192.168.20.100:8099/locations',
+                'http://192.168.20.101:8099/locations',
             // ── New features ──
             autoSyncDelay: 5000,
           ),

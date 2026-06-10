@@ -1,3 +1,7 @@
+## 3.2.13
+
+- **FIX**(android): `startOnBoot` now resumes tracking after a reboot even when the OS refuses to start the location foreground service from `BOOT_COMPLETED` (Android 14 disallows starting a `location`-type foreground service from boot). Previously the boot start was deferred until the app was next opened, so tracking silently never resumed after a reboot — `BootReceiver` now falls back to background WorkManager/alarm tracking when the foreground-service start is blocked.
+
 ## 3.2.12
 
 - **CHORE**: Re-release to align the full federated package set and native SDKs to a single consistent version. The 3.2.11 release published with mismatched versions across some packages (a few resolved to 3.2.10). No functional code changes.

@@ -1,0 +1,77 @@
+# iOS SDK: Surviving Suspension
+
+Apple’s `CoreLocation` framework provides powerful tools for background tracking, but iOS is extremely aggressive at suspending apps to save memory and battery life. 
+
+This page explains exactly how Tracelet interacts with Apple's strict background execution policies, and how you can configure it for your specific scenario.
+
+import { Callout, Tabs } from 'nextra/components'
+
+---
+
+## Scenario 1: The Fitness App (High Accuracy, No Suspend)
+**Concepts Explored:** Activity Types, Suspension, Audio Wake
+
+### The Problem
+Your user is running a marathon. They open your app, start the run, and lock their iPhone. Five minutes later, iOS decides it needs RAM to run a background iCloud backup, so it completely suspends your app's Dart isolate. Tracelet's native swift code continues to gather GPS points, but because the Dart isolate is frozen, your Flutter UI stops updating the distance counter, and any live-tracking web-sockets you have running in Dart are killed.
+
+### How Tracelet Solves It: Prevent Suspend
+
+To keep the Flutter Dart isolate running indefinitely while the screen is off, you must trick iOS into thinking the app is actively playing media.
+
+```dart
+ios: tl.IosConfig(
+  activityType: tl.LocationActivityType.fitness, // Optimizes GPS filtering for running
+  preventSuspend: true, 
+)
+```
+
+Setting `preventSuspend: true` causes Tracelet to play an imperceptible, silent audio clip on a loop. Because iOS thinks the user is listening to music, it will NEVER suspend the Dart isolate.
+
+<Callout type="warning">
+  **App Store Review Note:** Using `preventSuspend` requires the `audio` background mode capability in Xcode. Apple **will reject your app** if you use background audio purely to keep the app alive without a legitimate user-facing reason (e.g., a fitness tracker playing voice cues, or a navigation app speaking turn-by-turn directions). Do not use this for silent fleet tracking!
+
+  **To enable this:** Open your iOS project in Xcode, go to **Signing & Capabilities** -> **+ Capability** -> **Background Modes** -> check **Audio, AirPlay, and Picture in Picture**.
+</Callout>
+
+---
+
+## Scenario 2: The Social Radar (Low Power, Coarse)
+**Concepts Explored:** Significant Changes, Authorization Levels
+
+### The Problem
+You are building a social networking app that notifies the user when a friend is nearby. You don't need turn-by-turn accuracy; you just need to know roughly what neighborhood they are in. You also don't want to show the scary "Always Allow" permission prompt, as users will reject it.
+
+### How Tracelet Solves It: Significant Changes
+
+Instead of powering up the GPS chip, Tracelet can rely entirely on cell-tower handoffs.
+
+```dart
+ios: tl.IosConfig(
+  useSignificantChangesOnly: true, 
+  locationAuthorizationRequest: tl.LocationAuthorizationRequest.whenInUse,
+  disableLocationAuthorizationAlert: true,
+)
+```
+
+1. **Significant Changes Only:** By enabling this, Tracelet tells iOS to only wake the app up when the device jumps to a completely different cell tower (usually 500m to several kilometers). The battery drain is practically zero.
+2. **When In Use Authorization:** You only ask for "When In Use" permission. Tracelet respects this and will not trigger the native Apple prompt telling the user to go to Settings to enable "Always". *(To learn how to trigger these permission prompts from Dart, see the [Flutter SDK: Permissions](/flutter#scenario-2-the-onboarding-flow) page).*
+
+---
+
+## Scenario 3: The Blue Pill Indicator
+**Concepts Explored:** Background Location Indicator
+
+### The Problem
+You only have "When In Use" permission, but you still want to track the user temporarily in the background while they complete a specific task (like picking up a rideshare passenger). 
+
+### How Tracelet Solves It
+By enabling the blue status bar indicator, Apple permits "When In Use" apps to continue receiving high-frequency updates in the background, because the user is clearly visually notified that tracking is happening.
+
+```dart
+ios: tl.IosConfig(
+  showsBackgroundLocationIndicator: true, 
+)
+```
+When the user locks their phone, a blue pill with an arrow will appear in the top-left of their screen.
+
+**To enable this:** You must have the `location` Background Mode enabled in Xcode (**Signing & Capabilities** -> **Background Modes** -> **Location updates**).

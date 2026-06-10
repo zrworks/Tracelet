@@ -2,6 +2,7 @@ name: tracelet_sync
 description: Offline SQLite persistence and automatic HTTP synchronization engine for Tracelet.
 version: 3.2.13
 homepage: https://github.com/ikolvi/tracelet
+documentation: https://tracelet.ikolvi.com
 repository: https://github.com/ikolvi/tracelet/tree/main/packages/tracelet_sync
 funding:
   - https://github.com/sponsors/GalacticTitan

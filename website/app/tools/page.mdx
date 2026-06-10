@@ -1,0 +1,60 @@
+# Diagnostic Tools & Power Management
+
+Debugging background geolocation is notoriously difficult, especially on fragmented Android devices with aggressive battery savers. Tracelet provides a suite of tools to help you visualize what the engine is doing and mitigate OEM restrictions.
+
+import { Callout, Cards } from 'nextra/components'
+
+---
+
+## Tracelet Doctor
+
+**Tracelet Doctor** (`tracelet_doctor`) is a drop-in UI dashboard that visualizes the internal state of the Tracelet engine in real-time. It is essential for field testing.
+
+<Callout type="info" emoji="🩺">
+  Never deploy Tracelet Doctor to regular end-users in production. Guard the entry point with a hidden developer menu (e.g., tapping the version number 7 times).
+</Callout>
+
+### Installation
+
+```bash
+flutter pub add tracelet_doctor
+```
+
+### Integration
+
+Push the dashboard onto your navigation stack:
+
+```dart
+import 'package:tracelet_doctor/tracelet_doctor.dart';
+
+Navigator.push(context, MaterialPageRoute(
+  builder: (context) => const TraceletDoctorDashboard(),
+));
+```
+
+### Core Features
+
+The dashboard provides 5 crucial tabs for debugging:
+
+1. **Overview Dashboard**
+   Displays the real-time `isMoving` state, current GPS coordinates, accuracy (in meters), battery level, and the active `TraceletProfile`. If the engine is in the `STATIONARY` state, this screen will explicitly show that the GPS hardware is powered off.
+
+2. **Geofence Live Map**
+   A visual map rendering your current location, the `stationaryRadius` bounds, and all registered Geofences (both circular and complex Polygon zones). Crucially, it visualizes the `geofenceProximityRadius` so you can verify that geofences are dynamically loading and unloading as you move.
+
+3. **Database Inspector**
+   Directly inspect the raw SQLite rows. You can see how many locations are queued for HTTP Sync, verify if the Delta Compression logic successfully shrank coordinates, and manually trigger a flush.
+
+4. **Log Console**
+   A live, color-coded stream of the native SDK logs (Trace, Debug, Info, Warn, Error). This is where you can see the engine making decisions: *"Detected 65mph, stretching distanceFilter to 50m"*.
+
+5. **Config Inspector**
+   A JSON tree viewer showing the exact `Config` object currently injected into the native engine, ensuring your Dart configuration successfully crossed the platform channel.
+
+---
+
+## OEM Power Manager (Settings Health)
+
+Chinese OEMs (Xiaomi, Huawei, Oppo, Vivo, OnePlus) ship with highly aggressive, proprietary battery managers that completely ignore standard Android foreground service rules. 
+
+To see how Tracelet handles these devices and which manufacturers are supported, please read our dedicated [OEM Power Management 📖](/oem-power-management) guide.

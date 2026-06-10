@@ -12,6 +12,11 @@ name: Release (Native SDKs + pub.dev)
 on:
   workflow_dispatch:
     inputs:
+      deploy_website:
+        description: "Deploy Documentation Website to Firebase Hosting"
+        required: false
+        type: boolean
+        default: true
       dry_run:
         description: "Dry run (build & lint only, don't publish anything)"
         required: false
@@ -1066,3 +1071,36 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 **This was a dry run. Nothing was published.**" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 6: Deploy Documentation Website
+  # ─────────────────────────────────────────────────────────────
+  deploy_docs:
+    name: Deploy Docs to Firebase
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_website == 'true' || github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install Dependencies
+        working-directory: ./website
+        run: npm install
+        
+      - name: Build Next.js Static Site
+        working-directory: ./website
+        run: npm run build
+        
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_IKOLVI }}'
+          projectId: 'ikolvi'
+          target: 'tracelet-docs'
+          channelId: 'live'
+          entryPoint: './website'

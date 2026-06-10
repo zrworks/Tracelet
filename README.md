@@ -18,6 +18,8 @@
 
 > **Production-grade background geolocation for Flutter — fully open-source.**
 
+📚 **Official Documentation:** [tracelet.ikolvi.com](https://tracelet.ikolvi.com)
+
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
 > [!IMPORTANT]
@@ -266,6 +268,8 @@ if (health['isAggressiveOem'] == true) {
 See the [OEM Compatibility Guide](help/OEM-COMPATIBILITY.md) for full details on manufacturer-specific behaviors.
 
 ## Documentation
+
+The full documentation is available at [**tracelet.ikolvi.com**](https://tracelet.ikolvi.com).
 
 | Guide | Description |
 |---|---|

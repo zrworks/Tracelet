@@ -1,3 +1,7 @@
+## 3.2.13
+
+- **CHORE**: Version bump to 3.2.13 to stay in lockstep with the federated set (Android `startOnBoot` reboot-tracking fix — see `tracelet_android`). No changes to this package.
+
 ## 3.2.12
 
 - **CHORE**: Re-release to align the iOS SDK podspec with the federated package set at 3.2.12. The podspec version had drifted behind (3.2.9) during the 3.2.11 release; this realigns it. No functional code changes.

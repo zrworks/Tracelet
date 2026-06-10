@@ -87,29 +87,45 @@ class BootReceiver : BroadcastReceiver() {
             // Periodic mode without foreground service —
             // re-schedule WorkManager/AlarmManager work directly.
             // No foreground service needed (no persistent notification).
-            //
-            // Auto-select exact alarms when interval < 15 min, matching
-            // the same logic in TraceletAndroidPlugin.handleStartPeriodic().
-            val interval = configManager.getPeriodicLocationInterval()
-            val useExactAlarms = configManager.getPeriodicUseExactAlarms() ||
-                interval < 900
-
-            if (useExactAlarms) {
-                PeriodicLocationWorker.scheduleOneTime(context)
-                PeriodicLocationWorker.scheduleExactAlarm(context, interval)
-                Log.d(TAG, "Periodic mode restored with exact alarms (interval=${interval}s)")
-            } else {
-                PeriodicLocationWorker.schedule(context, interval)
-                Log.d(TAG, "Periodic mode restored with WorkManager (interval=${interval}s)")
-            }
+            scheduleBackgroundFallback(context, configManager)
         } else {
             // Continuous (0), geofences (1), or periodic with foreground service —
-            // start the foreground service with boot flag for native tracking
-            LocationService.startFromBoot(context)
+            // start the foreground service with boot flag for native tracking.
+            val started = LocationService.startFromBoot(context)
+            if (!started) {
+                // The platform refused the foreground-service start (e.g. Android 14
+                // disallows starting a location-type FGS from BOOT_COMPLETED). Don't
+                // give up — fall back to the background-eligible WorkManager/alarm
+                // path so tracking still resumes after the reboot.
+                Log.w(TAG, "Boot foreground service refused by OS — falling back to background WorkManager/alarm tracking")
+                scheduleBackgroundFallback(context, configManager)
+            }
         }
 
         // Wakelock auto-releases after 60s timeout (A-M5). Do NOT release it
         // manually here — the foreground service start is asynchronous and the
         // device could sleep before the service's onCreate acquires its own lock.
+    }
+
+    /**
+     * Re-schedules tracking via the background-eligible WorkManager/AlarmManager
+     * path. Used both for periodic-mode boot restore and as the fallback when a
+     * foreground-service start is refused at boot (Android 12+ background
+     * restriction). Auto-selects exact alarms when the interval is < 15 min,
+     * matching TraceletAndroidPlugin.handleStartPeriodic().
+     */
+    private fun scheduleBackgroundFallback(context: Context, configManager: ConfigManager) {
+        val interval = configManager.getPeriodicLocationInterval()
+        val useExactAlarms = configManager.getPeriodicUseExactAlarms() ||
+            interval < 900
+
+        if (useExactAlarms) {
+            PeriodicLocationWorker.scheduleOneTime(context)
+            PeriodicLocationWorker.scheduleExactAlarm(context, interval)
+            Log.d(TAG, "Background tracking scheduled with exact alarms (interval=${interval}s)")
+        } else {
+            PeriodicLocationWorker.schedule(context, interval)
+            Log.d(TAG, "Background tracking scheduled with WorkManager (interval=${interval}s)")
+        }
     }
 }

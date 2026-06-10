@@ -65,3 +65,45 @@ Mark's auth token (JWT) expired while he was hiking. When Tracelet finally tries
 
 2. **Exponential Backoff (`maxRetries` & `retryBackoffCap`)**
    What if your auth server is down and returns a 503? Tracelet handles this gracefully. It attempts a retry. It fails. It waits 1 second (`retryBackoffBase`), then 2 seconds, then 4 seconds. The exponential backoff is capped at 60 seconds (`retryBackoffCap`). After 3 attempts (`maxRetries`), it gives up entirely, leaving the data safely in SQLite to try again tomorrow.
+
+---
+
+## Scenario 4: The Custom Server Schema
+**Concepts Explored:** Custom Sync Body Builders, Schema Mapping
+
+### The Problem
+Mark's company has a legacy backend that expects location data in a very specific, non-standard format. Tracelet's default JSON payload doesn't match their server's required schema, and they can't change the backend API just for this app.
+
+### How Tracelet Sync Solves It
+
+1. **Custom Sync Body Builder (`setSyncBodyBuilder`)**
+   Instead of using the default JSON wrapper, Tracelet lets you intercept the batch of locations right before they are sent over the network, allowing you to map them into any shape your server desires.
+   
+   Starting from **Tracelet 3.2.8**, the locations passed to this builder use a robust **nested schema** (where coordinates are safely grouped under `coords` and activity data under `activity`).
+
+   ```dart
+   Tracelet.setSyncBodyBuilder((context) async {
+     // Map Tracelet's nested schema to your legacy server's flat schema
+     final mappedPoints = context.locations.map((loc) {
+       final coords = loc['coords'] as Map;
+       final activity = loc['activity'] as Map;
+       
+       return {
+         'lat': coords['latitude'],
+         'lng': coords['longitude'],
+         'time': loc['timestamp'],
+         'moving': loc['is_moving'],
+         'action': activity['type'],
+       };
+     }).toList();
+
+     // Return the exact JSON structure your server expects
+     return {
+       'device_id': myDeviceId,
+       'payload': mappedPoints,
+     };
+   });
+   ```
+
+2. **Headless Execution**
+   Just like token refreshes, this custom body building can also be executed completely headlessly in the background via `registerHeadlessSyncBodyBuilder()`, ensuring your custom schema is built and sent even when the app is completely terminated.

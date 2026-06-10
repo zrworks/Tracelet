@@ -194,6 +194,7 @@ Configures Core Location parameters, accuracy, sampling filter thresholds, batte
 | `enableDeadReckoning` | `bool` | `false` | Enable inertial sensor fusion positioning during GPS signal loss. |
 | `deadReckoningActivationDelay` | `int` | `0` | Seconds without a GPS fix before activating dead reckoning. |
 | `deadReckoningMaxDuration` | `int` | `0` | Maximum seconds to execute dead reckoning estimation. `0` for unlimited. |
+| `resolveAddress` | `bool` | `false` | Automatically resolve coordinates to a street address using the native OS Geocoder. |
 | `filter` | `LocationFilter` | `const LocationFilter()` | Detailed GPS filtering and smoothing options. |
 
 > **Note:** `periodicUseForegroundService` and `periodicUseExactAlarms` are Android-only — configure them under `AndroidConfig`, not `GeoConfig`.

@@ -161,3 +161,4 @@ sdk/rust-core/benchmark_results.json
 docs/superpowers/
 website/.next/
 website/out/
+website/public/_pagefind/

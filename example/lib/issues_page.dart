@@ -40,6 +40,10 @@ class _IssuesPageState extends State<IssuesPage> {
 
   bool _isIssue134Tracking = false;
   bool _isIssue140Tracking = false;
+  Timer? _issue140Timer;
+  int _issue140ElapsedSeconds = 0;
+  StreamSubscription? _issue140MotionSub;
+  bool _issue140IsMoving = false;
 
   @override
   void initState() {
@@ -59,6 +63,8 @@ class _IssuesPageState extends State<IssuesPage> {
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _issue140Timer?.cancel();
+    _issue140MotionSub?.cancel();
     super.dispose();
   }
 
@@ -784,7 +790,28 @@ class _IssuesPageState extends State<IssuesPage> {
 
   // ==== ISSUE 140: motion resumes during stop-timeout ====
   Future<void> _startIssue140() async {
-    setState(() => _isIssue140Tracking = true);
+    setState(() {
+      _isIssue140Tracking = true;
+      _issue140ElapsedSeconds = 0;
+      _issue140IsMoving = true; // Default to moving on start
+    });
+
+    _issue140MotionSub?.cancel();
+    _issue140MotionSub = Tracelet.onMotionChange((location) {
+      if (mounted) {
+        setState(() {
+          _issue140IsMoving = location.isMoving;
+        });
+      }
+    });
+
+    _issue140Timer?.cancel();
+    _issue140Timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() => _issue140ElapsedSeconds++);
+      }
+    });
+
     _setStatus(140, 'Starting smart-motion tracking (short stop-timeout)...');
     try {
       await Tracelet.requestLocationAuthorization();
@@ -792,8 +819,10 @@ class _IssuesPageState extends State<IssuesPage> {
         const Config(
           motion: MotionConfig(
             motionDetectionMode: MotionDetectionMode.smart,
+            disableMotionActivityUpdates:
+                true, // Disable AR to test raw accelerometer
             stopTimeout: 1, // minutes — keep short for the repro
-            speedStationaryDelay: 15,
+            speedStationaryDelay: 60, // seconds — keep short for the repro
           ),
         ),
       );
@@ -814,6 +843,8 @@ class _IssuesPageState extends State<IssuesPage> {
       await Tracelet.stop();
     } finally {
       if (mounted) {
+        _issue140Timer?.cancel();
+        _issue140MotionSub?.cancel();
         setState(() => _isIssue140Tracking = false);
         _setStatus(140, 'Stopped.');
       }
@@ -1152,6 +1183,49 @@ class _IssuesPageState extends State<IssuesPage> {
                       icon: const Icon(Icons.stop),
                       label: const Text('Stop'),
                     ),
+                    if (_isIssue140Tracking)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '⏱️ Stopwatch: $_issue140ElapsedSeconds s (Test your stop-timeout!)',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _issue140IsMoving
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _issue140IsMoving
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              ),
+                              child: Text(
+                                'Current State: ${_issue140IsMoving ? 'Moving 🏃' : 'Stationary 🛑'}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _issue140IsMoving
+                                      ? Colors.green.shade900
+                                      : Colors.red.shade900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ],

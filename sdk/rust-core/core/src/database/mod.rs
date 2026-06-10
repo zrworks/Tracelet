@@ -319,7 +319,11 @@ impl DatabaseManager {
         let mut sql = "SELECT id, uuid, timestamp, latitude, longitude, accuracy, speed, heading, altitude, is_mock, is_moving, activity, encrypted_payload, route_context, event_type, event_payload FROM location_events WHERE 1=1".to_string();
         let mut params: Vec<Value> = Vec::new();
         
-        let limit = query.as_ref().and_then(|q| q.limit).unwrap_or(1000);
+        // No limit specified → return ALL matching rows (-1 = no LIMIT, handled
+        // below). Previously this defaulted to 1000, silently capping manual
+        // reads like getLocations() / getCarbonReport() (Issue #139). Callers
+        // that want a cap (e.g. sync batching) always pass an explicit limit.
+        let limit = query.as_ref().and_then(|q| q.limit).unwrap_or(-1);
         let offset = query.as_ref().and_then(|q| q.offset).unwrap_or(0);
         let is_desc = query.as_ref().and_then(|q| q.order_descending).unwrap_or(false);
         
@@ -1054,6 +1058,40 @@ mod tests {
         assert_eq!(locations2.len(), 3); // ASC: 1, 2, 3, 4, 5 -> offset 2 -> 3, 4, 5
         assert_eq!(locations2[0].id, 3);
         assert_eq!(locations2[2].id, 5);
+    }
+
+    #[test]
+    fn test_unbounded_query_returns_all_rows_past_legacy_1000_cap() {
+        // Regression for Issue #139: an unspecified limit must return EVERY row,
+        // not silently cap at the legacy 1000. Insert > 1000 and read with no
+        // query (limit = None) and with an explicit None-limit query.
+        let db = DatabaseManager::new(":memory:").expect("Failed to create in-memory db");
+        for i in 1..=1500 {
+            db.insert_location(None, i as f64, i as f64, 10.0, 1.5, 90.0, 15.0, false, false, "walking", None, None, None, None).unwrap();
+        }
+
+        // No query at all.
+        assert_eq!(db.get_locations_batch(None).unwrap().len(), 1500);
+
+        // Query present but limit unset → still unbounded.
+        let unbounded = LocationQuery {
+            start_time_ms: None,
+            end_time_ms: None,
+            limit: None,
+            offset: None,
+            order_descending: None,
+        };
+        assert_eq!(db.get_locations_batch(Some(unbounded)).unwrap().len(), 1500);
+
+        // An explicit limit is still honored.
+        let capped = LocationQuery {
+            start_time_ms: None,
+            end_time_ms: None,
+            limit: Some(250),
+            offset: None,
+            order_descending: None,
+        };
+        assert_eq!(db.get_locations_batch(Some(capped)).unwrap().len(), 250);
     }
 
     #[test]

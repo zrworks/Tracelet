@@ -14,6 +14,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.mockito.Mockito.mock
 import kotlin.test.assertNotSame
+import kotlin.test.assertEquals
+import com.ikolvi.tracelet.sdk.sync.NO_SYNC_BODY_BUILDER_SENTINEL
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -52,6 +54,22 @@ class TraceletAndroidPluginTest {
             plugin,
             TraceletSdk.getInstance(context).dartSyncInterceptor,
             "TraceletAndroidPlugin should not overwrite dartSyncInterceptor when spawned by a headless engine"
+        )
+    }
+
+    @Test
+    fun `requestSyncBody returns sentinel immediately when hasCustomSyncBodyBuilder is false`() {
+        TraceletAndroidPlugin.hasCustomSyncBodyBuilder = false
+        val plugin = TraceletAndroidPlugin()
+        
+        // When no custom builder is registered, it should immediately return the sentinel 
+        // without waiting for a method channel timeout.
+        val result = plugin.requestSyncBody(emptyList())
+        
+        assertEquals(
+            NO_SYNC_BODY_BUILDER_SENTINEL, 
+            result,
+            "requestSyncBody should return sentinel immediately when hasCustomSyncBodyBuilder is false"
         )
     }
 }

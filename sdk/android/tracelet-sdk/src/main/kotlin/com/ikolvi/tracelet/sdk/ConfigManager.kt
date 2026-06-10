@@ -677,7 +677,10 @@ class ConfigManager(context: Context) {
         getBool("enableDeltaCompression", false)
 
     fun getDeltaCoordinatePrecision(): Int =
-        getInt("deltaCoordinatePrecision", 6)
+        // Default must match the Dart HttpConfig default (5). A higher native
+        // fallback (6) produced a finer grid and larger payloads than intended
+        // when the value wasn't explicitly set (Issue #137).
+        getInt("deltaCoordinatePrecision", 5)
 
     fun getSslPinningCertificates(): List<String> {
         val raw = configCache["sslPinningCertificates"]

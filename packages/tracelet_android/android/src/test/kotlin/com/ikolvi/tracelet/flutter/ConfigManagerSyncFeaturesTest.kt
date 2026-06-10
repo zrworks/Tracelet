@@ -193,4 +193,20 @@ internal class ConfigManagerSyncFeaturesTest {
         assertEquals("sha256/AAAA", fps[0])
         assertEquals("sha256/BBBB", fps[1])
     }
+
+    // =========================================================================
+    // Delta compression (Issue #137: default must match the Dart layer = 5)
+    // =========================================================================
+
+    @Test
+    fun `getDeltaCoordinatePrecision defaults to 5 matching the Dart HttpConfig default`() {
+        val config = createConfig()
+        assertEquals(5, config.getDeltaCoordinatePrecision())
+    }
+
+    @Test
+    fun `getDeltaCoordinatePrecision honors an explicit override`() {
+        val config = createConfig(mapOf("http" to mapOf("deltaCoordinatePrecision" to 7)))
+        assertEquals(7, config.getDeltaCoordinatePrecision())
+    }
 }

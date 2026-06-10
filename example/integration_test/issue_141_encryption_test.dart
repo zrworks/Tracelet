@@ -54,30 +54,31 @@ void main() {
       await Tracelet.stop();
     });
 
-    testWidgets('encryptDatabase:true WITHOUT key — still works (the #141 repro)', (
-      tester,
-    ) async {
-      // The reporter's exact config: encryption on, no key supplied.
-      await Tracelet.ready(
-        const Config(
-          geo: GeoConfig(distanceFilter: 0),
-          security: SecurityConfig(encryptDatabase: true),
-        ),
-      );
-      await Tracelet.destroyLocations();
+    testWidgets(
+      'encryptDatabase:true WITHOUT key — still works (the #141 repro)',
+      (tester) async {
+        // The reporter's exact config: encryption on, no key supplied.
+        await Tracelet.ready(
+          const Config(
+            geo: GeoConfig(distanceFilter: 0),
+            security: SecurityConfig(encryptDatabase: true),
+          ),
+        );
+        await Tracelet.destroyLocations();
 
-      await insertSample(10.5, 20.5);
+        await insertSample(10.5, 20.5);
 
-      final locations = await Tracelet.getLocations();
-      expect(
-        locations.length,
-        1,
-        reason: 'encryptDatabase:true must not break the data path (#141)',
-      );
-      expect(locations.first.coords.latitude, closeTo(10.5, 1e-6));
+        final locations = await Tracelet.getLocations();
+        expect(
+          locations.length,
+          1,
+          reason: 'encryptDatabase:true must not break the data path (#141)',
+        );
+        expect(locations.first.coords.latitude, closeTo(10.5, 1e-6));
 
-      await Tracelet.stop();
-    });
+        await Tracelet.stop();
+      },
+    );
 
     testWidgets('parity: encrypted vs unencrypted both round-trip', (
       tester,

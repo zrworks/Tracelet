@@ -46,6 +46,9 @@ class HeadlessTaskService(
         private const val KEY_DISPATCH_CALLBACK = "dispatch_callback_id"
         private const val CHANNEL_NAME = "com.tracelet/headless"
         private const val METHODS_CHANNEL_NAME = "com.tracelet/methods"
+
+        @JvmStatic
+        var isSpawningHeadlessEngine = false
     }
 
     enum class CallbackType(val regKey: String, val dispatchKey: String) {
@@ -277,7 +280,9 @@ class HeadlessTaskService(
                 loader.startInitialization(context)
                 loader.ensureInitializationComplete(context, null)
 
-                flutterEngine = FlutterEngine(context).also { engine ->
+                isSpawningHeadlessEngine = true
+                try {
+                    flutterEngine = FlutterEngine(context).also { engine ->
                     headlessMethodChannel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
 
                     // Set up method channel to receive "ready" signal from Dart
@@ -330,7 +335,10 @@ class HeadlessTaskService(
                         destroy()
                     }
                 }
-            } catch (e: Exception) {
+            } finally {
+                isSpawningHeadlessEngine = false
+            }
+        } catch (e: Exception) {
                 TraceletSdk.getInstance(context).logger.error("Failed to create headless FlutterEngine: ${e.message}")
                 destroy()
             }

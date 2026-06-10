@@ -36,6 +36,7 @@ class _IssuesPageState extends State<IssuesPage> {
     138,
     139,
     140,
+    141,
   ];
 
   bool _isIssue134Tracking = false;
@@ -44,6 +45,9 @@ class _IssuesPageState extends State<IssuesPage> {
   int _issue140ElapsedSeconds = 0;
   StreamSubscription? _issue140MotionSub;
   bool _issue140IsMoving = false;
+
+  bool _isIssue141Tracking = false;
+  StreamSubscription? _issue141LocationSub;
 
   @override
   void initState() {
@@ -851,15 +855,62 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 141: encryptDatabase: true silently breaks events ====
+  Future<void> _startIssue141() async {
+    _setStatus(
+      141,
+      'Testing Issue 141: encryptDatabase = true. Waiting for location...',
+    );
+    try {
+      await Tracelet.stop();
+      await Tracelet.ready(
+        const Config(
+          security: SecurityConfig(encryptDatabase: true),
+          motion: MotionConfig(isMoving: true),
+        ),
+      );
+
+      _issue141LocationSub = Tracelet.onLocation((loc) {
+        _setStatus(
+          141,
+          '✅ SUCCESS: Received location with encryption enabled!',
+        );
+        _stopIssue141();
+      });
+
+      await Tracelet.start();
+      setState(() => _isIssue141Tracking = true);
+    } catch (e) {
+      _setStatus(141, '❌ FAILED: $e');
+    }
+  }
+
+  Future<void> _stopIssue141() async {
+    await Tracelet.stop();
+    _issue141LocationSub?.cancel();
+    if (mounted) {
+      setState(() => _isIssue141Tracking = false);
+      if (_statuses[141] != null && !_statuses[141]!.contains('SUCCESS')) {
+        _setStatus(141, 'Stopped.');
+      }
+    }
+  }
+
   Widget _buildIssueCard({
     required int issueNumber,
     required String title,
     required String description,
     required List<Widget> actions,
   }) {
-    if (_searchQuery.isNotEmpty &&
-        !issueNumber.toString().contains(_searchQuery)) {
-      return const SizedBox.shrink();
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      final matchesNumber = issueNumber.toString().contains(query);
+      final matchesTitle = title.toLowerCase().contains(query);
+      final matchesDescription = description.toLowerCase().contains(query);
+
+      if (!matchesNumber && !matchesTitle && !matchesDescription) {
+        return const SizedBox.shrink();
+      }
     }
 
     final status = _statuses[issueNumber] ?? 'Idle';
@@ -1226,6 +1277,27 @@ class _IssuesPageState extends State<IssuesPage> {
                           ],
                         ),
                       ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 141,
+                  title: 'encryptDatabase: true breaks events',
+                  description:
+                      'When encryptDatabase is set to true without an explicit key, '
+                      'the internal DB correctly falls back to unencrypted storage, '
+                      'but the Dart event bridge breaks silently due to Native config bypass. '
+                      'This test ensures we receive location events successfully.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue141Tracking ? null : _startIssue141,
+                      icon: const Icon(Icons.security),
+                      label: const Text('Start (Encrypted)'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue141Tracking ? _stopIssue141 : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
+                    ),
                   ],
                 ),
               ],

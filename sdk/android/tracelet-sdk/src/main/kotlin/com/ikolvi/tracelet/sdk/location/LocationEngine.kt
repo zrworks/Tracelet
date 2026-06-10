@@ -364,8 +364,12 @@ class LocationEngine(
                         val enriched = resolved.toMutableMap()
                         enriched["event"] = "periodic"
                         enriched["odometer"] = state.odometer
+                        
+                        val speed = resolved["speed"] as? Double ?: 0.0
+                        speedMotionSpeedSink?.invoke(speed)
+                        
                         events.sendLocation(enriched)
-                        Log.d(TAG, "periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy")
+                        Log.d(TAG, "periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy, speed=$speed")
 
                         // Notify proximity-based geofence monitoring
                         if (lat != null && lng != null) {

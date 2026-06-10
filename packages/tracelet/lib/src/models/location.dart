@@ -253,6 +253,10 @@ class Location {
   final Address? address;
 
   /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
+
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'coords': coords.toMap(),
@@ -386,6 +390,10 @@ class Address {
 
   /// The country name.
   final String? country;
+
+  /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
@@ -532,6 +540,10 @@ class MockHeuristics {
   final bool? platformFlagMock;
 
   /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
+
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       if (satellites != null) 'satellites': satellites,
@@ -645,6 +657,10 @@ class Coords {
   final int? floor;
 
   /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
+
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'latitude': latitude,
@@ -746,6 +762,10 @@ class LocationActivity {
   final ActivityConfidence confidence;
 
   /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
+
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{'type': type.name, 'confidence': confidence.name};
   }
@@ -790,6 +810,10 @@ class LocationBattery {
 
   /// Whether the device is currently charging.
   final bool isCharging;
+
+  /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {

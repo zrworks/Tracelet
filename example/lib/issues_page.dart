@@ -662,7 +662,7 @@ class _IssuesPageState extends State<IssuesPage> {
   Future<void> _stopIssue134Repro() async {
     try {
       await Tracelet.stop();
-      Tracelet.setSyncBodyBuilder(null);
+      await Tracelet.setSyncBodyBuilder(null);
       setState(() {
         _isIssue134Tracking = false;
       });
@@ -676,7 +676,7 @@ class _IssuesPageState extends State<IssuesPage> {
     _setStatus(134, 'Verifying Issue 134 Fix...');
     try {
       // 1. Ensure NO custom sync body builder is registered
-      Tracelet.setSyncBodyBuilder(null);
+      await Tracelet.setSyncBodyBuilder(null);
 
       // 2. Set up local server
       final server = await HttpServer.bind('127.0.0.1', 8084);

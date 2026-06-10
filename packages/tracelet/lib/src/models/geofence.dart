@@ -119,6 +119,10 @@ class Geofence {
   final List<List<double>> vertices;
 
   /// Serializes to a map.
+  /// Serializes to a JSON-compatible map.
+  Map<String, Object?> toJson() => toMap();
+
+  /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'identifier': identifier,

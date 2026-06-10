@@ -1,15 +1,7 @@
 {
   "index": "Introduction",
-  "core-concepts": "Core Concepts",
-  "tracelet-sync": "Tracelet Sync",
-  "flutter": "Flutter SDK",
-  "platform-setup": "Platform Setup",
-  "configuration": "Configuration API",
-  "configuration-profiles": "Configuration Profiles",
-  "api-reference": "Full API Reference",
-  "oem-power-management": "OEM Power Management",
-  "tools": "Diagnostic Tools",
-  "adapters": "Database Adapters",
-  "faq": "FAQ & Troubleshooting",
-  "sponsor": "Support Tracelet ❤️"
+  "getting-started": "Getting Started",
+  "core": "Key Points to Remember",
+  "config": "Configuration",
+  "reference": "Tools & Reference"
 }

@@ -29,6 +29,17 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
         }
     }
 
+    /**
+     * Cancels a pending (debounced) or in-flight auto-sync so no further POSTs
+     * fire after tracking is stopped. Called from [TraceletSdk.stop]. A
+     * subsequent location insert (after a new start) schedules a fresh sync, so
+     * this does not need to be reset.
+     */
+    override fun cancelPendingSync() {
+        syncJob?.cancel()
+        syncJob = null
+    }
+
     private suspend fun triggerSync() {
         syncMutex.withLock {
             sdk.logger.debug("NativeSyncProvider: triggerSync started")

@@ -17,6 +17,8 @@
 
 > **Production-grade background geolocation for Flutter — fully open-source.**
 
+📚 **Official Documentation:** [tracelet.ikolvi.com](https://tracelet.ikolvi.com)
+
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
 > [!IMPORTANT]

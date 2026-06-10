@@ -58,7 +58,9 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                     endTimeMs = null,
                     limit = limit.toInt(),
                     offset = null,
-                    orderDescending = null
+                    // Honor the configured sort order (0=ascending, 1=descending)
+                    // instead of always defaulting to ascending (Issue #138).
+                    orderDescending = coreHttp.locationsOrderDirection == 1
                 ))
                 sdk.logger.debug("NativeSyncProvider: Found ${records.size} locations in DB")
                 if (records.isEmpty()) return

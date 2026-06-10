@@ -672,6 +672,61 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  Future<void> _verifyIssue134() async {
+    _setStatus(134, 'Verifying Issue 134 Fix...');
+    try {
+      // 1. Ensure NO custom sync body builder is registered
+      Tracelet.setSyncBodyBuilder(null);
+
+      // 2. Set up local server
+      final server = await HttpServer.bind('127.0.0.1', 8084);
+      server.listen((req) async {
+        req.response.statusCode = 200;
+        req.response.write('{"success":true}');
+        await req.response.close();
+        await server.close(force: true);
+      });
+
+      await Tracelet.ready(
+        const Config(
+          http: HttpConfig(url: 'http://127.0.0.1:8084/sync', autoSync: false),
+        ),
+      );
+
+      // 3. Insert mock location
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'verify-134',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 0, longitude: 0, accuracy: 10),
+        ).toMap(),
+      );
+
+      // 4. Measure sync time
+      final stopwatch = Stopwatch()..start();
+      await Tracelet.sync();
+      stopwatch.stop();
+
+      // If the bug exists, it will take 10 seconds (dart callback timeout).
+      // If fixed, it bypasses the timeout and finishes almost instantly.
+      if (stopwatch.elapsedMilliseconds < 2000) {
+        _setStatus(
+          134,
+          '✅ SUCCESS: Issue 134 Fixed! Sync took ${stopwatch.elapsedMilliseconds}ms (no timeout).',
+        );
+      } else {
+        _setStatus(
+          134,
+          '❌ FAILED: Issue 134 Bug Present! Sync timed out, took ${stopwatch.elapsedMilliseconds}ms.',
+        );
+      }
+    } catch (e) {
+      _setStatus(134, '❌ FAILED: Issue 134 Error: $e');
+    }
+  }
+
   // ==== ISSUE 136: Background sync body interceptor ====
   Future<void> _testIssue136() async {
     _setStatus(136, 'Testing Issue 136 (Background Custom Sync Body)...');
@@ -1190,12 +1245,21 @@ class _IssuesPageState extends State<IssuesPage> {
                       'and move — watch the test server to see if on-the-fly '
                       'sync keeps firing or stalls ("synced 0 locations").',
                   actions: [
-                    FilledButton.icon(
-                      onPressed: _isIssue134Tracking
-                          ? null
-                          : _startIssue134Repro,
-                      icon: const Icon(Icons.directions_car),
-                      label: const Text('Start Repro'),
+                    Row(
+                      children: [
+                        FilledButton.icon(
+                          onPressed: _isIssue134Tracking
+                              ? null
+                              : _startIssue134Repro,
+                          icon: const Icon(Icons.directions_car),
+                          label: const Text('Start Repro'),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: _verifyIssue134,
+                          child: const Text('Verify Auto'),
+                        ),
+                      ],
                     ),
                     OutlinedButton.icon(
                       onPressed: _isIssue134Tracking

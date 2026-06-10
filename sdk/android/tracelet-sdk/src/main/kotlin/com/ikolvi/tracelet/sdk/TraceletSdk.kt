@@ -136,6 +136,13 @@ class TraceletSdk private constructor(private val context: Context) {
 
     interface SyncProvider {
         fun syncBatchBlocking(config: uniffi.tracelet_core.HttpConfig, records: List<uniffi.tracelet_core.DbLocationRecord>): Long
+
+        /**
+         * Cancels any pending/in-flight auto-sync (e.g. a debounced background
+         * sync) so nothing keeps POSTing after [stop] is called. Default no-op
+         * for providers that don't queue work.
+         */
+        fun cancelPendingSync() {}
     }
 
     var syncProvider: SyncProvider? = null
@@ -704,6 +711,9 @@ class TraceletSdk private constructor(private val context: Context) {
         locationEngine.stop()
         locationEngine.onLocationUpdate = null
         locationEngine.speedMotionSpeedSink = null
+        // Cancel any pending/in-flight background sync so it doesn't keep POSTing
+        // after tracking is stopped (e.g. a debounced headless sync mid-flight).
+        syncProvider?.cancelPendingSync()
         motionDetector.stop()
         speedMotionManager.stop()
         stopHeartbeat()

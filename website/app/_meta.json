@@ -6,6 +6,7 @@
   "android": "Android SDK",
   "ios": "iOS SDK",
   "configuration": "Configuration API",
+  "configuration-profiles": "Configuration Profiles",
   "api-reference": "Full API Reference",
   "oem-power-management": "OEM Power Management",
   "tools": "Diagnostic Tools",

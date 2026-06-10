@@ -1,3 +1,7 @@
+## 3.2.12
+
+- **CHORE**: Re-release to align the full federated package set and native SDKs to a single consistent version. The 3.2.11 release published with mismatched versions across some packages (a few resolved to 3.2.10). No functional code changes.
+
 ## 3.2.11
 
 - **FIX**(android): Fall back to the headless engine when a custom sync-body round-trip times out, instead of aborting the sync. Fixes location sync stopping after a few minutes while the app is backgrounded (Issue #134).

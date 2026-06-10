@@ -1,3 +1,7 @@
+## 3.2.12
+
+- **CHORE**: Re-release to align the iOS SDK podspec with the federated package set at 3.2.12. The podspec version had drifted behind (3.2.9) during the 3.2.11 release; this realigns it. No functional code changes.
+
 ## 3.2.10
 
 - **FIX**(ios): Remove `TraceletCore+Dummy.swift` / `TraceletSyncFFI+Dummy.swift` — `@_silgen_name` declarations from the old static library model caused "Undefined symbol" linker errors after the static→dynamic xcframework migration.

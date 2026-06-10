@@ -1,3 +1,7 @@
+## 3.2.12
+
+- **CHORE**: Re-release to align the full federated package set and native SDKs to a single consistent version. The 3.2.11 release published with mismatched versions across some packages (a few resolved to 3.2.10). No functional code changes.
+
 ## 3.2.11
 
 - **CHORE**: Version bump to align with 3.2.11 platform release.

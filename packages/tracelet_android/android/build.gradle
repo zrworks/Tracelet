@@ -51,6 +51,13 @@ android {
         api("com.ikolvi:tracelet-sdk:3.2.13")
 
         // Testing
+        // Real org.json so ConfigManager's JSON persistence works under unit
+        // tests (Android's bundled org.json is stubbed to return null when
+        // unitTests.returnDefaultValues=true). Mirrors the tracelet-sdk module.
+        testImplementation("org.json:json:20251224")
+        // Optional SDK deps that some duplicated SDK-behavior tests exercise.
+        testImplementation("androidx.security:security-crypto:1.1.0")
+        testImplementation("com.google.android.play:integrity:1.6.0")
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.23.0")
         testImplementation("org.robolectric:robolectric:4.16.1")
@@ -59,6 +66,12 @@ android {
         testImplementation("androidx.test:core:1.7.0")
         testImplementation("androidx.work:work-testing:2.11.2")
         testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+        // JVM (JAR) build of JNA so its native dispatch (libjnidispatch,
+        // incl. darwin-aarch64) is on the unit-test classpath. The runtime
+        // dependency is the `@aar` variant, which omits the JVM native bits, so
+        // uniffi-backed tests fail to initialise JNA without this. Mirrors the
+        // tracelet-sdk module.
+        testImplementation("net.java.dev.jna:jna:5.18.1")
         testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
     }
 
@@ -66,6 +79,19 @@ android {
         unitTests.returnDefaultValues = true
         unitTests.all {
             useJUnitPlatform()
+
+            // Let uniffi-backed tests load the host Rust core via JNA. The lib is
+            // produced by `cargo build` in sdk/rust-core (CI's "Build Host Rust
+            // Library" step). Anchored to this module's dir so it resolves the
+            // same whichever app includes the plugin. Tests still need the host
+            // lib built first.
+            def rustDebugDir = new File(project.projectDir, "../../../sdk/rust-core/target/debug")
+            systemProperty "jna.library.path", rustDebugDir.absolutePath
+            // The plugin's companion `init` calls System.loadLibrary("tracelet_core"),
+            // which uses java.library.path (not jna.library.path). Prepend the host
+            // lib dir so plugin-instantiating tests can load it.
+            systemProperty "java.library.path",
+                rustDebugDir.absolutePath + File.pathSeparator + System.getProperty("java.library.path", "")
 
             testLogging {
                events "passed", "skipped", "failed", "standardOut", "standardError"

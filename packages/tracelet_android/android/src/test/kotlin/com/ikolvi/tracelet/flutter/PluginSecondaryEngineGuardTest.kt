@@ -54,6 +54,9 @@ internal class PluginSecondaryEngineGuardTest {
         // TraceletSdk.getInstance(context) returns our mock without
         // needing mockStatic (avoids matcher issues).
         mockSdk = mock(TraceletSdk::class.java)
+        // onAttachedToEngine logs via sdk.logger; the lazy property is null on a
+        // Mockito mock, so stub it to a mock logger to avoid an NPE.
+        `when`(mockSdk.logger).thenReturn(mock(com.ikolvi.tracelet.sdk.util.TraceletLogger::class.java))
         val instanceField = TraceletSdk::class.java.getDeclaredField("instance")
         instanceField.isAccessible = true
         instanceField.set(null, mockSdk)

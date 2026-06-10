@@ -1,6 +1,8 @@
 ## 3.2.13
 
 - **FIX**(android): `startOnBoot` now resumes tracking after a reboot even when the OS refuses to start the location foreground service from `BOOT_COMPLETED` (Android 14 disallows starting a `location`-type foreground service from boot). The boot start is no longer deferred until the app is next opened; `BootReceiver` falls back to background WorkManager/alarm tracking when the foreground-service start is blocked.
+- **FIX**(android): Background HTTP sync now functions in a headless boot process. The host framework wires `dartSyncInterceptor` at process start (via a `ContentProvider`), so `NativeSyncProvider` can drive the registered headless Dart callbacks for token refresh and custom sync body after a reboot.
+- **FIX**(android): Guard against a null `Build.MANUFACTURER` in OEM detection so it degrades gracefully instead of crashing on ROMs/environments where it is unset.
 
 ## 3.2.12
 

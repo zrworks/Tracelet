@@ -66,4 +66,13 @@ internal class ManifestComponentTest {
             "HeadlessTaskService package changed — update AndroidManifest.xml"
         )
     }
+
+    @Test
+    fun traceletStartupProvider_packageMatchesManifestDeclaration() {
+        assertEquals(
+            "com.ikolvi.tracelet.flutter.TraceletStartupProvider",
+            TraceletStartupProvider::class.java.name,
+            "TraceletStartupProvider package changed — update AndroidManifest.xml"
+        )
+    }
 }

@@ -52,6 +52,14 @@ Tracelet's native code is fully guarded with `checkSelfPermission()`. **Missing 
 </manifest>
 ```
 
+### Automatic ProGuard / R8 Rules
+
+Tracelet heavily utilizes background Kotlin services, JNA bindings for the Rust core, and reflective Pigeon channels. If these are obfuscated or shrunk incorrectly, background tracking will silently fail when your app is compiled for release.
+
+**You do not need to manually configure ProGuard for Tracelet.**
+
+The `tracelet_android` plugin automatically ships with embedded `consumer-rules.pro`. When you build your Flutter app in release mode, Android's R8 shrinker automatically extracts these rules and ensures all necessary classes (such as the `HeadlessTaskService`, `BootReceiver`, and the Rust `uniffi` bindings) survive shrinking.
+
 ---
 
 ## Scenario 1: The Delivery Driver (Continuous Tracking)

@@ -55,6 +55,27 @@ If your client doesn't want specific features (e.g., they don't want to track mo
 
 ---
 
+## The Rust Core Architecture
+
+To guarantee absolute parity between Android and iOS, Tracelet's core logic (the state machine, HTTP sync engine, SQLite persistence, and battery budget calculations) is written entirely in **Rust**.
+
+### Why Rust?
+* **Zero Discrepancies:** iOS and Android behave identically because they run the exact same underlying logic. 
+* **Fearless Concurrency:** The background Sync Engine operates flawlessly under heavy multithreaded loads, completely avoiding race conditions when locations are recorded and uploaded simultaneously.
+* **Performance:** Rust operates with C-level performance and near-zero memory footprint, making it perfect for battery-constrained background execution.
+
+### Pre-compiled XCFramework Download
+When you add the `tracelet` plugin to your `pubspec.yaml`, the iOS project automatically triggers a Cocoapods/Swift Package Manager resolution.
+
+**You do not need to install the Rust toolchain on your Mac.**
+
+Tracelet automatically fetches the pre-compiled `TraceletCore.xcframework` directly from the tagged GitHub release. This ensures that:
+1. `pod install` takes seconds, not minutes.
+2. Your iOS build does not have to compile Rust from source.
+3. The downloaded core perfectly matches the Dart version you installed.
+
+---
+
 ## Scenario 1: The Fitness App (High Accuracy, No Suspend)
 **Concepts Explored:** Activity Types, Suspension, Audio Wake
 

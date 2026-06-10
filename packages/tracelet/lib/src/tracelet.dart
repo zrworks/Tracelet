@@ -863,16 +863,19 @@ class Tracelet {
   ///
   /// For background (headless) body building, also register
   /// [registerHeadlessSyncBodyBuilder].
-  static void setSyncBodyBuilder(
+  static Future<void> setSyncBodyBuilder(
     Future<Map<String, Object?>> Function(SyncBodyContext)? builder,
-  ) {
+  ) async {
     _syncBodyBuilder = builder;
 
     // Notify native side whether a foreground builder is registered.
     // This prevents native timeouts and unintended aborts when auto-syncing
     // in the background without a custom builder.
     const channel = MethodChannel('com.tracelet/sync_body');
-    channel.invokeMethod<void>('setHasCustomSyncBodyBuilder', builder != null);
+    await channel.invokeMethod<void>(
+      'setHasCustomSyncBodyBuilder',
+      builder != null,
+    );
 
     if (builder != null) {
       _ensureSyncBodyChannel();

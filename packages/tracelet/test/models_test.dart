@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tracelet/tracelet.dart';
 
@@ -321,6 +323,26 @@ void main() {
   // Location
   // ==========================================================================
   group('Location', () {
+    test('toJson can be used by jsonEncode', () {
+      final loc = Location.fromMap(const {
+        'uuid': 'test-uuid',
+        'timestamp': '2024-01-01T00:00:00Z',
+        'is_moving': true,
+        'odometer': 15.0,
+        'coords': {'latitude': 10.0, 'longitude': 20.0, 'accuracy': 5.0},
+      });
+
+      // If jsonEncode throws, this test will fail.
+      final jsonStr = jsonEncode(loc);
+      final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+
+      expect(decoded['uuid'], 'test-uuid');
+      expect(decoded['timestamp'], '2024-01-01T00:00:00Z');
+      expect(decoded['is_moving'], true);
+      expect(decoded['odometer'], 15.0);
+      expect((decoded['coords'] as Map)['latitude'], 10.0);
+    });
+
     test('fromMap with minimal data', () {
       final loc = Location.fromMap(const {
         'uuid': 'abc-123',

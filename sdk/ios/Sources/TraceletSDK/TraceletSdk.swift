@@ -202,6 +202,13 @@ public final class TraceletSdk {
 
         let merged = configManager.setConfig(config)
 
+        if config["encryptDatabase"] as? Bool == true {
+            let key = config["encryptionKey"] as? String ?? ""
+            rustDatabase?.setEncryptionKey(key: key)
+        } else {
+            rustDatabase?.setEncryptionKey(key: "")
+        }
+
         if configManager.isDebug() { soundManager.start() }
         logger.pruneOldLogs()
 
@@ -281,20 +288,27 @@ public final class TraceletSdk {
 
         let wasTracking = locationEngine.isTracking
 
+        // A manual start() while tracking is ALREADY active is a no-op. Previously
+        // it reset isMoving to the configured default (isMoving=false) and forced
+        // changePace(false), so a second start() slammed the device into the
+        // STATIONARY state even while moving (and iOS could get stuck there).
+        // Calling start() again must not disturb the live motion state — use
+        // changePace() to change pace.
+        if !isResume && wasTracking {
+            stateManager.enabled = true
+            stateManager.trackingMode = .continuous
+            return stateManager.toMap(configManager.getConfig())
+        }
+
         stateManager.enabled = true
         stateManager.trackingMode = .continuous
         if !isResume {
             stateManager.isMoving = configManager.getIsMoving()
         }
-        
+
         smartMotionCoordinator.syncCurrentMode()
 
         let shouldForceMoving = stateManager.isMoving
-
-        if !isResume && wasTracking {
-            _ = changePace(shouldForceMoving)
-            return stateManager.toMap(configManager.getConfig())
-        }
 
         // Stop any periodic tracking before switching to continuous mode.
         locationEngine.stopPeriodic()
@@ -2048,6 +2062,17 @@ public final class TraceletSdk {
 
         NSLog("[Tracelet] Speed motion mode started (threshold=%.1f, delay=%ds, stationary=%@)",
               smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode == .geofences ? "geofences" : "periodic")
+
+        // Sync stateManager.isMoving with restored speed motion state if not forcing
+        if !forceMoving {
+            if smm.state == .stationary {
+                smartMotionCoordinator.onSpeedStateChange(isMoving: false)
+                stateManager.isMoving = false
+            } else {
+                smartMotionCoordinator.onSpeedStateChange(isMoving: true)
+                stateManager.isMoving = true
+            }
+        }
 
         // If we're resuming in stationary state, switch immediately
         if smm.state == .stationary {

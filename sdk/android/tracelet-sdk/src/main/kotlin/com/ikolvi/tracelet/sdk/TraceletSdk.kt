@@ -478,6 +478,13 @@ class TraceletSdk private constructor(private val context: Context) {
     fun ready(config: Map<String, Any?>, callback: (Map<String, Any?>) -> Unit) {
         val merged = configManager.setConfig(config)
 
+        if (merged["encryptDatabase"] == true) {
+            val key = merged["encryptionKey"] as? String ?: ""
+            rustDatabase?.setEncryptionKey(key)
+        } else {
+            rustDatabase?.setEncryptionKey("")
+        }
+
         // Auto-encrypt if enabled
         if (merged["encryptDatabase"] == true) {
             encryptDatabase()
@@ -603,6 +610,18 @@ class TraceletSdk private constructor(private val context: Context) {
         PeriodicLocationWorker.cancel(context)
         PeriodicLocationWorker.eventSender = null
 
+        // A manual start() while tracking is ALREADY active is a no-op. Previously
+        // it reset isMoving to the configured default (isMoving=false) and forced
+        // changePace(false), so calling start() a second time slammed the device
+        // into the STATIONARY state even while moving. Calling start() again must
+        // not disturb the live motion state — use changePace() to change pace.
+        if (!isResume && isTracking) {
+            stateManager.enabled = true
+            stateManager.trackingMode = TrackingMode.CONTINUOUS
+            logger.debug("start() — already tracking; ignoring redundant start (no pace reset)")
+            return null
+        }
+
         stateManager.enabled = true
         stateManager.trackingMode = TrackingMode.CONTINUOUS
         if (!isResume) {
@@ -610,11 +629,6 @@ class TraceletSdk private constructor(private val context: Context) {
         }
 
         val shouldForceMoving = stateManager.isMoving
-
-        if (!isResume && isTracking) {
-            changePace(shouldForceMoving)
-            return null
-        }
 
         if (configManager.isForegroundServiceEnabled()) {
             LocationService.start(context)
@@ -634,28 +648,42 @@ class TraceletSdk private constructor(private val context: Context) {
         
         if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SPEED) {
             speedMotionManager.start(forceMoving = shouldForceMoving)
+            if (!shouldForceMoving) {
+                val restoredMoving = speedMotionManager.getCurrentState() != "stationary"
+                if (::smartMotionCoordinator.isInitialized) {
+                    smartMotionCoordinator.onSpeedStateChange(restoredMoving)
+                }
+                stateManager.isMoving = restoredMoving
+            }
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
             
             // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
             speedMotionManager.onLocation(locationEngine.lastEffectiveSpeed)
             
-            if (shouldForceMoving) {
+            if (shouldForceMoving || stateManager.isMoving) {
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
-                } ?: mapOf("is_moving" to true)
+                } ?: mapOf("is_moving" to stateManager.isMoving)
                 eventSender.sendMotionChange(locationMap)
             }
         } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
             speedMotionManager.start(forceMoving = shouldForceMoving)
+            if (!shouldForceMoving) {
+                val restoredMoving = speedMotionManager.getCurrentState() != "stationary"
+                if (::smartMotionCoordinator.isInitialized) {
+                    smartMotionCoordinator.onSpeedStateChange(restoredMoving)
+                }
+                stateManager.isMoving = restoredMoving
+            }
             locationEngine.speedMotionSpeedSink = { speed -> speedMotionManager.onLocation(speed) }
             
             // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
             speedMotionManager.onLocation(locationEngine.lastEffectiveSpeed)
             
-            if (shouldForceMoving) {
+            if (shouldForceMoving || stateManager.isMoving) {
                 val locationMap = locationEngine.getLastLocation()?.let {
                     locationEngine.enrichLocation(it, "motionchange")
-                } ?: mapOf("is_moving" to true)
+                } ?: mapOf("is_moving" to stateManager.isMoving)
                 eventSender.sendMotionChange(locationMap)
             }
 

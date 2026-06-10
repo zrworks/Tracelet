@@ -23,7 +23,19 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, GlobalKey> _keys = {};
 
   final List<int> _allIssues = [
-    115, 117, 118, 119, 120, 124, 125, 126, 134, 137, 138, 139, 140,
+    115,
+    117,
+    118,
+    119,
+    120,
+    124,
+    125,
+    126,
+    134,
+    137,
+    138,
+    139,
+    140,
   ];
 
   bool _isIssue134Tracking = false;

@@ -70,6 +70,50 @@ Tracelet flips the traditional location tracking model. Instead of relying purel
   </Cards.Card>
 </Cards>
 
+## ⚡ 10-Minute Quick Start
+
+Get background tracking running in your app instantly using our highly optimized pre-built configuration profiles. No deep expertise in location APIs required!
+
+### 1. Install Tracelet
+
+```bash
+flutter pub add tracelet
+```
+
+### 2. Add Platform Permissions
+
+* **iOS:** Add `UIBackgroundModes` (`location`, `fetch`) and `NSLocationAlwaysAndWhenInUseUsageDescription` to your `Info.plist`.
+* **Android:** Add background location and foreground service permissions to your `AndroidManifest.xml` (See [Android Guide](/android) for the snippet).
+
+### 3. Initialize & Track
+
+Start Tracelet using the pre-configured **Balanced Profile**. This is the perfect default that actively tracks when the user is moving, and completely powers down GPS when stationary to save battery.
+
+```dart
+import 'package:tracelet/tracelet.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Configure and start Tracelet in a single call!
+  await Tracelet.ready(Config.balanced(
+    url: 'https://api.your-server.com/locations',
+    headers: {'Authorization': 'Bearer YOUR_TOKEN'},
+    startOnBoot: true,
+    stopOnTerminate: false,
+  ));
+
+  // 2. Listen to real-time location events
+  Tracelet.onLocation((location) {
+    print('[Tracelet] Location: ${location.coords.latitude}, ${location.coords.longitude}');
+  });
+
+  runApp(MyApp());
+}
+```
+
+That's it! Tracelet will now automatically handle background execution, motion detection heuristics, offline SQLite caching, and network synchronization entirely on its own.
+
 ## Federated Architecture
 
 Tracelet uses a **federated plugin architecture** with 5 packages, ensuring modularity and performance:

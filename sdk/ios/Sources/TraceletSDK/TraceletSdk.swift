@@ -1034,7 +1034,9 @@ public final class TraceletSdk {
                     endTimeMs: nil,
                     limit: batchSize,
                     offset: nil,
-                    orderDescending: nil
+                    // Honor the configured sort order (0=ascending, 1=descending)
+                    // instead of always defaulting to ascending (Issue #138).
+                    orderDescending: config.http.locationsOrderDirection == 1
                 ))
                 if records.isEmpty {
                     DispatchQueue.main.async { completion?([]) }

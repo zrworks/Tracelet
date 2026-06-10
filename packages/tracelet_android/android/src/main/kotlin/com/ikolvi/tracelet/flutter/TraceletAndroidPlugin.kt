@@ -74,7 +74,13 @@ class TraceletAndroidPlugin :
         }
 
         @Volatile
-        private var primaryInstance: TraceletAndroidPlugin? = null
+        var primaryInstance: TraceletAndroidPlugin? = null
+
+        // Whether a foreground custom sync body builder is registered in Dart.
+        // If false, we immediately return the sentinel instead of waiting for a 
+        // Dart timeout, preventing the sync from aborting when suspended.
+        @Volatile
+        var hasCustomSyncBodyBuilder: Boolean = false
         
         private val attachedEngineCount = AtomicInteger(0)
         private val globalEventSender = MultiEventSender()
@@ -132,7 +138,17 @@ class TraceletAndroidPlugin :
 
             val mainHandler = Handler(Looper.getMainLooper())
             syncBodyChannel = MethodChannel(binding.binaryMessenger, "com.tracelet/sync_body")
-
+            
+            syncBodyChannel?.setMethodCallHandler { call, result ->
+                if (call.method == "setHasCustomSyncBodyBuilder") {
+                    val hasBuilder = call.arguments as? Boolean ?: false
+                    hasCustomSyncBodyBuilder = hasBuilder
+                    result.success(null)
+                } else {
+                    result.notImplemented()
+                }
+            }
+            
             sdk.dartSyncInterceptor = this
 
             eventDispatcher.headlessFallback = { eventName, eventData ->
@@ -304,6 +320,13 @@ class TraceletAndroidPlugin :
      * Issue #125 bug.
      */
     override fun requestSyncBody(locations: List<Map<String, Any?>>): String? {
+        if (!hasCustomSyncBodyBuilder) {
+            // No foreground builder registered in Dart. Return the sentinel
+            // immediately to bypass the 10-second channel timeout and ensure 
+            // the sync falls back to the default payload without aborting.
+            return NO_SYNC_BODY_BUILDER_SENTINEL
+        }
+
         sdk.logger.debug("requestSyncBody called with ${locations.size} locations. isEngineAttached=$isEngineAttached")
         if (!isEngineAttached) {
             // Background/killed: route to the headless service, which returns the

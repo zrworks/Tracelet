@@ -16,7 +16,12 @@ import TraceletSDK
 public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
 
     /// Timeout for Dart callback round-trips (headers refresh, sync body).
-    private static let dartCallbackTimeout: TimeInterval = 10.0
+    public static var dartCallbackTimeout: TimeInterval = 10.0
+    
+    // Whether a foreground custom sync body builder is registered in Dart.
+    // If false, we immediately return the sentinel instead of waiting for a 
+    // Dart timeout, preventing the sync from aborting when suspended.
+    public static var hasCustomSyncBodyBuilder = false
 
     /// Reference to the primary (foreground) plugin instance.
     ///
@@ -80,6 +85,18 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
             
             // Set up sync body channel
             instance.syncBodyChannel = FlutterMethodChannel(name: "com.tracelet/sync_body", binaryMessenger: registrar.messenger())
+            
+            instance.syncBodyChannel.setMethodCallHandler { call, result in
+                if call.method == "setHasCustomSyncBodyBuilder" {
+                    if let hasBuilder = call.arguments as? Bool {
+                        TraceletIosPlugin.hasCustomSyncBodyBuilder = hasBuilder
+                    }
+                    result(nil)
+                } else {
+                    result(FlutterMethodNotImplemented)
+                }
+            }
+            
             TraceletSdk.shared.dartSyncInterceptor = instance
 
             // Initialize SDK subsystems so httpSyncManager (and others) exist
@@ -205,6 +222,13 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     /// (timed out or threw). Must never return an error object as a body —
     /// that was the Issue #125 bug.
     public func requestSyncBody(locations: [[String: Any]]) -> String? {
+        if !TraceletIosPlugin.hasCustomSyncBodyBuilder {
+            // No foreground builder registered in Dart. Return the sentinel
+            // immediately to bypass the 10-second channel timeout and ensure 
+            // the sync falls back to the default payload without aborting.
+            return traceletNoSyncBodyBuilderSentinel
+        }
+        
         if TraceletIosPlugin.primaryInstance == nil {
             // Background/killed: no foreground engine. Route to the headless
             // runner, which returns the sentinel when no headless sync-body

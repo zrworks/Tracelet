@@ -728,17 +728,31 @@ http: tl.HttpConfig(
 
 ```dart
 Tracelet.setSyncBodyBuilder((SyncBodyContext context) async {
+  // Map the locations, noting that coords and activity are nested objects!
+  final mappedPoints = context.locations.map((loc) {
+    final coords = loc['coords'] as Map;
+    final activity = loc['activity'] as Map;
+    
+    return {
+      'lat': coords['latitude'],
+      'lng': coords['longitude'],
+      'timestamp': loc['timestamp'],
+      'is_moving': loc['is_moving'],
+      'activity_type': activity['type'],
+    };
+  }).toList();
+
   return {
     'deviceId': myDeviceId,
     'taskId': currentTaskId,
-    'points': context.locations,
+    'points': mappedPoints,
     'sentAt': DateTime.now().toIso8601String(),
     'metadata': {'appVersion': '2.1.0'},
   };
 });
 ```
 
-The callback receives a `SyncBodyContext` containing the batch of locations.
+The callback receives a `SyncBodyContext` containing the batch of locations. Note that the locations conform to the nested schema defined in [LOCATION-MAP-FORMAT.md](LOCATION-MAP-FORMAT.md).
 The returned `Map` is JSON-encoded and used as the **complete** HTTP request
 body — `httpRootProperty`, `params`, and default wrapping are all bypassed.
 

@@ -38,6 +38,15 @@ All map builders (SDK `buildLocationMap()`, `enrichLocation()`, DB `locationRowT
     "confidence": 85
   },
 
+  "address": {
+    "street": "1600 Amphitheatre Pkwy",
+    "city": "Mountain View",
+    "state": "CA",
+    "country": "United States",
+    "postalCode": "94043",
+    "isoCountryCode": "US"
+  },
+
   "extras": { "key": "value" }
 }
 ```
@@ -55,6 +64,7 @@ All map builders (SDK `buildLocationMap()`, `enrichLocation()`, DB `locationRowT
 | `mock` | **No prefix** | Not `isMock` or `is_mock`. |
 | `activity.type` | **String** | Matches Dart `ActivityType` enum `.name` values. |
 | `activity.confidence` | **Int (0–100)** | Raw percentage from platform API. |
+| `address` | **Nested map** | Never flat. Only populated when `resolveAddress` is true. |
 
 ## Producers (must output this format)
 

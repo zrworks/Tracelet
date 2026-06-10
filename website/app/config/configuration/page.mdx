@@ -26,6 +26,11 @@ Handles all physical location, accuracy, and sampling logic.
 - **What:** The radius around the user's last known point where they are considered "stationary".
 - **When to override:** In dense urban environments, GPS "bounces" off skyscrapers. If a user is sitting at a cafe, their GPS might bounce 40 meters down the street. If `stationaryRadius` is too small, Tracelet will think the user is walking and turn the GPS on, draining the battery. Set this to `50.0` in cities like New York or Tokyo.
 
+### `resolveAddress`
+- **Default:** `false`
+- **What:** Automatically calls the native OS Geocoder (Apple Maps / Google Play Services) to reverse-geocode coordinates into a human-readable street address.
+- **When to override:** If your app is a mileage tracker that needs to show users exactly what street they started and ended a trip on, set this to `true`. Be careful though: reverse geocoding requires a live internet connection and adds HTTP latency to the location pipeline. Do not use this if you record points every 5 seconds, as you will get rate-limited by the OS.
+
 ### `disableElasticity` & `elasticityMultiplier`
 - **Defaults:** `false`, `1.0`
 - **What:** Dynamically stretches the `distanceFilter` based on the user's speed.

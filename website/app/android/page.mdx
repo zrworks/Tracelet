@@ -19,23 +19,34 @@ Tracelet automatically injects the necessary permissions into your `AndroidManif
 * `POST_NOTIFICATIONS` (Required for Android 13+ foreground service UI)
 * `SCHEDULE_EXACT_ALARM` (Required for precise Periodic Mode tracking)
 
-### Removing Unused Permissions
+### Removing Unused Permissions (Manifest Merger)
 
-If your app doesn't need a specific feature (for example, you don't use Periodic Mode, or you don't need background location), you can forcefully remove the permission using Android's manifest merger `tools:node="remove"` directive in your **app-level** `AndroidManifest.xml` (`android/app/src/main/AndroidManifest.xml`).
+If your app doesn't need a specific feature (for example, your client doesn't need motion detection, or you don't use Periodic Mode), you can forcefully remove the permission using Android's manifest merger `tools:node="remove"` directive in your **app-level** `AndroidManifest.xml` (`android/app/src/main/AndroidManifest.xml`).
 
 Tracelet's native code is fully guarded with `checkSelfPermission()`. **Missing permissions will trigger graceful fallbacks, not crashes.**
+
+| Permission | Effect when removed (`tools:node="remove"`) |
+|---|---|
+| `ACTIVITY_RECOGNITION` | **Safe.** Falls back to basic accelerometer-only motion detection. The `onActivityChange` stream won't fire (no walking/running/driving classification). |
+| `ACCESS_BACKGROUND_LOCATION` | **Safe.** Android 10+ will restrict tracking when the app is completely backgrounded or swiped away. |
+| `SCHEDULE_EXACT_ALARM` | **Safe.** Periodic mode falls back to using battery-friendly, but inexact, WorkManager timers. |
+| `POST_NOTIFICATIONS` | **Safe.** The foreground service persistent notification is hidden on Android 13+. Service still runs. |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | **Safe.** You won't be able to request battery optimization exemptions from the OS. |
+| `ACCESS_FINE_LOCATION` / `COARSE` | **UNSAFE.** Without any location permission, Tracelet cannot obtain positions. |
+
+#### Example: Removing Motion & Background Permissions
 
 ```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Remove Activity Recognition: Falls back to basic accelerometer-only motion detection -->
+    <!-- Client doesn't want Activity/Motion tracking -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" tools:node="remove" />
     
-    <!-- Remove Background Location: Stops tracking when the app is completely backgrounded on Android 10+ -->
+    <!-- Client only wants foreground tracking -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
 
-    <!-- Remove Exact Alarms: Periodic mode will use battery-friendly inexact WorkManager instead -->
+    <!-- Remove Exact Alarms -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
     
 </manifest>

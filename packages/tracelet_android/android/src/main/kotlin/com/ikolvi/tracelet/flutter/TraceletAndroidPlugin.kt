@@ -101,6 +101,13 @@ class TraceletAndroidPlugin :
         
         val count = attachedEngineCount.incrementAndGet()
         val isFirst = count == 1
+
+        // ISSUE 136: Protect primary singletons from headless background engines.
+        // Android's FlutterLoader uses reflection to auto-attach plugins to ALL FlutterEngines.
+        // When the app is swiped away, the UI engine dies (primaryInstance becomes null). 
+        // Later, HeadlessTaskService spins up a background engine, which instantiates a NEW 
+        // TraceletAndroidPlugin. Without this flag check, the new headless plugin would see 
+        // primaryInstance == null and hijack the dartSyncInterceptor, breaking routing.
         val isPrimaryCandidate = primaryInstance == null && !HeadlessTaskService.isSpawningHeadlessEngine
         
         sdk.logger.debug("onAttachedToEngine: engineCount=$count, isFirst=$isFirst, isPrimaryCandidate=$isPrimaryCandidate")

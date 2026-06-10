@@ -47,6 +47,9 @@ class HeadlessTaskService(
         private const val CHANNEL_NAME = "com.tracelet/headless"
         private const val METHODS_CHANNEL_NAME = "com.tracelet/methods"
 
+        // Context flag to protect against FlutterLoader auto-registering plugins.
+        // Used by TraceletAndroidPlugin.onAttachedToEngine to avoid hijacking the primary 
+        // instance singletons (like dartSyncInterceptor) when a headless engine boots (Issue 136).
         @JvmStatic
         var isSpawningHeadlessEngine = false
     }

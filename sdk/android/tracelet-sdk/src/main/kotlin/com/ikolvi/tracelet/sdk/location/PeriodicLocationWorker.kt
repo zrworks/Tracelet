@@ -185,6 +185,11 @@ class PeriodicLocationWorker(
                 // Dispatch to the event sender which will route to UI/Headless
                 dispatchLocation(locationMap)
                 Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
+
+                // Feed speed to motion coordinators to allow wake up from stationary
+                if (sdk.isReady) {
+                    sdk.locationEngine.speedMotionSpeedSink?.invoke(effectiveSpeed)
+                }
             }
 
             val interval = config.getPeriodicLocationInterval()

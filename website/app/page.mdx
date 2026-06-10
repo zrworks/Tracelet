@@ -95,18 +95,28 @@ import 'package:tracelet/tracelet.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Configure and start Tracelet in a single call!
+  // 1. Listen to real-time location events
+  Tracelet.onLocation((location) {
+    print('[Tracelet] Location: ${location.coords.latitude}, ${location.coords.longitude}');
+  });
+
+  // 2. Configure Tracelet with the Balanced Profile and Notification settings
   await Tracelet.ready(Config.balanced(
     url: 'https://api.your-server.com/locations',
     headers: {'Authorization': 'Bearer YOUR_TOKEN'},
     startOnBoot: true,
     stopOnTerminate: false,
+    android: AndroidConfig(
+      foregroundService: ForegroundServiceConfig(
+        contentTitle: "Background Tracking",
+        contentText: "We are tracking your location securely.",
+        notificationIcon: "mipmap/ic_launcher",
+      ),
+    ),
   ));
 
-  // 2. Listen to real-time location events
-  Tracelet.onLocation((location) {
-    print('[Tracelet] Location: ${location.coords.latitude}, ${location.coords.longitude}');
-  });
+  // 3. Start tracking!
+  await Tracelet.start();
 
   runApp(MyApp());
 }

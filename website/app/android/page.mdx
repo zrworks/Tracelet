@@ -8,6 +8,41 @@ import { Callout, Tabs } from 'nextra/components'
 
 ---
 
+## Permissions & Manifest Setup
+
+Tracelet automatically injects the necessary permissions into your `AndroidManifest.xml` when you compile your app. By default, it requests:
+
+* `ACCESS_COARSE_LOCATION` & `ACCESS_FINE_LOCATION` (Required for tracking)
+* `ACCESS_BACKGROUND_LOCATION` (Required for tracking when app is closed)
+* `FOREGROUND_SERVICE` & `FOREGROUND_SERVICE_LOCATION` (Required for continuous background execution)
+* `ACTIVITY_RECOGNITION` (Required for the smart motion-detection engine)
+* `POST_NOTIFICATIONS` (Required for Android 13+ foreground service UI)
+* `SCHEDULE_EXACT_ALARM` (Required for precise Periodic Mode tracking)
+
+### Removing Unused Permissions
+
+If your app doesn't need a specific feature (for example, you don't use Periodic Mode, or you don't need background location), you can forcefully remove the permission using Android's manifest merger `tools:node="remove"` directive in your **app-level** `AndroidManifest.xml` (`android/app/src/main/AndroidManifest.xml`).
+
+Tracelet's native code is fully guarded with `checkSelfPermission()`. **Missing permissions will trigger graceful fallbacks, not crashes.**
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Remove Activity Recognition: Falls back to basic accelerometer-only motion detection -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" tools:node="remove" />
+    
+    <!-- Remove Background Location: Stops tracking when the app is completely backgrounded on Android 10+ -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
+
+    <!-- Remove Exact Alarms: Periodic mode will use battery-friendly inexact WorkManager instead -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    
+</manifest>
+```
+
+---
+
 ## Scenario 1: The Delivery Driver (Continuous Tracking)
 **Concepts Explored:** Doze Mode, Foreground Services, Wakelocks
 

@@ -8,6 +8,43 @@ import { Callout, Tabs } from 'nextra/components'
 
 ---
 
+## Permissions & Info.plist Setup
+
+Apple enforces strict privacy requirements. To use Tracelet effectively, you must declare exactly *why* you need certain permissions in your `ios/Runner/Info.plist`. Apple will reject your app during App Store review if these strings are missing or don't clearly explain the use-case.
+
+### 1. Required Usage Descriptions
+Add the following keys to your `Info.plist`:
+
+```xml
+<!-- Required for basic tracking -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>We need your location to track your route while the app is open.</string>
+
+<!-- Required for background tracking when the app is minimized or killed -->
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>We need background location to record your route even when the app is closed.</string>
+
+<!-- Required for the smart motion-detection battery saving engine -->
+<key>NSMotionUsageDescription</key>
+<string>Motion detection allows battery-efficient tracking by pausing GPS when stationary.</string>
+```
+
+### 2. Background Modes
+For Tracelet to run in the background (and execute headless Dart code when the app is killed), you must declare the proper Background Modes capabilities in Xcode. 
+
+Alternatively, add them directly to your `Info.plist`:
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+  <string>location</string>
+  <string>fetch</string>
+  <!-- Only add 'audio' if you are using 'preventSuspend: true' (See Scenario 1 below) -->
+</array>
+```
+
+---
+
 ## Scenario 1: The Fitness App (High Accuracy, No Suspend)
 **Concepts Explored:** Activity Types, Suspension, Audio Wake
 

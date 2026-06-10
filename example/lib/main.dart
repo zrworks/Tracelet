@@ -70,11 +70,24 @@ Future<void> _handleHeadlessSyncBody(tl.HeadlessEvent event) async {
       }
     }
   }
-  await tl.Tracelet.setSyncBodyResponse({
-    'location': locations,
-    'is_live_ping': false,
-    'extras': {'source': 'issue134-headless'},
-  });
+  await tl.Tracelet.setSyncBodyResponse(buildTraceletSyncBody(locations));
+}
+
+/// Canonical custom sync body, used by BOTH the foreground
+/// ([tl.Tracelet.setSyncBodyBuilder]) and headless
+/// ([tl.Tracelet.registerHeadlessSyncBodyBuilder]) builders so the backend
+/// receives an **identical** payload whether the app is foreground,
+/// backgrounded, or killed. Keeping the two in sync is the whole point of the
+/// headless builder — see the HTTP-SYNC guide.
+Map<String, Object?> buildTraceletSyncBody(
+  List<Map<String, Object?>> locations,
+) {
+  return <String, Object?>{
+    'device': 'tracelet-example',
+    'sentAt': DateTime.now().toUtc().toIso8601String(),
+    'locationCount': locations.length,
+    'locations': locations,
+  };
 }
 
 void main() {
@@ -733,13 +746,10 @@ class _DashboardPageState extends State<DashboardPage>
 
       // ── Custom Sync Body Builder ──
       // Fully control the HTTP request body structure for foreground sync.
+      // Uses the SAME builder as the headless path so the backend receives an
+      // identical payload in foreground, background, and killed state.
       tl.Tracelet.setSyncBodyBuilder((tl.SyncBodyContext context) async {
-        return {
-          'device': 'tracelet-example',
-          'sentAt': DateTime.now().toUtc().toIso8601String(),
-          'locationCount': context.locations.length,
-          'locations': context.locations,
-        };
+        return buildTraceletSyncBody(context.locations);
       });
       _addLog('SYNC', 'Custom sync body builder registered');
 

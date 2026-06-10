@@ -18,10 +18,10 @@ import { Callout, Cards } from 'nextra/components'
   </p>
   
   <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-    <a href="/flutter" style={{ padding: '0.75rem 1.5rem', color: 'white', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#0F9D58', textDecoration: 'none', transition: 'opacity 0.2s' }} className="hover:opacity-90">
+    <a href="/getting-started/flutter" style={{ padding: '0.75rem 1.5rem', color: 'white', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#0F9D58', textDecoration: 'none', transition: 'opacity 0.2s' }} className="hover:opacity-90">
       Get Started →
     </a>
-    <a href="/core-concepts" style={{ padding: '0.75rem 1.5rem', color: '#1f2937', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#f3f4f6', textDecoration: 'none', transition: 'background-color 0.2s' }} className="dark-secondary-btn hover:bg-gray-200">
+    <a href="/core/core-concepts" style={{ padding: '0.75rem 1.5rem', color: '#1f2937', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#f3f4f6', textDecoration: 'none', transition: 'background-color 0.2s' }} className="dark-secondary-btn hover:bg-gray-200">
       Core Concepts
     </a>
   </div>
@@ -38,32 +38,32 @@ Tracelet flips the traditional location tracking model. Instead of relying purel
 ### Key Features
 
 <Cards>
-  <Cards.Card title="🏃 Motion Detection" href="/core-concepts#motion-detection" className="glare-card">
+  <Cards.Card title="🏃 Motion Detection" href="/core/core-concepts#motion-detection" className="glare-card">
     <span className="card-desc">
       Uses accelerometer, gyroscope & activity recognition to toggle GPS only when moving.
     </span>
   </Cards.Card>
-  <Cards.Card title="🌍 Geofencing" href="/core-concepts#geofencing" className="glare-card">
+  <Cards.Card title="🌍 Geofencing" href="/core/core-concepts#geofencing" className="glare-card">
     <span className="card-desc">
       Unlimited geofences via proximity auto-load. Supports custom Polygon bounds.
     </span>
   </Cards.Card>
-  <Cards.Card title="📡 Tracelet Sync" href="/tracelet-sync" className="glare-card">
+  <Cards.Card title="📡 Tracelet Sync" href="/core/tracelet-sync" className="glare-card">
     <span className="card-desc">
       Configurable offline queuing, exponential backoff, Wi-Fi only, and 401-aware retries.
     </span>
   </Cards.Card>
-  <Cards.Card title="💾 SQLite Persistence" href="/configuration" className="glare-card">
+  <Cards.Card title="💾 SQLite Persistence" href="/config/configuration" className="glare-card">
     <span className="card-desc">
       All locations stored locally with configurable max days and records retention.
     </span>
   </Cards.Card>
-  <Cards.Card title="🛡️ Enterprise Security" href="/configuration" className="glare-card">
+  <Cards.Card title="🛡️ Enterprise Security" href="/config/configuration" className="glare-card">
     <span className="card-desc">
       SSL Certificate Pinning, At-rest Database Encryption, and Device Attestation.
     </span>
   </Cards.Card>
-  <Cards.Card title="🩺 Diagnostic Doctor" href="/tools" className="glare-card">
+  <Cards.Card title="🩺 Diagnostic Doctor" href="/reference/tools" className="glare-card">
     <span className="card-desc">
       In-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state.
     </span>
@@ -100,7 +100,7 @@ You must explicitly define usage descriptions and background modes to prevent Ap
 ```
 
 **Android Setup (`android/app/src/main/AndroidManifest.xml`)**
-Add background location and foreground service permissions (See the full XML snippet in the [Android Guide](/android)).
+Add background location and foreground service permissions (See the full XML snippet in the [Android Guide](/getting-started/platform-setup/android)).
 
 ### 3. Initialize & Track
 
@@ -110,7 +110,6 @@ Start Tracelet using the pre-configured **Balanced Profile**. This is the perfec
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 // 1. Define a top-level Headless Task to handle events when the app is killed
 @pragma('vm:entry-point')
@@ -124,11 +123,10 @@ void main() async {
   // 2. Register the headless task BEFORE runApp!
   Tracelet.registerHeadlessTask(headlessTask);
 
-  // 3. Request permissions required for background tracking
-  // Tracelet handles Location, but you must manually handle OS-level permissions
+  // 3. Request permissions required for background tracking natively via Tracelet
   if (Platform.isAndroid) {
-    await Permission.notification.request(); // Required for Android 13+ Foreground Service
-    await Permission.activityRecognition.request(); // Required for Motion Detection
+    await Tracelet.requestNotificationAuthorization(); // Required for Android 13+ Foreground Service
+    await Tracelet.requestMotionAuthorization(); // Required for Motion Detection heuristics
   }
   
   final authStatus = await Tracelet.requestLocationAuthorization();
@@ -149,6 +147,7 @@ void main() async {
   Tracelet.onLocation((location) {
     print('[Tracelet] Location: ${location.coords.latitude}, ${location.coords.longitude}');
   });
+
 
   // 6. Configure Tracelet with the Balanced Profile and Notification settings
   await Tracelet.ready(Config.balanced(
@@ -196,7 +195,7 @@ flutter pub add tracelet
 ```
 
 <div className="mt-8">
-  <a href="/flutter" className="text-lg font-medium hover:underline" style={{ color: '#0F9D58' }}>
+  <a href="/getting-started/flutter" className="text-lg font-medium hover:underline" style={{ color: '#0F9D58' }}>
     Proceed to Flutter Setup →
   </a>
 </div>

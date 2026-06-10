@@ -939,17 +939,9 @@ class Tracelet {
 
   /// Tears down the MethodChannel handler when all callbacks are cleared.
   static void _tearDownSyncBodyChannel() {
-    if (!_syncBodyChannelReady) return;
-    // Keep the channel alive if any callback is still set.
-    if (_headersCallback != null ||
-        _syncBodyBuilder != null ||
-        _tokenRefreshCallback != null) {
-      return;
-    }
-    _syncBodyChannelReady = false;
-
-    const channel = MethodChannel('com.tracelet/sync_body');
-    channel.setMethodCallHandler(null);
+    // Keep the channel alive. Unregistering the handler in Dart causes iOS
+    // invokeMethod completion blocks to hang/timeout in some Flutter versions
+    // rather than returning FlutterMethodNotImplemented immediately.
   }
 
   /// Send a custom sync body response back to native (headless use).

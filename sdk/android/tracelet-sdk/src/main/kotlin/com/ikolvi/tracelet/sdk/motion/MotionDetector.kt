@@ -443,6 +443,10 @@ class MotionDetector(
             return
         }
         state.isMoving = false
+        
+        // Stop the stillness monitor before we transition to stationary state
+        stopAccelerometerMonitoring()
+        
         logger.debug("declareStationary() → invoking onMotionStateChanged(false)")
         onMotionStateChanged?.invoke(false)
 
@@ -703,7 +707,7 @@ class MotionDetector(
                     consecutiveStillSamples++
                     if (consecutiveStillSamples == stillCount) {
                         logger.debug("[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
-                        stopAccelerometerMonitoring()
+                        // Keep the sampler running so we can abort if motion resumes
                         startStopTimeoutCountdown()
                     }
                 } else {

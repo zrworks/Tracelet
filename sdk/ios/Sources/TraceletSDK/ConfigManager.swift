@@ -238,7 +238,8 @@ public final class ConfigManager {
     public func getRetryBackoffBase() -> Int { (cache["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000 }
     public func getRetryBackoffCap() -> Int { (cache["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000 }
     public func getEnableDeltaCompression() -> Bool { cache["enableDeltaCompression"] as? Bool ?? false }
-    public func getDeltaCoordinatePrecision() -> Int { (cache["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 6 }
+    // Default must match the Dart HttpConfig default (5), not 6 (Issue #137).
+    public func getDeltaCoordinatePrecision() -> Int { (cache["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 5 }
     
     public func getHttpParams() -> [String: Any] {
         if let params = cache["params"] as? [String: Any] {

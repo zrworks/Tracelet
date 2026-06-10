@@ -1,20 +1,57 @@
 package com.ikolvi.tracelet.flutter
 
-import kotlin.test.Test
-import kotlin.test.assertNotNull
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
+import com.ikolvi.tracelet.sdk.TraceletSdk
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.BinaryMessenger
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.mockito.Mockito.mock
+import kotlin.test.assertNotSame
 
-/*
- * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
- *
- * Once you have built the plugin's example app, you can run these tests from the command
- * line by running `./gradlew testDebugUnitTest` in the `example/android/` directory, or
- * you can run them directly from IDEs that support JUnit such as Android Studio.
- */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
+class TraceletAndroidPluginTest {
 
-internal class TraceletAndroidPluginTest {
+    private lateinit var context: Context
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext()
+        // Reset state
+        TraceletSdk.getInstance(context).dartSyncInterceptor = null
+        HeadlessTaskService.isSpawningHeadlessEngine = false
+    }
+
+    @After
+    fun tearDown() {
+        TraceletSdk.getInstance(context).dartSyncInterceptor = null
+        HeadlessTaskService.isSpawningHeadlessEngine = false
+    }
+
     @Test
-    fun pluginCanBeInstantiated() {
+    fun `plugin attached to headless engine acts as secondary instance`() {
+        // Set the flag simulating a headless engine spawning
+        HeadlessTaskService.isSpawningHeadlessEngine = true
+
         val plugin = TraceletAndroidPlugin()
-        assertNotNull(plugin)
+        val mockBinding = mock(FlutterPlugin.FlutterPluginBinding::class.java)
+        org.mockito.Mockito.`when`(mockBinding.applicationContext).thenReturn(context)
+        org.mockito.Mockito.`when`(mockBinding.binaryMessenger).thenReturn(mock(BinaryMessenger::class.java))
+
+        plugin.onAttachedToEngine(mockBinding)
+
+        // The plugin should NOT overwrite the dartSyncInterceptor
+        assertNotSame(
+            plugin,
+            TraceletSdk.getInstance(context).dartSyncInterceptor,
+            "TraceletAndroidPlugin should not overwrite dartSyncInterceptor when spawned by a headless engine"
+        )
     }
 }

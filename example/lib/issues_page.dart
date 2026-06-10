@@ -6,6 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
+@pragma('vm:entry-point')
+void headlessSyncBodyBuilder136(HeadlessEvent event) {
+  final locations = event.event['locations'];
+  Tracelet.setSyncBodyResponse({
+    'issue_136_test': 'success',
+    'points': locations,
+  });
+}
+
 class IssuesPage extends StatefulWidget {
   const IssuesPage({super.key});
 
@@ -32,6 +41,7 @@ class _IssuesPageState extends State<IssuesPage> {
     125,
     126,
     134,
+    136,
     137,
     138,
     139,
@@ -398,16 +408,15 @@ class _IssuesPageState extends State<IssuesPage> {
         return {'issue_124_test': true, 'points': context.locations};
       });
 
-      // Enable autoSync with a 5 second delay
-      await Tracelet.ready(
-        Config(
-          http: HttpConfig(
-            url: currentUrl,
-            autoSyncDelay: 5000,
-            headers: const {'X-Test-Header': 'issue124-value'},
-          ),
+      // Enable autoSync with a short delay, preserving background settings
+      final newConfig = Tracelet.activeConfig.copyWith(
+        http: Tracelet.activeConfig.http.copyWith(
+          url: currentUrl,
+          autoSyncDelay: 2000,
+          headers: const {'X-Test-Header': 'issue124-value'},
         ),
       );
+      await Tracelet.ready(newConfig);
 
       await Tracelet.insertLocation(
         const Location(
@@ -663,11 +672,54 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 136: Background sync body interceptor ====
+  Future<void> _testIssue136() async {
+    _setStatus(136, 'Testing Issue 136 (Background Custom Sync Body)...');
+    try {
+      final currentUrl = Tracelet.activeConfig.http.url;
+      if (currentUrl == null || currentUrl.isEmpty) {
+        _setStatus(136, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
+
+      await Tracelet.destroyLocations();
+
+      // Register the headless body builder
+      Tracelet.registerHeadlessSyncBodyBuilder(headlessSyncBodyBuilder136);
+
+      // Enable autoSync with a short delay
+      final newConfig = Tracelet.activeConfig.copyWith(
+        http: Tracelet.activeConfig.http.copyWith(
+          url: currentUrl,
+          autoSyncDelay: 2000,
+        ),
+      );
+      await Tracelet.ready(newConfig);
+
+      await Tracelet.insertLocation(
+        const Location(
+          uuid: 'test-headless-136',
+          timestamp: '2026-06-06T11:27:54.443591+00:00',
+          isMoving: false,
+          odometer: 0,
+          coords: Coords(latitude: 37.7749, longitude: -122.4194, accuracy: 10),
+        ).toMap(),
+      );
+
+      _setStatus(
+        136,
+        '✅ Location inserted & Headless Builder registered! Swipe/kill the app NOW from recent apps. Wait 5-10s and check your test server logs for multiple sync payloads. They should contain "issue_136_test": "success"!',
+      );
+    } catch (e) {
+      _setStatus(136, '❌ FAILED: Issue 136 Error: $e');
+    }
+  }
+
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
-      // Issues 134 & 140 are manual, long-running background/motion repros —
+      // Issues 134, 136 & 140 are manual, long-running background/motion repros —
       // not part of the automated sweep.
-      if (issue == 134 || issue == 140) continue;
+      if (issue == 134 || issue == 136 || issue == 140) continue;
       _scrollTo(issue);
       if (issue == 115) {
         await _startIssue115Tracking();
@@ -1151,6 +1203,19 @@ class _IssuesPageState extends State<IssuesPage> {
                           : null,
                       icon: const Icon(Icons.stop),
                       label: const Text('Stop'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 136,
+                  title: 'Background Sync Body Interceptor',
+                  description:
+                      'Verifies that when the app UI is killed, background syncs still correctly call the headless sync body builder instead of falling back to the default payload. Click test, then kill the app from recents.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue136,
+                      icon: const Icon(Icons.sync_problem),
+                      label: const Text('Test Headless Sync'),
                     ),
                   ],
                 ),

@@ -101,7 +101,7 @@ class TraceletAndroidPlugin :
         
         val count = attachedEngineCount.incrementAndGet()
         val isFirst = count == 1
-        val isPrimaryCandidate = primaryInstance == null
+        val isPrimaryCandidate = primaryInstance == null && !HeadlessTaskService.isSpawningHeadlessEngine
         
         sdk.logger.debug("onAttachedToEngine: engineCount=$count, isFirst=$isFirst, isPrimaryCandidate=$isPrimaryCandidate")
 

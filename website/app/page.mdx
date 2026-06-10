@@ -107,7 +107,10 @@ Add background location and foreground service permissions (See the full XML sni
 Start Tracelet using the pre-configured **Balanced Profile**. This is the perfect default that actively tracks when the user is moving, and completely powers down GPS when stationary to save battery. This code also registers the **Headless Task** so tracking continues flawlessly even if the user swipes the app away!
 
 ```dart
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // 1. Define a top-level Headless Task to handle events when the app is killed
 @pragma('vm:entry-point')
@@ -121,19 +124,33 @@ void main() async {
   // 2. Register the headless task BEFORE runApp!
   Tracelet.registerHeadlessTask(headlessTask);
 
-  // 3. Request permissions directly from Dart
+  // 3. Request permissions required for background tracking
+  // Tracelet handles Location, but you must manually handle OS-level permissions
+  if (Platform.isAndroid) {
+    await Permission.notification.request(); // Required for Android 13+ Foreground Service
+    await Permission.activityRecognition.request(); // Required for Motion Detection
+  }
+  
   final authStatus = await Tracelet.requestLocationAuthorization();
   if (authStatus == AuthorizationStatus.deniedForever) {
     print("Permissions denied!");
     return;
   }
 
-  // 4. Listen to real-time location events
+  // 4. (Optional) Mitigate Aggressive OEM Battery Managers (Xiaomi, Huawei, etc.)
+  if (Platform.isAndroid) {
+    final health = await Tracelet.getSettingsHealth();
+    if (health['isAggressiveOem'] == true) {
+      await Tracelet.showPowerManager(); // Prompts user to whitelist the app
+    }
+  }
+
+  // 5. Listen to real-time location events
   Tracelet.onLocation((location) {
     print('[Tracelet] Location: ${location.coords.latitude}, ${location.coords.longitude}');
   });
 
-  // 5. Configure Tracelet with the Balanced Profile and Notification settings
+  // 6. Configure Tracelet with the Balanced Profile and Notification settings
   await Tracelet.ready(Config.balanced(
     url: 'https://api.your-server.com/locations',
     headers: {'Authorization': 'Bearer YOUR_TOKEN'},
@@ -148,7 +165,7 @@ void main() async {
     ),
   ));
 
-  // 6. Start tracking!
+  // 7. Start tracking!
   await Tracelet.start();
 
   runApp(MyApp());
@@ -156,6 +173,7 @@ void main() async {
 ```
 
 That's it! Tracelet will now automatically handle background execution, motion detection heuristics, offline SQLite caching, and network synchronization entirely on its own.
+
 
 ## Federated Architecture
 

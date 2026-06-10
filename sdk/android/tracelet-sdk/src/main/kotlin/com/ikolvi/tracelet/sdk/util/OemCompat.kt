@@ -32,7 +32,10 @@ object OemCompat {
 
     /** Normalized lowercase manufacturer string. */
     val manufacturer: String
-        get() = Build.MANUFACTURER.lowercase()
+        // Build.MANUFACTURER is declared @NonNull but can be null on some
+        // ROMs/emulators (and is null under plain JVM unit tests); guard so OEM
+        // detection degrades to "no special handling" instead of crashing.
+        get() = (Build.MANUFACTURER ?: "").lowercase()
 
     private val huaweiNames = setOf("huawei", "honor")
     private val xiaomiNames = setOf("xiaomi", "redmi", "poco")

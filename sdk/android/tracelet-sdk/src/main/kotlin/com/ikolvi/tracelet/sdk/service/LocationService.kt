@@ -622,11 +622,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 ListenerEventSender()
             }
 
-        // Headless dispatcher — used for 401 authorization refresh in boot mode.
-        // Note: headless event routing is handled by the EventDispatcher's
-        // headlessFallback, which is wired by the host framework's
-        // eventSenderFactory (e.g. TraceletAndroidPlugin).
-        val headless = TraceletBootstrap.headlessDispatcherFactory?.invoke(ctx)
+        // Headless event routing is handled by the EventDispatcher's
+        // headlessFallback, wired by the host framework's eventSenderFactory
+        // (e.g. TraceletAndroidPlugin). The headless *sync* bridge (token
+        // refresh + custom body) is installed at process start by the host's
+        // ContentProvider (TraceletStartupProvider), which sets
+        // TraceletSdk.dartSyncInterceptor so NativeSyncProvider can reach the
+        // registered headless Dart callbacks even in this boot process.
 
         // HTTP sync is handled natively by Rust Core now
         val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(ctx)

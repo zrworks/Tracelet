@@ -28,7 +28,15 @@ melos:
   ide:
     intellij: false
 
-
+  command:
+    version:
+      # The native SDKs (Android gradle.properties, the iOS podspecs, and the
+      # plugins' native-dependency pins) are not Dart packages, so Melos cannot
+      # version them. This hook runs after Melos updates the Flutter pubspecs and
+      # before the version commit, syncing every native version location from
+      # `packages/tracelet/pubspec.yaml` so they never drift out of lockstep.
+      hooks:
+        preCommit: python3 scripts/sync_native_versions.py && git add -A
 
   scripts:
     analyze:

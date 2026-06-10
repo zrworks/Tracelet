@@ -227,6 +227,19 @@ jobs:
           COUNT_SYNC=$(nm -D "$SO_SYNC" | grep -c "uniffi_")
           echo "✅ Verified $COUNT_SYNC uniffi symbols present in the APK (libtracelet_sync)"
 
+      # Gate the tracelet_android plugin's Kotlin unit tests (boot, config,
+      # location-service, DB, headless-sync wiring). These exercise the host
+      # Rust core via JNA / System.loadLibrary, so build the host lib first and
+      # expose it via jna.library.path/java.library.path (wired in the module's
+      # build.gradle). Without this step these tests never run in CI.
+      - name: Build Host Rust Library (for plugin unit tests)
+        working-directory: sdk/rust-core
+        run: cargo build
+
+      - name: Run tracelet_android unit tests
+        working-directory: example/android
+        run: ./gradlew :tracelet_android:testDebugUnitTest
+
   build-ios:
     name: Build iOS
     runs-on: macos-latest

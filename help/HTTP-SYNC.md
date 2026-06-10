@@ -54,7 +54,11 @@ synced when connectivity returns.
 ```
 
 The root property name is configurable via `httpRootProperty` (default:
-`"location"`). Extra static fields can be added via `params`.
+`"location"`). Extra static fields can be injected at the **root** of the body
+via `extras` (and as query parameters / extra fields via `params`). This covers
+most server schemas without any code — see
+[Do I need a custom sync body builder?](#do-i-need-a-custom-sync-body-builder)
+before reaching for `setSyncBodyBuilder`.
 
 ---
 
@@ -666,6 +670,59 @@ By default, Tracelet sends locations in a standard JSON format wrapped in a
 root property. The sync body builder lets you **fully control** the HTTP
 request body — restructure the payload, add metadata, filter fields, or
 match any server API schema.
+
+### Do I need a custom sync body builder?
+
+**Most apps don't.** The default body already nests your locations under
+`httpRootProperty` and injects your `HttpConfig.extras` at the root, which
+matches the large majority of server schemas through config alone — and it
+works identically in foreground, background, and killed state with nothing
+extra to register.
+
+**You do NOT need a builder** if your server accepts a body like this:
+
+```json
+{
+  "location": [ /* batch of location records */ ],
+  "is_live_ping": false,
+  "meta": { "appVersion": "2.1.0", "platform": "android" }
+}
+```
+
+Produce it entirely from `HttpConfig`:
+
+```dart
+http: tl.HttpConfig(
+  url: 'https://api.example.com/telemetry',
+  headers: { 'Authorization': 'Bearer $token' },
+  httpRootProperty: 'location',   // key the locations array sits under (default)
+  extras: {                       // injected at the ROOT of the body
+    'is_live_ping': false,
+    'meta': { 'appVersion': '2.1.0', 'platform': 'android' },
+  },
+),
+```
+
+**You DO need a custom builder only when:**
+
+- the body must be built **dynamically per sync** — a value that changes between
+  syncs and can't be a static `extras` set once at `ready()`; **or**
+- the schema can't be expressed as "locations under one root key + flat extras"
+  (locations must be renamed/reshaped, split across fields, or nested
+  differently).
+
+| Your need | Use |
+|---|---|
+| Default body, optionally with static extra fields | `HttpConfig.extras` + `httpRootProperty` — **no builder** |
+| Dynamic auth token in background/killed state | `registerHeadlessHeadersCallback` (token refresh) — still **no body builder** |
+| A body shape config can't express | `setSyncBodyBuilder` (foreground) **and** `registerHeadlessSyncBodyBuilder` (background/killed) |
+
+> ⚠️ **If you use a custom builder _and_ need background/killed-state sync, you
+> must register the [headless](#headless-background-callbacks) variant too.** The
+> foreground `setSyncBodyBuilder` cannot run while the app is suspended —
+> registering only it means background syncs have no body to send and are
+> deferred until the app is next opened (a common cause of "locations stored but
+> not syncing on the fly").
 
 ### Foreground Usage
 

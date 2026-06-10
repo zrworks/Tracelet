@@ -55,16 +55,20 @@ def main():
     # Update Android SDK version
     update_file("sdk/android/gradle.properties", r'SDK_VERSION=.*', f'SDK_VERSION={version}')
     
-    # Update iOS SDK versions
+    # Update iOS SDK versions — root podspec, the sub podspec under sdk/ios
+    # (was previously missed and drifted behind), and both plugin podspecs.
     update_file("TraceletSDK.podspec", r"s\.version\s*=\s*'.*'", f"s.version = '{version}'")
+    update_file("sdk/ios/TraceletSDK.podspec", r"s\.version\s*=\s*'.*'", f"s.version = '{version}'")
     update_file("packages/tracelet_ios/ios/tracelet_ios.podspec", r"s\.version\s*=\s*'.*'", f"s.version = '{version}'")
     update_file("packages/tracelet_sync/ios/tracelet_sync.podspec", r"s\.version\s*=\s*'.*'", f"s.version = '{version}'")
-    
-    # Update iOS SDK dependencies
+
+    # Update iOS SDK dependencies (exact pin) — BOTH plugins depend on TraceletSDK.
     update_file("packages/tracelet_ios/ios/tracelet_ios.podspec", r"s\.dependency 'TraceletSDK',\s*'.*'", f"s.dependency 'TraceletSDK', '{version}'")
-    
-    # Update Android Flutter Plugin dependencies
-    update_file("packages/tracelet_android/android/build.gradle", r'implementation\("com\.ikolvi:tracelet-sdk:.*"\)', f'implementation("com.ikolvi:tracelet-sdk:{version}")')
+    update_file("packages/tracelet_sync/ios/tracelet_sync.podspec", r"s\.dependency 'TraceletSDK',\s*'.*'", f"s.dependency 'TraceletSDK', '{version}'")
+
+    # Update Android Flutter Plugin dependencies. tracelet_android pins with
+    # `api(...)`, not `implementation(...)`, so match either Gradle keyword.
+    update_file("packages/tracelet_android/android/build.gradle", r'(api|implementation)\("com\.ikolvi:tracelet-sdk:[^"]*"\)', f'\\1("com.ikolvi:tracelet-sdk:{version}")')
     update_file("packages/tracelet_sync/android/build.gradle.kts", r'compileOnly\("com\.ikolvi:tracelet-sdk:.*"\)', f'compileOnly("com.ikolvi:tracelet-sdk:{version}")')
     update_file("packages/tracelet_sync/android/build.gradle.kts", r'implementation\("com\.ikolvi:tracelet-sync-sdk:.*"\)', f'implementation("com.ikolvi:tracelet-sync-sdk:{version}")')
 

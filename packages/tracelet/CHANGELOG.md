@@ -1,6 +1,7 @@
 ## 3.2.13
 
 - **FIX**(android): `startOnBoot` now resumes tracking after a reboot on devices where the OS refuses to start a `location` foreground service from `BOOT_COMPLETED` (e.g. Android 14). Previously tracking silently never resumed after a reboot; it now falls back to background WorkManager/alarm tracking.
+- **FIX**(android): HTTP sync now works headlessly after a reboot — background sync can refresh an expiring auth token and build a custom sync body without the app being opened. Previously the headless Dart sync bridge was only wired when a UI engine attached, so post-reboot sync used a stale token (or the wrong payload) until the app was launched.
 
 ## 3.2.12
 

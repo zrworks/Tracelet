@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Material Colors instead of Nextra default primary */
+  --nextra-primary-hue: 145; /* Material Green approx */
+  --nextra-primary-saturation: 83%;
+  --nextra-primary-lightness: 34%;
+}
+
+/* Add a glaring shine effect on hover for custom Cards */
+.glare-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.glare-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.glare-card:hover::after {
+  animation: glare 0.7s forwards;
+}
+
+@keyframes glare {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Custom Nextra Cards alignment */
+.glare-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Center the Nextra title span */
+.glare-card > span {
+  justify-content: center !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* Style the description wrapper with dark mode support */
+.card-desc {
+  display: block;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  margin-top: 0.5rem;
+  color: #4b5563; /* Tailwind gray-600 */
+  font-size: 0.9rem;
+}
+
+html.dark .card-desc {
+  color: #9ca3af; /* Tailwind gray-400 */
+}
+
+/* Beautify Nextra Sidebar Items */
+aside li > a,
+aside li > button {
+  padding: 0.5rem 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+  border-radius: 0.5rem !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s ease-in-out !important;
+  border: 1px solid transparent !important;
+}
+
+html.dark aside li > a,
+html.dark aside li > button {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+aside li > a:hover,
+aside li > button:hover {
+  background-color: rgba(15, 157, 88, 0.1) !important;
+  border-color: rgba(15, 157, 88, 0.2) !important;
+}
+
+/* Footer Link Hover Effects */
+.footer-link {
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+.footer-link:hover {
+  color: #0F9D58 !important;
+}
+
+/* Sticky Footer */
+footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 50 !important;
+  background-color: var(--nextra-bg, #fff) !important;
+}
+
+html.dark footer {
+  background-color: var(--nextra-bg, #111) !important;
+}

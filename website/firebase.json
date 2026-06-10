@@ -1,0 +1,12 @@
+{
+  "hosting": {
+    "target": "tracelet-docs",
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true
+  }
+}

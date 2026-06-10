@@ -1,0 +1,117 @@
+# Tracelet LLM Configuration Dump
+This file contains the absolute source of truth for Tracelet's configuration API. It is optimized for LLMs and AI agents for code generation.
+
+## class Config
+Compound top-level configuration.
+- `geo`: GeoConfig
+- `app`: AppConfig
+- `android`: AndroidConfig
+- `ios`: IosConfig
+- `http`: HttpConfig
+- `logger`: LoggerConfig
+- `motion`: MotionConfig
+- `geofence`: GeofenceConfig
+- `persistence`: PersistenceConfig
+- `audit`: AuditConfig
+- `privacyZone`: PrivacyZoneConfig
+- `security`: SecurityConfig
+- `attestation`: AttestationConfig
+
+## class GeoConfig
+- `desiredAccuracy`: DesiredAccuracy (Default: DesiredAccuracy.high)
+- `distanceFilter`: double (Default: 10.0)
+- `stationaryRadius`: double (Default: 25.0)
+- `locationTimeout`: int (Default: 60)
+- `disableElasticity`: bool (Default: false)
+- `elasticityMultiplier`: double (Default: 1.0)
+- `stopAfterElapsedMinutes`: int (Default: -1)
+- `maxMonitoredGeofences`: int (Default: -1)
+- `enableTimestampMeta`: bool (Default: false)
+- `enableAdaptiveMode`: bool (Default: false)
+- `periodicLocationInterval`: int (Default: 900)
+- `periodicDesiredAccuracy`: DesiredAccuracy (Default: DesiredAccuracy.medium)
+- `enableSparseUpdates`: bool (Default: false)
+- `sparseDistanceThreshold`: double (Default: 50.0)
+- `sparseMaxIdleSeconds`: int (Default: 300)
+- `batteryBudgetPerHour`: double (Default: 0.0)
+- `enableDeadReckoning`: bool (Default: false)
+- `deadReckoningActivationDelay`: int (Default: 0)
+- `deadReckoningMaxDuration`: int (Default: 0)
+- `filter`: LocationFilter
+- `resolveAddress`: bool (Default: false)
+
+## class LocationFilter
+- `trackingAccuracyThreshold`: int (Default: 100)
+- `maxImpliedSpeed`: int (Default: 80)
+- `odometerAccuracyThreshold`: int (Default: 50)
+- `policy`: LocationFilterPolicy (Default: LocationFilterPolicy.adjust)
+- `rejectMockLocations`: bool (Default: false)
+- `mockDetectionLevel`: int (Default: 1)
+- `useKalmanFilter`: bool (Default: false)
+
+## class AppConfig
+- `stopOnTerminate`: bool (Default: true)
+- `startOnBoot`: bool (Default: false)
+- `heartbeatInterval`: int (Default: 60)
+- `schedule`: List<String> (Default: [])
+- `remoteConfigUrl`: String? (Default: null)
+- `remoteConfigHeaders`: Map<String, String>? (Default: null)
+- `remoteConfigTimeout`: int (Default: 60000)
+- `remoteConfigRefreshInterval`: int (Default: 1440)
+
+## class AndroidConfig
+- `locationUpdateInterval`: int (Default: 1000)
+- `fastestLocationUpdateInterval`: int (Default: 500)
+- `deferTime`: int (Default: 0)
+- `allowIdenticalLocations`: bool (Default: false)
+- `geofenceModeHighAccuracy`: bool (Default: false)
+- `periodicUseForegroundService`: bool (Default: false)
+- `periodicUseExactAlarms`: bool (Default: false)
+- `scheduleUseAlarmManager`: bool (Default: false)
+- `foregroundService`: ForegroundServiceConfig
+
+## class ForegroundServiceConfig
+- `enabled`: bool (Default: true)
+- `channelId`: String (Default: 'tracelet_channel')
+- `channelName`: String (Default: 'Tracelet')
+- `notificationTitle`: String (Default: 'Tracelet')
+- `notificationText`: String (Default: 'Tracking location in background')
+- `notificationColor`: String? (Default: null)
+- `notificationSmallIcon`: String? (Default: null)
+- `notificationLargeIcon`: String? (Default: null)
+- `notificationPriority`: NotificationPriority (Default: NotificationPriority.defaultPriority)
+- `notificationOngoing`: bool (Default: true)
+- `showNotificationOnPauseOnly`: bool (Default: false)
+- `actions`: List<String> (Default: [])
+
+## class IosConfig
+- `activityType`: LocationActivityType (Default: LocationActivityType.other)
+- `useSignificantChangesOnly`: bool (Default: false)
+- `showsBackgroundLocationIndicator`: bool (Default: false)
+- `pausesLocationUpdatesAutomatically`: bool (Default: false)
+- `locationAuthorizationRequest`: LocationAuthorizationRequest (Default: LocationAuthorizationRequest.always)
+- `disableLocationAuthorizationAlert`: bool (Default: false)
+- `preventSuspend`: bool (Default: false)
+
+## class HttpConfig
+- `url`: String? (Default: null)
+- `method`: HttpMethod (Default: HttpMethod.post)
+- `headers`: Map<String, String>? (Default: null)
+- `params`: Map<String, Object?>? (Default: null)
+- `extras`: Map<String, Object?>? (Default: null)
+- `httpRootProperty`: String? (Default: 'location')
+- `autoSync`: bool (Default: true)
+- `batchSync`: bool (Default: false)
+- `maxBatchSize`: int (Default: 250)
+- `autoSyncThreshold`: int (Default: 0)
+- `autoSyncDelay`: int (Default: 10000)
+- `httpTimeout`: int (Default: 60000)
+- `locationsOrderDirection`: LocationOrderDirection (Default: LocationOrderDirection.ascending)
+- `disableAutoSyncOnCellular`: bool (Default: false)
+- `maxRetries`: int (Default: 3)
+- `retryBackoffBase`: int (Default: 1000)
+- `retryBackoffCap`: int (Default: 60000)
+- `enableDeltaCompression`: bool (Default: false)
+- `deltaCoordinatePrecision`: int (Default: 5)
+- `sslPinningFingerprints`: List<String>? (Default: null)
+- `sslPinningCertificates`: List<String>? (Default: null)

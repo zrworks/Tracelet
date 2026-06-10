@@ -1,0 +1,97 @@
+---
+title: "Tracelet - Production-grade background geolocation for Flutter"
+description: "Tracelet is a battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution engine for iOS & Android."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '4rem 0 2rem 0' }}>
+  <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/logo_anim.webp" alt="Tracelet Animated Logo" style={{ width: 'auto', height: '150px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+</div>
+
+<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '3rem' }}>
+  <h1 style={{ fontSize: '3.5rem', fontWeight: '800', letterSpacing: '-0.02em', color: '#0F9D58', lineHeight: '1.2' }}>
+    Tracelet
+  </h1>
+  <p style={{ marginTop: '1rem', fontSize: '1.25rem', color: '#6b7280', maxWidth: '42rem' }} className="dark:text-gray-400">
+    Production-grade background geolocation for Flutter — fully open-source.
+  </p>
+  
+  <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+    <a href="/flutter" style={{ padding: '0.75rem 1.5rem', color: 'white', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#0F9D58', textDecoration: 'none', transition: 'opacity 0.2s' }} className="hover:opacity-90">
+      Get Started →
+    </a>
+    <a href="/core-concepts" style={{ padding: '0.75rem 1.5rem', color: '#1f2937', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#f3f4f6', textDecoration: 'none', transition: 'background-color 0.2s' }} className="dark-secondary-btn hover:bg-gray-200">
+      Core Concepts
+    </a>
+  </div>
+</div>
+
+## Why Tracelet?
+
+Tracelet flips the traditional location tracking model. Instead of relying purely on high-frequency, battery-draining GPS polls, we use intelligent **Motion-detection algorithms**, **activity recognition**, and **Adaptive Sampling** to track devices seamlessly in the background with near-zero battery drain when stationary.
+
+<Callout type="info" emoji="🔋">
+  **Battery Budget Engine:** Automatically tune `distanceFilter` and `desiredAccuracy` on the fly to stay within a configurable battery drain target (e.g. `2.0%` per hour).
+</Callout>
+
+### Key Features
+
+<Cards>
+  <Cards.Card title="🏃 Motion Detection" href="/core-concepts#motion-detection" className="glare-card">
+    <span className="card-desc">
+      Uses accelerometer, gyroscope & activity recognition to toggle GPS only when moving.
+    </span>
+  </Cards.Card>
+  <Cards.Card title="🌍 Geofencing" href="/core-concepts#geofencing" className="glare-card">
+    <span className="card-desc">
+      Unlimited geofences via proximity auto-load. Supports custom Polygon bounds.
+    </span>
+  </Cards.Card>
+  <Cards.Card title="📡 Tracelet Sync" href="/tracelet-sync" className="glare-card">
+    <span className="card-desc">
+      Configurable offline queuing, exponential backoff, Wi-Fi only, and 401-aware retries.
+    </span>
+  </Cards.Card>
+  <Cards.Card title="💾 SQLite Persistence" href="/configuration" className="glare-card">
+    <span className="card-desc">
+      All locations stored locally with configurable max days and records retention.
+    </span>
+  </Cards.Card>
+  <Cards.Card title="🛡️ Enterprise Security" href="/configuration" className="glare-card">
+    <span className="card-desc">
+      SSL Certificate Pinning, At-rest Database Encryption, and Device Attestation.
+    </span>
+  </Cards.Card>
+  <Cards.Card title="🩺 Diagnostic Doctor" href="/tools" className="glare-card">
+    <span className="card-desc">
+      In-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state.
+    </span>
+  </Cards.Card>
+</Cards>
+
+## Federated Architecture
+
+Tracelet uses a **federated plugin architecture** with 5 packages, ensuring modularity and performance:
+
+| Package | Description |
+|---|---|
+| `tracelet` | App-facing Dart API — the only package you depend on |
+| `tracelet_doctor` | Advanced in-app diagnostic dashboard and health analysis overlay UI |
+| `tracelet_platform_interface` | Abstract platform interface + Pigeon definitions |
+| `tracelet_android` | Kotlin Android implementation (standalone SDK available) |
+| `tracelet_ios` | Swift iOS implementation (standalone SDK available) |
+
+## Ready to build?
+
+Dive right into the Flutter SDK guide to integrate Tracelet into your project.
+
+```bash
+flutter pub add tracelet
+```
+
+<div className="mt-8">
+  <a href="/flutter" className="text-lg font-medium hover:underline" style={{ color: '#0F9D58' }}>
+    Proceed to Flutter Setup →
+  </a>
+</div>

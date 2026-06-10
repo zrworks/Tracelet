@@ -1,0 +1,84 @@
+# Firebase Firestore Adapter
+
+The `tracelet_firebase` package provides a seamless, drop-in adapter to sync your background locations directly to Google Cloud Firestore.
+
+import { Steps, Callout } from 'nextra/components'
+
+## Installation
+
+Add the adapter to your `pubspec.yaml`:
+
+```bash
+flutter pub add tracelet_firebase
+```
+
+<Callout type="info">
+  This package automatically depends on `cloud_firestore` and `firebase_core`. You must configure your Flutter app for Firebase (using `flutterfire configure`) before using this adapter.
+</Callout>
+
+## Setup & Configuration
+
+<Steps>
+### Initialize Firebase
+Ensure Firebase is initialized in your `main.dart` before calling Tracelet:
+
+```dart
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
+}
+```
+
+### Configure the Adapter
+When initializing Tracelet, you don't need to configure the `HttpConfig` for syncing. Instead, you mount the Firebase Adapter.
+
+```dart
+import 'package:tracelet_firebase/tracelet_firebase.dart';
+import 'package:tracelet/tracelet.dart' as tl;
+
+// 1. Create the adapter
+final firebaseAdapter = TraceletFirebase(
+  collectionPath: 'users/123/locations', // The Firestore collection to write to
+  batchSize: 500, // Number of documents per Firestore batch write
+  autoSync: true, // Automatically listen to Tracelet's SQLite DB and flush
+);
+
+// 2. Start the adapter
+await firebaseAdapter.start();
+
+// 3. Start Tracelet
+await tl.Tracelet.ready(tl.Config.balanced());
+await tl.Tracelet.start();
+```
+</Steps>
+
+## How it Works
+
+The Firebase Adapter bypasses the standard HTTP Sync engine. 
+
+Instead, it listens directly to Tracelet's internal SQLite database. When new locations are recorded (e.g., while the user is hiking offline), the adapter pulls them out of SQLite, wraps them in a massive `WriteBatch` operation, and commits them to Firestore.
+
+If the device is offline, the `WriteBatch` will fail, and the adapter will simply leave the points in SQLite to try again later.
+
+## Security Rules
+
+You must ensure your Firestore Security Rules allow writing to the specified `collectionPath`. 
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/locations/{locationId} {
+      // Only allow the authenticated user to write their own locations
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if false; // Deny public reads
+    }
+  }
+}
+```

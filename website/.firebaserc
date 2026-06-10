@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "ikolvi"
+  },
+  "targets": {
+    "ikolvi": {
+      "hosting": {
+        "tracelet-docs": [
+          "tracelet-docs"
+        ]
+      }
+    }
+  }
+}

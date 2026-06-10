@@ -22,9 +22,12 @@ class _IssuesPageState extends State<IssuesPage> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [115, 117, 118, 119, 120, 124, 125, 126, 134];
+  final List<int> _allIssues = [
+    115, 117, 118, 119, 120, 124, 125, 126, 134, 137, 138, 139, 140,
+  ];
 
   bool _isIssue134Tracking = false;
+  bool _isIssue140Tracking = false;
 
   @override
   void initState() {
@@ -640,9 +643,9 @@ class _IssuesPageState extends State<IssuesPage> {
 
   Future<void> _executeAll() async {
     for (final issue in _allIssues) {
-      // Issue 134 is a manual, long-running background repro — not part of the
-      // automated sweep.
-      if (issue == 134) continue;
+      // Issues 134 & 140 are manual, long-running background/motion repros —
+      // not part of the automated sweep.
+      if (issue == 134 || issue == 140) continue;
       _scrollTo(issue);
       if (issue == 115) {
         await _startIssue115Tracking();
@@ -663,8 +666,145 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue125();
       } else if (issue == 126) {
         await _testIssue126();
+      } else if (issue == 137) {
+        await _testIssue137();
+      } else if (issue == 138) {
+        await _testIssue138();
+      } else if (issue == 139) {
+        await _testIssue139();
       }
       await Future.delayed(const Duration(seconds: 2));
+    }
+  }
+
+  // ==== ISSUE 137: deltaCoordinatePrecision default ====
+  Future<void> _testIssue137() async {
+    _setStatus(137, 'Testing Issue 137 (delta precision default)...');
+    try {
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: Tracelet.activeConfig.http.url ?? 'https://example.com/loc',
+            enableDeltaCompression: true,
+            // deltaCoordinatePrecision intentionally NOT set → must default to 5.
+          ),
+        ),
+      );
+      final precision = Tracelet.activeConfig.http.deltaCoordinatePrecision;
+      if (precision == 5) {
+        _setStatus(
+          137,
+          '✅ SUCCESS: default deltaCoordinatePrecision = 5 (aligned across '
+          'Dart and native; native previously defaulted to 6).',
+        );
+      } else {
+        _setStatus(137, '❌ FAILED: expected 5 but got $precision.');
+      }
+    } catch (e) {
+      _setStatus(137, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 138: locationsOrderDirection honored on sync ====
+  Future<void> _testIssue138() async {
+    _setStatus(138, 'Testing Issue 138 (descending sync order)...');
+    try {
+      await Tracelet.destroyLocations();
+      final base = DateTime.now().millisecondsSinceEpoch;
+      for (var i = 0; i < 3; i++) {
+        await Tracelet.insertLocation({
+          'latitude': 10.0 + i,
+          'longitude': 20.0,
+          'timestamp': base + i * 1000,
+        });
+      }
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: Tracelet.activeConfig.http.url ?? 'https://example.com/loc',
+            batchSync: true,
+            locationsOrderDirection: LocationOrderDirection.descending,
+          ),
+        ),
+      );
+      await Tracelet.sync();
+      _setStatus(
+        138,
+        '✅ Synced 3 points with locationsOrderDirection=descending. '
+        'Verify your backend received them newest-first (was always ascending).',
+      );
+    } catch (e) {
+      _setStatus(138, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 139: unbounded getLocations() (no 1000 cap) ====
+  Future<void> _testIssue139() async {
+    _setStatus(139, 'Testing Issue 139 (inserting 1100 rows)...');
+    try {
+      await Tracelet.destroyLocations();
+      final base = DateTime.now().millisecondsSinceEpoch;
+      for (var i = 0; i < 1100; i++) {
+        await Tracelet.insertLocation({
+          'latitude': 10.0 + i * 0.0001,
+          'longitude': 20.0,
+          'timestamp': base + i,
+        });
+      }
+      final all = await Tracelet.getLocations();
+      if (all.length == 1100) {
+        _setStatus(
+          139,
+          '✅ SUCCESS: getLocations() returned all ${all.length} rows '
+          '(no implicit 1000 cap).',
+        );
+      } else {
+        _setStatus(
+          139,
+          '❌ FAILED: expected 1100 but got ${all.length} '
+          '(query was capped).',
+        );
+      }
+    } catch (e) {
+      _setStatus(139, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 140: motion resumes during stop-timeout ====
+  Future<void> _startIssue140() async {
+    setState(() => _isIssue140Tracking = true);
+    _setStatus(140, 'Starting smart-motion tracking (short stop-timeout)...');
+    try {
+      await Tracelet.requestLocationAuthorization();
+      await Tracelet.ready(
+        const Config(
+          motion: MotionConfig(
+            motionDetectionMode: MotionDetectionMode.smart,
+            stopTimeout: 1, // minutes — keep short for the repro
+            speedStationaryDelay: 15,
+          ),
+        ),
+      );
+      await Tracelet.start();
+      _setStatus(
+        140,
+        'Tracking. Stay still until the stop-timeout countdown begins, then '
+        'move again before it elapses — you should stay in the moving state.',
+      );
+    } catch (e) {
+      setState(() => _isIssue140Tracking = false);
+      _setStatus(140, '❌ FAILED: $e');
+    }
+  }
+
+  Future<void> _stopIssue140() async {
+    try {
+      await Tracelet.stop();
+    } finally {
+      if (mounted) {
+        setState(() => _isIssue140Tracking = false);
+        _setStatus(140, 'Stopped.');
+      }
     }
   }
 
@@ -932,6 +1072,73 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _testIssue126,
                       icon: const Icon(Icons.schema),
                       label: const Text('Test Schema Alignment'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 137,
+                  title: 'deltaCoordinatePrecision Default',
+                  description:
+                      'Verifies the delta-compression precision default matches the '
+                      'Dart layer (5). A native fallback of 6 produced a finer grid '
+                      'and larger payloads when the value was not set.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue137,
+                      icon: const Icon(Icons.compress),
+                      label: const Text('Verify Default (5)'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 138,
+                  title: 'locationsOrderDirection Honored on Sync',
+                  description:
+                      'Configures descending sync order, records 3 points and syncs. '
+                      'Verify your backend receives the batch in descending order '
+                      '(the sync path previously always uploaded ascending).',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue138,
+                      icon: const Icon(Icons.sort),
+                      label: const Text('Sync Descending'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 139,
+                  title: 'Unbounded getLocations() (no 1000 cap)',
+                  description:
+                      'Inserts 1100 rows and reads them back with getLocations(). '
+                      'Previously an unspecified limit silently capped reads at 1000, '
+                      'truncating full-history reads and getCarbonReport().',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue139,
+                      icon: const Icon(Icons.all_inbox),
+                      label: const Text('Read 1100 Rows'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 140,
+                  title: 'Motion Resumes During Stop-Timeout',
+                  description:
+                      'Starts smart-motion tracking with a short stop-timeout. '
+                      'Walk for a few seconds, stay still until the countdown starts, '
+                      'then move again BEFORE it elapses — tracking should stay in the '
+                      'moving state (iOS keeps the accelerometer active during the '
+                      'countdown; see issue for the Android behavior).',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue140Tracking ? null : _startIssue140,
+                      icon: const Icon(Icons.directions_walk),
+                      label: const Text('Start'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue140Tracking ? _stopIssue140 : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
                     ),
                   ],
                 ),

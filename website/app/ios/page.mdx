@@ -43,6 +43,16 @@ Alternatively, add them directly to your `Info.plist`:
 </array>
 ```
 
+### 3. Removing Optional Features (No Crashes)
+
+If your client doesn't want specific features (e.g., they don't want to track motion or activity types), you can safely omit the corresponding key from your `Info.plist`. Tracelet's native Swift code safely checks for key presence before requesting features.
+
+| Feature Key | Effect when removed from `Info.plist` |
+|---|---|
+| `NSMotionUsageDescription` | **Safe.** iOS will silently fall back to checking location changes for movement. `CMMotionActivityManager` won't be invoked, and the user won't be prompted for Motion permissions. |
+| `UIBackgroundModes` -> `audio` | **Safe.** Only required if your config sets `preventSuspend: true` to prevent Dart isolate suspension. |
+| `NSLocationAlwaysAndWhenInUseUsageDescription` | **Safe.** The app will only ever track while in the foreground (or temporarily via the blue pill). Tracelet handles the graceful degradation internally. |
+
 ---
 
 ## Scenario 1: The Fitness App (High Accuracy, No Suspend)

@@ -707,7 +707,9 @@ class MotionDetector(
                     consecutiveStillSamples++
                     if (consecutiveStillSamples == stillCount) {
                         logger.debug("[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
-                        // Keep the sampler running so we can abort if motion resumes
+                        // Shut down the accelerometer during the stop countdown to prevent 
+                        // hyper-sensitive false-positive shake events from aborting the timeout
+                        stopAccelerometerMonitoring()
                         startStopTimeoutCountdown()
                     }
                 } else {

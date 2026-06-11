@@ -1,5 +1,6 @@
 ## 3.2.15
 
+* **FIX** (Native): Allow `getState()` and `stop()` to be called before `ready()` is invoked, correctly reporting persistent state and shutting down background services if the app was restarted from a killed state.
 * **CHORE**: Update dependencies and constraints.
 * **FIX**: Resolve `MissingPluginException` and test timing issues with `setHasCustomSyncBodyBuilder`.
 

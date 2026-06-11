@@ -1,3 +1,7 @@
+## 3.2.15
+
+* **FIX**: Allow `getState()` and `stop()` to be called before `ready()` is invoked, correctly reporting persistent state and shutting down background services if the app was restarted from a killed state.
+
 ## 3.2.13
 
 - **FIX**(android): `startOnBoot` now resumes tracking after a reboot even when the OS refuses to start the location foreground service from `BOOT_COMPLETED` (Android 14 disallows starting a `location`-type foreground service from boot). The boot start is no longer deferred until the app is next opened; `BootReceiver` falls back to background WorkManager/alarm tracking when the foreground-service start is blocked.

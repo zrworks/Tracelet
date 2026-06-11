@@ -301,7 +301,13 @@ async function run() {
     worker('bing'),
     worker('bing'),
     worker('bing'),
-    worker('bing')
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
   ]);
   
   console.log("\nAll translations completed successfully!");

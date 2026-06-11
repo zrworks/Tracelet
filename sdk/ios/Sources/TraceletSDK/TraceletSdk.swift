@@ -362,9 +362,6 @@ public final class TraceletSdk {
     /// - Returns: Updated state as a dictionary.
     @discardableResult
     public func stop() -> [String: Any] {
-        guard isReady else {
-            return [:]
-        }
         BackgroundTaskHelper.shared.run("stop") { [self] in
             stateManager.enabled = false
             stateManager.isMoving = false
@@ -522,10 +519,6 @@ public final class TraceletSdk {
     /// - Returns: State as a dictionary. Returns a default disabled state if
     ///   ``ready(config:)`` has not been called yet.
     public func getState() -> [String: Any] {
-        guard isReady else {
-            return ["enabled": false, "isMoving": false, "trackingMode": TraceletTrackingMode.continuous.rawValue,
-                    "schedulerEnabled": false, "odometer": 0.0]
-        }
         return stateManager.toMap(configManager.getConfig())
     }
 

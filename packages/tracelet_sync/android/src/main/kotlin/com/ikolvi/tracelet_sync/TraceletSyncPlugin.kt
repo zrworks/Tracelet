@@ -12,24 +12,35 @@ import com.ikolvi.tracelet.sdk.sync.NO_SYNC_BODY_BUILDER_SENTINEL
 import uniffi.tracelet_sync.SyncManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, TraceletSdk.SyncProvider {
-    private val scope = CoroutineScope(Dispatchers.IO)
+    // SupervisorJob: a single failed sync must not cancel the scope, else the
+    // first background sync that throws kills every future sync (Issue #134).
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncMutex = Mutex()
     private val syncManager = SyncManager()
-    
+
     private var syncJob: kotlinx.coroutines.Job? = null
     private val DEBOUNCE_MS = 10_000L
-    
+
     override fun insertLocation(location: Map<String, Any?>) {
         val delayMs = sdk.rustEngineState?.getConfig()?.http?.autoSyncDelay?.toLong() ?: 10_000L
         if (syncJob?.isActive == true) return
         syncJob = scope.launch {
-            kotlinx.coroutines.delay(delayMs)
-            triggerSync()
+            // Contain any throwable so a single failed iteration can't tear down
+            // auto-sync; re-throw real cancellation so stop() still works (#134).
+            try {
+                kotlinx.coroutines.delay(delayMs)
+                triggerSync()
+            } catch (ce: kotlinx.coroutines.CancellationException) {
+                throw ce
+            } catch (t: Throwable) {
+                sdk.logger.error("TraceletSyncSink: auto-sync iteration failed (contained): ${t.message}")
+            }
         }
     }
     

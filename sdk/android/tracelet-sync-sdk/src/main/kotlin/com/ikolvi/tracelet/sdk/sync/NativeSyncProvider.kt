@@ -5,6 +5,7 @@ import com.ikolvi.tracelet.sdk.location.LocationDataSink
 import uniffi.tracelet_sync.SyncManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,7 +14,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, TraceletSdk.SyncProvider {
-    private val scope = CoroutineScope(Dispatchers.IO)
+    // SupervisorJob: a single failed/throwing sync must NOT cancel the scope —
+    // otherwise the FIRST background sync that hits an uncaught error would kill
+    // every future sync (the "syncs once then never again" bug, Issue #134).
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncMutex = Mutex()
     private val syncManager = SyncManager()
 
@@ -24,8 +28,18 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
         val delayMs = sdk.rustEngineState?.getConfig()?.http?.autoSyncDelay?.toLong() ?: 10_000L
         if (syncJob?.isActive == true) return
         syncJob = scope.launch {
-            kotlinx.coroutines.delay(delayMs)
-            triggerSync()
+            // Contain ANY throwable from a single sync iteration so it can never
+            // propagate out of the coroutine and tear down auto-sync. Real
+            // cancellation (stop() → cancelPendingSync) is re-thrown so it still
+            // works. (Issue #134: keep background auto-sync firing every cycle.)
+            try {
+                kotlinx.coroutines.delay(delayMs)
+                triggerSync()
+            } catch (ce: kotlinx.coroutines.CancellationException) {
+                throw ce
+            } catch (t: Throwable) {
+                sdk.logger.error("NativeSyncProvider: auto-sync iteration failed (contained): ${t.message}")
+            }
         }
     }
 

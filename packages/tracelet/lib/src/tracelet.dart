@@ -868,19 +868,23 @@ class Tracelet {
   ) async {
     _syncBodyBuilder = builder;
 
-    // Notify native side whether a foreground builder is registered.
-    // This prevents native timeouts and unintended aborts when auto-syncing
-    // in the background without a custom builder.
-    const channel = MethodChannel('com.tracelet/sync_body');
-    await channel.invokeMethod<void>(
-      'setHasCustomSyncBodyBuilder',
-      builder != null,
-    );
-
     if (builder != null) {
       _ensureSyncBodyChannel();
     } else {
       _tearDownSyncBodyChannel();
+    }
+
+    // Notify native side whether a foreground builder is registered.
+    // This prevents native timeouts and unintended aborts when auto-syncing
+    // in the background without a custom builder.
+    const channel = MethodChannel('com.tracelet/sync_body');
+    try {
+      await channel.invokeMethod<void>(
+        'setHasCustomSyncBodyBuilder',
+        builder != null,
+      );
+    } on MissingPluginException {
+      // Ignore in tests.
     }
   }
 

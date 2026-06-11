@@ -91,7 +91,7 @@ void main() {
         <String, Object?>{'lat': 1.0},
       ]);
 
-      expect(response, isNull);
+      expect(response, '__tracelet_no_sync_body_builder__');
     });
 
     test('handler returns null for non-list arguments', () async {
@@ -219,7 +219,7 @@ void main() {
       response = await _invokeSyncBodyChannel(syncBodyChannel, <Object?>[
         <String, Object?>{'lat': 1.0},
       ]);
-      expect(response, isNull);
+      expect(response, '__tracelet_no_sync_body_builder__');
 
       // Re-registering should work
       Tracelet.setSyncBodyBuilder((SyncBodyContext context) async {

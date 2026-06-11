@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.19.4",
     "next": "^16.2.9",
     "nextra": "4.6.0",
     "nextra-theme-docs": "4.6.0",

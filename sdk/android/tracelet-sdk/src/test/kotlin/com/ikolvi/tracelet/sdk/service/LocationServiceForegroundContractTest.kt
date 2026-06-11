@@ -114,7 +114,24 @@ class LocationServiceForegroundContractTest {
         // After a system kill, START_STICKY services are restarted by the
         // system with a null intent. Without an explicit promotion, the
         // service crashes with RemoteServiceException.
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        com.ikolvi.tracelet.sdk.StateManager(ctx).enabled = true
         serviceController.create().get().onStartCommand(null, 0, 1)
         assertForegroundPromoted()
+    }
+
+    @Test
+    fun `sticky restart with tracking disabled stops the service cleanly`() {
+        // If the user called stop() before the system killed the process, a
+        // sticky restart must NOT resurrect tracking. The service still has to
+        // satisfy the foreground contract (startForeground before stopForeground),
+        // so this just verifies no exception and no boot engine is created.
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        com.ikolvi.tracelet.sdk.StateManager(ctx).enabled = false
+        serviceController.create().get().onStartCommand(null, 0, 1)
+        kotlin.test.assertNull(
+            LocationService.bootLocationEngine,
+            "Sticky restart with tracking disabled must not bootstrap a boot engine",
+        )
     }
 }

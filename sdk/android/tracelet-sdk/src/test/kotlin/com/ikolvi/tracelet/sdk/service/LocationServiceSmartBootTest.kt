@@ -49,7 +49,10 @@ class LocationServiceSmartBootTest {
             "bootStrategy" to true
         ))
         
-        // Set state to stationary so that an initial state change triggers logic
+        // Set state to stationary so that an initial state change triggers logic.
+        // Tracking must be enabled — startBootTracking() refuses to bootstrap
+        // when the user explicitly stopped tracking.
+        state.enabled = true
         state.isMoving = false
         state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
         
@@ -65,6 +68,25 @@ class LocationServiceSmartBootTest {
         try {
             serviceController.destroy()
         } catch (e: Exception) {}
+    }
+
+    @Test
+    fun `boot start with tracking disabled does not bootstrap native tracking`() {
+        state.enabled = false
+
+        val intent = android.content.Intent(context, LocationService::class.java)
+        intent.action = LocationService.ACTION_START
+        intent.putExtra("boot_start", true)
+        serviceController.create().withIntent(intent).startCommand(0, 1)
+
+        assertTrue(
+            LocationService.bootLocationEngine == null,
+            "bootLocationEngine must not be created when tracking was explicitly stopped",
+        )
+        assertTrue(
+            LocationService.bootMotionDetector == null,
+            "bootMotionDetector must not be created when tracking was explicitly stopped",
+        )
     }
 
     @Test

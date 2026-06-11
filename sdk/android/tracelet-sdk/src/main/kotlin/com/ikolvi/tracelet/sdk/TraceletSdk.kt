@@ -734,28 +734,39 @@ class TraceletSdk private constructor(private val context: Context) {
         stateManager.enabled = false
         stateManager.isMoving = false
 
-        locationEngine.stop()
-        locationEngine.onLocationUpdate = null
-        locationEngine.speedMotionSpeedSink = null
+        if (::locationEngine.isInitialized) {
+            locationEngine.stop()
+            locationEngine.onLocationUpdate = null
+            locationEngine.speedMotionSpeedSink = null
+        }
         // Cancel any pending/in-flight background sync so it doesn't keep POSTing
         // after tracking is stopped (e.g. a debounced headless sync mid-flight).
         syncProvider?.cancelPendingSync()
-        motionDetector.stop()
-        speedMotionManager.stop()
+        if (::motionDetector.isInitialized) motionDetector.stop()
+        if (::speedMotionManager.isInitialized) speedMotionManager.stop()
         stopHeartbeat()
         cancelStopAfterElapsedTimer()
-        tripManager.reset()
+        if (::tripManager.isInitialized) tripManager.reset()
         stopBatteryBudgetSampling()
         batteryBudgetEngine?.reset()
 
         PeriodicLocationWorker.cancel(context)
         PeriodicLocationWorker.eventSender = null
 
-        if (configManager.isForegroundServiceEnabled()) {
+        // Tear down service-side tracking synchronously. The stationary
+        // periodic timer and boot-mode engine live in LocationService's
+        // companion, not in this SDK's locationEngine, so relying on the
+        // async ACTION_STOP intent alone leaves them running (e.g. SMART
+        // mode switched to stationary-periodic while backgrounded, or a
+        // sticky service restart bootstrapped a boot engine).
+        LocationService.stopStationaryTimer()
+        LocationService.stopBootTracking()
+
+        if (configManager.isForegroundServiceEnabled() || LocationService.isServiceRunning()) {
             LocationService.stop(context)
         }
 
-        eventSender.sendEnabledChange(false)
+        if (::eventSender.isInitialized) eventSender.sendEnabledChange(false)
         logger.info("stop() — tracking stopped")
     }
 

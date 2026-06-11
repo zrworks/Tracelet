@@ -170,6 +170,15 @@ class PeriodicLocationWorker(
         return try {
             val config = ConfigManager.getInstance(applicationContext)
             val state = StateManager(applicationContext)
+
+            // Tracking was stopped after this work was enqueued — don't
+            // capture, persist, or sync anything.
+            if (!state.enabled) {
+                com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext).logger
+                    .info("Tracking disabled — skipping periodic location work")
+                return Result.success()
+            }
+
             val location = fetchLocation(config)
 
             if (location != null) {

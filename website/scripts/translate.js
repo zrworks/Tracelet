@@ -327,19 +327,19 @@ async function run() {
 
   // Run multiple Bing workers concurrently since Google is blocked locally
   await Promise.all([
-    worker('bing'),
     worker('google'),
-    worker('bing'),
     worker('google'),
-    worker('bing'),
     worker('google'),
-    worker('bing'),
     worker('google'),
-    worker('bing'),
     worker('google'),
-    worker('bing'),
     worker('google'),
-    worker('bing'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
+    worker('google'),
     worker('google'),
   ]);
 

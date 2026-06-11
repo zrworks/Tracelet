@@ -70,7 +70,12 @@ class TraceletAndroidPlugin :
         private const val DART_CALLBACK_TIMEOUT_MS = 10_000L
 
         init {
-            System.loadLibrary("tracelet_core")
+            try {
+                System.loadLibrary("tracelet_core")
+            } catch (e: UnsatisfiedLinkError) {
+                // Ignore in test environments like Robolectric
+                android.util.Log.w(TAG, "Failed to load tracelet_core library, expected in tests", e)
+            }
         }
 
         @Volatile

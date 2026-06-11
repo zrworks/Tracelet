@@ -5,11 +5,14 @@ Tracelet is unique because it pushes **almost all** of the logic down to the nat
 This page explains how the Flutter layer interacts with the native engine in real-world scenarios.
 
 import { Steps, Callout, Tabs } from 'nextra/components'
+import LottiePlayer from '../../../components/LottiePlayer'
 
 ---
 
 ## Scenario 1: The UI Subscription
 **Concepts Explored:** Event Streams, Headless Execution
+
+<LottiePlayer src="/animations/olympics.json" />
 
 ### The Problem
 You are building a fitness app. When the user is looking at the screen, you want a little blue dot to move on a Google Map in real-time. When the user locks the screen, you still want to record the run to the database, but you don't need to update a UI that nobody is looking at.

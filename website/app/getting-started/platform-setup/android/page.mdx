@@ -5,6 +5,7 @@ Android is infamous for aggressively killing background services. Chinese OEMs (
 This page explains *why* Android kills your app and *how* Tracelet's specific Android configurations solve it in the real world.
 
 import { Callout, Tabs } from 'nextra/components'
+import LottiePlayer from '../../../../components/LottiePlayer'
 
 ---
 
@@ -64,6 +65,8 @@ The `tracelet_android` plugin automatically ships with embedded `consumer-rules.
 
 ## Scenario 1: The Delivery Driver (Continuous Tracking)
 **Concepts Explored:** Doze Mode, Foreground Services, Wakelocks
+
+<LottiePlayer src="/animations/delivery2.json" />
 
 ### The Problem
 Your user is a pizza delivery driver. They put the phone in their pocket, turning off the screen. After 15 minutes, Android enters **Doze Mode**. It shuts down network access, defers background jobs, and severely limits CPU wake-ups to save battery. If your app relies on a simple timer to get GPS, Android will simply refuse to run your timer.

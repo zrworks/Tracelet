@@ -1,4 +1,5 @@
 import { Callout, Cards } from 'nextra/components'
+import LottiePlayer from '../../../components/LottiePlayer'
 
 # Core Concepts: A Journey Through Space and Time
 
@@ -8,6 +9,8 @@ To truly understand how Tracelet's background location engine operates, we must 
 
 ## Scenario 1: The Morning Commute
 **Concepts Explored:** Motion Detection, Adaptive Sampling, Elasticity
+
+<LottiePlayer src="/animations/delivery.json" />
 
 ### The Problem
 Sarah wakes up, gets ready, and leaves her house. If her phone’s GPS was constantly polling at 10-meter intervals while she slept, her battery would be dead before she even started her shift. Once she gets in her car and drives onto the highway, a 10-meter interval is far too frequent and will overwhelm the database, but if it's too infrequent, her route will look like a straight line cutting through buildings.

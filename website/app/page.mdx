@@ -5,7 +5,7 @@ description: "Tracelet is a battery-conscious motion-detection intelligence, geo
 ---
 
 import { Callout, Cards } from 'nextra/components'
-import CityAnimation from '../components/CityAnimation'
+import LottiePlayer from '../components/LottiePlayer'
 
 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '4rem 0 2rem 0' }}>
   <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/logo_anim.webp" alt="Tracelet Animated Logo" style={{ width: 'auto', height: '150px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
@@ -33,7 +33,7 @@ import CityAnimation from '../components/CityAnimation'
 
 Tracelet flips the traditional location tracking model. Instead of relying purely on high-frequency, battery-draining GPS polls, we use intelligent **Motion-detection algorithms**, **activity recognition**, and **Adaptive Sampling** to track devices seamlessly in the background with near-zero battery drain when stationary.
 
-<CityAnimation />
+<LottiePlayer src="/animations/buildAnim.json" />
 
 <Callout type="info" emoji="🔋">
   **Battery Budget Engine:** Automatically tune `distanceFilter` and `desiredAccuracy` on the fly to stay within a configurable battery drain target (e.g. `2.0%` per hour).

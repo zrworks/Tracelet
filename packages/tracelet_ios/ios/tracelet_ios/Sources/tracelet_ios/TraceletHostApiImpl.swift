@@ -310,12 +310,10 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func stop(completion: @escaping (Result<TlState, Error>) -> Void) {
-        guard sdk.isReadyState else {
-            completion(.success(TlState(
-                enabled: false, isMoving: false, trackingMode: .location,
-                schedulerEnabled: false, odometer: 0.0, lastLocationTimestamp: nil)))
-            return
-        }
+        // No isReadyState guard — stop() must work before ready() so the user
+        // can halt tracking that was auto-resumed after a killed-state relaunch.
+        // The SDK is initialize()d at plugin registration, so this is safe.
+        // (Matches Android: TraceletHostApiImpl.stop has no readiness guard.)
         let state = sdk.stop()
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }
@@ -339,12 +337,9 @@ class TraceletHostApiImpl: TraceletHostApi {
     }
 
     func getState(completion: @escaping (Result<TlState, Error>) -> Void) {
-        guard sdk.isReadyState else {
-            completion(.success(TlState(
-                enabled: false, isMoving: false, trackingMode: .location,
-                schedulerEnabled: false, odometer: 0.0, lastLocationTimestamp: nil)))
-            return
-        }
+        // No isReadyState guard — getState() must report the real persisted
+        // state before ready() so a relaunched app can restore its UI
+        // (see killed-state restart support; matches Android behavior).
         let state = sdk.getState()
         completion(.success(dictToTlState(state as? [String: Any] ?? [:])))
     }

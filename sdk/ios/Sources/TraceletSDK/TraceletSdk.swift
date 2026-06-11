@@ -1543,6 +1543,12 @@ public final class TraceletSdk {
     // MARK: - Private: Motion State
 
     private func handleMotionStateChange(_ isMoving: Bool) {
+        // A CMMotionActivity callback can land after stop() — never let it
+        // restart tracking (changePace/coordinator can start GPS again).
+        guard stateManager.enabled else {
+            logger.debug("handleMotionStateChange ignored — tracking is stopped")
+            return
+        }
         if configManager.getMotionDetectionMode() == .smart {
             // In SMART mode, route the accel event through the coordinator first.
             // Only reset the speed state machine when the coordinator actually
@@ -2092,6 +2098,12 @@ extension TraceletSdk: SpeedMotionDelegate {
 
     public func switchToContinuousForce() {
         BackgroundTaskHelper.shared.run("speedSwitchContinuous") { [self] in
+            // A queued speed/smart callback can execute after stop() — never
+            // restart continuous GPS once the user has stopped tracking.
+            guard stateManager.enabled else {
+                logger.debug("switchToContinuousForce ignored — tracking is stopped")
+                return
+            }
             stateManager.isMoving = true
             stateManager.trackingMode = .continuous
             locationEngine.switchToContinuous()
@@ -2127,6 +2139,12 @@ extension TraceletSdk: SpeedMotionDelegate {
 
     public func switchToStationaryPeriodicForce() {
         BackgroundTaskHelper.shared.run("speedSwitchStationary") { [self] in
+            // A queued speed/smart callback can execute after stop() — never
+            // restart the stationary periodic timer once tracking is stopped.
+            guard stateManager.enabled else {
+                logger.debug("switchToStationaryPeriodicForce ignored — tracking is stopped")
+                return
+            }
             stateManager.isMoving = false
             locationEngine.switchToStationaryPeriodic()
             backgroundActivitySessionManager.stop()
@@ -2166,6 +2184,12 @@ extension TraceletSdk: SpeedMotionDelegate {
 
     public func switchToStationaryGeofencesForce() {
         BackgroundTaskHelper.shared.run("speedSwitchGeofences") { [self] in
+            // A queued speed/smart callback can execute after stop() — never
+            // re-register geofence monitoring once tracking is stopped.
+            guard stateManager.enabled else {
+                logger.debug("switchToStationaryGeofencesForce ignored — tracking is stopped")
+                return
+            }
             stateManager.isMoving = false
             stateManager.trackingMode = .geofences
             locationEngine.switchToStationaryGeofences()

@@ -65,6 +65,15 @@ class BootReceiver : BroadcastReceiver() {
         }
 
         val stateManager = StateManager(context)
+
+        // Only resume tracking that was active when the device shut down.
+        // If the user explicitly called stop(), a reboot must not resurrect
+        // tracking — startOnBoot means "survive reboots", not "auto-start".
+        if (!stateManager.enabled) {
+            Log.d(TAG, "Tracking was stopped before reboot — not resuming")
+            return
+        }
+
         val trackingMode = stateManager.trackingMode
 
         Log.d(TAG, "startOnBoot=true, trackingMode=$trackingMode — restoring tracking")

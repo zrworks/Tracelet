@@ -118,7 +118,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
             val runnable = object : Runnable {
                 override fun run() {
-                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy, "skipCache" to true)) { locationMap -> 
+                    if (!state.enabled) {
+                        com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(engine.context).logger
+                            .info("stationary periodic tick — tracking disabled, stopping timer")
+                        stopStationaryTimer()
+                        return
+                    }
+                    engine.getCurrentPosition(mapOf("desiredAccuracy" to accuracy, "skipCache" to true)) { locationMap ->
                         if (locationMap != null) {
                             val coords = locationMap["coords"] as? Map<*, *>
                             var speed = (coords?.get("speed") as? Number)?.toDouble() ?: 0.0
@@ -305,6 +311,11 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     override fun onStart(owner: LifecycleOwner) {
                         ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
                         deferredStartObserver = null
+                        if (!StateManager(appContext).enabled) {
+                            com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(appContext).logger
+                                .info("Deferred foreground-service start skipped — tracking was stopped")
+                            return
+                        }
                         val retryIntent = Intent(appContext, LocationService::class.java).apply {
                             action = ACTION_START
                             if (isBoot) putExtra(EXTRA_BOOT_START, true)
@@ -459,9 +470,20 @@ class LocationService : Service(), DefaultLifecycleObserver {
             }
             null -> {
                 // Sticky restart after system kill
-                Log.d(TAG, "Sticky restart detected — bootstrapping native tracking")
-                acquireOemWakelock()
-                startBootTracking()
+                if (!StateManager(applicationContext).enabled) {
+                    com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext).logger
+                        .info("Sticky restart but tracking is disabled — stopping service")
+                    stopBootTrackingInternal()
+                    releaseOemWakelock()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    isForegroundService = false
+                    stopSelf()
+                    isRunning = false
+                } else {
+                    Log.d(TAG, "Sticky restart detected — bootstrapping native tracking")
+                    acquireOemWakelock()
+                    startBootTracking()
+                }
             }
         }
 
@@ -612,6 +634,14 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
         val config = ConfigManager.getInstance(ctx)
         val state = StateManager(ctx)
+
+        // Tracking was explicitly stopped — never resurrect it from a boot,
+        // sticky-restart, or task-removal path.
+        if (!state.enabled) {
+            com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(ctx).logger
+                .info("startBootTracking() — tracking disabled (stop() was called), not bootstrapping")
+            return
+        }
 
         val eventSender = TraceletBootstrap.eventSenderFactory?.invoke(ctx)
             ?: run {

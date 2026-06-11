@@ -625,7 +625,13 @@ class _IssuesPageState extends State<IssuesPage> {
 
       // Reporter's custom body shape (3.2.8). If this builder ever throws, the
       // native side returns null → aborts the sync → "synced 0 locations".
-      Tracelet.setSyncBodyBuilder((context) async {
+      //
+      // IMPORTANT: await it. setSyncBodyBuilder() notifies the native side that a
+      // foreground builder exists (setHasCustomSyncBodyBuilder); if you don't
+      // await it, the first auto-sync can fire before that flag propagates and
+      // the sync silently falls back to the DEFAULT body (no custom shape, no
+      // custom headers) — exactly what the server logs showed.
+      await Tracelet.setSyncBodyBuilder((context) async {
         return {
           'location': context.locations,
           'is_live_ping': false,
@@ -635,10 +641,23 @@ class _IssuesPageState extends State<IssuesPage> {
 
       await Tracelet.ready(
         Config(
+          // distanceFilter: 0 so a stationary device still records fixes during
+          // the repro (otherwise the Rust distance filter drops them and you see
+          // only ONE sync — that's the filter, not a sync bug).
+          geo: const GeoConfig(distanceFilter: 0),
           motion: const MotionConfig(
             motionDetectionMode: MotionDetectionMode.smart,
           ),
-          http: HttpConfig(url: scannedUrl, autoSyncDelay: 5000),
+          http: HttpConfig(
+            url: scannedUrl,
+            autoSyncDelay: 5000,
+            // Sample auth headers so you can confirm headers actually reach the
+            // server. Replace with your real headers.
+            headers: const {
+              'Authorization': 'Bearer issue134-token',
+              'x-account-id': 'demo-account',
+            },
+          ),
         ),
       );
 

@@ -1,0 +1,105 @@
+import { Callout } from 'nextra/components'
+import LottiePlayer from '../../../../components/LottiePlayer'
+
+# Geofencing API
+
+Tracelet provides a robust, offline-first geofencing engine. Unlike standard OS geofencing which is limited to 20-100 geofences and requires the OS to wake your app, Tracelet evaluates geofences internally within the Rust engine. This enables **unlimited** geofences with zero additional battery drain.
+
+<LottiePlayer src="/animations/search.json" maxWidth="300px" />
+
+---
+
+## 1. Circular vs Polygon Geofences
+
+Tracelet supports both standard circular geofences and complex polygon geofences.
+
+### Circular Geofences
+A circular geofence is defined by a center coordinate and a radius (in meters).
+
+```dart
+final circular = tl.Geofence(
+  identifier: 'headquarters',
+  latitude: 37.7749,
+  longitude: -122.4194,
+  radius: 200, // 200 meters
+  notifyOnEntry: true,
+  notifyOnExit: true,
+  notifyOnDwell: true, // Triggers if they stay inside
+  loiteringDelay: 300, // Trigger dwell after 5 minutes
+);
+```
+
+### Polygon Geofences
+A polygon geofence is defined by an array of coordinates outlining a complex shape (like a park or a building).
+
+```dart
+final polygon = tl.Geofence.polygon(
+  identifier: 'golden_gate_park',
+  vertices: [
+    tl.Coordinate(latitude: 37.773972, longitude: -122.431297),
+    tl.Coordinate(latitude: 37.769996, longitude: -122.511055),
+    tl.Coordinate(latitude: 37.764516, longitude: -122.508566),
+  ],
+  notifyOnEntry: true,
+  notifyOnExit: true,
+);
+```
+
+---
+
+## 2. Adding and Removing Geofences
+
+Tracelet stores all geofences in the local SQLite database. This means they are persistent across app restarts. You do not need to re-add them every time the app launches.
+
+### Adding Geofences
+You can add a single geofence or an array of geofences.
+
+```dart
+// Add a single geofence
+await tl.Tracelet.addGeofence(circular);
+
+// Add multiple geofences efficiently
+await tl.Tracelet.addGeofences([circular, polygon]);
+```
+
+### Removing Geofences
+Remove them by their unique identifier, or clear the entire database.
+
+```dart
+// Remove a specific geofence
+await tl.Tracelet.removeGeofence('headquarters');
+
+// Remove all geofences entirely
+await tl.Tracelet.removeGeofences();
+```
+
+---
+
+## 3. Listing Active Geofences
+
+You can query the SQLite database at any time to see which geofences are currently being monitored.
+
+```dart
+final geofences = await tl.Tracelet.getGeofences();
+for (final fence in geofences) {
+  print('Monitoring: \${fence.identifier}');
+}
+```
+
+---
+
+## 4. Listening for Geofence Events
+
+When the user crosses a geofence boundary, Tracelet fires the `onGeofence` event. Because the evaluation happens in the Rust core during location updates, these events will fire even if the app is killed (triggering your headless callback).
+
+```dart
+tl.Tracelet.onGeofence((evt) {
+  if (evt.action == tl.GeofenceEventAction.ENTER) {
+    print('User entered: \${evt.identifier}');
+  } else if (evt.action == tl.GeofenceEventAction.EXIT) {
+    print('User exited: \${evt.identifier}');
+  } else if (evt.action == tl.GeofenceEventAction.DWELL) {
+    print('User is dwelling inside: \${evt.identifier}');
+  }
+});
+```

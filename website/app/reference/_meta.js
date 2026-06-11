@@ -1,7 +1,0 @@
-export default {
-  "tools": "Diagnostic Tools",
-  "adapters": "Database Adapters",
-  "api-reference": "Full API Reference",
-  "faq": "FAQ & Troubleshooting",
-  "sponsor": "Support Tracelet ❤️"
-}

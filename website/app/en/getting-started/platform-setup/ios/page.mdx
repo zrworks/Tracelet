@@ -1,0 +1,155 @@
+# iOS SDK: Surviving Suspension
+
+Apple’s `CoreLocation` framework provides powerful tools for background tracking, but iOS is extremely aggressive at suspending apps to save memory and battery life. 
+
+This page explains exactly how Tracelet interacts with Apple's strict background execution policies, and how you can configure it for your specific scenario.
+
+import { Callout, Tabs } from 'nextra/components'
+import LottiePlayer from '../../../../../components/LottiePlayer'
+
+<LottiePlayer src="/animations/apple.json" maxWidth="300px" minHeight="200px" />
+
+---
+
+## Permissions & Info.plist Setup
+
+Apple enforces strict privacy requirements. To use Tracelet effectively, you must declare exactly *why* you need certain permissions in your `ios/Runner/Info.plist`. Apple will reject your app during App Store review if these strings are missing or don't clearly explain the use-case.
+
+### 1. Required Usage Descriptions
+Add the following keys to your `Info.plist`:
+
+```xml
+<!-- Required for basic tracking -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>We need your location to track your route while the app is open.</string>
+
+<!-- Required for background tracking when the app is minimized or killed -->
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>We need background location to record your route even when the app is closed.</string>
+
+<!-- Required for the smart motion-detection battery saving engine -->
+<key>NSMotionUsageDescription</key>
+<string>Motion detection allows battery-efficient tracking by pausing GPS when stationary.</string>
+```
+
+### 2. Background Modes
+For Tracelet to run in the background (and execute headless Dart code when the app is killed), you must declare the proper Background Modes capabilities in Xcode. 
+
+Alternatively, add them directly to your `Info.plist`:
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+  <string>location</string>
+  <string>fetch</string>
+  <!-- Only add 'audio' if you are using 'preventSuspend: true' (See Scenario 1 below) -->
+</array>
+```
+
+### 3. Removing Optional Features (No Crashes)
+
+If your client doesn't want specific features (e.g., they don't want to track motion or activity types), you can safely omit the corresponding key from your `Info.plist`. Tracelet's native Swift code safely checks for key presence before requesting features.
+
+| Feature Key | Effect when removed from `Info.plist` |
+|---|---|
+| `NSMotionUsageDescription` | **Safe.** iOS will silently fall back to checking location changes for movement. `CMMotionActivityManager` won't be invoked, and the user won't be prompted for Motion permissions. |
+| `UIBackgroundModes` -> `audio` | **Safe.** Only required if your config sets `preventSuspend: true` to prevent Dart isolate suspension. |
+| `NSLocationAlwaysAndWhenInUseUsageDescription` | **Safe.** The app will only ever track while in the foreground (or temporarily via the blue pill). Tracelet handles the graceful degradation internally. |
+
+
+
+## Scenario 1: The Fitness App (High Accuracy, No Suspend)
+**Concepts Explored:** Activity Types, Suspension, Audio Wake
+
+### The Problem
+Your user is running a marathon. They open your app, start the run, and lock their iPhone. Five minutes later, iOS decides it needs RAM to run a background iCloud backup, so it completely suspends your app's Dart isolate. Tracelet's native swift code continues to gather GPS points, but because the Dart isolate is frozen, your Flutter UI stops updating the distance counter, and any live-tracking web-sockets you have running in Dart are killed.
+
+### How Tracelet Solves It: Prevent Suspend
+
+To keep the Flutter Dart isolate running indefinitely while the screen is off, you must trick iOS into thinking the app is actively playing media.
+
+```dart
+ios: tl.IosConfig(
+  activityType: tl.LocationActivityType.fitness, // Optimizes GPS filtering for running
+  preventSuspend: true, 
+)
+```
+
+Setting `preventSuspend: true` causes Tracelet to play an imperceptible, silent audio clip on a loop. Because iOS thinks the user is listening to music, it will NEVER suspend the Dart isolate.
+
+<Callout type="warning">
+  **App Store Review Note:** Using `preventSuspend` requires the `audio` background mode capability in Xcode. Apple **will reject your app** if you use background audio purely to keep the app alive without a legitimate user-facing reason (e.g., a fitness tracker playing voice cues, or a navigation app speaking turn-by-turn directions). Do not use this for silent fleet tracking!
+
+  **To enable this:** Open your iOS project in Xcode, go to **Signing & Capabilities** -> **+ Capability** -> **Background Modes** -> check **Audio, AirPlay, and Picture in Picture**.
+</Callout>
+
+---
+
+## Scenario 2: The Social Radar (Low Power, Coarse)
+**Concepts Explored:** Significant Changes, Authorization Levels
+
+### The Problem
+You are building a social networking app that notifies the user when a friend is nearby. You don't need turn-by-turn accuracy; you just need to know roughly what neighborhood they are in. You also don't want to show the scary "Always Allow" permission prompt, as users will reject it.
+
+### How Tracelet Solves It: Significant Changes
+
+Instead of powering up the GPS chip, Tracelet can rely entirely on cell-tower handoffs.
+
+```dart
+ios: tl.IosConfig(
+  useSignificantChangesOnly: true, 
+  locationAuthorizationRequest: tl.LocationAuthorizationRequest.whenInUse,
+  disableLocationAuthorizationAlert: true,
+)
+```
+
+1. **Significant Changes Only:** By enabling this, Tracelet tells iOS to only wake the app up when the device jumps to a completely different cell tower (usually 500m to several kilometers). The battery drain is practically zero.
+2. **When In Use Authorization:** You only ask for "When In Use" permission. Tracelet respects this and will not trigger the native Apple prompt telling the user to go to Settings to enable "Always". *(To learn how to trigger these permission prompts from Dart, see the [Flutter SDK: Permissions](/en/getting-started/flutter#scenario-2-the-onboarding-flow) page).*
+
+---
+
+## Scenario 3: The Blue Pill Indicator
+**Concepts Explored:** Background Location Indicator
+
+### The Problem
+You only have "When In Use" permission, but you still want to track the user temporarily in the background while they complete a specific task (like picking up a rideshare passenger). 
+
+### How Tracelet Solves It
+By enabling the blue status bar indicator, Apple permits "When In Use" apps to continue receiving high-frequency updates in the background, because the user is clearly visually notified that tracking is happening.
+
+```dart
+ios: tl.IosConfig(
+  showsBackgroundLocationIndicator: true, 
+)
+```
+When the user locks their phone, a blue pill with an arrow will appear in the top-left of their screen.
+
+**To enable this:** You must have the `location` Background Mode enabled in Xcode (**Signing & Capabilities** -> **Background Modes** -> **Location updates**).
+
+---
+
+## Scenario 4: The Terminated State (App Force-Quit)
+**Concepts Explored:** App Lifecycle, Force-Quit vs OS Suspension
+
+### The Problem
+Your user swipes up from the app switcher and completely force-quits the app. You expect Tracelet to continue tracking them in the background, but the locations stop coming in.
+
+### How Apple Handles It
+Unlike Android, where a Foreground Service can often survive a swipe-to-dismiss, **iOS strictly enforces user intent**. 
+
+According to [Apple's Official CoreLocation Documentation](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background):
+> *"If the user force-quits your app, the system does not automatically launch it when new location events arrive. The user must explicitly relaunch your app before the system resumes delivering location events."*
+
+When a user manually force-quits the app:
+1. **Standard Location Updates:** Stopped completely.
+2. **Significant Location Changes (SLC):** Stopped completely.
+3. **Region Monitoring (Geofences):** Stopped completely.
+
+**Will it work in the Terminated State?**
+* **If the OS terminated the app (e.g., due to memory pressure in the background):** Yes. Apple will automatically relaunch your app in the background when a location event occurs (like a significant change or geofence trigger). Tracelet's native Rust core will wake up and handle it seamlessly.
+* **If the user explicitly force-quits the app:** No. The app will remain dead until the user manually taps the app icon to open it again. 
+
+### How Tracelet Solves It
+Tracelet cannot bypass Apple's fundamental OS constraints. However, Tracelet ensures that:
+1. All unsynced locations are safely persisted in the Rust SQLite database *before* the app is killed.
+2. As soon as the user opens the app again, Tracelet instantly resumes tracking and syncs any offline data without missing a beat.

@@ -3,6 +3,84 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-11
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.2.14`](#tracelet---v3214)
+ - [`tracelet_android` - `v3.2.14`](#tracelet_android---v3214)
+ - [`tracelet_doctor` - `v3.2.14`](#tracelet_doctor---v3214)
+ - [`tracelet_firebase` - `v3.2.14`](#tracelet_firebase---v3214)
+ - [`tracelet_ios` - `v3.2.14`](#tracelet_ios---v3214)
+ - [`tracelet_platform_interface` - `v3.2.14`](#tracelet_platform_interface---v3214)
+ - [`tracelet_supabase` - `v3.2.14`](#tracelet_supabase---v3214)
+ - [`tracelet_sync` - `v3.2.14`](#tracelet_sync---v3214)
+ - [`tracelet_web` - `v3.2.14`](#tracelet_web---v3214)
+
+---
+
+#### `tracelet` - `v3.2.14`
+
+ - **FIX**(sync): keep method channel alive to avoid iOS timeout bugs when no builder is registered. ([9a083478](https://github.com/Ikolvi/Tracelet/commit/9a083478733315922245fc82c36bada011378818))
+ - **FIX**(sync): resolve issue 134 where custom sync body timeouts prevented background syncs. ([7fa16fdf](https://github.com/Ikolvi/Tracelet/commit/7fa16fdf05274c326f6b6b29d318f55981232f1a))
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_android` - `v3.2.14`
+
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **FIX**(android): prevent headless engine from overwriting sync interceptor (Issue 136). ([b166bcd5](https://github.com/Ikolvi/Tracelet/commit/b166bcd56ad171e488b8c9aed9dda63ef2cc58bd))
+ - **FIX**(android): align deltaCoordinatePrecision default with Dart (Issue [#137](https://github.com/Ikolvi/Tracelet/issues/137)). ([5edb9910](https://github.com/Ikolvi/Tracelet/commit/5edb99108eedd7e9dbbcb2a311af6729def6ff79))
+ - **DOCS**(android): document Issue 136 fix to prevent regression. ([36b4b9c9](https://github.com/Ikolvi/Tracelet/commit/36b4b9c94f81ee8b852ce2cfcd8d368dd7cabba6))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_doctor` - `v3.2.14`
+
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_firebase` - `v3.2.14`
+
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_ios` - `v3.2.14`
+
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_platform_interface` - `v3.2.14`
+
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_supabase` - `v3.2.14`
+
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_sync` - `v3.2.14`
+
+ - **FIX**(android): background auto-sync no longer dies after one failure (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([6db758c0](https://github.com/Ikolvi/Tracelet/commit/6db758c03657676423841a43471ffa8799fd0f93))
+ - **FIX**(android): honor locationsOrderDirection when batching sync uploads (Issue [#138](https://github.com/Ikolvi/Tracelet/issues/138)). ([8c5a5ed2](https://github.com/Ikolvi/Tracelet/commit/8c5a5ed2db12a6bb8242e68876837a3eb77ffa5b))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+#### `tracelet_web` - `v3.2.14`
+
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
+
 ## 2026-06-09
 
 ### Changes

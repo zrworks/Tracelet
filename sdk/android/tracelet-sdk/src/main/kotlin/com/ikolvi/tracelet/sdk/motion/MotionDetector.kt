@@ -116,6 +116,20 @@ class MotionDetector(
          * impact on total detection time.
          */
         private const val STILLNESS_BATCH_LATENCY_US = 5_000_000
+
+        /**
+         * Number of consecutive above-threshold accelerometer samples required
+         * to abort an in-progress stop-timeout countdown.
+         *
+         * The stillness sampler batches deliveries ([STILLNESS_BATCH_LATENCY_US]),
+         * so a single burst can contain both the still streak that *starts* the
+         * countdown and stray motion/noise samples that immediately follow it.
+         * Requiring sustained motion (not one stray sample) to cancel the
+         * countdown prevents those stale in-burst spikes — and ordinary sensor
+         * noise during the long countdown — from stranding the detector in the
+         * moving state and never transitioning to stationary.
+         */
+        private const val MOTION_ABORT_COUNT = 5
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -148,6 +162,14 @@ class MotionDetector(
     /** Counter for consecutive still samples in accelerometer-only mode (A-M10). */
     @Volatile
     private var consecutiveStillSamples = 0
+
+    /**
+     * Counter for consecutive above-threshold samples seen *after* the
+     * stop-timeout countdown has started. Used to require sustained motion
+     * before aborting the countdown — see [MOTION_ABORT_COUNT].
+     */
+    @Volatile
+    private var consecutiveMotionSamples = 0
 
     @Volatile
     var isRunning = false
@@ -468,6 +490,7 @@ class MotionDetector(
         stopAccelerometerMonitoring()
         cancelSignificantMotionListener()
         consecutiveStillSamples = 0
+        consecutiveMotionSamples = 0
 
         val delay = config.getMotionTriggerDelay().toLong()
         if (delay > 0) {
@@ -646,6 +669,7 @@ class MotionDetector(
             return
         }
         consecutiveStillSamples = 0
+        consecutiveMotionSamples = 0
 
         // Log sensor details
         logger.debug("Accelerometer details (stillness): name=${accelerometer.name}, vendor=${accelerometer.vendor}, version=${accelerometer.version}, power=${accelerometer.power}mA, resolution=${accelerometer.resolution}m/s²")
@@ -704,19 +728,36 @@ class MotionDetector(
                 }
 
                 if (absMag < stillThreshold) {
+                    // A quiet sample — reset any motion streak that was building
+                    // toward an abort, then count toward the still threshold.
+                    consecutiveMotionSamples = 0
                     consecutiveStillSamples++
                     if (consecutiveStillSamples == stillCount) {
                         logger.debug("[STILLNESS] ★★★ sustained stillness detected ($stillCount samples) → startStopTimeoutCountdown()")
-                        // Shut down the accelerometer during the stop countdown to prevent 
-                        // hyper-sensitive false-positive shake events from aborting the timeout
-                        stopAccelerometerMonitoring()
+                        // NOTE: We intentionally keep the stillness sampler running
+                        // during the countdown. It must stay alive so that genuine,
+                        // sustained motion can abort the timeout below — stopping the
+                        // sensor here (as a previous fix did) strands the detector in
+                        // the moving state when a stale, still-batched motion sample
+                        // cancels the countdown right after it starts.
                         startStopTimeoutCountdown()
                     }
-                } else {
-                    if (consecutiveStillSamples >= stillCount) {
-                        logger.debug("[STILLNESS] Motion resumed during stop-timeout (mag=${String.format("%.3f", magnitude)} >= threshold=$stillThreshold) → cancelStopTimeout()")
+                } else if (consecutiveStillSamples >= stillCount) {
+                    // The countdown is running. Only abort on *sustained* motion —
+                    // a single above-threshold sample is almost always sensor noise
+                    // or a stale sample left over from the same batched delivery that
+                    // started the countdown. Aborting on one such sample is exactly
+                    // what left the device stuck in the moving state.
+                    consecutiveMotionSamples++
+                    if (consecutiveMotionSamples >= MOTION_ABORT_COUNT) {
+                        logger.debug("[STILLNESS] Sustained motion resumed during stop-timeout ($consecutiveMotionSamples samples ≥ threshold=$stillThreshold) → cancelStopTimeout()")
                         cancelStopTimeout()
+                        consecutiveStillSamples = 0
+                        consecutiveMotionSamples = 0
                     }
+                } else {
+                    // Not yet in a countdown — a normal motion sample just breaks
+                    // the still streak.
                     consecutiveStillSamples = 0
                 }
             }

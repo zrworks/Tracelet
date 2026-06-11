@@ -30,9 +30,8 @@ Push the dashboard onto your navigation stack:
 ```dart
 import 'package:tracelet_doctor/tracelet_doctor.dart';
 
-Navigator.push(context, MaterialPageRoute(
-  builder: (context) => const TraceletDoctorDashboard(),
-));
+// Show the interactive diagnostic overlay
+TraceletDoctor.show(context);
 ```
 
 ### Core Features
@@ -60,4 +59,4 @@ The dashboard provides 5 crucial tabs for debugging:
 
 Chinese OEMs (Xiaomi, Huawei, Oppo, Vivo, OnePlus) ship with highly aggressive, proprietary battery managers that completely ignore standard Android foreground service rules. 
 
-To see how Tracelet handles these devices and which manufacturers are supported, please read our dedicated [OEM Power Management 📖](/oem-power-management) guide.
+To see how Tracelet handles these devices and which manufacturers are supported, please read our dedicated [OEM Power Management 📖](/core/oem-power-management) guide.

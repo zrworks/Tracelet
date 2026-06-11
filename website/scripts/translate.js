@@ -296,18 +296,13 @@ async function run() {
   await Promise.all([
     worker('bing'),
     worker('bing'),
-    worker('bing'),
     worker('google'),
     worker('google'),
-    worker('bing'),
-    worker('bing'),
     worker('bing'),
     worker('bing'),
     worker('google'),
     worker('google'),
     worker('google'),
-    worker('google'),
-    worker('bing'),
     worker('bing'),
     worker('bing'),
   ]);

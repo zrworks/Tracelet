@@ -1,3 +1,12 @@
+## 3.2.14
+
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **FIX**(android): prevent headless engine from overwriting sync interceptor (Issue 136). ([b166bcd5](https://github.com/Ikolvi/Tracelet/commit/b166bcd56ad171e488b8c9aed9dda63ef2cc58bd))
+ - **FIX**(android): align deltaCoordinatePrecision default with Dart (Issue [#137](https://github.com/Ikolvi/Tracelet/issues/137)). ([5edb9910](https://github.com/Ikolvi/Tracelet/commit/5edb99108eedd7e9dbbcb2a311af6729def6ff79))
+ - **DOCS**(android): document Issue 136 fix to prevent regression. ([36b4b9c9](https://github.com/Ikolvi/Tracelet/commit/36b4b9c94f81ee8b852ce2cfcd8d368dd7cabba6))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
 ## 3.2.13
 
 - **FIX**(android): `startOnBoot` now resumes tracking after a reboot even when the OS refuses to start the location foreground service from `BOOT_COMPLETED` (Android 14 disallows starting a `location`-type foreground service from boot). Previously the boot start was deferred until the app was next opened, so tracking silently never resumed after a reboot — `BootReceiver` now falls back to background WorkManager/alarm tracking when the foreground-service start is blocked.

@@ -1,3 +1,9 @@
+## 3.2.14
+
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
 ## 3.2.13
 
 - **CHORE**: Version bump to 3.2.13 to stay in lockstep with the federated set (Android `startOnBoot` reboot-tracking fix — see `tracelet_android`). No changes to this package.

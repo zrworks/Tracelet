@@ -1,3 +1,11 @@
+## 3.2.14
+
+ - **FIX**(sync): keep method channel alive to avoid iOS timeout bugs when no builder is registered. ([9a083478](https://github.com/Ikolvi/Tracelet/commit/9a083478733315922245fc82c36bada011378818))
+ - **FIX**(sync): resolve issue 134 where custom sync body timeouts prevented background syncs. ([7fa16fdf](https://github.com/Ikolvi/Tracelet/commit/7fa16fdf05274c326f6b6b29d318f55981232f1a))
+ - **FIX**(sync): fix background auto-sync abortion when no custom builder is registered (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([631542a1](https://github.com/Ikolvi/Tracelet/commit/631542a1c89cece565160966c6f6301a0e18098a))
+ - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))
+ - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))
+
 ## 3.2.13
 
 - **FIX**(android): `startOnBoot` now resumes tracking after a reboot on devices where the OS refuses to start a `location` foreground service from `BOOT_COMPLETED` (e.g. Android 14). Previously tracking silently never resumed after a reboot; it now falls back to background WorkManager/alarm tracking.

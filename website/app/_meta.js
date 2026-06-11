@@ -3,5 +3,6 @@ export default {
   "getting-started": "Getting Started",
   core: "Core Concepts",
   config: "Configuration",
-  reference: "Reference & Tools"
+  reference: "Reference & Tools",
+  "whats-new": "What's New"
 }

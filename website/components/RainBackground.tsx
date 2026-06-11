@@ -36,11 +36,11 @@ export default function RainBackground() {
       'rgba(33, 150, 243, 0.4)'
     ]
     
-    // Tracelet themed colors for light mode
+    // Tracelet themed colors for light mode (increased opacity for visibility)
     const lightColors = [
-      'rgba(0, 0, 0, 0.15)', 
-      'rgba(15, 157, 88, 0.25)', // Tracelet Green
-      'rgba(33, 150, 243, 0.25)'
+      'rgba(0, 0, 0, 0.45)', 
+      'rgba(15, 157, 88, 0.55)', // Tracelet Green
+      'rgba(33, 150, 243, 0.55)'
     ]
     
     interface Drop {
@@ -70,7 +70,7 @@ export default function RainBackground() {
       const isDark = document.documentElement.classList.contains('dark')
       const activeColors = isDark ? darkColors : lightColors
       
-      ctx.lineWidth = 1 // Keeping thickness exactly the same
+      ctx.lineWidth = 1.5 // Increased thickness for better visibility
       
       for (let i = 0; i < drops.length; i++) {
         const drop = drops[i]

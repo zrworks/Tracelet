@@ -5,6 +5,7 @@ Apple’s `CoreLocation` framework provides powerful tools for background tracki
 This page explains exactly how Tracelet interacts with Apple's strict background execution policies, and how you can configure it for your specific scenario.
 
 import { Callout, Tabs } from 'nextra/components'
+import LottiePlayer from '../../../../components/LottiePlayer'
 
 ---
 
@@ -56,6 +57,8 @@ If your client doesn't want specific features (e.g., they don't want to track mo
 ---
 
 ## The Rust Core Architecture
+
+<LottiePlayer src="/animations/fly.json" />
 
 To guarantee absolute parity between Android and iOS, Tracelet's core logic (the state machine, HTTP sync engine, SQLite persistence, and battery budget calculations) is written entirely in **Rust**.
 

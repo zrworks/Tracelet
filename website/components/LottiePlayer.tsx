@@ -8,11 +8,19 @@ const DotLottieReact = dynamic(
   { ssr: false }
 );
 
-export default function CityAnimation() {
+export default function LottiePlayer({ 
+  src, 
+  maxWidth = '600px', 
+  minHeight = '300px' 
+}: { 
+  src: string; 
+  maxWidth?: string; 
+  minHeight?: string; 
+}) {
   return (
-    <div style={{ width: '100%', maxWidth: '600px', minHeight: '300px', margin: '0 auto', padding: '2rem 0' }}>
+    <div style={{ width: '100%', maxWidth, minHeight, margin: '0 auto', padding: '2rem 0' }}>
       <DotLottieReact
-        src="/buildAnim.json"
+        src={src}
         loop
         autoplay
       />

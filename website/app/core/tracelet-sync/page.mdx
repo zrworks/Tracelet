@@ -3,6 +3,9 @@
 Location tracking means nothing if the data never reaches your servers. Mobile devices drop connection constantly—when entering elevators, driving through valleys, or switching from Wi-Fi to Cellular. Tracelet Sync is an offline-first, battery-aware networking engine designed to ensure data delivery without waking the UI.
 
 import { Callout, Steps, Tabs } from 'nextra/components'
+import LottiePlayer from '../../../components/LottiePlayer'
+
+<LottiePlayer src="/animations/ship.json" />
 
 <Callout type="warning">
   **Tracelet 3.2.0 Update:** HTTP sync logic has been moved to the `tracelet_sync` module. You must include this module if you require network synchronization.

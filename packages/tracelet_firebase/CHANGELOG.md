@@ -1,3 +1,8 @@
+## 3.2.15
+
+* **CHORE**: Update dependencies and constraints.
+* **FIX**: Resolve `MissingPluginException` and test timing issues with `setHasCustomSyncBodyBuilder`.
+
 ## 3.2.14
 
  - **DOCS**: integrate nextra website and update pubspec URLs. ([99b7fda8](https://github.com/Ikolvi/Tracelet/commit/99b7fda82e290ca6c8175313eae62a2475360050))

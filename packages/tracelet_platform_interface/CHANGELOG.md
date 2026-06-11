@@ -1,3 +1,8 @@
+## 3.2.15
+
+* **CHORE**: Update dependencies and constraints.
+* **FIX**: Resolve `MissingPluginException` and test timing issues with `setHasCustomSyncBodyBuilder`.
+
 ## 3.2.14
 
  - **DOCS**: add official documentation URL to all package READMEs. ([9eb6951e](https://github.com/Ikolvi/Tracelet/commit/9eb6951e64c13007f3264e2d44f0feb9222500a3))

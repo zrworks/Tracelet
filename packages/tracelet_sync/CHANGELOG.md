@@ -1,3 +1,8 @@
+## 3.2.15
+
+* **CHORE**: Update dependencies and constraints.
+* **FIX**: Resolve `MissingPluginException` and test timing issues with `setHasCustomSyncBodyBuilder`.
+
 ## 3.2.14
 
  - **FIX**(android): background auto-sync no longer dies after one failure (Issue [#134](https://github.com/Ikolvi/Tracelet/issues/134)). ([6db758c0](https://github.com/Ikolvi/Tracelet/commit/6db758c03657676423841a43471ffa8799fd0f93))

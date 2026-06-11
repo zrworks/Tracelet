@@ -1,3 +1,8 @@
+## 3.2.15
+
+* **CHORE**: Update dependencies and constraints.
+* **FIX**: Resolve `MissingPluginException` and test timing issues with `setHasCustomSyncBodyBuilder`.
+
 ## 3.2.14
 
  - **FIX**(sync): keep method channel alive to avoid iOS timeout bugs when no builder is registered. ([9a083478](https://github.com/Ikolvi/Tracelet/commit/9a083478733315922245fc82c36bada011378818))

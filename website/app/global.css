@@ -109,3 +109,54 @@ footer {
 html.dark footer {
   background-color: var(--nextra-bg, #111) !important;
 }
+
+/* Cookie Banner Dark Mode Fix */
+.cookie-banner {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+html.dark .cookie-banner {
+  background-color: #171717; /* neutral-900 */
+  border-color: #262626; /* neutral-800 */
+  color: #f3f4f6; /* gray-100 */
+}
+
+.cookie-banner-text {
+  color: #6b7280; /* gray-500 */
+}
+
+html.dark .cookie-banner-text {
+  color: #9ca3af; /* gray-400 */
+}
+
+.cookie-btn-decline {
+  border: 1px solid #d1d5db;
+}
+
+html.dark .cookie-btn-decline {
+  border-color: #404040; /* neutral-700 */
+}
+
+.cookie-btn-decline:hover {
+  background-color: #f3f4f6; /* gray-100 */
+}
+
+html.dark .cookie-btn-decline:hover {
+  background-color: #262626; /* neutral-800 */
+}
+
+/* Hide the Language Switcher in the Sidebar */
+.nextra-sidebar-footer > div:last-child {
+  display: none !important;
+}
+aside button[role="combobox"] {
+  display: none !important;
+}
+
+/* Language Prompt Bounce Animation */
+@keyframes tracelet-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}

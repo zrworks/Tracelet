@@ -1091,6 +1091,12 @@ jobs:
         working-directory: ./website
         run: npm install
         
+      - name: Generate i18n Translations (On-the-fly)
+        working-directory: ./website
+        run: |
+          npm run i18n:sync
+          npm run i18n:translate
+        
       - name: Build Next.js Static Site
         working-directory: ./website
         run: npm run build

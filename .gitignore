@@ -162,3 +162,12 @@ docs/superpowers/
 website/.next/
 website/out/
 website/public/_pagefind/
+
+# i18n Generated Folders
+website/app/hi/
+website/app/zh/
+website/app/ja/
+website/app/es/
+website/app/ml/
+website/app/ta/
+website/app/ru/

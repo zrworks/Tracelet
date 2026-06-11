@@ -84,7 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', fontSize: '0.9rem' }}>
-                <a href="/sponsor" className="footer-link" style={{ color: '#0F9D58', fontWeight: '600' }}>❤️ Support Tracelet</a>
+                <a href="/reference/sponsor" className="footer-link" style={{ color: '#0F9D58', fontWeight: '600' }}>❤️ Support Tracelet</a>
                 
                 <span style={{ borderLeft: '1px solid #d1d5db', height: '16px', margin: '0 0.5rem' }}></span>
                 <span style={{ fontWeight: '600', color: '#4b5563' }}>Powered by Ikolvi</span>
@@ -98,7 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           toc={{
             extraContent: (
               <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
-                <a href="/sponsor" style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58', marginBottom: '0.25rem' }}>❤️ Support Tracelet</b></a>
+                <a href="/reference/sponsor" style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58', marginBottom: '0.25rem' }}>❤️ Support Tracelet</b></a>
                 <a href="https://github.com/sponsors/GalacticTitan" target="_blank" rel="noopener noreferrer" className="footer-link">🐙 GitHub Sponsors</a>
                 <a href="https://www.buymeacoffee.com/kiranbjm" target="_blank" rel="noopener noreferrer" className="footer-link">☕ Buy Me a Coffee</a>
                 <a href="https://thanks.dev/d/gh/galactictitan/dependencies" target="_blank" rel="noopener noreferrer" className="footer-link">✨ Thanks.dev</a>

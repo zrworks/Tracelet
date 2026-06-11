@@ -39,14 +39,31 @@ const baseLang = 'en';
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-async function translateLineGoogle(text, targetLang) {
+async function translateLineGoogle(text, targetLang, retries = 5) {
   if (!text.trim()) return text;
-  await delay(1000); // Strict 1s delay for Google to prevent IP block
-  const res = await googleTranslate(text, { to: targetLang });
-  let translated = res.text;
-  // Fix spaces inside markdown bold tags (e.g. "** text **" -> "**text**")
-  translated = translated.replace(/(\*\*)\s*(.*?)\s*(\*\*)/g, '$1$2$3');
-  return translated;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      // Base delay of 1s, but if we are retrying, wait longer
+      await delay(1000 + (i * 1000)); 
+      
+      const res = await googleTranslate(text, { to: targetLang });
+      let translated = res.text;
+      // Fix spaces inside markdown bold tags (e.g. "** text **" -> "**text**")
+      translated = translated.replace(/(\*\*)\s*(.*?)\s*(\*\*)/g, '$1$2$3');
+      return translated;
+    } catch (e) {
+      const isRateLimit = e.name === 'TooManyRequestsError' || e.message.includes('TooManyRequests') || e.statusCode === 429;
+      
+      if (isRateLimit && i < retries - 1) {
+        const waitTime = 3000 * (i + 1); // 3s, 6s, 9s...
+        console.log(`\n[GOOGLE API] Blocked (Too Many Requests). Waiting ${waitTime/1000}s to retry...`);
+        await delay(waitTime);
+      } else {
+        throw e; // Throw if it's a different error or we ran out of retries
+      }
+    }
+  }
 }
 
 async function translateLineBing(text, targetLang) {

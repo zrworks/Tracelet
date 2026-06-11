@@ -59,7 +59,7 @@ class MotionDetectorTest {
     }
 
     @Test
-    fun `sustained stillness starts stop timeout and stops accelerometer`() {
+    fun `sustained stillness starts stop timeout and keeps stillness sampler running`() {
         val listener = getAccelerometerListener()
         assertNotNull(listener, "Accelerometer should be listening for stillness")
 
@@ -69,17 +69,67 @@ class MotionDetectorTest {
         }
         assertNull(getStopTimeoutRunnable(), "Timeout should not be started yet")
 
-        // 25th sample
-        println("Sending 25th sample...")
+        // 25th sample triggers the countdown.
         sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f))
-        
-        println("Runnable is: ${getStopTimeoutRunnable()}")
-        // Timeout should be started
         assertNotNull(getStopTimeoutRunnable(), "Timeout should be started after sustained stillness")
-        
-        // CRITICAL FIX TEST: Accelerometer should be SHUT DOWN during the stop countdown
-        // to prevent hyper-sensitive false-positive shake events from aborting the timeout!
-        assertNull(getAccelerometerListener(), "Accelerometer must be shut down during the stop countdown")
+
+        // The stillness sampler MUST stay registered during the countdown so
+        // that genuine, sustained motion can still abort it. Shutting it down
+        // (a previous regression) stranded the detector in the moving state
+        // when a stale batched sample cancelled the timeout right after start.
+        assertNotNull(
+            getAccelerometerListener(),
+            "Stillness sampler must keep running during the stop countdown",
+        )
+    }
+
+    @Test
+    fun `single stray motion sample after countdown starts does not cancel the timeout`() {
+        val listener = getAccelerometerListener()!!
+
+        // Build the still streak that starts the countdown.
+        repeat(25) { sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f)) }
+        assertNotNull(getStopTimeoutRunnable(), "Countdown should be running")
+
+        // One above-threshold sample (e.g. a stale sample left in the same
+        // batched burst, or sensor noise) must NOT abort the countdown.
+        sendSensorEvent(listener, floatArrayOf(5f, 0f, 9.81f)) // magnitude ≈ 5 >> 0.4
+
+        assertNotNull(
+            getStopTimeoutRunnable(),
+            "A single stray motion sample must not cancel the stop timeout",
+        )
+    }
+
+    @Test
+    fun `sustained motion after countdown starts cancels the timeout`() {
+        val listener = getAccelerometerListener()!!
+
+        repeat(25) { sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f)) }
+        assertNotNull(getStopTimeoutRunnable(), "Countdown should be running")
+
+        // MOTION_ABORT_COUNT (5) consecutive above-threshold samples represent
+        // real resumed movement and must abort the pending stationary decision.
+        repeat(5) { sendSensorEvent(listener, floatArrayOf(5f, 0f, 9.81f)) }
+
+        assertNull(
+            getStopTimeoutRunnable(),
+            "Sustained motion must cancel the stop timeout",
+        )
+        assertTrue(state.isMoving, "Device must remain in the moving state after a real abort")
+    }
+
+    @Test
+    fun `stop timeout fires and declares stationary when stillness is sustained`() {
+        val listener = getAccelerometerListener()!!
+
+        repeat(25) { sendSensorEvent(listener, floatArrayOf(0f, 0f, 9.81f)) }
+        assertNotNull(getStopTimeoutRunnable(), "Countdown should be running")
+
+        // Advance past the stop timeout (configured to 1 minute in setUp).
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMinutes(2))
+
+        assertFalse(state.isMoving, "Detector must transition to stationary when the timeout fires")
     }
 
     // =========================================================================

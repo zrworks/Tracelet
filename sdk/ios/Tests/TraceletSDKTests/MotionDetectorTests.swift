@@ -76,7 +76,7 @@ final class MotionDetectorTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    func testMotionDuringStopTimeoutAbortsStopTransition() {
+    func testSustainedMotionDuringStopTimeoutAbortsStopTransition() {
         var timeoutStarted = false
         var timeoutCancelled = false
 
@@ -97,18 +97,76 @@ final class MotionDetectorTests: XCTestCase {
         }
         wait(for: [startExpectation], timeout: 1.0)
 
-        // Now simulate a bump (magnitude > 0.15 threshold)
-        // Let's send 1.5g on Z axis (magnitude = 0.5)
+        // Simulate SUSTAINED motion: motionAbortCount (5) consecutive bumps
+        // (magnitude 0.5 > 0.15 threshold). Only sustained motion may abort.
         let bumpAcc = CMAcceleration(x: 0, y: 0, z: 1.5)
-        detector.handleAcceleration(bumpAcc)
+        for _ in 0..<5 {
+            detector.handleAcceleration(bumpAcc)
+        }
 
         let cancelExpectation = XCTestExpectation(description: "Timeout cancelled")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertTrue(timeoutCancelled, "Stop timeout should be cancelled because motion resumed")
+            XCTAssertTrue(timeoutCancelled, "Stop timeout should be cancelled because sustained motion resumed")
             XCTAssertTrue(self.stateManager.isMoving, "State should remain moving")
             cancelExpectation.fulfill()
         }
         wait(for: [cancelExpectation], timeout: 1.0)
+    }
+
+    /// A single above-threshold sample (sensor noise / a stray bump) during the
+    /// stop-timeout countdown must NOT abort it. Aborting on one sample resets
+    /// all stillness progress and can keep the device stuck in the moving state
+    /// (continuous GPS, battery drain) — the regression this guards against.
+    func testSingleBumpDuringStopTimeoutDoesNotAbort() {
+        var timeoutCancelled = false
+        detector.onStopTimeoutCancelled = { timeoutCancelled = true }
+
+        let stillAcc = CMAcceleration(x: 0, y: 0, z: 1.0)
+        for _ in 0..<50 { detector.handleAcceleration(stillAcc) }
+
+        let startExpectation = XCTestExpectation(description: "Timeout started")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { startExpectation.fulfill() }
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // Four bumps — below motionAbortCount (5) — must not cancel.
+        let bumpAcc = CMAcceleration(x: 0, y: 0, z: 1.5)
+        for _ in 0..<4 { detector.handleAcceleration(bumpAcc) }
+
+        let exp = XCTestExpectation(description: "Timeout survives single bumps")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertFalse(timeoutCancelled, "A few stray bumps must not cancel the stop timeout")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+    }
+
+    /// A still sample arriving between stray bumps resets the motion streak, so
+    /// the countdown survives intermittent noise indefinitely.
+    func testIntermittentNoiseDuringStopTimeoutDoesNotAbort() {
+        var timeoutCancelled = false
+        detector.onStopTimeoutCancelled = { timeoutCancelled = true }
+
+        let stillAcc = CMAcceleration(x: 0, y: 0, z: 1.0)
+        for _ in 0..<50 { detector.handleAcceleration(stillAcc) }
+
+        let startExpectation = XCTestExpectation(description: "Timeout started")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { startExpectation.fulfill() }
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // Alternate bumps and still samples: the motion streak never reaches 5.
+        let bumpAcc = CMAcceleration(x: 0, y: 0, z: 1.5)
+        for _ in 0..<10 {
+            detector.handleAcceleration(bumpAcc)
+            detector.handleAcceleration(bumpAcc)
+            detector.handleAcceleration(stillAcc) // resets motion streak
+        }
+
+        let exp = XCTestExpectation(description: "Timeout survives intermittent noise")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertFalse(timeoutCancelled, "Intermittent noise must not cancel the stop timeout")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
     }
 
     /// Issue #130: while stationary, a shake-magnitude sample must declare

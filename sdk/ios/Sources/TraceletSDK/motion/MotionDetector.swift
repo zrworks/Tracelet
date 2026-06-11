@@ -81,7 +81,24 @@ public final class MotionDetector {
     private static let dutyBurstSeconds: TimeInterval = 1.5   // ~15 samples @10Hz
     private static let dutyPeriodSeconds: TimeInterval = 10.0 // worst-case resume latency
 
+    /// Consecutive above-threshold samples required to abort an in-progress
+    /// stop-timeout countdown. At 10Hz this is ~0.5s of sustained motion.
+    ///
+    /// A single above-threshold sample is almost always sensor noise (the
+    /// stillThreshold is a low 0.15g). Aborting the countdown on one such
+    /// sample resets all stillness progress, so in a slightly noisy
+    /// environment the device can keep restarting the countdown and never
+    /// transition to stationary — leaving continuous GPS running and draining
+    /// the battery. Requiring sustained motion to abort avoids that.
+    ///
+    /// - SeeAlso: Android `MotionDetector.MOTION_ABORT_COUNT` (5)
+    private static let motionAbortCount = 5
+
     private var consecutiveStillSamples = 0
+
+    /// Consecutive above-threshold samples seen after the stop-timeout
+    /// countdown has started — see [motionAbortCount].
+    private var consecutiveMotionSamples = 0
 
     /// Called when motion state changes (isMoving).
     public var onMotionStateChanged: ((Bool) -> Void)?
@@ -220,6 +237,7 @@ public final class MotionDetector {
         guard motionManager.isAccelerometerAvailable else { return }
         stopDutyCycle()
         consecutiveStillSamples = 0
+        consecutiveMotionSamples = 0
         motionManager.accelerometerUpdateInterval = 1.0 / 10.0
         if !motionManager.isAccelerometerActive {
             motionManager.startAccelerometerUpdates()   // no handler → pull model
@@ -295,6 +313,9 @@ public final class MotionDetector {
             if configManager.getDisableStopDetection() { return }
 
             if abs(magnitude) < configManager.getStillThreshold() {
+                // A quiet sample — reset any motion streak building toward an
+                // abort, then count toward the still threshold.
+                consecutiveMotionSamples = 0
                 consecutiveStillSamples += 1
                 if consecutiveStillSamples == configManager.getStillSampleCount() {
                     // Sustained stillness — start stop-timeout countdown
@@ -303,11 +324,21 @@ public final class MotionDetector {
                     // Keep the sampler running so we can abort if motion resumes.
                     startStopTimeoutCountdown()
                 }
-            } else {
-                if consecutiveStillSamples >= configManager.getStillSampleCount() {
-                    logger.verbose("Accelerometer broke stillness — aborting stop-timeout countdown")
+            } else if consecutiveStillSamples >= configManager.getStillSampleCount() {
+                // The countdown is running. Only abort on *sustained* motion — a
+                // single above-threshold sample is almost always sensor noise,
+                // and aborting on it resets all stillness progress and can keep
+                // the device stuck in the moving state.
+                consecutiveMotionSamples += 1
+                if consecutiveMotionSamples >= MotionDetector.motionAbortCount {
+                    logger.verbose("Accelerometer sustained motion resumed — aborting stop-timeout countdown")
+                    consecutiveStillSamples = 0
+                    consecutiveMotionSamples = 0
                     handleMovingDetected()
                 }
+            } else {
+                // Not yet in a countdown — a normal motion sample just breaks the
+                // still streak.
                 consecutiveStillSamples = 0
             }
         } else {

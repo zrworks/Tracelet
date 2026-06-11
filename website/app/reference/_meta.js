@@ -1,4 +1,4 @@
-{
+export default {
   "tools": "Diagnostic Tools",
   "adapters": "Database Adapters",
   "api-reference": "Full API Reference",

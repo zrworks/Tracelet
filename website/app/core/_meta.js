@@ -1,4 +1,4 @@
-{
+export default {
   "core-concepts": "Core Concepts",
   "motion-detection": "Motion Detection",
   "tracelet-sync": "Tracelet Sync",

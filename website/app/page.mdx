@@ -1,9 +1,11 @@
 ---
 title: "Tracelet - Production-grade background geolocation for Flutter"
+sidebarTitle: "Tracelet"
 description: "Tracelet is a battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution engine for iOS & Android."
 ---
 
 import { Callout, Cards } from 'nextra/components'
+import CityAnimation from '../components/CityAnimation'
 
 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '4rem 0 2rem 0' }}>
   <img src="https://raw.githubusercontent.com/Ikolvi/Tracelet/main/assets/logo_anim.webp" alt="Tracelet Animated Logo" style={{ width: 'auto', height: '150px', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
@@ -13,9 +15,9 @@ import { Callout, Cards } from 'nextra/components'
   <h1 style={{ fontSize: '3.5rem', fontWeight: '800', letterSpacing: '-0.02em', color: '#0F9D58', lineHeight: '1.2' }}>
     Tracelet
   </h1>
-  <p style={{ marginTop: '1rem', fontSize: '1.25rem', color: '#6b7280', maxWidth: '42rem' }} className="dark:text-gray-400">
+  <div style={{ marginTop: '1rem', fontSize: '1.25rem', color: '#6b7280', maxWidth: '42rem' }} className="dark:text-gray-400">
     Production-grade background geolocation for Flutter — fully open-source.
-  </p>
+  </div>
   
   <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
     <a href="/getting-started/flutter" style={{ padding: '0.75rem 1.5rem', color: 'white', fontWeight: '600', borderRadius: '0.5rem', backgroundColor: '#0F9D58', textDecoration: 'none', transition: 'opacity 0.2s' }} className="hover:opacity-90">
@@ -30,6 +32,8 @@ import { Callout, Cards } from 'nextra/components'
 ## Why Tracelet?
 
 Tracelet flips the traditional location tracking model. Instead of relying purely on high-frequency, battery-draining GPS polls, we use intelligent **Motion-detection algorithms**, **activity recognition**, and **Adaptive Sampling** to track devices seamlessly in the background with near-zero battery drain when stationary.
+
+<CityAnimation />
 
 <Callout type="info" emoji="🔋">
   **Battery Budget Engine:** Automatically tune `distanceFilter` and `desiredAccuracy` on the fly to stay within a configurable battery drain target (e.g. `2.0%` per hour).
@@ -100,7 +104,19 @@ You must explicitly define usage descriptions and background modes to prevent Ap
 ```
 
 **Android Setup (`android/app/src/main/AndroidManifest.xml`)**
-Add background location and foreground service permissions (See the full XML snippet in the [Android Guide](/getting-started/platform-setup/android)).
+Add background location and foreground service permissions. For a complete list of optional permissions and Doze mode mitigations, see the [Android Guide](/getting-started/platform-setup/android).
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for background tracking & motion detection -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+```
 
 ### 3. Initialize & Track
 

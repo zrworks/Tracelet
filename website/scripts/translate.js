@@ -48,7 +48,12 @@ async function translateLineGoogle(text, targetLang, retries = 5) {
       await delay(200 + (i * 1000));
 
       const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${targetLang}&q=${encodeURIComponent(text)}`;
-      const response = await fetch(url);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Google API returned ${response.status}`);

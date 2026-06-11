@@ -731,8 +731,6 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     fun stop() {
-        if (!isReady) return
-
         stateManager.enabled = false
         stateManager.isMoving = false
 
@@ -762,13 +760,6 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     fun getState(): Map<String, Any?> {
-        if (!isReady) return mapOf(
-            "enabled" to false,
-            "isMoving" to false,
-            "trackingMode" to TrackingMode.CONTINUOUS.value,
-            "schedulerEnabled" to false,
-            "odometer" to 0.0,
-        )
         return stateManager.toMap(configManager.getConfig())
     }
 

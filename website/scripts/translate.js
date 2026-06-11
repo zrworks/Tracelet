@@ -297,6 +297,8 @@ async function run() {
     worker('bing'),
     worker('bing'),
     worker('bing'),
+    worker('google'),
+    worker('google'),
     worker('bing'),
     worker('bing'),
     worker('bing'),
@@ -305,9 +307,9 @@ async function run() {
     worker('google'),
     worker('google'),
     worker('google'),
-    worker('google'),
-    worker('google'),
-    worker('google'),
+    worker('bing'),
+    worker('bing'),
+    worker('bing'),
   ]);
   
   console.log("\nAll translations completed successfully!");

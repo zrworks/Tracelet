@@ -41,23 +41,39 @@ const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 async function translateLineGoogle(text, targetLang, retries = 5) {
   if (!text.trim()) return text;
-  
+
   for (let i = 0; i < retries; i++) {
     try {
-      // Base delay of 1s, but if we are retrying, wait longer
-      await delay(1000 + (i * 1000)); 
-      
-      const res = await googleTranslate(text, { to: targetLang });
-      let translated = res.text;
+      // Much smaller delay (200ms) since the Chrome Dictionary endpoint handles huge concurrency!
+      await delay(200 + (i * 1000));
+
+      const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${targetLang}&q=${encodeURIComponent(text)}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Google API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      // The response is an array of arrays, translated text is at data[0][0] or data.sentences[0].trans
+      let translated = '';
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        translated = data[0][0];
+      } else if (data.sentences && data.sentences[0]) {
+        translated = data.sentences[0].trans;
+      } else {
+        translated = data; // fallback
+      }
+
       // Fix spaces inside markdown bold tags (e.g. "** text **" -> "**text**")
       translated = translated.replace(/(\*\*)\s*(.*?)\s*(\*\*)/g, '$1$2$3');
       return translated;
     } catch (e) {
-      const isRateLimit = e.name === 'TooManyRequestsError' || e.message.includes('TooManyRequests') || e.statusCode === 429;
-      
+      const isRateLimit = e.message.includes('429') || e.message.includes('403') || e.name === 'TooManyRequestsError';
+
       if (isRateLimit && i < retries - 1) {
         const waitTime = 3000 * (i + 1); // 3s, 6s, 9s...
-        console.log(`\n[GOOGLE API] Blocked (Too Many Requests). Waiting ${waitTime/1000}s to retry...`);
+        console.log(`\n[GOOGLE API] Blocked (${e.message}). Waiting ${waitTime / 1000}s to retry...`);
         await delay(waitTime);
       } else {
         throw e; // Throw if it's a different error or we ran out of retries
@@ -68,11 +84,11 @@ async function translateLineGoogle(text, targetLang, retries = 5) {
 
 async function translateLineBing(text, targetLang) {
   if (!text.trim()) return text;
-  
+
   // Bing uses different language codes for some languages (e.g., 'zh' -> 'zh-Hans')
   let bingLang = targetLang;
   if (targetLang === 'zh') bingLang = 'zh-Hans';
-  
+
   await delay(100); // Bing handles more requests, minimal delay
   const res = await bingTranslate(text, null, bingLang);
   let translated = res.translation;
@@ -89,7 +105,7 @@ async function translateTextWithProtection(text, targetLang, engine) {
     return `NOTRANS${inlineCodes.length - 1}LATE`;
   });
 
-  let t = engine === 'google' 
+  let t = engine === 'google'
     ? await translateLineGoogle(tempText, targetLang)
     : await translateLineBing(tempText, targetLang);
 
@@ -106,14 +122,14 @@ async function translateTextWithProtection(text, targetLang, engine) {
 async function translateMdx(content, targetLang, engine) {
   const lines = content.split('\n');
   const translatedLines = [];
-  
+
   let inCodeBlock = false;
   let inFrontMatter = false;
   let isFirstLine = true;
-  
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
-    
+
     if (isFirstLine && line.trim() === '---') {
       inFrontMatter = true;
       translatedLines.push(line);
@@ -129,7 +145,7 @@ async function translateMdx(content, targetLang, engine) {
       if (line.startsWith('title:')) {
         const titleMatch = line.match(/title:\s*"(.*)"/);
         if (titleMatch) {
-          const t = engine === 'google' 
+          const t = engine === 'google'
             ? await translateLineGoogle(titleMatch[1], targetLang)
             : await translateLineBing(titleMatch[1], targetLang);
           translatedLines.push(`title: "${t}"`);
@@ -141,9 +157,9 @@ async function translateMdx(content, targetLang, engine) {
       }
       continue;
     }
-    
+
     isFirstLine = false;
-    
+
     if (line.trim().startsWith('```')) {
       inCodeBlock = !inCodeBlock;
       translatedLines.push(line);
@@ -153,7 +169,7 @@ async function translateMdx(content, targetLang, engine) {
       translatedLines.push(line);
       continue;
     }
-    
+
     if (line.trim().startsWith('#')) {
       const hashes = line.match(/^#+/)[0];
       const text = line.replace(/^#+/, '').trim();
@@ -161,7 +177,7 @@ async function translateMdx(content, targetLang, engine) {
       translatedLines.push(`${hashes} ${t}`);
       continue;
     }
-    
+
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       const match = line.match(/^[\s]*[\-*]\s+/);
       const prefix = match ? match[0] : '';
@@ -170,29 +186,29 @@ async function translateMdx(content, targetLang, engine) {
       translatedLines.push(`${prefix}${t}`);
       continue;
     }
-    
+
     const t = await translateTextWithProtection(line, targetLang, engine);
     translatedLines.push(t);
   }
-  
+
   return translatedLines.join('\n');
 }
 
 async function translateMetaJs(content, targetLang, engine) {
   const lines = content.split('\n');
   const translatedLines = [];
-  
+
   for (let line of lines) {
     const match = line.match(/^(\s*(?:['"]?[\w-]+['"]?\s*:\s*)['"])(.*?)(['"],?\s*)$/);
     if (match) {
       const prefix = match[1];
       const text = match[2];
       const suffix = match[3];
-      
-      const t = engine === 'google' 
-        ? await googleTranslate(text, { to: targetLang }).then(res => res.text)
-        : await bingTranslate(text, null, targetLang === 'zh' ? 'zh-Hans' : targetLang).then(res => res.translation);
-        
+
+      const t = engine === 'google'
+        ? await translateLineGoogle(text, targetLang)
+        : await translateLineBing(text, targetLang);
+
       translatedLines.push(`${prefix}${t}${suffix}`);
     } else {
       translatedLines.push(line);
@@ -204,7 +220,7 @@ async function translateMetaJs(content, targetLang, engine) {
 function getAllFiles(dirPath, arrayOfFiles) {
   let files = fs.readdirSync(dirPath)
   arrayOfFiles = arrayOfFiles || []
-  files.forEach(function(file) {
+  files.forEach(function (file) {
     if (fs.statSync(dirPath + "/" + file).isDirectory()) {
       arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles)
     } else {
@@ -217,7 +233,7 @@ function getAllFiles(dirPath, arrayOfFiles) {
 async function run() {
   const args = process.argv.slice(2);
   let filesToTranslate = [];
-  
+
   if (args.includes('--all')) {
     const baseDir = path.join(__dirname, '../app/en');
     const allFiles = getAllFiles(baseDir);
@@ -242,11 +258,11 @@ async function run() {
   for (const file of filesToTranslate) {
     const absolutePath = path.resolve(file);
     if (!fs.existsSync(absolutePath)) continue;
-    
+
     for (const locale of locales) {
       const destPath = absolutePath.replace(`/app/${baseLang}/`, `/app/${locale}/`);
       let shouldTranslate = force;
-      
+
       if (!force) {
         if (!fs.existsSync(destPath)) {
           shouldTranslate = true;
@@ -284,7 +300,7 @@ async function run() {
       try {
         const relSrcPath = path.relative(path.join(__dirname, '../app/en'), task.srcPath);
         console.log(`[${engine.toUpperCase()}] Translating ${relSrcPath} to '${task.targetLocale}'...`);
-        
+
         const content = fs.readFileSync(task.srcPath, 'utf8');
         let translated;
         if (task.srcPath.endsWith('.mdx')) {
@@ -295,12 +311,12 @@ async function run() {
         } else if (task.srcPath.endsWith('_meta.js')) {
           translated = await translateMetaJs(content, task.targetLocale, engine);
         }
-        
+
         fs.mkdirSync(path.dirname(task.destPath), { recursive: true });
         fs.writeFileSync(task.destPath, translated, 'utf8');
         const relDestPath = path.relative(path.join(__dirname, '../app'), task.destPath);
         console.log(`[${engine.toUpperCase()}] ✓ Saved ${relDestPath}`);
-        
+
       } catch (e) {
         console.error(`\n[FATAL ERROR] ${engine.toUpperCase()} blocked or failed: ${e.message}`);
         console.error("Stopping script immediately to prevent corrupted files.");
@@ -312,18 +328,21 @@ async function run() {
   // Run multiple Bing workers concurrently since Google is blocked locally
   await Promise.all([
     worker('bing'),
+    worker('google'),
     worker('bing'),
     worker('google'),
     worker('bing'),
+    worker('google'),
     worker('bing'),
+    worker('google'),
     worker('bing'),
+    worker('google'),
     worker('bing'),
+    worker('google'),
     worker('bing'),
-    worker('bing'),
-    worker('bing'),
-    worker('bing'),
+    worker('google'),
   ]);
-  
+
   console.log("\nAll translations completed successfully!");
   process.exit(0);
 }

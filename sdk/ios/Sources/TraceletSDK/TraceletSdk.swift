@@ -90,7 +90,13 @@ public final class TraceletSdk {
     private var eventSender: TraceletEventSending
     private var heartbeatTimer: Timer?
     private var stopAfterElapsedTimer: Timer?
+    private var syncIntervalTimer: Timer?
     private var isReady = false
+
+    /// Running total of locations synced-and-pruned since the last
+    /// `destroySyncedLocations()` call (#154).
+    private let syncedLocationsLock = NSLock()
+    private var syncedLocationsRemoved: Int = 0
 
     // Algorithms
     public private(set) var tripManager: TraceletTripManager!
@@ -261,6 +267,9 @@ public final class TraceletSdk {
         syncConfigToRustFlat()
         checkSyncProvider()
 
+        // Apply the interval-based sync cadence from the freshly-applied config (#149).
+        startSyncIntervalTimer()
+
         // Rebuild the native location processor with the config just applied by
         // ready(); otherwise the engine keeps the previous/default processor in
         // memory and filters fixes the new config should accept (#157).
@@ -378,6 +387,7 @@ public final class TraceletSdk {
             speedMotionManager = nil
             geofenceManager.destroy()
             stopHeartbeat()
+            stopSyncIntervalTimer()
             cancelStopAfterElapsedTimer()
             locationEngine.stopPeriodic()
             periodicRefreshScheduler.stop()
@@ -613,6 +623,7 @@ public final class TraceletSdk {
             speedMotionManager?.stop()
             speedMotionManager = nil
             stopHeartbeat()
+            stopSyncIntervalTimer()
             cancelStopAfterElapsedTimer()
             periodicRefreshScheduler.stop()
 
@@ -926,13 +937,24 @@ public final class TraceletSdk {
         }
     }
 
-    /// Destroy only locations that have been successfully synced.
+    /// Destroy (clear) locations that have already been synced to the backend.
     ///
-    /// - Returns: Number of synced locations deleted.
+    /// The Rust Core prunes each location from the local store the moment it is
+    /// confirmed synced (see `sync` / `clearLocationsUpTo`), so there is never a
+    /// "synced but still persisted" row to delete on demand. This method reports
+    /// and resets the running total of locations that have been synced-and-pruned
+    /// since it was last called — a real, DB-backed figure rather than the
+    /// previous hardcoded `0` stub. Callers that have not synced anything since
+    /// the last call correctly receive `0`.
+    ///
+    /// - Returns: Number of synced locations removed since the last call.
     @discardableResult
     public func destroySyncedLocations() -> Int {
-        // Centralized Rust Core auto-sync immediately prunes synced locations.
-        return 0
+        syncedLocationsLock.lock()
+        defer { syncedLocationsLock.unlock() }
+        let removed = syncedLocationsRemoved
+        syncedLocationsRemoved = 0
+        return removed
     }
 
     /// Destroy a single location by UUID.
@@ -1088,6 +1110,9 @@ public final class TraceletSdk {
                     let successfullySynced = Array(records.prefix(Int(syncedCount)))
                     if let lastRecord = successfullySynced.last {
                         try db.clearLocationsUpTo(maxId: lastRecord.id)
+                        self.syncedLocationsLock.lock()
+                        self.syncedLocationsRemoved += Int(syncedCount)
+                        self.syncedLocationsLock.unlock()
                     }
                     DispatchQueue.main.async { completion?([]) }
                 } else {
@@ -1687,6 +1712,37 @@ public final class TraceletSdk {
     private func stopHeartbeat() {
         heartbeatTimer?.invalidate()
         heartbeatTimer = nil
+    }
+
+    // MARK: - Private: Interval-based sync (#149)
+
+    /// Starts the interval-based sync timer.
+    ///
+    /// When `HttpConfig.syncInterval` (seconds) is greater than 0 and auto-sync is
+    /// enabled, the SDK periodically flushes any pending locations to the configured
+    /// endpoint on this cadence — independent of the `autoSyncDelay` debounce that
+    /// fires on new inserts. A value of 0 (the default) leaves the timer disabled.
+    private func startSyncIntervalTimer() {
+        stopSyncIntervalTimer()
+        let interval = configManager.getSyncInterval()
+        guard interval > 0, configManager.getAutoSync() else { return }
+        guard !configManager.getUrl().isEmpty else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.syncIntervalTimer = Timer.scheduledTimer(
+                withTimeInterval: TimeInterval(interval),
+                repeats: true
+            ) { [weak self] _ in
+                guard let self = self, self.isReady else { return }
+                self.sync(completion: nil)
+            }
+        }
+        NSLog("[Tracelet] syncInterval timer started (%ds)", interval)
+    }
+
+    private func stopSyncIntervalTimer() {
+        syncIntervalTimer?.invalidate()
+        syncIntervalTimer = nil
     }
 
     // MARK: - Private: Battery Budget Sampling

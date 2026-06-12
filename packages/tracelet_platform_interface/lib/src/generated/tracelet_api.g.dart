@@ -823,6 +823,7 @@ class TlHttpConfig {
     this.httpRootProperty,
     required this.autoSyncThreshold,
     this.autoSyncDelay,
+    required this.syncInterval,
     required this.httpTimeout,
     required this.locationsOrderDirection,
     this.extras,
@@ -858,6 +859,8 @@ class TlHttpConfig {
 
   int? autoSyncDelay;
 
+  int syncInterval;
+
   int httpTimeout;
 
   TlLocationOrderDirection locationsOrderDirection;
@@ -890,6 +893,7 @@ class TlHttpConfig {
       httpRootProperty,
       autoSyncThreshold,
       autoSyncDelay,
+      syncInterval,
       httpTimeout,
       locationsOrderDirection,
       extras,
@@ -921,15 +925,16 @@ class TlHttpConfig {
       httpRootProperty: result[9] as String?,
       autoSyncThreshold: result[10]! as int,
       autoSyncDelay: result[11] as int?,
-      httpTimeout: result[12]! as int,
-      locationsOrderDirection: result[13]! as TlLocationOrderDirection,
-      extras: (result[14] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
-      disableAutoSyncOnCellular: result[15]! as bool,
-      maxRetries: result[16]! as int,
-      retryBackoffBase: result[17]! as int,
-      retryBackoffCap: result[18]! as int,
-      enableDeltaCompression: result[19]! as bool,
-      deltaCoordinatePrecision: result[20]! as int,
+      syncInterval: result[12]! as int,
+      httpTimeout: result[13]! as int,
+      locationsOrderDirection: result[14]! as TlLocationOrderDirection,
+      extras: (result[15] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      disableAutoSyncOnCellular: result[16]! as bool,
+      maxRetries: result[17]! as int,
+      retryBackoffBase: result[18]! as int,
+      retryBackoffCap: result[19]! as int,
+      enableDeltaCompression: result[20]! as bool,
+      deltaCoordinatePrecision: result[21]! as int,
     );
   }
 
@@ -954,6 +959,7 @@ class TlHttpConfig {
         _deepEquals(httpRootProperty, other.httpRootProperty) &&
         _deepEquals(autoSyncThreshold, other.autoSyncThreshold) &&
         _deepEquals(autoSyncDelay, other.autoSyncDelay) &&
+        _deepEquals(syncInterval, other.syncInterval) &&
         _deepEquals(httpTimeout, other.httpTimeout) &&
         _deepEquals(locationsOrderDirection, other.locationsOrderDirection) &&
         _deepEquals(extras, other.extras) &&

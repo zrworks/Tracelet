@@ -150,6 +150,13 @@ class TraceletSdk private constructor(private val context: Context) {
 
     private var heartbeatRunnable: Runnable? = null
     private var stopAfterElapsedRunnable: Runnable? = null
+    private var syncIntervalRunnable: Runnable? = null
+
+    /**
+     * Running total of locations that have been successfully synced and pruned
+     * from the local store since the last [destroySyncedLocations] call (#154).
+     */
+    private val syncedLocationsRemoved = java.util.concurrent.atomic.AtomicLong(0L)
 
     /** Async permission callback — set before triggering OS dialog. */
     internal var pendingPermissionCallback: ((AuthorizationStatus) -> Unit)? = null
@@ -563,6 +570,9 @@ class TraceletSdk private constructor(private val context: Context) {
         syncConfigToRustFlat()
         checkSyncProvider()
 
+        // Apply the interval-based sync cadence from the freshly-applied config (#149).
+        startSyncIntervalTimer()
+
         // Rebuild the native location processor with the config just applied by
         // ready(). Without this the engine keeps the previous/default processor
         // (e.g. distanceFilter=20) in memory and silently filters fixes the new
@@ -760,6 +770,7 @@ class TraceletSdk private constructor(private val context: Context) {
         if (::motionDetector.isInitialized) motionDetector.stop()
         if (::speedMotionManager.isInitialized) speedMotionManager.stop()
         stopHeartbeat()
+        stopSyncIntervalTimer()
         cancelStopAfterElapsedTimer()
         if (::tripManager.isInitialized) tripManager.reset()
         stopBatteryBudgetSampling()
@@ -978,6 +989,7 @@ class TraceletSdk private constructor(private val context: Context) {
         locationEngine.destroy()
         motionDetector.stop()
         stopHeartbeat()
+        stopSyncIntervalTimer()
         geofenceManager.destroy()
         LocationService.stop(context)
 
@@ -1215,10 +1227,21 @@ class TraceletSdk private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Destroys (clears) locations that have already been synced to the backend,
+     * returning the number removed (#154).
+     *
+     * The Rust Core prunes each location from the local store the moment it is
+     * confirmed synced (see [sync] / `clearLocationsUpTo`), so there is never a
+     * "synced but still persisted" row to delete on demand. This method therefore
+     * reports and resets the running total of locations that have been
+     * synced-and-pruned since it was last called — a real, DB-backed figure
+     * rather than the previous hardcoded `0` stub. Callers that have not synced
+     * anything since the last call correctly receive `0`.
+     */
     fun destroySyncedLocations(): Int {
         if (!isReady) return 0
-        // Centralized Rust Core auto-sync immediately prunes synced locations.
-        return 0
+        return syncedLocationsRemoved.getAndSet(0L).toInt()
     }
 
     fun destroyLocation(uuid: String): Boolean {
@@ -1346,6 +1369,7 @@ class TraceletSdk private constructor(private val context: Context) {
                     val successfullySynced = records.take(syncedCount)
                     successfullySynced.lastOrNull()?.let { lastRecord ->
                         db.clearLocationsUpTo(lastRecord.id)
+                        syncedLocationsRemoved.addAndGet(count)
                     }
                     logger.info("TraceletSdk: Synced and cleared $count locations via SyncProvider.")
                 }
@@ -1950,6 +1974,42 @@ class TraceletSdk private constructor(private val context: Context) {
     internal fun stopHeartbeat() {
         heartbeatRunnable?.let { mainHandler.removeCallbacks(it) }
         heartbeatRunnable = null
+    }
+
+    /**
+     * Starts the interval-based sync timer (issue #149).
+     *
+     * When `HttpConfig.syncInterval` (seconds) is greater than 0 and auto-sync is
+     * enabled, the SDK periodically flushes any pending locations to the configured
+     * endpoint on this cadence — independent of the `autoSyncDelay` debounce that
+     * fires on new inserts. A value of 0 (the default) leaves the timer disabled.
+     */
+    internal fun startSyncIntervalTimer() {
+        stopSyncIntervalTimer()
+        val intervalSeconds = configManager.getSyncInterval()
+        if (intervalSeconds <= 0 || !configManager.getAutoSync()) return
+        if (configManager.getHttpUrl().isNullOrEmpty()) return
+
+        val periodMs = intervalSeconds * 1000L
+        syncIntervalRunnable = object : Runnable {
+            override fun run() {
+                if (isReady) {
+                    try {
+                        sync { /* native handles upload + prune */ }
+                    } catch (e: Exception) {
+                        logger.error("syncInterval flush failed: ${e.message}")
+                    }
+                }
+                mainHandler.postDelayed(this, periodMs)
+            }
+        }
+        mainHandler.postDelayed(syncIntervalRunnable!!, periodMs)
+        logger.info("syncInterval timer started (${intervalSeconds}s)")
+    }
+
+    internal fun stopSyncIntervalTimer() {
+        syncIntervalRunnable?.let { mainHandler.removeCallbacks(it) }
+        syncIntervalRunnable = null
     }
 
     private fun startBatteryBudgetSampling() {

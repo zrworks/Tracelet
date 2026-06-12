@@ -620,6 +620,7 @@ void main() {
         maxBatchSize: 250,
         method: TlHttpMethod.post,
         autoSyncThreshold: 0,
+        syncInterval: 0,
         httpTimeout: 60000,
         locationsOrderDirection: TlLocationOrderDirection.ascending,
         disableAutoSyncOnCellular: false,

@@ -702,6 +702,7 @@ class MethodChannelTracelet extends TraceletPlatform {
     'maxBatchSize': c.maxBatchSize,
     'autoSync': c.autoSync,
     'autoSyncThreshold': c.autoSyncThreshold,
+    'syncInterval': c.syncInterval,
     'httpTimeout': c.httpTimeout,
     'params': c.params,
     'locationsOrderDirection': c.locationsOrderDirection.index,

@@ -889,6 +889,7 @@ data class TlHttpConfig (
   val httpRootProperty: String? = null,
   val autoSyncThreshold: Long,
   val autoSyncDelay: Long? = null,
+  val syncInterval: Long,
   val httpTimeout: Long,
   val locationsOrderDirection: TlLocationOrderDirection,
   val extras: Map<String?, Any?>? = null,
@@ -914,16 +915,17 @@ data class TlHttpConfig (
       val httpRootProperty = pigeonVar_list[9] as String?
       val autoSyncThreshold = pigeonVar_list[10] as Long
       val autoSyncDelay = pigeonVar_list[11] as Long?
-      val httpTimeout = pigeonVar_list[12] as Long
-      val locationsOrderDirection = pigeonVar_list[13] as TlLocationOrderDirection
-      val extras = pigeonVar_list[14] as Map<String?, Any?>?
-      val disableAutoSyncOnCellular = pigeonVar_list[15] as Boolean
-      val maxRetries = pigeonVar_list[16] as Long
-      val retryBackoffBase = pigeonVar_list[17] as Long
-      val retryBackoffCap = pigeonVar_list[18] as Long
-      val enableDeltaCompression = pigeonVar_list[19] as Boolean
-      val deltaCoordinatePrecision = pigeonVar_list[20] as Long
-      return TlHttpConfig(url, method, headers, params, autoSync, batchSync, maxBatchSize, sslPinningFingerprints, sslPinningCertificates, httpRootProperty, autoSyncThreshold, autoSyncDelay, httpTimeout, locationsOrderDirection, extras, disableAutoSyncOnCellular, maxRetries, retryBackoffBase, retryBackoffCap, enableDeltaCompression, deltaCoordinatePrecision)
+      val syncInterval = pigeonVar_list[12] as Long
+      val httpTimeout = pigeonVar_list[13] as Long
+      val locationsOrderDirection = pigeonVar_list[14] as TlLocationOrderDirection
+      val extras = pigeonVar_list[15] as Map<String?, Any?>?
+      val disableAutoSyncOnCellular = pigeonVar_list[16] as Boolean
+      val maxRetries = pigeonVar_list[17] as Long
+      val retryBackoffBase = pigeonVar_list[18] as Long
+      val retryBackoffCap = pigeonVar_list[19] as Long
+      val enableDeltaCompression = pigeonVar_list[20] as Boolean
+      val deltaCoordinatePrecision = pigeonVar_list[21] as Long
+      return TlHttpConfig(url, method, headers, params, autoSync, batchSync, maxBatchSize, sslPinningFingerprints, sslPinningCertificates, httpRootProperty, autoSyncThreshold, autoSyncDelay, syncInterval, httpTimeout, locationsOrderDirection, extras, disableAutoSyncOnCellular, maxRetries, retryBackoffBase, retryBackoffCap, enableDeltaCompression, deltaCoordinatePrecision)
     }
   }
   fun toList(): List<Any?> {
@@ -940,6 +942,7 @@ data class TlHttpConfig (
       httpRootProperty,
       autoSyncThreshold,
       autoSyncDelay,
+      syncInterval,
       httpTimeout,
       locationsOrderDirection,
       extras,
@@ -959,7 +962,7 @@ data class TlHttpConfig (
       return true
     }
     val other = other as TlHttpConfig
-    return TraceletApiPigeonUtils.deepEquals(this.url, other.url) && TraceletApiPigeonUtils.deepEquals(this.method, other.method) && TraceletApiPigeonUtils.deepEquals(this.headers, other.headers) && TraceletApiPigeonUtils.deepEquals(this.params, other.params) && TraceletApiPigeonUtils.deepEquals(this.autoSync, other.autoSync) && TraceletApiPigeonUtils.deepEquals(this.batchSync, other.batchSync) && TraceletApiPigeonUtils.deepEquals(this.maxBatchSize, other.maxBatchSize) && TraceletApiPigeonUtils.deepEquals(this.sslPinningFingerprints, other.sslPinningFingerprints) && TraceletApiPigeonUtils.deepEquals(this.sslPinningCertificates, other.sslPinningCertificates) && TraceletApiPigeonUtils.deepEquals(this.httpRootProperty, other.httpRootProperty) && TraceletApiPigeonUtils.deepEquals(this.autoSyncThreshold, other.autoSyncThreshold) && TraceletApiPigeonUtils.deepEquals(this.autoSyncDelay, other.autoSyncDelay) && TraceletApiPigeonUtils.deepEquals(this.httpTimeout, other.httpTimeout) && TraceletApiPigeonUtils.deepEquals(this.locationsOrderDirection, other.locationsOrderDirection) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras) && TraceletApiPigeonUtils.deepEquals(this.disableAutoSyncOnCellular, other.disableAutoSyncOnCellular) && TraceletApiPigeonUtils.deepEquals(this.maxRetries, other.maxRetries) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffBase, other.retryBackoffBase) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffCap, other.retryBackoffCap) && TraceletApiPigeonUtils.deepEquals(this.enableDeltaCompression, other.enableDeltaCompression) && TraceletApiPigeonUtils.deepEquals(this.deltaCoordinatePrecision, other.deltaCoordinatePrecision)
+    return TraceletApiPigeonUtils.deepEquals(this.url, other.url) && TraceletApiPigeonUtils.deepEquals(this.method, other.method) && TraceletApiPigeonUtils.deepEquals(this.headers, other.headers) && TraceletApiPigeonUtils.deepEquals(this.params, other.params) && TraceletApiPigeonUtils.deepEquals(this.autoSync, other.autoSync) && TraceletApiPigeonUtils.deepEquals(this.batchSync, other.batchSync) && TraceletApiPigeonUtils.deepEquals(this.maxBatchSize, other.maxBatchSize) && TraceletApiPigeonUtils.deepEquals(this.sslPinningFingerprints, other.sslPinningFingerprints) && TraceletApiPigeonUtils.deepEquals(this.sslPinningCertificates, other.sslPinningCertificates) && TraceletApiPigeonUtils.deepEquals(this.httpRootProperty, other.httpRootProperty) && TraceletApiPigeonUtils.deepEquals(this.autoSyncThreshold, other.autoSyncThreshold) && TraceletApiPigeonUtils.deepEquals(this.autoSyncDelay, other.autoSyncDelay) && TraceletApiPigeonUtils.deepEquals(this.syncInterval, other.syncInterval) && TraceletApiPigeonUtils.deepEquals(this.httpTimeout, other.httpTimeout) && TraceletApiPigeonUtils.deepEquals(this.locationsOrderDirection, other.locationsOrderDirection) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras) && TraceletApiPigeonUtils.deepEquals(this.disableAutoSyncOnCellular, other.disableAutoSyncOnCellular) && TraceletApiPigeonUtils.deepEquals(this.maxRetries, other.maxRetries) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffBase, other.retryBackoffBase) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffCap, other.retryBackoffCap) && TraceletApiPigeonUtils.deepEquals(this.enableDeltaCompression, other.enableDeltaCompression) && TraceletApiPigeonUtils.deepEquals(this.deltaCoordinatePrecision, other.deltaCoordinatePrecision)
   }
 
   override fun hashCode(): Int {
@@ -976,6 +979,7 @@ data class TlHttpConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.httpRootProperty)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.autoSyncThreshold)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.autoSyncDelay)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.syncInterval)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.httpTimeout)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.locationsOrderDirection)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.extras)

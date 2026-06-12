@@ -53,8 +53,18 @@ actor SyncCoordinator {
             TraceletSdk.shared.logger.debug("Found \(coreRecords.count) locations in DB.")
             if coreRecords.isEmpty { return }
             
-            // Call syncBatchBlocking which handles the interceptor fallback logic
-            let count = try sink.syncBatchBlocking(config: updatedHttp, records: coreRecords)
+            // CRITICAL FIX: Offload the synchronous blocking FFI call to a background 
+            // DispatchQueue so we do not starve the Swift Concurrency cooperative thread pool.
+            let count = try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .utility).async {
+                    do {
+                        let result = try sink.syncBatchBlocking(config: updatedHttp, records: coreRecords)
+                        continuation.resume(returning: result)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
             
             if count > 0, let lastId = coreRecords.last?.id {
                 try db.clearLocationsUpTo(maxId: lastId)

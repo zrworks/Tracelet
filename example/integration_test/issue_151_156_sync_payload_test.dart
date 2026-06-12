@@ -64,7 +64,11 @@ void main() {
 
     // Default httpRootProperty is "location"; batchSync sends an array.
     final records = body['location'];
-    expect(records, isA<List>(), reason: 'payload should carry a location list');
+    expect(
+      records,
+      isA<List>(),
+      reason: 'payload should carry a location list',
+    );
     final record = (records as List).first as Map<String, dynamic>;
 
     expect(

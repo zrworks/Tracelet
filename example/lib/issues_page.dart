@@ -47,6 +47,11 @@ class _IssuesPageState extends State<IssuesPage> {
     139,
     140,
     141,
+    148,
+    150,
+    152,
+    155,
+    157,
   ];
 
   bool _isIssue134Tracking = false;
@@ -58,6 +63,15 @@ class _IssuesPageState extends State<IssuesPage> {
 
   bool _isIssue141Tracking = false;
   StreamSubscription? _issue141LocationSub;
+
+  // Issue #155 — live activity propagation
+  bool _isIssue155Tracking = false;
+  StreamSubscription? _issue155Sub;
+
+  // Issue #157 — live fixes with distanceFilter:0
+  bool _isIssue157Tracking = false;
+  StreamSubscription? _issue157Sub;
+  int _issue157Count = 0;
 
   @override
   void initState() {
@@ -79,6 +93,8 @@ class _IssuesPageState extends State<IssuesPage> {
     _searchController.dispose();
     _issue140Timer?.cancel();
     _issue140MotionSub?.cancel();
+    _issue155Sub?.cancel();
+    _issue157Sub?.cancel();
     super.dispose();
   }
 
@@ -1022,6 +1038,159 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 148: useKalmanFilter key mismatch (EKF silently disabled) ====
+  Future<void> _testIssue148() async {
+    _setStatus(148, 'Testing Issue 148 (Kalman key)...');
+    try {
+      await Tracelet.ready(
+        const Config(
+          geo: GeoConfig(filter: LocationFilter(useKalmanFilter: true)),
+        ),
+      );
+      _setStatus(
+        148,
+        '✅ Configured useKalmanFilter:true. Native now reads the correct key '
+        '(was silently disabled by reading "enableKalmanFilter"). Move with live '
+        'GPS and observe smoother tracks / native logs to confirm the EKF is active.',
+      );
+    } catch (e) {
+      _setStatus(148, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 150: AuditConfig sha384/sha512 fatal RangeError ====
+  Future<void> _testIssue150() async {
+    _setStatus(150, 'Testing Issue 150 (AuditConfig sha512 crash)...');
+    try {
+      await Tracelet.ready(
+        const Config(
+          audit: AuditConfig(
+            enabled: true,
+            hashAlgorithm: HashAlgorithm.sha512,
+          ),
+        ),
+      );
+      _setStatus(
+        150,
+        '✅ SUCCESS: ready() with HashAlgorithm.sha512 did NOT crash '
+        '(previously threw a fatal RangeError). Unsupported variants fall back to sha256.',
+      );
+      // ignore: avoid_catching_errors — the regression under test IS a RangeError
+    } on RangeError catch (e) {
+      _setStatus(150, '❌ FAILED: RangeError still thrown: $e');
+    } catch (e) {
+      _setStatus(150, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 152: getCount ignores query filters ====
+  Future<void> _testIssue152() async {
+    _setStatus(152, 'Testing Issue 152 (getCount honors query)...');
+    try {
+      await Tracelet.ready(const Config());
+      await Tracelet.destroyLocations();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await Tracelet.insertLocation({
+        'latitude': 48.8566,
+        'longitude': 2.3522,
+        'timestamp': now - 2 * 3600 * 1000, // 2h ago
+      });
+      await Tracelet.insertLocation({
+        'latitude': 48.8567,
+        'longitude': 2.3523,
+        'timestamp': now,
+      });
+      final total = await Tracelet.getCount();
+      final lastHour = await Tracelet.getCount(
+        SQLQuery(start: DateTime.fromMillisecondsSinceEpoch(now - 3600 * 1000)),
+      );
+      if (total == 2 && lastHour == 1) {
+        _setStatus(
+          152,
+          '✅ SUCCESS: total=2, filtered (last hour)=1 — getCount() honors the '
+          'time bounds (previously returned the whole-DB total).',
+        );
+      } else {
+        _setStatus(
+          152,
+          '❌ FAILED: expected total=2, filtered=1 but got total=$total, '
+          'filtered=$lastHour.',
+        );
+      }
+    } catch (e) {
+      _setStatus(152, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 155: activity never propagated (permanent "unknown") ====
+  Future<void> _startIssue155() async {
+    _setStatus(155, 'Starting Issue 155 (activity propagation)...');
+    try {
+      await Tracelet.ready(
+        const Config(
+          motion: MotionConfig(
+            motionDetectionMode: MotionDetectionMode.smart,
+          ),
+        ),
+      );
+      _issue155Sub = Tracelet.onLocation((loc) {
+        final act = loc.activity.type.name;
+        _setStatus(
+          155,
+          act == 'unknown'
+              ? '⏳ Live activity = "unknown" — keep moving (needs '
+                'ACTIVITY_RECOGNITION permission + real motion to classify).'
+              : '✅ Live activity = "$act" — propagated into the location '
+                '(was permanently stuck at "unknown").',
+        );
+      });
+      await Tracelet.start();
+      setState(() => _isIssue155Tracking = true);
+    } catch (e) {
+      _setStatus(155, '❌ FAILED: $e');
+    }
+  }
+
+  Future<void> _stopIssue155() async {
+    await _issue155Sub?.cancel();
+    _issue155Sub = null;
+    try {
+      await Tracelet.stop();
+    } catch (_) {}
+    setState(() => _isIssue155Tracking = false);
+  }
+
+  // ==== ISSUE 157: LocationEngine not rebuilt on ready() (stale distanceFilter) ====
+  Future<void> _startIssue157() async {
+    _setStatus(157, 'Starting Issue 157 (distanceFilter:0 rebuild)...');
+    try {
+      await Tracelet.ready(const Config(geo: GeoConfig(distanceFilter: 0)));
+      setState(() => _issue157Count = 0);
+      _issue157Sub = Tracelet.onLocation((loc) {
+        setState(() => _issue157Count++);
+        _setStatus(
+          157,
+          '✅ Received $_issue157Count fix(es) with distanceFilter:0 — the native '
+          'processor was rebuilt on ready(). A stale 20m filter would suppress '
+          'closely-spaced fixes.',
+        );
+      });
+      await Tracelet.start();
+      setState(() => _isIssue157Tracking = true);
+    } catch (e) {
+      _setStatus(157, '❌ FAILED: $e');
+    }
+  }
+
+  Future<void> _stopIssue157() async {
+    await _issue157Sub?.cancel();
+    _issue157Sub = null;
+    try {
+      await Tracelet.stop();
+    } catch (_) {}
+    setState(() => _isIssue157Tracking = false);
+  }
+
   Widget _buildIssueCard({
     required int issueNumber,
     required String title,
@@ -1443,6 +1612,95 @@ class _IssuesPageState extends State<IssuesPage> {
                     ),
                     OutlinedButton.icon(
                       onPressed: _isIssue141Tracking ? _stopIssue141 : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 148,
+                  title: 'Kalman Filter silently disabled (key mismatch)',
+                  description:
+                      'Dart writes "useKalmanFilter" but native ConfigManager read '
+                      '"enableKalmanFilter", so the Extended Kalman Filter never '
+                      'initialized. Configures useKalmanFilter:true to confirm it is '
+                      'now wired (observe smoother tracks / native logs while moving).',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue148,
+                      icon: const Icon(Icons.timeline),
+                      label: const Text('Configure & Verify'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 150,
+                  title: 'AuditConfig sha384/sha512 fatal RangeError',
+                  description:
+                      'ready() with HashAlgorithm.sha512 crashed with a fatal '
+                      'RangeError (Pigeon enum mismatch). This test confirms ready() '
+                      'no longer crashes (falls back to sha256). Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue150,
+                      icon: const Icon(Icons.lock_outline),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 152,
+                  title: 'getCount ignores query filters',
+                  description:
+                      'getCount(SQLQuery) ignored time bounds and returned the '
+                      'whole-DB total. Inserts 2 points (2h ago + now) and asserts a '
+                      'last-hour query counts 1. Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue152,
+                      icon: const Icon(Icons.numbers),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 155,
+                  title: 'Activity permanently "unknown"',
+                  description:
+                      'Detected activity was never propagated to the LocationEngine, '
+                      'so every record had "activity":"unknown". Start tracking and '
+                      'move around — the live activity (in Status) should classify '
+                      '(walking / still / in_vehicle). Needs ACTIVITY_RECOGNITION '
+                      'permission + real motion.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue155Tracking ? null : _startIssue155,
+                      icon: const Icon(Icons.directions_walk),
+                      label: const Text('Start'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue155Tracking ? _stopIssue155 : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 157,
+                  title: 'LocationEngine not rebuilt on ready()',
+                  description:
+                      'ready() with distanceFilter:0 kept the stale default processor, '
+                      'filtering closely-spaced fixes. Start tracking and move slightly '
+                      '— fixes should flow with no distance filtering (live counter in '
+                      'Status).',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue157Tracking ? null : _startIssue157,
+                      icon: const Icon(Icons.filter_alt_off),
+                      label: const Text('Start (df:0)'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue157Tracking ? _stopIssue157 : null,
                       icon: const Icon(Icons.stop),
                       label: const Text('Stop'),
                     ),

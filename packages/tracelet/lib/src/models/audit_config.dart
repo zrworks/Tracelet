@@ -111,7 +111,13 @@ class AuditConfig {
   /// Converts to Pigeon [TlAuditConfig].
   TlAuditConfig toTlConfig() => TlAuditConfig(
     enabled: enabled,
-    hashAlgorithm: TlHashAlgorithm.values[hashAlgorithm.index],
+    // The public [HashAlgorithm] enum has more variants (sha256/sha384/sha512)
+    // than the Pigeon [TlHashAlgorithm] currently carries, so indexing it
+    // directly threw a fatal RangeError on sha384/sha512 during ready() (#150).
+    // Guard the index; unsupported variants fall back to sha256.
+    hashAlgorithm: hashAlgorithm.index < TlHashAlgorithm.values.length
+        ? TlHashAlgorithm.values[hashAlgorithm.index]
+        : TlHashAlgorithm.sha256,
   );
 
   @override

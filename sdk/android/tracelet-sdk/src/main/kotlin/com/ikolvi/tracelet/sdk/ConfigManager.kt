@@ -352,7 +352,10 @@ class ConfigManager(context: Context) {
         getInt("sparseMaxIdleSeconds", DEFAULT_SPARSE_MAX_IDLE_SECONDS)
 
     fun getEnableKalmanFilter(): Boolean =
-        getBool("enableKalmanFilter", DEFAULT_ENABLE_KALMAN_FILTER)
+        // The Dart LocationFilter serializes this under "useKalmanFilter"; older
+        // configs / native callers used "enableKalmanFilter". Read both so the
+        // EKF is not silently disabled on a key mismatch (#148).
+        getBool("useKalmanFilter", getBool("enableKalmanFilter", DEFAULT_ENABLE_KALMAN_FILTER))
 
     // Dead Reckoning config
     fun getEnableDeadReckoning(): Boolean =

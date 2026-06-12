@@ -145,6 +145,13 @@ class MotionDetector(
     /** Callback: notify LocationEngine to start/stop GPS. */
     var onMotionStateChanged: ((isMoving: Boolean) -> Unit)? = null
 
+    /**
+     * Callback: the detected activity (type, confidence) changed. The SDK binds
+     * this to push the activity into the LocationEngine so enriched locations
+     * carry the real activity instead of a permanent "unknown" (#155).
+     */
+    var onActivityChanged: ((type: String, confidence: Int) -> Unit)? = null
+
     /** Callback: request full tracking stop (`stopOnStationary` mode). */
     var onStopRequested: (() -> Unit)? = null
 
@@ -385,6 +392,11 @@ class MotionDetector(
 
         currentActivity = activityTypeStr
         currentConfidence = 100 // Transition API always reports 100% confidence
+
+        // Propagate the activity to the LocationEngine immediately — before the
+        // confidence/trigger filters below — so enriched locations always carry
+        // the current activity (#155).
+        onActivityChanged?.invoke(currentActivity, currentConfidence)
 
         // Apply confidence filter
         val minConfidence = config.getMinimumActivityRecognitionConfidence()

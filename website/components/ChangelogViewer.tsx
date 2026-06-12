@@ -36,7 +36,7 @@ async function getPackageChangelog(pkg: string) {
 }
 
 function extractLatestChangelog(text: string) {
-  const sections = text.split(/\n##? /);
+  const sections = text.split(/(?:^|\n)##? /);
   
   if (sections.length > 1) {
     let latest = sections[1];

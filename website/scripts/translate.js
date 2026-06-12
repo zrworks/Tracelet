@@ -121,6 +121,30 @@ async function translateTextWithProtection(text, targetLang, engine) {
     t = t.replace(regex, code);
   });
 
+  // Post-processing glossary overrides to fix contextual errors
+  const glossary = {
+    'ml': [
+      { from: /സംസ്ഥാനം/g, to: 'അവസ്ഥ' }, // State (Province) -> State (Condition)
+      { from: /സംസ്ഥാന/g, to: 'അവസ്ഥ' }
+    ],
+    'hi': [
+      { from: /राज्य/g, to: 'स्थिति' }
+    ],
+    'ta': [
+      { from: /மாநிலம்/g, to: 'நிலை' },
+      { from: /மாநில/g, to: 'நிலை' }
+    ],
+    'ja': [
+      { from: /州/g, to: '状態' }
+    ]
+  };
+
+  if (glossary[targetLang]) {
+    glossary[targetLang].forEach(rule => {
+      t = t.replace(rule.from, rule.to);
+    });
+  }
+
   return t;
 }
 

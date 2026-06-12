@@ -249,6 +249,16 @@ async function translateMetaJs(content, targetLang, engine) {
       const text = match[2];
       const suffix = match[3];
 
+      // Skip translating Nextra reserved keywords
+      const keyMatch = prefix.match(/['"]?([\w-]+)['"]?\s*:/);
+      if (keyMatch) {
+        const key = keyMatch[1];
+        if (['display', 'type', 'href', 'theme'].includes(key)) {
+          translatedLines.push(line);
+          continue;
+        }
+      }
+
       let t = engine === 'google'
         ? await translateLineGoogle(text, targetLang)
         : await translateLineBing(text, targetLang);

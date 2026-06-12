@@ -4,7 +4,6 @@ import { Head } from 'nextra/components'
 import RainBackground from './RainBackground'
 import CookieBanner from './CookieBanner'
 import LanguagePrompt from './LanguagePrompt'
-import AnalyticsProvider from './AnalyticsProvider'
 import TrackedLink from './TrackedLink'
 import { LocaleSwitch } from 'nextra-theme-docs'
 import 'nextra-theme-docs/style.css'
@@ -100,9 +99,6 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
       <RainBackground />
       <LanguagePrompt />
       <CookieBanner />
-      <Suspense fallback={null}>
-        <AnalyticsProvider />
-      </Suspense>
     </>
   )
 }

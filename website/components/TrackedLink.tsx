@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import { getAnalyticsInstance } from "../lib/firebase";
-import { logEvent } from "firebase/analytics";
 
 interface TrackedLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   eventName: string;
@@ -10,14 +8,12 @@ interface TrackedLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement>
 
 export default function TrackedLink({ eventName, children, ...props }: TrackedLinkProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Log the event asynchronously
-    getAnalyticsInstance().then(analytics => {
-      if (analytics) {
-        logEvent(analytics, eventName, {
-          link_url: props.href
-        });
-      }
-    });
+    // Log the event asynchronously via Cloudflare Zaraz
+    if (typeof window !== 'undefined' && (window as any).zaraz) {
+      (window as any).zaraz.track(eventName, {
+        link_url: props.href
+      });
+    }
 
     if (props.onClick) {
       props.onClick(e);

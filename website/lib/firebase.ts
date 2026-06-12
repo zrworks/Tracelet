@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
   projectId: "ikolvi",
@@ -11,13 +10,5 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-
-// Initialize Analytics lazily to ensure it only runs on the client and if consent is given
-export const getAnalyticsInstance = async () => {
-  if (typeof window !== "undefined" && await isSupported()) {
-    return getAnalytics(app);
-  }
-  return null;
-};
 
 export { app };

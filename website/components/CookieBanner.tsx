@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAnalyticsInstance } from "../lib/firebase";
-import { logEvent } from "firebase/analytics";
 
 export default function CookieBanner() {
   const [showBanner, setShowBanner] = useState(false);
@@ -13,10 +11,10 @@ export default function CookieBanner() {
     if (!consent) {
       setShowBanner(true);
     } else if (consent === "accepted") {
-      // Initialize analytics immediately if they already accepted previously
-      getAnalyticsInstance().then(analytics => {
-         if(analytics) logEvent(analytics, "consent_previously_given");
-      });
+      // Cloudflare Zaraz loads analytics server-side, but we can track the consent event
+      if (typeof window !== 'undefined' && (window as any).zaraz) {
+         (window as any).zaraz.track("consent_previously_given");
+      }
     }
   }, []);
 
@@ -25,9 +23,9 @@ export default function CookieBanner() {
     setShowBanner(false);
     
     // Initialize analytics right now
-    getAnalyticsInstance().then(analytics => {
-        if(analytics) logEvent(analytics, "consent_accepted");
-    });
+    if (typeof window !== 'undefined' && (window as any).zaraz) {
+       (window as any).zaraz.track("consent_accepted");
+    }
   };
 
   const handleDecline = () => {

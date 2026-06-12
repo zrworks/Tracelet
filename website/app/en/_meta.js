@@ -17,5 +17,9 @@ export default {
   "terms": {
     "title": "Terms of Service",
     "display": "hidden"
+  },
+  "license": {
+    "title": "License",
+    "display": "hidden"
   }
 }

@@ -40,6 +40,28 @@ const tocTitles: Record<string, string> = {
   ru: "На этой странице"
 };
 
+const askQuestionTitles: Record<string, string> = {
+  en: "Ask a Question",
+  ja: "質問する",
+  zh: "提问",
+  es: "Hacer una pregunta",
+  hi: "प्रश्न पूछें",
+  ml: "ഒരു ചോദ്യം ചോദിക്കുക",
+  ta: "கேள்வி கேளுங்கள்",
+  ru: "Задать вопрос"
+};
+
+const reportIssueTitles: Record<string, string> = {
+  en: "Report an Issue",
+  ja: "問題を報告",
+  zh: "报告问题",
+  es: "Informar de un problema",
+  hi: "समस्या की रिपोर्ट करें",
+  ml: "ഒരു പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക",
+  ta: "பிரச்சனையை புகாரளிக்கவும்",
+  ru: "Сообщить о проблеме"
+};
+
 export default function DocLayout({ children, pageMap, version, locale }: { children: React.ReactNode, pageMap: any, version: string, locale: string }) {
   return (
     <>
@@ -89,6 +111,14 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
           extraContent: (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
               <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58', marginBottom: '0.25rem' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
+              <a href="https://github.com/Ikolvi/Tracelet/discussions" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                {askQuestionTitles[locale] || askQuestionTitles.en}
+              </a>
+              <a href="https://github.com/Ikolvi/Tracelet/issues/new/choose" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                {reportIssueTitles[locale] || reportIssueTitles.en}
+              </a>
             </div>
           )
         }}

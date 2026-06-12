@@ -1,3 +1,8 @@
+## 3.2.17
+
+* **FIX** (Native): Resolve iOS auto-sync thread starvation by offloading synchronous HTTP requests to a background DispatchQueue to prevent blocking Swift Concurrency pools ([#146](https://github.com/Ikolvi/Tracelet/issues/146)).
+* **CHORE** (Docs): Fix Nextra changelog rendering bug and improve auto-translation glossary script for internationalization.
+
 ## 3.2.16
 
 * **FIX**: Resolve getting stuck in the moving state and never transitioning back to stationary (continuous GPS + battery drain). The accelerometer stillness sampler keeps running during the stop-timeout and requires sustained motion — not a single stray sample — to abort it ([#142](https://github.com/Ikolvi/Tracelet/issues/142)).

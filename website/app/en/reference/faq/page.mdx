@@ -126,6 +126,13 @@ If you only want GPS-quality data, filter on your side by `locationSource == "gp
 
 Locations buffer within your retention limits (`maxDaysToPersist`, `maxRecordsToPersist`); the oldest are pruned once those are exceeded. You can also hold uploads off cellular with `disableAutoSyncOnCellular: true`.
 
+### Will tracelet_sync automatically push to my backend when the internet comes back?
+
+**Yes, automatically and entirely in the background.** If you use `tracelet_sync` (or its wrappers like `tracelet_supabase` / `tracelet_firebase`), you do not need to write any network-retry logic yourself. 
+
+When the OS detects that network connectivity has been restored, the native sync engine immediately wakes up in the background and begins uploading the cached locations to your backend in chronological batches. It continues uploading until the local database is fully caught up with the server, ensuring zero data loss even after prolonged offline periods.
+
+
 ---
 
 ## Reboot & Device Unlock

@@ -3,6 +3,10 @@ import './global.css'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tracelet.ikolvi.com'),
+  alternates: {
+    canonical: '/',
+  },
   title: {
     template: '%s | Tracelet',
     default: 'Tracelet | Production-grade background geolocation for Flutter',

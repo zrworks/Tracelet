@@ -164,7 +164,9 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                         heading = it.heading,
                         altitude = it.altitude,
                         isMock = it.isMock,
+                        isMoving = it.isMoving,
                         activity = it.activity,
+                        event = it.eventType,
                         routeContext = it.routeContext
                     )
                 }
@@ -229,7 +231,9 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                 heading = it.heading,
                 altitude = it.altitude,
                 isMock = it.isMock,
+                isMoving = it.isMoving,
                 activity = it.activity,
+                event = it.eventType,
                 routeContext = it.routeContext
             )
         }

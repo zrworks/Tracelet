@@ -49,8 +49,10 @@ class _IssuesPageState extends State<IssuesPage> {
     141,
     148,
     150,
+    151,
     152,
     155,
+    156,
     157,
   ];
 
@@ -1191,6 +1193,62 @@ class _IssuesPageState extends State<IssuesPage> {
     setState(() => _isIssue157Tracking = false);
   }
 
+  // ==== ISSUE 151 + 156: is_moving / event missing from sync payload ====
+  Future<void> _testIssue151156() async {
+    _setStatus(151, 'Testing #151/#156 (sync payload)...');
+    _setStatus(156, 'Testing #151/#156 (sync payload)...');
+    try {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final completer = Completer<Map<String, dynamic>>();
+      server.listen((req) async {
+        final content = await utf8.decoder.bind(req).join();
+        req.response.statusCode = 200;
+        req.response.write('{"success":true}');
+        await req.response.close();
+        if (!completer.isCompleted) {
+          completer.complete(jsonDecode(content) as Map<String, dynamic>);
+        }
+      });
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: 'http://127.0.0.1:${server.port}/sync',
+            batchSync: true,
+            maxBatchSize: 10,
+          ),
+        ),
+      );
+      await Tracelet.destroyLocations();
+      await Tracelet.insertLocation({
+        'uuid': 'issue-151-156',
+        'timestamp': DateTime.now().toIso8601String(),
+        'latitude': 37.7749,
+        'longitude': -122.4194,
+        'accuracy': 10.0,
+        'speed': 1.2,
+        'heading': 0.0,
+        'altitude': 0.0,
+        'is_moving': true,
+        'event': 'motionchange',
+      });
+      await Tracelet.sync();
+      final body = await completer.future.timeout(const Duration(seconds: 20));
+      await server.close();
+      final rec = (body['location'] as List).first as Map<String, dynamic>;
+      final hasMoving = rec.containsKey('is_moving');
+      final hasEvent = rec.containsKey('event');
+      final msg = hasMoving && hasEvent
+          ? '✅ SUCCESS: payload has is_moving=${rec['is_moving']} (#151) and '
+                'event="${rec['event']}" (#156).'
+          : '❌ FAILED: is_moving present=$hasMoving, event present=$hasEvent.';
+      _setStatus(151, msg);
+      _setStatus(156, msg);
+    } catch (e) {
+      _setStatus(151, '❌ FAILED: $e');
+      _setStatus(156, '❌ FAILED: $e');
+    }
+  }
+
   Widget _buildIssueCard({
     required int issueNumber,
     required String title,
@@ -1703,6 +1761,39 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _isIssue157Tracking ? _stopIssue157 : null,
                       icon: const Icon(Icons.stop),
                       label: const Text('Stop'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 151,
+                  title: 'is_moving missing from sync payload',
+                  description:
+                      'The native SyncLocationRecord omitted the motion state, so '
+                      'the HTTP payload never carried "is_moving". This test syncs a '
+                      'record (is_moving:true) to a loopback server and asserts the '
+                      'payload contains it. Deterministic. (Same test as #156.)',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue151156,
+                      icon: const Icon(Icons.directions_run),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 156,
+                  title: 'event key missing from sync payload',
+                  description:
+                      'The native SyncLocationRecord omitted the trigger event, so '
+                      'the HTTP payload never carried "event" (location / motionchange '
+                      '/ heartbeat / geofence). This test syncs a record '
+                      '(event:"motionchange") and asserts the payload contains it. '
+                      'Deterministic. (Same test as #151.)',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue151156,
+                      icon: const Icon(Icons.bolt),
+                      label: const Text('Run Test'),
                     ),
                   ],
                 ),

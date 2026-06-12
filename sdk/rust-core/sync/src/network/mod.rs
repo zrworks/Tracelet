@@ -39,7 +39,12 @@ pub struct SyncLocationRecord {
     pub heading: f64,
     pub altitude: f64,
     pub is_mock: bool,
+    /// Motion state of this record (#151).
+    pub is_moving: bool,
     pub activity: String,
+    /// Trigger that recorded this point: "location", "motionchange",
+    /// "heartbeat", "geofence", etc. (#156).
+    pub event: String,
     pub route_context: Option<String>,
 }
 
@@ -158,7 +163,9 @@ impl SyncManager {
                         "altitude": r.altitude,
                     },
                     "is_mock": r.is_mock,
-                    "activity": r.activity
+                    "is_moving": r.is_moving,
+                    "activity": r.activity,
+                    "event": r.event
                 });
                 let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
                     .and_then(|rc| serde_json::from_str(rc).ok());
@@ -194,7 +201,9 @@ impl SyncManager {
                     "altitude": r.altitude,
                 },
                 "is_mock": r.is_mock,
-                "activity": r.activity
+                    "is_moving": r.is_moving,
+                    "activity": r.activity,
+                    "event": r.event
             });
             let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
                 .and_then(|rc| serde_json::from_str(rc).ok());

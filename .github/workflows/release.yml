@@ -1090,8 +1090,19 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   deploy_docs:
     name: Deploy Docs to Firebase
+    # Deploy the website ONLY after the Flutter packages have finished publishing
+    # to pub.dev. Without this dependency the job races the publish jobs and the
+    # version shown on the site (sidebar/version badge) can read the new version
+    # before it is actually live on pub.dev — a confusing mismatch for users.
+    needs:
+      - validate
+      - publish-flutter
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploy_website == 'true' || github.event_name != 'workflow_dispatch' }}
+    if: |
+      always() &&
+      (github.event.inputs.deploy_website == 'true' || github.event_name != 'workflow_dispatch') &&
+      needs.validate.result == 'success' &&
+      (needs.publish-flutter.result == 'success' || needs.publish-flutter.result == 'skipped')
     steps:
       - uses: actions/checkout@v4
       

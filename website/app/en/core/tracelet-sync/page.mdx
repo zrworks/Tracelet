@@ -13,6 +13,39 @@ import LottiePlayer from '../../../../components/LottiePlayer'
 
 ---
 
+## How to Sync to the Network
+
+While Tracelet Core captures locations, **`tracelet_sync`** is the background HTTP engine that delivers them to your server. To enable it, initialize `TraceletSync.ready()` before you start tracking:
+
+```dart
+import 'package:tracelet_sync/tracelet_sync.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Configure the Sync Engine
+  await TraceletSync.ready(SyncConfig(
+    url: 'https://your-api.com/locations',
+    method: 'POST',
+    autoSyncThreshold: 10,       // Sync every 10 locations
+    autoSyncDelay: 10000,        // Wait 10s before pushing
+    batchSync: true,             // Send as a JSON array
+    maxBatchSize: 250,           // Up to 250 locations per request
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN'
+    },
+  ));
+
+  // 2. Configure and start Tracelet Core as usual
+  await Tracelet.ready(Config.balanced());
+  await Tracelet.start();
+}
+```
+
+Once configured, the engine will handle all the scenarios below automatically!
+
+---
+
 ## Scenario 1: The Mountain Hike
 **Concepts Explored:** Offline Queuing, Batch Sync, Debouncing
 

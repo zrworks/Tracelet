@@ -1,0 +1,48 @@
+# Tracelet Ecosystem & Packages
+
+Tracelet is built using a **Federated Plugin Architecture**. Rather than forcing a massive, monolithic dependency into your app, Tracelet is split into several modular packages. This ensures your app size remains small, you only ship the native permissions and code that you actually need, and backend logic remains entirely decoupled from location tracking.
+
+Below is an overview of every package in the Tracelet ecosystem and what it does.
+
+## The Core Packages
+
+These packages are the foundation of Tracelet. Most apps will only ever need to interact directly with the main `tracelet` package.
+
+### `tracelet`
+This is the primary frontend package you add to your `pubspec.yaml`. It provides the main Dart API (`Tracelet.start()`, `Tracelet.ready()`), the configuration objects (`Config.balanced()`), and handles the Dart-to-Rust bindings.
+
+### `tracelet_platform_interface`
+The abstract common interface that connects the frontend `tracelet` package to the underlying native platforms. You will never interact with this directly, but it ensures all platforms conform to the exact same methods and return types.
+
+### `tracelet_android` & `tracelet_ios` & `tracelet_web`
+These are the platform-specific implementations. When you install `tracelet`, Flutter automatically pulls in these platform packages under the hood. 
+- **`tracelet_android`** contains the Kotlin wrappers and Android background service logic.
+- **`tracelet_ios`** contains the Swift wrappers and `CLLocationManager` logic.
+
+---
+
+## Networking & Sync Adapters
+
+Tracelet strictly separates "Location Tracking" from "Network Syncing." If you want to build your own manual HTTP retry logic inside `onLocation`, you never have to install these. But if you want automated, battery-friendly offline syncing, you use an adapter.
+
+### `tracelet_sync`
+The core native networking engine. It provides the `TraceletSync` API. Instead of waking up the Dart engine to send HTTP requests, it runs a native WorkManager (Android) or BGTask (iOS) to flush SQLite locations to your HTTP backend automatically, even when your app is force-quit. 
+
+### `tracelet_supabase`
+A pre-built wrapper around `tracelet_sync` specifically designed for [Supabase](https://supabase.com/). It automatically points the sync URL to your Supabase project, handles authentication headers, and writes directly to your Postgres database without you needing to write a backend API.
+
+### `tracelet_firebase`
+A pre-built wrapper around `tracelet_sync` specifically designed for [Firebase Firestore](https://firebase.google.com/). It batches writes to Firestore and utilizes Firebase's native offline-cache persistence.
+
+---
+
+## Diagnostic & Debugging Tools
+
+### `tracelet_doctor`
+A drop-in UI overlay package for developers. By adding `tracelet_doctor` to your app during testing, you get a beautiful diagnostic overlay that displays:
+- Real-time GPS accuracy rings
+- The current motion state (STATIONARY vs MOVING)
+- Native SQLite database row counts
+- The underlying battery drain
+
+It is highly recommended to use `tracelet_doctor` during QA and testing, and strip it from your release builds.

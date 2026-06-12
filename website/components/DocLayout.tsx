@@ -100,6 +100,7 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
               
               <a href={`/${locale}/privacy`} style={{ textDecoration: 'none', color: '#6b7280' }}>Privacy Policy</a>
               <a href={`/${locale}/terms`} style={{ textDecoration: 'none', color: '#6b7280' }}>Terms of Service</a>
+              <a href={`/${locale}/license`} style={{ textDecoration: 'none', color: '#6b7280' }}>License</a>
 
               <span style={{ borderLeft: '1px solid #d1d5db', height: '16px', margin: '0 0.5rem' }}></span>
               <span style={{ fontWeight: '600', color: '#4b5563' }}>Powered by Ikolvi</span>

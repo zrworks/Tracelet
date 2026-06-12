@@ -269,10 +269,11 @@ async function run() {
     filesToTranslate = allFiles.filter(f => 
       (f.endsWith('.mdx') || f.endsWith('_meta.js')) && 
       !f.includes('/privacy/') && 
-      !f.includes('/terms/')
+      !f.includes('/terms/') &&
+      !f.includes('/license/')
     );
   } else if (args.length > 0) {
-    filesToTranslate = args.filter(f => !f.includes('/privacy/') && !f.includes('/terms/'));
+    filesToTranslate = args.filter(f => !f.includes('/privacy/') && !f.includes('/terms/') && !f.includes('/license/'));
   } else {
     try {
       const { execSync } = require('child_process');
@@ -281,7 +282,8 @@ async function run() {
         file.includes(`app/${baseLang}/`) && 
         file.endsWith('.mdx') &&
         !file.includes('/privacy/') &&
-        !file.includes('/terms/')
+        !file.includes('/terms/') &&
+        !file.includes('/license/')
       );
     } catch (e) {
       console.warn("Could not detect git changes. Please provide specific files or use --all.");

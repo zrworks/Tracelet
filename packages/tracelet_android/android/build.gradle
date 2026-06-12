@@ -54,7 +54,7 @@ android {
         // Real org.json so ConfigManager's JSON persistence works under unit
         // tests (Android's bundled org.json is stubbed to return null when
         // unitTests.returnDefaultValues=true). Mirrors the tracelet-sdk module.
-        testImplementation("org.json:json:20251224")
+        testImplementation("org.json:json:20260522")
         // Optional SDK deps that some duplicated SDK-behavior tests exercise.
         testImplementation("androidx.security:security-crypto:1.1.0")
         testImplementation("com.google.android.play:integrity:1.6.0")
@@ -71,7 +71,7 @@ android {
         // dependency is the `@aar` variant, which omits the JVM native bits, so
         // uniffi-backed tests fail to initialise JNA without this. Mirrors the
         // tracelet-sdk module.
-        testImplementation("net.java.dev.jna:jna:5.18.1")
+        testImplementation("net.java.dev.jna:jna:5.19.0")
         testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
     }
 

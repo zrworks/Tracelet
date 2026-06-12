@@ -1,6 +1,7 @@
 export default {
   "index": "Home",
   "quick-start": "Quick Start (2 min)",
+  "getting-started": "Getting Started",
   "installation": "Installation",
   "basic-example": "Basic Example",
   "migrating-from-fbg": "Migrating from FBG",

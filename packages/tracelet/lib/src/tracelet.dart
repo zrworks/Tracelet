@@ -153,6 +153,21 @@ class Tracelet {
   /// Gets the currently active plugin configuration.
   static Config get activeConfig => _currentConfig;
 
+  /// Builds a [State] from a platform result map, backfilling the active
+  /// configuration when the native layer omits it.
+  ///
+  /// Issue #147: the Pigeon `TlState` FFI struct did not carry the active
+  /// config, so `State.config` was permanently `null` from `ready()` /
+  /// `getState()`. The Dart layer authoritatively tracks the active config in
+  /// [_currentConfig], so we populate `state.config` from it whenever the
+  /// native map does not already provide one.
+  static State _stateFromMap(Map<String, Object?> result) {
+    final map = result['config'] == null
+        ? <String, Object?>{...result, 'config': _currentConfig.toMap()}
+        : result;
+    return State.fromMap(map);
+  }
+
   /// Whether [registerHeadlessTask] has been called in this isolate.
   ///
   /// Used by diagnostic tools (e.g. `tracelet_doctor`) to warn when
@@ -213,7 +228,7 @@ class Tracelet {
     _checkSyncProvider(config);
 
     final result = await _platform.ready(config.toTlConfig());
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Start location tracking.
@@ -229,7 +244,7 @@ class Tracelet {
     // Start battery budget tracking if enabled.
     _startBatteryBudgetTracking();
 
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Stop location tracking.
@@ -246,7 +261,7 @@ class Tracelet {
     _stopBatteryBudgetTracking();
     _batteryBudgetEngine?.reset();
 
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Start geofence-only tracking mode.
@@ -255,7 +270,7 @@ class Tracelet {
   /// tracking, saving significant battery.
   static Future<State> startGeofences() async {
     final result = await _platform.startGeofences();
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Start periodic one-shot location tracking mode.
@@ -285,13 +300,13 @@ class Tracelet {
   /// ```
   static Future<State> startPeriodic() async {
     final result = await _platform.startPeriodic();
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Get the current plugin [State].
   static Future<State> getState() async {
     final result = await _platform.getState();
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Get a comprehensive diagnostic snapshot of the plugin's operational health.
@@ -358,7 +373,7 @@ class Tracelet {
     _checkSyncProvider(config);
 
     final s = await _platform.setConfig(config.toTlConfig());
-    return State.fromMap(s);
+    return _stateFromMap(s);
   }
 
   /// Verifies if tracelet_sync is installed/registered when HTTP URL is configured.
@@ -390,7 +405,7 @@ class Tracelet {
   /// Returns the updated [State].
   static Future<State> reset([Config? config]) async {
     final result = await _platform.reset(config?.toTlConfig());
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   // ---------------------------------------------------------------------------
@@ -619,6 +634,30 @@ class Tracelet {
   /// [SQLQuery.limit], [SQLQuery.offset], and [SQLQuery.order] are ignored.
   static Future<int> getCount([SQLQuery? query]) {
     return _platform.getCount(query?.toMap());
+  }
+
+  /// Get the locations still pending synchronization to the backend (#159).
+  ///
+  /// Tracelet prunes each record from the local store the moment it is confirmed
+  /// synced, so every persisted location is by definition still *pending* upload.
+  /// This is a convenience wrapper over [getLocations] that makes offline-queue
+  /// monitoring explicit: the returned list is exactly the set of locations that
+  /// have been captured/stored but not yet delivered (e.g. while offline).
+  ///
+  /// Optionally pass a [query] to filter by time range and limit.
+  static Future<List<Location>> getPendingLocations([SQLQuery? query]) {
+    return getLocations(query);
+  }
+
+  /// Get the number of locations still pending synchronization (#159).
+  ///
+  /// Because synced records are pruned immediately, this equals the size of the
+  /// offline queue. Useful for surfacing queue depth to end users or for audit
+  /// and diagnostics. See [getPendingLocations].
+  ///
+  /// Only [SQLQuery.start] and [SQLQuery.end] affect the result.
+  static Future<int> getPendingLocationCount([SQLQuery? query]) {
+    return getCount(query);
   }
 
   /// Destroy all stored locations.
@@ -1383,13 +1422,13 @@ class Tracelet {
   /// Start the scheduler (uses the `schedule` array in [AppConfig]).
   static Future<State> startSchedule() async {
     final result = await _platform.startSchedule();
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   /// Stop the scheduler.
   static Future<State> stopSchedule() async {
     final result = await _platform.stopSchedule();
-    return State.fromMap(result);
+    return _stateFromMap(result);
   }
 
   // ---------------------------------------------------------------------------
@@ -1697,7 +1736,7 @@ class Tracelet {
         .toList();
     final dbEncrypted = results[7] as bool;
 
-    final state = State.fromMap(stateMap);
+    final state = _stateFromMap(stateMap);
 
     // Extract timestamps from oldest/newest records.
     // Android sends timestamps as int (millis), iOS sends as String (ISO8601).

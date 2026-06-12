@@ -902,6 +902,7 @@ class HttpConfig {
     this.maxBatchSize = 250,
     this.autoSyncThreshold = 0,
     this.autoSyncDelay = 10000,
+    this.syncInterval = 0,
     this.httpTimeout = 60000,
     this.locationsOrderDirection = LocationOrderDirection.ascending,
     this.disableAutoSyncOnCellular = false,
@@ -932,6 +933,7 @@ class HttpConfig {
       maxBatchSize: ensureInt(map['maxBatchSize'], fallback: 250),
       autoSyncThreshold: ensureInt(map['autoSyncThreshold'], fallback: 0),
       autoSyncDelay: ensureInt(map['autoSyncDelay'], fallback: 10000),
+      syncInterval: ensureInt(map['syncInterval'], fallback: 0),
       httpTimeout: ensureInt(map['httpTimeout'], fallback: 60000),
       locationsOrderDirection:
           LocationOrderDirection.values[ensureInt(
@@ -973,6 +975,7 @@ class HttpConfig {
     int? maxBatchSize,
     int? autoSyncThreshold,
     int? autoSyncDelay,
+    int? syncInterval,
     int? httpTimeout,
     LocationOrderDirection? locationsOrderDirection,
     bool? disableAutoSyncOnCellular,
@@ -996,6 +999,7 @@ class HttpConfig {
       maxBatchSize: maxBatchSize ?? this.maxBatchSize,
       autoSyncThreshold: autoSyncThreshold ?? this.autoSyncThreshold,
       autoSyncDelay: autoSyncDelay ?? this.autoSyncDelay,
+      syncInterval: syncInterval ?? this.syncInterval,
       httpTimeout: httpTimeout ?? this.httpTimeout,
       locationsOrderDirection:
           locationsOrderDirection ?? this.locationsOrderDirection,
@@ -1059,6 +1063,16 @@ class HttpConfig {
   /// Defaults to `10000` (10 seconds).
   final int autoSyncDelay;
 
+  /// Interval, in **seconds**, for the repeating sync timer (interval-based sync).
+  ///
+  /// When greater than `0`, the SDK periodically flushes any pending locations
+  /// to [url] on this cadence, in addition to the debounced auto-sync controlled
+  /// by [autoSyncDelay]. This is useful for time-driven flushing of the offline
+  /// queue regardless of how many records have accumulated.
+  ///
+  /// Defaults to `0` (the repeating timer is disabled).
+  final int syncInterval;
+
   /// Request timeout in milliseconds.
   /// Defaults to `60000` (60 seconds).
   final int httpTimeout;
@@ -1111,6 +1125,7 @@ class HttpConfig {
     maxBatchSize: maxBatchSize,
     autoSyncThreshold: autoSyncThreshold,
     autoSyncDelay: autoSyncDelay,
+    syncInterval: syncInterval,
     httpTimeout: httpTimeout,
     locationsOrderDirection:
         TlLocationOrderDirection.values[locationsOrderDirection.index],
@@ -1138,6 +1153,7 @@ class HttpConfig {
       'maxBatchSize': maxBatchSize,
       'autoSyncThreshold': autoSyncThreshold,
       'autoSyncDelay': autoSyncDelay,
+      'syncInterval': syncInterval,
       'httpTimeout': httpTimeout,
       'locationsOrderDirection': locationsOrderDirection.index,
       'disableAutoSyncOnCellular': disableAutoSyncOnCellular,
@@ -1167,6 +1183,7 @@ class HttpConfig {
           maxBatchSize == other.maxBatchSize &&
           autoSyncThreshold == other.autoSyncThreshold &&
           autoSyncDelay == other.autoSyncDelay &&
+          syncInterval == other.syncInterval &&
           httpTimeout == other.httpTimeout &&
           locationsOrderDirection == other.locationsOrderDirection &&
           disableAutoSyncOnCellular == other.disableAutoSyncOnCellular &&
@@ -1191,6 +1208,7 @@ class HttpConfig {
     maxBatchSize,
     autoSyncThreshold,
     autoSyncDelay,
+    syncInterval,
     httpTimeout,
     locationsOrderDirection,
     disableAutoSyncOnCellular,

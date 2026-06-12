@@ -230,7 +230,7 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
+    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
     this.headers,
     this.params,
     this.sslPinningFingerprints,
@@ -252,6 +252,7 @@ class TlHttpConfig {
   final String? httpRootProperty;
   final int autoSyncThreshold;
   final int? autoSyncDelay;
+  final int syncInterval;
   final int httpTimeout;
   final TlLocationOrderDirection locationsOrderDirection;
   final Map<String?, Object?>? extras;

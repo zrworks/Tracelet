@@ -232,6 +232,7 @@ class TraceletHostApiImpl(
             put("maxBatchSize", c.http.maxBatchSize)
             put("autoSyncThreshold", c.http.autoSyncThreshold)
             put("autoSyncDelay", c.http.autoSyncDelay)
+            put("syncInterval", c.http.syncInterval)
             put("httpTimeout", c.http.httpTimeout)
             put("locationsOrderDirection", c.http.locationsOrderDirection.raw)
             put("disableAutoSyncOnCellular", c.http.disableAutoSyncOnCellular)

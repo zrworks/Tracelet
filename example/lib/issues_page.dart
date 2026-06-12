@@ -54,6 +54,10 @@ class _IssuesPageState extends State<IssuesPage> {
     155,
     156,
     157,
+    147,
+    149,
+    154,
+    159,
   ];
 
   bool _isIssue134Tracking = false;
@@ -838,6 +842,14 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue138();
       } else if (issue == 139) {
         await _testIssue139();
+      } else if (issue == 147) {
+        await _testIssue147();
+      } else if (issue == 149) {
+        await _testIssue149();
+      } else if (issue == 154) {
+        await _testIssue154();
+      } else if (issue == 159) {
+        await _testIssue159();
       }
       await Future.delayed(const Duration(seconds: 2));
     }
@@ -1130,9 +1142,7 @@ class _IssuesPageState extends State<IssuesPage> {
     try {
       await Tracelet.ready(
         const Config(
-          motion: MotionConfig(
-            motionDetectionMode: MotionDetectionMode.smart,
-          ),
+          motion: MotionConfig(motionDetectionMode: MotionDetectionMode.smart),
         ),
       );
       _issue155Sub = Tracelet.onLocation((loc) {
@@ -1141,9 +1151,9 @@ class _IssuesPageState extends State<IssuesPage> {
           155,
           act == 'unknown'
               ? '⏳ Live activity = "unknown" — keep moving (needs '
-                'ACTIVITY_RECOGNITION permission + real motion to classify).'
+                    'ACTIVITY_RECOGNITION permission + real motion to classify).'
               : '✅ Live activity = "$act" — propagated into the location '
-                '(was permanently stuck at "unknown").',
+                    '(was permanently stuck at "unknown").',
         );
       });
       await Tracelet.start();
@@ -1246,6 +1256,157 @@ class _IssuesPageState extends State<IssuesPage> {
     } catch (e) {
       _setStatus(151, '❌ FAILED: $e');
       _setStatus(156, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 147: TlState/getState() drops active config ====
+  Future<void> _testIssue147() async {
+    _setStatus(147, 'Testing #147 (state.config populated)...');
+    try {
+      const url = 'https://example.com/issue-147';
+      final state = await Tracelet.ready(
+        const Config(http: HttpConfig(url: url, maxBatchSize: 77)),
+      );
+      final fetched = await Tracelet.getState();
+      if (state.config != null &&
+          state.config!.http.url == url &&
+          state.config!.http.maxBatchSize == 77 &&
+          fetched.config != null) {
+        _setStatus(
+          147,
+          '✅ SUCCESS: state.config is populated (url + maxBatchSize match) '
+          'from both ready() and getState() — was permanently null.',
+        );
+      } else {
+        _setStatus(
+          147,
+          '❌ FAILED: state.config=${state.config}, '
+          'getState.config=${fetched.config}.',
+        );
+      }
+      await Tracelet.stop();
+    } catch (e) {
+      _setStatus(147, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 149: missing syncInterval in HttpConfig ====
+  Future<void> _testIssue149() async {
+    _setStatus(149, 'Testing #149 (syncInterval)...');
+    try {
+      const config = HttpConfig(syncInterval: 45);
+      final hasKey = config.toMap().containsKey('syncInterval');
+      final state = await Tracelet.ready(
+        const Config(
+          http: HttpConfig(
+            url: 'https://example.com/issue-149',
+            syncInterval: 30,
+          ),
+        ),
+      );
+      final roundTrip = state.config?.http.syncInterval;
+      if (hasKey && config.toMap()['syncInterval'] == 45 && roundTrip == 30) {
+        _setStatus(
+          149,
+          '✅ SUCCESS: syncInterval exists in HttpConfig.toMap() and round-trips '
+          'through native state (got $roundTrip).',
+        );
+      } else {
+        _setStatus(
+          149,
+          '❌ FAILED: toMap has key=$hasKey, native round-trip=$roundTrip.',
+        );
+      }
+      await Tracelet.stop();
+    } catch (e) {
+      _setStatus(149, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 154: dummy destroySyncedLocations stub ====
+  Future<void> _testIssue154() async {
+    _setStatus(154, 'Testing #154 (destroySyncedLocations)...');
+    try {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((req) async {
+        await utf8.decoder.bind(req).join();
+        req.response.statusCode = 200;
+        req.response.write('{"success":true}');
+        await req.response.close();
+      });
+      await Tracelet.ready(
+        Config(
+          http: HttpConfig(
+            url: 'http://127.0.0.1:${server.port}/sync',
+            autoSync: false,
+            batchSync: true,
+            maxBatchSize: 50,
+          ),
+        ),
+      );
+      await Tracelet.destroyLocations();
+      await Tracelet.destroySyncedLocations(); // drain
+      const count = 3;
+      final base = DateTime.now().millisecondsSinceEpoch;
+      for (var i = 0; i < count; i++) {
+        await Tracelet.insertLocation({
+          'uuid': 'issue-154-$i',
+          'timestamp': base + i,
+          'latitude': 48.8566 + i * 0.0001,
+          'longitude': 2.3522,
+          'accuracy': 10.0,
+        });
+      }
+      await Tracelet.sync();
+      final deleted = await Tracelet.destroySyncedLocations();
+      await server.close(force: true);
+      if (deleted == count) {
+        _setStatus(
+          154,
+          '✅ SUCCESS: destroySyncedLocations() returned the real count '
+          '($deleted) — no longer a hardcoded 0 stub.',
+        );
+      } else {
+        _setStatus(154, '❌ FAILED: expected $count but got $deleted.');
+      }
+    } catch (e) {
+      _setStatus(154, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 159: pending-queue metrics ====
+  Future<void> _testIssue159() async {
+    _setStatus(159, 'Testing #159 (pending-queue metrics)...');
+    try {
+      await Tracelet.ready(const Config());
+      await Tracelet.destroyLocations();
+      const count = 4;
+      final base = DateTime.now().millisecondsSinceEpoch;
+      for (var i = 0; i < count; i++) {
+        await Tracelet.insertLocation({
+          'uuid': 'issue-159-$i',
+          'timestamp': base + i,
+          'latitude': 12.9716 + i * 0.0001,
+          'longitude': 77.5946,
+          'accuracy': 5.0,
+        });
+      }
+      final pendingCount = await Tracelet.getPendingLocationCount();
+      final pending = await Tracelet.getPendingLocations();
+      if (pendingCount == count && pending.length == count) {
+        _setStatus(
+          159,
+          '✅ SUCCESS: getPendingLocationCount()=$pendingCount and '
+          'getPendingLocations().length=${pending.length} expose the offline queue.',
+        );
+      } else {
+        _setStatus(
+          159,
+          '❌ FAILED: count=$pendingCount, list=${pending.length} (expected $count).',
+        );
+      }
+    } catch (e) {
+      _setStatus(159, '❌ FAILED: $e');
     }
   }
 
@@ -1793,6 +1954,68 @@ class _IssuesPageState extends State<IssuesPage> {
                     FilledButton.icon(
                       onPressed: _testIssue151156,
                       icon: const Icon(Icons.bolt),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 147,
+                  title: 'getState() drops active config',
+                  description:
+                      'The Pigeon TlState FFI struct had no config field, so '
+                      'State.config was permanently null from ready()/getState(). '
+                      'Now backfilled from the active config. Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue147,
+                      icon: const Icon(Icons.settings_backup_restore),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 149,
+                  title: 'Missing syncInterval in HttpConfig',
+                  description:
+                      'HttpConfig.syncInterval (interval-based sync) was missing '
+                      'from the Dart class and Pigeon struct, causing compile '
+                      'failures. Now present, serialized, and round-trips through '
+                      'native. Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue149,
+                      icon: const Icon(Icons.timelapse),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 154,
+                  title: 'Dummy destroySyncedLocations stub',
+                  description:
+                      'destroySyncedLocations() always returned a hardcoded 0. It '
+                      'now reports the real count of locations synced-and-pruned. '
+                      'Syncs 3 records to a loopback server and asserts the count. '
+                      'Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue154,
+                      icon: const Icon(Icons.delete_sweep),
+                      label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 159,
+                  title: 'Offline queue metrics',
+                  description:
+                      'Adds getPendingLocations()/getPendingLocationCount() to '
+                      'expose the offline (pending-sync) queue. Inserts 4 records '
+                      'and asserts both APIs report them. Deterministic.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue159,
+                      icon: const Icon(Icons.inbox),
                       label: const Text('Run Test'),
                     ),
                   ],

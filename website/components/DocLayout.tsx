@@ -2,7 +2,6 @@ import React, { Suspense } from 'react'
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { Head } from 'nextra/components'
 import RainBackground from './RainBackground'
-import CookieBanner from './CookieBanner'
 import LanguagePrompt from './LanguagePrompt'
 import TrackedLink from './TrackedLink'
 import { LocaleSwitch } from 'nextra-theme-docs'
@@ -98,7 +97,6 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
       </Layout>
       <RainBackground />
       <LanguagePrompt />
-      <CookieBanner />
     </>
   )
 }

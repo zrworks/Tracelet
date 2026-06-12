@@ -3,6 +3,7 @@ export default {
   "quick-start": "Quick Start (2 min)",
   "installation": "Installation",
   "basic-example": "Basic Example",
+  "migrating-from-fbg": "Migrating from FBG",
   "core": "Core Concepts",
   "config": "Configuration",
   "api-reference": "API Reference",

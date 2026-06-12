@@ -29,6 +29,7 @@ void main() async {
     method: 'POST',
     autoSyncThreshold: 10,       // Sync every 10 locations
     autoSyncDelay: 10000,        // Wait 10s before pushing
+    syncInterval: 0,             // (Optional) Seconds between repeating queue flushes; 0 = off
     batchSync: true,             // Send as a JSON array
     maxBatchSize: 250,           // Up to 250 locations per request
     headers: {
@@ -62,6 +63,9 @@ Mark is using your fitness app to track a 3-hour hike through the mountains. He 
 
 3. **Batch Syncing (`batchSync` & `maxBatchSize`)**
    Instead of 500 individual `POST` requests, `batchSync: true` and `maxBatchSize: 250` bundles the locations into two massive JSON arrays. It sends the first 250 points, waits for your server to return an `HTTP 200 OK`, deletes those points from SQLite, and then sends the next batch.
+
+4. **Interval-Based Sync (`syncInterval`)**
+   `autoSyncDelay` reacts to *new* locations. If you also want a time-driven flush — uploading whatever is queued on a fixed cadence, regardless of how many points have accumulated — set `syncInterval` to the number of seconds between flushes (e.g. `syncInterval: 60` flushes the offline queue once a minute). It runs alongside the debounce and is disabled by default (`0`).
 
 ---
 

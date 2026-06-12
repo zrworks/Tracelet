@@ -175,6 +175,8 @@ Controls the network synchronization engine. [See Sync Story 📖](/en/core/trac
   Number of SQLite records required before triggering a sync.
 - **`autoSyncDelay`**: `int` *(Default: `10000`)*
   Ms to wait before syncing after a location arrives.
+- **`syncInterval`**: `int` *(Default: `0`)*
+  Seconds between repeating, time-based flushes of the offline queue. When `> 0`, the SDK periodically uploads any pending locations on this cadence — independent of the `autoSyncDelay` debounce that fires on new inserts. Useful for time-driven flushing regardless of how many records have accumulated. `0` disables the interval timer.
 - **`httpTimeout`**: `int` *(Default: `60000`)*
 - **`locationsOrderDirection`**: `LocationOrderDirection` *(Default: `LocationOrderDirection.ascending`)*
 - **`disableAutoSyncOnCellular`**: `bool` *(Default: `false`)*

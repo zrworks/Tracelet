@@ -1263,9 +1263,13 @@ class _IssuesPageState extends State<IssuesPage> {
   Future<void> _testIssue147() async {
     _setStatus(147, 'Testing #147 (state.config populated)...');
     try {
-      const url = 'https://example.com/issue-147';
+      final url = Tracelet.activeConfig.http.url;
+      if (url == null || url.isEmpty) {
+        _setStatus(147, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
       final state = await Tracelet.ready(
-        const Config(http: HttpConfig(url: url, maxBatchSize: 77)),
+        Config(http: HttpConfig(url: url, maxBatchSize: 77)),
       );
       final fetched = await Tracelet.getState();
       if (state.config != null &&
@@ -1294,15 +1298,15 @@ class _IssuesPageState extends State<IssuesPage> {
   Future<void> _testIssue149() async {
     _setStatus(149, 'Testing #149 (syncInterval)...');
     try {
+      final url = Tracelet.activeConfig.http.url;
+      if (url == null || url.isEmpty) {
+        _setStatus(149, '❌ FAILED: Please scan a Test Server QR code first.');
+        return;
+      }
       const config = HttpConfig(syncInterval: 45);
       final hasKey = config.toMap().containsKey('syncInterval');
       final state = await Tracelet.ready(
-        const Config(
-          http: HttpConfig(
-            url: 'https://example.com/issue-149',
-            syncInterval: 30,
-          ),
-        ),
+        Config(http: HttpConfig(url: url, syncInterval: 30)),
       );
       final roundTrip = state.config?.http.syncInterval;
       if (hasKey && config.toMap()['syncInterval'] == 45 && roundTrip == 30) {
@@ -1964,7 +1968,8 @@ class _IssuesPageState extends State<IssuesPage> {
                   description:
                       'The Pigeon TlState FFI struct had no config field, so '
                       'State.config was permanently null from ready()/getState(). '
-                      'Now backfilled from the active config. Deterministic.',
+                      'Now backfilled from the active config. Scan a Test Server '
+                      'QR code first.',
                   actions: [
                     FilledButton.icon(
                       onPressed: _testIssue147,
@@ -1980,7 +1985,7 @@ class _IssuesPageState extends State<IssuesPage> {
                       'HttpConfig.syncInterval (interval-based sync) was missing '
                       'from the Dart class and Pigeon struct, causing compile '
                       'failures. Now present, serialized, and round-trips through '
-                      'native. Deterministic.',
+                      'native. Scan a Test Server QR code first.',
                   actions: [
                     FilledButton.icon(
                       onPressed: _testIssue149,

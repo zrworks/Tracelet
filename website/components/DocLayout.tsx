@@ -110,7 +110,17 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
           title: tocTitles[locale] || tocTitles.en,
           extraContent: (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
-              <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58', marginBottom: '0.25rem' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingLeft: '1.25rem' }}>
+                  <a href="https://www.patreon.com/c/kiranbjm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '12px' }}>🟠</span> Patreon
+                  </a>
+                  <a href="https://www.buymeacoffee.com/kiranbjm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '12px' }}>☕</span> Buy Me a Coffee
+                  </a>
+                </div>
+              </div>
               <a href="https://github.com/Ikolvi/Tracelet/discussions" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 {askQuestionTitles[locale] || askQuestionTitles.en}

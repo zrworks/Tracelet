@@ -103,24 +103,31 @@ jobs:
           cache: true
 
       - name: Install Melos
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: dart pub global activate melos
 
       - name: Setup Rust
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         uses: dtolnay/rust-toolchain@stable
       - name: Setup sccache
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install cargo-binstall
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
       - name: Install flutter_rust_bridge_codegen
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: cargo binstall -y --force cargo-expand flutter_rust_bridge_codegen
 
       - name: Generate Rust Bindings
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         working-directory: packages/tracelet_platform_interface
         run: flutter_rust_bridge_codegen generate
 
       - name: Check for uncommitted generated files
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "❌ Generated files are out of date!"
@@ -131,6 +138,7 @@ jobs:
           echo "✅ Generated files are up to date."
 
       - name: Upload Rust Bindings
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         uses: actions/upload-artifact@v7
         with:
           name: frb-bindings
@@ -138,9 +146,11 @@ jobs:
           retention-days: 1
 
       - name: Bootstrap
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: melos bootstrap
 
       - name: Read versions from source
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         id: versions
         run: |
           ANDROID_SDK=$(grep '^SDK_VERSION=' sdk/android/gradle.properties | cut -d= -f2)
@@ -168,11 +178,13 @@ jobs:
           echo "| Flutter firebase package | \`$FLUTTER_FIREBASE\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate mock env for examples
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: |
           echo "const supabaseUrl = 'https://dummy.supabase.co';" > example_supabase/lib/env.dart
           echo "const supabaseAnonKey = 'dummy';" >> example_supabase/lib/env.dart
 
       - name: Check published status
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         id: published_status
         run: |
           ANDROID_VERSION="${{ steps.versions.outputs.android_sdk }}"
@@ -199,8 +211,10 @@ jobs:
           fi
 
       - name: Analyze
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: melos run analyze
       - name: Dry-run pub publish
+        if: ${{ !(inputs.skip_flutter && inputs.skip_native_sdks) }}
         run: |
           ORDERED=""
           if [ "${{ inputs.publish_core_flutter }}" = "true" ]; then

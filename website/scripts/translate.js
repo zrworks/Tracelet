@@ -249,11 +249,26 @@ async function translateMetaJs(content, targetLang, engine) {
       const text = match[2];
       const suffix = match[3];
 
-      const t = engine === 'google'
+      let t = engine === 'google'
         ? await translateLineGoogle(text, targetLang)
         : await translateLineBing(text, targetLang);
 
-      translatedLines.push(`${prefix}${t}${suffix}`);
+      // Escape double quotes returned by translator to prevent syntax errors
+      t = t.replace(/"/g, '\\"');
+
+      // Re-assemble the line
+      // Notice: If the prefix ended with a single quote, we replace the prefix/suffix 
+      // with double quotes to ensure the escaped \" works correctly.
+      let newPrefix = prefix;
+      let newSuffix = suffix;
+      if (prefix.endsWith("'")) {
+        newPrefix = prefix.slice(0, -1) + '"';
+      }
+      if (suffix.startsWith("'")) {
+        newSuffix = '"' + suffix.slice(1);
+      }
+      
+      translatedLines.push(`${newPrefix}${t}${newSuffix}`);
     } else {
       translatedLines.push(line);
     }

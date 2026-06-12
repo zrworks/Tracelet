@@ -1210,7 +1210,13 @@ class TraceletSdk private constructor(private val context: Context) {
      * Prevents duplicate insertions of the exact same GPS fix based on the timestamp.
      */
     fun insertLocation(params: Map<String, Any?>): String {
-        if (!isReady) return ""
+        // Persist whenever the Rust DB is initialized — NOT only when isReady.
+        // The headless boot/background path (bootstrapForBackground) wires the
+        // DB and sync provider but never calls ready() (no Dart UI), so isReady
+        // stays false. Gating on isReady here silently dropped every location
+        // captured after a reboot, so the DB stayed empty and auto-sync (which
+        // reads from the DB) had nothing to send. The db null-check below is the
+        // correct readiness signal for persistence.
         val db = rustDatabase ?: return ""
         val coords = (params["coords"] as? Map<*, *>) ?: params
         val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0

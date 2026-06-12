@@ -14,18 +14,10 @@ async function getPackageVersion(pkg: string) {
 
 async function getPackageChangelog(pkg: string) {
   try {
-    const url = pkg === 'tracelet' 
-      ? `https://raw.githubusercontent.com/Ikolvi/Tracelet/main/CHANGELOG.md`
-      : `https://raw.githubusercontent.com/Ikolvi/Tracelet/main/packages/${pkg}/CHANGELOG.md`;
+    const url = `https://raw.githubusercontent.com/Ikolvi/Tracelet/main/packages/${pkg}/CHANGELOG.md`;
       
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) {
-      if (res.status === 404 && pkg === 'tracelet') {
-         const rootRes = await fetch(`https://raw.githubusercontent.com/Ikolvi/Tracelet/main/packages/tracelet/CHANGELOG.md`);
-         if (!rootRes.ok) return 'Changelog not found.';
-         const rootText = await rootRes.text();
-         return extractLatestChangelog(rootText);
-      }
       return 'Changelog not available.';
     }
     const text = await res.text();

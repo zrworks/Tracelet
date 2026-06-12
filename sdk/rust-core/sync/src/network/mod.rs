@@ -421,7 +421,9 @@ mod tests {
             heading: 90.0,
             altitude: 100.0,
             is_mock: false,
+            is_moving: true,
             activity: "moving".to_string(),
+            event: "location".to_string(),
             route_context: None,
         }
     }

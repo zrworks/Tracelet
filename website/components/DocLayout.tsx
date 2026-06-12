@@ -113,11 +113,17 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingLeft: '1.25rem' }}>
-                  <a href="https://www.patreon.com/c/kiranbjm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '12px' }}>🟠</span> Patreon
+                  <a href="https://github.com/sponsors/GalacticTitan" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '12px' }}>🐙</span> GitHub Sponsors
                   </a>
                   <a href="https://www.buymeacoffee.com/kiranbjm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span style={{ fontSize: '12px' }}>☕</span> Buy Me a Coffee
+                  </a>
+                  <a href="https://thanks.dev/d/gh/galactictitan/dependencies" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '12px' }}>✨</span> Thanks.dev
+                  </a>
+                  <a href="https://www.patreon.com/c/kiranbjm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '12px' }}>🟠</span> Patreon
                   </a>
                 </div>
               </div>

@@ -940,7 +940,12 @@ public final class TraceletSdk {
     /// - Parameter params: Location data dictionary.
     /// - Returns: The UUID of the inserted location.
     public func insertLocation(_ params: [String: Any]) -> String {
-        guard isReady else { return "" }
+        // Persist whenever the Rust DB is initialized — NOT only when isReady.
+        // The killed-state relaunch path (autoResumeTracking) wires the DB and
+        // sync provider but never calls ready(), so isReady stays false. Gating
+        // on isReady here silently dropped every location captured after a
+        // background relaunch, leaving the DB empty so auto-sync had nothing to
+        // send. The db check below is the correct readiness signal.
         guard let db = rustDatabase else { return "" }
         let coords = params["coords"] as? [String: Any] ?? params
         let lat = coords["latitude"] as? Double ?? 0.0

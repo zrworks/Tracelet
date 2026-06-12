@@ -1,3 +1,9 @@
+## 3.2.16
+
+* **FIX**: Resolve getting stuck in the moving state and never transitioning back to stationary (continuous GPS + battery drain). The accelerometer stillness sampler stays active during the stop-timeout countdown and requires sustained motion — not a single noisy or stale sample — to abort it ([#142](https://github.com/Ikolvi/Tracelet/issues/142)).
+* **FIX**: Background and post-reboot location captures are persisted (and therefore synced) again. Headless boot tracking never calls `ready()`, so an `isReady` guard in `insertLocation` silently dropped every captured location before it reached the Rust database, leaving auto-sync with nothing to upload.
+* **FIX**: The foreground-service notification now appears when the app is backgrounded or terminated with `showNotificationOnPauseOnly` enabled. The service's own `IMPORTANCE_FOREGROUND_SERVICE` importance (and OS importance lag) made the app read as foregrounded, suppressing the pause-only notification while tracking and sync continued.
+
 ## 3.2.15
 
 * **FIX**: Allow `getState()` and `stop()` to be called before `ready()` is invoked, correctly reporting persistent state and shutting down background services if the app was restarted from a killed state.

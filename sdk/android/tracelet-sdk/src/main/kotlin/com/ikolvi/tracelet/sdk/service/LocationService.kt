@@ -402,7 +402,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
     override fun onStart(owner: LifecycleOwner) {
         Log.d(TAG, "App moved to FOREGROUND — checking notification visibility")
-        updateNotificationVisibility()
+        // ProcessLifecycleOwner is authoritative about UI foreground state —
+        // pass it explicitly so we don't depend on the laggy process-importance
+        // heuristic (which our own foreground service also skews).
+        updateNotificationVisibility(forcedForeground = true)
         try {
             val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
             if (sdk.isReady) {
@@ -416,7 +419,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
     override fun onStop(owner: LifecycleOwner) {
         Log.d(TAG, "App moved to BACKGROUND — checking notification visibility")
-        updateNotificationVisibility()
+        // Authoritative background transition — show the pause-only notification
+        // even though the OS process importance may still report foreground
+        // (our foreground service pins it, and importance updates lag).
+        updateNotificationVisibility(forcedForeground = false)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -548,6 +554,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 isRunning = false
                 return
             }
+
+            // The UI is gone — for foreground-service tracking modes the
+            // persistent notification must now be visible (with
+            // showNotificationOnPauseOnly it was suppressed while the app was
+            // open). Force it on before the process is torn down.
+            lastInForeground = false
+            updateNotificationVisibility(forcedForeground = false)
 
             startBootTracking()
             return // Service survives task removal with native tracking
@@ -1081,10 +1094,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
         nm.notify(NOTIFICATION_ID, buildNotification())
     }
 
-    private fun updateNotificationVisibility() {
+    private fun updateNotificationVisibility(forcedForeground: Boolean? = null) {
         if (!isRunning) return
         val showOnPauseOnly = configManager.getShowNotificationOnPauseOnly()
-        val inForeground = isAppInForeground()
+        // Lifecycle callbacks pass the real UI state; isAppInForeground() is only
+        // a fallback for the onStartCommand / boot path where no authoritative
+        // signal is available.
+        val inForeground = forcedForeground ?: isAppInForeground()
 
         val changed = inForeground != lastInForeground
         lastInForeground = inForeground
@@ -1129,7 +1145,12 @@ class LocationService : Service(), DefaultLifecycleObserver {
         // Using getMyMemoryState is more efficient and reliable for the current process.
         val processInfo = ActivityManager.RunningAppProcessInfo()
         ActivityManager.getMyMemoryState(processInfo)
-        val importanceForeground = processInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
+        // Our own foreground service pins importance at IMPORTANCE_FOREGROUND_SERVICE
+        // (125, which is <= IMPORTANCE_VISIBLE), which would otherwise make the app
+        // always look "in foreground" and permanently suppress the pause-only
+        // notification. Exclude that level so only genuine UI visibility counts.
+        val importanceForeground = processInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE &&
+            processInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
 
         Log.d(TAG, "Foreground check: lifecycle=$lifecycleState, importance=${processInfo.importance}")
 

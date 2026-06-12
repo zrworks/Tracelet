@@ -9,5 +9,13 @@ export default {
   "config": "Configuration",
   "api-reference": "API Reference",
   "reference": "Other Tools & Adapters",
-  "whats-new": "What's New"
+  "whats-new": "What's New",
+  "privacy": {
+    "title": "Privacy Policy",
+    "display": "hidden"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "display": "hidden"
+  }
 }

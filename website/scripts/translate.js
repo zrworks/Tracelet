@@ -110,6 +110,13 @@ async function translateTextWithProtection(text, targetLang, engine) {
     return `NOTRANS${inlineCodes.length - 1}LATE`;
   });
 
+  // Protect markdown URLs
+  const mdUrls = [];
+  tempText = tempText.replace(/\]\((.*?)\)/g, (match, url) => {
+    mdUrls.push(url);
+    return `](NOTRANSURL${mdUrls.length - 1})`;
+  });
+
   let t = engine === 'google'
     ? await translateLineGoogle(tempText, targetLang)
     : await translateLineBing(tempText, targetLang);
@@ -119,6 +126,14 @@ async function translateTextWithProtection(text, targetLang, engine) {
     // Handle cases where the translator might have added spaces or changed case
     const regex = new RegExp(`NOTRANS\\s*${i}\\s*LATE`, 'gi');
     t = t.replace(regex, code);
+  });
+
+  // Restore markdown URLs
+  mdUrls.forEach((url, i) => {
+    // Note: Translator might have added a space before the parenthesis: "] (NOTRANSURL0)"
+    // We can fix this by replacing "] (NOTRANSURL" with "](NOTRANSURL" before restoring, or just restore it normally.
+    const regex = new RegExp(`\\]\\s*\\(\\s*NOTRANSURL\\s*${i}\\s*\\)`, 'gi');
+    t = t.replace(regex, `](${url})`);
   });
 
   // Post-processing glossary overrides to fix contextual errors

@@ -177,7 +177,9 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 heading: r.heading,
                 altitude: r.altitude,
                 isMock: r.isMock,
+                isMoving: r.isMoving,
                 activity: r.activity,
+                event: r.eventType,
                 routeContext: r.routeContext
             )
         }

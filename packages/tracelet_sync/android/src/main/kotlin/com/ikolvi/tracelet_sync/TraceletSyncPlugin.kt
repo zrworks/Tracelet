@@ -134,7 +134,9 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                 heading = it.heading,
                 altitude = it.altitude,
                 isMock = it.isMock,
+                isMoving = it.isMoving,
                 activity = it.activity,
+                event = it.eventType,
                 routeContext = it.routeContext
             )
         }

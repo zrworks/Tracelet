@@ -1539,7 +1539,18 @@ data class SyncLocationRecord (
     , 
     var `isMock`: kotlin.Boolean
     , 
+    /**
+     * Motion state of this record (#151).
+     */
+    var `isMoving`: kotlin.Boolean
+    , 
     var `activity`: kotlin.String
+    , 
+    /**
+     * Trigger that recorded this point: "location", "motionchange",
+     * "heartbeat", "geofence", etc. (#156).
+     */
+    var `event`: kotlin.String
     , 
     var `routeContext`: kotlin.String?
     
@@ -1568,6 +1579,8 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -1584,7 +1597,9 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterDouble.allocationSize(value.`heading`) +
             FfiConverterDouble.allocationSize(value.`altitude`) +
             FfiConverterBoolean.allocationSize(value.`isMock`) +
+            FfiConverterBoolean.allocationSize(value.`isMoving`) +
             FfiConverterString.allocationSize(value.`activity`) +
+            FfiConverterString.allocationSize(value.`event`) +
             FfiConverterOptionalString.allocationSize(value.`routeContext`)
     )
 
@@ -1599,7 +1614,9 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterDouble.write(value.`heading`, buf)
             FfiConverterDouble.write(value.`altitude`, buf)
             FfiConverterBoolean.write(value.`isMock`, buf)
+            FfiConverterBoolean.write(value.`isMoving`, buf)
             FfiConverterString.write(value.`activity`, buf)
+            FfiConverterString.write(value.`event`, buf)
             FfiConverterOptionalString.write(value.`routeContext`, buf)
     }
 }

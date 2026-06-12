@@ -809,12 +809,28 @@ public struct SyncLocationRecord: Equatable, Hashable {
     public var heading: Double
     public var altitude: Double
     public var isMock: Bool
+    /**
+     * Motion state of this record (#151).
+     */
+    public var isMoving: Bool
     public var activity: String
+    /**
+     * Trigger that recorded this point: "location", "motionchange",
+     * "heartbeat", "geofence", etc. (#156).
+     */
+    public var event: String
     public var routeContext: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, activity: String, routeContext: String?) {
+    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, 
+        /**
+         * Motion state of this record (#151).
+         */isMoving: Bool, activity: String, 
+        /**
+         * Trigger that recorded this point: "location", "motionchange",
+         * "heartbeat", "geofence", etc. (#156).
+         */event: String, routeContext: String?) {
         self.id = id
         self.uuid = uuid
         self.timestamp = timestamp
@@ -825,7 +841,9 @@ public struct SyncLocationRecord: Equatable, Hashable {
         self.heading = heading
         self.altitude = altitude
         self.isMock = isMock
+        self.isMoving = isMoving
         self.activity = activity
+        self.event = event
         self.routeContext = routeContext
     }
 
@@ -855,7 +873,9 @@ public struct FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer {
                 heading: FfiConverterDouble.read(from: &buf), 
                 altitude: FfiConverterDouble.read(from: &buf), 
                 isMock: FfiConverterBool.read(from: &buf), 
+                isMoving: FfiConverterBool.read(from: &buf), 
                 activity: FfiConverterString.read(from: &buf), 
+                event: FfiConverterString.read(from: &buf), 
                 routeContext: FfiConverterOptionString.read(from: &buf)
         )
     }
@@ -871,7 +891,9 @@ public struct FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer {
         FfiConverterDouble.write(value.heading, into: &buf)
         FfiConverterDouble.write(value.altitude, into: &buf)
         FfiConverterBool.write(value.isMock, into: &buf)
+        FfiConverterBool.write(value.isMoving, into: &buf)
         FfiConverterString.write(value.activity, into: &buf)
+        FfiConverterString.write(value.event, into: &buf)
         FfiConverterOptionString.write(value.routeContext, into: &buf)
     }
 }

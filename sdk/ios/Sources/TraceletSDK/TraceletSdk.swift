@@ -261,6 +261,11 @@ public final class TraceletSdk {
         syncConfigToRustFlat()
         checkSyncProvider()
 
+        // Rebuild the native location processor with the config just applied by
+        // ready(); otherwise the engine keeps the previous/default processor in
+        // memory and filters fixes the new config should accept (#157).
+        locationEngine.rebuildProcessor()
+
         if stateManager.enabled {
             switch stateManager.trackingMode {
             case .continuous:
@@ -880,8 +885,25 @@ public final class TraceletSdk {
         guard isReady else { return 0 }
         guard let db = rustDatabase else { return 0 }
         do {
-            let count = try db.getLocationsCount()
-            return Int(count)
+            let startTimeMs = (query?["start"] as? NSNumber)?.int64Value
+                ?? (query?["from"] as? NSNumber)?.int64Value
+            let endTimeMs = (query?["end"] as? NSNumber)?.int64Value
+                ?? (query?["to"] as? NSNumber)?.int64Value
+            if startTimeMs == nil && endTimeMs == nil {
+                // No time filter — use the efficient native COUNT(*).
+                return Int(try db.getLocationsCount())
+            }
+            // The native getLocationsCount ignores time bounds (#152), so a
+            // filtered getCount() would otherwise return the whole-DB total.
+            // Honor the query by counting the query-aware batch instead.
+            let records = try db.getLocationsBatch(query: LocationQuery(
+                startTimeMs: startTimeMs,
+                endTimeMs: endTimeMs,
+                limit: nil,
+                offset: nil,
+                orderDescending: nil
+            ))
+            return records.count
         } catch {
             NSLog("getCount failed: \(error)")
             return 0
@@ -1488,6 +1510,11 @@ public final class TraceletSdk {
         )
         motionDetector.onMotionStateChanged = { [weak self] isMoving in
             self?.handleMotionStateChange(isMoving)
+        }
+        // Keep the LocationEngine's activity in sync so enriched locations don't
+        // report a permanent "unknown" (#155).
+        motionDetector.onActivityChanged = { [weak self] type, _ in
+            self?.locationEngine.currentActivityType = type
         }
         motionDetector.onStopTimeoutStarted = { [weak self] in
             self?.locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "MotionDetector")

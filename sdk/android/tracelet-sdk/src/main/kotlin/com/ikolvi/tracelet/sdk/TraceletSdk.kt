@@ -296,6 +296,15 @@ class TraceletSdk private constructor(private val context: Context) {
         )
         motionDetector.onMotionStateChanged = { isMoving ->
             handleMotionStateChange(isMoving)
+            // Keep the LocationEngine's activity in sync so enriched locations
+            // don't report a permanent "unknown" (#155).
+            val (activityType, activityConfidence) = motionDetector.getCurrentActivity()
+            locationEngine.setCurrentActivity(activityType, activityConfidence)
+        }
+        // Push activity into the LocationEngine the moment it changes, even when
+        // no motion-state transition occurs (#155).
+        motionDetector.onActivityChanged = { type, confidence ->
+            locationEngine.setCurrentActivity(type, confidence)
         }
         motionDetector.onStopRequested = {
             mainHandler.post {
@@ -553,6 +562,12 @@ class TraceletSdk private constructor(private val context: Context) {
         isReady = true
         syncConfigToRustFlat()
         checkSyncProvider()
+
+        // Rebuild the native location processor with the config just applied by
+        // ready(). Without this the engine keeps the previous/default processor
+        // (e.g. distanceFilter=20) in memory and silently filters fixes the new
+        // config (e.g. distanceFilter=0) should have accepted (#157).
+        if (::locationEngine.isInitialized) locationEngine.rebuildProcessor()
 
         if (stateManager.enabled) {
             val motionMode = configManager.getMotionDetectionMode()
@@ -1161,7 +1176,27 @@ class TraceletSdk private constructor(private val context: Context) {
         if (!isReady) return 0
         val db = rustDatabase ?: return 0
         return try {
-            db.getLocationsCount()
+            val startTimeMs = (query?.get("start") as? Number)?.toLong()
+                ?: (query?.get("from") as? Number)?.toLong()
+            val endTimeMs = (query?.get("end") as? Number)?.toLong()
+                ?: (query?.get("to") as? Number)?.toLong()
+            if (startTimeMs == null && endTimeMs == null) {
+                // No time filter — use the efficient native COUNT(*).
+                db.getLocationsCount()
+            } else {
+                // The native get_locations_count ignores time bounds (#152), so a
+                // filtered getCount() would otherwise return the whole-DB total.
+                // Honor the query by counting the query-aware batch instead.
+                db.getLocationsBatch(
+                    uniffi.tracelet_core.LocationQuery(
+                        startTimeMs = startTimeMs,
+                        endTimeMs = endTimeMs,
+                        limit = null,
+                        offset = null,
+                        orderDescending = null,
+                    )
+                ).size
+            }
         } catch (e: Exception) {
             logger.error("getCount failed: ${e.message}")
             0

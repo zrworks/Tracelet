@@ -112,6 +112,11 @@ public final class MotionDetector {
     /// Called when the stopTimeout countdown is cancelled or finishes.
     public var onStopTimeoutCancelled: (() -> Void)?
 
+    /// Called when the detected activity (type, confidence) changes. The SDK
+    /// binds this to push the activity into the LocationEngine so enriched
+    /// locations carry the real activity instead of a permanent "unknown" (#155).
+    public var onActivityChanged: ((String, Int) -> Void)?
+
     /// Whether operating in accelerometer-only (permission-free) mode.
     private var isAccelerometerOnlyMode: Bool {
         configManager.getDisableMotionActivityUpdates()
@@ -452,6 +457,10 @@ public final class MotionDetector {
         let prevActivity = currentActivity
         currentActivity = type
         currentConfidence = confidence
+
+        // Propagate the activity to the LocationEngine so enriched locations
+        // carry it instead of a permanent "unknown" (#155).
+        onActivityChanged?(type, confidence)
 
         // Dispatch activity change event to Dart
         if type != prevActivity {

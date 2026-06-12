@@ -127,7 +127,11 @@ public final class ConfigManager {
     public func getEnableSparseUpdates() -> Bool { cache["enableSparseUpdates"] as? Bool ?? false }
     public func getSparseDistanceThreshold() -> Double { (cache["sparseDistanceThreshold"] as? NSNumber)?.doubleValue ?? 50.0 }
     public func getSparseMaxIdleSeconds() -> Int { (cache["sparseMaxIdleSeconds"] as? NSNumber)?.intValue ?? 0 }
-    public func getEnableKalmanFilter() -> Bool { cache["enableKalmanFilter"] as? Bool ?? false }
+    public func getEnableKalmanFilter() -> Bool {
+        // Dart's LocationFilter serializes this under "useKalmanFilter"; read it
+        // first so the EKF isn't silently disabled by a key mismatch (#148).
+        (cache["useKalmanFilter"] as? Bool) ?? (cache["enableKalmanFilter"] as? Bool) ?? false
+    }
 
     // Dead Reckoning
     public func getEnableDeadReckoning() -> Bool { cache["enableDeadReckoning"] as? Bool ?? false }

@@ -266,14 +266,23 @@ async function run() {
   if (args.includes('--all')) {
     const baseDir = path.join(__dirname, '../app/en');
     const allFiles = getAllFiles(baseDir);
-    filesToTranslate = allFiles.filter(f => f.endsWith('.mdx') || f.endsWith('_meta.js'));
+    filesToTranslate = allFiles.filter(f => 
+      (f.endsWith('.mdx') || f.endsWith('_meta.js')) && 
+      !f.includes('/privacy/') && 
+      !f.includes('/terms/')
+    );
   } else if (args.length > 0) {
-    filesToTranslate = args;
+    filesToTranslate = args.filter(f => !f.includes('/privacy/') && !f.includes('/terms/'));
   } else {
     try {
       const { execSync } = require('child_process');
       const diffOutput = execSync('git diff --name-only HEAD~1').toString();
-      filesToTranslate = diffOutput.split('\n').filter(file => file.includes(`app/${baseLang}/`) && file.endsWith('.mdx'));
+      filesToTranslate = diffOutput.split('\n').filter(file => 
+        file.includes(`app/${baseLang}/`) && 
+        file.endsWith('.mdx') &&
+        !file.includes('/privacy/') &&
+        !file.includes('/terms/')
+      );
     } catch (e) {
       console.warn("Could not detect git changes. Please provide specific files or use --all.");
       process.exit(1);

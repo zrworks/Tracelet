@@ -302,6 +302,32 @@ class TraceletHostApiImpl(
             put("enabled", c.attestation.enabled)
             put("refreshInterval", c.attestation.refreshInterval)
         })
+        put("telematics", buildMap {
+            put("enableDrivingEvents", c.telematics.enableDrivingEvents)
+            put("harshBrakingG", c.telematics.harshBrakingG)
+            put("harshAccelerationG", c.telematics.harshAccelerationG)
+            put("harshCorneringG", c.telematics.harshCorneringG)
+            put("speedLimitKmh", c.telematics.speedLimitKmh)
+            put("speedingToleranceKmh", c.telematics.speedingToleranceKmh)
+            put("speedingMinDurationMs", c.telematics.speedingMinDurationMs)
+            put("minSpeedForEventsKmh", c.telematics.minSpeedForEventsKmh)
+            put("eventDebounceMs", c.telematics.eventDebounceMs)
+        })
+        put("classifier", buildMap {
+            put("enableFusedClassifier", c.classifier.enableFusedClassifier)
+            put("fusedClassifierAuthoritative", c.classifier.fusedClassifierAuthoritative)
+            put("modeSwitchDwellMs", c.classifier.modeSwitchDwellMs)
+            put("minModeConfidence", c.classifier.minModeConfidence)
+        })
+        put("impact", buildMap {
+            put("enableCrashDetection", c.impact.enableCrashDetection)
+            put("enableFallDetection", c.impact.enableFallDetection)
+            put("crashGThreshold", c.impact.crashGThreshold)
+            put("crashMinSpeedKmh", c.impact.crashMinSpeedKmh)
+            put("fallGThreshold", c.impact.fallGThreshold)
+            put("confirmWindowMs", c.impact.confirmWindowMs)
+            put("minImpactConfidence", c.impact.minImpactConfidence)
+        })
     }
 
     private fun wrapException(err: String): FlutterError {

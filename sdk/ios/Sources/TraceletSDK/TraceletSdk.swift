@@ -106,6 +106,19 @@ public final class TraceletSdk {
     /// Battery budget sampling interval: 5 minutes.
     private static let batterySampleInterval: TimeInterval = 5 * 60
 
+    // 3.3.0 behavior engines (opt-in, default off)
+    private var telematicsEngine: TelematicsEngine?
+    private var transportClassifier: TransportModeClassifier?
+    private var impactDetector: ImpactDetector?
+    private var accelBuffer: [Double] = []
+    private let accelBufferLock = NSLock()
+    private var accelWindowTimer: Timer?
+    private var impactConfirmTimer: Timer?
+    private var lastSpeedMps: Double = 0
+    private var lastLat: Double = 0
+    private var lastLng: Double = 0
+    private static let accelWindowInterval: TimeInterval = 1.0
+
     /// Whether ``ready(config:)`` has been called.
     public var isReadyState: Bool { isReady }
 
@@ -263,6 +276,8 @@ public final class TraceletSdk {
             batteryBudgetEngine = nil
         }
 
+        initBehaviorEngines()
+
         isReady = true
         syncConfigToRustFlat()
         checkSyncProvider()
@@ -362,6 +377,7 @@ public final class TraceletSdk {
         startHeartbeat()
         startStopAfterElapsedTimer()
         startBatteryBudgetSampling()
+        startBehaviorSampling()
         preventSuspendManager.start()
         serviceSessionManager.start()
 
@@ -399,6 +415,8 @@ public final class TraceletSdk {
             tripManager.reset()
             stopBatteryBudgetSampling()
             batteryBudgetEngine?.reset()
+            stopBehaviorSampling()
+            telematicsEngine?.reset()
             eventSender.sendEnabledChange(false)
             logger.info("stop() — tracking stopped")
         }
@@ -1510,6 +1528,7 @@ public final class TraceletSdk {
             eventDispatcher: eventSender
         )
         locationEngine.registerSink(RustDatabaseSinkWrapper(sdk: self))
+        locationEngine.registerSink(TelematicsSinkWrapper(sdk: self))
         if let syncSink = syncProvider as? LocationDataSink {
             locationEngine.registerSink(syncSink)
         }
@@ -1540,6 +1559,10 @@ public final class TraceletSdk {
         // report a permanent "unknown" (#155).
         motionDetector.onActivityChanged = { [weak self] type, _ in
             self?.locationEngine.currentActivityType = type
+        }
+        // 3.3.0: feed accelerometer samples (g) to the classifier/impact keystone.
+        motionDetector.onAccelSample = { [weak self] magnitudeG in
+            self?.feedAccelSample(magnitudeG)
         }
         motionDetector.onStopTimeoutStarted = { [weak self] in
             self?.locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "MotionDetector")
@@ -1743,6 +1766,140 @@ public final class TraceletSdk {
     private func stopSyncIntervalTimer() {
         syncIntervalTimer?.invalidate()
         syncIntervalTimer = nil
+    }
+
+    // MARK: - 3.3.0 behavior engines (telematics / classifier / impact)
+
+    private func initBehaviorEngines() {
+        telematicsEngine = configManager.getEnableDrivingEvents()
+            ? TelematicsEngine(config: TelematicsConfig(
+                harshBrakingG: configManager.getHarshBrakingG(),
+                harshAccelerationG: configManager.getHarshAccelerationG(),
+                harshCorneringG: configManager.getHarshCorneringG(),
+                speedLimitKmh: configManager.getSpeedLimitKmh(),
+                speedingToleranceKmh: configManager.getSpeedingToleranceKmh(),
+                speedingMinDurationMs: configManager.getSpeedingMinDurationMs(),
+                minSpeedForEventsKmh: configManager.getMinSpeedForEventsKmh(),
+                eventDebounceMs: configManager.getEventDebounceMs()))
+            : nil
+
+        transportClassifier = configManager.getEnableFusedClassifier()
+            ? TransportModeClassifier(config: ClassifierConfig(
+                modeSwitchDwellMs: configManager.getModeSwitchDwellMs(),
+                minConfidence: configManager.getMinModeConfidence()))
+            : nil
+
+        impactDetector = (configManager.getEnableCrashDetection() || configManager.getEnableFallDetection())
+            ? ImpactDetector(config: ImpactConfig(
+                enableCrash: configManager.getEnableCrashDetection(),
+                enableFall: configManager.getEnableFallDetection(),
+                crashGThreshold: configManager.getCrashGThreshold(),
+                crashMinSpeedKmh: configManager.getCrashMinSpeedKmh(),
+                fallGThreshold: configManager.getFallGThreshold(),
+                confirmWindowMs: configManager.getConfirmWindowMs(),
+                minConfidence: configManager.getMinImpactConfidence()))
+            : nil
+    }
+
+    /// Feeds an accepted location fix to the telematics engine and emits events.
+    func processTelematics(_ location: [String: Any]) {
+        guard let engine = telematicsEngine else { return }
+        let coords = location["coords"] as? [String: Any] ?? location
+        let speed = (coords["speed"] as? Double) ?? 0.0
+        let heading = (coords["heading"] as? Double) ?? -1.0
+        let lat = (coords["latitude"] as? Double) ?? 0.0
+        let lng = (coords["longitude"] as? Double) ?? 0.0
+        lastSpeedMps = speed
+        lastLat = lat
+        lastLng = lng
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let events = engine.processFix(speed: speed, heading: heading, latitude: lat, longitude: lng, timestampMs: nowMs)
+        for e in events {
+            eventSender.sendDrivingEvent([
+                "kind": e.kind, "severity": e.severity, "speed": e.speed,
+                "value": e.value, "latitude": e.latitude, "longitude": e.longitude,
+                "timestampMs": e.timestampMs,
+            ])
+        }
+    }
+
+    /// Buffers one accelerometer sample (gravity-subtracted g) for the window loop.
+    func feedAccelSample(_ magnitudeG: Double) {
+        guard transportClassifier != nil || impactDetector != nil else { return }
+        accelBufferLock.lock()
+        accelBuffer.append(magnitudeG)
+        accelBufferLock.unlock()
+    }
+
+    private func startBehaviorSampling() {
+        stopBehaviorSampling()
+        guard transportClassifier != nil || impactDetector != nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.accelWindowTimer = Timer.scheduledTimer(withTimeInterval: Self.accelWindowInterval, repeats: true) { [weak self] _ in
+                self?.processAccelWindow()
+            }
+            if self.impactDetector != nil {
+                self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                    guard let self = self, let detector = self.impactDetector else { return }
+                    let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+                    for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
+                }
+            }
+        }
+    }
+
+    private func stopBehaviorSampling() {
+        accelWindowTimer?.invalidate(); accelWindowTimer = nil
+        impactConfirmTimer?.invalidate(); impactConfirmTimer = nil
+        accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
+    }
+
+    private func processAccelWindow() {
+        accelBufferLock.lock()
+        let samples = accelBuffer
+        accelBuffer.removeAll()
+        accelBufferLock.unlock()
+        guard !samples.isEmpty else { return }
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let window = computeAccelWindow(magnitudesG: samples, durationMs: Int64(Self.accelWindowInterval * 1000))
+
+        if let classifier = transportClassifier {
+            let result = classifier.classify(window: window, speedMps: lastSpeedMps, nowMs: nowMs)
+            if result.changed {
+                eventSender.sendModeChange([
+                    "mode": String(describing: result.mode).lowercased(),
+                    "confidence": result.confidence,
+                ])
+            }
+        }
+        if let detector = impactDetector {
+            let onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
+                emitImpact(candidate)
+            }
+        }
+    }
+
+    private func emitImpact(_ e: ImpactEvent) {
+        eventSender.sendImpact([
+            "kind": e.kind, "id": e.id, "confidence": e.confidence, "peakG": e.peakG,
+            "speedBefore": e.speedBefore, "latitude": e.latitude, "longitude": e.longitude,
+            "timestampMs": e.timestampMs, "confirmDeadlineMs": e.confirmDeadlineMs,
+        ])
+    }
+
+    /// Confirms a pending impact candidate (called from the Pigeon host API).
+    public func confirmImpact(_ id: Int64) -> Bool {
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        guard let confirmed = impactDetector?.confirm(id: id, nowMs: nowMs) else { return false }
+        emitImpact(confirmed)
+        return true
+    }
+
+    /// Cancels a pending impact candidate (called from the Pigeon host API).
+    public func cancelImpact(_ id: Int64) -> Bool {
+        return impactDetector?.cancel(id: id) ?? false
     }
 
     // MARK: - Private: Battery Budget Sampling
@@ -2435,6 +2592,16 @@ private struct RustDatabaseSinkWrapper: LocationDataSink {
 
     func insertLocation(_ location: [String: Any]) -> String {
         return sdk?.insertLocation(location) ?? ""
+    }
+}
+
+/// Feeds each accepted location into the telematics engine (3.3.0).
+private struct TelematicsSinkWrapper: LocationDataSink {
+    weak var sdk: TraceletSdk?
+
+    func insertLocation(_ location: [String: Any]) -> String {
+        sdk?.processTelematics(location)
+        return ""
     }
 }
 

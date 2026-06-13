@@ -190,6 +190,57 @@ public final class PluginEventDispatcher: NSObject, TraceletEventSending {
         fallback("budgetadjustment", data)
     }
 
+    public func sendDrivingEvent(_ data: [String: Any]) {
+        guard let api = eventApi else { return fallback("drivingevent", data) }
+        let event = TlDrivingEvent(
+            kind: data["kind"] as? String ?? "",
+            severity: num(data["severity"]),
+            speed: num(data["speed"]),
+            value: num(data["value"]),
+            latitude: num(data["latitude"]),
+            longitude: num(data["longitude"]),
+            timestampMs: lng(data["timestampMs"])
+        )
+        DispatchQueue.main.async { api.onDrivingEvent(event: event) { _ in } }
+    }
+
+    public func sendImpact(_ data: [String: Any]) {
+        guard let api = eventApi else { return fallback("impact", data) }
+        let event = TlImpactEvent(
+            kind: data["kind"] as? String ?? "",
+            id: lng(data["id"]),
+            confidence: num(data["confidence"]),
+            peakG: num(data["peakG"]),
+            speedBefore: num(data["speedBefore"]),
+            latitude: num(data["latitude"]),
+            longitude: num(data["longitude"]),
+            timestampMs: lng(data["timestampMs"]),
+            confirmDeadlineMs: lng(data["confirmDeadlineMs"])
+        )
+        DispatchQueue.main.async { api.onImpact(event: event) { _ in } }
+    }
+
+    public func sendModeChange(_ data: [String: Any]) {
+        guard let api = eventApi else { return fallback("modechange", data) }
+        let event = TlModeChangeEvent(
+            mode: data["mode"] as? String ?? "unknown",
+            confidence: num(data["confidence"])
+        )
+        DispatchQueue.main.async { api.onModeChange(event: event) { _ in } }
+    }
+
+    private func num(_ v: Any?) -> Double {
+        if let d = v as? Double { return d }
+        if let n = v as? NSNumber { return n.doubleValue }
+        return 0.0
+    }
+
+    private func lng(_ v: Any?) -> Int64 {
+        if let i = v as? Int64 { return i }
+        if let n = v as? NSNumber { return n.int64Value }
+        return 0
+    }
+
     public func hasListener(eventName: String) -> Bool {
         return eventApi != nil
     }

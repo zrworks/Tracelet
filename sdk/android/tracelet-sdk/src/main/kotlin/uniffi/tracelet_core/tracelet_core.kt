@@ -640,11 +640,25 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_func_is_point_in_polygon(
     ): Short
+    external fun uniffi_tracelet_core_checksum_func_compute_accel_window(
+    ): Short
     external fun uniffi_tracelet_core_checksum_func_build_canonical_string(
     ): Short
     external fun uniffi_tracelet_core_checksum_func_compute_genesis_hash(
     ): Short
     external fun uniffi_tracelet_core_checksum_func_sha256(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_cancel(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_confirm(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_pending_count(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_impactdetector_reset(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed(
     ): Short
@@ -667,6 +681,18 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_telematicsengine_current_score(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_telematicsengine_process_fix(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_telematicsengine_reset(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_classify(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_current_mode(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_reset(
     ): Short
     external fun uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active(
     ): Short
@@ -788,6 +814,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary(
     ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_impactdetector_new(
+    ): Short
     external fun uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new(
@@ -795,6 +823,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_tracelet_core_checksum_constructor_locationprocessor_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_scheduleparser_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_telematicsengine_new(
+    ): Short
+    external fun uniffi_tracelet_core_checksum_constructor_transportmodeclassifier_new(
     ): Short
     external fun uniffi_tracelet_core_checksum_constructor_tripmanager_new(
     ): Short
@@ -832,7 +864,25 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "tracelet_core"))
         
     }
-    external fun uniffi_tracelet_core_fn_clone_kalmanlocationfilter(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_tracelet_core_fn_clone_impactdetector(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_impactdetector(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_impactdetector_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_impactdetector_cancel(`ptr`: Long,`id`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
+external fun uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(`ptr`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_impactdetector_confirm(`ptr`: Long,`id`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(`ptr`: Long,`peakG`: Double,`speedBeforeMps`: Double,`isOnFoot`: Byte,`latitude`: Double,`longitude`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_impactdetector_pending_count(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Int
+external fun uniffi_tracelet_core_fn_method_impactdetector_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_clone_kalmanlocationfilter(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_free_kalmanlocationfilter(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -878,6 +928,30 @@ external fun uniffi_tracelet_core_fn_method_scheduleparser_calculate_next_alarms
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_scheduleparser_is_within_schedule(`ptr`: Long,`schedules`: RustBuffer.ByValue,`timestampMs`: Long,`tzOffsetSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
+external fun uniffi_tracelet_core_fn_clone_telematicsengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_telematicsengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_telematicsengine_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_telematicsengine_current_score(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Double
+external fun uniffi_tracelet_core_fn_method_telematicsengine_process_fix(`ptr`: Long,`speed`: Double,`heading`: Double,`latitude`: Double,`longitude`: Double,`timestampMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_telematicsengine_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_clone_transportmodeclassifier(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_free_transportmodeclassifier(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_constructor_transportmodeclassifier_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Long
+external fun uniffi_tracelet_core_fn_method_transportmodeclassifier_classify(`ptr`: Long,`window`: RustBuffer.ByValue,`speedMps`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_transportmodeclassifier_current_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_transportmodeclassifier_reset(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
 external fun uniffi_tracelet_core_fn_clone_tripmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_tracelet_core_fn_free_tripmanager(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1056,6 +1130,8 @@ external fun uniffi_tracelet_core_fn_func_haversine(`lat1`: Double,`lon1`: Doubl
 ): Double
 external fun uniffi_tracelet_core_fn_func_is_point_in_polygon(`lat`: Double,`lng`: Double,`vertices`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
+external fun uniffi_tracelet_core_fn_func_compute_accel_window(`magnitudesG`: RustBuffer.ByValue,`durationMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_func_build_canonical_string(`previousHash`: RustBuffer.ByValue,`chainIndex`: Int,`loc`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_func_compute_genesis_hash(`deviceId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1187,6 +1263,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 16595.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_func_compute_accel_window() != 29960.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_func_build_canonical_string() != 7071.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1194,6 +1273,24 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_func_sha256() != 14625.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_cancel() != 42443.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations() != 9379.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 28969.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_reset() != 57860.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 64160.toShort()) {
@@ -1227,6 +1324,24 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 16562.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_telematicsengine_current_score() != 11738.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_telematicsengine_process_fix() != 30835.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_telematicsengine_reset() != 5304.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_transportmodeclassifier_classify() != 52837.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_transportmodeclassifier_current_mode() != 65278.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_transportmodeclassifier_reset() != 4812.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 47274.toShort()) {
@@ -1409,6 +1524,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_constructor_impactdetector_new() != 56951.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 44956.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1419,6 +1537,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 36401.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_telematicsengine_new() != 15489.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_constructor_transportmodeclassifier_new() != 21163.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 53892.toShort()) {
@@ -1603,6 +1727,29 @@ private class JavaLangRefCleanable(
     val cleanable: java.lang.ref.Cleaner.Cleanable
 ) : UniffiCleaner.Cleanable {
     override fun clean() = cleanable.clean()
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterUInt: FfiConverter<UInt, Int> {
+    override fun lift(value: Int): UInt {
+        return value.toUInt()
+    }
+
+    override fun read(buf: ByteBuffer): UInt {
+        return lift(buf.getInt())
+    }
+
+    override fun lower(value: UInt): Int {
+        return value.toInt()
+    }
+
+    override fun allocationSize(value: UInt) = 4UL
+
+    override fun write(value: UInt, buf: ByteBuffer) {
+        buf.putInt(value.toInt())
+    }
 }
 
 /**
@@ -4608,6 +4755,389 @@ public object FfiConverterTypeGeofenceEvaluator: FfiConverter<GeofenceEvaluator,
 
 
 /**
+ * Detects crash/fall impacts with a confirmation window.
+ */
+public interface ImpactDetectorInterface {
+    
+    /**
+     * User cancels a candidate ("I'm fine") — no confirmed event will fire.
+     */
+    fun `cancel`(`id`: kotlin.Long): kotlin.Boolean
+    
+    /**
+     * Fires confirmed events for candidates whose deadline has elapsed without
+     * a cancel. Call on a timer.
+     */
+    fun `checkConfirmations`(`nowMs`: kotlin.Long): List<ImpactEvent>
+    
+    /**
+     * User (or app) explicitly confirms a candidate is a real emergency now.
+     */
+    fun `confirm`(`id`: kotlin.Long, `nowMs`: kotlin.Long): ImpactEvent?
+    
+    /**
+     * Feeds one accel window's peak plus motion context. Returns a
+     * `potential_*` event when an impact is detected (and registers it for
+     * confirmation), else `None`.
+     */
+    fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent?
+    
+    /**
+     * Number of candidates awaiting confirmation.
+     */
+    fun `pendingCount`(): kotlin.UInt
+    
+    /**
+     * Clears all pending candidates.
+     */
+    fun `reset`()
+    
+    companion object
+}
+
+/**
+ * Detects crash/fall impacts with a confirmation window.
+ */
+open class ImpactDetector: Disposable, AutoCloseable, ImpactDetectorInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Creates a detector. Pass `None` for defaults (both detections off).
+     */
+    constructor(`config`: ImpactConfig?) :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_impactdetector_new(
+    
+        FfiConverterOptionalTypeImpactConfig.lower(`config`),_status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_impactdetector(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_impactdetector(handle, status)
+        }
+    }
+
+    
+    /**
+     * User cancels a candidate ("I'm fine") — no confirmed event will fire.
+     */override fun `cancel`(`id`: kotlin.Long): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_cancel(
+        it,
+        FfiConverterLong.lower(`id`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Fires confirmed events for candidates whose deadline has elapsed without
+     * a cancel. Call on a timer.
+     */override fun `checkConfirmations`(`nowMs`: kotlin.Long): List<ImpactEvent> {
+            return FfiConverterSequenceTypeImpactEvent.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(
+        it,
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * User (or app) explicitly confirms a candidate is a real emergency now.
+     */override fun `confirm`(`id`: kotlin.Long, `nowMs`: kotlin.Long): ImpactEvent? {
+            return FfiConverterOptionalTypeImpactEvent.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_confirm(
+        it,
+        FfiConverterLong.lower(`id`),FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Feeds one accel window's peak plus motion context. Returns a
+     * `potential_*` event when an impact is detected (and registers it for
+     * confirmation), else `None`.
+     */override fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent? {
+            return FfiConverterOptionalTypeImpactEvent.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
+        it,
+        FfiConverterDouble.lower(`peakG`),FfiConverterDouble.lower(`speedBeforeMps`),FfiConverterBoolean.lower(`isOnFoot`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Number of candidates awaiting confirmation.
+     */override fun `pendingCount`(): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_pending_count(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Clears all pending candidates.
+     */override fun `reset`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_reset(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeImpactDetector: FfiConverter<ImpactDetector, Long> {
+    override fun lower(value: ImpactDetector): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): ImpactDetector {
+        return ImpactDetector(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): ImpactDetector {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: ImpactDetector) = 8UL
+
+    override fun write(value: ImpactDetector, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
  * Provides a Kalman filter implementation tailored for smoothing noisy GPS location data.
  */
 public interface KalmanLocationFilterInterface {
@@ -6211,6 +6741,646 @@ public object FfiConverterTypeSmartMotionCoordinator: FfiConverter<SmartMotionCo
 
 
 /**
+ * Detects driving events from a stream of accepted location fixes.
+ */
+public interface TelematicsEngineInterface {
+    
+    /**
+     * Rolling driving score in [0, 100] (100 = flawless). Penalties accrue
+     * per event weighted by severity.
+     */
+    fun `currentScore`(): kotlin.Double
+    
+    /**
+     * Processes one accepted fix and returns any driving events it triggers.
+     *
+     * `speed` is m/s, `heading` is degrees (negative ⇒ unknown), `timestamp_ms`
+     * is epoch ms. Returns empty until a second fix establishes deltas, on
+     * time gaps, or when nothing crosses a threshold.
+     */
+    fun `processFix`(`speed`: kotlin.Double, `heading`: kotlin.Double, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `timestampMs`: kotlin.Long): List<DrivingEvent>
+    
+    /**
+     * Clears all state (call on trip start / tracking restart).
+     */
+    fun `reset`()
+    
+    companion object
+}
+
+/**
+ * Detects driving events from a stream of accepted location fixes.
+ */
+open class TelematicsEngine: Disposable, AutoCloseable, TelematicsEngineInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Creates an engine. Pass `None` for default thresholds.
+     */
+    constructor(`config`: TelematicsConfig?) :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_telematicsengine_new(
+    
+        FfiConverterOptionalTypeTelematicsConfig.lower(`config`),_status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_telematicsengine(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_telematicsengine(handle, status)
+        }
+    }
+
+    
+    /**
+     * Rolling driving score in [0, 100] (100 = flawless). Penalties accrue
+     * per event weighted by severity.
+     */override fun `currentScore`(): kotlin.Double {
+            return FfiConverterDouble.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_telematicsengine_current_score(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Processes one accepted fix and returns any driving events it triggers.
+     *
+     * `speed` is m/s, `heading` is degrees (negative ⇒ unknown), `timestamp_ms`
+     * is epoch ms. Returns empty until a second fix establishes deltas, on
+     * time gaps, or when nothing crosses a threshold.
+     */override fun `processFix`(`speed`: kotlin.Double, `heading`: kotlin.Double, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `timestampMs`: kotlin.Long): List<DrivingEvent> {
+            return FfiConverterSequenceTypeDrivingEvent.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_telematicsengine_process_fix(
+        it,
+        FfiConverterDouble.lower(`speed`),FfiConverterDouble.lower(`heading`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterLong.lower(`timestampMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Clears all state (call on trip start / tracking restart).
+     */override fun `reset`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_telematicsengine_reset(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTelematicsEngine: FfiConverter<TelematicsEngine, Long> {
+    override fun lower(value: TelematicsEngine): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): TelematicsEngine {
+        return TelematicsEngine(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): TelematicsEngine {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: TelematicsEngine) = 8UL
+
+    override fun write(value: TelematicsEngine, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * Fuses accel features + speed into a transport mode with hysteresis.
+ */
+public interface TransportModeClassifierInterface {
+    
+    /**
+     * Classifies one window + speed, applying confidence gating and dwell
+     * hysteresis. Returns the currently committed mode.
+     */
+    fun `classify`(`window`: AccelWindow, `speedMps`: kotlin.Double, `nowMs`: kotlin.Long): ModeResult
+    
+    /**
+     * Currently committed mode.
+     */
+    fun `currentMode`(): TransportMode
+    
+    /**
+     * Resets to `Unknown`.
+     */
+    fun `reset`()
+    
+    companion object
+}
+
+/**
+ * Fuses accel features + speed into a transport mode with hysteresis.
+ */
+open class TransportModeClassifier: Disposable, AutoCloseable, TransportModeClassifierInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+    /**
+     * Creates a classifier. Pass `None` for default tuning.
+     */
+    constructor(`config`: ClassifierConfig?) :
+        this(UniffiWithHandle, 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_constructor_transportmodeclassifier_new(
+    
+        FfiConverterOptionalTypeClassifierConfig.lower(`config`),_status)
+}
+    )
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_tracelet_core_fn_free_transportmodeclassifier(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_tracelet_core_fn_clone_transportmodeclassifier(handle, status)
+        }
+    }
+
+    
+    /**
+     * Classifies one window + speed, applying confidence gating and dwell
+     * hysteresis. Returns the currently committed mode.
+     */override fun `classify`(`window`: AccelWindow, `speedMps`: kotlin.Double, `nowMs`: kotlin.Long): ModeResult {
+            return FfiConverterTypeModeResult.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_transportmodeclassifier_classify(
+        it,
+        FfiConverterTypeAccelWindow.lower(`window`),FfiConverterDouble.lower(`speedMps`),FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Currently committed mode.
+     */override fun `currentMode`(): TransportMode {
+            return FfiConverterTypeTransportMode.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_transportmodeclassifier_current_mode(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Resets to `Unknown`.
+     */override fun `reset`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_transportmodeclassifier_reset(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTransportModeClassifier: FfiConverter<TransportModeClassifier, Long> {
+    override fun lower(value: TransportModeClassifier): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): TransportModeClassifier {
+        return TransportModeClassifier(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): TransportModeClassifier {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: TransportModeClassifier) = 8UL
+
+    override fun write(value: TransportModeClassifier, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
  * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
  */
 public interface TripManagerInterface {
@@ -6447,6 +7617,87 @@ public object FfiConverterTypeTripManager: FfiConverter<TripManager, Long> {
 
     override fun write(value: TripManager, buf: ByteBuffer) {
         buf.putLong(lower(value))
+    }
+}
+
+
+
+/**
+ * Lightweight features summarizing one accelerometer window.
+ */
+data class AccelWindow (
+    /**
+     * Mean magnitude (g, gravity-subtracted).
+     */
+    var `meanG`: kotlin.Double
+    , 
+    /**
+     * Variance of the magnitude — separates steady (vehicle) from bouncy
+     * (running) motion.
+     */
+    var `variance`: kotlin.Double
+    , 
+    /**
+     * Largest single magnitude in the window (g) — the impact signal.
+     */
+    var `peakG`: kotlin.Double
+    , 
+    /**
+     * Dominant oscillation frequency (Hz), estimated from mean-crossings —
+     * the cadence cue distinguishing walking (~2 Hz) from running (~3 Hz).
+     */
+    var `dominantCadenceHz`: kotlin.Double
+    , 
+    /**
+     * Number of samples in the window.
+     */
+    var `sampleCount`: kotlin.UInt
+    , 
+    /**
+     * Window duration (ms).
+     */
+    var `durationMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAccelWindow: FfiConverterRustBuffer<AccelWindow> {
+    override fun read(buf: ByteBuffer): AccelWindow {
+        return AccelWindow(
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: AccelWindow) = (
+            FfiConverterDouble.allocationSize(value.`meanG`) +
+            FfiConverterDouble.allocationSize(value.`variance`) +
+            FfiConverterDouble.allocationSize(value.`peakG`) +
+            FfiConverterDouble.allocationSize(value.`dominantCadenceHz`) +
+            FfiConverterUInt.allocationSize(value.`sampleCount`) +
+            FfiConverterLong.allocationSize(value.`durationMs`)
+    )
+
+    override fun write(value: AccelWindow, buf: ByteBuffer) {
+            FfiConverterDouble.write(value.`meanG`, buf)
+            FfiConverterDouble.write(value.`variance`, buf)
+            FfiConverterDouble.write(value.`peakG`, buf)
+            FfiConverterDouble.write(value.`dominantCadenceHz`, buf)
+            FfiConverterUInt.write(value.`sampleCount`, buf)
+            FfiConverterLong.write(value.`durationMs`, buf)
     }
 }
 
@@ -6867,6 +8118,53 @@ public object FfiConverterTypeBudgetAdjustmentEvent: FfiConverterRustBuffer<Budg
 
 
 /**
+ * Classifier tuning.
+ */
+data class ClassifierConfig (
+    /**
+     * A candidate mode must persist this long (ms) before it commits.
+     */
+    var `modeSwitchDwellMs`: kotlin.Long
+    , 
+    /**
+     * Below this confidence the result is reported as `Unknown`.
+     */
+    var `minConfidence`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeClassifierConfig: FfiConverterRustBuffer<ClassifierConfig> {
+    override fun read(buf: ByteBuffer): ClassifierConfig {
+        return ClassifierConfig(
+            FfiConverterLong.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ClassifierConfig) = (
+            FfiConverterLong.allocationSize(value.`modeSwitchDwellMs`) +
+            FfiConverterDouble.allocationSize(value.`minConfidence`)
+    )
+
+    override fun write(value: ClassifierConfig, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`modeSwitchDwellMs`, buf)
+            FfiConverterDouble.write(value.`minConfidence`, buf)
+    }
+}
+
+
+
+/**
  * Represents a 2D geographical coordinate using latitude and longitude.
  */
 data class Coordinate (
@@ -7206,6 +8504,85 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
             FfiConverterOptionalString.write(value.`routeContext`, buf)
             FfiConverterString.write(value.`eventType`, buf)
             FfiConverterOptionalString.write(value.`eventPayload`, buf)
+    }
+}
+
+
+
+/**
+ * A detected driving event.
+ */
+data class DrivingEvent (
+    /**
+     * `harsh_braking` | `harsh_acceleration` | `harsh_cornering` | `speeding`.
+     */
+    var `kind`: kotlin.String
+    , 
+    /**
+     * Normalized 0–1 severity (how far past the threshold).
+     */
+    var `severity`: kotlin.Double
+    , 
+    /**
+     * Speed at the event (m/s).
+     */
+    var `speed`: kotlin.Double
+    , 
+    /**
+     * The measured magnitude that triggered it: g for harsh events, km/h over
+     * the limit for speeding.
+     */
+    var `value`: kotlin.Double
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `timestampMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDrivingEvent: FfiConverterRustBuffer<DrivingEvent> {
+    override fun read(buf: ByteBuffer): DrivingEvent {
+        return DrivingEvent(
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DrivingEvent) = (
+            FfiConverterString.allocationSize(value.`kind`) +
+            FfiConverterDouble.allocationSize(value.`severity`) +
+            FfiConverterDouble.allocationSize(value.`speed`) +
+            FfiConverterDouble.allocationSize(value.`value`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterLong.allocationSize(value.`timestampMs`)
+    )
+
+    override fun write(value: DrivingEvent, buf: ByteBuffer) {
+            FfiConverterString.write(value.`kind`, buf)
+            FfiConverterDouble.write(value.`severity`, buf)
+            FfiConverterDouble.write(value.`speed`, buf)
+            FfiConverterDouble.write(value.`value`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterLong.write(value.`timestampMs`, buf)
     }
 }
 
@@ -7830,6 +9207,187 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
 
 
 /**
+ * Impact detector tuning.
+ */
+data class ImpactConfig (
+    /**
+     * Enable vehicle crash detection.
+     */
+    var `enableCrash`: kotlin.Boolean
+    , 
+    /**
+     * Enable personal fall detection (best-effort; more false positives).
+     */
+    var `enableFall`: kotlin.Boolean
+    , 
+    /**
+     * Impact magnitude (g) for a crash candidate.
+     */
+    var `crashGThreshold`: kotlin.Double
+    , 
+    /**
+     * Pre-impact speed (km/h) required to corroborate a crash.
+     */
+    var `crashMinSpeedKmh`: kotlin.Double
+    , 
+    /**
+     * Impact magnitude (g) for a fall candidate.
+     */
+    var `fallGThreshold`: kotlin.Double
+    , 
+    /**
+     * Countdown (ms) before a candidate auto-confirms.
+     */
+    var `confirmWindowMs`: kotlin.Long
+    , 
+    /**
+     * Suppress candidates below this confidence.
+     */
+    var `minConfidence`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeImpactConfig: FfiConverterRustBuffer<ImpactConfig> {
+    override fun read(buf: ByteBuffer): ImpactConfig {
+        return ImpactConfig(
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ImpactConfig) = (
+            FfiConverterBoolean.allocationSize(value.`enableCrash`) +
+            FfiConverterBoolean.allocationSize(value.`enableFall`) +
+            FfiConverterDouble.allocationSize(value.`crashGThreshold`) +
+            FfiConverterDouble.allocationSize(value.`crashMinSpeedKmh`) +
+            FfiConverterDouble.allocationSize(value.`fallGThreshold`) +
+            FfiConverterLong.allocationSize(value.`confirmWindowMs`) +
+            FfiConverterDouble.allocationSize(value.`minConfidence`)
+    )
+
+    override fun write(value: ImpactConfig, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`enableCrash`, buf)
+            FfiConverterBoolean.write(value.`enableFall`, buf)
+            FfiConverterDouble.write(value.`crashGThreshold`, buf)
+            FfiConverterDouble.write(value.`crashMinSpeedKmh`, buf)
+            FfiConverterDouble.write(value.`fallGThreshold`, buf)
+            FfiConverterLong.write(value.`confirmWindowMs`, buf)
+            FfiConverterDouble.write(value.`minConfidence`, buf)
+    }
+}
+
+
+
+/**
+ * An impact event.
+ */
+data class ImpactEvent (
+    /**
+     * `potential_crash` | `crash` | `potential_fall` | `fall`.
+     */
+    var `kind`: kotlin.String
+    , 
+    /**
+     * Candidate id — pair `potential_*` with its later `confirm`/`cancel`.
+     */
+    var `id`: kotlin.Long
+    , 
+    /**
+     * 0–1 confidence.
+     */
+    var `confidence`: kotlin.Double
+    , 
+    /**
+     * Peak magnitude (g) of the impact.
+     */
+    var `peakG`: kotlin.Double
+    , 
+    /**
+     * Speed before impact (m/s).
+     */
+    var `speedBefore`: kotlin.Double
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `timestampMs`: kotlin.Long
+    , 
+    /**
+     * For `potential_*`: epoch ms at which it auto-confirms unless cancelled.
+     */
+    var `confirmDeadlineMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeImpactEvent: FfiConverterRustBuffer<ImpactEvent> {
+    override fun read(buf: ByteBuffer): ImpactEvent {
+        return ImpactEvent(
+            FfiConverterString.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ImpactEvent) = (
+            FfiConverterString.allocationSize(value.`kind`) +
+            FfiConverterLong.allocationSize(value.`id`) +
+            FfiConverterDouble.allocationSize(value.`confidence`) +
+            FfiConverterDouble.allocationSize(value.`peakG`) +
+            FfiConverterDouble.allocationSize(value.`speedBefore`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterLong.allocationSize(value.`timestampMs`) +
+            FfiConverterLong.allocationSize(value.`confirmDeadlineMs`)
+    )
+
+    override fun write(value: ImpactEvent, buf: ByteBuffer) {
+            FfiConverterString.write(value.`kind`, buf)
+            FfiConverterLong.write(value.`id`, buf)
+            FfiConverterDouble.write(value.`confidence`, buf)
+            FfiConverterDouble.write(value.`peakG`, buf)
+            FfiConverterDouble.write(value.`speedBefore`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterLong.write(value.`timestampMs`, buf)
+            FfiConverterLong.write(value.`confirmDeadlineMs`, buf)
+    }
+}
+
+
+
+/**
  * A simple geographical point used for the smoothed output of the Kalman filter.
  */
 data class LatLng (
@@ -8116,6 +9674,55 @@ public object FfiConverterTypeLogEntry: FfiConverterRustBuffer<LogEntry> {
             FfiConverterString.write(value.`message`, buf)
             FfiConverterString.write(value.`timestamp`, buf)
             FfiConverterString.write(value.`source`, buf)
+    }
+}
+
+
+
+/**
+ * Result of a classification step.
+ */
+data class ModeResult (
+    var `mode`: TransportMode
+    , 
+    var `confidence`: kotlin.Double
+    , 
+    /**
+     * True when this call committed a *change* from the previous committed mode.
+     */
+    var `changed`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeModeResult: FfiConverterRustBuffer<ModeResult> {
+    override fun read(buf: ByteBuffer): ModeResult {
+        return ModeResult(
+            FfiConverterTypeTransportMode.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ModeResult) = (
+            FfiConverterTypeTransportMode.allocationSize(value.`mode`) +
+            FfiConverterDouble.allocationSize(value.`confidence`) +
+            FfiConverterBoolean.allocationSize(value.`changed`)
+    )
+
+    override fun write(value: ModeResult, buf: ByteBuffer) {
+            FfiConverterTypeTransportMode.write(value.`mode`, buf)
+            FfiConverterDouble.write(value.`confidence`, buf)
+            FfiConverterBoolean.write(value.`changed`, buf)
     }
 }
 
@@ -8485,6 +10092,105 @@ public object FfiConverterTypeSecurityConfig: FfiConverterRustBuffer<SecurityCon
 
     override fun write(value: SecurityConfig, buf: ByteBuffer) {
             FfiConverterBoolean.write(value.`encryptDatabase`, buf)
+    }
+}
+
+
+
+/**
+ * Tunable thresholds for driving-event detection. Defaults follow common
+ * usage-based-insurance / fleet practice and are overridable by the caller.
+ */
+data class TelematicsConfig (
+    /**
+     * Longitudinal deceleration (g) above which `harsh_braking` fires.
+     */
+    var `harshBrakingG`: kotlin.Double
+    , 
+    /**
+     * Longitudinal acceleration (g) above which `harsh_acceleration` fires.
+     */
+    var `harshAccelerationG`: kotlin.Double
+    , 
+    /**
+     * Lateral acceleration (g) above which `harsh_cornering` fires.
+     */
+    var `harshCorneringG`: kotlin.Double
+    , 
+    /**
+     * Global speed limit in km/h. `0` disables threshold-based speeding
+     * (per-geofence limits can still be applied by the caller).
+     */
+    var `speedLimitKmh`: kotlin.Double
+    , 
+    /**
+     * Grace (km/h) added to the limit before speeding counts.
+     */
+    var `speedingToleranceKmh`: kotlin.Double
+    , 
+    /**
+     * Sustained time over the limit (ms) before `speeding` fires.
+     */
+    var `speedingMinDurationMs`: kotlin.Long
+    , 
+    /**
+     * Suppress brake/accel/corner events below this speed (km/h) to avoid
+     * parking-lot / GPS-jitter noise.
+     */
+    var `minSpeedForEventsKmh`: kotlin.Double
+    , 
+    /**
+     * Minimum time between two events of the same kind (ms) — debounce so a
+     * single maneuver spanning several fixes yields one event.
+     */
+    var `eventDebounceMs`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTelematicsConfig: FfiConverterRustBuffer<TelematicsConfig> {
+    override fun read(buf: ByteBuffer): TelematicsConfig {
+        return TelematicsConfig(
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: TelematicsConfig) = (
+            FfiConverterDouble.allocationSize(value.`harshBrakingG`) +
+            FfiConverterDouble.allocationSize(value.`harshAccelerationG`) +
+            FfiConverterDouble.allocationSize(value.`harshCorneringG`) +
+            FfiConverterDouble.allocationSize(value.`speedLimitKmh`) +
+            FfiConverterDouble.allocationSize(value.`speedingToleranceKmh`) +
+            FfiConverterLong.allocationSize(value.`speedingMinDurationMs`) +
+            FfiConverterDouble.allocationSize(value.`minSpeedForEventsKmh`) +
+            FfiConverterLong.allocationSize(value.`eventDebounceMs`)
+    )
+
+    override fun write(value: TelematicsConfig, buf: ByteBuffer) {
+            FfiConverterDouble.write(value.`harshBrakingG`, buf)
+            FfiConverterDouble.write(value.`harshAccelerationG`, buf)
+            FfiConverterDouble.write(value.`harshCorneringG`, buf)
+            FfiConverterDouble.write(value.`speedLimitKmh`, buf)
+            FfiConverterDouble.write(value.`speedingToleranceKmh`, buf)
+            FfiConverterLong.write(value.`speedingMinDurationMs`, buf)
+            FfiConverterDouble.write(value.`minSpeedForEventsKmh`, buf)
+            FfiConverterLong.write(value.`eventDebounceMs`, buf)
     }
 }
 
@@ -8932,6 +10638,48 @@ public object FfiConverterTypeTrackingMode: FfiConverterRustBuffer<TrackingMode>
 
 
 
+/**
+ * Detected travel mode. Distinct from the platform `ActivityType` so adding
+ * `Cycling` here doesn't perturb existing activity plumbing.
+ */
+
+enum class TransportMode {
+    
+    UNKNOWN,
+    STILL,
+    WALKING,
+    RUNNING,
+    CYCLING,
+    VEHICLE;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTransportMode: FfiConverterRustBuffer<TransportMode> {
+    override fun read(buf: ByteBuffer) = try {
+        TransportMode.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: TransportMode) = 4UL
+
+    override fun write(value: TransportMode, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
 
 /**
  * @suppress
@@ -9192,6 +10940,38 @@ public object FfiConverterOptionalTypeBudgetAdjustmentEvent: FfiConverterRustBuf
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeClassifierConfig: FfiConverterRustBuffer<ClassifierConfig?> {
+    override fun read(buf: ByteBuffer): ClassifierConfig? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeClassifierConfig.read(buf)
+    }
+
+    override fun allocationSize(value: ClassifierConfig?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeClassifierConfig.allocationSize(value)
+        }
+    }
+
+    override fun write(value: ClassifierConfig?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeClassifierConfig.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeDbLocationRecord: FfiConverterRustBuffer<DbLocationRecord?> {
     override fun read(buf: ByteBuffer): DbLocationRecord? {
         if (buf.get().toInt() == 0) {
@@ -9214,6 +10994,70 @@ public object FfiConverterOptionalTypeDbLocationRecord: FfiConverterRustBuffer<D
         } else {
             buf.put(1)
             FfiConverterTypeDbLocationRecord.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeImpactConfig: FfiConverterRustBuffer<ImpactConfig?> {
+    override fun read(buf: ByteBuffer): ImpactConfig? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeImpactConfig.read(buf)
+    }
+
+    override fun allocationSize(value: ImpactConfig?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeImpactConfig.allocationSize(value)
+        }
+    }
+
+    override fun write(value: ImpactConfig?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeImpactConfig.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeImpactEvent: FfiConverterRustBuffer<ImpactEvent?> {
+    override fun read(buf: ByteBuffer): ImpactEvent? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeImpactEvent.read(buf)
+    }
+
+    override fun allocationSize(value: ImpactEvent?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeImpactEvent.allocationSize(value)
+        }
+    }
+
+    override fun write(value: ImpactEvent?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeImpactEvent.write(value, buf)
         }
     }
 }
@@ -9278,6 +11122,38 @@ public object FfiConverterOptionalTypeLocationRecord: FfiConverterRustBuffer<Loc
         } else {
             buf.put(1)
             FfiConverterTypeLocationRecord.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeTelematicsConfig: FfiConverterRustBuffer<TelematicsConfig?> {
+    override fun read(buf: ByteBuffer): TelematicsConfig? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeTelematicsConfig.read(buf)
+    }
+
+    override fun allocationSize(value: TelematicsConfig?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeTelematicsConfig.allocationSize(value)
+        }
+    }
+
+    override fun write(value: TelematicsConfig?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeTelematicsConfig.write(value, buf)
         }
     }
 }
@@ -9438,6 +11314,34 @@ public object FfiConverterOptionalMapStringString: FfiConverterRustBuffer<Map<ko
         } else {
             buf.put(1)
             FfiConverterMapStringString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceDouble: FfiConverterRustBuffer<List<kotlin.Double>> {
+    override fun read(buf: ByteBuffer): List<kotlin.Double> {
+        val len = buf.getInt()
+        return List<kotlin.Double>(len) {
+            FfiConverterDouble.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.Double>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterDouble.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.Double>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterDouble.write(it, buf)
         }
     }
 }
@@ -9644,6 +11548,34 @@ public object FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer<L
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeDrivingEvent: FfiConverterRustBuffer<List<DrivingEvent>> {
+    override fun read(buf: ByteBuffer): List<DrivingEvent> {
+        val len = buf.getInt()
+        return List<DrivingEvent>(len) {
+            FfiConverterTypeDrivingEvent.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<DrivingEvent>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeDrivingEvent.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<DrivingEvent>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeDrivingEvent.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer<List<GeofenceTransition>> {
     override fun read(buf: ByteBuffer): List<GeofenceTransition> {
         val len = buf.getInt()
@@ -9662,6 +11594,34 @@ public object FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeGeofenceTransition.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeImpactEvent: FfiConverterRustBuffer<List<ImpactEvent>> {
+    override fun read(buf: ByteBuffer): List<ImpactEvent> {
+        val len = buf.getInt()
+        return List<ImpactEvent>(len) {
+            FfiConverterTypeImpactEvent.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<ImpactEvent>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeImpactEvent.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<ImpactEvent>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeImpactEvent.write(it, buf)
         }
     }
 }
@@ -9782,6 +11742,20 @@ public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<kotlin.Str
     UniffiLib.uniffi_tracelet_core_fn_func_is_point_in_polygon(
     
         FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),FfiConverterSequenceTypeCoordinate.lower(`vertices`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Computes [`AccelWindow`] features from a batch of gravity-subtracted
+         * magnitudes (g) spanning `duration_ms`.
+         */ fun `computeAccelWindow`(`magnitudesG`: List<kotlin.Double>, `durationMs`: kotlin.Long): AccelWindow {
+            return FfiConverterTypeAccelWindow.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_func_compute_accel_window(
+    
+        FfiConverterSequenceDouble.lower(`magnitudesG`),FfiConverterLong.lower(`durationMs`),_status)
 }
     )
     }

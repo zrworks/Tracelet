@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
 import 'package:tracelet_doctor/tracelet_doctor.dart';
+import 'package:tracelet_example/behavior_page.dart';
 import 'package:tracelet_example/map_page.dart';
 import 'package:tracelet_example/issues_page.dart';
 import 'package:tracelet_example/scanner_page.dart';
@@ -3900,6 +3901,33 @@ class _DashboardPageState extends State<DashboardPage>
                     icon: const Icon(Icons.bug_report),
                     label: const Text(
                       'Issues Test',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                // ── Driving & Safety (3.3.0) Button ──
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const BehaviorPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.drive_eta),
+                    label: const Text(
+                      'Driving & Safety',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

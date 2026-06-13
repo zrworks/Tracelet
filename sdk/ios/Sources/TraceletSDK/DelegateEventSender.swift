@@ -104,6 +104,13 @@ final class DelegateEventSender: TraceletEventSending {
         dispatch { sdk, delegate in delegate.tracelet(sdk, didAdjustBudget: data) }
     }
 
+    // Driving/impact/mode events are consumed by the Flutter plugin
+    // (PluginEventDispatcher). Native-Swift delegate hooks are an extension
+    // point for future use, mirroring sendRemoteConfigEvent.
+    func sendDrivingEvent(_ data: [String: Any]) {}
+    func sendImpact(_ data: [String: Any]) {}
+    func sendModeChange(_ data: [String: Any]) {}
+
     func hasListener(eventName: String) -> Bool {
         return delegate != nil || headlessDispatcher?.isRegistered() == true
     }

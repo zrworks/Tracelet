@@ -279,6 +279,9 @@ class TlConfig {
     required this.privacyZone,
     required this.security,
     required this.attestation,
+    required this.telematics,
+    required this.classifier,
+    required this.impact,
   });
 
   final TlGeoConfig geo;
@@ -294,6 +297,9 @@ class TlConfig {
   final TlPrivacyZoneConfig privacyZone;
   final TlSecurityConfig security;
   final TlAttestationConfig attestation;
+  final TlTelematicsConfig telematics;
+  final TlClassifierConfig classifier;
+  final TlImpactConfig impact;
 }
 
 class TlLoggerConfig {
@@ -400,6 +406,64 @@ class TlAttestationConfig {
   TlAttestationConfig({required this.enabled, required this.refreshInterval});
   final bool enabled;
   final int refreshInterval;
+}
+
+/// Driving-behavior (telematics) event detection config. See `TelematicsEngine`.
+class TlTelematicsConfig {
+  TlTelematicsConfig({
+    required this.enableDrivingEvents,
+    required this.harshBrakingG,
+    required this.harshAccelerationG,
+    required this.harshCorneringG,
+    required this.speedLimitKmh,
+    required this.speedingToleranceKmh,
+    required this.speedingMinDurationMs,
+    required this.minSpeedForEventsKmh,
+    required this.eventDebounceMs,
+  });
+  final bool enableDrivingEvents;
+  final double harshBrakingG;
+  final double harshAccelerationG;
+  final double harshCorneringG;
+  final double speedLimitKmh;
+  final double speedingToleranceKmh;
+  final int speedingMinDurationMs;
+  final double minSpeedForEventsKmh;
+  final int eventDebounceMs;
+}
+
+/// On-device transport-mode classifier config. See `TransportModeClassifier`.
+class TlClassifierConfig {
+  TlClassifierConfig({
+    required this.enableFusedClassifier,
+    required this.fusedClassifierAuthoritative,
+    required this.modeSwitchDwellMs,
+    required this.minModeConfidence,
+  });
+  final bool enableFusedClassifier;
+  final bool fusedClassifierAuthoritative;
+  final int modeSwitchDwellMs;
+  final double minModeConfidence;
+}
+
+/// Crash & fall detection config. See `ImpactDetector`.
+class TlImpactConfig {
+  TlImpactConfig({
+    required this.enableCrashDetection,
+    required this.enableFallDetection,
+    required this.crashGThreshold,
+    required this.crashMinSpeedKmh,
+    required this.fallGThreshold,
+    required this.confirmWindowMs,
+    required this.minImpactConfidence,
+  });
+  final bool enableCrashDetection;
+  final bool enableFallDetection;
+  final double crashGThreshold;
+  final double crashMinSpeedKmh;
+  final double fallGThreshold;
+  final int confirmWindowMs;
+  final double minImpactConfidence;
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }
@@ -653,6 +717,60 @@ class TlConnectivityChangeEvent {
   final bool connected;
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+class TlDrivingEvent {
+  TlDrivingEvent({
+    required this.kind,
+    required this.severity,
+    required this.speed,
+    required this.value,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+  });
+  final String kind;
+  final double severity;
+  final double speed;
+  final double value;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+class TlImpactEvent {
+  TlImpactEvent({
+    required this.kind,
+    required this.id,
+    required this.confidence,
+    required this.peakG,
+    required this.speedBefore,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+    required this.confirmDeadlineMs,
+  });
+  final String kind;
+  final int id;
+  final double confidence;
+  final double peakG;
+  final double speedBefore;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+  final int confirmDeadlineMs;
+}
+
+/// A fused transport-mode change.
+class TlModeChangeEvent {
+  TlModeChangeEvent({
+    required this.mode,
+    required this.confidence,
+  });
+  final String mode;
+  final double confidence;
+}
+
 // =============================================================================
 // Host API
 // =============================================================================
@@ -699,6 +817,12 @@ abstract class TraceletHostApi {
 
   @async
   bool changePace(bool isMoving);
+
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  bool confirmImpact(int id);
+
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  bool cancelImpact(int id);
 
   @async
   double getOdometer();
@@ -917,4 +1041,7 @@ abstract class TraceletEventApi {
   void onNotificationAction(String action);
   void onAuthorization(TlAuthorizationEvent event);
   void onWatchPosition(TlLocation location);
+  void onDrivingEvent(TlDrivingEvent event);
+  void onImpact(TlImpactEvent event);
+  void onModeChange(TlModeChangeEvent event);
 }

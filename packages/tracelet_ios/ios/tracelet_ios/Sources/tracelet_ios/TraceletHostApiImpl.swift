@@ -409,6 +409,14 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(result))
     }
 
+    func confirmImpact(id: Int64) throws -> Bool {
+        return sdk.isReadyState ? sdk.confirmImpact(id) : false
+    }
+
+    func cancelImpact(id: Int64) throws -> Bool {
+        return sdk.isReadyState ? sdk.cancelImpact(id) : false
+    }
+
     func getOdometer(completion: @escaping (Result<Double, Error>) -> Void) {
         completion(.success(sdk.getOdometer()))
     }

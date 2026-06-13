@@ -103,6 +103,10 @@ public final class MotionDetector {
     /// Called when motion state changes (isMoving).
     public var onMotionStateChanged: ((Bool) -> Void)?
 
+    /// Emitted per accelerometer sample with the gravity-subtracted magnitude
+    /// in g — feeds the 3.3.0 transport-mode classifier and impact detector.
+    public var onAccelSample: ((Double) -> Void)?
+
     /// Called when stopOnStationary fires — requests full tracking stop.
     public var onStopRequested: (() -> Void)?
 
@@ -310,8 +314,10 @@ public final class MotionDetector {
 
     // Internal for testing
     internal func handleAcceleration(_ acc: CMAcceleration) {
-        // Compute magnitude and subtract gravity (~1g)
+        // Compute magnitude and subtract gravity (~1g). iOS CMAccelerometer
+        // reports in g units, so this residual is already in g.
         let magnitude = sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) - 1.0
+        onAccelSample?(abs(magnitude))
 
         if stateManager.isMoving {
             // Currently moving — detect sustained stillness

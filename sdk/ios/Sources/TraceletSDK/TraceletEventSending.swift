@@ -25,5 +25,8 @@ public protocol TraceletEventSending: AnyObject {
     func sendRemoteConfigEvent(_ data: [String: Any])
     func sendTrip(_ data: [String: Any])
     func sendBudgetAdjustment(_ data: [String: Any])
+    func sendDrivingEvent(_ data: [String: Any])
+    func sendImpact(_ data: [String: Any])
+    func sendModeChange(_ data: [String: Any])
     func hasListener(eventName: String) -> Bool
 }

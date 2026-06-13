@@ -717,6 +717,60 @@ class TlConnectivityChangeEvent {
   final bool connected;
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+class TlDrivingEvent {
+  TlDrivingEvent({
+    required this.kind,
+    required this.severity,
+    required this.speed,
+    required this.value,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+  });
+  final String kind;
+  final double severity;
+  final double speed;
+  final double value;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+class TlImpactEvent {
+  TlImpactEvent({
+    required this.kind,
+    required this.id,
+    required this.confidence,
+    required this.peakG,
+    required this.speedBefore,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+    required this.confirmDeadlineMs,
+  });
+  final String kind;
+  final int id;
+  final double confidence;
+  final double peakG;
+  final double speedBefore;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+  final int confirmDeadlineMs;
+}
+
+/// A fused transport-mode change.
+class TlModeChangeEvent {
+  TlModeChangeEvent({
+    required this.mode,
+    required this.confidence,
+  });
+  final String mode;
+  final double confidence;
+}
+
 // =============================================================================
 // Host API
 // =============================================================================
@@ -763,6 +817,12 @@ abstract class TraceletHostApi {
 
   @async
   bool changePace(bool isMoving);
+
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  bool confirmImpact(int id);
+
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  bool cancelImpact(int id);
 
   @async
   double getOdometer();
@@ -981,4 +1041,7 @@ abstract class TraceletEventApi {
   void onNotificationAction(String action);
   void onAuthorization(TlAuthorizationEvent event);
   void onWatchPosition(TlLocation location);
+  void onDrivingEvent(TlDrivingEvent event);
+  void onImpact(TlImpactEvent event);
+  void onModeChange(TlModeChangeEvent event);
 }

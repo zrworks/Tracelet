@@ -2439,6 +2439,180 @@ struct TlConnectivityChangeEvent: Hashable {
   }
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlDrivingEvent: Hashable {
+  var kind: String
+  var severity: Double
+  var speed: Double
+  var value: Double
+  var latitude: Double
+  var longitude: Double
+  var timestampMs: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlDrivingEvent? {
+    let kind = pigeonVar_list[0] as! String
+    let severity = pigeonVar_list[1] as! Double
+    let speed = pigeonVar_list[2] as! Double
+    let value = pigeonVar_list[3] as! Double
+    let latitude = pigeonVar_list[4] as! Double
+    let longitude = pigeonVar_list[5] as! Double
+    let timestampMs = pigeonVar_list[6] as! Int64
+
+    return TlDrivingEvent(
+      kind: kind,
+      severity: severity,
+      speed: speed,
+      value: value,
+      latitude: latitude,
+      longitude: longitude,
+      timestampMs: timestampMs
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      kind,
+      severity,
+      speed,
+      value,
+      latitude,
+      longitude,
+      timestampMs,
+    ]
+  }
+  static func == (lhs: TlDrivingEvent, rhs: TlDrivingEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.kind, rhs.kind) && deepEqualsTraceletApi(lhs.severity, rhs.severity) && deepEqualsTraceletApi(lhs.speed, rhs.speed) && deepEqualsTraceletApi(lhs.value, rhs.value) && deepEqualsTraceletApi(lhs.latitude, rhs.latitude) && deepEqualsTraceletApi(lhs.longitude, rhs.longitude) && deepEqualsTraceletApi(lhs.timestampMs, rhs.timestampMs)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlDrivingEvent")
+    deepHashTraceletApi(value: kind, hasher: &hasher)
+    deepHashTraceletApi(value: severity, hasher: &hasher)
+    deepHashTraceletApi(value: speed, hasher: &hasher)
+    deepHashTraceletApi(value: value, hasher: &hasher)
+    deepHashTraceletApi(value: latitude, hasher: &hasher)
+    deepHashTraceletApi(value: longitude, hasher: &hasher)
+    deepHashTraceletApi(value: timestampMs, hasher: &hasher)
+  }
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlImpactEvent: Hashable {
+  var kind: String
+  var id: Int64
+  var confidence: Double
+  var peakG: Double
+  var speedBefore: Double
+  var latitude: Double
+  var longitude: Double
+  var timestampMs: Int64
+  var confirmDeadlineMs: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlImpactEvent? {
+    let kind = pigeonVar_list[0] as! String
+    let id = pigeonVar_list[1] as! Int64
+    let confidence = pigeonVar_list[2] as! Double
+    let peakG = pigeonVar_list[3] as! Double
+    let speedBefore = pigeonVar_list[4] as! Double
+    let latitude = pigeonVar_list[5] as! Double
+    let longitude = pigeonVar_list[6] as! Double
+    let timestampMs = pigeonVar_list[7] as! Int64
+    let confirmDeadlineMs = pigeonVar_list[8] as! Int64
+
+    return TlImpactEvent(
+      kind: kind,
+      id: id,
+      confidence: confidence,
+      peakG: peakG,
+      speedBefore: speedBefore,
+      latitude: latitude,
+      longitude: longitude,
+      timestampMs: timestampMs,
+      confirmDeadlineMs: confirmDeadlineMs
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      kind,
+      id,
+      confidence,
+      peakG,
+      speedBefore,
+      latitude,
+      longitude,
+      timestampMs,
+      confirmDeadlineMs,
+    ]
+  }
+  static func == (lhs: TlImpactEvent, rhs: TlImpactEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.kind, rhs.kind) && deepEqualsTraceletApi(lhs.id, rhs.id) && deepEqualsTraceletApi(lhs.confidence, rhs.confidence) && deepEqualsTraceletApi(lhs.peakG, rhs.peakG) && deepEqualsTraceletApi(lhs.speedBefore, rhs.speedBefore) && deepEqualsTraceletApi(lhs.latitude, rhs.latitude) && deepEqualsTraceletApi(lhs.longitude, rhs.longitude) && deepEqualsTraceletApi(lhs.timestampMs, rhs.timestampMs) && deepEqualsTraceletApi(lhs.confirmDeadlineMs, rhs.confirmDeadlineMs)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlImpactEvent")
+    deepHashTraceletApi(value: kind, hasher: &hasher)
+    deepHashTraceletApi(value: id, hasher: &hasher)
+    deepHashTraceletApi(value: confidence, hasher: &hasher)
+    deepHashTraceletApi(value: peakG, hasher: &hasher)
+    deepHashTraceletApi(value: speedBefore, hasher: &hasher)
+    deepHashTraceletApi(value: latitude, hasher: &hasher)
+    deepHashTraceletApi(value: longitude, hasher: &hasher)
+    deepHashTraceletApi(value: timestampMs, hasher: &hasher)
+    deepHashTraceletApi(value: confirmDeadlineMs, hasher: &hasher)
+  }
+}
+
+/// A fused transport-mode change.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlModeChangeEvent: Hashable {
+  var mode: String
+  var confidence: Double
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlModeChangeEvent? {
+    let mode = pigeonVar_list[0] as! String
+    let confidence = pigeonVar_list[1] as! Double
+
+    return TlModeChangeEvent(
+      mode: mode,
+      confidence: confidence
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      mode,
+      confidence,
+    ]
+  }
+  static func == (lhs: TlModeChangeEvent, rhs: TlModeChangeEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.mode, rhs.mode) && deepEqualsTraceletApi(lhs.confidence, rhs.confidence)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlModeChangeEvent")
+    deepHashTraceletApi(value: mode, hasher: &hasher)
+    deepHashTraceletApi(value: confidence, hasher: &hasher)
+  }
+}
+
 private class TraceletApiPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -2628,6 +2802,12 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
       return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
     case 183:
       return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
+    case 184:
+      return TlDrivingEvent.fromList(self.readValue() as! [Any?])
+    case 185:
+      return TlImpactEvent.fromList(self.readValue() as! [Any?])
+    case 186:
+      return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -2801,6 +2981,15 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlConnectivityChangeEvent {
       super.writeByte(183)
       super.writeValue(value.toList())
+    } else if let value = value as? TlDrivingEvent {
+      super.writeByte(184)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlImpactEvent {
+      super.writeByte(185)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlModeChangeEvent {
+      super.writeByte(186)
+      super.writeValue(value.toList())
     } else {
       super.writeValue(value)
     }
@@ -2838,6 +3027,10 @@ protocol TraceletHostApi {
   func watchPosition(options: TlCurrentPositionOptions, completion: @escaping (Result<Int64, Error>) -> Void)
   func stopWatchPosition(watchId: Int64, completion: @escaping (Result<Bool, Error>) -> Void)
   func changePace(isMoving: Bool, completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  func confirmImpact(id: Int64) throws -> Bool
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  func cancelImpact(id: Int64) throws -> Bool
   func getOdometer(completion: @escaping (Result<Double, Error>) -> Void)
   func setOdometer(value: Double, completion: @escaping (Result<TlLocation, Error>) -> Void)
   func addGeofence(geofence: TlGeofence, completion: @escaping (Result<Bool, Error>) -> Void)
@@ -3131,6 +3324,38 @@ class TraceletHostApiSetup {
       }
     } else {
       changePaceChannel.setMessageHandler(nil)
+    }
+    /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+    let confirmImpactChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      confirmImpactChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let idArg = args[0] as! Int64
+        do {
+          let result = try api.confirmImpact(id: idArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      confirmImpactChannel.setMessageHandler(nil)
+    }
+    /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+    let cancelImpactChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      cancelImpactChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let idArg = args[0] as! Int64
+        do {
+          let result = try api.cancelImpact(id: idArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      cancelImpactChannel.setMessageHandler(nil)
     }
     let getOdometerChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getOdometer\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
@@ -4196,6 +4421,9 @@ protocol TraceletEventApiProtocol {
   func onNotificationAction(action actionArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onAuthorization(event eventArg: TlAuthorizationEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onWatchPosition(location locationArg: TlLocation, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onDrivingEvent(event eventArg: TlDrivingEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onImpact(event eventArg: TlImpactEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
 }
 class TraceletEventApi: TraceletEventApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -4481,6 +4709,60 @@ class TraceletEventApi: TraceletEventApiProtocol {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onWatchPosition\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([locationArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  func onDrivingEvent(event eventArg: TlDrivingEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([eventArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  func onImpact(event eventArg: TlImpactEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([eventArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([eventArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
         completion(.failure(createConnectionError(withChannelName: channelName)))
         return

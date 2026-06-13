@@ -103,6 +103,15 @@ internal class ListenerEventSender : TraceletEventSender {
     override fun sendBudgetAdjustment(data: Map<String, Any?>) =
         dispatch("budgetadjustment", data) { listener?.onBudgetAdjustment(data) }
 
+    override fun sendDrivingEvent(data: Map<String, Any?>) =
+        dispatch("drivingevent", data) { listener?.onDrivingEvent(data) }
+
+    override fun sendImpact(data: Map<String, Any?>) =
+        dispatch("impact", data) { listener?.onImpact(data) }
+
+    override fun sendModeChange(data: Map<String, Any?>) =
+        dispatch("modechange", data) { listener?.onModeChange(data) }
+
     override fun hasListener(eventName: String): Boolean = listener != null
 
     private inline fun dispatch(

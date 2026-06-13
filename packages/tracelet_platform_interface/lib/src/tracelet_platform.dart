@@ -141,6 +141,16 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('changePace() has not been implemented.');
   }
 
+  /// Confirms a pending impact candidate as a real emergency.
+  Future<bool> confirmImpact(int id) {
+    throw UnimplementedError('confirmImpact() has not been implemented.');
+  }
+
+  /// Cancels a pending impact candidate.
+  Future<bool> cancelImpact(int id) {
+    throw UnimplementedError('cancelImpact() has not been implemented.');
+  }
+
   /// Get the current odometer value in meters.
   Future<double> getOdometer() {
     throw UnimplementedError('getOdometer() has not been implemented.');
@@ -765,6 +775,21 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Stream of watchPosition events.
   Stream<TlLocation> get watchPositionEvents {
     throw UnimplementedError('watchPositionEvents has not been implemented.');
+  }
+
+  /// Stream of driving-behavior events (harsh brake/accel/cornering/speeding).
+  Stream<TlDrivingEvent> get drivingEvents {
+    throw UnimplementedError('drivingEvents has not been implemented.');
+  }
+
+  /// Stream of crash/fall impact events.
+  Stream<TlImpactEvent> get impactEvents {
+    throw UnimplementedError('impactEvents has not been implemented.');
+  }
+
+  /// Stream of fused transport-mode changes.
+  Stream<TlModeChangeEvent> get modeChangeEvents {
+    throw UnimplementedError('modeChangeEvents has not been implemented.');
   }
 
   /// Stream of speed-based motion mode change events.

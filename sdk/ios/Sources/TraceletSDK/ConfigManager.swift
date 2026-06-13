@@ -330,6 +330,30 @@ public final class ConfigManager {
     // MARK: - Battery Budget
     public func getBatteryBudgetPerHour() -> Double { cache["batteryBudgetPerHour"] as? Double ?? 0.0 }
 
+    // MARK: - Telematics / classifier / impact (3.3.0)
+    public func getEnableDrivingEvents() -> Bool { cache["enableDrivingEvents"] as? Bool ?? false }
+    public func getHarshBrakingG() -> Double { cache["harshBrakingG"] as? Double ?? 0.40 }
+    public func getHarshAccelerationG() -> Double { cache["harshAccelerationG"] as? Double ?? 0.35 }
+    public func getHarshCorneringG() -> Double { cache["harshCorneringG"] as? Double ?? 0.40 }
+    public func getSpeedLimitKmh() -> Double { cache["speedLimitKmh"] as? Double ?? 0.0 }
+    public func getSpeedingToleranceKmh() -> Double { cache["speedingToleranceKmh"] as? Double ?? 5.0 }
+    public func getSpeedingMinDurationMs() -> Int64 { (cache["speedingMinDurationMs"] as? NSNumber)?.int64Value ?? 3000 }
+    public func getMinSpeedForEventsKmh() -> Double { cache["minSpeedForEventsKmh"] as? Double ?? 5.0 }
+    public func getEventDebounceMs() -> Int64 { (cache["eventDebounceMs"] as? NSNumber)?.int64Value ?? 2000 }
+
+    public func getEnableFusedClassifier() -> Bool { cache["enableFusedClassifier"] as? Bool ?? false }
+    public func getFusedClassifierAuthoritative() -> Bool { cache["fusedClassifierAuthoritative"] as? Bool ?? false }
+    public func getModeSwitchDwellMs() -> Int64 { (cache["modeSwitchDwellMs"] as? NSNumber)?.int64Value ?? 8000 }
+    public func getMinModeConfidence() -> Double { cache["minModeConfidence"] as? Double ?? 0.6 }
+
+    public func getEnableCrashDetection() -> Bool { cache["enableCrashDetection"] as? Bool ?? false }
+    public func getEnableFallDetection() -> Bool { cache["enableFallDetection"] as? Bool ?? false }
+    public func getCrashGThreshold() -> Double { cache["crashGThreshold"] as? Double ?? 3.0 }
+    public func getCrashMinSpeedKmh() -> Double { cache["crashMinSpeedKmh"] as? Double ?? 25.0 }
+    public func getFallGThreshold() -> Double { cache["fallGThreshold"] as? Double ?? 2.5 }
+    public func getConfirmWindowMs() -> Int64 { (cache["confirmWindowMs"] as? NSNumber)?.int64Value ?? 15000 }
+    public func getMinImpactConfidence() -> Double { cache["minImpactConfidence"] as? Double ?? 0.6 }
+
     // MARK: - SSL Pinning
 
     public func getSslPinningCertificates() -> [String] {

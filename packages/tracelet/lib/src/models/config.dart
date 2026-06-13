@@ -5,6 +5,7 @@ import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet/src/models/android_config.dart';
 import 'package:tracelet/src/models/attestation_config.dart';
 import 'package:tracelet/src/models/audit_config.dart';
+import 'package:tracelet/src/models/driving_config.dart';
 import 'package:tracelet/src/models/ios_config.dart';
 import 'package:tracelet/src/models/privacy_zone_config.dart';
 import 'package:tracelet/src/models/security_config.dart';
@@ -59,6 +60,9 @@ class Config {
     this.privacyZone = const PrivacyZoneConfig(),
     this.security = const SecurityConfig(),
     this.attestation = const AttestationConfig(),
+    this.telematics = const TelematicsConfig(),
+    this.classifier = const ClassifierConfig(),
+    this.impact = const ImpactConfig(),
   });
 
   /// High Accuracy profile tailored for turn-by-turn navigation or precise tracking.
@@ -100,6 +104,13 @@ class Config {
       privacyZone: PrivacyZoneConfig.fromMap(privacyMap ?? map),
       security: SecurityConfig.fromMap(securityMap ?? map),
       attestation: AttestationConfig.fromMap(attestMap ?? map),
+      telematics: TelematicsConfig.fromMap(
+        safeMap(map['telematics']) ?? map,
+      ),
+      classifier: ClassifierConfig.fromMap(
+        safeMap(map['classifier']) ?? map,
+      ),
+      impact: ImpactConfig.fromMap(safeMap(map['impact']) ?? map),
     );
   }
 
@@ -142,6 +153,15 @@ class Config {
   /// **Enterprise** — Device integrity attestation.
   final AttestationConfig attestation;
 
+  /// Driving-behavior (telematics) event detection.
+  final TelematicsConfig telematics;
+
+  /// On-device transport-mode classifier.
+  final ClassifierConfig classifier;
+
+  /// Crash & fall detection.
+  final ImpactConfig impact;
+
   /// Creates a copy of this [Config] with the given fields replaced with the new values.
   Config copyWith({
     GeoConfig? geo,
@@ -157,6 +177,9 @@ class Config {
     PrivacyZoneConfig? privacyZone,
     SecurityConfig? security,
     AttestationConfig? attestation,
+    TelematicsConfig? telematics,
+    ClassifierConfig? classifier,
+    ImpactConfig? impact,
   }) {
     return Config(
       geo: geo ?? this.geo,
@@ -172,6 +195,9 @@ class Config {
       privacyZone: privacyZone ?? this.privacyZone,
       security: security ?? this.security,
       attestation: attestation ?? this.attestation,
+      telematics: telematics ?? this.telematics,
+      classifier: classifier ?? this.classifier,
+      impact: impact ?? this.impact,
     );
   }
 
@@ -206,6 +232,9 @@ class Config {
     privacyZone: privacyZone.toTlConfig(),
     security: security.toTlConfig(),
     attestation: attestation.toTlConfig(),
+    telematics: telematics.toTlConfig(),
+    classifier: classifier.toTlConfig(),
+    impact: impact.toTlConfig(),
   );
 
   /// Serializes to a nested map suitable for platform channel transmission.
@@ -224,6 +253,9 @@ class Config {
       'privacyZone': privacyZone.toMap(),
       'security': security.toMap(),
       'attestation': attestation.toMap(),
+      'telematics': telematics.toMap(),
+      'classifier': classifier.toMap(),
+      'impact': impact.toMap(),
     };
   }
 
@@ -232,7 +264,8 @@ class Config {
       'Config(geo: $geo, app: $app, android: $android, ios: $ios, http: $http, '
       'logger: $logger, motion: $motion, geofence: $geofence, '
       'persistence: $persistence, audit: $audit, privacyZone: $privacyZone, '
-      'security: $security, attestation: $attestation)';
+      'security: $security, attestation: $attestation, '
+      'telematics: $telematics, classifier: $classifier, impact: $impact)';
 
   @override
   bool operator ==(Object other) =>
@@ -251,7 +284,10 @@ class Config {
           audit == other.audit &&
           privacyZone == other.privacyZone &&
           security == other.security &&
-          attestation == other.attestation;
+          attestation == other.attestation &&
+          telematics == other.telematics &&
+          classifier == other.classifier &&
+          impact == other.impact;
 
   @override
   int get hashCode => Object.hashAll([
@@ -268,6 +304,9 @@ class Config {
     privacyZone,
     security,
     attestation,
+    telematics,
+    classifier,
+    impact,
   ]);
 }
 

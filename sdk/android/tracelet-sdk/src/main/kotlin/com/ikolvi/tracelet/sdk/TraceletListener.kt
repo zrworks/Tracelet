@@ -63,4 +63,13 @@ interface TraceletListener {
 
     /** Called when the battery budget engine adjusts parameters. */
     fun onBudgetAdjustment(data: Map<String, Any?>) {}
+
+    /** Called for driving-behavior events (harsh brake/accel/cornering/speeding). */
+    fun onDrivingEvent(data: Map<String, Any?>) {}
+
+    /** Called for crash/fall impact events. */
+    fun onImpact(data: Map<String, Any?>) {}
+
+    /** Called when the fused transport mode changes. */
+    fun onModeChange(data: Map<String, Any?>) {}
 }

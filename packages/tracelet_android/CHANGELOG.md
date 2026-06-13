@@ -1,3 +1,7 @@
+## 3.2.19
+
+**CHORE**: version bump for patch release
+
 ## 3.2.18
 
 * **FIX** (Native): `ready()` / `getState()` now populate `State.config` with the active configuration instead of leaving it permanently `null` ([#147](https://github.com/Ikolvi/Tracelet/issues/147)).

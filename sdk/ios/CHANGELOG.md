@@ -1,3 +1,7 @@
+## 3.2.19
+
+**CHORE**: version bump for patch release
+
 ## 3.2.18
 
 * **FIX**: Interval-based sync — honor `HttpConfig.syncInterval` with a repeating timer that flushes the offline queue on the configured cadence ([#149](https://github.com/Ikolvi/Tracelet/issues/149)).

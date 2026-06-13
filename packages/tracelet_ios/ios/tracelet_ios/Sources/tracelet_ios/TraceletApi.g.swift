@@ -935,6 +935,9 @@ struct TlConfig: Hashable {
   var privacyZone: TlPrivacyZoneConfig
   var security: TlSecurityConfig
   var attestation: TlAttestationConfig
+  var telematics: TlTelematicsConfig
+  var classifier: TlClassifierConfig
+  var impact: TlImpactConfig
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -952,6 +955,9 @@ struct TlConfig: Hashable {
     let privacyZone = pigeonVar_list[10] as! TlPrivacyZoneConfig
     let security = pigeonVar_list[11] as! TlSecurityConfig
     let attestation = pigeonVar_list[12] as! TlAttestationConfig
+    let telematics = pigeonVar_list[13] as! TlTelematicsConfig
+    let classifier = pigeonVar_list[14] as! TlClassifierConfig
+    let impact = pigeonVar_list[15] as! TlImpactConfig
 
     return TlConfig(
       geo: geo,
@@ -966,7 +972,10 @@ struct TlConfig: Hashable {
       audit: audit,
       privacyZone: privacyZone,
       security: security,
-      attestation: attestation
+      attestation: attestation,
+      telematics: telematics,
+      classifier: classifier,
+      impact: impact
     )
   }
   func toList() -> [Any?] {
@@ -984,13 +993,16 @@ struct TlConfig: Hashable {
       privacyZone,
       security,
       attestation,
+      telematics,
+      classifier,
+      impact,
     ]
   }
   static func == (lhs: TlConfig, rhs: TlConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.geo, rhs.geo) && deepEqualsTraceletApi(lhs.app, rhs.app) && deepEqualsTraceletApi(lhs.android, rhs.android) && deepEqualsTraceletApi(lhs.ios, rhs.ios) && deepEqualsTraceletApi(lhs.http, rhs.http) && deepEqualsTraceletApi(lhs.logger, rhs.logger) && deepEqualsTraceletApi(lhs.motion, rhs.motion) && deepEqualsTraceletApi(lhs.geofence, rhs.geofence) && deepEqualsTraceletApi(lhs.persistence, rhs.persistence) && deepEqualsTraceletApi(lhs.audit, rhs.audit) && deepEqualsTraceletApi(lhs.privacyZone, rhs.privacyZone) && deepEqualsTraceletApi(lhs.security, rhs.security) && deepEqualsTraceletApi(lhs.attestation, rhs.attestation)
+    return deepEqualsTraceletApi(lhs.geo, rhs.geo) && deepEqualsTraceletApi(lhs.app, rhs.app) && deepEqualsTraceletApi(lhs.android, rhs.android) && deepEqualsTraceletApi(lhs.ios, rhs.ios) && deepEqualsTraceletApi(lhs.http, rhs.http) && deepEqualsTraceletApi(lhs.logger, rhs.logger) && deepEqualsTraceletApi(lhs.motion, rhs.motion) && deepEqualsTraceletApi(lhs.geofence, rhs.geofence) && deepEqualsTraceletApi(lhs.persistence, rhs.persistence) && deepEqualsTraceletApi(lhs.audit, rhs.audit) && deepEqualsTraceletApi(lhs.privacyZone, rhs.privacyZone) && deepEqualsTraceletApi(lhs.security, rhs.security) && deepEqualsTraceletApi(lhs.attestation, rhs.attestation) && deepEqualsTraceletApi(lhs.telematics, rhs.telematics) && deepEqualsTraceletApi(lhs.classifier, rhs.classifier) && deepEqualsTraceletApi(lhs.impact, rhs.impact)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1008,6 +1020,9 @@ struct TlConfig: Hashable {
     deepHashTraceletApi(value: privacyZone, hasher: &hasher)
     deepHashTraceletApi(value: security, hasher: &hasher)
     deepHashTraceletApi(value: attestation, hasher: &hasher)
+    deepHashTraceletApi(value: telematics, hasher: &hasher)
+    deepHashTraceletApi(value: classifier, hasher: &hasher)
+    deepHashTraceletApi(value: impact, hasher: &hasher)
   }
 }
 
@@ -1411,6 +1426,190 @@ struct TlAttestationConfig: Hashable {
     hasher.combine("TlAttestationConfig")
     deepHashTraceletApi(value: enabled, hasher: &hasher)
     deepHashTraceletApi(value: refreshInterval, hasher: &hasher)
+  }
+}
+
+/// Driving-behavior (telematics) event detection config. See `TelematicsEngine`.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlTelematicsConfig: Hashable {
+  var enableDrivingEvents: Bool
+  var harshBrakingG: Double
+  var harshAccelerationG: Double
+  var harshCorneringG: Double
+  var speedLimitKmh: Double
+  var speedingToleranceKmh: Double
+  var speedingMinDurationMs: Int64
+  var minSpeedForEventsKmh: Double
+  var eventDebounceMs: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlTelematicsConfig? {
+    let enableDrivingEvents = pigeonVar_list[0] as! Bool
+    let harshBrakingG = pigeonVar_list[1] as! Double
+    let harshAccelerationG = pigeonVar_list[2] as! Double
+    let harshCorneringG = pigeonVar_list[3] as! Double
+    let speedLimitKmh = pigeonVar_list[4] as! Double
+    let speedingToleranceKmh = pigeonVar_list[5] as! Double
+    let speedingMinDurationMs = pigeonVar_list[6] as! Int64
+    let minSpeedForEventsKmh = pigeonVar_list[7] as! Double
+    let eventDebounceMs = pigeonVar_list[8] as! Int64
+
+    return TlTelematicsConfig(
+      enableDrivingEvents: enableDrivingEvents,
+      harshBrakingG: harshBrakingG,
+      harshAccelerationG: harshAccelerationG,
+      harshCorneringG: harshCorneringG,
+      speedLimitKmh: speedLimitKmh,
+      speedingToleranceKmh: speedingToleranceKmh,
+      speedingMinDurationMs: speedingMinDurationMs,
+      minSpeedForEventsKmh: minSpeedForEventsKmh,
+      eventDebounceMs: eventDebounceMs
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enableDrivingEvents,
+      harshBrakingG,
+      harshAccelerationG,
+      harshCorneringG,
+      speedLimitKmh,
+      speedingToleranceKmh,
+      speedingMinDurationMs,
+      minSpeedForEventsKmh,
+      eventDebounceMs,
+    ]
+  }
+  static func == (lhs: TlTelematicsConfig, rhs: TlTelematicsConfig) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.enableDrivingEvents, rhs.enableDrivingEvents) && deepEqualsTraceletApi(lhs.harshBrakingG, rhs.harshBrakingG) && deepEqualsTraceletApi(lhs.harshAccelerationG, rhs.harshAccelerationG) && deepEqualsTraceletApi(lhs.harshCorneringG, rhs.harshCorneringG) && deepEqualsTraceletApi(lhs.speedLimitKmh, rhs.speedLimitKmh) && deepEqualsTraceletApi(lhs.speedingToleranceKmh, rhs.speedingToleranceKmh) && deepEqualsTraceletApi(lhs.speedingMinDurationMs, rhs.speedingMinDurationMs) && deepEqualsTraceletApi(lhs.minSpeedForEventsKmh, rhs.minSpeedForEventsKmh) && deepEqualsTraceletApi(lhs.eventDebounceMs, rhs.eventDebounceMs)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlTelematicsConfig")
+    deepHashTraceletApi(value: enableDrivingEvents, hasher: &hasher)
+    deepHashTraceletApi(value: harshBrakingG, hasher: &hasher)
+    deepHashTraceletApi(value: harshAccelerationG, hasher: &hasher)
+    deepHashTraceletApi(value: harshCorneringG, hasher: &hasher)
+    deepHashTraceletApi(value: speedLimitKmh, hasher: &hasher)
+    deepHashTraceletApi(value: speedingToleranceKmh, hasher: &hasher)
+    deepHashTraceletApi(value: speedingMinDurationMs, hasher: &hasher)
+    deepHashTraceletApi(value: minSpeedForEventsKmh, hasher: &hasher)
+    deepHashTraceletApi(value: eventDebounceMs, hasher: &hasher)
+  }
+}
+
+/// On-device transport-mode classifier config. See `TransportModeClassifier`.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlClassifierConfig: Hashable {
+  var enableFusedClassifier: Bool
+  var fusedClassifierAuthoritative: Bool
+  var modeSwitchDwellMs: Int64
+  var minModeConfidence: Double
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlClassifierConfig? {
+    let enableFusedClassifier = pigeonVar_list[0] as! Bool
+    let fusedClassifierAuthoritative = pigeonVar_list[1] as! Bool
+    let modeSwitchDwellMs = pigeonVar_list[2] as! Int64
+    let minModeConfidence = pigeonVar_list[3] as! Double
+
+    return TlClassifierConfig(
+      enableFusedClassifier: enableFusedClassifier,
+      fusedClassifierAuthoritative: fusedClassifierAuthoritative,
+      modeSwitchDwellMs: modeSwitchDwellMs,
+      minModeConfidence: minModeConfidence
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enableFusedClassifier,
+      fusedClassifierAuthoritative,
+      modeSwitchDwellMs,
+      minModeConfidence,
+    ]
+  }
+  static func == (lhs: TlClassifierConfig, rhs: TlClassifierConfig) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.enableFusedClassifier, rhs.enableFusedClassifier) && deepEqualsTraceletApi(lhs.fusedClassifierAuthoritative, rhs.fusedClassifierAuthoritative) && deepEqualsTraceletApi(lhs.modeSwitchDwellMs, rhs.modeSwitchDwellMs) && deepEqualsTraceletApi(lhs.minModeConfidence, rhs.minModeConfidence)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlClassifierConfig")
+    deepHashTraceletApi(value: enableFusedClassifier, hasher: &hasher)
+    deepHashTraceletApi(value: fusedClassifierAuthoritative, hasher: &hasher)
+    deepHashTraceletApi(value: modeSwitchDwellMs, hasher: &hasher)
+    deepHashTraceletApi(value: minModeConfidence, hasher: &hasher)
+  }
+}
+
+/// Crash & fall detection config. See `ImpactDetector`.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlImpactConfig: Hashable {
+  var enableCrashDetection: Bool
+  var enableFallDetection: Bool
+  var crashGThreshold: Double
+  var crashMinSpeedKmh: Double
+  var fallGThreshold: Double
+  var confirmWindowMs: Int64
+  var minImpactConfidence: Double
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlImpactConfig? {
+    let enableCrashDetection = pigeonVar_list[0] as! Bool
+    let enableFallDetection = pigeonVar_list[1] as! Bool
+    let crashGThreshold = pigeonVar_list[2] as! Double
+    let crashMinSpeedKmh = pigeonVar_list[3] as! Double
+    let fallGThreshold = pigeonVar_list[4] as! Double
+    let confirmWindowMs = pigeonVar_list[5] as! Int64
+    let minImpactConfidence = pigeonVar_list[6] as! Double
+
+    return TlImpactConfig(
+      enableCrashDetection: enableCrashDetection,
+      enableFallDetection: enableFallDetection,
+      crashGThreshold: crashGThreshold,
+      crashMinSpeedKmh: crashMinSpeedKmh,
+      fallGThreshold: fallGThreshold,
+      confirmWindowMs: confirmWindowMs,
+      minImpactConfidence: minImpactConfidence
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enableCrashDetection,
+      enableFallDetection,
+      crashGThreshold,
+      crashMinSpeedKmh,
+      fallGThreshold,
+      confirmWindowMs,
+      minImpactConfidence,
+    ]
+  }
+  static func == (lhs: TlImpactConfig, rhs: TlImpactConfig) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.enableCrashDetection, rhs.enableCrashDetection) && deepEqualsTraceletApi(lhs.enableFallDetection, rhs.enableFallDetection) && deepEqualsTraceletApi(lhs.crashGThreshold, rhs.crashGThreshold) && deepEqualsTraceletApi(lhs.crashMinSpeedKmh, rhs.crashMinSpeedKmh) && deepEqualsTraceletApi(lhs.fallGThreshold, rhs.fallGThreshold) && deepEqualsTraceletApi(lhs.confirmWindowMs, rhs.confirmWindowMs) && deepEqualsTraceletApi(lhs.minImpactConfidence, rhs.minImpactConfidence)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlImpactConfig")
+    deepHashTraceletApi(value: enableCrashDetection, hasher: &hasher)
+    deepHashTraceletApi(value: enableFallDetection, hasher: &hasher)
+    deepHashTraceletApi(value: crashGThreshold, hasher: &hasher)
+    deepHashTraceletApi(value: crashMinSpeedKmh, hasher: &hasher)
+    deepHashTraceletApi(value: fallGThreshold, hasher: &hasher)
+    deepHashTraceletApi(value: confirmWindowMs, hasher: &hasher)
+    deepHashTraceletApi(value: minImpactConfidence, hasher: &hasher)
   }
 }
 
@@ -2390,38 +2589,44 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
     case 163:
       return TlAttestationConfig.fromList(self.readValue() as! [Any?])
     case 164:
-      return TlCoords.fromList(self.readValue() as! [Any?])
+      return TlTelematicsConfig.fromList(self.readValue() as! [Any?])
     case 165:
-      return TlBattery.fromList(self.readValue() as! [Any?])
+      return TlClassifierConfig.fromList(self.readValue() as! [Any?])
     case 166:
-      return TlAddress.fromList(self.readValue() as! [Any?])
+      return TlImpactConfig.fromList(self.readValue() as! [Any?])
     case 167:
-      return TlLocation.fromList(self.readValue() as! [Any?])
+      return TlCoords.fromList(self.readValue() as! [Any?])
     case 168:
-      return TlActivity.fromList(self.readValue() as! [Any?])
+      return TlBattery.fromList(self.readValue() as! [Any?])
     case 169:
-      return TlState.fromList(self.readValue() as! [Any?])
+      return TlAddress.fromList(self.readValue() as! [Any?])
     case 170:
-      return TlGeofence.fromList(self.readValue() as! [Any?])
+      return TlLocation.fromList(self.readValue() as! [Any?])
     case 171:
-      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+      return TlActivity.fromList(self.readValue() as! [Any?])
     case 172:
-      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+      return TlState.fromList(self.readValue() as! [Any?])
     case 173:
-      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofence.fromList(self.readValue() as! [Any?])
     case 174:
-      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
     case 175:
-      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlHttpEvent.fromList(self.readValue() as! [Any?])
     case 176:
-      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
     case 177:
-      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
     case 178:
-      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
+      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
     case 179:
-      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
     case 180:
+      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+    case 181:
+      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
+    case 182:
+      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+    case 183:
       return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -2536,56 +2741,65 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlAttestationConfig {
       super.writeByte(163)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCoords {
+    } else if let value = value as? TlTelematicsConfig {
       super.writeByte(164)
       super.writeValue(value.toList())
-    } else if let value = value as? TlBattery {
+    } else if let value = value as? TlClassifierConfig {
       super.writeByte(165)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAddress {
+    } else if let value = value as? TlImpactConfig {
       super.writeByte(166)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLocation {
+    } else if let value = value as? TlCoords {
       super.writeByte(167)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivity {
+    } else if let value = value as? TlBattery {
       super.writeByte(168)
       super.writeValue(value.toList())
-    } else if let value = value as? TlState {
+    } else if let value = value as? TlAddress {
       super.writeByte(169)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofence {
+    } else if let value = value as? TlLocation {
       super.writeByte(170)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceEvent {
+    } else if let value = value as? TlActivity {
       super.writeByte(171)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpEvent {
+    } else if let value = value as? TlState {
       super.writeByte(172)
       super.writeValue(value.toList())
-    } else if let value = value as? TlProviderChangeEvent {
+    } else if let value = value as? TlGeofence {
       super.writeByte(173)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCurrentPositionOptions {
+    } else if let value = value as? TlGeofenceEvent {
       super.writeByte(174)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivityChangeEvent {
+    } else if let value = value as? TlHttpEvent {
       super.writeByte(175)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofencesChangeEvent {
+    } else if let value = value as? TlProviderChangeEvent {
       super.writeByte(176)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHeartbeatEvent {
+    } else if let value = value as? TlCurrentPositionOptions {
       super.writeByte(177)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSpeedMotionEvent {
+    } else if let value = value as? TlActivityChangeEvent {
       super.writeByte(178)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuthorizationEvent {
+    } else if let value = value as? TlGeofencesChangeEvent {
       super.writeByte(179)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConnectivityChangeEvent {
+    } else if let value = value as? TlHeartbeatEvent {
       super.writeByte(180)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlSpeedMotionEvent {
+      super.writeByte(181)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlAuthorizationEvent {
+      super.writeByte(182)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlConnectivityChangeEvent {
+      super.writeByte(183)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

@@ -63,6 +63,7 @@ export 'src/models/authorization_event.dart';
 export 'src/models/compliance_report.dart';
 export 'src/models/config.dart';
 export 'src/models/connectivity_change_event.dart';
+export 'src/models/driving_config.dart';
 export 'src/models/device_info.dart';
 export 'src/models/geofence.dart';
 export 'src/models/geofence_event.dart';

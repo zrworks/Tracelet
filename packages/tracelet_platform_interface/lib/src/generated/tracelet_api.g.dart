@@ -2689,6 +2689,204 @@ class TlConnectivityChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+class TlDrivingEvent {
+  TlDrivingEvent({
+    required this.kind,
+    required this.severity,
+    required this.speed,
+    required this.value,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+  });
+
+  String kind;
+
+  double severity;
+
+  double speed;
+
+  double value;
+
+  double latitude;
+
+  double longitude;
+
+  int timestampMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      kind,
+      severity,
+      speed,
+      value,
+      latitude,
+      longitude,
+      timestampMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static TlDrivingEvent decode(Object result) {
+    result as List<Object?>;
+    return TlDrivingEvent(
+      kind: result[0]! as String,
+      severity: result[1]! as double,
+      speed: result[2]! as double,
+      value: result[3]! as double,
+      latitude: result[4]! as double,
+      longitude: result[5]! as double,
+      timestampMs: result[6]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlDrivingEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(kind, other.kind) && _deepEquals(severity, other.severity) && _deepEquals(speed, other.speed) && _deepEquals(value, other.value) && _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(timestampMs, other.timestampMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+class TlImpactEvent {
+  TlImpactEvent({
+    required this.kind,
+    required this.id,
+    required this.confidence,
+    required this.peakG,
+    required this.speedBefore,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+    required this.confirmDeadlineMs,
+  });
+
+  String kind;
+
+  int id;
+
+  double confidence;
+
+  double peakG;
+
+  double speedBefore;
+
+  double latitude;
+
+  double longitude;
+
+  int timestampMs;
+
+  int confirmDeadlineMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      kind,
+      id,
+      confidence,
+      peakG,
+      speedBefore,
+      latitude,
+      longitude,
+      timestampMs,
+      confirmDeadlineMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static TlImpactEvent decode(Object result) {
+    result as List<Object?>;
+    return TlImpactEvent(
+      kind: result[0]! as String,
+      id: result[1]! as int,
+      confidence: result[2]! as double,
+      peakG: result[3]! as double,
+      speedBefore: result[4]! as double,
+      latitude: result[5]! as double,
+      longitude: result[6]! as double,
+      timestampMs: result[7]! as int,
+      confirmDeadlineMs: result[8]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlImpactEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(kind, other.kind) && _deepEquals(id, other.id) && _deepEquals(confidence, other.confidence) && _deepEquals(peakG, other.peakG) && _deepEquals(speedBefore, other.speedBefore) && _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(timestampMs, other.timestampMs) && _deepEquals(confirmDeadlineMs, other.confirmDeadlineMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A fused transport-mode change.
+class TlModeChangeEvent {
+  TlModeChangeEvent({
+    required this.mode,
+    required this.confidence,
+  });
+
+  String mode;
+
+  double confidence;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      mode,
+      confidence,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static TlModeChangeEvent decode(Object result) {
+    result as List<Object?>;
+    return TlModeChangeEvent(
+      mode: result[0]! as String,
+      confidence: result[1]! as double,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlModeChangeEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(mode, other.mode) && _deepEquals(confidence, other.confidence);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -2862,6 +3060,15 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is TlConnectivityChangeEvent) {
       buffer.putUint8(183);
       writeValue(buffer, value.encode());
+    }    else if (value is TlDrivingEvent) {
+      buffer.putUint8(184);
+      writeValue(buffer, value.encode());
+    }    else if (value is TlImpactEvent) {
+      buffer.putUint8(185);
+      writeValue(buffer, value.encode());
+    }    else if (value is TlModeChangeEvent) {
+      buffer.putUint8(186);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -2999,6 +3206,12 @@ class _PigeonCodec extends StandardMessageCodec {
         return TlAuthorizationEvent.decode(readValue(buffer)!);
       case 183:
         return TlConnectivityChangeEvent.decode(readValue(buffer)!);
+      case 184:
+        return TlDrivingEvent.decode(readValue(buffer)!);
+      case 185:
+        return TlImpactEvent.decode(readValue(buffer)!);
+      case 186:
+        return TlModeChangeEvent.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -3272,6 +3485,46 @@ class TraceletHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[isMoving]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  Future<bool> confirmImpact(int id) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[id]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  Future<bool> cancelImpact(int id) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[id]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
@@ -4549,6 +4802,12 @@ abstract class TraceletEventApi {
 
   void onWatchPosition(TlLocation location);
 
+  void onDrivingEvent(TlDrivingEvent event);
+
+  void onImpact(TlImpactEvent event);
+
+  void onModeChange(TlModeChangeEvent event);
+
   static void setUp(TraceletEventApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
@@ -4878,6 +5137,69 @@ abstract class TraceletEventApi {
           final TlLocation arg_location = args[0]! as TlLocation;
           try {
             api.onWatchPosition(arg_location);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlDrivingEvent arg_event = args[0]! as TlDrivingEvent;
+          try {
+            api.onDrivingEvent(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlImpactEvent arg_event = args[0]! as TlImpactEvent;
+          try {
+            api.onImpact(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlModeChangeEvent arg_event = args[0]! as TlModeChangeEvent;
+          try {
+            api.onModeChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

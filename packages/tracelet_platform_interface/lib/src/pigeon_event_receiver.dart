@@ -36,6 +36,9 @@ class PigeonEventReceiver implements TraceletEventApi {
   final _notificationActionCtrl = StreamController<String>.broadcast();
   final _authorizationCtrl = StreamController<TlAuthorizationEvent>.broadcast();
   final _watchPositionCtrl = StreamController<TlLocation>.broadcast();
+  final _drivingEventCtrl = StreamController<TlDrivingEvent>.broadcast();
+  final _impactCtrl = StreamController<TlImpactEvent>.broadcast();
+  final _modeChangeCtrl = StreamController<TlModeChangeEvent>.broadcast();
 
   // ---------------------------------------------------------------------------
   // Public streams
@@ -98,6 +101,15 @@ class PigeonEventReceiver implements TraceletEventApi {
   /// Stream of high-frequency locations from `watchPosition`.
   Stream<TlLocation> get watchPositionEvents => _watchPositionCtrl.stream;
 
+  /// Stream of driving-behavior events (harsh brake/accel/cornering/speeding).
+  Stream<TlDrivingEvent> get drivingEvents => _drivingEventCtrl.stream;
+
+  /// Stream of crash/fall impact events.
+  Stream<TlImpactEvent> get impactEvents => _impactCtrl.stream;
+
+  /// Stream of fused transport-mode changes.
+  Stream<TlModeChangeEvent> get modeChangeEvents => _modeChangeCtrl.stream;
+
   // ---------------------------------------------------------------------------
   // TraceletEventApi implementation (called by native via Pigeon)
   // ---------------------------------------------------------------------------
@@ -154,6 +166,15 @@ class PigeonEventReceiver implements TraceletEventApi {
   @override
   void onWatchPosition(TlLocation location) => _watchPositionCtrl.add(location);
 
+  @override
+  void onDrivingEvent(TlDrivingEvent event) => _drivingEventCtrl.add(event);
+
+  @override
+  void onImpact(TlImpactEvent event) => _impactCtrl.add(event);
+
+  @override
+  void onModeChange(TlModeChangeEvent event) => _modeChangeCtrl.add(event);
+
   /// Called by native when the speed-based motion state machine transitions.
   ///
   /// Forwards the typed [TlSpeedMotionEvent] (state, previousState,
@@ -180,5 +201,8 @@ class PigeonEventReceiver implements TraceletEventApi {
     _authorizationCtrl.close();
     _watchPositionCtrl.close();
     _motionModeChangeCtrl.close();
+    _drivingEventCtrl.close();
+    _impactCtrl.close();
+    _modeChangeCtrl.close();
   }
 }

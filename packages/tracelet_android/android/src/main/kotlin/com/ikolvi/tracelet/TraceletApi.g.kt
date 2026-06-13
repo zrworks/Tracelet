@@ -2484,6 +2484,180 @@ data class TlConnectivityChangeEvent (
     return result
   }
 }
+
+/**
+ * A driving-behavior event (harsh brake/accel/cornering/speeding).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class TlDrivingEvent (
+  val kind: String,
+  val severity: Double,
+  val speed: Double,
+  val value: Double,
+  val latitude: Double,
+  val longitude: Double,
+  val timestampMs: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlDrivingEvent {
+      val kind = pigeonVar_list[0] as String
+      val severity = pigeonVar_list[1] as Double
+      val speed = pigeonVar_list[2] as Double
+      val value = pigeonVar_list[3] as Double
+      val latitude = pigeonVar_list[4] as Double
+      val longitude = pigeonVar_list[5] as Double
+      val timestampMs = pigeonVar_list[6] as Long
+      return TlDrivingEvent(kind, severity, speed, value, latitude, longitude, timestampMs)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      kind,
+      severity,
+      speed,
+      value,
+      latitude,
+      longitude,
+      timestampMs,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlDrivingEvent
+    return TraceletApiPigeonUtils.deepEquals(this.kind, other.kind) && TraceletApiPigeonUtils.deepEquals(this.severity, other.severity) && TraceletApiPigeonUtils.deepEquals(this.speed, other.speed) && TraceletApiPigeonUtils.deepEquals(this.value, other.value) && TraceletApiPigeonUtils.deepEquals(this.latitude, other.latitude) && TraceletApiPigeonUtils.deepEquals(this.longitude, other.longitude) && TraceletApiPigeonUtils.deepEquals(this.timestampMs, other.timestampMs)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.kind)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.severity)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.speed)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.value)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.latitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.longitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.timestampMs)
+    return result
+  }
+}
+
+/**
+ * A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class TlImpactEvent (
+  val kind: String,
+  val id: Long,
+  val confidence: Double,
+  val peakG: Double,
+  val speedBefore: Double,
+  val latitude: Double,
+  val longitude: Double,
+  val timestampMs: Long,
+  val confirmDeadlineMs: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlImpactEvent {
+      val kind = pigeonVar_list[0] as String
+      val id = pigeonVar_list[1] as Long
+      val confidence = pigeonVar_list[2] as Double
+      val peakG = pigeonVar_list[3] as Double
+      val speedBefore = pigeonVar_list[4] as Double
+      val latitude = pigeonVar_list[5] as Double
+      val longitude = pigeonVar_list[6] as Double
+      val timestampMs = pigeonVar_list[7] as Long
+      val confirmDeadlineMs = pigeonVar_list[8] as Long
+      return TlImpactEvent(kind, id, confidence, peakG, speedBefore, latitude, longitude, timestampMs, confirmDeadlineMs)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      kind,
+      id,
+      confidence,
+      peakG,
+      speedBefore,
+      latitude,
+      longitude,
+      timestampMs,
+      confirmDeadlineMs,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlImpactEvent
+    return TraceletApiPigeonUtils.deepEquals(this.kind, other.kind) && TraceletApiPigeonUtils.deepEquals(this.id, other.id) && TraceletApiPigeonUtils.deepEquals(this.confidence, other.confidence) && TraceletApiPigeonUtils.deepEquals(this.peakG, other.peakG) && TraceletApiPigeonUtils.deepEquals(this.speedBefore, other.speedBefore) && TraceletApiPigeonUtils.deepEquals(this.latitude, other.latitude) && TraceletApiPigeonUtils.deepEquals(this.longitude, other.longitude) && TraceletApiPigeonUtils.deepEquals(this.timestampMs, other.timestampMs) && TraceletApiPigeonUtils.deepEquals(this.confirmDeadlineMs, other.confirmDeadlineMs)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.kind)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.id)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.confidence)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.peakG)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.speedBefore)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.latitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.longitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.timestampMs)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.confirmDeadlineMs)
+    return result
+  }
+}
+
+/**
+ * A fused transport-mode change.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class TlModeChangeEvent (
+  val mode: String,
+  val confidence: Double
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlModeChangeEvent {
+      val mode = pigeonVar_list[0] as String
+      val confidence = pigeonVar_list[1] as Double
+      return TlModeChangeEvent(mode, confidence)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      mode,
+      confidence,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlModeChangeEvent
+    return TraceletApiPigeonUtils.deepEquals(this.mode, other.mode) && TraceletApiPigeonUtils.deepEquals(this.confidence, other.confidence)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.mode)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.confidence)
+    return result
+  }
+}
 private open class TraceletApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -2762,6 +2936,21 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
           TlConnectivityChangeEvent.fromList(it)
         }
       }
+      184.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlDrivingEvent.fromList(it)
+        }
+      }
+      185.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlImpactEvent.fromList(it)
+        }
+      }
+      186.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlModeChangeEvent.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -2987,6 +3176,18 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(183)
         writeValue(stream, value.toList())
       }
+      is TlDrivingEvent -> {
+        stream.write(184)
+        writeValue(stream, value.toList())
+      }
+      is TlImpactEvent -> {
+        stream.write(185)
+        writeValue(stream, value.toList())
+      }
+      is TlModeChangeEvent -> {
+        stream.write(186)
+        writeValue(stream, value.toList())
+      }
       else -> super.writeValue(stream, value)
     }
   }
@@ -3009,6 +3210,10 @@ interface TraceletHostApi {
   fun watchPosition(options: TlCurrentPositionOptions, callback: (Result<Long>) -> Unit)
   fun stopWatchPosition(watchId: Long, callback: (Result<Boolean>) -> Unit)
   fun changePace(isMoving: Boolean, callback: (Result<Boolean>) -> Unit)
+  /** Confirms a pending impact candidate (by [id]) as a real emergency now. */
+  fun confirmImpact(id: Long): Boolean
+  /** Cancels a pending impact candidate (by [id]) — no confirmed event fires. */
+  fun cancelImpact(id: Long): Boolean
   fun getOdometer(callback: (Result<Double>) -> Unit)
   fun setOdometer(value: Double, callback: (Result<TlLocation>) -> Unit)
   fun addGeofence(geofence: TlGeofence, callback: (Result<Boolean>) -> Unit)
@@ -3342,6 +3547,40 @@ interface TraceletHostApi {
                 reply.reply(TraceletApiPigeonUtils.wrapResult(data))
               }
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val idArg = args[0] as Long
+            val wrapped: List<Any?> = try {
+              listOf(api.confirmImpact(idArg))
+            } catch (exception: Throwable) {
+              TraceletApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val idArg = args[0] as Long
+            val wrapped: List<Any?> = try {
+              listOf(api.cancelImpact(idArg))
+            } catch (exception: Throwable) {
+              TraceletApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)
@@ -4840,6 +5079,57 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
     val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onWatchPosition$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(locationArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(TraceletApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+  fun onDrivingEvent(eventArg: TlDrivingEvent, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(eventArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(TraceletApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+  fun onImpact(eventArg: TlImpactEvent, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(eventArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(TraceletApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+  fun onModeChange(eventArg: TlModeChangeEvent, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(eventArg)) {
       if (it is List<*>) {
         if (it.size > 1) {
           callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))

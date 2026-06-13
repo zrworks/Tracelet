@@ -127,6 +127,19 @@ class TraceletSdk private constructor(private val context: Context) {
     private var batteryBudgetEngine: BatteryBudgetEngine? = null
     private var batteryBudgetRunnable: Runnable? = null
 
+    // 3.3.0 behavior engines (opt-in, default off)
+    private var telematicsEngine: uniffi.tracelet_core.TelematicsEngine? = null
+    private var transportClassifier: uniffi.tracelet_core.TransportModeClassifier? = null
+    private var impactDetector: uniffi.tracelet_core.ImpactDetector? = null
+    private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
+    private var accelWindowRunnable: Runnable? = null
+    private var impactConfirmRunnable: Runnable? = null
+    @Volatile private var lastSpeedMps: Double = 0.0
+    @Volatile private var lastLat: Double = 0.0
+    @Volatile private var lastLng: Double = 0.0
+    private val accelWindowMs = 1000L
+    private val impactConfirmPollMs = 1000L
+
     var activity: Activity? = null
     var isReady: Boolean = false
         private set
@@ -285,6 +298,7 @@ class TraceletSdk private constructor(private val context: Context) {
         locationEngine.registerSink(object : com.ikolvi.tracelet.sdk.location.LocationDataSink {
             override fun insertLocation(location: Map<String, Any?>) {
                 this@TraceletSdk.insertLocation(location)
+                processTelematics(location)
             }
         })
 
@@ -312,6 +326,13 @@ class TraceletSdk private constructor(private val context: Context) {
         // no motion-state transition occurs (#155).
         motionDetector.onActivityChanged = { type, confidence ->
             locationEngine.setCurrentActivity(type, confidence)
+        }
+        // 3.3.0: feed accelerometer samples (g) to the classifier/impact window
+        // keystone — only buffers while a consumer engine is active.
+        motionDetector.onAccelSample = { magnitudeG ->
+            if (transportClassifier != null || impactDetector != null) {
+                accelBuffer.add(magnitudeG)
+            }
         }
         motionDetector.onStopRequested = {
             mainHandler.post {
@@ -566,6 +587,8 @@ class TraceletSdk private constructor(private val context: Context) {
             batteryBudgetEngine = null
         }
 
+        initBehaviorEngines()
+
         isReady = true
         syncConfigToRustFlat()
         checkSyncProvider()
@@ -749,6 +772,7 @@ class TraceletSdk private constructor(private val context: Context) {
         startHeartbeat()
         startStopAfterElapsedTimer()
         startBatteryBudgetSampling()
+        startBehaviorSampling()
 
         eventSender.sendEnabledChange(true)
         logger.info("start() — tracking started")
@@ -775,6 +799,8 @@ class TraceletSdk private constructor(private val context: Context) {
         if (::tripManager.isInitialized) tripManager.reset()
         stopBatteryBudgetSampling()
         batteryBudgetEngine?.reset()
+        stopBehaviorSampling()
+        telematicsEngine?.reset()
 
         PeriodicLocationWorker.cancel(context)
         PeriodicLocationWorker.eventSender = null
@@ -2011,6 +2037,195 @@ class TraceletSdk private constructor(private val context: Context) {
         syncIntervalRunnable?.let { mainHandler.removeCallbacks(it) }
         syncIntervalRunnable = null
     }
+
+    // =========================================================================
+    // 3.3.0 behavior engines: telematics, transport-mode classifier, impact
+    // =========================================================================
+
+    /** Instantiates the opt-in behavior engines from config. */
+    private fun initBehaviorEngines() {
+        telematicsEngine = if (configManager.getEnableDrivingEvents()) {
+            uniffi.tracelet_core.TelematicsEngine(
+                uniffi.tracelet_core.TelematicsConfig(
+                    harshBrakingG = configManager.getHarshBrakingG(),
+                    harshAccelerationG = configManager.getHarshAccelerationG(),
+                    harshCorneringG = configManager.getHarshCorneringG(),
+                    speedLimitKmh = configManager.getSpeedLimitKmh(),
+                    speedingToleranceKmh = configManager.getSpeedingToleranceKmh(),
+                    speedingMinDurationMs = configManager.getSpeedingMinDurationMs(),
+                    minSpeedForEventsKmh = configManager.getMinSpeedForEventsKmh(),
+                    eventDebounceMs = configManager.getEventDebounceMs(),
+                ),
+            )
+        } else {
+            null
+        }
+
+        transportClassifier = if (configManager.getEnableFusedClassifier()) {
+            uniffi.tracelet_core.TransportModeClassifier(
+                uniffi.tracelet_core.ClassifierConfig(
+                    modeSwitchDwellMs = configManager.getModeSwitchDwellMs(),
+                    minConfidence = configManager.getMinModeConfidence(),
+                ),
+            )
+        } else {
+            null
+        }
+
+        impactDetector = if (configManager.getEnableCrashDetection() ||
+            configManager.getEnableFallDetection()
+        ) {
+            uniffi.tracelet_core.ImpactDetector(
+                uniffi.tracelet_core.ImpactConfig(
+                    enableCrash = configManager.getEnableCrashDetection(),
+                    enableFall = configManager.getEnableFallDetection(),
+                    crashGThreshold = configManager.getCrashGThreshold(),
+                    crashMinSpeedKmh = configManager.getCrashMinSpeedKmh(),
+                    fallGThreshold = configManager.getFallGThreshold(),
+                    confirmWindowMs = configManager.getConfirmWindowMs(),
+                    minConfidence = configManager.getMinImpactConfidence(),
+                ),
+            )
+        } else {
+            null
+        }
+    }
+
+    /** Feeds an accepted location fix to the telematics engine and emits events. */
+    private fun processTelematics(location: Map<String, Any?>) {
+        val engine = telematicsEngine ?: return
+        @Suppress("UNCHECKED_CAST")
+        val coords = location["coords"] as? Map<String, Any?> ?: return
+        val speed = (coords["speed"] as? Number)?.toDouble() ?: 0.0
+        val heading = (coords["heading"] as? Number)?.toDouble() ?: -1.0
+        val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0
+        val lng = (coords["longitude"] as? Number)?.toDouble() ?: 0.0
+        lastSpeedMps = speed
+        lastLat = lat
+        lastLng = lng
+        val events = try {
+            engine.processFix(speed, heading, lat, lng, System.currentTimeMillis())
+        } catch (e: Exception) {
+            logger.error("telematics processFix failed: ${e.message}")
+            return
+        }
+        for (e in events) {
+            eventSender.sendDrivingEvent(
+                mapOf(
+                    "kind" to e.kind,
+                    "severity" to e.severity,
+                    "speed" to e.speed,
+                    "value" to e.value,
+                    "latitude" to e.latitude,
+                    "longitude" to e.longitude,
+                    "timestampMs" to e.timestampMs,
+                ),
+            )
+        }
+    }
+
+    /** Starts the ~1 Hz accel-window loop (classifier + impact) if a consumer is active. */
+    private fun startBehaviorSampling() {
+        stopBehaviorSampling()
+        if (transportClassifier == null && impactDetector == null) return
+
+        accelBuffer.clear()
+        accelWindowRunnable = object : Runnable {
+            override fun run() {
+                if (!stateManager.enabled) return
+                processAccelWindow()
+                mainHandler.postDelayed(this, accelWindowMs)
+            }
+        }
+        mainHandler.postDelayed(accelWindowRunnable!!, accelWindowMs)
+
+        if (impactDetector != null) {
+            impactConfirmRunnable = object : Runnable {
+                override fun run() {
+                    if (!stateManager.enabled) return
+                    impactDetector?.checkConfirmations(System.currentTimeMillis())?.forEach(::emitImpact)
+                    mainHandler.postDelayed(this, impactConfirmPollMs)
+                }
+            }
+            mainHandler.postDelayed(impactConfirmRunnable!!, impactConfirmPollMs)
+        }
+    }
+
+    private fun stopBehaviorSampling() {
+        accelWindowRunnable?.let { mainHandler.removeCallbacks(it) }
+        accelWindowRunnable = null
+        impactConfirmRunnable?.let { mainHandler.removeCallbacks(it) }
+        impactConfirmRunnable = null
+        accelBuffer.clear()
+    }
+
+    /** Snapshots the accel buffer into one window and feeds classifier + impact. */
+    private fun processAccelWindow() {
+        val samples: List<Double>
+        synchronized(accelBuffer) {
+            if (accelBuffer.isEmpty()) return
+            samples = ArrayList(accelBuffer)
+            accelBuffer.clear()
+        }
+        val now = System.currentTimeMillis()
+        val window = try {
+            uniffi.tracelet_core.computeAccelWindow(samples, accelWindowMs)
+        } catch (e: Exception) {
+            logger.error("computeAccelWindow failed: ${e.message}")
+            return
+        }
+
+        transportClassifier?.let { classifier ->
+            val result = classifier.classify(window, lastSpeedMps, now)
+            if (result.changed) {
+                eventSender.sendModeChange(
+                    mapOf(
+                        "mode" to result.mode.name.lowercase(),
+                        "confidence" to result.confidence,
+                    ),
+                )
+            }
+        }
+
+        impactDetector?.let { detector ->
+            val onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
+            val candidate = detector.onImpactWindow(
+                window.peakG,
+                lastSpeedMps,
+                onFoot,
+                lastLat,
+                lastLng,
+                now,
+            )
+            if (candidate != null) emitImpact(candidate)
+        }
+    }
+
+    private fun emitImpact(e: uniffi.tracelet_core.ImpactEvent) {
+        eventSender.sendImpact(
+            mapOf(
+                "kind" to e.kind,
+                "id" to e.id,
+                "confidence" to e.confidence,
+                "peakG" to e.peakG,
+                "speedBefore" to e.speedBefore,
+                "latitude" to e.latitude,
+                "longitude" to e.longitude,
+                "timestampMs" to e.timestampMs,
+                "confirmDeadlineMs" to e.confirmDeadlineMs,
+            ),
+        )
+    }
+
+    /** Confirms a pending impact candidate (called from the Pigeon host API). */
+    fun confirmImpact(id: Long): Boolean {
+        val confirmed = impactDetector?.confirm(id, System.currentTimeMillis()) ?: return false
+        emitImpact(confirmed)
+        return true
+    }
+
+    /** Cancels a pending impact candidate (called from the Pigeon host API). */
+    fun cancelImpact(id: Long): Boolean = impactDetector?.cancel(id) ?: false
 
     private fun startBatteryBudgetSampling() {
         stopBatteryBudgetSampling()

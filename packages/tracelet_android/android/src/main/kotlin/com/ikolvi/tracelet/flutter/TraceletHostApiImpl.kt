@@ -480,6 +480,12 @@ class TraceletHostApiImpl(
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
+    override fun confirmImpact(id: Long): Boolean =
+        if (sdk.isReady) sdk.confirmImpact(id) else false
+
+    override fun cancelImpact(id: Long): Boolean =
+        if (sdk.isReady) sdk.cancelImpact(id) else false
+
     override fun getOdometer(callback: (Result<Double>) -> Unit) {
         try {
             callback(Result.success(sdk.getOdometer()))

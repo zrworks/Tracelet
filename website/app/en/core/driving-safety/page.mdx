@@ -171,7 +171,7 @@ Tracelet.onImpact((event) async {
 |---|---|---|
 | `enableCrashDetection` | `false` | Vehicle crash detection |
 | `enableFallDetection` | `false` | Personal fall (best-effort — more false alarms) |
-| `crashGThreshold` | `3.0` | Impact strength (g) to count as a crash |
+| `crashGThreshold` | `2.0` | Impact strength (g) to count as a crash. Lowered from 3.0 based on a large field-data study (3.0 g missed ~half of real crashes); favours recall since the cancel-countdown catches false alarms. Tune up if you see too many prompts. |
 | `crashMinSpeedKmh` | `25` | Must have been moving this fast (corroboration) |
 | `confirmWindowMs` | `15000` | Cancel countdown length |
 | `minImpactConfidence` | `0.6` | Suppress low-confidence candidates |

@@ -348,7 +348,7 @@ public final class ConfigManager {
 
     public func getEnableCrashDetection() -> Bool { cache["enableCrashDetection"] as? Bool ?? false }
     public func getEnableFallDetection() -> Bool { cache["enableFallDetection"] as? Bool ?? false }
-    public func getCrashGThreshold() -> Double { cache["crashGThreshold"] as? Double ?? 3.0 }
+    public func getCrashGThreshold() -> Double { cache["crashGThreshold"] as? Double ?? 2.0 }
     public func getCrashMinSpeedKmh() -> Double { cache["crashMinSpeedKmh"] as? Double ?? 25.0 }
     public func getFallGThreshold() -> Double { cache["fallGThreshold"] as? Double ?? 2.5 }
     public func getConfirmWindowMs() -> Int64 { (cache["confirmWindowMs"] as? NSNumber)?.int64Value ?? 15000 }

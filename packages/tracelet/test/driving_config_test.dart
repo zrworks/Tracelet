@@ -58,7 +58,7 @@ void main() {
       const c = ImpactConfig();
       expect(c.enableCrashDetection, isFalse);
       expect(c.enableFallDetection, isFalse);
-      expect(c.crashGThreshold, 3.0);
+      expect(c.crashGThreshold, 2.0);
       expect(c.crashMinSpeedKmh, 25.0);
       expect(c.confirmWindowMs, 15000);
     });

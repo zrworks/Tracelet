@@ -637,219 +637,229 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckApiChecksums(this)
     }
     external fun uniffi_tracelet_core_checksum_func_haversine(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_func_is_point_in_polygon(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_func_compute_accel_window(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_func_build_canonical_string(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_func_compute_genesis_hash(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_func_sha256(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_cancel(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_confirm(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_pending_count(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_impactdetector_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_adaptivesamplingengine_compute(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_locationprocessor_has_last_location(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_locationprocessor_last_effective_speed(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_locationprocessor_process(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_locationprocessor_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_telematicsengine_current_score(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_telematicsengine_process_fix(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_telematicsengine_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_classify(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_current_mode(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_tripmanager_on_location_received(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_tripmanager_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_audittrailengine_reset_state(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_audit_trail(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_logs(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_location(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_geofences(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_location_for_audit(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_logs(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_location(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_log(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_is_empty(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_degrade_coordinates(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_evaluate(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_reset(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_get_config(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_get_health(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_get_route_context(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_set_route_context(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_set_tracking(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_update_config(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_impactdetector_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_locationprocessor_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_scheduleparser_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_telematicsengine_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_transportmodeclassifier_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_tripmanager_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_audittrailengine_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_databasemanager_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_eventdispatcher_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_privacyzoneevaluator_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_enginestate_new(
-    ): Short
-    external fun uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new(
-    ): Short
-    external fun ffi_tracelet_core_uniffi_contract_version(
-    ): Int
+): Short
+external fun uniffi_tracelet_core_checksum_func_is_point_in_polygon(
+): Short
+external fun uniffi_tracelet_core_checksum_func_compute_accel_window(
+): Short
+external fun uniffi_tracelet_core_checksum_func_build_canonical_string(
+): Short
+external fun uniffi_tracelet_core_checksum_func_compute_genesis_hash(
+): Short
+external fun uniffi_tracelet_core_checksum_func_sha256(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_cancel(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_confirm(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_pending_count(
+): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed(
+): Short
+external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_is_initialized(
+): Short
+external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_process(
+): Short
+external fun uniffi_tracelet_core_checksum_method_kalmanlocationfilter_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_adaptivesamplingengine_compute(
+): Short
+external fun uniffi_tracelet_core_checksum_method_locationprocessor_has_last_location(
+): Short
+external fun uniffi_tracelet_core_checksum_method_locationprocessor_last_effective_speed(
+): Short
+external fun uniffi_tracelet_core_checksum_method_locationprocessor_process(
+): Short
+external fun uniffi_tracelet_core_checksum_method_locationprocessor_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_scheduleparser_calculate_next_alarms(
+): Short
+external fun uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule(
+): Short
+external fun uniffi_tracelet_core_checksum_method_telematicsengine_current_score(
+): Short
+external fun uniffi_tracelet_core_checksum_method_telematicsengine_process_fix(
+): Short
+external fun uniffi_tracelet_core_checksum_method_telematicsengine_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_classify(
+): Short
+external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_current_mode(
+): Short
+external fun uniffi_tracelet_core_checksum_method_transportmodeclassifier_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active(
+): Short
+external fun uniffi_tracelet_core_checksum_method_tripmanager_on_location_received(
+): Short
+external fun uniffi_tracelet_core_checksum_method_tripmanager_on_motion_state_changed(
+): Short
+external fun uniffi_tracelet_core_checksum_method_tripmanager_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_audittrailengine_generate_next_hash(
+): Short
+external fun uniffi_tracelet_core_checksum_method_audittrailengine_reset_state(
+): Short
+external fun uniffi_tracelet_core_checksum_method_audittrailengine_verify_chain(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_audit_trail(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_geofences(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_locations_up_to(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_logs(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_clear_telematics_events(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_geofence(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_delete_privacy_zone(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_location(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_destroy_locations(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_encrypt_payload(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_audit_trail(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_geofences(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_location_for_audit(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_batch(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_locations_count(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_logs(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_get_telematics_events(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_location(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_log(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_insert_telematics_event(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_is_empty(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_mark_telematics_synced(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_prune_logs(
+): Short
+external fun uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key(
+): Short
+external fun uniffi_tracelet_core_checksum_method_eventdispatcher_on_location_update(
+): Short
+external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear(
+): Short
+external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_clear_index(
+): Short
+external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_evaluate_proximity(
+): Short
+external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_index_geofences(
+): Short
+external fun uniffi_tracelet_core_checksum_method_geofenceevaluator_remove_geofence(
+): Short
+external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_degrade_coordinates(
+): Short
+external fun uniffi_tracelet_core_checksum_method_privacyzoneevaluator_evaluate(
+): Short
+external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_accuracy_index(
+): Short
+external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_distance_filter(
+): Short
+external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_periodic_interval(
+): Short
+external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_process_sample(
+): Short
+external fun uniffi_tracelet_core_checksum_method_batterybudgetengine_reset(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_get_config(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_get_health(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_get_route_context(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_set_dynamic_headers(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_set_route_context(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_set_tracking(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_update_config(
+): Short
+external fun uniffi_tracelet_core_checksum_method_enginestate_update_config_from_json(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_evaluate_configuration_change(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_accel_moving(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_is_speed_moving(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_accel_state_change(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_on_speed_state_change(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current_mode(
+): Short
+external fun uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_impactdetector_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_adaptivesamplingengine_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_locationprocessor_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_scheduleparser_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_telematicsengine_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_transportmodeclassifier_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_tripmanager_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_audittrailengine_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_databasemanager_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_eventdispatcher_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_geofenceevaluator_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_privacyzoneevaluator_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_batterybudgetengine_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_enginestate_new(
+): Short
+external fun uniffi_tracelet_core_checksum_constructor_smartmotioncoordinator_new(
+): Short
+external fun ffi_tracelet_core_uniffi_contract_version(
+): Int
 
-        
+    
 }
 
 internal object UniffiLib {
@@ -994,6 +1004,8 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_clear_logs(`ptr`: Lo
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_clear_telematics_events(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_decrypt_payload(`ptr`: Long,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_delete_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1020,6 +1032,8 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_get_logs(`ptr`: Long
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_get_privacy_zones(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_databasemanager_get_telematics_events(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_audit_trail(`ptr`: Long,`uuid`: RustBuffer.ByValue,`hash`: RustBuffer.ByValue,`prevHash`: RustBuffer.ByValue,`index`: Int,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_geofence(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`vertices`: RustBuffer.ByValue,`extras`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1030,8 +1044,14 @@ external fun uniffi_tracelet_core_fn_method_databasemanager_insert_log(`ptr`: Lo
 ): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_insert_privacy_zone(`ptr`: Long,`identifier`: RustBuffer.ByValue,`lat`: Double,`lng`: Double,`radius`: Double,`action`: Int,`degradedAccuracy`: Double,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_insert_telematics_event(`ptr`: Long,`eventType`: RustBuffer.ByValue,`severity`: Double,`lat`: Double,`lng`: Double,uniffi_out_err: UniffiRustCallStatus, 
+): Long
 external fun uniffi_tracelet_core_fn_method_databasemanager_is_empty(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
+external fun uniffi_tracelet_core_fn_method_databasemanager_mark_telematics_synced(`ptr`: Long,`maxId`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_tracelet_core_fn_method_databasemanager_prune_logs(`ptr`: Long,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
 external fun uniffi_tracelet_core_fn_method_databasemanager_set_encryption_key(`ptr`: Long,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_tracelet_core_fn_clone_eventdispatcher(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1380,6 +1400,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_clear_telematics_events() != 26123.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1419,6 +1442,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_get_telematics_events() != 50151.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1434,7 +1460,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_insert_telematics_event() != 45369.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_mark_telematics_synced() != 38059.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_databasemanager_prune_logs() != 51361.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884.toShort()) {
@@ -2979,6 +3014,11 @@ public interface DatabaseManagerInterface {
      */
     fun `clearPrivacyZones`()
     
+    /**
+     * Clears all telematics events from the database.
+     */
+    fun `clearTelematicsEvents`()
+    
     fun `decryptPayload`(`payload`: kotlin.ByteArray): kotlin.ByteArray?
     
     fun `deleteGeofence`(`identifier`: kotlin.String)
@@ -3035,6 +3075,11 @@ public interface DatabaseManagerInterface {
     fun `getPrivacyZones`(): List<CorePrivacyZone>
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+    fun `getTelematicsEvents`(`limit`: kotlin.Int): List<DbTelematicsRecord>
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
     fun `insertAuditTrail`(`uuid`: kotlin.String, `hash`: kotlin.String, `prevHash`: kotlin.String, `index`: kotlin.Int)
@@ -3068,9 +3113,24 @@ public interface DatabaseManagerInterface {
     fun `insertPrivacyZone`(`identifier`: kotlin.String, `lat`: kotlin.Double, `lng`: kotlin.Double, `radius`: kotlin.Double, `action`: kotlin.Int, `degradedAccuracy`: kotlin.Double)
     
     /**
+     * Inserts a telematics event into the database.
+     */
+    fun `insertTelematicsEvent`(`eventType`: kotlin.String, `severity`: kotlin.Double, `lat`: kotlin.Double, `lng`: kotlin.Double): kotlin.Long
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
     fun `isEmpty`(): kotlin.Boolean
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+    fun `markTelematicsSynced`(`maxId`: kotlin.Long)
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+    fun `pruneLogs`(`limit`: kotlin.Int)
     
     /**
      * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
@@ -3262,6 +3322,22 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     callWithHandle {
     uniffiRustCallWithError(TraceletException) { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Clears all telematics events from the database.
+     */
+    @Throws(TraceletException::class)override fun `clearTelematicsEvents`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_clear_telematics_events(
         it,
         _status)
 }
@@ -3476,6 +3552,23 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
 
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+    @Throws(TraceletException::class)override fun `getTelematicsEvents`(`limit`: kotlin.Int): List<DbTelematicsRecord> {
+            return FfiConverterSequenceTypeDbTelematicsRecord.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_get_telematics_events(
+        it,
+        FfiConverterInt.lower(`limit`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
     @Throws(TraceletException::class)override fun `insertAuditTrail`(`uuid`: kotlin.String, `hash`: kotlin.String, `prevHash`: kotlin.String, `index`: kotlin.Int)
@@ -3565,6 +3658,23 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
 
     
     /**
+     * Inserts a telematics event into the database.
+     */
+    @Throws(TraceletException::class)override fun `insertTelematicsEvent`(`eventType`: kotlin.String, `severity`: kotlin.Double, `lat`: kotlin.Double, `lng`: kotlin.Double): kotlin.Long {
+            return FfiConverterLong.lift(
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_insert_telematics_event(
+        it,
+        FfiConverterString.lower(`eventType`),FfiConverterDouble.lower(`severity`),FfiConverterDouble.lower(`lat`),FfiConverterDouble.lower(`lng`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
     @Throws(TraceletException::class)override fun `isEmpty`(): kotlin.Boolean {
@@ -3578,6 +3688,38 @@ open class DatabaseManager: Disposable, AutoCloseable, DatabaseManagerInterface
     }
     )
     }
+    
+
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+    @Throws(TraceletException::class)override fun `markTelematicsSynced`(`maxId`: kotlin.Long)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_mark_telematics_synced(
+        it,
+        FfiConverterLong.lower(`maxId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+    @Throws(TraceletException::class)override fun `pruneLogs`(`limit`: kotlin.Int)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(TraceletException) { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_databasemanager_prune_logs(
+        it,
+        FfiConverterInt.lower(`limit`),_status)
+}
+    }
+    
     
 
     
@@ -8510,6 +8652,72 @@ public object FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer<DbLocatio
 
 
 /**
+ * Represents a telematics event (crash, hard brake, etc.) persisted in the database.
+ */
+data class DbTelematicsRecord (
+    var `id`: kotlin.Long
+    , 
+    var `eventType`: kotlin.String
+    , 
+    var `severity`: kotlin.Double
+    , 
+    var `latitude`: kotlin.Double
+    , 
+    var `longitude`: kotlin.Double
+    , 
+    var `timestamp`: kotlin.String
+    , 
+    var `synced`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDbTelematicsRecord: FfiConverterRustBuffer<DbTelematicsRecord> {
+    override fun read(buf: ByteBuffer): DbTelematicsRecord {
+        return DbTelematicsRecord(
+            FfiConverterLong.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DbTelematicsRecord) = (
+            FfiConverterLong.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`eventType`) +
+            FfiConverterDouble.allocationSize(value.`severity`) +
+            FfiConverterDouble.allocationSize(value.`latitude`) +
+            FfiConverterDouble.allocationSize(value.`longitude`) +
+            FfiConverterString.allocationSize(value.`timestamp`) +
+            FfiConverterBoolean.allocationSize(value.`synced`)
+    )
+
+    override fun write(value: DbTelematicsRecord, buf: ByteBuffer) {
+            FfiConverterLong.write(value.`id`, buf)
+            FfiConverterString.write(value.`eventType`, buf)
+            FfiConverterDouble.write(value.`severity`, buf)
+            FfiConverterDouble.write(value.`latitude`, buf)
+            FfiConverterDouble.write(value.`longitude`, buf)
+            FfiConverterString.write(value.`timestamp`, buf)
+            FfiConverterBoolean.write(value.`synced`, buf)
+    }
+}
+
+
+
+/**
  * A detected driving event.
  */
 data class DrivingEvent (
@@ -11538,6 +11746,34 @@ public object FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuffer<L
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeDbLocationRecord.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeDbTelematicsRecord: FfiConverterRustBuffer<List<DbTelematicsRecord>> {
+    override fun read(buf: ByteBuffer): List<DbTelematicsRecord> {
+        val len = buf.getInt()
+        return List<DbTelematicsRecord>(len) {
+            FfiConverterTypeDbTelematicsRecord.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<DbTelematicsRecord>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeDbTelematicsRecord.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<DbTelematicsRecord>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeDbTelematicsRecord.write(it, buf)
         }
     }
 }

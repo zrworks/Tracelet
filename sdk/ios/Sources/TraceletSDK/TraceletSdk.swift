@@ -1112,7 +1112,37 @@ public final class TraceletSdk {
                     // instead of always defaulting to ascending (Issue #138).
                     orderDescending: config.http.locationsOrderDirection == 1
                 ))
-                if records.isEmpty {
+                var configHttp = config.http
+                let syncTelematics = (self.configManager.getConfig()["http"] as? [String: Any])?["syncTelematics"] as? Bool ?? false
+                
+                var telematicsCleared = false
+                if syncTelematics {
+                    let telematics = try db.getTelematicsEvents(limit: 250)
+                    if !telematics.isEmpty {
+                        var telematicsDicts = [[String: Any]]()
+                        for event in telematics {
+                            telematicsDicts.append([
+                                "id": event.id,
+                                "event_type": event.eventType,
+                                "severity": event.severity,
+                                "latitude": event.latitude,
+                                "longitude": event.longitude,
+                                "timestamp": event.timestamp,
+                                "synced": event.synced
+                            ])
+                        }
+                        if let jsonData = try? JSONSerialization.data(withJSONObject: telematicsDicts, options: []),
+                           let jsonString = String(data: jsonData, encoding: .utf8) {
+                            var newExtras = configHttp.extras ?? [:]
+                            newExtras["__telematics"] = jsonString
+                            configHttp.extras = newExtras
+                            telematicsCleared = true
+                        }
+                    }
+                }
+                
+                let hasTelematics = telematicsCleared
+                if records.isEmpty && !hasTelematics {
                     DispatchQueue.main.async { completion?([]) }
                     return
                 }
@@ -1123,14 +1153,19 @@ public final class TraceletSdk {
                     return
                 }
                 
-                let syncedCount = try syncProvider.syncBatchBlocking(config: config.http, records: records)
-                if syncedCount > 0 {
-                    let successfullySynced = Array(records.prefix(Int(syncedCount)))
-                    if let lastRecord = successfullySynced.last {
-                        try db.clearLocationsUpTo(maxId: lastRecord.id)
-                        self.syncedLocationsLock.lock()
-                        self.syncedLocationsRemoved += Int(syncedCount)
-                        self.syncedLocationsLock.unlock()
+                let syncedCount = try syncProvider.syncBatchBlocking(config: configHttp, records: records)
+                if syncedCount > 0 || hasTelematics {
+                    if syncedCount > 0 {
+                        let successfullySynced = Array(records.prefix(Int(syncedCount)))
+                        if let lastRecord = successfullySynced.last {
+                            try db.clearLocationsUpTo(maxId: lastRecord.id)
+                            self.syncedLocationsLock.lock()
+                            self.syncedLocationsRemoved += Int(syncedCount)
+                            self.syncedLocationsLock.unlock()
+                        }
+                    }
+                    if telematicsCleared {
+                        try db.clearTelematicsEvents()
                     }
                     DispatchQueue.main.async { completion?([]) }
                 } else {
@@ -1295,6 +1330,78 @@ public final class TraceletSdk {
     public func log(_ level: String, _ message: String) {
         guard isReady else { return }
         logger.log(levelString: level, message: message)
+    }
+
+    // =========================================================================
+    // MARK: - Telematics
+    // =========================================================================
+
+    /// Retrieve raw telematics events.
+    ///
+    /// - Parameter limit: Maximum number of events to return.
+    /// - Returns: Array of `DbTelematicsRecord` objects.
+    public func getTelematicsEvents(limit: Int) -> [DbTelematicsRecord] {
+        guard isReady, let db = rustDatabase else { return [] }
+        do {
+            return try db.getTelematicsEvents(limit: Int32(limit))
+        } catch {
+            NSLog("Failed to get telematics events: \(error)")
+            return []
+        }
+    }
+
+    public func getLogs(limit: Int) -> [LogEntry] {
+        guard let db = rustDatabase else { return [] }
+        do {
+            return try db.getLogs(limit: Int32(limit))
+        } catch {
+            NSLog("Failed to get logs: \(error)")
+            return []
+        }
+    }
+    
+    public func clearLogs() {
+        guard let db = rustDatabase else { return }
+        do {
+            try db.clearLogs()
+        } catch {
+            NSLog("Failed to clear logs: \(error)")
+        }
+    }
+
+    /// Destroy all synced and unsynced telematics events.
+    ///
+    /// - Returns: `true` if cleared successfully.
+    @discardableResult
+    public func destroyTelematicsEvents() -> Bool {
+        guard isReady, let db = rustDatabase else { return false }
+        do {
+            try db.clearTelematicsEvents()
+            return true
+        } catch {
+            logger.error("Failed to clear telematics events: \(error)")
+            return false
+        }
+    }
+
+    /// Simulate a telematics event (e.g. for testing).
+    ///
+    /// - Parameters:
+    ///   - eventType: The type of event (e.g. "harsh_braking").
+    ///   - severity: Severity value (e.g. g-force).
+    ///   - latitude: Event latitude.
+    ///   - longitude: Event longitude.
+    /// - Returns: `true` if inserted successfully.
+    @discardableResult
+    public func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double) -> Bool {
+        guard isReady, let db = rustDatabase else { return false }
+        do {
+            try db.insertTelematicsEvent(eventType: eventType, severity: severity, lat: latitude, lng: longitude)
+            return true
+        } catch {
+            logger.error("Failed to simulate telematics event: \(error)")
+            return false
+        }
     }
 
     // =========================================================================

@@ -518,8 +518,8 @@ class FakeHostApi extends TraceletHostApi {
 
   // Enterprise: Carbon
   @override
-  Future<Map<String?, Object?>> getCarbonReport(
-    Map<String?, Object?>? query,
+  Future<Map<String, Object?>> getCarbonReport(
+    Map<String, Object?>? query,
   ) async {
     _record('getCarbonReport', [query]);
     return {'co2_grams': 42.0};

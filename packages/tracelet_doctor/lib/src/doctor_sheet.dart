@@ -8,6 +8,7 @@ import 'package:tracelet_doctor/src/doctor_theme.dart';
 import 'package:tracelet_doctor/src/widgets/battery_oem_card.dart';
 import 'package:tracelet_doctor/src/widgets/config_review_card.dart';
 import 'package:tracelet_doctor/src/widgets/database_card.dart';
+import 'package:tracelet_doctor/src/widgets/log_viewer_sheet.dart';
 import 'package:tracelet_doctor/src/widgets/permission_card.dart';
 import 'package:tracelet_doctor/src/widgets/sensor_grid.dart';
 import 'package:tracelet_doctor/src/widgets/tracking_card.dart';
@@ -231,6 +232,12 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
             ),
           ),
           if (health != null) ...[
+            _HeaderButton(
+              icon: Icons.list_alt_rounded,
+              tooltip: 'View Logs',
+              onPressed: () => LogViewerSheet.show(context),
+            ),
+            const SizedBox(width: 6),
             _HeaderButton(
               icon: Icons.copy_rounded,
               tooltip: 'Copy Report',

@@ -1015,7 +1015,72 @@ abstract class TraceletHostApi {
   Map<String?, Object?>? getDeadReckoningState();
 
   @async
-  Map<String?, Object?> getCarbonReport(Map<String?, Object?>? query);
+  Map<String, Object?> getCarbonReport(Map<String, Object?>? query);
+
+  @async
+  int simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  );
+
+  @async
+  List<TlTelematicsRecord?> getTelematicsEvents(int limit);
+
+  @async
+  int clearTelematicsEvents();
+
+  @async
+  List<TlLogEntry?> getLogs(int limit);
+
+  @async
+  void clearLogs();
+}
+
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The type of telematics event.
+  final String eventType;
+  /// The severity of the event.
+  final double severity;
+  /// The latitude.
+  final double latitude;
+  /// The longitude.
+  final double longitude;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
+  /// Whether the event has been synced to the server.
+  final bool synced;
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The log level.
+  final String level;
+  /// The log message.
+  final String message;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
 }
 
 // =============================================================================

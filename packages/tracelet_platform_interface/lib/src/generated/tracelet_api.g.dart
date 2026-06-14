@@ -3067,6 +3067,148 @@ class TlModeChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The type of telematics event.
+  String eventType;
+
+  /// The severity of the event.
+  double severity;
+
+  /// The latitude.
+  double latitude;
+
+  /// The longitude.
+  double longitude;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  /// Whether the event has been synced to the server.
+  bool synced;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      eventType,
+      severity,
+      latitude,
+      longitude,
+      timestamp,
+      synced,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlTelematicsRecord decode(Object result) {
+    result as List<Object?>;
+    return TlTelematicsRecord(
+      id: result[0]! as int,
+      eventType: result[1]! as String,
+      severity: result[2]! as double,
+      latitude: result[3]! as double,
+      longitude: result[4]! as double,
+      timestamp: result[5]! as String,
+      synced: result[6]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlTelematicsRecord || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(eventType, other.eventType) &&
+        _deepEquals(severity, other.severity) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestamp, other.timestamp) &&
+        _deepEquals(synced, other.synced);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The log level.
+  String level;
+
+  /// The log message.
+  String message;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  List<Object?> _toList() {
+    return <Object?>[id, level, message, timestamp];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlLogEntry decode(Object result) {
+    result as List<Object?>;
+    return TlLogEntry(
+      id: result[0]! as int,
+      level: result[1]! as String,
+      message: result[2]! as String,
+      timestamp: result[3]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlLogEntry || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(level, other.level) &&
+        _deepEquals(message, other.message) &&
+        _deepEquals(timestamp, other.timestamp);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -3248,6 +3390,12 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is TlModeChangeEvent) {
       buffer.putUint8(186);
       writeValue(buffer, value.encode());
+    } else if (value is TlTelematicsRecord) {
+      buffer.putUint8(187);
+      writeValue(buffer, value.encode());
+    } else if (value is TlLogEntry) {
+      buffer.putUint8(188);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -3393,6 +3541,10 @@ class _PigeonCodec extends StandardMessageCodec {
         return TlImpactEvent.decode(readValue(buffer)!);
       case 186:
         return TlModeChangeEvent.decode(readValue(buffer)!);
+      case 187:
+        return TlTelematicsRecord.decode(readValue(buffer)!);
+      case 188:
+        return TlLogEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -4969,8 +5121,8 @@ class TraceletHostApi {
         ?.cast<String?, Object?>();
   }
 
-  Future<Map<String?, Object?>> getCarbonReport(
-    Map<String?, Object?>? query,
+  Future<Map<String, Object?>> getCarbonReport(
+    Map<String, Object?>? query,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport$pigeonVar_messageChannelSuffix';
@@ -4990,7 +5142,112 @@ class TraceletHostApi {
       isNullValid: false,
     );
     return (pigeonVar_replyValue! as Map<Object?, Object?>)
-        .cast<String?, Object?>();
+        .cast<String, Object?>();
+  }
+
+  Future<int> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.simulateTelematicsEvent$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[eventType, severity, latitude, longitude],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as int;
+  }
+
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlTelematicsRecord?>();
+  }
+
+  Future<int> clearTelematicsEvents() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as int;
+  }
+
+  Future<List<TlLogEntry?>> getLogs(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlLogEntry?>();
+  }
+
+  Future<void> clearLogs() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
   }
 }
 

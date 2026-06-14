@@ -1384,20 +1384,55 @@ class TraceletSdk private constructor(private val context: Context) {
                     offset = null,
                     orderDescending = null
                 ))
-                if (records.isEmpty()) {
+                var configHttp = config.http
+                val syncTelematics = configManager.getConfig().let { cfg ->
+                    val http = cfg["http"] as? Map<*,*>
+                    http?.get("syncTelematics") as? Boolean ?: false
+                }
+                
+                var telematicsCleared = false
+                if (syncTelematics) {
+                    val telematics = db.getTelematicsEvents(250)
+                    if (telematics.isNotEmpty()) {
+                        val jsonArray = org.json.JSONArray()
+                        telematics.forEach { event ->
+                            val obj = org.json.JSONObject()
+                            obj.put("id", event.id)
+                            obj.put("event_type", event.eventType)
+                            obj.put("severity", event.severity)
+                            obj.put("latitude", event.latitude)
+                            obj.put("longitude", event.longitude)
+                            obj.put("timestamp", event.timestamp)
+                            obj.put("synced", event.synced)
+                            jsonArray.put(obj)
+                        }
+                        val newExtras = (configHttp.extras ?: emptyMap()).toMutableMap()
+                        newExtras["__telematics"] = jsonArray.toString()
+                        configHttp = configHttp.copy(extras = newExtras)
+                        telematicsCleared = true
+                    }
+                }
+                
+                val hasTelematics = telematicsCleared
+                if (records.isEmpty() && !hasTelematics) {
                     mainHandler.post { callback(emptyList()) }
                     return@Thread
                 }
                 
-                val count = provider.syncBatchBlocking(config.http, records)
-                if (count > 0L) {
-                    val syncedCount = count.toInt()
-                    val successfullySynced = records.take(syncedCount)
-                    successfullySynced.lastOrNull()?.let { lastRecord ->
-                        db.clearLocationsUpTo(lastRecord.id)
-                        syncedLocationsRemoved.addAndGet(count)
+                val count = provider.syncBatchBlocking(configHttp, records)
+                if (count > 0L || hasTelematics) {
+                    if (count > 0L) {
+                        val syncedCount = count.toInt()
+                        val successfullySynced = records.take(syncedCount)
+                        successfullySynced.lastOrNull()?.let { lastRecord ->
+                            db.clearLocationsUpTo(lastRecord.id)
+                            syncedLocationsRemoved.addAndGet(count)
+                        }
                     }
-                    logger.info("TraceletSdk: Synced and cleared $count locations via SyncProvider.")
+                    if (telematicsCleared) {
+                        db.clearTelematicsEvents()
+                    }
+                    logger.info("TraceletSdk: Synced locations ($count) and telematics ($hasTelematics)")
                 }
                 
                 mainHandler.post {
@@ -1671,6 +1706,61 @@ class TraceletSdk private constructor(private val context: Context) {
     fun log(level: String, message: String): Boolean {
         if (!isReady) return false
         return logger.log(level, message)
+    }
+
+    // =========================================================================
+    // Telematics
+    // =========================================================================
+
+    fun getTelematicsEvents(limit: Int): List<uniffi.tracelet_core.DbTelematicsRecord> {
+        if (!isReady) return emptyList()
+        return try {
+            rustDatabase?.getTelematicsEvents(limit) ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Failed to get telematics events: ${e.message}")
+            emptyList()
+        }
+    }
+
+    fun getLogs(limit: Int): List<uniffi.tracelet_core.LogEntry> {
+        val db = rustDatabase ?: return emptyList()
+        return try {
+            db.getLogs(limit)
+        } catch (e: Exception) {
+            logger.error("Failed to get logs: ${e.message}")
+            emptyList()
+        }
+    }
+    
+    fun clearLogs() {
+        val db = rustDatabase ?: return
+        try {
+            db.clearLogs()
+        } catch (e: Exception) {
+            logger.error("Failed to clear logs: ${e.message}")
+        }
+    }
+
+    fun destroyTelematicsEvents(): Boolean {
+        if (!isReady) return false
+        return try {
+            rustDatabase?.clearTelematicsEvents()
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to clear telematics events: ${e.message}")
+            false
+        }
+    }
+
+    fun simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double): Boolean {
+        if (!isReady) return false
+        return try {
+            rustDatabase?.insertTelematicsEvent(eventType, severity, latitude, longitude)
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to simulate telematics event: ${e.message}")
+            false
+        }
     }
 
     // =========================================================================

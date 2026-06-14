@@ -92,11 +92,13 @@ class TraceletHostApiImpl(
             ),
             battery = TlBattery(
                 level = (battery["level"] as? Number)?.toDouble() ?: -1.0,
-                isCharging = battery["isCharging"] as? Boolean ?: false,
+                // Native emits snake_case `is_charging`; accept both for safety.
+                isCharging = (battery["is_charging"] ?: battery["isCharging"]) as? Boolean ?: false,
             ),
             timestamp = m["timestamp"] as? String ?: "",
             uuid = m["uuid"] as? String ?: "",
-            isMoving = m["isMoving"] as? Boolean ?: false,
+            // Native emits snake_case `is_moving`; accept both for safety.
+            isMoving = (m["is_moving"] ?: m["isMoving"]) as? Boolean ?: false,
             odometer = (m["odometer"] as? Number)?.toDouble() ?: 0.0,
             event = m["event"] as? String,
             activity = if (activity != null) TlActivity(
@@ -145,12 +147,16 @@ class TraceletHostApiImpl(
         "vertices" to g.vertices,
     )
 
-    private fun tlOptionsToMap(o: TlCurrentPositionOptions): Map<String, Any?> = mapOf(
-        "timeout" to o.timeout,
-        "maximumAge" to o.maximumAge,
-        "persist" to o.persist,
-        "samples" to o.samples,
-    )
+    private fun tlOptionsToMap(o: TlCurrentPositionOptions): Map<String, Any?> = buildMap {
+        put("timeout", o.timeout)
+        put("maximumAge", o.maximumAge)
+        put("persist", o.persist)
+        put("samples", o.samples)
+        // Previously dropped here, so getCurrentPosition(desiredAccuracy:/extras:)
+        // were silently ignored (#175). Forward them to the SDK.
+        o.desiredAccuracy?.let { put("desiredAccuracy", it.raw) }
+        o.extras?.let { put("extras", it) }
+    }
 
     private fun tlConfigToSdkMap(c: TlConfig): Map<String, Any?> = buildMap {
         put("geo", buildMap {

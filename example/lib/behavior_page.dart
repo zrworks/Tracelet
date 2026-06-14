@@ -273,6 +273,38 @@ class _BehaviorPageState extends State<BehaviorPage> {
     }
   }
 
+  /// Exercises the telematics SQLite log: persist a test event, read it back,
+  /// or clear it. This is the path used by Tracelet Doctor and verifies that
+  /// `getTelematicsEvents` / `simulateTelematicsEvent` / `destroyTelematicsEvents`
+  /// round-trip through the real on-device database.
+  Future<void> _dbAction(String action) async {
+    await _ensureReady();
+    try {
+      switch (action) {
+        case 'persist':
+          final ok = await tl.Tracelet.simulateTelematicsEvent(
+            eventType: 'harsh_braking',
+            severity: 0.85,
+            latitude: 37.422,
+            longitude: -122.084,
+          );
+          _logLine('💾 persisted test event → DB (ok=$ok)');
+        case 'load':
+          final events = await tl.Tracelet.getTelematicsEvents(50);
+          _logLine('💾 DB has ${events.length} event(s)');
+          for (final e in events.take(5)) {
+            _logLine('   • ${e.eventType}  sev=${e.severity.toStringAsFixed(2)}  '
+                '@${e.latitude.toStringAsFixed(3)},${e.longitude.toStringAsFixed(3)}');
+          }
+        case 'clear':
+          final ok = await tl.Tracelet.destroyTelematicsEvents();
+          _logLine('💾 cleared telematics DB (ok=$ok)');
+      }
+    } catch (e) {
+      _logLine('⚠️ DB action failed: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -352,6 +384,30 @@ class _BehaviorPageState extends State<BehaviorPage> {
               OutlinedButton(
                 onPressed: () => _simulate('vehicle'),
                 child: const Text('Vehicle mode'),
+              ),
+            ],
+          ),
+          const Divider(height: 32),
+          const Text(
+            'Stored telematics (SQLite DB)',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: () => _dbAction('persist'),
+                child: const Text('Persist test event'),
+              ),
+              OutlinedButton(
+                onPressed: () => _dbAction('load'),
+                child: const Text('Load from DB'),
+              ),
+              OutlinedButton(
+                onPressed: () => _dbAction('clear'),
+                child: const Text('Clear DB'),
               ),
             ],
           ),

@@ -83,6 +83,7 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Adaptive sampling** — auto-adjusts `distanceFilter` based on detected activity, battery level, and speed for optimal battery/accuracy trade-off. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md)
 - **Health check API** — `getHealth()` returns a comprehensive diagnostic snapshot covering permissions, battery, sensors, database, and geofence state with actionable warnings. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md)
 - **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
+- **Telematics & Diagnostics APIs** — Retrieve raw telematics events (`getTelematicsEvents`), simulate mock events for testing (`simulateTelematicsEvent`), and access system logs (`getLogs`, `clearLogs`) directly from Dart, Kotlin, and Swift.
 - **HTTP sync retry engine** — configurable retry with exponential backoff for transient server failures (5xx, 429, timeout). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
 - **Configurable motion sensitivity** — tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) for Low/Medium/High preset profiles or custom values
 

@@ -80,7 +80,15 @@ struct Pending {
 struct DetectorState {
     next_id: i64,
     pending: HashMap<i64, Pending>,
+    /// Epoch ms of the last registered candidate, used to debounce the burst of
+    /// windows a single crash produces (primary spike + bounce / secondary
+    /// impacts) so one event doesn't raise several "Are you OK?" prompts.
+    last_register_ms: i64,
 }
+
+/// Refractory period after a candidate is registered during which further
+/// impacts are ignored as part of the same event.
+const REGISTER_REFRACTORY_MS: i64 = 5_000;
 
 /// Detects crash/fall impacts with a confirmation window.
 #[derive(uniffi::Object)]
@@ -89,13 +97,23 @@ pub struct ImpactDetector {
     state: Mutex<DetectorState>,
 }
 
+/// Confidence for a corroborated impact, in `[0, 1]`.
+///
+/// A candidate that just meets its magnitude threshold (and passes the speed /
+/// on-foot corroboration in the caller) scores the **base** confidence, scaling
+/// up toward `1.0` as the peak exceeds the threshold. The base is chosen so a
+/// fully-corroborated crash exactly at `crash_g_threshold` already clears the
+/// default `min_confidence` (0.6) — i.e. the documented threshold *is* the real
+/// threshold, rather than being silently raised by the confidence gate.
+/// `speed_factor` < 1 (used for the weaker on-foot fall context) deliberately
+/// keeps falls more conservative.
 fn confidence(peak_g: f64, threshold: f64, speed_factor: f64) -> f64 {
     let over = if threshold > 0.0 {
         ((peak_g - threshold) / threshold).clamp(0.0, 1.0)
     } else {
         1.0
     };
-    (0.5 + 0.5 * over).min(1.0) * speed_factor
+    (0.6 + 0.4 * over).min(1.0) * speed_factor
 }
 
 #[uniffi::export]
@@ -108,6 +126,7 @@ impl ImpactDetector {
             state: Mutex::new(DetectorState {
                 next_id: 1,
                 pending: HashMap::new(),
+                last_register_ms: i64::MIN,
             }),
         }
     }
@@ -126,6 +145,16 @@ impl ImpactDetector {
     ) -> Option<ImpactEvent> {
         let cfg = &self.config;
         let speed_kmh = speed_before_mps * 3.6;
+
+        // Debounce: a single crash spans several windows (primary spike + bounce
+        // / secondary impacts). Suppress new candidates within the refractory
+        // period of the last one so one event raises a single prompt.
+        {
+            let st = self.state.lock().unwrap();
+            if now_ms.saturating_sub(st.last_register_ms) < REGISTER_REFRACTORY_MS {
+                return None;
+            }
+        }
 
         // ── Crash: spike corroborated by pre-impact speed ──
         if cfg.enable_crash
@@ -194,6 +223,7 @@ impl ImpactDetector {
     pub fn reset(&self) {
         let mut st = self.state.lock().unwrap();
         st.pending.clear();
+        st.last_register_ms = i64::MIN;
     }
 }
 
@@ -212,6 +242,7 @@ impl ImpactDetector {
         let mut st = self.state.lock().unwrap();
         let id = st.next_id;
         st.next_id += 1;
+        st.last_register_ms = now_ms;
         let deadline = now_ms + self.config.confirm_window_ms;
         st.pending.insert(
             id,
@@ -334,5 +365,30 @@ mod tests {
     fn weak_spike_below_threshold_ignored() {
         let d = ImpactDetector::new(Some(crash_cfg()));
         assert!(d.on_impact_window(2.0, 60.0 / 3.6, false, 0.0, 0.0, 0).is_none());
+    }
+
+    #[test]
+    fn crash_at_exact_threshold_fires() {
+        // A fully-corroborated crash exactly at the documented 3.0 g threshold
+        // must register — the confidence gate must not silently raise it.
+        let d = ImpactDetector::new(Some(crash_cfg()));
+        let cand = d.on_impact_window(3.0, 60.0 / 3.6, false, 0.0, 0.0, 1000);
+        assert!(cand.is_some());
+        assert_eq!(cand.unwrap().kind, "potential_crash");
+    }
+
+    #[test]
+    fn one_crash_burst_yields_a_single_candidate() {
+        // Primary spike + bounce/secondary impacts within the refractory window
+        // must not spawn multiple candidates.
+        let d = ImpactDetector::new(Some(crash_cfg()));
+        let speed = 60.0 / 3.6;
+        assert!(d.on_impact_window(5.0, speed, false, 0.0, 0.0, 1000).is_some());
+        assert!(d.on_impact_window(4.0, speed, false, 0.0, 0.0, 1500).is_none()); // bounce
+        assert!(d.on_impact_window(6.0, speed, false, 0.0, 0.0, 2000).is_none()); // secondary
+        assert_eq!(d.pending_count(), 1);
+        // A genuinely separate impact after the refractory period is allowed.
+        assert!(d.on_impact_window(5.0, speed, false, 0.0, 0.0, 1000 + REGISTER_REFRACTORY_MS).is_some());
+        assert_eq!(d.pending_count(), 2);
     }
 }

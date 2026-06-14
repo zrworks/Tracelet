@@ -2225,6 +2225,15 @@ class TraceletSdk private constructor(private val context: Context) {
         } else {
             null
         }
+
+        // Crash/fall impulses peak in ~50-150 ms, far faster than the ~5 Hz
+        // SENSOR_DELAY_NORMAL used for motion detection. When impact detection is
+        // active, sample the accelerometer at a higher rate so the peak is
+        // actually captured (battery cost is accepted because the feature is
+        // opt-in). Falls back to the normal rate otherwise.
+        if (::motionDetector.isInitialized) {
+            motionDetector.impactHighRate = impactDetector != null
+        }
     }
 
     /** Feeds an accepted location fix to the telematics engine and emits events. */
@@ -2281,25 +2290,46 @@ class TraceletSdk private constructor(private val context: Context) {
             }
         }
         mainHandler.postDelayed(accelWindowRunnable!!, accelWindowMs)
-
-        if (impactDetector != null) {
-            impactConfirmRunnable = object : Runnable {
-                override fun run() {
-                    if (!stateManager.enabled) return
-                    impactDetector?.checkConfirmations(System.currentTimeMillis())?.forEach(::emitImpact)
-                    mainHandler.postDelayed(this, impactConfirmPollMs)
-                }
-            }
-            mainHandler.postDelayed(impactConfirmRunnable!!, impactConfirmPollMs)
-        }
     }
 
     private fun stopBehaviorSampling() {
         accelWindowRunnable?.let { mainHandler.removeCallbacks(it) }
         accelWindowRunnable = null
-        impactConfirmRunnable?.let { mainHandler.removeCallbacks(it) }
-        impactConfirmRunnable = null
         accelBuffer.clear()
+        // NOTE: the impact confirmation loop is intentionally NOT stopped here.
+        // A crash typically ends in the vehicle stopping, which disables tracking
+        // (stopTimeout) and would otherwise abandon a pending `potential_crash`
+        // before its countdown elapses — so the confirmed `crash` would never
+        // fire. The confirmation loop runs independently and self-terminates once
+        // no candidates remain (see [ensureImpactConfirmLoop]).
+    }
+
+    /**
+     * Ensures the impact confirmation poll is running. Unlike accel sampling,
+     * this loop is decoupled from `stateManager.enabled`: once a candidate is
+     * pending it keeps polling — across a tracking stop — until every candidate
+     * has confirmed (deadline elapsed), been confirmed explicitly, or cancelled.
+     * It self-terminates when nothing is pending.
+     */
+    private fun ensureImpactConfirmLoop() {
+        if (impactConfirmRunnable != null) return
+        val runnable = object : Runnable {
+            override fun run() {
+                val detector = impactDetector
+                if (detector == null) {
+                    impactConfirmRunnable = null
+                    return
+                }
+                detector.checkConfirmations(System.currentTimeMillis()).forEach(::emitImpact)
+                if (detector.pendingCount() > 0u) {
+                    mainHandler.postDelayed(this, impactConfirmPollMs)
+                } else {
+                    impactConfirmRunnable = null
+                }
+            }
+        }
+        impactConfirmRunnable = runnable
+        mainHandler.postDelayed(runnable, impactConfirmPollMs)
     }
 
     /** Snapshots the accel buffer into one window and feeds classifier + impact. */
@@ -2340,7 +2370,12 @@ class TraceletSdk private constructor(private val context: Context) {
                 lastLng,
                 now,
             )
-            if (candidate != null) emitImpact(candidate)
+            if (candidate != null) {
+                emitImpact(candidate)
+                // Keep the countdown alive even if tracking stops right after the
+                // crash (vehicle comes to rest → stopTimeout disables tracking).
+                ensureImpactConfirmLoop()
+            }
         }
     }
 

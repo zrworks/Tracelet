@@ -11,10 +11,11 @@ We will create a `website/app/en/notifications.json` file. This acts as the sour
 {
   "badgeTitle": "New in 3.3.0",
   "items": [
-    { "title": "Driving Events", "href": "/core/driving-safety" },
-    { "title": "Transport Mode", "href": "/core/driving-safety" },
-    { "title": "Crash Detection", "href": "/core/driving-safety" },
-    { "title": "Telematics APIs", "href": "/core/driving-safety" }
+    { 
+      "title": "Driving & Safety Features", 
+      "description": "Driving events, transport mode, crash detection, and new telematics APIs.",
+      "href": "/core/driving-safety" 
+    }
   ]
 }
 ```

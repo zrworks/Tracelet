@@ -1,5 +1,9 @@
 pub mod geo_utils;
+pub mod impact;
 pub mod kalman;
 pub mod location_processor;
 pub mod schedule_parser;
+pub mod sensor_features;
+pub mod telematics;
+pub mod transport_mode;
 pub mod trip_manager;

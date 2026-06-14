@@ -203,6 +203,7 @@ class TraceletHostApiImpl(
             put("periodicUseForegroundService", c.android.periodicUseForegroundService)
             put("periodicUseExactAlarms", c.android.periodicUseExactAlarms)
             put("scheduleUseAlarmManager", c.android.scheduleUseAlarmManager)
+            put("releaseWakelockWhenStationary", c.android.releaseWakelockWhenStationary)
             put("foregroundService", buildMap {
                 put("enabled", c.android.foregroundService.enabled)
                 put("channelId", c.android.foregroundService.channelId)
@@ -241,6 +242,8 @@ class TraceletHostApiImpl(
             put("retryBackoffCap", c.http.retryBackoffCap)
             put("enableDeltaCompression", c.http.enableDeltaCompression)
             put("deltaCoordinatePrecision", c.http.deltaCoordinatePrecision)
+            put("syncTelematics", c.http.syncTelematics)
+            put("telematicsUrl", c.http.telematicsUrl)
         })
         put("logger", buildMap {
             put("logLevel", c.logger.logLevel.raw)
@@ -301,6 +304,32 @@ class TraceletHostApiImpl(
         put("attestation", buildMap {
             put("enabled", c.attestation.enabled)
             put("refreshInterval", c.attestation.refreshInterval)
+        })
+        put("telematics", buildMap {
+            put("enableDrivingEvents", c.telematics.enableDrivingEvents)
+            put("harshBrakingG", c.telematics.harshBrakingG)
+            put("harshAccelerationG", c.telematics.harshAccelerationG)
+            put("harshCorneringG", c.telematics.harshCorneringG)
+            put("speedLimitKmh", c.telematics.speedLimitKmh)
+            put("speedingToleranceKmh", c.telematics.speedingToleranceKmh)
+            put("speedingMinDurationMs", c.telematics.speedingMinDurationMs)
+            put("minSpeedForEventsKmh", c.telematics.minSpeedForEventsKmh)
+            put("eventDebounceMs", c.telematics.eventDebounceMs)
+        })
+        put("classifier", buildMap {
+            put("enableFusedClassifier", c.classifier.enableFusedClassifier)
+            put("fusedClassifierAuthoritative", c.classifier.fusedClassifierAuthoritative)
+            put("modeSwitchDwellMs", c.classifier.modeSwitchDwellMs)
+            put("minModeConfidence", c.classifier.minModeConfidence)
+        })
+        put("impact", buildMap {
+            put("enableCrashDetection", c.impact.enableCrashDetection)
+            put("enableFallDetection", c.impact.enableFallDetection)
+            put("crashGThreshold", c.impact.crashGThreshold)
+            put("crashMinSpeedKmh", c.impact.crashMinSpeedKmh)
+            put("fallGThreshold", c.impact.fallGThreshold)
+            put("confirmWindowMs", c.impact.confirmWindowMs)
+            put("minImpactConfidence", c.impact.minImpactConfidence)
         })
     }
 
@@ -453,6 +482,12 @@ class TraceletHostApiImpl(
             callback(Result.success(true))
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
+
+    override fun confirmImpact(id: Long): Boolean =
+        if (sdk.isReady) sdk.confirmImpact(id) else false
+
+    override fun cancelImpact(id: Long): Boolean =
+        if (sdk.isReady) sdk.cancelImpact(id) else false
 
     override fun getOdometer(callback: (Result<Double>) -> Unit) {
         try {
@@ -815,6 +850,40 @@ class TraceletHostApiImpl(
     }
 
     // =========================================================================
+    // Telematics
+    // =========================================================================
+
+    override fun getTelematicsEvents(limit: Long, callback: (Result<List<com.ikolvi.tracelet.TlTelematicsRecord?>>) -> Unit) {
+        try {
+            val events = sdk.getTelematicsEvents(limit.toInt())
+            val mapped = events.map { e ->
+                com.ikolvi.tracelet.TlTelematicsRecord(
+                    id = e.id,
+                    eventType = e.eventType,
+                    severity = e.severity,
+                    latitude = e.latitude,
+                    longitude = e.longitude,
+                    timestamp = e.timestamp,
+                    synced = e.synced
+                )
+            }
+            callback(Result.success(mapped))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    override fun destroyTelematicsEvents(callback: (Result<Boolean>) -> Unit) {
+        try {
+            callback(Result.success(sdk.destroyTelematicsEvents()))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    override fun simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, callback: (Result<Boolean>) -> Unit) {
+        try {
+            callback(Result.success(sdk.simulateTelematicsEvent(eventType, severity, latitude, longitude)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    // =========================================================================
     // Scheduling
     // =========================================================================
 
@@ -990,10 +1059,28 @@ class TraceletHostApiImpl(
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun getCarbonReport(query: Map<String?, Any?>?, callback: (Result<Map<String?, Any?>>) -> Unit) {
+    override fun getCarbonReport(query: Map<String, Any?>?, callback: (Result<Map<String, Any?>>) -> Unit) {
         try {
-            callback(Result.success((sdk.getCarbonReport(query as Map<String, Any?>?) as Map<String?, Any?>)))
+            callback(Result.success((sdk.getCarbonReport(query) as Map<String, Any?>)))
         } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    override fun getLogs(limit: Long, callback: (Result<List<com.ikolvi.tracelet.TlLogEntry?>>) -> Unit) {
+        val records = sdk.getLogs(limit.toInt())
+        val mapped = records.map { r ->
+            com.ikolvi.tracelet.TlLogEntry(
+                id = r.id.toLong(),
+                level = r.level,
+                message = r.message,
+                timestamp = r.timestamp
+            )
+        }
+        callback(Result.success(mapped))
+    }
+
+    override fun clearLogs(callback: (Result<Unit>) -> Unit) {
+        sdk.clearLogs()
+        callback(Result.success(Unit))
     }
 
     override fun getDeadReckoningState(callback: (Result<Map<String?, Any?>?>) -> Unit) {

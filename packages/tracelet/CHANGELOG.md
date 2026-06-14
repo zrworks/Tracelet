@@ -1,3 +1,13 @@
+## 3.3.0
+
+* **FIX** (Audit, Android/iOS): The tamper-proof audit chain only covered locations that flowed through the foreground location dispatcher. Background/headless persists (periodic worker, location service, killed-state relaunch, geofence events) wrote location rows with **no** matching audit-trail link, so `getAuditProof()` returned `null` for those records even with audit enabled. Audit links are now generated at the single persistence chokepoint, so **every** persisted location is chained regardless of source. Chain mutation is also now thread-safe.
+* **FIX** (Audit, iOS): `appendToChain` no longer creates an audit row for records without a `uuid` (it previously used an empty string). Such orphan rows had no retrievable location and made `verifyAuditTrail()` report the whole chain as *broken* ("missing location record"). uuid-less records are now skipped on both platforms. The audit hash version was bumped (auto-resets any orphaned/incomplete chains from the prior logic on first launch).
+* **FEAT** (Battery, Android): Motion-gated wakelock — drop the OEM partial wakelock when stationary and re-assert it on movement, via `AndroidConfig.releaseWakelockWhenStationary` (opt-in, default off; gated on the hardware significant-motion wake sensor) ([#162](https://github.com/Ikolvi/Tracelet/issues/162)).
+* **FEAT** (Driving & Safety): On-device driving-behavior telematics — `harsh_braking` / `harsh_acceleration` / `harsh_cornering` / `speeding` via `TelematicsConfig` + `Tracelet.onDrivingEvent` (opt-in, default off) ([#163](https://github.com/Ikolvi/Tracelet/issues/163)).
+* **FEAT** (Driving & Safety): On-device transport-mode classifier (still/walking/running/cycling/vehicle) fusing accelerometer + GPS via `ClassifierConfig` + `Tracelet.onModeChange` ([#164](https://github.com/Ikolvi/Tracelet/issues/164)).
+* **FEAT** (Driving & Safety): Crash & fall detection with a cancel-countdown confirmation flow via `ImpactConfig` + `Tracelet.onImpact` and `Tracelet.confirmImpact` / `Tracelet.cancelImpact` (opt-in, default off) ([#165](https://github.com/Ikolvi/Tracelet/issues/165)).
+* All three features are **default-off** and side-channel — no change to existing tracking when disabled. See [Driving & Safety](https://github.com/Ikolvi/Tracelet/blob/main/help/DRIVING-AND-SAFETY.md).
+
 ## 3.2.19
 
 **CHORE**: version bump for patch release

@@ -193,6 +193,7 @@ class TlAndroidConfig {
     required this.periodicUseExactAlarms,
     required this.scheduleUseAlarmManager,
     required this.foregroundService,
+    required this.releaseWakelockWhenStationary,
   });
 
   final int locationUpdateInterval;
@@ -204,6 +205,10 @@ class TlAndroidConfig {
   final bool periodicUseExactAlarms;
   final bool scheduleUseAlarmManager;
   final TlForegroundServiceConfig foregroundService;
+
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  final bool releaseWakelockWhenStationary;
 }
 
 class TlIosConfig {
@@ -230,7 +235,8 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
+    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, required this.syncTelematics, this.url,
+    this.telematicsUrl,
     this.headers,
     this.params,
     this.sslPinningFingerprints,
@@ -262,6 +268,8 @@ class TlHttpConfig {
   final int retryBackoffCap;
   final bool enableDeltaCompression;
   final int deltaCoordinatePrecision;
+  final bool syncTelematics;
+  final String? telematicsUrl;
 }
 
 class TlConfig {
@@ -279,6 +287,9 @@ class TlConfig {
     required this.privacyZone,
     required this.security,
     required this.attestation,
+    required this.telematics,
+    required this.classifier,
+    required this.impact,
   });
 
   final TlGeoConfig geo;
@@ -294,6 +305,9 @@ class TlConfig {
   final TlPrivacyZoneConfig privacyZone;
   final TlSecurityConfig security;
   final TlAttestationConfig attestation;
+  final TlTelematicsConfig telematics;
+  final TlClassifierConfig classifier;
+  final TlImpactConfig impact;
 }
 
 class TlLoggerConfig {
@@ -328,7 +342,9 @@ class TlMotionConfig {
     required this.disableStopDetection,
     required this.stopDetectionDelay,
     required this.stopOnStationary,
-    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval, required this.stationaryPeriodicAccuracy, required this.speedWakeConfirmCount, this.activityTypes,
+    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval,    required this.stationaryPeriodicAccuracy,
+    required this.speedWakeConfirmCount,
+    this.activityTypes,
   });
   final int stopTimeout;
   final int motionTriggerDelay;
@@ -400,6 +416,64 @@ class TlAttestationConfig {
   TlAttestationConfig({required this.enabled, required this.refreshInterval});
   final bool enabled;
   final int refreshInterval;
+}
+
+/// Driving-behavior (telematics) event detection config. See `TelematicsEngine`.
+class TlTelematicsConfig {
+  TlTelematicsConfig({
+    required this.enableDrivingEvents,
+    required this.harshBrakingG,
+    required this.harshAccelerationG,
+    required this.harshCorneringG,
+    required this.speedLimitKmh,
+    required this.speedingToleranceKmh,
+    required this.speedingMinDurationMs,
+    required this.minSpeedForEventsKmh,
+    required this.eventDebounceMs,
+  });
+  final bool enableDrivingEvents;
+  final double harshBrakingG;
+  final double harshAccelerationG;
+  final double harshCorneringG;
+  final double speedLimitKmh;
+  final double speedingToleranceKmh;
+  final int speedingMinDurationMs;
+  final double minSpeedForEventsKmh;
+  final int eventDebounceMs;
+}
+
+/// On-device transport-mode classifier config. See `TransportModeClassifier`.
+class TlClassifierConfig {
+  TlClassifierConfig({
+    required this.enableFusedClassifier,
+    required this.fusedClassifierAuthoritative,
+    required this.modeSwitchDwellMs,
+    required this.minModeConfidence,
+  });
+  final bool enableFusedClassifier;
+  final bool fusedClassifierAuthoritative;
+  final int modeSwitchDwellMs;
+  final double minModeConfidence;
+}
+
+/// Crash & fall detection config. See `ImpactDetector`.
+class TlImpactConfig {
+  TlImpactConfig({
+    required this.enableCrashDetection,
+    required this.enableFallDetection,
+    required this.crashGThreshold,
+    required this.crashMinSpeedKmh,
+    required this.fallGThreshold,
+    required this.confirmWindowMs,
+    required this.minImpactConfidence,
+  });
+  final bool enableCrashDetection;
+  final bool enableFallDetection;
+  final double crashGThreshold;
+  final double crashMinSpeedKmh;
+  final double fallGThreshold;
+  final int confirmWindowMs;
+  final double minImpactConfidence;
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }
@@ -653,6 +727,60 @@ class TlConnectivityChangeEvent {
   final bool connected;
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+class TlDrivingEvent {
+  TlDrivingEvent({
+    required this.kind,
+    required this.severity,
+    required this.speed,
+    required this.value,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+  });
+  final String kind;
+  final double severity;
+  final double speed;
+  final double value;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+class TlImpactEvent {
+  TlImpactEvent({
+    required this.kind,
+    required this.id,
+    required this.confidence,
+    required this.peakG,
+    required this.speedBefore,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+    required this.confirmDeadlineMs,
+  });
+  final String kind;
+  final int id;
+  final double confidence;
+  final double peakG;
+  final double speedBefore;
+  final double latitude;
+  final double longitude;
+  final int timestampMs;
+  final int confirmDeadlineMs;
+}
+
+/// A fused transport-mode change.
+class TlModeChangeEvent {
+  TlModeChangeEvent({
+    required this.mode,
+    required this.confidence,
+  });
+  final String mode;
+  final double confidence;
+}
+
 // =============================================================================
 // Host API
 // =============================================================================
@@ -699,6 +827,12 @@ abstract class TraceletHostApi {
 
   @async
   bool changePace(bool isMoving);
+
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  bool confirmImpact(int id);
+
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  bool cancelImpact(int id);
 
   @async
   double getOdometer();
@@ -879,12 +1013,76 @@ abstract class TraceletHostApi {
 
   @async
   Map<String?, Object?>? getAttestationToken();
-
   @async
   Map<String?, Object?>? getDeadReckoningState();
 
   @async
-  Map<String?, Object?> getCarbonReport(Map<String?, Object?>? query);
+  Map<String, Object?> getCarbonReport(Map<String, Object?>? query);
+
+  @async
+  bool simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  );
+
+  @async
+  List<TlTelematicsRecord?> getTelematicsEvents(int limit);
+
+  @async
+  bool destroyTelematicsEvents();
+
+  @async
+  List<TlLogEntry?> getLogs(int limit);
+
+  @async
+  void clearLogs();
+}
+
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The type of telematics event.
+  final String eventType;
+  /// The severity of the event.
+  final double severity;
+  /// The latitude.
+  final double latitude;
+  /// The longitude.
+  final double longitude;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
+  /// Whether the event has been synced to the server.
+  final bool synced;
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The log level.
+  final String level;
+  /// The log message.
+  final String message;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
 }
 
 // =============================================================================
@@ -917,4 +1115,7 @@ abstract class TraceletEventApi {
   void onNotificationAction(String action);
   void onAuthorization(TlAuthorizationEvent event);
   void onWatchPosition(TlLocation location);
+  void onDrivingEvent(TlDrivingEvent event);
+  void onImpact(TlImpactEvent event);
+  void onModeChange(TlModeChangeEvent event);
 }

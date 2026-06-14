@@ -1,5 +1,5 @@
 group = "com.ikolvi.tracelet_sync"
-version = "1.0-SNAPSHOT"
+version = "3.3.0"
 
 buildscript {
     val kotlinVersion = "2.3.20"
@@ -72,8 +72,8 @@ kotlin {
 }
 
 dependencies {
-    compileOnly("com.ikolvi:tracelet-sdk:3.2.19")
-    implementation("com.ikolvi:tracelet-sync-sdk:3.2.19")
+    compileOnly("com.ikolvi:tracelet-sdk:3.3.0")
+    implementation("com.ikolvi:tracelet-sync-sdk:3.3.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }

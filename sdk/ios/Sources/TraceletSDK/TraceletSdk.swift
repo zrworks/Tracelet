@@ -106,6 +106,19 @@ public final class TraceletSdk {
     /// Battery budget sampling interval: 5 minutes.
     private static let batterySampleInterval: TimeInterval = 5 * 60
 
+    // 3.3.0 behavior engines (opt-in, default off)
+    private var telematicsEngine: TelematicsEngine?
+    private var transportClassifier: TransportModeClassifier?
+    private var impactDetector: ImpactDetector?
+    private var accelBuffer: [Double] = []
+    private let accelBufferLock = NSLock()
+    private var accelWindowTimer: Timer?
+    private var impactConfirmTimer: Timer?
+    private var lastSpeedMps: Double = 0
+    private var lastLat: Double = 0
+    private var lastLng: Double = 0
+    private static let accelWindowInterval: TimeInterval = 1.0
+
     /// Whether ``ready(config:)`` has been called.
     public var isReadyState: Bool { isReady }
 
@@ -263,6 +276,8 @@ public final class TraceletSdk {
             batteryBudgetEngine = nil
         }
 
+        initBehaviorEngines()
+
         isReady = true
         syncConfigToRustFlat()
         checkSyncProvider()
@@ -362,6 +377,7 @@ public final class TraceletSdk {
         startHeartbeat()
         startStopAfterElapsedTimer()
         startBatteryBudgetSampling()
+        startBehaviorSampling()
         preventSuspendManager.start()
         serviceSessionManager.start()
 
@@ -399,6 +415,8 @@ public final class TraceletSdk {
             tripManager.reset()
             stopBatteryBudgetSampling()
             batteryBudgetEngine?.reset()
+            stopBehaviorSampling()
+            telematicsEngine?.reset()
             eventSender.sendEnabledChange(false)
             logger.info("stop() — tracking stopped")
         }
@@ -1021,7 +1039,24 @@ public final class TraceletSdk {
         if eventType == "location" { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
-        if let auditHash = params["audit_hash"] as? String {
+
+        // Audit trail (Enterprise): the canonical place audit links are created.
+        // The LocationEngine.dispatch() path pre-computes `audit_hash` and passes
+        // it in `params`. But background/headless persists that call insertLocation()
+        // directly (autoResumeTracking, geofence events, etc.) never went through
+        // dispatch(), so they previously skipped the chain entirely — leaving
+        // location_events rows with no matching audit_trail row, so getAuditProof()
+        // returned nil for any such record. Generate the audit link here when it
+        // wasn't pre-computed, so EVERY persisted location is covered.
+        var auditHash = params["audit_hash"] as? String
+        var auditPrevHash = params["audit_previous_hash"]
+        var auditChainIndex = params["audit_chain_index"]
+        if auditHash == nil, uuid != nil, let auditFields = auditTrailManager?.appendToChain(params) {
+            auditHash = auditFields["audit_hash"] as? String
+            auditPrevHash = auditFields["audit_previous_hash"]
+            auditChainIndex = auditFields["audit_chain_index"]
+        }
+        if let auditHash = auditHash {
             var contextDict: [String: Any] = [:]
             if let rc = routeContext, let data = rc.data(using: .utf8) {
                 if let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
@@ -1029,9 +1064,9 @@ public final class TraceletSdk {
                 }
             }
             contextDict["audit_hash"] = auditHash
-            if let prevHash = params["audit_previous_hash"] { contextDict["audit_previous_hash"] = prevHash }
-            if let chainIndex = params["audit_chain_index"] { contextDict["audit_chain_index"] = chainIndex }
-            
+            if let prevHash = auditPrevHash { contextDict["audit_previous_hash"] = prevHash }
+            if let chainIndex = auditChainIndex { contextDict["audit_chain_index"] = chainIndex }
+
             if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
                let jsonString = String(data: jsonData, encoding: .utf8) {
                 routeContext = jsonString
@@ -1094,7 +1129,37 @@ public final class TraceletSdk {
                     // instead of always defaulting to ascending (Issue #138).
                     orderDescending: config.http.locationsOrderDirection == 1
                 ))
-                if records.isEmpty {
+                var configHttp = config.http
+                let syncTelematics = (self.configManager.getConfig()["http"] as? [String: Any])?["syncTelematics"] as? Bool ?? false
+                
+                var telematicsCleared = false
+                if syncTelematics {
+                    let telematics = try db.getTelematicsEvents(limit: 250)
+                    if !telematics.isEmpty {
+                        var telematicsDicts = [[String: Any]]()
+                        for event in telematics {
+                            telematicsDicts.append([
+                                "id": event.id,
+                                "event_type": event.eventType,
+                                "severity": event.severity,
+                                "latitude": event.latitude,
+                                "longitude": event.longitude,
+                                "timestamp": event.timestamp,
+                                "synced": event.synced
+                            ])
+                        }
+                        if let jsonData = try? JSONSerialization.data(withJSONObject: telematicsDicts, options: []),
+                           let jsonString = String(data: jsonData, encoding: .utf8) {
+                            var newExtras = configHttp.extras ?? [:]
+                            newExtras["__telematics"] = jsonString
+                            configHttp.extras = newExtras
+                            telematicsCleared = true
+                        }
+                    }
+                }
+                
+                let hasTelematics = telematicsCleared
+                if records.isEmpty && !hasTelematics {
                     DispatchQueue.main.async { completion?([]) }
                     return
                 }
@@ -1105,14 +1170,19 @@ public final class TraceletSdk {
                     return
                 }
                 
-                let syncedCount = try syncProvider.syncBatchBlocking(config: config.http, records: records)
-                if syncedCount > 0 {
-                    let successfullySynced = Array(records.prefix(Int(syncedCount)))
-                    if let lastRecord = successfullySynced.last {
-                        try db.clearLocationsUpTo(maxId: lastRecord.id)
-                        self.syncedLocationsLock.lock()
-                        self.syncedLocationsRemoved += Int(syncedCount)
-                        self.syncedLocationsLock.unlock()
+                let syncedCount = try syncProvider.syncBatchBlocking(config: configHttp, records: records)
+                if syncedCount > 0 || hasTelematics {
+                    if syncedCount > 0 {
+                        let successfullySynced = Array(records.prefix(Int(syncedCount)))
+                        if let lastRecord = successfullySynced.last {
+                            try db.clearLocationsUpTo(maxId: lastRecord.id)
+                            self.syncedLocationsLock.lock()
+                            self.syncedLocationsRemoved += Int(syncedCount)
+                            self.syncedLocationsLock.unlock()
+                        }
+                    }
+                    if telematicsCleared {
+                        try db.clearTelematicsEvents()
                     }
                     DispatchQueue.main.async { completion?([]) }
                 } else {
@@ -1277,6 +1347,78 @@ public final class TraceletSdk {
     public func log(_ level: String, _ message: String) {
         guard isReady else { return }
         logger.log(levelString: level, message: message)
+    }
+
+    // =========================================================================
+    // MARK: - Telematics
+    // =========================================================================
+
+    /// Retrieve raw telematics events.
+    ///
+    /// - Parameter limit: Maximum number of events to return.
+    /// - Returns: Array of `DbTelematicsRecord` objects.
+    public func getTelematicsEvents(limit: Int) -> [DbTelematicsRecord] {
+        guard isReady, let db = rustDatabase else { return [] }
+        do {
+            return try db.getTelematicsEvents(limit: Int32(limit))
+        } catch {
+            NSLog("Failed to get telematics events: \(error)")
+            return []
+        }
+    }
+
+    public func getLogs(limit: Int) -> [LogEntry] {
+        guard let db = rustDatabase else { return [] }
+        do {
+            return try db.getLogs(limit: Int32(limit))
+        } catch {
+            NSLog("Failed to get logs: \(error)")
+            return []
+        }
+    }
+    
+    public func clearLogs() {
+        guard let db = rustDatabase else { return }
+        do {
+            try db.clearLogs()
+        } catch {
+            NSLog("Failed to clear logs: \(error)")
+        }
+    }
+
+    /// Destroy all synced and unsynced telematics events.
+    ///
+    /// - Returns: `true` if cleared successfully.
+    @discardableResult
+    public func destroyTelematicsEvents() -> Bool {
+        guard isReady, let db = rustDatabase else { return false }
+        do {
+            try db.clearTelematicsEvents()
+            return true
+        } catch {
+            logger.error("Failed to clear telematics events: \(error)")
+            return false
+        }
+    }
+
+    /// Simulate a telematics event (e.g. for testing).
+    ///
+    /// - Parameters:
+    ///   - eventType: The type of event (e.g. "harsh_braking").
+    ///   - severity: Severity value (e.g. g-force).
+    ///   - latitude: Event latitude.
+    ///   - longitude: Event longitude.
+    /// - Returns: `true` if inserted successfully.
+    @discardableResult
+    public func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double) -> Bool {
+        guard isReady, let db = rustDatabase else { return false }
+        do {
+            try db.insertTelematicsEvent(eventType: eventType, severity: severity, lat: latitude, lng: longitude)
+            return true
+        } catch {
+            logger.error("Failed to simulate telematics event: \(error)")
+            return false
+        }
     }
 
     // =========================================================================
@@ -1510,6 +1652,7 @@ public final class TraceletSdk {
             eventDispatcher: eventSender
         )
         locationEngine.registerSink(RustDatabaseSinkWrapper(sdk: self))
+        locationEngine.registerSink(TelematicsSinkWrapper(sdk: self))
         if let syncSink = syncProvider as? LocationDataSink {
             locationEngine.registerSink(syncSink)
         }
@@ -1540,6 +1683,10 @@ public final class TraceletSdk {
         // report a permanent "unknown" (#155).
         motionDetector.onActivityChanged = { [weak self] type, _ in
             self?.locationEngine.currentActivityType = type
+        }
+        // 3.3.0: feed accelerometer samples (g) to the classifier/impact keystone.
+        motionDetector.onAccelSample = { [weak self] magnitudeG in
+            self?.feedAccelSample(magnitudeG)
         }
         motionDetector.onStopTimeoutStarted = { [weak self] in
             self?.locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "MotionDetector")
@@ -1743,6 +1890,150 @@ public final class TraceletSdk {
     private func stopSyncIntervalTimer() {
         syncIntervalTimer?.invalidate()
         syncIntervalTimer = nil
+    }
+
+    // MARK: - 3.3.0 behavior engines (telematics / classifier / impact)
+
+    private func initBehaviorEngines() {
+        telematicsEngine = configManager.getEnableDrivingEvents()
+            ? TelematicsEngine(config: TelematicsConfig(
+                harshBrakingG: configManager.getHarshBrakingG(),
+                harshAccelerationG: configManager.getHarshAccelerationG(),
+                harshCorneringG: configManager.getHarshCorneringG(),
+                speedLimitKmh: configManager.getSpeedLimitKmh(),
+                speedingToleranceKmh: configManager.getSpeedingToleranceKmh(),
+                speedingMinDurationMs: configManager.getSpeedingMinDurationMs(),
+                minSpeedForEventsKmh: configManager.getMinSpeedForEventsKmh(),
+                eventDebounceMs: configManager.getEventDebounceMs()))
+            : nil
+
+        transportClassifier = configManager.getEnableFusedClassifier()
+            ? TransportModeClassifier(config: ClassifierConfig(
+                modeSwitchDwellMs: configManager.getModeSwitchDwellMs(),
+                minConfidence: configManager.getMinModeConfidence()))
+            : nil
+
+        impactDetector = (configManager.getEnableCrashDetection() || configManager.getEnableFallDetection())
+            ? ImpactDetector(config: ImpactConfig(
+                enableCrash: configManager.getEnableCrashDetection(),
+                enableFall: configManager.getEnableFallDetection(),
+                crashGThreshold: configManager.getCrashGThreshold(),
+                crashMinSpeedKmh: configManager.getCrashMinSpeedKmh(),
+                fallGThreshold: configManager.getFallGThreshold(),
+                confirmWindowMs: configManager.getConfirmWindowMs(),
+                minConfidence: configManager.getMinImpactConfidence()))
+            : nil
+    }
+
+    /// Feeds an accepted location fix to the telematics engine and emits events.
+    func processTelematics(_ location: [String: Any]) {
+        guard let engine = telematicsEngine else { return }
+        let coords = location["coords"] as? [String: Any] ?? location
+        let speed = (coords["speed"] as? Double) ?? 0.0
+        let heading = (coords["heading"] as? Double) ?? -1.0
+        let lat = (coords["latitude"] as? Double) ?? 0.0
+        let lng = (coords["longitude"] as? Double) ?? 0.0
+        lastSpeedMps = speed
+        lastLat = lat
+        lastLng = lng
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let events = engine.processFix(speed: speed, heading: heading, latitude: lat, longitude: lng, timestampMs: nowMs)
+        for e in events {
+            eventSender.sendDrivingEvent([
+                "kind": e.kind, "severity": e.severity, "speed": e.speed,
+                "value": e.value, "latitude": e.latitude, "longitude": e.longitude,
+                "timestampMs": e.timestampMs,
+            ])
+            // Persist to the telematics DB so getTelematicsEvents() returns the
+            // real history (not just Doctor-simulated events).
+            try? rustDatabase?.insertTelematicsEvent(
+                eventType: e.kind, severity: e.severity, lat: e.latitude, lng: e.longitude)
+        }
+    }
+
+    /// Buffers one accelerometer sample (gravity-subtracted g) for the window loop.
+    func feedAccelSample(_ magnitudeG: Double) {
+        guard transportClassifier != nil || impactDetector != nil else { return }
+        accelBufferLock.lock()
+        accelBuffer.append(magnitudeG)
+        accelBufferLock.unlock()
+    }
+
+    private func startBehaviorSampling() {
+        stopBehaviorSampling()
+        guard transportClassifier != nil || impactDetector != nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.accelWindowTimer = Timer.scheduledTimer(withTimeInterval: Self.accelWindowInterval, repeats: true) { [weak self] _ in
+                self?.processAccelWindow()
+            }
+            if self.impactDetector != nil {
+                self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                    guard let self = self, let detector = self.impactDetector else { return }
+                    let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+                    for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
+                }
+            }
+        }
+    }
+
+    private func stopBehaviorSampling() {
+        accelWindowTimer?.invalidate(); accelWindowTimer = nil
+        impactConfirmTimer?.invalidate(); impactConfirmTimer = nil
+        accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
+    }
+
+    private func processAccelWindow() {
+        accelBufferLock.lock()
+        let samples = accelBuffer
+        accelBuffer.removeAll()
+        accelBufferLock.unlock()
+        guard !samples.isEmpty else { return }
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let window = computeAccelWindow(magnitudesG: samples, durationMs: Int64(Self.accelWindowInterval * 1000))
+
+        if let classifier = transportClassifier {
+            let result = classifier.classify(window: window, speedMps: lastSpeedMps, nowMs: nowMs)
+            if result.changed {
+                eventSender.sendModeChange([
+                    "mode": String(describing: result.mode).lowercased(),
+                    "confidence": result.confidence,
+                ])
+            }
+        }
+        if let detector = impactDetector {
+            let onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
+                emitImpact(candidate)
+            }
+        }
+    }
+
+    private func emitImpact(_ e: ImpactEvent) {
+        eventSender.sendImpact([
+            "kind": e.kind, "id": e.id, "confidence": e.confidence, "peakG": e.peakG,
+            "speedBefore": e.speedBefore, "latitude": e.latitude, "longitude": e.longitude,
+            "timestampMs": e.timestampMs, "confirmDeadlineMs": e.confirmDeadlineMs,
+        ])
+        // Persist confirmed impacts (not transient potential_* candidates, which
+        // may still be cancelled) to the telematics DB for history/retrieval.
+        if e.kind == "crash" || e.kind == "fall" {
+            try? rustDatabase?.insertTelematicsEvent(
+                eventType: e.kind, severity: e.confidence, lat: e.latitude, lng: e.longitude)
+        }
+    }
+
+    /// Confirms a pending impact candidate (called from the Pigeon host API).
+    public func confirmImpact(_ id: Int64) -> Bool {
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        guard let confirmed = impactDetector?.confirm(id: id, nowMs: nowMs) else { return false }
+        emitImpact(confirmed)
+        return true
+    }
+
+    /// Cancels a pending impact candidate (called from the Pigeon host API).
+    public func cancelImpact(_ id: Int64) -> Bool {
+        return impactDetector?.cancel(id: id) ?? false
     }
 
     // MARK: - Private: Battery Budget Sampling
@@ -2435,6 +2726,16 @@ private struct RustDatabaseSinkWrapper: LocationDataSink {
 
     func insertLocation(_ location: [String: Any]) -> String {
         return sdk?.insertLocation(location) ?? ""
+    }
+}
+
+/// Feeds each accepted location into the telematics engine (3.3.0).
+private struct TelematicsSinkWrapper: LocationDataSink {
+    weak var sdk: TraceletSdk?
+
+    func insertLocation(_ location: [String: Any]) -> String {
+        sdk?.processTelematics(location)
+        return ""
     }
 }
 

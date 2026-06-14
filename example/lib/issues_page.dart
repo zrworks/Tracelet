@@ -58,6 +58,7 @@ class _IssuesPageState extends State<IssuesPage> {
     149,
     154,
     159,
+    162,
   ];
 
   bool _isIssue134Tracking = false;
@@ -101,6 +102,7 @@ class _IssuesPageState extends State<IssuesPage> {
     _issue140MotionSub?.cancel();
     _issue155Sub?.cancel();
     _issue157Sub?.cancel();
+    _issue162Sub?.cancel();
     super.dispose();
   }
 
@@ -1414,6 +1416,63 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 162: Battery Budget & Wakelock ====
+  bool _isIssue162Tracking = false;
+  StreamSubscription? _issue162Sub;
+  String _issue162Details = '';
+
+  Future<void> _toggleIssue162() async {
+    if (_isIssue162Tracking) {
+      await Tracelet.stop();
+      _issue162Sub?.cancel();
+      setState(() {
+        _isIssue162Tracking = false;
+        _issue162Details = '';
+        _statuses[162] = 'Idle';
+      });
+      return;
+    }
+
+    _setStatus(162, 'Requesting permissions...');
+    await Tracelet.requestLocationAuthorization();
+    await Tracelet.requestMotionAuthorization();
+
+    _setStatus(162, 'Starting Tracelet with BatteryBudget (5%/hr)...');
+    try {
+      await Tracelet.ready(
+        const Config(
+          android: AndroidConfig(releaseWakelockWhenStationary: true),
+          motion: MotionConfig(
+            motionDetectionMode: MotionDetectionMode.smart,
+            stationaryPeriodicInterval: 60,
+          ),
+          geo: GeoConfig(batteryBudgetPerHour: 5),
+        ),
+      );
+
+      _issue162Sub = Tracelet.onBudgetAdjustment((event) {
+        if (mounted) {
+          setState(() {
+            _issue162Details =
+                'Drain: ${event.currentBatteryDrain.toStringAsFixed(2)}%/hr\n'
+                'Target: ${event.targetBudget}%/hr\n'
+                'New DF: ${event.newDistanceFilter}m\n'
+                'New Acc: ${event.newDesiredAccuracy}\n'
+                'New Interval: ${event.newPeriodicInterval}s';
+          });
+        }
+      });
+
+      await Tracelet.start();
+      setState(() {
+        _isIssue162Tracking = true;
+        _statuses[162] = 'Tracking (Budget Active)';
+      });
+    } catch (e) {
+      _setStatus(162, '❌ FAILED: $e');
+    }
+  }
+
   Widget _buildIssueCard({
     required int issueNumber,
     required String title,
@@ -2022,6 +2081,26 @@ class _IssuesPageState extends State<IssuesPage> {
                       onPressed: _testIssue159,
                       icon: const Icon(Icons.inbox),
                       label: const Text('Run Test'),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 162,
+                  title: 'Battery Budget & Wakelock',
+                  description:
+                      'Test dynamic battery budgeting (adjusts distanceFilter, '
+                      'desiredAccuracy, and periodic interval based on target %/hr) '
+                      'and stationary OEM Wakelock release.\n\n'
+                      '$_issue162Details',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _toggleIssue162,
+                      icon: Icon(
+                        _isIssue162Tracking ? Icons.stop : Icons.play_arrow,
+                      ),
+                      label: Text(
+                        _isIssue162Tracking ? 'Stop' : 'Start tracking',
+                      ),
                     ),
                   ],
                 ),

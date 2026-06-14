@@ -1,5 +1,10 @@
+import NotificationBell from './components/NotificationBell'
+
 export default {
   logo: <span style={{ color: '#0F9D58', fontWeight: 'bold' }}>Tracelet</span>,
+  navbar: {
+    extra: <NotificationBell />
+  },
   project: {
     link: 'https://github.com/Ikolvi/Tracelet'
   },

@@ -10,6 +10,7 @@ import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 import 'package:tracelet/src/models/activity_change_event.dart';
 import 'package:tracelet/src/models/attestation_config.dart';
 import 'package:tracelet/src/models/audit_config.dart';
+import 'package:tracelet/src/models/driving_event.dart';
 import 'package:tracelet/src/models/audit_proof.dart';
 import 'package:tracelet/src/models/authorization_event.dart';
 import 'package:tracelet/src/models/compliance_report.dart';
@@ -34,6 +35,8 @@ import 'package:tracelet/src/models/state.dart';
 import 'package:tracelet/src/models/sync_body_context.dart';
 import 'package:tracelet/src/models/trip_event.dart';
 import 'package:tracelet/src/models/speed_motion_event.dart';
+import 'package:tracelet/src/models/log_entry.dart';
+import 'package:tracelet/src/models/telematics_record.dart';
 
 /// Production-grade background geolocation for Flutter.
 ///
@@ -121,6 +124,9 @@ class Tracelet {
   static Stream<HttpEvent>? _httpStream;
   static Stream<State>? _scheduleStream;
   static Stream<ConnectivityChangeEvent>? _connectivityChangeStream;
+  static Stream<DrivingEvent>? _drivingEventStream;
+  static Stream<ImpactEvent>? _impactStream;
+  static Stream<ModeChangeEvent>? _modeChangeStream;
 
   /// Whether the Kalman filter is currently enabled for GPS smoothing.
   ///
@@ -558,6 +564,19 @@ class Tracelet {
     return _platform.changePace(isMoving);
   }
 
+  /// Confirms a pending impact candidate ([ImpactEvent.id]) as a real
+  /// emergency, firing its confirmed `crash`/`fall` event immediately.
+  static Future<bool> confirmImpact(int id) {
+    return _platform.confirmImpact(id);
+  }
+
+  /// Cancels a pending impact candidate ([ImpactEvent.id]) within its
+  /// confirmation window — no confirmed event will fire. Call this when the
+  /// user dismisses the crash/fall countdown ("I'm fine").
+  static Future<bool> cancelImpact(int id) {
+    return _platform.cancelImpact(id);
+  }
+
   /// Get the current odometer value in meters.
   static Future<double> getOdometer() {
     return _platform.getOdometer();
@@ -616,8 +635,50 @@ class Tracelet {
   }
 
   // ---------------------------------------------------------------------------
-  // Persistence
+  // Persistence & Logs & Telematics
   // ---------------------------------------------------------------------------
+
+  /// Get stored logs from the native SQLite database.
+  ///
+  /// The [limit] controls the maximum number of logs returned.
+  static Future<List<LogEntry>> getLogs(int limit) async {
+    final result = await _platform.getLogs(limit);
+    return result.whereType<TlLogEntry>().map(LogEntry.fromTl).toList();
+  }
+
+  /// Delete all stored background logs from the native SQLite database.
+  static Future<void> clearLogs() async {
+    await _platform.clearLogs();
+  }
+
+  /// Get stored telematics events.
+  static Future<List<TelematicsRecord>> getTelematicsEvents(int limit) async {
+    final result = await _platform.getTelematicsEvents(limit);
+    return result
+        .whereType<TlTelematicsRecord>()
+        .map(TelematicsRecord.fromTl)
+        .toList();
+  }
+
+  /// Destroy all stored telematics events.
+  static Future<bool> destroyTelematicsEvents() {
+    return _platform.destroyTelematicsEvents();
+  }
+
+  /// Manually insert a telematics event (e.g. for testing with the Doctor UI).
+  static Future<bool> simulateTelematicsEvent({
+    required String eventType,
+    required double severity,
+    required double latitude,
+    required double longitude,
+  }) async {
+    return _platform.simulateTelematicsEvent(
+      eventType,
+      severity,
+      latitude,
+      longitude,
+    );
+  }
 
   /// Get stored locations from the local database.
   ///
@@ -1680,8 +1741,9 @@ class Tracelet {
   /// ```
   static Future<Map<String, Object?>> getCarbonReport([
     Map<String, Object?>? query,
-  ]) {
-    return _platform.getCarbonReport(query);
+  ]) async {
+    final result = await _platform.getCarbonReport(query);
+    return result.cast<String, Object?>();
   }
 
   // ---------------------------------------------------------------------------
@@ -1906,6 +1968,33 @@ class Tracelet {
     );
   }
 
+  /// A broadcast stream of driving-behavior (telematics) events.
+  ///
+  /// Fires for `harsh_braking`, `harsh_acceleration`, `harsh_cornering`, and
+  /// `speeding` when `TelematicsConfig.enableDrivingEvents` is set.
+  static Stream<DrivingEvent> get drivingEventStream {
+    return _drivingEventStream ??= _platform.drivingEvents.map(
+      DrivingEvent.fromTl,
+    );
+  }
+
+  /// A broadcast stream of crash/fall impact events.
+  ///
+  /// Fires `potential_crash`/`crash` (and `potential_fall`/`fall` when enabled)
+  /// when `ImpactConfig.enableCrashDetection` is set.
+  static Stream<ImpactEvent> get impactStream {
+    return _impactStream ??= _platform.impactEvents.map(ImpactEvent.fromTl);
+  }
+
+  /// A broadcast stream of fused transport-mode changes.
+  ///
+  /// Fires when `ClassifierConfig.enableFusedClassifier` is set.
+  static Stream<ModeChangeEvent> get modeChangeStream {
+    return _modeChangeStream ??= _platform.modeChangeEvents.map(
+      ModeChangeEvent.fromTl,
+    );
+  }
+
   /// A broadcast stream of schedule events.
   ///
   /// Fires when the scheduler starts or stops a tracking period.
@@ -2088,6 +2177,36 @@ class Tracelet {
           )
           .listen(callback),
     );
+  }
+
+  /// Subscribe to driving-behavior (telematics) events.
+  ///
+  /// Requires `TelematicsConfig.enableDrivingEvents`. Fires `harsh_braking`,
+  /// `harsh_acceleration`, `harsh_cornering`, and `speeding`.
+  static StreamSubscription<DrivingEvent> onDrivingEvent(
+    void Function(DrivingEvent) callback,
+  ) {
+    return _tracked(drivingEventStream.listen(callback));
+  }
+
+  /// Subscribe to crash/fall impact events.
+  ///
+  /// Requires `ImpactConfig.enableCrashDetection` (and/or `enableFallDetection`).
+  /// A `potential_*` event can be cancelled within its window via
+  /// [cancelImpact], or confirmed early via [confirmImpact].
+  static StreamSubscription<ImpactEvent> onImpact(
+    void Function(ImpactEvent) callback,
+  ) {
+    return _tracked(impactStream.listen(callback));
+  }
+
+  /// Subscribe to fused transport-mode changes.
+  ///
+  /// Requires `ClassifierConfig.enableFusedClassifier`.
+  static StreamSubscription<ModeChangeEvent> onModeChange(
+    void Function(ModeChangeEvent) callback,
+  ) {
+    return _tracked(modeChangeStream.listen(callback));
   }
 
   /// Subscribe to heartbeat events.

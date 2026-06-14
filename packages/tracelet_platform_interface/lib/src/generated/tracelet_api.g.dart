@@ -633,6 +633,7 @@ class TlAndroidConfig {
     required this.periodicUseExactAlarms,
     required this.scheduleUseAlarmManager,
     required this.foregroundService,
+    required this.releaseWakelockWhenStationary,
   });
 
   int locationUpdateInterval;
@@ -653,6 +654,10 @@ class TlAndroidConfig {
 
   TlForegroundServiceConfig foregroundService;
 
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  bool releaseWakelockWhenStationary;
+
   List<Object?> _toList() {
     return <Object?>[
       locationUpdateInterval,
@@ -664,6 +669,7 @@ class TlAndroidConfig {
       periodicUseExactAlarms,
       scheduleUseAlarmManager,
       foregroundService,
+      releaseWakelockWhenStationary,
     ];
   }
 
@@ -683,6 +689,7 @@ class TlAndroidConfig {
       periodicUseExactAlarms: result[6]! as bool,
       scheduleUseAlarmManager: result[7]! as bool,
       foregroundService: result[8]! as TlForegroundServiceConfig,
+      releaseWakelockWhenStationary: result[9]! as bool,
     );
   }
 
@@ -709,7 +716,11 @@ class TlAndroidConfig {
         ) &&
         _deepEquals(periodicUseExactAlarms, other.periodicUseExactAlarms) &&
         _deepEquals(scheduleUseAlarmManager, other.scheduleUseAlarmManager) &&
-        _deepEquals(foregroundService, other.foregroundService);
+        _deepEquals(foregroundService, other.foregroundService) &&
+        _deepEquals(
+          releaseWakelockWhenStationary,
+          other.releaseWakelockWhenStationary,
+        );
   }
 
   @override
@@ -833,6 +844,8 @@ class TlHttpConfig {
     required this.retryBackoffCap,
     required this.enableDeltaCompression,
     required this.deltaCoordinatePrecision,
+    required this.syncTelematics,
+    this.telematicsUrl,
   });
 
   String? url;
@@ -879,6 +892,10 @@ class TlHttpConfig {
 
   int deltaCoordinatePrecision;
 
+  bool syncTelematics;
+
+  String? telematicsUrl;
+
   List<Object?> _toList() {
     return <Object?>[
       url,
@@ -903,6 +920,8 @@ class TlHttpConfig {
       retryBackoffCap,
       enableDeltaCompression,
       deltaCoordinatePrecision,
+      syncTelematics,
+      telematicsUrl,
     ];
   }
 
@@ -935,6 +954,8 @@ class TlHttpConfig {
       retryBackoffCap: result[19]! as int,
       enableDeltaCompression: result[20]! as bool,
       deltaCoordinatePrecision: result[21]! as int,
+      syncTelematics: result[22]! as bool,
+      telematicsUrl: result[23] as String?,
     );
   }
 
@@ -971,7 +992,9 @@ class TlHttpConfig {
         _deepEquals(retryBackoffBase, other.retryBackoffBase) &&
         _deepEquals(retryBackoffCap, other.retryBackoffCap) &&
         _deepEquals(enableDeltaCompression, other.enableDeltaCompression) &&
-        _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision);
+        _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision) &&
+        _deepEquals(syncTelematics, other.syncTelematics) &&
+        _deepEquals(telematicsUrl, other.telematicsUrl);
   }
 
   @override
@@ -994,6 +1017,9 @@ class TlConfig {
     required this.privacyZone,
     required this.security,
     required this.attestation,
+    required this.telematics,
+    required this.classifier,
+    required this.impact,
   });
 
   TlGeoConfig geo;
@@ -1022,6 +1048,12 @@ class TlConfig {
 
   TlAttestationConfig attestation;
 
+  TlTelematicsConfig telematics;
+
+  TlClassifierConfig classifier;
+
+  TlImpactConfig impact;
+
   List<Object?> _toList() {
     return <Object?>[
       geo,
@@ -1037,6 +1069,9 @@ class TlConfig {
       privacyZone,
       security,
       attestation,
+      telematics,
+      classifier,
+      impact,
     ];
   }
 
@@ -1060,6 +1095,9 @@ class TlConfig {
       privacyZone: result[10]! as TlPrivacyZoneConfig,
       security: result[11]! as TlSecurityConfig,
       attestation: result[12]! as TlAttestationConfig,
+      telematics: result[13]! as TlTelematicsConfig,
+      classifier: result[14]! as TlClassifierConfig,
+      impact: result[15]! as TlImpactConfig,
     );
   }
 
@@ -1084,7 +1122,10 @@ class TlConfig {
         _deepEquals(audit, other.audit) &&
         _deepEquals(privacyZone, other.privacyZone) &&
         _deepEquals(security, other.security) &&
-        _deepEquals(attestation, other.attestation);
+        _deepEquals(attestation, other.attestation) &&
+        _deepEquals(telematics, other.telematics) &&
+        _deepEquals(classifier, other.classifier) &&
+        _deepEquals(impact, other.impact);
   }
 
   @override
@@ -1599,6 +1640,237 @@ class TlAttestationConfig {
     }
     return _deepEquals(enabled, other.enabled) &&
         _deepEquals(refreshInterval, other.refreshInterval);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// Driving-behavior (telematics) event detection config. See `TelematicsEngine`.
+class TlTelematicsConfig {
+  TlTelematicsConfig({
+    required this.enableDrivingEvents,
+    required this.harshBrakingG,
+    required this.harshAccelerationG,
+    required this.harshCorneringG,
+    required this.speedLimitKmh,
+    required this.speedingToleranceKmh,
+    required this.speedingMinDurationMs,
+    required this.minSpeedForEventsKmh,
+    required this.eventDebounceMs,
+  });
+
+  bool enableDrivingEvents;
+
+  double harshBrakingG;
+
+  double harshAccelerationG;
+
+  double harshCorneringG;
+
+  double speedLimitKmh;
+
+  double speedingToleranceKmh;
+
+  int speedingMinDurationMs;
+
+  double minSpeedForEventsKmh;
+
+  int eventDebounceMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      enableDrivingEvents,
+      harshBrakingG,
+      harshAccelerationG,
+      harshCorneringG,
+      speedLimitKmh,
+      speedingToleranceKmh,
+      speedingMinDurationMs,
+      minSpeedForEventsKmh,
+      eventDebounceMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlTelematicsConfig decode(Object result) {
+    result as List<Object?>;
+    return TlTelematicsConfig(
+      enableDrivingEvents: result[0]! as bool,
+      harshBrakingG: result[1]! as double,
+      harshAccelerationG: result[2]! as double,
+      harshCorneringG: result[3]! as double,
+      speedLimitKmh: result[4]! as double,
+      speedingToleranceKmh: result[5]! as double,
+      speedingMinDurationMs: result[6]! as int,
+      minSpeedForEventsKmh: result[7]! as double,
+      eventDebounceMs: result[8]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlTelematicsConfig || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(enableDrivingEvents, other.enableDrivingEvents) &&
+        _deepEquals(harshBrakingG, other.harshBrakingG) &&
+        _deepEquals(harshAccelerationG, other.harshAccelerationG) &&
+        _deepEquals(harshCorneringG, other.harshCorneringG) &&
+        _deepEquals(speedLimitKmh, other.speedLimitKmh) &&
+        _deepEquals(speedingToleranceKmh, other.speedingToleranceKmh) &&
+        _deepEquals(speedingMinDurationMs, other.speedingMinDurationMs) &&
+        _deepEquals(minSpeedForEventsKmh, other.minSpeedForEventsKmh) &&
+        _deepEquals(eventDebounceMs, other.eventDebounceMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// On-device transport-mode classifier config. See `TransportModeClassifier`.
+class TlClassifierConfig {
+  TlClassifierConfig({
+    required this.enableFusedClassifier,
+    required this.fusedClassifierAuthoritative,
+    required this.modeSwitchDwellMs,
+    required this.minModeConfidence,
+  });
+
+  bool enableFusedClassifier;
+
+  bool fusedClassifierAuthoritative;
+
+  int modeSwitchDwellMs;
+
+  double minModeConfidence;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      enableFusedClassifier,
+      fusedClassifierAuthoritative,
+      modeSwitchDwellMs,
+      minModeConfidence,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlClassifierConfig decode(Object result) {
+    result as List<Object?>;
+    return TlClassifierConfig(
+      enableFusedClassifier: result[0]! as bool,
+      fusedClassifierAuthoritative: result[1]! as bool,
+      modeSwitchDwellMs: result[2]! as int,
+      minModeConfidence: result[3]! as double,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlClassifierConfig || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(enableFusedClassifier, other.enableFusedClassifier) &&
+        _deepEquals(
+          fusedClassifierAuthoritative,
+          other.fusedClassifierAuthoritative,
+        ) &&
+        _deepEquals(modeSwitchDwellMs, other.modeSwitchDwellMs) &&
+        _deepEquals(minModeConfidence, other.minModeConfidence);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// Crash & fall detection config. See `ImpactDetector`.
+class TlImpactConfig {
+  TlImpactConfig({
+    required this.enableCrashDetection,
+    required this.enableFallDetection,
+    required this.crashGThreshold,
+    required this.crashMinSpeedKmh,
+    required this.fallGThreshold,
+    required this.confirmWindowMs,
+    required this.minImpactConfidence,
+  });
+
+  bool enableCrashDetection;
+
+  bool enableFallDetection;
+
+  double crashGThreshold;
+
+  double crashMinSpeedKmh;
+
+  double fallGThreshold;
+
+  int confirmWindowMs;
+
+  double minImpactConfidence;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      enableCrashDetection,
+      enableFallDetection,
+      crashGThreshold,
+      crashMinSpeedKmh,
+      fallGThreshold,
+      confirmWindowMs,
+      minImpactConfidence,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlImpactConfig decode(Object result) {
+    result as List<Object?>;
+    return TlImpactConfig(
+      enableCrashDetection: result[0]! as bool,
+      enableFallDetection: result[1]! as bool,
+      crashGThreshold: result[2]! as double,
+      crashMinSpeedKmh: result[3]! as double,
+      fallGThreshold: result[4]! as double,
+      confirmWindowMs: result[5]! as int,
+      minImpactConfidence: result[6]! as double,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlImpactConfig || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(enableCrashDetection, other.enableCrashDetection) &&
+        _deepEquals(enableFallDetection, other.enableFallDetection) &&
+        _deepEquals(crashGThreshold, other.crashGThreshold) &&
+        _deepEquals(crashMinSpeedKmh, other.crashMinSpeedKmh) &&
+        _deepEquals(fallGThreshold, other.fallGThreshold) &&
+        _deepEquals(confirmWindowMs, other.confirmWindowMs) &&
+        _deepEquals(minImpactConfidence, other.minImpactConfidence);
   }
 
   @override
@@ -2597,6 +2869,358 @@ class TlConnectivityChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// A driving-behavior event (harsh brake/accel/cornering/speeding).
+class TlDrivingEvent {
+  TlDrivingEvent({
+    required this.kind,
+    required this.severity,
+    required this.speed,
+    required this.value,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+  });
+
+  String kind;
+
+  double severity;
+
+  double speed;
+
+  double value;
+
+  double latitude;
+
+  double longitude;
+
+  int timestampMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      kind,
+      severity,
+      speed,
+      value,
+      latitude,
+      longitude,
+      timestampMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlDrivingEvent decode(Object result) {
+    result as List<Object?>;
+    return TlDrivingEvent(
+      kind: result[0]! as String,
+      severity: result[1]! as double,
+      speed: result[2]! as double,
+      value: result[3]! as double,
+      latitude: result[4]! as double,
+      longitude: result[5]! as double,
+      timestampMs: result[6]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlDrivingEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(kind, other.kind) &&
+        _deepEquals(severity, other.severity) &&
+        _deepEquals(speed, other.speed) &&
+        _deepEquals(value, other.value) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestampMs, other.timestampMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A crash/fall impact event (`potential_crash`/`crash`/`potential_fall`/`fall`).
+class TlImpactEvent {
+  TlImpactEvent({
+    required this.kind,
+    required this.id,
+    required this.confidence,
+    required this.peakG,
+    required this.speedBefore,
+    required this.latitude,
+    required this.longitude,
+    required this.timestampMs,
+    required this.confirmDeadlineMs,
+  });
+
+  String kind;
+
+  int id;
+
+  double confidence;
+
+  double peakG;
+
+  double speedBefore;
+
+  double latitude;
+
+  double longitude;
+
+  int timestampMs;
+
+  int confirmDeadlineMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      kind,
+      id,
+      confidence,
+      peakG,
+      speedBefore,
+      latitude,
+      longitude,
+      timestampMs,
+      confirmDeadlineMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlImpactEvent decode(Object result) {
+    result as List<Object?>;
+    return TlImpactEvent(
+      kind: result[0]! as String,
+      id: result[1]! as int,
+      confidence: result[2]! as double,
+      peakG: result[3]! as double,
+      speedBefore: result[4]! as double,
+      latitude: result[5]! as double,
+      longitude: result[6]! as double,
+      timestampMs: result[7]! as int,
+      confirmDeadlineMs: result[8]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlImpactEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(kind, other.kind) &&
+        _deepEquals(id, other.id) &&
+        _deepEquals(confidence, other.confidence) &&
+        _deepEquals(peakG, other.peakG) &&
+        _deepEquals(speedBefore, other.speedBefore) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestampMs, other.timestampMs) &&
+        _deepEquals(confirmDeadlineMs, other.confirmDeadlineMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A fused transport-mode change.
+class TlModeChangeEvent {
+  TlModeChangeEvent({required this.mode, required this.confidence});
+
+  String mode;
+
+  double confidence;
+
+  List<Object?> _toList() {
+    return <Object?>[mode, confidence];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlModeChangeEvent decode(Object result) {
+    result as List<Object?>;
+    return TlModeChangeEvent(
+      mode: result[0]! as String,
+      confidence: result[1]! as double,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlModeChangeEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(mode, other.mode) &&
+        _deepEquals(confidence, other.confidence);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The type of telematics event.
+  String eventType;
+
+  /// The severity of the event.
+  double severity;
+
+  /// The latitude.
+  double latitude;
+
+  /// The longitude.
+  double longitude;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  /// Whether the event has been synced to the server.
+  bool synced;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      eventType,
+      severity,
+      latitude,
+      longitude,
+      timestamp,
+      synced,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlTelematicsRecord decode(Object result) {
+    result as List<Object?>;
+    return TlTelematicsRecord(
+      id: result[0]! as int,
+      eventType: result[1]! as String,
+      severity: result[2]! as double,
+      latitude: result[3]! as double,
+      longitude: result[4]! as double,
+      timestamp: result[5]! as String,
+      synced: result[6]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlTelematicsRecord || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(eventType, other.eventType) &&
+        _deepEquals(severity, other.severity) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestamp, other.timestamp) &&
+        _deepEquals(synced, other.synced);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The log level.
+  String level;
+
+  /// The log message.
+  String message;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  List<Object?> _toList() {
+    return <Object?>[id, level, message, timestamp];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlLogEntry decode(Object result) {
+    result as List<Object?>;
+    return TlLogEntry(
+      id: result[0]! as int,
+      level: result[1]! as String,
+      message: result[2]! as String,
+      timestamp: result[3]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlLogEntry || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(level, other.level) &&
+        _deepEquals(message, other.message) &&
+        _deepEquals(timestamp, other.timestamp);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -2709,56 +3333,80 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is TlAttestationConfig) {
       buffer.putUint8(163);
       writeValue(buffer, value.encode());
-    } else if (value is TlCoords) {
+    } else if (value is TlTelematicsConfig) {
       buffer.putUint8(164);
       writeValue(buffer, value.encode());
-    } else if (value is TlBattery) {
+    } else if (value is TlClassifierConfig) {
       buffer.putUint8(165);
       writeValue(buffer, value.encode());
-    } else if (value is TlAddress) {
+    } else if (value is TlImpactConfig) {
       buffer.putUint8(166);
       writeValue(buffer, value.encode());
-    } else if (value is TlLocation) {
+    } else if (value is TlCoords) {
       buffer.putUint8(167);
       writeValue(buffer, value.encode());
-    } else if (value is TlActivity) {
+    } else if (value is TlBattery) {
       buffer.putUint8(168);
       writeValue(buffer, value.encode());
-    } else if (value is TlState) {
+    } else if (value is TlAddress) {
       buffer.putUint8(169);
       writeValue(buffer, value.encode());
-    } else if (value is TlGeofence) {
+    } else if (value is TlLocation) {
       buffer.putUint8(170);
       writeValue(buffer, value.encode());
-    } else if (value is TlGeofenceEvent) {
+    } else if (value is TlActivity) {
       buffer.putUint8(171);
       writeValue(buffer, value.encode());
-    } else if (value is TlHttpEvent) {
+    } else if (value is TlState) {
       buffer.putUint8(172);
       writeValue(buffer, value.encode());
-    } else if (value is TlProviderChangeEvent) {
+    } else if (value is TlGeofence) {
       buffer.putUint8(173);
       writeValue(buffer, value.encode());
-    } else if (value is TlCurrentPositionOptions) {
+    } else if (value is TlGeofenceEvent) {
       buffer.putUint8(174);
       writeValue(buffer, value.encode());
-    } else if (value is TlActivityChangeEvent) {
+    } else if (value is TlHttpEvent) {
       buffer.putUint8(175);
       writeValue(buffer, value.encode());
-    } else if (value is TlGeofencesChangeEvent) {
+    } else if (value is TlProviderChangeEvent) {
       buffer.putUint8(176);
       writeValue(buffer, value.encode());
-    } else if (value is TlHeartbeatEvent) {
+    } else if (value is TlCurrentPositionOptions) {
       buffer.putUint8(177);
       writeValue(buffer, value.encode());
-    } else if (value is TlSpeedMotionEvent) {
+    } else if (value is TlActivityChangeEvent) {
       buffer.putUint8(178);
       writeValue(buffer, value.encode());
-    } else if (value is TlAuthorizationEvent) {
+    } else if (value is TlGeofencesChangeEvent) {
       buffer.putUint8(179);
       writeValue(buffer, value.encode());
-    } else if (value is TlConnectivityChangeEvent) {
+    } else if (value is TlHeartbeatEvent) {
       buffer.putUint8(180);
+      writeValue(buffer, value.encode());
+    } else if (value is TlSpeedMotionEvent) {
+      buffer.putUint8(181);
+      writeValue(buffer, value.encode());
+    } else if (value is TlAuthorizationEvent) {
+      buffer.putUint8(182);
+      writeValue(buffer, value.encode());
+    } else if (value is TlConnectivityChangeEvent) {
+      buffer.putUint8(183);
+      writeValue(buffer, value.encode());
+    } else if (value is TlDrivingEvent) {
+      buffer.putUint8(184);
+      writeValue(buffer, value.encode());
+    } else if (value is TlImpactEvent) {
+      buffer.putUint8(185);
+      writeValue(buffer, value.encode());
+    } else if (value is TlModeChangeEvent) {
+      buffer.putUint8(186);
+      writeValue(buffer, value.encode());
+    } else if (value is TlTelematicsRecord) {
+      buffer.putUint8(187);
+      writeValue(buffer, value.encode());
+    } else if (value is TlLogEntry) {
+      buffer.putUint8(188);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -2860,39 +3508,55 @@ class _PigeonCodec extends StandardMessageCodec {
       case 163:
         return TlAttestationConfig.decode(readValue(buffer)!);
       case 164:
-        return TlCoords.decode(readValue(buffer)!);
+        return TlTelematicsConfig.decode(readValue(buffer)!);
       case 165:
-        return TlBattery.decode(readValue(buffer)!);
+        return TlClassifierConfig.decode(readValue(buffer)!);
       case 166:
-        return TlAddress.decode(readValue(buffer)!);
+        return TlImpactConfig.decode(readValue(buffer)!);
       case 167:
-        return TlLocation.decode(readValue(buffer)!);
+        return TlCoords.decode(readValue(buffer)!);
       case 168:
-        return TlActivity.decode(readValue(buffer)!);
+        return TlBattery.decode(readValue(buffer)!);
       case 169:
-        return TlState.decode(readValue(buffer)!);
+        return TlAddress.decode(readValue(buffer)!);
       case 170:
-        return TlGeofence.decode(readValue(buffer)!);
+        return TlLocation.decode(readValue(buffer)!);
       case 171:
-        return TlGeofenceEvent.decode(readValue(buffer)!);
+        return TlActivity.decode(readValue(buffer)!);
       case 172:
-        return TlHttpEvent.decode(readValue(buffer)!);
+        return TlState.decode(readValue(buffer)!);
       case 173:
-        return TlProviderChangeEvent.decode(readValue(buffer)!);
+        return TlGeofence.decode(readValue(buffer)!);
       case 174:
-        return TlCurrentPositionOptions.decode(readValue(buffer)!);
+        return TlGeofenceEvent.decode(readValue(buffer)!);
       case 175:
-        return TlActivityChangeEvent.decode(readValue(buffer)!);
+        return TlHttpEvent.decode(readValue(buffer)!);
       case 176:
-        return TlGeofencesChangeEvent.decode(readValue(buffer)!);
+        return TlProviderChangeEvent.decode(readValue(buffer)!);
       case 177:
-        return TlHeartbeatEvent.decode(readValue(buffer)!);
+        return TlCurrentPositionOptions.decode(readValue(buffer)!);
       case 178:
-        return TlSpeedMotionEvent.decode(readValue(buffer)!);
+        return TlActivityChangeEvent.decode(readValue(buffer)!);
       case 179:
-        return TlAuthorizationEvent.decode(readValue(buffer)!);
+        return TlGeofencesChangeEvent.decode(readValue(buffer)!);
       case 180:
+        return TlHeartbeatEvent.decode(readValue(buffer)!);
+      case 181:
+        return TlSpeedMotionEvent.decode(readValue(buffer)!);
+      case 182:
+        return TlAuthorizationEvent.decode(readValue(buffer)!);
+      case 183:
         return TlConnectivityChangeEvent.decode(readValue(buffer)!);
+      case 184:
+        return TlDrivingEvent.decode(readValue(buffer)!);
+      case 185:
+        return TlImpactEvent.decode(readValue(buffer)!);
+      case 186:
+        return TlModeChangeEvent.decode(readValue(buffer)!);
+      case 187:
+        return TlTelematicsRecord.decode(readValue(buffer)!);
+      case 188:
+        return TlLogEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -3190,6 +3854,50 @@ class TraceletHostApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[isMoving],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Confirms a pending impact candidate (by [id]) as a real emergency now.
+  Future<bool> confirmImpact(int id) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[id],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
+  Future<bool> cancelImpact(int id) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[id],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -4425,8 +5133,8 @@ class TraceletHostApi {
         ?.cast<String?, Object?>();
   }
 
-  Future<Map<String?, Object?>> getCarbonReport(
-    Map<String?, Object?>? query,
+  Future<Map<String, Object?>> getCarbonReport(
+    Map<String, Object?>? query,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport$pigeonVar_messageChannelSuffix';
@@ -4446,7 +5154,112 @@ class TraceletHostApi {
       isNullValid: false,
     );
     return (pigeonVar_replyValue! as Map<Object?, Object?>)
-        .cast<String?, Object?>();
+        .cast<String, Object?>();
+  }
+
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.simulateTelematicsEvent$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[eventType, severity, latitude, longitude],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlTelematicsRecord?>();
+  }
+
+  Future<bool> destroyTelematicsEvents() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<List<TlLogEntry?>> getLogs(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlLogEntry?>();
+  }
+
+  Future<void> clearLogs() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
   }
 }
 
@@ -4551,6 +5364,12 @@ abstract class TraceletEventApi {
   void onAuthorization(TlAuthorizationEvent event);
 
   void onWatchPosition(TlLocation location);
+
+  void onDrivingEvent(TlDrivingEvent event);
+
+  void onImpact(TlImpactEvent event);
+
+  void onModeChange(TlModeChangeEvent event);
 
   static void setUp(
     TraceletEventApi? api, {
@@ -4954,6 +5773,81 @@ abstract class TraceletEventApi {
           final TlLocation arg_location = args[0]! as TlLocation;
           try {
             api.onWatchPosition(arg_location);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlDrivingEvent arg_event = args[0]! as TlDrivingEvent;
+          try {
+            api.onDrivingEvent(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlImpactEvent arg_event = args[0]! as TlImpactEvent;
+          try {
+            api.onImpact(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlModeChangeEvent arg_event = args[0]! as TlModeChangeEvent;
+          try {
+            api.onModeChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

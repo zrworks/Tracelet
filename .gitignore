@@ -171,4 +171,5 @@ website/app/es/
 website/app/ml/
 website/app/ta/
 website/app/ru/
-/.supermemory/
+.supermemory/
+example/ios/build_out.txt

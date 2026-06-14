@@ -152,6 +152,14 @@ class MotionDetector(
      */
     var onActivityChanged: ((type: String, confidence: Int) -> Unit)? = null
 
+    /**
+     * Emitted per accelerometer sample with the gravity-subtracted magnitude
+     * expressed in g (1 g ≈ 9.81 m/s²). Feeds the 3.3.0 transport-mode
+     * classifier and impact detector via the accel-window keystone. Only fires
+     * while an accelerometer listener is active (moving/stillness sampling).
+     */
+    var onAccelSample: ((magnitudeG: Double) -> Unit)? = null
+
     /** Callback: request full tracking stop (`stopOnStationary` mode). */
     var onStopRequested: (() -> Unit)? = null
 
@@ -595,6 +603,7 @@ class MotionDetector(
 
                 // Track max magnitude in last 10 samples
                 val absMag = Math.abs(magnitude)
+                onAccelSample?.invoke(absMag / 9.81)
                 if (absMag > maxMagLast10) {
                     maxMagLast10 = absMag
                 }
@@ -724,6 +733,7 @@ class MotionDetector(
 
                 // Track max magnitude in last 10 samples
                 val absMag = Math.abs(magnitude)
+                onAccelSample?.invoke(absMag / 9.81)
                 if (absMag > maxMagLast10) {
                     maxMagLast10 = absMag
                 }

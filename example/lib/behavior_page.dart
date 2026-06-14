@@ -10,7 +10,8 @@ import 'package:tracelet_platform_interface/src/rust/api_dart/telematics.dart';
 import 'package:tracelet_platform_interface/src/rust/api_dart/impact.dart';
 import 'package:tracelet_platform_interface/src/rust/api_dart/transport_mode.dart';
 import 'package:tracelet_platform_interface/src/rust/algorithms/impact.dart'
-    as frb show ImpactConfig;
+    as frb
+    show ImpactConfig;
 
 /// Demo page for the 3.3.0 behavior features: driving telematics, crash/fall
 /// detection, and the fused transport-mode classifier.
@@ -165,38 +166,62 @@ class _BehaviorPageState extends State<BehaviorPage> {
         case 'brake':
           final e = TelematicsEngineDart();
           e.processFix(
-              speed: 22, heading: 90, latitude: 0, longitude: 0, timestampMs: 0);
+            speed: 22,
+            heading: 90,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 0,
+          );
           for (final ev in e.processFix(
-              speed: 5,
-              heading: 90,
-              latitude: 0,
-              longitude: 0,
-              timestampMs: 1000)) {
-            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+            speed: 5,
+            heading: 90,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 1000,
+          )) {
+            _logLine(
+              '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
+            );
           }
         case 'accel':
           final e = TelematicsEngineDart();
           e.processFix(
-              speed: 4, heading: 90, latitude: 0, longitude: 0, timestampMs: 0);
+            speed: 4,
+            heading: 90,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 0,
+          );
           for (final ev in e.processFix(
-              speed: 15,
-              heading: 90,
-              latitude: 0,
-              longitude: 0,
-              timestampMs: 1000)) {
-            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+            speed: 15,
+            heading: 90,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 1000,
+          )) {
+            _logLine(
+              '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
+            );
           }
         case 'corner':
           final e = TelematicsEngineDart();
           e.processFix(
-              speed: 15, heading: 0, latitude: 0, longitude: 0, timestampMs: 0);
+            speed: 15,
+            heading: 0,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 0,
+          );
           for (final ev in e.processFix(
-              speed: 15,
-              heading: 45,
-              latitude: 0,
-              longitude: 0,
-              timestampMs: 1000)) {
-            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+            speed: 15,
+            heading: 45,
+            latitude: 0,
+            longitude: 0,
+            timestampMs: 1000,
+          )) {
+            _logLine(
+              '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
+            );
           }
         case 'crash':
           final d = ImpactDetectorDart(
@@ -211,30 +236,37 @@ class _BehaviorPageState extends State<BehaviorPage> {
             ),
           );
           final c = d.onImpactWindow(
-              peakG: 5,
-              speedBeforeMps: 60 / 3.6,
-              isOnFoot: false,
-              latitude: 0,
-              longitude: 0,
-              nowMs: 0);
+            peakG: 5,
+            speedBeforeMps: 60 / 3.6,
+            isOnFoot: false,
+            latitude: 0,
+            longitude: 0,
+            nowMs: 0,
+          );
           if (c != null) {
-            _logLine('🆘 ${c.kind}  peak=${c.peakG.toStringAsFixed(1)}g (sim) '
-                '→ would auto-confirm in ${(c.confirmDeadlineMs / 1000).round()}s');
+            _logLine(
+              '🆘 ${c.kind}  peak=${c.peakG.toStringAsFixed(1)}g (sim) '
+              '→ would auto-confirm in ${(c.confirmDeadlineMs / 1000).round()}s',
+            );
           }
         case 'vehicle':
           final cl = TransportModeClassifierDart();
           final steady = List<double>.filled(10, 0.05);
           cl.classifySamples(
-              magnitudesG: steady,
-              durationMs: 1000,
-              speedMps: 60 / 3.6,
-              nowMs: 0);
+            magnitudesG: steady,
+            durationMs: 1000,
+            speedMps: 60 / 3.6,
+            nowMs: 0,
+          );
           final r = cl.classifySamples(
-              magnitudesG: steady,
-              durationMs: 1000,
-              speedMps: 60 / 3.6,
-              nowMs: 9000);
-          _logLine('🚦 mode → ${r.mode.name} (${r.confidence.toStringAsFixed(2)}) (sim)');
+            magnitudesG: steady,
+            durationMs: 1000,
+            speedMps: 60 / 3.6,
+            nowMs: 9000,
+          );
+          _logLine(
+            '🚦 mode → ${r.mode.name} (${r.confidence.toStringAsFixed(2)}) (sim)',
+          );
       }
     } catch (e) {
       _logLine('⚠️ simulate failed: $e (is the SDK initialized?)');

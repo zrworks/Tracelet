@@ -9,7 +9,8 @@ import 'package:tracelet_platform_interface/src/rust/api_dart/telematics.dart';
 import 'package:tracelet_platform_interface/src/rust/api_dart/impact.dart';
 import 'package:tracelet_platform_interface/src/rust/api_dart/transport_mode.dart';
 import 'package:tracelet_platform_interface/src/rust/algorithms/impact.dart'
-    as frb show ImpactConfig;
+    as frb
+    show ImpactConfig;
 import 'package:tracelet_platform_interface/src/rust/algorithms/transport_mode.dart'
     show TransportMode;
 

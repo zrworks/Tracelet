@@ -27,9 +27,12 @@
 // Section: imports
 
 use crate::api_dart::battery_budget::*;
+use crate::api_dart::impact::*;
 use crate::api_dart::rtree::*;
 use crate::api_dart::schedule::*;
 use crate::api_dart::smart_motion::*;
+use crate::api_dart::telematics::*;
+use crate::api_dart::transport_mode::*;
 use crate::api_dart::trip::*;
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
@@ -43,7 +46,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -863233453;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1235722226;
 
 // Section: executor
 
@@ -441,6 +444,303 @@ let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decod
         let api_that_guard = api_that_guard.unwrap();
  let output_ok = Result::<_,()>::Ok(crate::api_dart::battery_budget::BatteryBudgetEngineDart::should_throttle_location(&*api_that_guard))?;   Ok(output_ok)
                 })()) })
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_cancel_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_cancel",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::impact::ImpactDetectorDart::cancel(&*api_that_guard, api_id),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_check_confirmations_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_check_confirmations",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_now_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::impact::ImpactDetectorDart::check_confirmations(
+                        &*api_that_guard,
+                        api_now_ms,
+                    ),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_confirm_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_confirm",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_id = <i64>::sse_decode(&mut deserializer);
+            let api_now_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok =
+                    Result::<_, ()>::Ok(crate::api_dart::impact::ImpactDetectorDart::confirm(
+                        &*api_that_guard,
+                        api_id,
+                        api_now_ms,
+                    ))?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_new_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_new",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_config =
+                <Option<crate::algorithms::impact::ImpactConfig>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::impact::ImpactDetectorDart::new(api_config),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_on_impact_window",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_peak_g = <f64>::sse_decode(&mut deserializer);
+            let api_speed_before_mps = <f64>::sse_decode(&mut deserializer);
+            let api_is_on_foot = <bool>::sse_decode(&mut deserializer);
+            let api_latitude = <f64>::sse_decode(&mut deserializer);
+            let api_longitude = <f64>::sse_decode(&mut deserializer);
+            let api_now_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::impact::ImpactDetectorDart::on_impact_window(
+                        &*api_that_guard,
+                        api_peak_g,
+                        api_speed_before_mps,
+                        api_is_on_foot,
+                        api_latitude,
+                        api_longitude,
+                        api_now_ms,
+                    ),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_reset_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_reset",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok({
+                    crate::api_dart::impact::ImpactDetectorDart::reset(&*api_that_guard);
+                })?;
+                Ok(output_ok)
+            })())
+        },
+    )
 }
 fn wire__crate__api_dart__rtree__RTreeDart_clear_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1070,6 +1370,345 @@ fn wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_set_tracking_
         },
     )
 }
+fn wire__crate__api_dart__telematics__TelematicsEngineDart_current_score_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TelematicsEngineDart_current_score",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::telematics::TelematicsEngineDart::current_score(
+                        &*api_that_guard,
+                    ),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__telematics__TelematicsEngineDart_new_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TelematicsEngineDart_new",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_config = <Option<crate::algorithms::telematics::TelematicsConfig>>::sse_decode(
+                &mut deserializer,
+            );
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::telematics::TelematicsEngineDart::new(api_config),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__telematics__TelematicsEngineDart_process_fix_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TelematicsEngineDart_process_fix",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_speed = <f64>::sse_decode(&mut deserializer);
+            let api_heading = <f64>::sse_decode(&mut deserializer);
+            let api_latitude = <f64>::sse_decode(&mut deserializer);
+            let api_longitude = <f64>::sse_decode(&mut deserializer);
+            let api_timestamp_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::telematics::TelematicsEngineDart::process_fix(
+                        &*api_that_guard,
+                        api_speed,
+                        api_heading,
+                        api_latitude,
+                        api_longitude,
+                        api_timestamp_ms,
+                    ),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__telematics__TelematicsEngineDart_reset_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TelematicsEngineDart_reset",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok({
+                    crate::api_dart::telematics::TelematicsEngineDart::reset(&*api_that_guard);
+                })?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__transport_mode__TransportModeClassifierDart_classify_samples_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TransportModeClassifierDart_classify_samples",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<
+                    TransportModeClassifierDart,
+                >,
+            >>::sse_decode(&mut deserializer);
+            let api_magnitudes_g = <Vec<f64>>::sse_decode(&mut deserializer);
+            let api_duration_ms = <i64>::sse_decode(&mut deserializer);
+            let api_speed_mps = <f64>::sse_decode(&mut deserializer);
+            let api_now_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::transport_mode::TransportModeClassifierDart::classify_samples(
+                        &*api_that_guard,
+                        api_magnitudes_g,
+                        api_duration_ms,
+                        api_speed_mps,
+                        api_now_ms,
+                    ),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__transport_mode__TransportModeClassifierDart_new_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TransportModeClassifierDart_new",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_config =
+                <Option<crate::algorithms::transport_mode::ClassifierConfig>>::sse_decode(
+                    &mut deserializer,
+                );
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::transport_mode::TransportModeClassifierDart::new(api_config),
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__transport_mode__TransportModeClassifierDart_reset_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "TransportModeClassifierDart_reset",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<
+                    TransportModeClassifierDart,
+                >,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok({
+                    crate::api_dart::transport_mode::TransportModeClassifierDart::reset(
+                        &*api_that_guard,
+                    );
+                })?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api_dart__trip__TripManagerDart_is_trip_active_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1318,6 +1957,9 @@ flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>
+);
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<RTreeDart>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
@@ -1325,6 +1967,12 @@ flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SmartMotionCoordinatorDart>
+);
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>
+);
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
+    flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>
 );
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(
     flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TripManagerDart>
@@ -1337,6 +1985,16 @@ impl SseDecode for BatteryBudgetEngineDart {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <RustOpaqueMoi<
             flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>,
+        >>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
+impl SseDecode for ImpactDetectorDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
         >>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
     }
@@ -1372,6 +2030,26 @@ impl SseDecode for SmartMotionCoordinatorDart {
     }
 }
 
+impl SseDecode for TelematicsEngineDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>,
+        >>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
+impl SseDecode for TransportModeClassifierDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
 impl SseDecode for TripManagerDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1386,6 +2064,16 @@ impl SseDecode
     for RustOpaqueMoi<
         flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>,
     >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1417,6 +2105,28 @@ impl SseDecode
 impl SseDecode
     for RustOpaqueMoi<
         flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SmartMotionCoordinatorDart>,
+    >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode
+    for RustOpaqueMoi<
+        flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
     >
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1469,6 +2179,40 @@ impl SseDecode for crate::state::battery_budget::BudgetAdjustmentEvent {
     }
 }
 
+impl SseDecode for crate::algorithms::transport_mode::ClassifierConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_modeSwitchDwellMs = <i64>::sse_decode(deserializer);
+        let mut var_minConfidence = <f64>::sse_decode(deserializer);
+        return crate::algorithms::transport_mode::ClassifierConfig {
+            mode_switch_dwell_ms: var_modeSwitchDwellMs,
+            min_confidence: var_minConfidence,
+        };
+    }
+}
+
+impl SseDecode for crate::algorithms::telematics::DrivingEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <String>::sse_decode(deserializer);
+        let mut var_severity = <f64>::sse_decode(deserializer);
+        let mut var_speed = <f64>::sse_decode(deserializer);
+        let mut var_value = <f64>::sse_decode(deserializer);
+        let mut var_latitude = <f64>::sse_decode(deserializer);
+        let mut var_longitude = <f64>::sse_decode(deserializer);
+        let mut var_timestampMs = <i64>::sse_decode(deserializer);
+        return crate::algorithms::telematics::DrivingEvent {
+            kind: var_kind,
+            severity: var_severity,
+            speed: var_speed,
+            value: var_value,
+            latitude: var_latitude,
+            longitude: var_longitude,
+            timestamp_ms: var_timestampMs,
+        };
+    }
+}
+
 impl SseDecode for f32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1497,6 +2241,54 @@ impl SseDecode for i64 {
     }
 }
 
+impl SseDecode for crate::algorithms::impact::ImpactConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_enableCrash = <bool>::sse_decode(deserializer);
+        let mut var_enableFall = <bool>::sse_decode(deserializer);
+        let mut var_crashGThreshold = <f64>::sse_decode(deserializer);
+        let mut var_crashMinSpeedKmh = <f64>::sse_decode(deserializer);
+        let mut var_fallGThreshold = <f64>::sse_decode(deserializer);
+        let mut var_confirmWindowMs = <i64>::sse_decode(deserializer);
+        let mut var_minConfidence = <f64>::sse_decode(deserializer);
+        return crate::algorithms::impact::ImpactConfig {
+            enable_crash: var_enableCrash,
+            enable_fall: var_enableFall,
+            crash_g_threshold: var_crashGThreshold,
+            crash_min_speed_kmh: var_crashMinSpeedKmh,
+            fall_g_threshold: var_fallGThreshold,
+            confirm_window_ms: var_confirmWindowMs,
+            min_confidence: var_minConfidence,
+        };
+    }
+}
+
+impl SseDecode for crate::algorithms::impact::ImpactEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <String>::sse_decode(deserializer);
+        let mut var_id = <i64>::sse_decode(deserializer);
+        let mut var_confidence = <f64>::sse_decode(deserializer);
+        let mut var_peakG = <f64>::sse_decode(deserializer);
+        let mut var_speedBefore = <f64>::sse_decode(deserializer);
+        let mut var_latitude = <f64>::sse_decode(deserializer);
+        let mut var_longitude = <f64>::sse_decode(deserializer);
+        let mut var_timestampMs = <i64>::sse_decode(deserializer);
+        let mut var_confirmDeadlineMs = <i64>::sse_decode(deserializer);
+        return crate::algorithms::impact::ImpactEvent {
+            kind: var_kind,
+            id: var_id,
+            confidence: var_confidence,
+            peak_g: var_peakG,
+            speed_before: var_speedBefore,
+            latitude: var_latitude,
+            longitude: var_longitude,
+            timestamp_ms: var_timestampMs,
+            confirm_deadline_ms: var_confirmDeadlineMs,
+        };
+    }
+}
+
 impl SseDecode for Vec<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1504,6 +2296,46 @@ impl SseDecode for Vec<String> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::algorithms::telematics::DrivingEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::algorithms::telematics::DrivingEvent>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::algorithms::impact::ImpactEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::algorithms::impact::ImpactEvent>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<f64>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -1535,12 +2367,40 @@ impl SseDecode for Vec<crate::api_dart::trip::TripWaypointDart> {
     }
 }
 
+impl SseDecode for crate::algorithms::transport_mode::ModeResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_mode =
+            <crate::algorithms::transport_mode::TransportMode>::sse_decode(deserializer);
+        let mut var_confidence = <f64>::sse_decode(deserializer);
+        let mut var_changed = <bool>::sse_decode(deserializer);
+        return crate::algorithms::transport_mode::ModeResult {
+            mode: var_mode,
+            confidence: var_confidence,
+            changed: var_changed,
+        };
+    }
+}
+
 impl SseDecode for Option<crate::state::battery_budget::BudgetAdjustmentEvent> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(
                 <crate::state::battery_budget::BudgetAdjustmentEvent>::sse_decode(deserializer),
+            );
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::algorithms::transport_mode::ClassifierConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(
+                <crate::algorithms::transport_mode::ClassifierConfig>::sse_decode(deserializer),
             );
         } else {
             return None;
@@ -1564,6 +2424,45 @@ impl SseDecode for Option<i32> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<i32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::algorithms::impact::ImpactConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::algorithms::impact::ImpactConfig>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::algorithms::impact::ImpactEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::algorithms::impact::ImpactEvent>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::algorithms::telematics::TelematicsConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(
+                <crate::algorithms::telematics::TelematicsConfig>::sse_decode(deserializer),
+            );
         } else {
             return None;
         }
@@ -1608,6 +2507,30 @@ impl SseDecode for crate::api_dart::schedule::ScheduleAlarmsDart {
     }
 }
 
+impl SseDecode for crate::algorithms::telematics::TelematicsConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_harshBrakingG = <f64>::sse_decode(deserializer);
+        let mut var_harshAccelerationG = <f64>::sse_decode(deserializer);
+        let mut var_harshCorneringG = <f64>::sse_decode(deserializer);
+        let mut var_speedLimitKmh = <f64>::sse_decode(deserializer);
+        let mut var_speedingToleranceKmh = <f64>::sse_decode(deserializer);
+        let mut var_speedingMinDurationMs = <i64>::sse_decode(deserializer);
+        let mut var_minSpeedForEventsKmh = <f64>::sse_decode(deserializer);
+        let mut var_eventDebounceMs = <i64>::sse_decode(deserializer);
+        return crate::algorithms::telematics::TelematicsConfig {
+            harsh_braking_g: var_harshBrakingG,
+            harsh_acceleration_g: var_harshAccelerationG,
+            harsh_cornering_g: var_harshCorneringG,
+            speed_limit_kmh: var_speedLimitKmh,
+            speeding_tolerance_kmh: var_speedingToleranceKmh,
+            speeding_min_duration_ms: var_speedingMinDurationMs,
+            min_speed_for_events_kmh: var_minSpeedForEventsKmh,
+            event_debounce_ms: var_eventDebounceMs,
+        };
+    }
+}
+
 impl SseDecode for crate::api_dart::smart_motion::TrackingModeDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1617,6 +2540,22 @@ impl SseDecode for crate::api_dart::smart_motion::TrackingModeDart {
             1 => crate::api_dart::smart_motion::TrackingModeDart::Passive,
             2 => crate::api_dart::smart_motion::TrackingModeDart::Manual,
             _ => unreachable!("Invalid variant for TrackingModeDart: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::algorithms::transport_mode::TransportMode {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::algorithms::transport_mode::TransportMode::Unknown,
+            1 => crate::algorithms::transport_mode::TransportMode::Still,
+            2 => crate::algorithms::transport_mode::TransportMode::Walking,
+            3 => crate::algorithms::transport_mode::TransportMode::Running,
+            4 => crate::algorithms::transport_mode::TransportMode::Cycling,
+            5 => crate::algorithms::transport_mode::TransportMode::Vehicle,
+            _ => unreachable!("Invalid variant for TransportMode: {}", inner),
         };
     }
 }
@@ -1717,24 +2656,37 @@ fn pde_ffi_dispatcher_sync_impl(
 7 => wire__crate__api_dart__battery_budget__BatteryBudgetEngineDart_process_sample_impl(ptr, rust_vec_len, data_len),
 8 => wire__crate__api_dart__battery_budget__BatteryBudgetEngineDart_reset_impl(ptr, rust_vec_len, data_len),
 9 => wire__crate__api_dart__battery_budget__BatteryBudgetEngineDart_should_throttle_location_impl(ptr, rust_vec_len, data_len),
-10 => wire__crate__api_dart__rtree__RTreeDart_clear_impl(ptr, rust_vec_len, data_len),
-11 => wire__crate__api_dart__rtree__RTreeDart_insert_impl(ptr, rust_vec_len, data_len),
-12 => wire__crate__api_dart__rtree__RTreeDart_new_impl(ptr, rust_vec_len, data_len),
-13 => wire__crate__api_dart__rtree__RTreeDart_query_circle_impl(ptr, rust_vec_len, data_len),
-14 => wire__crate__api_dart__rtree__RTreeDart_search_impl(ptr, rust_vec_len, data_len),
-15 => wire__crate__api_dart__schedule__ScheduleParserDart_calculate_next_alarms_impl(ptr, rust_vec_len, data_len),
-16 => wire__crate__api_dart__schedule__ScheduleParserDart_is_within_schedule_impl(ptr, rust_vec_len, data_len),
-17 => wire__crate__api_dart__schedule__ScheduleParserDart_new_impl(ptr, rust_vec_len, data_len),
-18 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_is_moving_impl(ptr, rust_vec_len, data_len),
-19 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_new_impl(ptr, rust_vec_len, data_len),
-20 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_accel_event_impl(ptr, rust_vec_len, data_len),
-21 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_speed_changed_impl(ptr, rust_vec_len, data_len),
-22 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_set_tracking_mode_impl(ptr, rust_vec_len, data_len),
-23 => wire__crate__api_dart__trip__TripManagerDart_is_trip_active_impl(ptr, rust_vec_len, data_len),
-24 => wire__crate__api_dart__trip__TripManagerDart_new_impl(ptr, rust_vec_len, data_len),
-25 => wire__crate__api_dart__trip__TripManagerDart_on_location_received_impl(ptr, rust_vec_len, data_len),
-26 => wire__crate__api_dart__trip__TripManagerDart_on_motion_state_changed_impl(ptr, rust_vec_len, data_len),
-27 => wire__crate__api_dart__trip__TripManagerDart_reset_impl(ptr, rust_vec_len, data_len),
+10 => wire__crate__api_dart__impact__ImpactDetectorDart_cancel_impl(ptr, rust_vec_len, data_len),
+11 => wire__crate__api_dart__impact__ImpactDetectorDart_check_confirmations_impl(ptr, rust_vec_len, data_len),
+12 => wire__crate__api_dart__impact__ImpactDetectorDart_confirm_impl(ptr, rust_vec_len, data_len),
+13 => wire__crate__api_dart__impact__ImpactDetectorDart_new_impl(ptr, rust_vec_len, data_len),
+14 => wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(ptr, rust_vec_len, data_len),
+15 => wire__crate__api_dart__impact__ImpactDetectorDart_reset_impl(ptr, rust_vec_len, data_len),
+16 => wire__crate__api_dart__rtree__RTreeDart_clear_impl(ptr, rust_vec_len, data_len),
+17 => wire__crate__api_dart__rtree__RTreeDart_insert_impl(ptr, rust_vec_len, data_len),
+18 => wire__crate__api_dart__rtree__RTreeDart_new_impl(ptr, rust_vec_len, data_len),
+19 => wire__crate__api_dart__rtree__RTreeDart_query_circle_impl(ptr, rust_vec_len, data_len),
+20 => wire__crate__api_dart__rtree__RTreeDart_search_impl(ptr, rust_vec_len, data_len),
+21 => wire__crate__api_dart__schedule__ScheduleParserDart_calculate_next_alarms_impl(ptr, rust_vec_len, data_len),
+22 => wire__crate__api_dart__schedule__ScheduleParserDart_is_within_schedule_impl(ptr, rust_vec_len, data_len),
+23 => wire__crate__api_dart__schedule__ScheduleParserDart_new_impl(ptr, rust_vec_len, data_len),
+24 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_is_moving_impl(ptr, rust_vec_len, data_len),
+25 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_new_impl(ptr, rust_vec_len, data_len),
+26 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_accel_event_impl(ptr, rust_vec_len, data_len),
+27 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_speed_changed_impl(ptr, rust_vec_len, data_len),
+28 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_set_tracking_mode_impl(ptr, rust_vec_len, data_len),
+29 => wire__crate__api_dart__telematics__TelematicsEngineDart_current_score_impl(ptr, rust_vec_len, data_len),
+30 => wire__crate__api_dart__telematics__TelematicsEngineDart_new_impl(ptr, rust_vec_len, data_len),
+31 => wire__crate__api_dart__telematics__TelematicsEngineDart_process_fix_impl(ptr, rust_vec_len, data_len),
+32 => wire__crate__api_dart__telematics__TelematicsEngineDart_reset_impl(ptr, rust_vec_len, data_len),
+33 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_classify_samples_impl(ptr, rust_vec_len, data_len),
+34 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_new_impl(ptr, rust_vec_len, data_len),
+35 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_reset_impl(ptr, rust_vec_len, data_len),
+36 => wire__crate__api_dart__trip__TripManagerDart_is_trip_active_impl(ptr, rust_vec_len, data_len),
+37 => wire__crate__api_dart__trip__TripManagerDart_new_impl(ptr, rust_vec_len, data_len),
+38 => wire__crate__api_dart__trip__TripManagerDart_on_location_received_impl(ptr, rust_vec_len, data_len),
+39 => wire__crate__api_dart__trip__TripManagerDart_on_motion_state_changed_impl(ptr, rust_vec_len, data_len),
+40 => wire__crate__api_dart__trip__TripManagerDart_reset_impl(ptr, rust_vec_len, data_len),
                         _ => unreachable!(),
                     }
 }
@@ -1757,6 +2709,24 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<BatteryBudgetEngineDart>>
     for BatteryBudgetEngineDart
 {
     fn into_into_dart(self) -> FrbWrapper<BatteryBudgetEngineDart> {
+        self.into()
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<ImpactDetectorDart> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
+            .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<ImpactDetectorDart>
+{
+}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<ImpactDetectorDart>> for ImpactDetectorDart {
+    fn into_into_dart(self) -> FrbWrapper<ImpactDetectorDart> {
         self.into()
     }
 }
@@ -1815,6 +2785,44 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<SmartMotionCoordinatorDart>>
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<TelematicsEngineDart> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
+            .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<TelematicsEngineDart>
+{
+}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<TelematicsEngineDart>> for TelematicsEngineDart {
+    fn into_into_dart(self) -> FrbWrapper<TelematicsEngineDart> {
+        self.into()
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<TransportModeClassifierDart> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
+            .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for FrbWrapper<TransportModeClassifierDart>
+{
+}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<TransportModeClassifierDart>>
+    for TransportModeClassifierDart
+{
+    fn into_into_dart(self) -> FrbWrapper<TransportModeClassifierDart> {
+        self.into()
+    }
+}
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<TripManagerDart> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0)
@@ -1854,6 +2862,129 @@ impl flutter_rust_bridge::IntoIntoDart<crate::state::battery_budget::BudgetAdjus
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::transport_mode::ClassifierConfig {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.mode_switch_dwell_ms.into_into_dart().into_dart(),
+            self.min_confidence.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::transport_mode::ClassifierConfig
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::transport_mode::ClassifierConfig>
+    for crate::algorithms::transport_mode::ClassifierConfig
+{
+    fn into_into_dart(self) -> crate::algorithms::transport_mode::ClassifierConfig {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::telematics::DrivingEvent {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.severity.into_into_dart().into_dart(),
+            self.speed.into_into_dart().into_dart(),
+            self.value.into_into_dart().into_dart(),
+            self.latitude.into_into_dart().into_dart(),
+            self.longitude.into_into_dart().into_dart(),
+            self.timestamp_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::telematics::DrivingEvent
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::telematics::DrivingEvent>
+    for crate::algorithms::telematics::DrivingEvent
+{
+    fn into_into_dart(self) -> crate::algorithms::telematics::DrivingEvent {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::impact::ImpactConfig {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.enable_crash.into_into_dart().into_dart(),
+            self.enable_fall.into_into_dart().into_dart(),
+            self.crash_g_threshold.into_into_dart().into_dart(),
+            self.crash_min_speed_kmh.into_into_dart().into_dart(),
+            self.fall_g_threshold.into_into_dart().into_dart(),
+            self.confirm_window_ms.into_into_dart().into_dart(),
+            self.min_confidence.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::impact::ImpactConfig
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::impact::ImpactConfig>
+    for crate::algorithms::impact::ImpactConfig
+{
+    fn into_into_dart(self) -> crate::algorithms::impact::ImpactConfig {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::impact::ImpactEvent {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.id.into_into_dart().into_dart(),
+            self.confidence.into_into_dart().into_dart(),
+            self.peak_g.into_into_dart().into_dart(),
+            self.speed_before.into_into_dart().into_dart(),
+            self.latitude.into_into_dart().into_dart(),
+            self.longitude.into_into_dart().into_dart(),
+            self.timestamp_ms.into_into_dart().into_dart(),
+            self.confirm_deadline_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::impact::ImpactEvent
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::impact::ImpactEvent>
+    for crate::algorithms::impact::ImpactEvent
+{
+    fn into_into_dart(self) -> crate::algorithms::impact::ImpactEvent {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::transport_mode::ModeResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.mode.into_into_dart().into_dart(),
+            self.confidence.into_into_dart().into_dart(),
+            self.changed.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::transport_mode::ModeResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::transport_mode::ModeResult>
+    for crate::algorithms::transport_mode::ModeResult
+{
+    fn into_into_dart(self) -> crate::algorithms::transport_mode::ModeResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api_dart::schedule::ScheduleAlarmsDart {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1871,6 +3002,33 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api_dart::schedule::ScheduleAlarms
     for crate::api_dart::schedule::ScheduleAlarmsDart
 {
     fn into_into_dart(self) -> crate::api_dart::schedule::ScheduleAlarmsDart {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::telematics::TelematicsConfig {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.harsh_braking_g.into_into_dart().into_dart(),
+            self.harsh_acceleration_g.into_into_dart().into_dart(),
+            self.harsh_cornering_g.into_into_dart().into_dart(),
+            self.speed_limit_kmh.into_into_dart().into_dart(),
+            self.speeding_tolerance_kmh.into_into_dart().into_dart(),
+            self.speeding_min_duration_ms.into_into_dart().into_dart(),
+            self.min_speed_for_events_kmh.into_into_dart().into_dart(),
+            self.event_debounce_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::telematics::TelematicsConfig
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::telematics::TelematicsConfig>
+    for crate::algorithms::telematics::TelematicsConfig
+{
+    fn into_into_dart(self) -> crate::algorithms::telematics::TelematicsConfig {
         self
     }
 }
@@ -1893,6 +3051,31 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api_dart::smart_motion::TrackingMo
     for crate::api_dart::smart_motion::TrackingModeDart
 {
     fn into_into_dart(self) -> crate::api_dart::smart_motion::TrackingModeDart {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::algorithms::transport_mode::TransportMode {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Unknown => 0.into_dart(),
+            Self::Still => 1.into_dart(),
+            Self::Walking => 2.into_dart(),
+            Self::Running => 3.into_dart(),
+            Self::Cycling => 4.into_dart(),
+            Self::Vehicle => 5.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::algorithms::transport_mode::TransportMode
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::algorithms::transport_mode::TransportMode>
+    for crate::algorithms::transport_mode::TransportMode
+{
+    fn into_into_dart(self) -> crate::algorithms::transport_mode::TransportMode {
         self
     }
 }
@@ -1976,6 +3159,13 @@ impl SseEncode for BatteryBudgetEngineDart {
     }
 }
 
+impl SseEncode for ImpactDetectorDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>>::sse_encode(flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self), serializer);
+    }
+}
+
 impl SseEncode for RTreeDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2002,6 +3192,30 @@ impl SseEncode for SmartMotionCoordinatorDart {
     }
 }
 
+impl SseEncode for TelematicsEngineDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>,
+        >>::sse_encode(
+            flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self),
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for TransportModeClassifierDart {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >>::sse_encode(
+            flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self),
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for TripManagerDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2013,6 +3227,17 @@ impl SseEncode
     for RustOpaqueMoi<
         flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>,
     >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2047,6 +3272,30 @@ impl SseEncode
 impl SseEncode
     for RustOpaqueMoi<
         flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SmartMotionCoordinatorDart>,
+    >
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode
+    for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>
+{
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode
+    for RustOpaqueMoi<
+        flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
     >
 {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2093,6 +3342,27 @@ impl SseEncode for crate::state::battery_budget::BudgetAdjustmentEvent {
     }
 }
 
+impl SseEncode for crate::algorithms::transport_mode::ClassifierConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.mode_switch_dwell_ms, serializer);
+        <f64>::sse_encode(self.min_confidence, serializer);
+    }
+}
+
+impl SseEncode for crate::algorithms::telematics::DrivingEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.kind, serializer);
+        <f64>::sse_encode(self.severity, serializer);
+        <f64>::sse_encode(self.speed, serializer);
+        <f64>::sse_encode(self.value, serializer);
+        <f64>::sse_encode(self.latitude, serializer);
+        <f64>::sse_encode(self.longitude, serializer);
+        <i64>::sse_encode(self.timestamp_ms, serializer);
+    }
+}
+
 impl SseEncode for f32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2121,12 +3391,70 @@ impl SseEncode for i64 {
     }
 }
 
+impl SseEncode for crate::algorithms::impact::ImpactConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.enable_crash, serializer);
+        <bool>::sse_encode(self.enable_fall, serializer);
+        <f64>::sse_encode(self.crash_g_threshold, serializer);
+        <f64>::sse_encode(self.crash_min_speed_kmh, serializer);
+        <f64>::sse_encode(self.fall_g_threshold, serializer);
+        <i64>::sse_encode(self.confirm_window_ms, serializer);
+        <f64>::sse_encode(self.min_confidence, serializer);
+    }
+}
+
+impl SseEncode for crate::algorithms::impact::ImpactEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.kind, serializer);
+        <i64>::sse_encode(self.id, serializer);
+        <f64>::sse_encode(self.confidence, serializer);
+        <f64>::sse_encode(self.peak_g, serializer);
+        <f64>::sse_encode(self.speed_before, serializer);
+        <f64>::sse_encode(self.latitude, serializer);
+        <f64>::sse_encode(self.longitude, serializer);
+        <i64>::sse_encode(self.timestamp_ms, serializer);
+        <i64>::sse_encode(self.confirm_deadline_ms, serializer);
+    }
+}
+
 impl SseEncode for Vec<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <String>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::algorithms::telematics::DrivingEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::algorithms::telematics::DrivingEvent>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::algorithms::impact::ImpactEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::algorithms::impact::ImpactEvent>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <f64>::sse_encode(item, serializer);
         }
     }
 }
@@ -2151,12 +3479,31 @@ impl SseEncode for Vec<crate::api_dart::trip::TripWaypointDart> {
     }
 }
 
+impl SseEncode for crate::algorithms::transport_mode::ModeResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::algorithms::transport_mode::TransportMode>::sse_encode(self.mode, serializer);
+        <f64>::sse_encode(self.confidence, serializer);
+        <bool>::sse_encode(self.changed, serializer);
+    }
+}
+
 impl SseEncode for Option<crate::state::battery_budget::BudgetAdjustmentEvent> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::state::battery_budget::BudgetAdjustmentEvent>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::algorithms::transport_mode::ClassifierConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::algorithms::transport_mode::ClassifierConfig>::sse_encode(value, serializer);
         }
     }
 }
@@ -2177,6 +3524,36 @@ impl SseEncode for Option<i32> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <i32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::algorithms::impact::ImpactConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::algorithms::impact::ImpactConfig>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::algorithms::impact::ImpactEvent> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::algorithms::impact::ImpactEvent>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::algorithms::telematics::TelematicsConfig> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::algorithms::telematics::TelematicsConfig>::sse_encode(value, serializer);
         }
     }
 }
@@ -2209,6 +3586,20 @@ impl SseEncode for crate::api_dart::schedule::ScheduleAlarmsDart {
     }
 }
 
+impl SseEncode for crate::algorithms::telematics::TelematicsConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <f64>::sse_encode(self.harsh_braking_g, serializer);
+        <f64>::sse_encode(self.harsh_acceleration_g, serializer);
+        <f64>::sse_encode(self.harsh_cornering_g, serializer);
+        <f64>::sse_encode(self.speed_limit_kmh, serializer);
+        <f64>::sse_encode(self.speeding_tolerance_kmh, serializer);
+        <i64>::sse_encode(self.speeding_min_duration_ms, serializer);
+        <f64>::sse_encode(self.min_speed_for_events_kmh, serializer);
+        <i64>::sse_encode(self.event_debounce_ms, serializer);
+    }
+}
+
 impl SseEncode for crate::api_dart::smart_motion::TrackingModeDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2217,6 +3608,26 @@ impl SseEncode for crate::api_dart::smart_motion::TrackingModeDart {
                 crate::api_dart::smart_motion::TrackingModeDart::Active => 0,
                 crate::api_dart::smart_motion::TrackingModeDart::Passive => 1,
                 crate::api_dart::smart_motion::TrackingModeDart::Manual => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::algorithms::transport_mode::TransportMode {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::algorithms::transport_mode::TransportMode::Unknown => 0,
+                crate::algorithms::transport_mode::TransportMode::Still => 1,
+                crate::algorithms::transport_mode::TransportMode::Walking => 2,
+                crate::algorithms::transport_mode::TransportMode::Running => 3,
+                crate::algorithms::transport_mode::TransportMode::Cycling => 4,
+                crate::algorithms::transport_mode::TransportMode::Vehicle => 5,
                 _ => {
                     unimplemented!("");
                 }
@@ -2291,9 +3702,12 @@ mod io {
 
     use super::*;
     use crate::api_dart::battery_budget::*;
+    use crate::api_dart::impact::*;
     use crate::api_dart::rtree::*;
     use crate::api_dart::schedule::*;
     use crate::api_dart::smart_motion::*;
+    use crate::api_dart::telematics::*;
+    use crate::api_dart::transport_mode::*;
     use crate::api_dart::trip::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
@@ -2317,6 +3731,20 @@ mod io {
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>>::decrement_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImpactDetectorDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImpactDetectorDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>::decrement_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
@@ -2362,6 +3790,38 @@ mod io {
     }
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTelematicsEngineDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTelematicsEngineDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>::decrement_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTransportModeClassifierDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTransportModeClassifierDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >::decrement_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_tracelet_platform_interface_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTripManagerDart(
         ptr: *const std::ffi::c_void,
     ) {
@@ -2388,9 +3848,12 @@ mod web {
 
     use super::*;
     use crate::api_dart::battery_budget::*;
+    use crate::api_dart::impact::*;
     use crate::api_dart::rtree::*;
     use crate::api_dart::schedule::*;
     use crate::api_dart::smart_motion::*;
+    use crate::api_dart::telematics::*;
+    use crate::api_dart::transport_mode::*;
     use crate::api_dart::trip::*;
     use flutter_rust_bridge::for_generated::byteorder::{
         NativeEndian, ReadBytesExt, WriteBytesExt,
@@ -2416,6 +3879,20 @@ mod web {
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<BatteryBudgetEngineDart>>::decrement_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImpactDetectorDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImpactDetectorDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>>::decrement_strong_count(ptr as _);
     }
 
     #[wasm_bindgen]
@@ -2458,6 +3935,38 @@ mod web {
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SmartMotionCoordinatorDart>>::decrement_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTelematicsEngineDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTelematicsEngineDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TelematicsEngineDart>>::decrement_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTransportModeClassifierDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTransportModeClassifierDart(
+        ptr: *const std::ffi::c_void,
+    ) {
+        MoiArc::<
+            flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TransportModeClassifierDart>,
+        >::decrement_strong_count(ptr as _);
     }
 
     #[wasm_bindgen]

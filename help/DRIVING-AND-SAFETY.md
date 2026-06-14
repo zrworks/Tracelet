@@ -1,126 +1,157 @@
 # Driving & Safety (Telematics, Transport Mode, Crash/Fall)
 
-> Added in **3.3.0**. All three features are **opt-in and default-off** — they
-> never run, allocate, or affect tracking unless you explicitly enable them.
+> Added in **3.3.0**. Everything here is **opt-in and off by default** — if you
+> don't enable a feature, its engine is never created and your tracking behaves
+> exactly as before.
 
-Tracelet 3.3.0 adds three on-device behavior engines that turn the location +
-accelerometer stream into higher-level signals:
+Tracelet can turn the raw location + accelerometer stream into **meaningful
+events** about *how* a device is moving — on the device, no cloud calls. There
+are three independent features:
 
-| Feature | Config | Events |
-|---|---|---|
-| Driving-behavior (telematics) | `TelematicsConfig` | `Tracelet.onDrivingEvent` |
-| Transport-mode classifier | `ClassifierConfig` | `Tracelet.onModeChange` |
-| Crash / fall detection | `ImpactConfig` | `Tracelet.onImpact` |
+| Feature | What it tells you | Enable with | Listen with |
+|---|---|---|---|
+| **Driving events** | hard braking / acceleration / cornering / speeding | `TelematicsConfig` | `Tracelet.onDrivingEvent` |
+| **Transport mode** | walking / running / cycling / vehicle / still | `ClassifierConfig` | `Tracelet.onModeChange` |
+| **Crash & fall** | a likely crash or fall just happened | `ImpactConfig` | `Tracelet.onImpact` |
 
-All detection runs **on device** in the Rust core (no cloud, deterministic).
-Thresholds are expressed in **g** (1 g ≈ 9.81 m/s²) and are fully tunable.
+**Who uses this?** Usage-based insurance & fleet safety (driving events),
+delivery/field apps (transport mode), and lone-worker/rideshare/personal-safety
+apps (crash & fall). Enable any combination — they're independent.
 
 ---
 
-## 1. Driving-behavior events (telematics)
+## 1. Driving events (telematics)
 
-GPS-derived detection of `harsh_braking`, `harsh_acceleration`,
-`harsh_cornering`, and `speeding` — no extra sensors required.
+### Quick start
 
 ```dart
+// Turn it on (50 km/h limit enables speeding detection)
 await Tracelet.ready(Config(
   telematics: TelematicsConfig(
     enableDrivingEvents: true,
-    harshBrakingG: 0.40,        // deceleration threshold (g)
-    harshAccelerationG: 0.35,
-    harshCorneringG: 0.40,
-    speedLimitKmh: 50,          // 0 disables speeding
-    speedingToleranceKmh: 5,
-    speedingMinDurationMs: 3000,
+    speedLimitKmh: 50,
   ),
 ));
 
+// Listen
 Tracelet.onDrivingEvent((e) {
-  print('${e.kind}  severity=${e.severity}  value=${e.value}');
-  // e.kind: harsh_braking | harsh_acceleration | harsh_cornering | speeding
-  // e.value: g for harsh events, km/h-over-limit for speeding
+  print('${e.kind} — severity ${e.severity}, value ${e.value}');
 });
+
+await Tracelet.start();
 ```
 
-GPS speed is ~1 Hz and noisy, so the engine favors **specificity over
-sensitivity** (high thresholds, gap rejection, one-event-per-maneuver debounce).
-Each event carries a normalized `severity` (0–1). A rolling driving score is
-maintained internally per tracking session.
+You'll get events like `harsh_braking` / `harsh_acceleration` /
+`harsh_cornering` / `speeding`.
 
-## 2. Transport-mode classifier
+### Event fields
 
-Fuses accelerometer features (variance, cadence) with GPS speed to classify
-`still` / `walking` / `running` / `cycling` / `vehicle`, with hysteresis so a
-mode must persist before it commits.
+| Field | Meaning |
+|---|---|
+| `kind` | which event |
+| `severity` | `0.0`–`1.0`, how far past the threshold (good for scoring) |
+| `value` | **g-force** for harsh events, **km/h over the limit** for speeding |
+| `speed` | speed at the moment (m/s) |
+| `latitude` / `longitude` / `timestamp` | where & when |
+
+### Options (all thresholds in g; 1 g ≈ 9.81 m/s²)
+
+| Option | Default | Meaning |
+|---|---|---|
+| `harshBrakingG` | `0.40` | brake threshold |
+| `harshAccelerationG` | `0.35` | acceleration threshold |
+| `harshCorneringG` | `0.40` | cornering threshold |
+| `speedLimitKmh` | `0` (off) | speed limit; `0` disables speeding |
+| `speedingToleranceKmh` | `5` | grace over the limit |
+| `speedingMinDurationMs` | `3000` | sustained-over-limit time before it counts |
+| `minSpeedForEventsKmh` | `5` | ignore events below this speed |
+
+> **Why no events sometimes?** These are derived from ~1 Hz, noisy GPS speed, so
+> Tracelet favours accuracy over sensitivity (it won't cry wolf). Best used while
+> actually driving.
+
+---
+
+## 2. Transport mode
 
 ```dart
 await Tracelet.ready(Config(
-  classifier: ClassifierConfig(
-    enableFusedClassifier: true,
-    fusedClassifierAuthoritative: false, // annotate, don't override platform
-    modeSwitchDwellMs: 8000,
-    minModeConfidence: 0.6,
-  ),
+  classifier: ClassifierConfig(enableFusedClassifier: true),
 ));
-
-Tracelet.onModeChange((e) => print('mode: ${e.mode} (${e.confidence})'));
+Tracelet.onModeChange((e) => print('Now: ${e.mode} (${e.confidence})'));
 ```
 
-By default the classifier **annotates** — the platform Activity-Recognition
-value stays authoritative. Set `fusedClassifierAuthoritative: true` to let the
-fused mode drive sampling decisions.
+Reports `still` / `walking` / `running` / `cycling` / `vehicle`.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `enableFusedClassifier` | `false` | master switch |
+| `fusedClassifierAuthoritative` | `false` | `false` = annotate only (recommended); `true` = let the fused mode drive sampling |
+| `modeSwitchDwellMs` | `8000` | how long a mode must persist before it's reported |
+| `minModeConfidence` | `0.6` | below this → reported as `unknown` |
+
+By default it's a **second opinion** — it reports a mode but the OS activity stays
+in charge. Most apps want this.
+
+---
 
 ## 3. Crash & fall detection
-
-Safety-critical, so detection is **corroborated** (a high-g spike alone is never
-a crash) and uses a **cancel-countdown** confirmation flow.
 
 ```dart
 await Tracelet.ready(Config(
   impact: ImpactConfig(
     enableCrashDetection: true,
-    enableFallDetection: false,  // best-effort; default off
-    crashGThreshold: 3.0,        // impact magnitude (g)
-    crashMinSpeedKmh: 25,        // must have been moving
-    confirmWindowMs: 15000,      // countdown before auto-confirm
+    confirmWindowMs: 15000,  // 15s for the user to cancel
   ),
 ));
 
-Tracelet.onImpact((e) {
+Tracelet.onImpact((e) async {
   if (e.isPotential) {
-    // Show a countdown UI; if the user is fine, cancel it:
-    // await Tracelet.cancelImpact(e.id);
-    // To escalate immediately:
-    // await Tracelet.confirmImpact(e.id);
+    // Show an "Are you OK?" countdown.
+    await Tracelet.cancelImpact(e.id);   // user is fine
+    // await Tracelet.confirmImpact(e.id); // escalate now
   } else {
-    // e.kind == 'crash' (or 'fall') — confirmed emergency
+    // e.kind == 'crash'/'fall' — confirmed; start your SOS flow.
   }
 });
 ```
 
-- A **crash** requires an impact above `crashGThreshold` **while moving** above
-  `crashMinSpeedKmh`.
-- A `potential_crash`/`potential_fall` fires first with a `confirmDeadline`;
-  if not cancelled within `confirmWindowMs`, the confirmed `crash`/`fall` fires.
-- Tracelet provides the **trigger + cancel window** — it never places emergency
-  calls. That's the host app's responsibility.
+**The flow:** hard impact while moving → `potential_crash` (with a deadline) →
+user cancels/confirms, or it auto-confirms to `crash` after `confirmWindowMs`.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `enableCrashDetection` | `false` | vehicle crash |
+| `enableFallDetection` | `false` | personal fall (best-effort; more false alarms) |
+| `crashGThreshold` | `3.0` | impact strength (g) for a crash |
+| `crashMinSpeedKmh` | `25` | must have been moving this fast (corroboration) |
+| `confirmWindowMs` | `15000` | cancel-countdown length |
+| `minImpactConfidence` | `0.6` | suppress low-confidence candidates |
+
+> ⚠️ Tracelet provides the **trigger + cancel window** only — it never places
+> emergency calls. Building the SOS flow is your app's job.
 
 ---
 
+## Trying it without driving (simulation)
+
+The example app's **Driving & Safety** page has *Simulate* buttons (Hard brake,
+Rapid accel, Sharp turn, Crash, Vehicle mode) that feed synthetic data into the
+**real** engines and show the events. In tests, the engines are callable
+directly from Dart (flutter_rust_bridge) — see
+`example/integration_test/behavior_simulation_test.dart`.
+
 ## Permissions
 
-- **Driving events** need only the location permission you already grant for
-  tracking — **no new permission**.
-- **Classifier** and **crash/fall** use the accelerometer. On Android the
-  accelerometer is already used by motion detection (no extra permission); on
-  iOS, Motion & Fitness (`NSMotionUsageDescription`) improves fidelity. See
+- **Driving events**: only your existing location permission — nothing extra.
+- **Transport mode / crash / fall**: the accelerometer (already used on Android;
+  add the Motion & Fitness usage description on iOS for best accuracy). See
   [PERMISSIONS.md](PERMISSIONS.md).
 
 ## Guarantees
 
-- **Default-off:** with the three config blocks at their defaults, no engine is
-  instantiated and behavior is byte-for-byte identical to 3.2.x.
-- **Side-channel:** these events never alter the location pipeline, odometer, or
-  `onLocation` payload.
-- **Cross-platform:** identical engines (shared Rust core) on Android and iOS;
-  driving events also work on Web (GPS-derived).
+- **Default-off** — config blocks at defaults ⇒ engines never created ⇒ behaviour
+  identical to 3.2.x.
+- **Side-channel** — never alters your locations, odometer, or sync.
+- **On-device & cross-platform** — shared Rust core; identical on Android & iOS
+  (driving events also work on Web).

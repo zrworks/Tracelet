@@ -54,7 +54,7 @@ Sarah reaches a large corporate campus and spends 45 minutes walking around insi
 
 ### How Tracelet Solves It
 
-1. **The Battery Budget (`geo.batteryBudgetPerHour`)**
+1. **The Battery Budget (`android.batteryBudgetPerHour`)**
    You configured Tracelet with a `batteryBudgetPerHour` of `2.0%`. Tracelet notices her battery is draining at 3.5% per hour due to the weak signal inside the building. The engine automatically degrades the `desiredAccuracy` from `high` to `medium` and increases the `distanceFilter` to force the battery drain back down under the 2.0% budget.
 
 2. **Unlimited Geofences via Proximity**

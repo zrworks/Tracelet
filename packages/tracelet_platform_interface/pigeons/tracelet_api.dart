@@ -193,6 +193,7 @@ class TlAndroidConfig {
     required this.periodicUseExactAlarms,
     required this.scheduleUseAlarmManager,
     required this.foregroundService,
+    required this.releaseWakelockWhenStationary,
   });
 
   final int locationUpdateInterval;
@@ -204,6 +205,10 @@ class TlAndroidConfig {
   final bool periodicUseExactAlarms;
   final bool scheduleUseAlarmManager;
   final TlForegroundServiceConfig foregroundService;
+
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  final bool releaseWakelockWhenStationary;
 }
 
 class TlIosConfig {
@@ -334,7 +339,9 @@ class TlMotionConfig {
     required this.disableStopDetection,
     required this.stopDetectionDelay,
     required this.stopOnStationary,
-    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval, required this.stationaryPeriodicAccuracy, required this.speedWakeConfirmCount, this.activityTypes,
+    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval,    required this.stationaryPeriodicAccuracy,
+    required this.speedWakeConfirmCount,
+    this.activityTypes,
   });
   final int stopTimeout;
   final int motionTriggerDelay;

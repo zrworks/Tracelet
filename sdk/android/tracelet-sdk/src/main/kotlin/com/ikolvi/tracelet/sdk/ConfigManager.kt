@@ -54,6 +54,7 @@ class ConfigManager(context: Context) {
         const val DEFAULT_PERIODIC_DESIRED_ACCURACY = 1 // DesiredAccuracy.medium
         const val DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE = false
         const val DEFAULT_PERIODIC_USE_EXACT_ALARMS = false
+        const val DEFAULT_RELEASE_WAKELOCK_WHEN_STATIONARY = false
 
         // AppConfig defaults
         const val DEFAULT_STOP_ON_TERMINATE = true
@@ -313,6 +314,13 @@ class ConfigManager(context: Context) {
 
     fun getPeriodicUseExactAlarms(): Boolean =
         getBool("periodicUseExactAlarms", DEFAULT_PERIODIC_USE_EXACT_ALARMS)
+
+    /**
+     * Drops the OEM Wakelock when the device enters a fully stationary state.
+     * Resolves Issue #162.
+     */
+    fun getReleaseWakelockWhenStationary(): Boolean =
+        getBool("releaseWakelockWhenStationary", DEFAULT_RELEASE_WAKELOCK_WHEN_STATIONARY)
 
     // LocationFilter sub-config
     fun getOdometerAccuracyThreshold(): Int =

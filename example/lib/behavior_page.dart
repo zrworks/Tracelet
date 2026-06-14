@@ -63,8 +63,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
     await _applyConfig();
     if (v) {
       _drivingSub ??= tl.Tracelet.drivingEventStream.listen((e) {
-        _logLine('🚗 ${e.kind}  sev=${e.severity.toStringAsFixed(2)}  '
-            'val=${e.value.toStringAsFixed(2)}');
+        _logLine(
+          '🚗 ${e.kind}  sev=${e.severity.toStringAsFixed(2)}  '
+          'val=${e.value.toStringAsFixed(2)}',
+        );
       });
     } else {
       _drivingSub?.cancel();
@@ -79,11 +81,15 @@ class _BehaviorPageState extends State<BehaviorPage> {
       _impactSub ??= tl.Tracelet.impactStream.listen((e) {
         if (e.isPotential) {
           setState(() => _pendingImpact = e);
-          _logLine('⚠️ ${e.kind}  peak=${e.peakG.toStringAsFixed(1)}g  '
-              '(cancel within window)');
+          _logLine(
+            '⚠️ ${e.kind}  peak=${e.peakG.toStringAsFixed(1)}g  '
+            '(cancel within window)',
+          );
         } else {
           setState(() => _pendingImpact = null);
-          _logLine('🆘 CONFIRMED ${e.kind}  peak=${e.peakG.toStringAsFixed(1)}g');
+          _logLine(
+            '🆘 CONFIRMED ${e.kind}  peak=${e.peakG.toStringAsFixed(1)}g',
+          );
         }
       });
     } else {
@@ -137,7 +143,9 @@ class _BehaviorPageState extends State<BehaviorPage> {
           ),
           SwitchListTile(
             title: const Text('Crash detection'),
-            subtitle: const Text('high-g impact while moving → cancel countdown'),
+            subtitle: const Text(
+              'high-g impact while moving → cancel countdown',
+            ),
             value: _crash,
             onChanged: _toggleCrash,
           ),
@@ -164,7 +172,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
               ),
             ),
           const Divider(height: 32),
-          const Text('Event log', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Event log',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           if (_log.isEmpty) const Text('— no events yet —'),
           ..._log.map(

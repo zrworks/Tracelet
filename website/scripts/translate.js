@@ -140,7 +140,11 @@ async function translateTextWithProtection(text, targetLang, engine) {
   const glossary = {
     'ml': [
       { from: /സംസ്ഥാനം/g, to: 'അവസ്ഥ' }, // State (Province) -> State (Condition)
-      { from: /സംസ്ഥാന/g, to: 'അവസ്ഥ' }
+      { from: /സംസ്ഥാന/g, to: 'അവസ്ഥ' },
+      { from: /തൂക്കിക്കൊല്ലുന്നതിനുപകരം/g, to: 'സ്റ്റക്ക് ആകുന്നതിന് പകരം' },
+      { from: /തൂക്കിക്കൊല്ലുക/g, to: 'സ്റ്റക്ക് ആകുക' },
+      { from: /തൂക്കിക്കൊല്ലുന്ന/g, to: 'സ്റ്റക്ക് ആകുന്ന' },
+      { from: /തൂങ്ങിക്കിടക്കുന്നു/g, to: 'സ്റ്റക്ക് ആകുന്നു' }
     ],
     'hi': [
       { from: /राज्य/g, to: 'स्थिति' }

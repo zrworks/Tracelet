@@ -84,13 +84,11 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div style={{
-          position: 'absolute', top: '100%', right: '0', marginTop: '0.5rem',
-          backgroundColor: 'var(--nextra-bg, white)', border: '1px solid var(--nextra-border, #e5e7eb)', borderRadius: '0.5rem',
-          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', width: '300px', zIndex: 100,
-          color: 'var(--nextra-fg, #1f2937)'
-        }}>
-          <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--nextra-border, #e5e7eb)', fontWeight: 600, fontSize: '0.875rem' }}>
+        <div 
+          className="notification-dropdown"
+          style={{ position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', width: '300px', zIndex: 50, borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+        >
+          <div className="notification-dropdown-header" style={{ padding: '0.75rem', fontWeight: 600, fontSize: '0.875rem' }}>
             {data.badgeTitle}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -98,12 +96,11 @@ export default function NotificationBell() {
               <button 
                 key={idx}
                 onClick={() => handleNavigate(item.href)}
+                className="notification-dropdown-item"
                 style={{
-                  padding: '0.75rem', background: 'none', border: 'none', borderBottom: idx < data.items.length - 1 ? '1px solid var(--nextra-border, #f3f4f6)' : 'none',
-                  textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.25rem'
+                  padding: '0.75rem', background: 'none', border: 'none',
+                  textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--nextra-primary-hue, rgba(15, 157, 88, 0.05))'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F9D58' }}>{item.title}</span>
                 <span style={{ fontSize: '0.75rem', color: '#6b7280', lineHeight: 1.4 }}>{item.description}</span>

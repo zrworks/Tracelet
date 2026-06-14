@@ -1,4 +1,5 @@
 import { Head } from 'nextra/components'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import './global.css'
 import { Metadata } from 'next'
 
@@ -54,6 +55,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
       </body>
+      {/* GA4 (G-42X97WN4M8). Cloudflare's Google tag gateway rewrites these
+          requests to load first-party from ikolvi.com, making measurement
+          resilient to ad/tracker blockers that target googletagmanager.com. */}
+      <GoogleAnalytics gaId="G-42X97WN4M8" />
     </html>
   )
 }

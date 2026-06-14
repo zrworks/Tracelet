@@ -96,13 +96,13 @@ public final class SpeedMotionManager {
 
         // Validate config bounds
         if speedStationaryDelay < 0 {
-            NSLog("[SpeedMotion] WARNING: speedStationaryDelay was %d, clamping to 0", speedStationaryDelay)
+            TraceletLog.warning(String(format: "[SpeedMotion] WARNING: speedStationaryDelay was %d, clamping to 0", speedStationaryDelay))
             speedStationaryDelay = 0
         } else if speedStationaryDelay == 0 {
-            NSLog("[SpeedMotion] WARNING: speedStationaryDelay is 0 — device will transition to STATIONARY immediately after a single low-speed fix")
+            TraceletLog.warning("[SpeedMotion] WARNING: speedStationaryDelay is 0 — device will transition to STATIONARY immediately after a single low-speed fix")
         }
         if speedWakeConfirmCount < 1 {
-            NSLog("[SpeedMotion] WARNING: speedWakeConfirmCount was %d, clamping to 1", speedWakeConfirmCount)
+            TraceletLog.warning(String(format: "[SpeedMotion] WARNING: speedWakeConfirmCount was %d, clamping to 1", speedWakeConfirmCount))
             speedWakeConfirmCount = 1
         }
 
@@ -125,15 +125,15 @@ public final class SpeedMotionManager {
             stateManager.speedLowCount = 0
             stateManager.speedWakeCount = 0
             stateManager.isMoving = true
-            NSLog("[SpeedMotion] start() — forced to MOVING state")
+            TraceletLog.debug("[SpeedMotion] start() — forced to MOVING state")
         } else {
-            NSLog("[SpeedMotion] start: restored state=%d, lowSpeedCount=%d, wakeCount=%d",
-                  state.rawValue, lowSpeedCount, wakeCount)
+            TraceletLog.debug(String(format: "[SpeedMotion] start: restored state=%d, lowSpeedCount=%d, wakeCount=%d",
+                  state.rawValue, lowSpeedCount, wakeCount))
             
             if state == .stationary {
                 switchToStationary()
             } else if state == .slowing {
-                NSLog("[SpeedMotion] start: restored SLOWING state, restarting timer")
+                TraceletLog.debug("[SpeedMotion] start: restored SLOWING state, restarting timer")
                 delegate?.speedMotionDidStartSlowing()
                 startSlowingTimer()
             }
@@ -144,13 +144,13 @@ public final class SpeedMotionManager {
     public func stop() {
         guard isRunning else { return }
         isRunning = false
-        NSLog("[SpeedMotion] stop")
+        TraceletLog.debug("[SpeedMotion] stop")
     }
 
     /// Handle manual pace changes triggered by the caller.
     public func onManualPaceChange(isMoving: Bool) {
         guard isRunning else { return }
-        NSLog("[SpeedMotion] onManualPaceChange(isMoving=\(isMoving))")
+        TraceletLog.debug("[SpeedMotion] onManualPaceChange(isMoving=\(isMoving))")
         if isMoving {
             lowSpeedCount = 0
             wakeCount = 0
@@ -222,8 +222,8 @@ public final class SpeedMotionManager {
             lowSpeedCount = 1
             wakeCount = 0
             slowingStartTime = now
-            NSLog("[SpeedMotion] MOVING -> SLOWING (speed=%.2f < threshold=%.2f)",
-                  speed, speedMovingThreshold)
+            TraceletLog.debug(String(format: "[SpeedMotion] MOVING -> SLOWING (speed=%.2f < threshold=%.2f)",
+                  speed, speedMovingThreshold))
             startSlowingTimer()
             
             delegate?.speedMotionDidStartSlowing()
@@ -244,7 +244,7 @@ public final class SpeedMotionManager {
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
                 if self.state == .slowing {
-                    NSLog("[SpeedMotion] SLOWING timer expired -> STATIONARY")
+                    TraceletLog.debug("[SpeedMotion] SLOWING timer expired -> STATIONARY")
                     let previousState = self.state
                     self.state = .stationary
                     self.wakeCount = 0
@@ -285,8 +285,8 @@ public final class SpeedMotionManager {
             state = .moving
             lowSpeedCount = 0
             stopSlowingTimer()
-            NSLog("[SpeedMotion] SLOWING -> MOVING (speed=%.2f >= threshold=%.2f)",
-                  speed, speedMovingThreshold)
+            TraceletLog.debug(String(format: "[SpeedMotion] SLOWING -> MOVING (speed=%.2f >= threshold=%.2f)",
+                  speed, speedMovingThreshold))
                   
             delegate?.speedMotionDidCancelSlowing()
             
@@ -305,8 +305,8 @@ public final class SpeedMotionManager {
             state = .stationary
             wakeCount = 0
             stopSlowingTimer()
-            NSLog("[SpeedMotion] SLOWING -> STATIONARY (elapsed=%.0fs >= delay=%ds, lowCount=%d)",
-                  elapsed, speedStationaryDelay, lowSpeedCount)
+            TraceletLog.debug(String(format: "[SpeedMotion] SLOWING -> STATIONARY (elapsed=%.0fs >= delay=%ds, lowCount=%d)",
+                  elapsed, speedStationaryDelay, lowSpeedCount))
 
             delegate?.speedMotionDidCancelSlowing()
             switchToStationary()
@@ -321,20 +321,20 @@ public final class SpeedMotionManager {
     private func handleStationary(speed: Double, now: TimeInterval) {
         if speed >= speedMovingThreshold {
             wakeCount += 1
-            NSLog("[SpeedMotion] STATIONARY: wake fix (speed=%.2f, wakeCount=%d/%d)",
-                  speed, wakeCount, speedWakeConfirmCount)
+            TraceletLog.debug(String(format: "[SpeedMotion] STATIONARY: wake fix (speed=%.2f, wakeCount=%d/%d)",
+                  speed, wakeCount, speedWakeConfirmCount))
             if wakeCount >= speedWakeConfirmCount {
                 state = .moving
                 lowSpeedCount = 0
                 wakeCount = 0
-                NSLog("[SpeedMotion] STATIONARY -> MOVING (wakeConfirm reached)")
+                TraceletLog.debug("[SpeedMotion] STATIONARY -> MOVING (wakeConfirm reached)")
                 delegate?.switchToContinuous()
             }
         } else {
             // Reset wake count on low-speed fix
             if wakeCount > 0 {
-                NSLog("[SpeedMotion] STATIONARY: reset wakeCount (speed=%.2f < threshold)",
-                      speed)
+                TraceletLog.debug(String(format: "[SpeedMotion] STATIONARY: reset wakeCount (speed=%.2f < threshold)",
+                      speed))
             }
             wakeCount = 0
         }

@@ -35,6 +35,7 @@ import com.ikolvi.tracelet.sdk.model.TrackingMode
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import com.ikolvi.tracelet.sdk.util.OemCompat
 import com.ikolvi.tracelet.sdk.util.SoundManager
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 import com.ikolvi.tracelet.sdk.util.TraceletLogger
 import com.ikolvi.tracelet.sdk.util.TraceletPermissionManager
 import com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor
@@ -93,7 +94,9 @@ class TraceletSdk private constructor(private val context: Context) {
 
     lateinit var scheduleManager: ScheduleManager
         internal set
-    val logger: TraceletLogger by lazy { TraceletLogger(context, configManager) }
+    val logger: TraceletLogger by lazy {
+        TraceletLogger(context, configManager).also { TraceletLog.attach(it) }
+    }
     lateinit var soundManager: SoundManager
         internal set
     lateinit var permissionManager: TraceletPermissionManager
@@ -209,7 +212,7 @@ class TraceletSdk private constructor(private val context: Context) {
             com.ikolvi.tracelet.sdk.service.LocationService.bootSpeedMotionManager?.events = sender
             com.ikolvi.tracelet.sdk.service.LocationService.bootSmartMotionCoordinator?.events = sender
         } catch (e: Exception) {
-            android.util.Log.e("Tracelet", "Failed to update boot event senders: ${e.message}")
+            TraceletLog.error("Failed to update boot event senders: ${e.message}")
         }
     }
 

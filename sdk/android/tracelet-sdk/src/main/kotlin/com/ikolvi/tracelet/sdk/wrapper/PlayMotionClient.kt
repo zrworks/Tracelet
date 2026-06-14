@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.wrapper
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.app.PendingIntent
 import android.content.Context
@@ -57,7 +58,7 @@ class PlayMotionClient(private val context: Context) : TraceletMotionClient {
             try {
                 activityClient.removeActivityTransitionUpdates(pi)
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to remove activity transitions: ${e.message}")
+                TraceletLog.warning("Failed to remove activity transitions: ${e.message}")
             }
         }
         transitionPendingIntent = null

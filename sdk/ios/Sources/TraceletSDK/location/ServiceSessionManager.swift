@@ -55,9 +55,9 @@ public final class ServiceSessionManager {
             let svcSession = CLServiceSession(authorization: .always, fullAccuracyPurposeKey: "TraceletFullAccuracy")
             session = svcSession
             isActive = true
-            NSLog("[Tracelet] CLServiceSession started (iOS 18+) — authorization=always, fullAccuracy")
+            TraceletLog.debug("[Tracelet] CLServiceSession started (iOS 18+) — authorization=always, fullAccuracy")
         } else {
-            NSLog("[Tracelet] CLServiceSession not available (iOS < 18)")
+            TraceletLog.debug("[Tracelet] CLServiceSession not available (iOS < 18)")
         }
     }
 
@@ -71,9 +71,9 @@ public final class ServiceSessionManager {
             let svcSession = CLServiceSession(authorization: .whenInUse)
             session = svcSession
             isActive = true
-            NSLog("[Tracelet] CLServiceSession started (iOS 18+) — authorization=whenInUse")
+            TraceletLog.debug("[Tracelet] CLServiceSession started (iOS 18+) — authorization=whenInUse")
         } else {
-            NSLog("[Tracelet] CLServiceSession not available (iOS < 18)")
+            TraceletLog.debug("[Tracelet] CLServiceSession not available (iOS < 18)")
         }
     }
 
@@ -92,6 +92,6 @@ public final class ServiceSessionManager {
 
         session = nil
         isActive = false
-        NSLog("[Tracelet] CLServiceSession stopped")
+        TraceletLog.debug("[Tracelet] CLServiceSession stopped")
     }
 }

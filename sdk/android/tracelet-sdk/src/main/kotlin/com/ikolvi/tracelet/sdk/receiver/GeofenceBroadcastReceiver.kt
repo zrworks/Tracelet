@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.receiver
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -25,7 +26,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         val event: TraceletGeofencingEvent = extractor.extractGeofencingEvent(intent) ?: return
 
         if (event.hasError) {
-            Log.e(TAG, "Geofence error: code=${event.errorCode}")
+            TraceletLog.error("Geofence error: code=${event.errorCode}")
             return
         }
 
@@ -36,7 +37,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         val lat = location?.latitude ?: 0.0
         val lng = location?.longitude ?: 0.0
 
-        Log.d(TAG, "Geofence transition: type=$transitionType, " +
+        TraceletLog.debug("Geofence transition: type=$transitionType, " +
                 "geofences=${triggeringGeofences.map { g: TraceletGeofence -> g.requestId }}")
 
         val manager = geofenceManager ?: run {
@@ -52,7 +53,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                     sdk.geofenceManager
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to bootstrap SDK: ${e.message}")
+                TraceletLog.error("Failed to bootstrap SDK: ${e.message}")
                 null
             }
         }

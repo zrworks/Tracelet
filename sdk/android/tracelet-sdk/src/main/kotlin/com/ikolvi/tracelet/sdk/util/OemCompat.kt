@@ -106,10 +106,10 @@ object OemCompat {
             // Always use a timeout to prevent indefinite CPU wakefulness.
             // Default 10 minutes; the service should re-acquire when needed.
             wakelock.acquire(timeout)
-            Log.d(TAG, "Acquired OEM-safe wakelock with tag: $tag")
+            TraceletLog.debug("Acquired OEM-safe wakelock with tag: $tag")
             wakelock
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to acquire wakelock: ${e.message}")
+            TraceletLog.error("Failed to acquire wakelock: ${e.message}")
             null
         }
     }
@@ -139,7 +139,7 @@ object OemCompat {
                 PackageManager.MATCH_DEFAULT_ONLY
             ) != null
         } catch (e: Exception) {
-            Log.e(TAG, "Autostart check failed: ${e.message}")
+            TraceletLog.error("Autostart check failed: ${e.message}")
             null
         }
     }
@@ -344,7 +344,7 @@ object OemCompat {
             context.startActivity(intent)
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to open OEM settings '$label': ${e.message}")
+            TraceletLog.error("Failed to open OEM settings '$label': ${e.message}")
             false
         }
     }
@@ -371,7 +371,7 @@ object OemCompat {
                 context.startActivity(intent)
                 return true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to launch power manager screen '${screen.label}': ${e.message}")
+                TraceletLog.error("Failed to launch power manager screen '${screen.label}': ${e.message}")
             }
         }
         return false
@@ -430,10 +430,10 @@ object OemCompat {
             if (pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
                 screens.add(screen)
             } else {
-                Log.d(TAG, "OEM settings screen not resolvable: ${screen.label}")
+                TraceletLog.debug("OEM settings screen not resolvable: ${screen.label}")
             }
         } catch (e: Exception) {
-            Log.d(TAG, "OEM settings screen check failed: ${screen.label}: ${e.message}")
+            TraceletLog.debug("OEM settings screen check failed: ${screen.label}: ${e.message}")
         }
     }
 }

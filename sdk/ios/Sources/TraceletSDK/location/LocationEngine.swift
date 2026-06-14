@@ -148,7 +148,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             authStatus = CLLocationManager.authorizationStatus()
         }
         if authStatus != .authorizedWhenInUse && authStatus != .authorizedAlways {
-            NSLog("[Tracelet] start() called without location authorization (status=\(authStatus.rawValue))")
+            TraceletLog.debug("[Tracelet] start() called without location authorization (status=\(authStatus.rawValue))")
             eventDispatcher.sendProviderChange(buildProviderState())
             return
         }
@@ -209,7 +209,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         isTracking = true // so delegate callbacks are processed
 
         let interval = configManager.getPeriodicLocationInterval()
-        NSLog("[Tracelet] startPeriodic: interval=%ds, accuracy=%d", interval, configManager.getPeriodicDesiredAccuracy())
+        TraceletLog.debug(String(format: "[Tracelet] startPeriodic: interval=%ds, accuracy=%d", interval, configManager.getPeriodicDesiredAccuracy()))
 
         configureLocationManagerForPeriodic()
         checkReducedAccuracy()
@@ -250,7 +250,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// timer. Significant-location-change monitoring and background sessions
     /// remain active.
     public func switchToStationaryPeriodic() {
-        NSLog("[Tracelet] switchToStationaryPeriodic: stopping continuous, starting periodic timer")
+        TraceletLog.debug("[Tracelet] switchToStationaryPeriodic: stopping continuous, starting periodic timer")
         locationManager.stopUpdatingLocation()
         cancelGpsLossTimer()
         deactivateDeadReckoning()
@@ -266,7 +266,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Stops continuous `startUpdatingLocation()` but leaves region monitoring
     /// active. Background sessions remain active.
     public func switchToStationaryGeofences() {
-        NSLog("[Tracelet] switchToStationaryGeofences: stopping continuous, geofences remain active")
+        TraceletLog.debug("[Tracelet] switchToStationaryGeofences: stopping continuous, geofences remain active")
         locationManager.stopUpdatingLocation()
         cancelGpsLossTimer()
         deactivateDeadReckoning()
@@ -279,7 +279,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Stops the periodic timer and resumes `startUpdatingLocation()`.
     /// Background sessions remain active.
     public func switchToContinuous() {
-        NSLog("[Tracelet] switchToContinuous: stopping periodic, resuming continuous")
+        TraceletLog.debug("[Tracelet] switchToContinuous: stopping periodic, resuming continuous")
         stopPeriodicTimer()
         isPeriodicTracking = false
 
@@ -349,7 +349,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     public func restartPeriodicTimerIfNeeded() {
         guard isPeriodicTracking else { return }
         guard periodicTimer == nil || !(periodicTimer?.isValid ?? false) else { return }
-        NSLog("[Tracelet] Restarting periodic timer (was invalidated/nil)")
+        TraceletLog.debug("[Tracelet] Restarting periodic timer (was invalidated/nil)")
         let interval = TimeInterval(configManager.getPeriodicLocationInterval())
         let timer = Timer.scheduledTimer(
             withTimeInterval: interval,
@@ -374,7 +374,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     public func performPeriodicFix() {
         guard isPeriodicTracking else { return }
 
-        NSLog("[Tracelet] performPeriodicFix: requesting one-shot GPS fix")
+        TraceletLog.debug("[Tracelet] performPeriodicFix: requesting one-shot GPS fix")
 
         // Cancel any previous timeout that hasn't fired yet
         periodicFixTimeoutWork?.cancel()
@@ -476,7 +476,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             // audio session. Overriding the GPS to continuous is redundant 
             // and wastes battery.
             if configManager.getPreventSuspend() {
-                NSLog("[Tracelet-Location] overrideDistanceFilter: skipped because preventSuspend is true")
+                TraceletLog.debug("[Tracelet-Location] overrideDistanceFilter: skipped because preventSuspend is true")
                 return
             }
             locationManager.distanceFilter = kCLDistanceFilterNone
@@ -494,14 +494,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             let current = locationManager.accuracyAuthorization == .fullAccuracy ? 0 : 1
             lastAccuracyAuthorization = current
             if current == 1 {
-                NSLog("[Tracelet] WARNING: Reduced accuracy authorization — locations will be approximate (~5 km). desiredAccuracy is ignored by iOS in this mode.")
+                TraceletLog.warning("[Tracelet] WARNING: Reduced accuracy authorization — locations will be approximate (~5 km). desiredAccuracy is ignored by iOS in this mode.")
                 // Auto-request temporary full accuracy. The purpose key must
                 // match a key in the app's Info.plist
                 // NSLocationTemporaryUsageDescriptionDictionary.
                 locationManager.requestTemporaryFullAccuracyAuthorization(
                     withPurposeKey: "TraceletFullAccuracy"
                 )
-                NSLog("[Tracelet] Requested temporary full accuracy (purposeKey: TraceletFullAccuracy)")
+                TraceletLog.debug("[Tracelet] Requested temporary full accuracy (purposeKey: TraceletFullAccuracy)")
             }
         }
     }
@@ -534,7 +534,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             authStatus = CLLocationManager.authorizationStatus()
         }
         guard authStatus == .authorizedWhenInUse || authStatus == .authorizedAlways else {
-            NSLog("[Tracelet] getCurrentPosition called without location authorization (status=\(authStatus.rawValue)). Call requestPermission() first.")
+            TraceletLog.debug("[Tracelet] getCurrentPosition called without location authorization (status=\(authStatus.rawValue)). Call requestPermission() first.")
             callback(nil)
             return
         }
@@ -733,7 +733,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         if LocationEngine.isGpsFix(location) {
             resetGpsLossTimer()
             if deadReckoningEngine?.isActive == true {
-                NSLog("[Tracelet] GPS signal recovered — deactivating dead reckoning")
+                TraceletLog.debug("[Tracelet] GPS signal recovered — deactivating dead reckoning")
                 deactivateDeadReckoning()
             }
         }
@@ -813,7 +813,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         speedSink?(result.effectiveSpeed)
 
         if !result.accepted {
-            NSLog("[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown")
+            TraceletLog.debug(String(format: "[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown"))
             if result.odometerDelta > 0 {
                 stateManager.addOdometer(distance: result.odometerDelta)
             }
@@ -950,8 +950,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             // In periodic mode, immediately stop GPS after receiving the fix
             // to minimise blue-arrow visibility.
             if self.isPeriodicTracking {
-                NSLog("[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
-                      location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy)
+                TraceletLog.debug(String(format: "[Tracelet] Periodic fix received: lat=%.6f, lon=%.6f, accuracy=%.1fm",
+                      location.coordinate.latitude, location.coordinate.longitude, location.horizontalAccuracy))
                 self.locationManager.stopUpdatingLocation()
                 self.locationManager.allowsBackgroundLocationUpdates = false
                 // Cancel the timeout and end the background task now that the fix succeeded.
@@ -963,7 +963,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        NSLog("[Tracelet] Location error: \(error.localizedDescription)")
+        TraceletLog.error("[Tracelet] Location error: \(error.localizedDescription)")
 
         // Fail all one-shots — fallback to lastLocation if available
         let fallbackLocation = lastLocation
@@ -1009,9 +1009,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             let current = manager.accuracyAuthorization == .fullAccuracy ? 0 : 1
             if lastAccuracyAuthorization >= 0 && current != lastAccuracyAuthorization {
                 if current == 1 {
-                    NSLog("[Tracelet] Accuracy authorization changed to REDUCED — locations will be approximate (~5 km)")
+                    TraceletLog.debug("[Tracelet] Accuracy authorization changed to REDUCED — locations will be approximate (~5 km)")
                 } else {
-                    NSLog("[Tracelet] Accuracy authorization restored to FULL")
+                    TraceletLog.debug("[Tracelet] Accuracy authorization restored to FULL")
                 }
             }
             lastAccuracyAuthorization = current
@@ -1338,7 +1338,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         cancelGpsLossTimer()
 
         let delay = TimeInterval(configManager.getDeadReckoningActivationDelay())
-        NSLog("[Tracelet] DR: GPS-loss timer started (\(delay)s)")
+        TraceletLog.debug("[Tracelet] DR: GPS-loss timer started (\(delay)s)")
         gpsLossTimer = Timer.scheduledTimer(
             withTimeInterval: delay,
             repeats: false
@@ -1362,19 +1362,19 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Activates dead reckoning from the last known GPS position.
     private func activateDeadReckoning() {
         guard let last = lastLocation else {
-            NSLog("[Tracelet] DR: Cannot activate — no last known location")
+            TraceletLog.debug("[Tracelet] DR: Cannot activate — no last known location")
             // Restart timer so we try again once a location arrives.
             startGpsLossTimer()
             return
         }
-        NSLog("[Tracelet] DR: GPS lost for \(configManager.getDeadReckoningActivationDelay())s — activating (last=\(last.coordinate.latitude),\(last.coordinate.longitude) acc=\(last.horizontalAccuracy))")
+        TraceletLog.debug("[Tracelet] DR: GPS lost for \(configManager.getDeadReckoningActivationDelay())s — activating (last=\(last.coordinate.latitude),\(last.coordinate.longitude) acc=\(last.horizontalAccuracy))")
 
         let engine = DeadReckoningEngine(configManager: configManager)
         engine.onEstimatedLocation = { [weak self] drLocation in
             self?.onDrLocationEstimated(drLocation)
         }
         engine.onDeactivated = {
-            NSLog("[Tracelet] Dead reckoning auto-stopped (max duration)")
+            TraceletLog.debug("[Tracelet] Dead reckoning auto-stopped (max duration)")
         }
         engine.activate(
             lat: last.coordinate.latitude,
@@ -1466,18 +1466,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             return
         }
         
-        NSLog("[Tracelet] GEOCODE: Requesting reverse geocoding for lat=%.6f, lon=%.6f", clLoc.coordinate.latitude, clLoc.coordinate.longitude)
+        TraceletLog.debug(String(format: "[Tracelet] GEOCODE: Requesting reverse geocoding for lat=%.6f, lon=%.6f", clLoc.coordinate.latitude, clLoc.coordinate.longitude))
         
         let geocoder = CLGeocoder()
         geocoder.reverseGeocodeLocation(clLoc) { placemarks, error in
             var finalMap = locationMap
             
             if let err = error {
-                NSLog("[Tracelet] GEOCODE: Error resolving address: %@", err.localizedDescription)
+                TraceletLog.error(String(format: "[Tracelet] GEOCODE: Error resolving address: %@", err.localizedDescription))
             }
             
             if let placemark = placemarks?.first {
-                NSLog("[Tracelet] GEOCODE: Found placemark: %@", placemark.description)
+                TraceletLog.debug(String(format: "[Tracelet] GEOCODE: Found placemark: %@", placemark.description))
                 var addressMap: [String: Any] = [:]
                 if let thoroughfare = placemark.thoroughfare { addressMap["street"] = thoroughfare }
                 else if let name = placemark.name { addressMap["street"] = name }
@@ -1489,12 +1489,12 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 
                 if !addressMap.isEmpty {
                     finalMap["address"] = addressMap
-                    NSLog("[Tracelet] GEOCODE: Mapped address: %@", addressMap.description)
+                    TraceletLog.debug(String(format: "[Tracelet] GEOCODE: Mapped address: %@", addressMap.description))
                 } else {
-                    NSLog("[Tracelet] GEOCODE: Placemark had no mappable address fields.")
+                    TraceletLog.debug("[Tracelet] GEOCODE: Placemark had no mappable address fields.")
                 }
             } else {
-                NSLog("[Tracelet] GEOCODE: No placemarks found.")
+                TraceletLog.debug("[Tracelet] GEOCODE: No placemarks found.")
             }
             completion(finalMap)
         }

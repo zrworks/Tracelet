@@ -49,10 +49,10 @@ public final class BackgroundActivitySessionManager {
             let bgSession = CLBackgroundActivitySession()
             session = bgSession
             isActive = true
-            NSLog("[Tracelet] CLBackgroundActivitySession started (iOS 17+)")
+            TraceletLog.debug("[Tracelet] CLBackgroundActivitySession started (iOS 17+)")
         } else {
             // iOS < 17: no-op, background handled via allowsBackgroundLocationUpdates
-            NSLog("[Tracelet] CLBackgroundActivitySession not available (iOS < 17)")
+            TraceletLog.debug("[Tracelet] CLBackgroundActivitySession not available (iOS < 17)")
         }
     }
 
@@ -72,6 +72,6 @@ public final class BackgroundActivitySessionManager {
 
         session = nil
         isActive = false
-        NSLog("[Tracelet] CLBackgroundActivitySession stopped")
+        TraceletLog.debug("[Tracelet] CLBackgroundActivitySession stopped")
     }
 }

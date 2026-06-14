@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.schedule
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -133,14 +134,14 @@ class ScheduleManager(
             override fun onReceive(ctx: Context?, intent: Intent?) {
                 when (intent?.action) {
                     ACTION_SCHEDULE_START -> {
-                        Log.d(TAG, "Schedule start triggered")
+                        TraceletLog.debug("Schedule start triggered")
                         onScheduleStart?.invoke()
                         events.sendSchedule(state.toMap())
                         // Re-schedule for next occurrence
                         scheduleNext(config.getSchedule())
                     }
                     ACTION_SCHEDULE_STOP -> {
-                        Log.d(TAG, "Schedule stop triggered")
+                        TraceletLog.debug("Schedule stop triggered")
                         onScheduleStop?.invoke()
                         events.sendSchedule(state.toMap())
                         scheduleNext(config.getSchedule())

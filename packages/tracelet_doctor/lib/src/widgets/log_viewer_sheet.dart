@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 import 'package:tracelet_doctor/src/doctor_theme.dart';
 
@@ -52,6 +53,32 @@ class _LogViewerSheetState extends State<LogViewerSheet> {
           _loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _copyLogs() async {
+    final logs = _logs;
+    if (logs == null || logs.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No logs to copy')));
+      return;
+    }
+    final text = logs
+        .map((l) => '${l.timestamp} [${l.level.toUpperCase()}] ${l.message}')
+        .join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${logs.length} log line(s) copied to clipboard'),
+          backgroundColor: DoctorTheme.accent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -164,6 +191,11 @@ class _LogViewerSheetState extends State<LogViewerSheet> {
                 Text('Last 500 entries', style: DoctorTheme.cardBodyStyle),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy_rounded, color: DoctorTheme.accent),
+            tooltip: 'Copy logs',
+            onPressed: _copyLogs,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: DoctorTheme.accent),

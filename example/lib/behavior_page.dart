@@ -293,8 +293,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
           final events = await tl.Tracelet.getTelematicsEvents(50);
           _logLine('💾 DB has ${events.length} event(s)');
           for (final e in events.take(5)) {
-            _logLine('   • ${e.eventType}  sev=${e.severity.toStringAsFixed(2)}  '
-                '@${e.latitude.toStringAsFixed(3)},${e.longitude.toStringAsFixed(3)}');
+            _logLine(
+              '   • ${e.eventType}  sev=${e.severity.toStringAsFixed(2)}  '
+              '@${e.latitude.toStringAsFixed(3)},${e.longitude.toStringAsFixed(3)}',
+            );
           }
         case 'clear':
           final ok = await tl.Tracelet.destroyTelematicsEvents();

@@ -136,6 +136,7 @@ class AuditTrailManager(
      * @return A map with `audit_hash`, `audit_previous_hash`, `audit_chain_index`
      *         to be merged into the location record, or `null` if audit is disabled.
      */
+    @Synchronized
     fun appendToChain(locationMap: Map<String, Any?>): Map<String, Any?>? {
         if (!isEnabled()) {
             android.util.Log.d("Tracelet", "AUDIT: appendToChain — audit disabled, skipping")

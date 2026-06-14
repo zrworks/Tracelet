@@ -1326,7 +1326,32 @@ class TraceletSdk private constructor(private val context: Context) {
         if (eventType == "location") { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
-        val auditHash = params["audit_hash"] as? String
+
+        // Audit trail (Enterprise): the canonical place audit links are created.
+        // The LocationEngine.dispatch() path pre-computes `audit_hash` and passes
+        // it in `params`. But background/headless persists — PeriodicLocationWorker,
+        // LocationService, geofence events — call insertLocation() directly and
+        // never went through dispatch(), so they previously skipped the chain
+        // entirely. That left location_events rows with no matching audit_trail
+        // row, so getAuditProof() returned null for any such record. Generate the
+        // audit link here when it wasn't pre-computed, so EVERY persisted location
+        // is covered regardless of source.
+        var auditHash = params["audit_hash"] as? String
+        var auditPrevHash = params["audit_previous_hash"]
+        var auditChainIndex = params["audit_chain_index"]
+        if (auditHash == null && ::auditTrailManager.isInitialized) {
+            val auditFields = try {
+                auditTrailManager.appendToChain(params)
+            } catch (e: Exception) {
+                logger.error("audit appendToChain failed: ${e.message}")
+                null
+            }
+            if (auditFields != null) {
+                auditHash = auditFields["audit_hash"] as? String
+                auditPrevHash = auditFields["audit_previous_hash"]
+                auditChainIndex = auditFields["audit_chain_index"]
+            }
+        }
         if (auditHash != null) {
             try {
                 val jsonMap = if (routeContext != null) {
@@ -1335,14 +1360,14 @@ class TraceletSdk private constructor(private val context: Context) {
                     org.json.JSONObject()
                 }
                 jsonMap.put("audit_hash", auditHash)
-                if (params["audit_previous_hash"] != null) jsonMap.put("audit_previous_hash", params["audit_previous_hash"])
-                if (params["audit_chain_index"] != null) jsonMap.put("audit_chain_index", params["audit_chain_index"])
+                if (auditPrevHash != null) jsonMap.put("audit_previous_hash", auditPrevHash)
+                if (auditChainIndex != null) jsonMap.put("audit_chain_index", auditChainIndex)
                 routeContext = jsonMap.toString()
             } catch (e: Exception) {
                 // Ignore and use base route context
             }
         }
-        
+
         return try {
             val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp, eventType, eventPayload)
             // Notify the sync plugin so it can trigger auto-sync

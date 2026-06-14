@@ -1,13 +1,12 @@
 ## 3.3.1
 
- - **FIX**(crash): harden crash/fall detection (confirmation survival, threshold, debounce, sample rate). ([0a17e804](https://github.com/Ikolvi/Tracelet/commit/0a17e804a8d05adba02becf21756fa328c4caec9))
-
-## 3.3.0
-
 * **FIX** (Crash detection, Android/iOS): Confirmed `crash`/`fall` events are no longer lost when tracking stops right after the impact (the common crash → vehicle-at-rest → `stopTimeout` case). The confirmation countdown now runs independently of tracking state and self-terminates when no candidate is pending ([#169](https://github.com/Ikolvi/Tracelet/issues/169)).
 * **FIX** (Crash detection): The effective crash g-threshold matched the documented value — the confidence gate previously raised a 3.0 g threshold to ~3.6 g, increasing false negatives ([#170](https://github.com/Ikolvi/Tracelet/issues/170)).
 * **FIX** (Crash detection): A single crash (primary spike + bounce/secondary impacts) no longer raises multiple candidates; a refractory period debounces one event into one prompt ([#171](https://github.com/Ikolvi/Tracelet/issues/171)).
 * **IMPROVE** (Crash detection, Android/iOS): When crash/fall detection is enabled, the accelerometer is sampled at a higher rate (Android `SENSOR_DELAY_GAME` + no batch latency; iOS 100 Hz) so short impact peaks (~50–150 ms) are actually captured instead of missed between motion-detection samples ([#172](https://github.com/Ikolvi/Tracelet/issues/172)). Roadmap for research-grade robustness (Δv, sensor fusion, free-fall signature, process-death survival): [#173](https://github.com/Ikolvi/Tracelet/issues/173).
+
+## 3.3.0
+
 * **FIX** (Audit, Android/iOS): The tamper-proof audit chain only covered locations that flowed through the foreground location dispatcher. Background/headless persists (periodic worker, location service, killed-state relaunch, geofence events) wrote location rows with **no** matching audit-trail link, so `getAuditProof()` returned `null` for those records even with audit enabled. Audit links are now generated at the single persistence chokepoint, so **every** persisted location is chained regardless of source. Chain mutation is also now thread-safe.
 * **FIX** (Audit, iOS): `appendToChain` no longer creates an audit row for records without a `uuid` (it previously used an empty string). Such orphan rows had no retrievable location and made `verifyAuditTrail()` report the whole chain as *broken* ("missing location record"). uuid-less records are now skipped on both platforms. The audit hash version was bumped (auto-resets any orphaned/incomplete chains from the prior logic on first launch).
 * **FEAT** (Battery, Android): Motion-gated wakelock — drop the OEM partial wakelock when stationary and re-assert it on movement, via `AndroidConfig.releaseWakelockWhenStationary` (opt-in, default off; gated on the hardware significant-motion wake sensor) ([#162](https://github.com/Ikolvi/Tracelet/issues/162)).

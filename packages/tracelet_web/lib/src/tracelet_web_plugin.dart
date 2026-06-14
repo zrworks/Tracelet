@@ -741,6 +741,28 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   // ---------------------------------------------------------------------------
+  // Driving & Safety (Crash / Fall Detection — not supported on web)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<bool> confirmImpact(int id) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] confirmImpact() is not supported on web',
+    );
+    return false;
+  }
+
+  @override
+  Future<bool> cancelImpact(int id) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] cancelImpact() is not supported on web',
+    );
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
 
@@ -1016,6 +1038,9 @@ class TraceletWebPlugin extends TraceletPlatform {
       // dedicated controller added to WebEventDispatcher in a future iteration.
       // For now return empty — the speed motion state is tracked internally.
       const Stream.empty();
+
+  @override
+  Stream<TlImpactEvent> get impactEvents => const Stream.empty();
 
   void _assertReady() {
     if (!_isReady) {

@@ -184,15 +184,48 @@ your app's responsibility (and lets you control the UX and legal copy).
 
 ---
 
-## Trying it without driving (simulation)
+## Trying it without driving (simulation) & Database Access
 
-You don't need to drive a car or crash to test these. The example app's
-**Driving & Safety** page has *Simulate* buttons (Hard brake, Rapid accel,
-Sharp turn, Crash, Vehicle mode) that feed synthetic data into the **real**
-detection engines and show the resulting events — great for wiring up your UI.
+During Phase 4, we introduced dedicated database tables to store telematics events and a set of diagnostic APIs. These are heavily used by the **Tracelet Doctor** diagnostic overlay, but you can also use them directly in your app to build custom diagnostic screens or test your safety flows without needing to physically drive or crash a car.
 
-In tests, you can drive the engines directly from Dart (they're exposed via
-flutter_rust_bridge) — see `example/integration_test/behavior_simulation_test.dart`.
+### Retrieving Telematics from the Database
+
+Every driving and impact event is automatically persisted to the local SQLite database. You can retrieve these structured records to display a history of risky driving behaviors:
+
+```dart
+// Fetch the 50 most recent telematics events from the database
+final events = await Tracelet.getTelematicsEvents(50);
+
+for (final event in events) {
+  print('Event Type: \${event?.eventType}');
+  print('Severity: \${event?.severity}');
+  print('Location: \${event?.latitude}, \${event?.longitude}');
+}
+```
+
+### Simulating Events
+
+You can inject mock telematics events directly into the native tracking engines. This is perfect for testing your app's reaction (like showing an SOS screen on a crash) or testing your UI components. The example app's **Driving & Safety** page and the Tracelet Doctor overlay use this API to let developers trigger events via buttons.
+
+```dart
+// Simulate a harsh braking event
+await Tracelet.simulateTelematicsEvent(
+  'harsh_braking', // eventType
+  0.85,            // severity (0.0 to 1.0)
+  37.422,          // latitude
+  -122.084,        // longitude
+);
+```
+
+### Clearing the Database
+
+If you need to reset the diagnostic state or clear the history of telematics events from the local database, you can purge the queue:
+
+```dart
+await Tracelet.clearTelematicsEvents();
+```
+
+In automated tests, you can also drive the engines directly from Dart (they're exposed via `flutter_rust_bridge`) — see `example/integration_test/behavior_simulation_test.dart`.
 
 ---
 

@@ -81,15 +81,37 @@ print('Health Check: \$health');
 Tracelet writes comprehensive diagnostic logs directly to an internal SQLite database (separate from the location database). This is invaluable for debugging issues in production.
 
 ### Get the Logs
-Retrieve the raw logs as a massive string.
-```dart
-final logs = await tl.Tracelet.getLog();
-print(logs);
 
-// Or query specific logs
-final errorLogs = await tl.Tracelet.getLog(
+There are two ways to retrieve logs, and it is important to understand the difference between them to avoid confusion:
+
+**1. `getLogs(int limit)` (Structured)**  
+Returns a structured `List<LogEntry>` from the database. This is best when you need to display logs in a structured UI (like Tracelet Doctor) or process them programmatically.
+
+```dart
+// Get the 50 most recent structured log entries
+final entries = await tl.Tracelet.getLogs(50);
+for (final entry in entries) {
+  print('[\${entry?.level}] \${entry?.message}');
+}
+```
+
+**2. `getLog([SQLQuery query])` (Raw String)**  
+Retrieves the logs concatenated as a single massive string. This is ideal when you just want to quickly print everything to the console or write it to a text file.
+
+```dart
+final logsString = await tl.Tracelet.getLog();
+print(logsString);
+
+// Or query specific logs as a string
+final errorLogsString = await tl.Tracelet.getLog(
   tl.SQLQuery(where: "level = 'ERROR'")
 );
+```
+
+### Clearing the Logs
+You can clear all stored system logs to reset the database queues:
+```dart
+await tl.Tracelet.clearLogs();
 ```
 
 ### Writing Custom Logs

@@ -1051,7 +1051,7 @@ public final class TraceletSdk {
         var auditHash = params["audit_hash"] as? String
         var auditPrevHash = params["audit_previous_hash"]
         var auditChainIndex = params["audit_chain_index"]
-        if auditHash == nil, let auditFields = auditTrailManager?.appendToChain(params) {
+        if auditHash == nil, uuid != nil, let auditFields = auditTrailManager?.appendToChain(params) {
             auditHash = auditFields["audit_hash"] as? String
             auditPrevHash = auditFields["audit_previous_hash"]
             auditChainIndex = auditFields["audit_chain_index"]

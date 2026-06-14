@@ -1339,7 +1339,7 @@ class TraceletSdk private constructor(private val context: Context) {
         var auditHash = params["audit_hash"] as? String
         var auditPrevHash = params["audit_previous_hash"]
         var auditChainIndex = params["audit_chain_index"]
-        if (auditHash == null && ::auditTrailManager.isInitialized) {
+        if (auditHash == null && uuid != null && ::auditTrailManager.isInitialized) {
             val auditFields = try {
                 auditTrailManager.appendToChain(params)
             } catch (e: Exception) {

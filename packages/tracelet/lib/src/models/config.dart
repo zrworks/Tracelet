@@ -948,6 +948,8 @@ class HttpConfig {
     this.deltaCoordinatePrecision = 5,
     this.sslPinningFingerprints,
     this.sslPinningCertificates,
+    this.syncTelematics = false,
+    this.telematicsUrl,
   });
 
   /// Creates an [HttpConfig] from a map.
@@ -994,6 +996,8 @@ class HttpConfig {
           ?.cast<String>(),
       sslPinningCertificates: (map['sslPinningCertificates'] as List?)
           ?.cast<String>(),
+      syncTelematics: ensureBool(map['syncTelematics'], fallback: false),
+      telematicsUrl: map['telematicsUrl'] as String?,
     );
   }
 
@@ -1021,6 +1025,8 @@ class HttpConfig {
     int? deltaCoordinatePrecision,
     List<String>? sslPinningFingerprints,
     List<String>? sslPinningCertificates,
+    bool? syncTelematics,
+    String? telematicsUrl,
   }) {
     return HttpConfig(
       url: url ?? this.url,
@@ -1051,6 +1057,8 @@ class HttpConfig {
           sslPinningFingerprints ?? this.sslPinningFingerprints,
       sslPinningCertificates:
           sslPinningCertificates ?? this.sslPinningCertificates,
+      syncTelematics: syncTelematics ?? this.syncTelematics,
+      telematicsUrl: telematicsUrl ?? this.telematicsUrl,
     );
   }
 
@@ -1147,6 +1155,12 @@ class HttpConfig {
   /// **Enterprise** — Base64 encoded SSL certificates.
   final List<String>? sslPinningCertificates;
 
+  /// Whether to sync telematics events automatically.
+  final bool syncTelematics;
+
+  /// The URL to sync telematics events to.
+  final String? telematicsUrl;
+
   /// Converts to Pigeon [TlHttpConfig].
   TlHttpConfig toTlConfig() => TlHttpConfig(
     url: url,
@@ -1170,6 +1184,8 @@ class HttpConfig {
     retryBackoffCap: retryBackoffCap,
     enableDeltaCompression: enableDeltaCompression,
     deltaCoordinatePrecision: deltaCoordinatePrecision,
+    syncTelematics: syncTelematics,
+    telematicsUrl: telematicsUrl,
     sslPinningFingerprints: sslPinningFingerprints,
     sslPinningCertificates: sslPinningCertificates,
   );
@@ -1197,6 +1213,8 @@ class HttpConfig {
       'retryBackoffCap': retryBackoffCap,
       'enableDeltaCompression': enableDeltaCompression,
       'deltaCoordinatePrecision': deltaCoordinatePrecision,
+      'syncTelematics': syncTelematics,
+      'telematicsUrl': telematicsUrl,
       'sslPinningFingerprints': sslPinningFingerprints,
       'sslPinningCertificates': sslPinningCertificates,
     };
@@ -1227,6 +1245,8 @@ class HttpConfig {
           retryBackoffCap == other.retryBackoffCap &&
           enableDeltaCompression == other.enableDeltaCompression &&
           deltaCoordinatePrecision == other.deltaCoordinatePrecision &&
+          syncTelematics == other.syncTelematics &&
+          telematicsUrl == other.telematicsUrl &&
           _listEquals(sslPinningFingerprints, other.sslPinningFingerprints) &&
           _listEquals(sslPinningCertificates, other.sslPinningCertificates);
 
@@ -1252,6 +1272,8 @@ class HttpConfig {
     retryBackoffCap,
     enableDeltaCompression,
     deltaCoordinatePrecision,
+    syncTelematics,
+    telematicsUrl,
     sslPinningFingerprints,
     sslPinningCertificates,
   ]);

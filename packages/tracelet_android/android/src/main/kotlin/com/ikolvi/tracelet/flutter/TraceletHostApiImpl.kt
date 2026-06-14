@@ -1059,9 +1059,9 @@ class TraceletHostApiImpl(
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
-    override fun getCarbonReport(query: Map<String?, Any?>?, callback: (Result<Map<String?, Any?>>) -> Unit) {
+    override fun getCarbonReport(query: Map<String, Any?>?, callback: (Result<Map<String, Any?>>) -> Unit) {
         try {
-            callback(Result.success((sdk.getCarbonReport(query as Map<String, Any?>?) as Map<String?, Any?>)))
+            callback(Result.success((sdk.getCarbonReport(query) as Map<String, Any?>)))
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 

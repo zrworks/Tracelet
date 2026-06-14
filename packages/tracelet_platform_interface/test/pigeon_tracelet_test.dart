@@ -642,6 +642,7 @@ void main() {
         preventSuspend: false,
       ),
       http: TlHttpConfig(
+        syncTelematics: false,
         autoSync: true,
         batchSync: false,
         maxBatchSize: 250,

@@ -650,12 +650,12 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
-  Future<int> clearTelematicsEvents() async {
-    return 0;
+  Future<bool> destroyTelematicsEvents() async {
+    return true;
   }
 
   @override
-  Future<int> simulateTelematicsEvent(
+  Future<bool> simulateTelematicsEvent(
     String eventType,
     double severity,
     double latitude,
@@ -665,7 +665,7 @@ class TraceletWebPlugin extends TraceletPlatform {
       'warning',
       '[Tracelet Web] simulateTelematicsEvent() is not supported on web',
     );
-    return 0;
+    return false;
   }
 
   // ---------------------------------------------------------------------------

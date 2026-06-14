@@ -660,8 +660,13 @@ class Tracelet {
         .toList();
   }
 
+  /// Destroy all stored telematics events.
+  static Future<bool> destroyTelematicsEvents() {
+    return _platform.destroyTelematicsEvents();
+  }
+
   /// Manually insert a telematics event (e.g. for testing with the Doctor UI).
-  static Future<int> simulateTelematicsEvent({
+  static Future<bool> simulateTelematicsEvent({
     required String eventType,
     required double severity,
     required double latitude,

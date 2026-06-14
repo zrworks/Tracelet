@@ -844,6 +844,8 @@ class TlHttpConfig {
     required this.retryBackoffCap,
     required this.enableDeltaCompression,
     required this.deltaCoordinatePrecision,
+    required this.syncTelematics,
+    this.telematicsUrl,
   });
 
   String? url;
@@ -890,6 +892,10 @@ class TlHttpConfig {
 
   int deltaCoordinatePrecision;
 
+  bool syncTelematics;
+
+  String? telematicsUrl;
+
   List<Object?> _toList() {
     return <Object?>[
       url,
@@ -914,6 +920,8 @@ class TlHttpConfig {
       retryBackoffCap,
       enableDeltaCompression,
       deltaCoordinatePrecision,
+      syncTelematics,
+      telematicsUrl,
     ];
   }
 
@@ -946,6 +954,8 @@ class TlHttpConfig {
       retryBackoffCap: result[19]! as int,
       enableDeltaCompression: result[20]! as bool,
       deltaCoordinatePrecision: result[21]! as int,
+      syncTelematics: result[22]! as bool,
+      telematicsUrl: result[23] as String?,
     );
   }
 
@@ -982,7 +992,9 @@ class TlHttpConfig {
         _deepEquals(retryBackoffBase, other.retryBackoffBase) &&
         _deepEquals(retryBackoffCap, other.retryBackoffCap) &&
         _deepEquals(enableDeltaCompression, other.enableDeltaCompression) &&
-        _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision);
+        _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision) &&
+        _deepEquals(syncTelematics, other.syncTelematics) &&
+        _deepEquals(telematicsUrl, other.telematicsUrl);
   }
 
   @override
@@ -5145,7 +5157,7 @@ class TraceletHostApi {
         .cast<String, Object?>();
   }
 
-  Future<int> simulateTelematicsEvent(
+  Future<bool> simulateTelematicsEvent(
     String eventType,
     double severity,
     double latitude,
@@ -5168,7 +5180,7 @@ class TraceletHostApi {
       pigeonVar_channelName,
       isNullValid: false,
     );
-    return pigeonVar_replyValue! as int;
+    return pigeonVar_replyValue! as bool;
   }
 
   Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
@@ -5192,9 +5204,9 @@ class TraceletHostApi {
     return (pigeonVar_replyValue! as List<Object?>).cast<TlTelematicsRecord?>();
   }
 
-  Future<int> clearTelematicsEvents() async {
+  Future<bool> destroyTelematicsEvents() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearTelematicsEvents$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyTelematicsEvents$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -5208,7 +5220,7 @@ class TraceletHostApi {
       pigeonVar_channelName,
       isNullValid: false,
     );
-    return pigeonVar_replyValue! as int;
+    return pigeonVar_replyValue! as bool;
   }
 
   Future<List<TlLogEntry?>> getLogs(int limit) async {

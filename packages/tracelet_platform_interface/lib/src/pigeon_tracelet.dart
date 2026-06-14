@@ -588,12 +588,12 @@ class PigeonTracelet extends TraceletPlatform {
   }
 
   @override
-  Future<int> clearTelematicsEvents() async {
-    return _api.clearTelematicsEvents();
+  Future<bool> destroyTelematicsEvents() async {
+    return _api.destroyTelematicsEvents();
   }
 
   @override
-  Future<int> simulateTelematicsEvent(
+  Future<bool> simulateTelematicsEvent(
     String eventType,
     double severity,
     double latitude,

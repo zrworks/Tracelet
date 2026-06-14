@@ -843,15 +843,15 @@ class TraceletHostApiImpl: TraceletHostApi {
 
     // MARK: - Enterprise: Carbon Estimator
 
-    func getCarbonReport(query: [String?: Any?]?, completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
+    func getCarbonReport(query: [String: Any?]?, completion: @escaping (Result<[String: Any?], Error>) -> Void) {
         do {
             let nonOptionalQuery = query?.reduce(into: [String: Any]()) { result, pair in
-                if let key = pair.key, let value = pair.value {
-                    result[key] = value
+                if let value = pair.value {
+                    result[pair.key] = value
                 }
             }
             let report = try sdk.getCarbonReport(query: nonOptionalQuery)
-            let resultReport = report.reduce(into: [String?: Any?]()) { result, pair in
+            let resultReport = report.reduce(into: [String: Any?]()) { result, pair in
                 result[pair.key] = pair.value
             }
             completion(.success(resultReport))

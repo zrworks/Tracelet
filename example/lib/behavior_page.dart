@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:tracelet/tracelet.dart' as tl;
 // FRB engine handles — drive the real Rust detection logic with synthetic
 // input so the features can be demoed without actually driving/crashing.
@@ -52,7 +53,31 @@ class _BehaviorPageState extends State<BehaviorPage> {
     });
   }
 
+  bool _ready = false;
+
+  /// Ensures the SDK is initialized so config/streams/simulation work even if
+  /// the user opened this page before pressing Initialize on the main screen.
+  ///
+  /// Non-clobbering: re-applies the *current* active config, which is a no-op
+  /// when already initialized and surfaces `NOT_READY` otherwise — in which case
+  /// we initialize with that same (default) config.
+  Future<void> _ensureReady() async {
+    if (_ready) return;
+    try {
+      await tl.Tracelet.setConfig(tl.Tracelet.activeConfig);
+    } on PlatformException catch (e) {
+      if (e.code == 'NOT_READY') {
+        await tl.Tracelet.ready(tl.Tracelet.activeConfig);
+        _logLine('ℹ️ Initialized Tracelet for this demo');
+      } else {
+        rethrow;
+      }
+    }
+    _ready = true;
+  }
+
   Future<void> _applyConfig() async {
+    await _ensureReady();
     await tl.Tracelet.setConfig(
       tl.Config(
         telematics: tl.TelematicsConfig(
@@ -131,8 +156,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
 
   /// Runs the real Rust engines (via flutter_rust_bridge) with synthetic input
   /// so each detection can be demoed on-device without actually driving. This
-  /// is a self-contained demo: it does not require tracking to be started.
-  void _simulate(String scenario) {
+  /// is a self-contained demo: it does not require tracking to be started, but
+  /// it does need the Rust library initialized — [_ensureReady] handles that.
+  Future<void> _simulate(String scenario) async {
+    await _ensureReady();
     try {
       switch (scenario) {
         case 'brake':

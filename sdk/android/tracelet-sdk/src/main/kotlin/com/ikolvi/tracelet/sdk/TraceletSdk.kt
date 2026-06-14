@@ -2229,6 +2229,13 @@ class TraceletSdk private constructor(private val context: Context) {
                     "timestampMs" to e.timestampMs,
                 ),
             )
+            // Persist to the telematics DB so getTelematicsEvents() returns the
+            // real history (not just Doctor-simulated events).
+            try {
+                rustDatabase?.insertTelematicsEvent(e.kind, e.severity, e.latitude, e.longitude)
+            } catch (ex: Exception) {
+                logger.error("Failed to persist driving event: ${ex.message}")
+            }
         }
     }
 
@@ -2323,6 +2330,15 @@ class TraceletSdk private constructor(private val context: Context) {
                 "confirmDeadlineMs" to e.confirmDeadlineMs,
             ),
         )
+        // Persist confirmed impacts (not transient potential_* candidates, which
+        // may still be cancelled) to the telematics DB for history/retrieval.
+        if (e.kind == "crash" || e.kind == "fall") {
+            try {
+                rustDatabase?.insertTelematicsEvent(e.kind, e.confidence, e.latitude, e.longitude)
+            } catch (ex: Exception) {
+                logger.error("Failed to persist impact event: ${ex.message}")
+            }
+        }
     }
 
     /** Confirms a pending impact candidate (called from the Pigeon host API). */

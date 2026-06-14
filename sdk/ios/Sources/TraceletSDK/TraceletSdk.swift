@@ -1927,6 +1927,10 @@ public final class TraceletSdk {
                 "value": e.value, "latitude": e.latitude, "longitude": e.longitude,
                 "timestampMs": e.timestampMs,
             ])
+            // Persist to the telematics DB so getTelematicsEvents() returns the
+            // real history (not just Doctor-simulated events).
+            try? rustDatabase?.insertTelematicsEvent(
+                eventType: e.kind, severity: e.severity, lat: e.latitude, lng: e.longitude)
         }
     }
 
@@ -1994,6 +1998,12 @@ public final class TraceletSdk {
             "speedBefore": e.speedBefore, "latitude": e.latitude, "longitude": e.longitude,
             "timestampMs": e.timestampMs, "confirmDeadlineMs": e.confirmDeadlineMs,
         ])
+        // Persist confirmed impacts (not transient potential_* candidates, which
+        // may still be cancelled) to the telematics DB for history/retrieval.
+        if e.kind == "crash" || e.kind == "fall" {
+            try? rustDatabase?.insertTelematicsEvent(
+                eventType: e.kind, severity: e.confidence, lat: e.latitude, lng: e.longitude)
+        }
     }
 
     /// Confirms a pending impact candidate (called from the Pigeon host API).

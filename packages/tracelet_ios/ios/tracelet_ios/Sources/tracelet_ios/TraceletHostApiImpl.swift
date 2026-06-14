@@ -182,7 +182,9 @@ class TraceletHostApiImpl: TraceletHostApi {
         )
     }
 
-    private func dictToTlLocation(_ d: [String: Any]) -> TlLocation {
+    // `internal` (not private) so the regression tests can verify the native-map
+    // → Pigeon field contract directly (#175).
+    func dictToTlLocation(_ d: [String: Any]) -> TlLocation {
         let coords = d["coords"] as? [String: Any] ?? [:]
         let battery = d["battery"] as? [String: Any] ?? [:]
         let activity = d["activity"] as? [String: Any]
@@ -203,11 +205,13 @@ class TraceletHostApiImpl: TraceletHostApi {
             ),
             battery: TlBattery(
                 level: battery["level"] as? Double ?? -1.0,
-                isCharging: battery["isCharging"] as? Bool ?? false
+                // Native emits snake_case `is_charging`; accept both for safety.
+                isCharging: (battery["is_charging"] ?? battery["isCharging"]) as? Bool ?? false
             ),
             timestamp: d["timestamp"] as? String ?? "",
             uuid: d["uuid"] as? String ?? "",
-            isMoving: d["isMoving"] as? Bool ?? false,
+            // Native emits snake_case `is_moving`; accept both for safety.
+            isMoving: (d["is_moving"] ?? d["isMoving"]) as? Bool ?? false,
             odometer: d["odometer"] as? Double ?? 0.0,
             event: d["event"] as? String,
             activity: activity.map {

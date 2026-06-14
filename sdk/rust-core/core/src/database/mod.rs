@@ -79,6 +79,18 @@ pub struct LogEntry {
     pub source: String,
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+/// Represents a telematics event (crash, hard brake, etc.) persisted in the database.
+pub struct DbTelematicsRecord {
+    pub id: i64,
+    pub event_type: String,
+    pub severity: f64,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub timestamp: String,
+    pub synced: bool,
+}
+
 #[uniffi::export]
 impl DatabaseManager {
     /// Initializes a new database connection and creates tables if they don't exist.
@@ -165,6 +177,19 @@ impl DatabaseManager {
                 message TEXT NOT NULL,
                 timestamp TEXT DEFAULT (datetime('now')),
                 source TEXT DEFAULT 'plugin'
+            )",
+            [],
+        ).map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS tracelet_telematics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                severity REAL NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                timestamp TEXT DEFAULT (datetime('now')),
+                synced INTEGER DEFAULT 0
             )",
             [],
         ).map_err(|e| TraceletError::Database(e.to_string()))?;
@@ -770,10 +795,76 @@ impl DatabaseManager {
         Ok(records)
     }
 
+    /// Prunes the logs to retain only the specified limit of latest entries.
+    pub fn prune_logs(&self, limit: i32) -> Result<(), TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM logs WHERE id NOT IN (SELECT id FROM logs ORDER BY id DESC LIMIT ?1)",
+            params![limit]
+        ).map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(())
+    }
+
     /// Clears all log entries from the database.
     pub fn clear_logs(&self) -> Result<(), TraceletError> {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM logs", [])
+            .map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    // --- Telematics ---
+
+    /// Inserts a telematics event into the database.
+    pub fn insert_telematics_event(&self, event_type: &str, severity: f64, lat: f64, lng: f64) -> Result<i64, TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO tracelet_telematics (event_type, severity, latitude, longitude) VALUES (?1, ?2, ?3, ?4)",
+            params![event_type, severity, lat, lng]
+        ).map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// Retrieves a batch of unsynced telematics events.
+    pub fn get_telematics_events(&self, limit: i32) -> Result<Vec<DbTelematicsRecord>, TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, event_type, severity, latitude, longitude, timestamp, synced FROM tracelet_telematics WHERE synced = 0 ORDER BY id ASC LIMIT ?1")
+            .map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        let iter = stmt.query_map([limit], |row| {
+            let synced_int: i32 = row.get(6)?;
+            Ok(DbTelematicsRecord {
+                id: row.get(0)?,
+                event_type: row.get(1)?,
+                severity: row.get(2)?,
+                latitude: row.get(3)?,
+                longitude: row.get(4)?,
+                timestamp: row.get(5)?,
+                synced: synced_int != 0,
+            })
+        }).map_err(|e| TraceletError::Database(e.to_string()))?;
+
+        let mut records = Vec::new();
+        for r in iter {
+            if let Ok(record) = r {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+
+    /// Marks telematics events up to max_id as synced.
+    pub fn mark_telematics_synced(&self, max_id: i64) -> Result<(), TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("UPDATE tracelet_telematics SET synced = 1 WHERE id <= ?1", params![max_id])
+            .map_err(|e| TraceletError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Clears all telematics events from the database.
+    pub fn clear_telematics_events(&self) -> Result<(), TraceletError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM tracelet_telematics", [])
             .map_err(|e| TraceletError::Database(e.to_string()))?;
         Ok(())
     }

@@ -1,3 +1,12 @@
+## 3.3.0
+
+* **FEAT** (Doctor): One-tap **bug report** — the *Copy* button now bundles health + active configuration (secrets redacted) + recent logs + telematics into a single Markdown report, and a new *Share* button exports it as a downloadable `.md` file. Available programmatically via `TraceletBugReport.build()` and `TraceletBugReport.redactConfig()`.
+* **FEAT** (Doctor): **Copy logs** button added to the log viewer sheet.
+* **FEAT** (Driving & Safety): On-device driving-behavior telematics — `harsh_braking` / `harsh_acceleration` / `harsh_cornering` / `speeding` via `TelematicsConfig` + `Tracelet.onDrivingEvent` (opt-in, default off) ([#163](https://github.com/Ikolvi/Tracelet/issues/163)).
+* **FEAT** (Driving & Safety): On-device transport-mode classifier (still/walking/running/cycling/vehicle) fusing accelerometer + GPS via `ClassifierConfig` + `Tracelet.onModeChange` ([#164](https://github.com/Ikolvi/Tracelet/issues/164)).
+* **FEAT** (Driving & Safety): Crash & fall detection with a cancel-countdown confirmation flow via `ImpactConfig` + `Tracelet.onImpact` and `Tracelet.confirmImpact` / `Tracelet.cancelImpact` (opt-in, default off) ([#165](https://github.com/Ikolvi/Tracelet/issues/165)).
+* All three features are **default-off** and side-channel — no change to existing tracking when disabled. See [Driving & Safety](https://github.com/Ikolvi/Tracelet/blob/main/help/DRIVING-AND-SAFETY.md).
+
 ## 3.2.19
 
 **CHORE**: version bump for patch release

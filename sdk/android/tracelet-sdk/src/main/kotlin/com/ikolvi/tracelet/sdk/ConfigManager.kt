@@ -54,6 +54,7 @@ class ConfigManager(context: Context) {
         const val DEFAULT_PERIODIC_DESIRED_ACCURACY = 1 // DesiredAccuracy.medium
         const val DEFAULT_PERIODIC_USE_FOREGROUND_SERVICE = false
         const val DEFAULT_PERIODIC_USE_EXACT_ALARMS = false
+        const val DEFAULT_RELEASE_WAKELOCK_WHEN_STATIONARY = false
 
         // AppConfig defaults
         const val DEFAULT_STOP_ON_TERMINATE = true
@@ -178,7 +179,7 @@ class ConfigManager(context: Context) {
 
         // Dart sends a nested structure: {geo: {...}, app: {...}, http: {...}, ...}
         // Flatten known section sub-maps into the top level first.
-        val sectionKeys = setOf("geo", "app", "android", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone", "security")
+        val sectionKeys = setOf("geo", "app", "android", "http", "logger", "motion", "geofence", "persistence", "audit", "privacyZone", "security", "telematics", "classifier", "impact")
         val flat = mutableMapOf<String, Any?>()
         for ((key, value) in newConfig) {
             if (key in sectionKeys && value is Map<*, *>) {
@@ -313,6 +314,13 @@ class ConfigManager(context: Context) {
 
     fun getPeriodicUseExactAlarms(): Boolean =
         getBool("periodicUseExactAlarms", DEFAULT_PERIODIC_USE_EXACT_ALARMS)
+
+    /**
+     * Drops the OEM Wakelock when the device enters a fully stationary state.
+     * Resolves Issue #162.
+     */
+    fun getReleaseWakelockWhenStationary(): Boolean =
+        getBool("releaseWakelockWhenStationary", DEFAULT_RELEASE_WAKELOCK_WHEN_STATIONARY)
 
     // LocationFilter sub-config
     fun getOdometerAccuracyThreshold(): Int =
@@ -768,6 +776,33 @@ class ConfigManager(context: Context) {
 
     fun getBatteryBudgetPerHour(): Double =
         getDouble("batteryBudgetPerHour", 0.0)
+
+    // ---------------------------------------------------------------------------
+    // Telematics / classifier / impact (3.3.0)
+    // ---------------------------------------------------------------------------
+
+    fun getEnableDrivingEvents(): Boolean = getBool("enableDrivingEvents", false)
+    fun getHarshBrakingG(): Double = getDouble("harshBrakingG", 0.40)
+    fun getHarshAccelerationG(): Double = getDouble("harshAccelerationG", 0.35)
+    fun getHarshCorneringG(): Double = getDouble("harshCorneringG", 0.40)
+    fun getSpeedLimitKmh(): Double = getDouble("speedLimitKmh", 0.0)
+    fun getSpeedingToleranceKmh(): Double = getDouble("speedingToleranceKmh", 5.0)
+    fun getSpeedingMinDurationMs(): Long = getInt("speedingMinDurationMs", 3000).toLong()
+    fun getMinSpeedForEventsKmh(): Double = getDouble("minSpeedForEventsKmh", 5.0)
+    fun getEventDebounceMs(): Long = getInt("eventDebounceMs", 2000).toLong()
+
+    fun getEnableFusedClassifier(): Boolean = getBool("enableFusedClassifier", false)
+    fun getFusedClassifierAuthoritative(): Boolean = getBool("fusedClassifierAuthoritative", false)
+    fun getModeSwitchDwellMs(): Long = getInt("modeSwitchDwellMs", 8000).toLong()
+    fun getMinModeConfidence(): Double = getDouble("minModeConfidence", 0.6)
+
+    fun getEnableCrashDetection(): Boolean = getBool("enableCrashDetection", false)
+    fun getEnableFallDetection(): Boolean = getBool("enableFallDetection", false)
+    fun getCrashGThreshold(): Double = getDouble("crashGThreshold", 3.0)
+    fun getCrashMinSpeedKmh(): Double = getDouble("crashMinSpeedKmh", 25.0)
+    fun getFallGThreshold(): Double = getDouble("fallGThreshold", 2.5)
+    fun getConfirmWindowMs(): Long = getInt("confirmWindowMs", 15000).toLong()
+    fun getMinImpactConfidence(): Double = getDouble("minImpactConfidence", 0.6)
 
     // ---------------------------------------------------------------------------
     // Private helpers

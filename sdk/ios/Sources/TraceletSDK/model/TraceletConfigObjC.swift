@@ -291,6 +291,10 @@ public final class TraceletAndroidConfigObjC: NSObject {
     public let periodicUseExactAlarms: Bool
     public let scheduleUseAlarmManager: Bool
     public let foregroundService: TraceletForegroundServiceConfigObjC
+    /// Android-only. Drops the OEM Wakelock when the device enters a fully stationary state.
+    /// Has no effect on iOS.
+    /// Resolves Issue #162.
+    public let releaseWakelockWhenStationary: Bool
 
     public init(
         locationUpdateInterval: Int = 1000,
@@ -301,7 +305,8 @@ public final class TraceletAndroidConfigObjC: NSObject {
         periodicUseForegroundService: Bool = false,
         periodicUseExactAlarms: Bool = false,
         scheduleUseAlarmManager: Bool = false,
-        foregroundService: TraceletForegroundServiceConfigObjC = TraceletForegroundServiceConfigObjC()
+        foregroundService: TraceletForegroundServiceConfigObjC = TraceletForegroundServiceConfigObjC(),
+        releaseWakelockWhenStationary: Bool = false
     ) {
         self.locationUpdateInterval = locationUpdateInterval
         self.fastestLocationUpdateInterval = fastestLocationUpdateInterval
@@ -312,6 +317,7 @@ public final class TraceletAndroidConfigObjC: NSObject {
         self.periodicUseExactAlarms = periodicUseExactAlarms
         self.scheduleUseAlarmManager = scheduleUseAlarmManager
         self.foregroundService = foregroundService
+        self.releaseWakelockWhenStationary = releaseWakelockWhenStationary
     }
 
     public func toMap() -> [String: Any] {
@@ -324,7 +330,8 @@ public final class TraceletAndroidConfigObjC: NSObject {
             "periodicUseForegroundService": periodicUseForegroundService,
             "periodicUseExactAlarms": periodicUseExactAlarms,
             "scheduleUseAlarmManager": scheduleUseAlarmManager,
-            "foregroundService": foregroundService.toMap()
+            "foregroundService": foregroundService.toMap(),
+            "releaseWakelockWhenStationary": releaseWakelockWhenStationary
         ]
     }
 
@@ -338,7 +345,8 @@ public final class TraceletAndroidConfigObjC: NSObject {
             periodicUseForegroundService: periodicUseForegroundService,
             periodicUseExactAlarms: periodicUseExactAlarms,
             scheduleUseAlarmManager: scheduleUseAlarmManager,
-            foregroundService: foregroundService.toSwift()
+            foregroundService: foregroundService.toSwift(),
+            releaseWakelockWhenStationary: releaseWakelockWhenStationary
         )
     }
 
@@ -352,7 +360,8 @@ public final class TraceletAndroidConfigObjC: NSObject {
             periodicUseForegroundService: map["periodicUseForegroundService"] as? Bool ?? false,
             periodicUseExactAlarms: map["periodicUseExactAlarms"] as? Bool ?? false,
             scheduleUseAlarmManager: map["scheduleUseAlarmManager"] as? Bool ?? false,
-            foregroundService: TraceletForegroundServiceConfigObjC.fromMap(map["foregroundService"] as? [String: Any] ?? [:])
+            foregroundService: TraceletForegroundServiceConfigObjC.fromMap(map["foregroundService"] as? [String: Any] ?? [:]),
+            releaseWakelockWhenStationary: map["releaseWakelockWhenStationary"] as? Bool ?? false
         )
     }
 }

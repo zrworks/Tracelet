@@ -22,6 +22,21 @@
 
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
+---
+
+## 🆕 New in 3.3.0 — Driving & Safety
+
+On-device, opt-in, and battery-friendly — all detection runs in the shared Rust core (no cloud, no extra permissions for the location-based features):
+
+- **🚗 Driving telematics** — harsh braking / acceleration / cornering / speeding, each with a `0–1` severity score for trip scoring. `TelematicsConfig` + `Tracelet.onDrivingEvent`.
+- **💥 Crash & fall detection** — corroborated impact detection (a big jolt alone is never enough) with a user "I'm OK" cancel-countdown before it escalates to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`.
+- **🚶 Transport-mode classifier** — still / walking / running / cycling / vehicle, fusing accelerometer + GPS. `ClassifierConfig` + `Tracelet.onModeChange`.
+- **🔋 Motion-gated wakelock (Android)** — drops the partial wakelock when stationary and re-asserts it on movement to cut idle battery drain. `AndroidConfig.releaseWakelockWhenStationary`.
+
+Everything is **default-off** and side-channel — when disabled, your existing tracking behaves exactly as before. → **[Driving & Safety guide](https://tracelet.ikolvi.com/en/core/driving-safety)** · **[Diagnostics & Bug Reports](https://tracelet.ikolvi.com/en/core/diagnostics)**
+
+---
+
 > [!IMPORTANT]
 > **Tracelet 3.2.0**: The SQLCipher dependency is no longer required for database encryption (Tracelet Core now natively uses AES-GCM in Rust, reducing APK size by ~16MB). Additionally, HTTP sync logic has been moved to the `tracelet_sync` module, which must now be included if you require network synchronization.
 
@@ -90,6 +105,11 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Wi-Fi-only sync** — `disableAutoSyncOnCellular` skips HTTP auto-sync on cellular networks, syncing only when connected to Wi-Fi. Supported on Android, iOS, and Web.
 - **Periodic mode** — Configurable one-shot location fixes at intervals from 60 seconds to 12 hours. Android supports sub-15-minute intervals via foreground service and exact alarms via `AlarmManager`.
 - **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
+- **Driving telematics** *(new in 3.3.0)* — On-device harsh-braking / acceleration / cornering / speeding detection from the GPS stream, each with a `0–1` severity score. Opt-in via `TelematicsConfig`; subscribe with `onDrivingEvent()`. Also works on Web.
+- **Crash & fall detection** *(new in 3.3.0)* — Corroborated impact detection (hard jolt **while moving**) with a user cancel-countdown before escalation. Opt-in via `ImpactConfig`; subscribe with `onImpact()` and resolve with `confirmImpact()` / `cancelImpact()`. You own the SOS UX.
+- **Transport-mode classifier** *(new in 3.3.0)* — Fuses accelerometer + GPS to classify still / walking / running / cycling / vehicle with hysteresis. Opt-in via `ClassifierConfig`; subscribe with `onModeChange()`.
+- **Motion-gated wakelock (Android)** *(new in 3.3.0)* — Drops the OEM partial wakelock when stationary and re-asserts it on movement, cutting idle battery drain. Opt-in via `AndroidConfig.releaseWakelockWhenStationary` (gated on the significant-motion wake sensor).
+- **Telematics & Diagnostics APIs** — Retrieve raw telematics events (`getTelematicsEvents`), simulate mock events for testing (`simulateTelematicsEvent`), and access system logs (`getLogs`, `clearLogs`) directly from Dart, Kotlin, and Swift. The `tracelet_doctor` overlay bundles health + config + logs + telematics into a one-tap, paste-ready **bug report** (secrets redacted).
 - **Live map view** — Built-in example with OpenStreetMap tiles, speed-colored route trail, geofence visualization, trip overlay, and real-time status overlay.
 
 ## Architecture

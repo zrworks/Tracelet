@@ -199,6 +199,11 @@ data class AndroidConfig(
     val periodicUseExactAlarms: Boolean = false,
     val scheduleUseAlarmManager: Boolean = false,
     val foregroundService: ForegroundServiceConfig = ForegroundServiceConfig(),
+    /**
+     * Drops the OEM Wakelock when the device enters a fully stationary state.
+     * Resolves Issue #162.
+     */
+    val releaseWakelockWhenStationary: Boolean = false,
 ) {
     companion object {
         fun fromMap(m: Map<String, Any?>) = AndroidConfig(
@@ -210,14 +215,16 @@ data class AndroidConfig(
             periodicUseForegroundService = m["periodicUseForegroundService"] as? Boolean ?: false,
             periodicUseExactAlarms = m["periodicUseExactAlarms"] as? Boolean ?: false,
             scheduleUseAlarmManager = m["scheduleUseAlarmManager"] as? Boolean ?: false,
-            foregroundService = (m["foregroundService"] as? Map<String, Any?>)?.let { ForegroundServiceConfig.fromMap(it) } ?: ForegroundServiceConfig()
+            foregroundService = (m["foregroundService"] as? Map<String, Any?>)?.let { ForegroundServiceConfig.fromMap(it) } ?: ForegroundServiceConfig(),
+            releaseWakelockWhenStationary = m["releaseWakelockWhenStationary"] as? Boolean ?: false,
         )
     }
     fun toMap(): Map<String, Any?> = mapOf(
         "locationUpdateInterval" to locationUpdateInterval, "fastestLocationUpdateInterval" to fastestLocationUpdateInterval,
         "deferTime" to deferTime, "allowIdenticalLocations" to allowIdenticalLocations, "geofenceModeHighAccuracy" to geofenceModeHighAccuracy,
         "periodicUseForegroundService" to periodicUseForegroundService, "periodicUseExactAlarms" to periodicUseExactAlarms,
-        "scheduleUseAlarmManager" to scheduleUseAlarmManager, "foregroundService" to foregroundService.toMap()
+        "scheduleUseAlarmManager" to scheduleUseAlarmManager, "foregroundService" to foregroundService.toMap(),
+        "releaseWakelockWhenStationary" to releaseWakelockWhenStationary
     )
 }
 

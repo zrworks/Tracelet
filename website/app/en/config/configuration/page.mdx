@@ -47,6 +47,16 @@ Handles all physical location, accuracy, and sampling logic.
 
 ---
 
+## The AndroidConfig Object (`config.android`)
+Android specific OS constraints and optimizations.
+
+### `releaseWakelockWhenStationary`
+- **Default:** `false`
+- **What:** Drops the OEM Wakelock when the device enters a fully stationary state (only applies when using `MotionDetectionMode.smart`).
+- **When to override:** If your app is used by delivery drivers who spend 30 minutes inside a restaurant waiting for food. Releasing the wakelock allows the phone's CPU to enter deep sleep, saving massive amounts of battery, while still relying on the hardware accelerometer to wake the CPU up instantly the moment the driver starts walking back to their car.
+
+---
+
 ## The LocationFilter Object (`config.geo.filter`)
 Cleans up bad GPS data before it hits your database.
 

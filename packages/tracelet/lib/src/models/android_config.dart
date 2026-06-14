@@ -17,6 +17,7 @@ class AndroidConfig {
     this.periodicUseForegroundService = false,
     this.periodicUseExactAlarms = false,
     this.scheduleUseAlarmManager = false,
+    this.releaseWakelockWhenStationary = false,
     this.foregroundService = const ForegroundServiceConfig(),
   });
 
@@ -53,6 +54,10 @@ class AndroidConfig {
         map['scheduleUseAlarmManager'],
         fallback: false,
       ),
+      releaseWakelockWhenStationary: ensureBool(
+        map['releaseWakelockWhenStationary'],
+        fallback: false,
+      ),
       foregroundService: fgMap != null
           ? ForegroundServiceConfig.fromMap(fgMap)
           : const ForegroundServiceConfig(),
@@ -69,6 +74,7 @@ class AndroidConfig {
     bool? periodicUseForegroundService,
     bool? periodicUseExactAlarms,
     bool? scheduleUseAlarmManager,
+    bool? releaseWakelockWhenStationary,
     ForegroundServiceConfig? foregroundService,
   }) {
     return AndroidConfig(
@@ -87,6 +93,8 @@ class AndroidConfig {
           periodicUseExactAlarms ?? this.periodicUseExactAlarms,
       scheduleUseAlarmManager:
           scheduleUseAlarmManager ?? this.scheduleUseAlarmManager,
+      releaseWakelockWhenStationary:
+          releaseWakelockWhenStationary ?? this.releaseWakelockWhenStationary,
       foregroundService: foregroundService ?? this.foregroundService,
     );
   }
@@ -122,6 +130,12 @@ class AndroidConfig {
   /// Defaults to `false` (uses WorkManager).
   final bool scheduleUseAlarmManager;
 
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Only applies when using `MotionDetectionMode.smart`.
+  /// Resolves Issue #162.
+  /// Defaults to `false`.
+  final bool releaseWakelockWhenStationary;
+
   /// Foreground service notification configuration.
   final ForegroundServiceConfig foregroundService;
 
@@ -135,6 +149,7 @@ class AndroidConfig {
     periodicUseForegroundService: periodicUseForegroundService,
     periodicUseExactAlarms: periodicUseExactAlarms,
     scheduleUseAlarmManager: scheduleUseAlarmManager,
+    releaseWakelockWhenStationary: releaseWakelockWhenStationary,
     foregroundService: foregroundService.toTlConfig(),
   );
 
@@ -149,6 +164,7 @@ class AndroidConfig {
       'periodicUseForegroundService': periodicUseForegroundService,
       'periodicUseExactAlarms': periodicUseExactAlarms,
       'scheduleUseAlarmManager': scheduleUseAlarmManager,
+      'releaseWakelockWhenStationary': releaseWakelockWhenStationary,
       'foregroundService': foregroundService.toMap(),
     };
   }
@@ -172,6 +188,8 @@ class AndroidConfig {
           periodicUseForegroundService == other.periodicUseForegroundService &&
           periodicUseExactAlarms == other.periodicUseExactAlarms &&
           scheduleUseAlarmManager == other.scheduleUseAlarmManager &&
+          releaseWakelockWhenStationary ==
+              other.releaseWakelockWhenStationary &&
           foregroundService == other.foregroundService;
 
   @override
@@ -184,6 +202,7 @@ class AndroidConfig {
     periodicUseForegroundService,
     periodicUseExactAlarms,
     scheduleUseAlarmManager,
+    releaseWakelockWhenStationary,
     foregroundService,
   );
 }

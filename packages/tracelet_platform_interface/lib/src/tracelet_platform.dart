@@ -141,6 +141,16 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('changePace() has not been implemented.');
   }
 
+  /// Confirms a pending impact candidate as a real emergency.
+  Future<bool> confirmImpact(int id) {
+    throw UnimplementedError('confirmImpact() has not been implemented.');
+  }
+
+  /// Cancels a pending impact candidate.
+  Future<bool> cancelImpact(int id) {
+    throw UnimplementedError('cancelImpact() has not been implemented.');
+  }
+
   /// Get the current odometer value in meters.
   Future<double> getOdometer() {
     throw UnimplementedError('getOdometer() has not been implemented.');
@@ -538,6 +548,45 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('emailLog() has not been implemented.');
   }
 
+  /// Connects to a custom sync URL.
+  Future<void> connectCustomSync(String url, String jwt) async {
+    throw UnimplementedError('connectCustomSync() has not been implemented.');
+  }
+
+  /// Gets telematics events up to a given [limit].
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) {
+    throw UnimplementedError('getTelematicsEvents() has not been implemented.');
+  }
+
+  /// Destroys all telematics events
+  Future<bool> destroyTelematicsEvents() {
+    throw UnimplementedError(
+      'destroyTelematicsEvents() has not been implemented.',
+    );
+  }
+
+  /// Simulates a telematics event
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) {
+    throw UnimplementedError(
+      'simulateTelematicsEvent() has not been implemented.',
+    );
+  }
+
+  /// Gets log entries up to a given [limit].
+  Future<List<TlLogEntry?>> getLogs(int limit) {
+    throw UnimplementedError('getLogs() has not been implemented.');
+  }
+
+  /// Clears all system log entries.
+  Future<void> clearLogs() {
+    throw UnimplementedError('clearLogs() has not been implemented.');
+  }
+
   /// Write a custom log entry at [level] with [message].
   Future<bool> log(String level, String message) {
     throw UnimplementedError('log() has not been implemented.');
@@ -677,7 +726,9 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// `distanceByMode`, and `totalTrips` fields.
   ///
   /// Optionally filter by [query] with `from` and `to` timestamps.
-  Future<Map<String, Object?>> getCarbonReport([Map<String, Object?>? query]) {
+  Future<Map<String, Object?>> getCarbonReport([
+    Map<String, Object?>? query,
+  ]) async {
     throw UnimplementedError('getCarbonReport() has not been implemented.');
   }
 
@@ -765,6 +816,21 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Stream of watchPosition events.
   Stream<TlLocation> get watchPositionEvents {
     throw UnimplementedError('watchPositionEvents has not been implemented.');
+  }
+
+  /// Stream of driving-behavior events (harsh brake/accel/cornering/speeding).
+  Stream<TlDrivingEvent> get drivingEvents {
+    throw UnimplementedError('drivingEvents has not been implemented.');
+  }
+
+  /// Stream of crash/fall impact events.
+  Stream<TlImpactEvent> get impactEvents {
+    throw UnimplementedError('impactEvents has not been implemented.');
+  }
+
+  /// Stream of fused transport-mode changes.
+  Stream<TlModeChangeEvent> get modeChangeEvents {
+    throw UnimplementedError('modeChangeEvents has not been implemented.');
   }
 
   /// Stream of speed-based motion mode change events.

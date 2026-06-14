@@ -216,6 +216,12 @@ class PigeonTracelet extends TraceletPlatform {
   Future<bool> changePace(bool isMoving) => _api.changePace(isMoving);
 
   @override
+  Future<bool> confirmImpact(int id) => _api.confirmImpact(id);
+
+  @override
+  Future<bool> cancelImpact(int id) => _api.cancelImpact(id);
+
+  @override
   Future<double> getOdometer() => _api.getOdometer();
 
   @override
@@ -576,6 +582,41 @@ class PigeonTracelet extends TraceletPlatform {
     return result.cast<String, Object?>();
   }
 
+  @override
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) {
+    return _api.getTelematicsEvents(limit);
+  }
+
+  @override
+  Future<bool> destroyTelematicsEvents() async {
+    return _api.destroyTelematicsEvents();
+  }
+
+  @override
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    return _api.simulateTelematicsEvent(
+      eventType,
+      severity,
+      latitude,
+      longitude,
+    );
+  }
+
+  @override
+  Future<List<TlLogEntry?>> getLogs(int limit) {
+    return _api.getLogs(limit);
+  }
+
+  @override
+  Future<void> clearLogs() {
+    return _api.clearLogs();
+  }
+
   // ---------------------------------------------------------------------------
   // Enterprise: Dead Reckoning
   // ---------------------------------------------------------------------------
@@ -678,6 +719,24 @@ class PigeonTracelet extends TraceletPlatform {
   Stream<TlLocation> get watchPositionEvents {
     _ensureEventsRegistered();
     return _events.watchPositionEvents;
+  }
+
+  @override
+  Stream<TlDrivingEvent> get drivingEvents {
+    _ensureEventsRegistered();
+    return _events.drivingEvents;
+  }
+
+  @override
+  Stream<TlImpactEvent> get impactEvents {
+    _ensureEventsRegistered();
+    return _events.impactEvents;
+  }
+
+  @override
+  Stream<TlModeChangeEvent> get modeChangeEvents {
+    _ensureEventsRegistered();
+    return _events.modeChangeEvents;
   }
 
   @override

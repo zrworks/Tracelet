@@ -419,6 +419,22 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
+    typealias FfiType = UInt32
+    typealias SwiftType = UInt32
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt32 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
     typealias FfiType = Int32
     typealias SwiftType = Int32
@@ -1092,6 +1108,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
      */
     func clearPrivacyZones() throws 
     
+    /**
+     * Clears all telematics events from the database.
+     */
+    func clearTelematicsEvents() throws 
+    
     func decryptPayload(payload: Data)  -> Data?
     
     func deleteGeofence(identifier: String) throws 
@@ -1148,6 +1169,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func getPrivacyZones() throws  -> [CorePrivacyZone]
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+    func getTelematicsEvents(limit: Int32) throws  -> [DbTelematicsRecord]
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
     func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32) throws 
@@ -1181,9 +1207,24 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double) throws 
     
     /**
+     * Inserts a telematics event into the database.
+     */
+    func insertTelematicsEvent(eventType: String, severity: Double, lat: Double, lng: Double) throws  -> Int64
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
     func isEmpty() throws  -> Bool
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+    func markTelematicsSynced(maxId: Int64) throws 
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+    func pruneLogs(limit: Int32) throws 
     
     /**
      * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
@@ -1303,6 +1344,16 @@ open func clearLogs()throws   {try rustCallWithError(FfiConverterTypeTraceletErr
      */
 open func clearPrivacyZones()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+    /**
+     * Clears all telematics events from the database.
+     */
+open func clearTelematicsEvents()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_telematics_events(
             self.uniffiCloneHandle(),$0
     )
 }
@@ -1446,6 +1497,18 @@ open func getPrivacyZones()throws  -> [CorePrivacyZone]  {
 }
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+open func getTelematicsEvents(limit: Int32)throws  -> [DbTelematicsRecord]  {
+    return try  FfiConverterSequenceTypeDbTelematicsRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_telematics_events(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+})
+}
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
 open func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
@@ -1538,6 +1601,21 @@ open func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius
 }
     
     /**
+     * Inserts a telematics event into the database.
+     */
+open func insertTelematicsEvent(eventType: String, severity: Double, lat: Double, lng: Double)throws  -> Int64  {
+    return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_telematics_event(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(eventType),
+        FfiConverterDouble.lower(severity),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),$0
+    )
+})
+}
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
 open func isEmpty()throws  -> Bool  {
@@ -1546,6 +1624,28 @@ open func isEmpty()throws  -> Bool  {
             self.uniffiCloneHandle(),$0
     )
 })
+}
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+open func markTelematicsSynced(maxId: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_mark_telematics_synced(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(maxId),$0
+    )
+}
+}
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+open func pruneLogs(limit: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_prune_logs(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+}
 }
     
     /**
@@ -2188,6 +2288,240 @@ public func FfiConverterTypeGeofenceEvaluator_lift(_ handle: UInt64) throws -> G
 #endif
 public func FfiConverterTypeGeofenceEvaluator_lower(_ value: GeofenceEvaluator) -> UInt64 {
     return FfiConverterTypeGeofenceEvaluator.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Detects crash/fall impacts with a confirmation window.
+ */
+public protocol ImpactDetectorProtocol: AnyObject, Sendable {
+    
+    /**
+     * User cancels a candidate ("I'm fine") — no confirmed event will fire.
+     */
+    func cancel(id: Int64)  -> Bool
+    
+    /**
+     * Fires confirmed events for candidates whose deadline has elapsed without
+     * a cancel. Call on a timer.
+     */
+    func checkConfirmations(nowMs: Int64)  -> [ImpactEvent]
+    
+    /**
+     * User (or app) explicitly confirms a candidate is a real emergency now.
+     */
+    func confirm(id: Int64, nowMs: Int64)  -> ImpactEvent?
+    
+    /**
+     * Feeds one accel window's peak plus motion context. Returns a
+     * `potential_*` event when an impact is detected (and registers it for
+     * confirmation), else `None`.
+     */
+    func onImpactWindow(peakG: Double, speedBeforeMps: Double, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64)  -> ImpactEvent?
+    
+    /**
+     * Number of candidates awaiting confirmation.
+     */
+    func pendingCount()  -> UInt32
+    
+    /**
+     * Clears all pending candidates.
+     */
+    func reset() 
+    
+}
+/**
+ * Detects crash/fall impacts with a confirmation window.
+ */
+open class ImpactDetector: ImpactDetectorProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_impactdetector(self.handle, $0) }
+    }
+    /**
+     * Creates a detector. Pass `None` for defaults (both detections off).
+     */
+public convenience init(config: ImpactConfig?) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_impactdetector_new(
+        FfiConverterOptionTypeImpactConfig.lower(config),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_impactdetector(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * User cancels a candidate ("I'm fine") — no confirmed event will fire.
+     */
+open func cancel(id: Int64) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_cancel(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(id),$0
+    )
+})
+}
+    
+    /**
+     * Fires confirmed events for candidates whose deadline has elapsed without
+     * a cancel. Call on a timer.
+     */
+open func checkConfirmations(nowMs: Int64) -> [ImpactEvent]  {
+    return try!  FfiConverterSequenceTypeImpactEvent.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
+     * User (or app) explicitly confirms a candidate is a real emergency now.
+     */
+open func confirm(id: Int64, nowMs: Int64) -> ImpactEvent?  {
+    return try!  FfiConverterOptionTypeImpactEvent.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_confirm(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(id),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
+     * Feeds one accel window's peak plus motion context. Returns a
+     * `potential_*` event when an impact is detected (and registers it for
+     * confirmation), else `None`.
+     */
+open func onImpactWindow(peakG: Double, speedBeforeMps: Double, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64) -> ImpactEvent?  {
+    return try!  FfiConverterOptionTypeImpactEvent.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(peakG),
+        FfiConverterDouble.lower(speedBeforeMps),
+        FfiConverterBool.lower(isOnFoot),
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
+     * Number of candidates awaiting confirmation.
+     */
+open func pendingCount() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_pending_count(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Clears all pending candidates.
+     */
+open func reset()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_reset(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeImpactDetector: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = ImpactDetector
+
+    public static func lift(_ handle: UInt64) throws -> ImpactDetector {
+        return ImpactDetector(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: ImpactDetector) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImpactDetector {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: ImpactDetector, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactDetector_lift(_ handle: UInt64) throws -> ImpactDetector {
+    return try FfiConverterTypeImpactDetector.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactDetector_lower(_ value: ImpactDetector) -> UInt64 {
+    return FfiConverterTypeImpactDetector.lower(value)
 }
 
 
@@ -3096,6 +3430,366 @@ public func FfiConverterTypeSmartMotionCoordinator_lower(_ value: SmartMotionCoo
 
 
 /**
+ * Detects driving events from a stream of accepted location fixes.
+ */
+public protocol TelematicsEngineProtocol: AnyObject, Sendable {
+    
+    /**
+     * Rolling driving score in [0, 100] (100 = flawless). Penalties accrue
+     * per event weighted by severity.
+     */
+    func currentScore()  -> Double
+    
+    /**
+     * Processes one accepted fix and returns any driving events it triggers.
+     *
+     * `speed` is m/s, `heading` is degrees (negative ⇒ unknown), `timestamp_ms`
+     * is epoch ms. Returns empty until a second fix establishes deltas, on
+     * time gaps, or when nothing crosses a threshold.
+     */
+    func processFix(speed: Double, heading: Double, latitude: Double, longitude: Double, timestampMs: Int64)  -> [DrivingEvent]
+    
+    /**
+     * Clears all state (call on trip start / tracking restart).
+     */
+    func reset() 
+    
+}
+/**
+ * Detects driving events from a stream of accepted location fixes.
+ */
+open class TelematicsEngine: TelematicsEngineProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_telematicsengine(self.handle, $0) }
+    }
+    /**
+     * Creates an engine. Pass `None` for default thresholds.
+     */
+public convenience init(config: TelematicsConfig?) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_telematicsengine_new(
+        FfiConverterOptionTypeTelematicsConfig.lower(config),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_telematicsengine(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Rolling driving score in [0, 100] (100 = flawless). Penalties accrue
+     * per event weighted by severity.
+     */
+open func currentScore() -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_telematicsengine_current_score(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Processes one accepted fix and returns any driving events it triggers.
+     *
+     * `speed` is m/s, `heading` is degrees (negative ⇒ unknown), `timestamp_ms`
+     * is epoch ms. Returns empty until a second fix establishes deltas, on
+     * time gaps, or when nothing crosses a threshold.
+     */
+open func processFix(speed: Double, heading: Double, latitude: Double, longitude: Double, timestampMs: Int64) -> [DrivingEvent]  {
+    return try!  FfiConverterSequenceTypeDrivingEvent.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_telematicsengine_process_fix(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(speed),
+        FfiConverterDouble.lower(heading),
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),
+        FfiConverterInt64.lower(timestampMs),$0
+    )
+})
+}
+    
+    /**
+     * Clears all state (call on trip start / tracking restart).
+     */
+open func reset()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_telematicsengine_reset(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTelematicsEngine: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = TelematicsEngine
+
+    public static func lift(_ handle: UInt64) throws -> TelematicsEngine {
+        return TelematicsEngine(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: TelematicsEngine) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TelematicsEngine {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: TelematicsEngine, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTelematicsEngine_lift(_ handle: UInt64) throws -> TelematicsEngine {
+    return try FfiConverterTypeTelematicsEngine.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTelematicsEngine_lower(_ value: TelematicsEngine) -> UInt64 {
+    return FfiConverterTypeTelematicsEngine.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Fuses accel features + speed into a transport mode with hysteresis.
+ */
+public protocol TransportModeClassifierProtocol: AnyObject, Sendable {
+    
+    /**
+     * Classifies one window + speed, applying confidence gating and dwell
+     * hysteresis. Returns the currently committed mode.
+     */
+    func classify(window: AccelWindow, speedMps: Double, nowMs: Int64)  -> ModeResult
+    
+    /**
+     * Currently committed mode.
+     */
+    func currentMode()  -> TransportMode
+    
+    /**
+     * Resets to `Unknown`.
+     */
+    func reset() 
+    
+}
+/**
+ * Fuses accel features + speed into a transport mode with hysteresis.
+ */
+open class TransportModeClassifier: TransportModeClassifierProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_transportmodeclassifier(self.handle, $0) }
+    }
+    /**
+     * Creates a classifier. Pass `None` for default tuning.
+     */
+public convenience init(config: ClassifierConfig?) {
+    let handle =
+        try! rustCall() {
+    uniffi_tracelet_core_fn_constructor_transportmodeclassifier_new(
+        FfiConverterOptionTypeClassifierConfig.lower(config),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_transportmodeclassifier(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Classifies one window + speed, applying confidence gating and dwell
+     * hysteresis. Returns the currently committed mode.
+     */
+open func classify(window: AccelWindow, speedMps: Double, nowMs: Int64) -> ModeResult  {
+    return try!  FfiConverterTypeModeResult_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_transportmodeclassifier_classify(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeAccelWindow_lower(window),
+        FfiConverterDouble.lower(speedMps),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
+     * Currently committed mode.
+     */
+open func currentMode() -> TransportMode  {
+    return try!  FfiConverterTypeTransportMode_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_transportmodeclassifier_current_mode(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Resets to `Unknown`.
+     */
+open func reset()  {try! rustCall() {
+    uniffi_tracelet_core_fn_method_transportmodeclassifier_reset(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTransportModeClassifier: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = TransportModeClassifier
+
+    public static func lift(_ handle: UInt64) throws -> TransportModeClassifier {
+        return TransportModeClassifier(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: TransportModeClassifier) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TransportModeClassifier {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: TransportModeClassifier, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTransportModeClassifier_lift(_ handle: UInt64) throws -> TransportModeClassifier {
+    return try FfiConverterTypeTransportModeClassifier.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTransportModeClassifier_lower(_ value: TransportModeClassifier) -> UInt64 {
+    return FfiConverterTypeTransportModeClassifier.lower(value)
+}
+
+
+
+
+
+
+/**
  * Core logic for determining trip boundaries (start/stop) based on location and motion changes.
  */
 public protocol TripManagerProtocol: AnyObject, Sendable {
@@ -3285,6 +3979,119 @@ public func FfiConverterTypeTripManager_lower(_ value: TripManager) -> UInt64 {
 }
 
 
+
+
+/**
+ * Lightweight features summarizing one accelerometer window.
+ */
+public struct AccelWindow: Equatable, Hashable {
+    /**
+     * Mean magnitude (g, gravity-subtracted).
+     */
+    public var meanG: Double
+    /**
+     * Variance of the magnitude — separates steady (vehicle) from bouncy
+     * (running) motion.
+     */
+    public var variance: Double
+    /**
+     * Largest single magnitude in the window (g) — the impact signal.
+     */
+    public var peakG: Double
+    /**
+     * Dominant oscillation frequency (Hz), estimated from mean-crossings —
+     * the cadence cue distinguishing walking (~2 Hz) from running (~3 Hz).
+     */
+    public var dominantCadenceHz: Double
+    /**
+     * Number of samples in the window.
+     */
+    public var sampleCount: UInt32
+    /**
+     * Window duration (ms).
+     */
+    public var durationMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Mean magnitude (g, gravity-subtracted).
+         */meanG: Double, 
+        /**
+         * Variance of the magnitude — separates steady (vehicle) from bouncy
+         * (running) motion.
+         */variance: Double, 
+        /**
+         * Largest single magnitude in the window (g) — the impact signal.
+         */peakG: Double, 
+        /**
+         * Dominant oscillation frequency (Hz), estimated from mean-crossings —
+         * the cadence cue distinguishing walking (~2 Hz) from running (~3 Hz).
+         */dominantCadenceHz: Double, 
+        /**
+         * Number of samples in the window.
+         */sampleCount: UInt32, 
+        /**
+         * Window duration (ms).
+         */durationMs: Int64) {
+        self.meanG = meanG
+        self.variance = variance
+        self.peakG = peakG
+        self.dominantCadenceHz = dominantCadenceHz
+        self.sampleCount = sampleCount
+        self.durationMs = durationMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AccelWindow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAccelWindow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AccelWindow {
+        return
+            try AccelWindow(
+                meanG: FfiConverterDouble.read(from: &buf), 
+                variance: FfiConverterDouble.read(from: &buf), 
+                peakG: FfiConverterDouble.read(from: &buf), 
+                dominantCadenceHz: FfiConverterDouble.read(from: &buf), 
+                sampleCount: FfiConverterUInt32.read(from: &buf), 
+                durationMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AccelWindow, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.meanG, into: &buf)
+        FfiConverterDouble.write(value.variance, into: &buf)
+        FfiConverterDouble.write(value.peakG, into: &buf)
+        FfiConverterDouble.write(value.dominantCadenceHz, into: &buf)
+        FfiConverterUInt32.write(value.sampleCount, into: &buf)
+        FfiConverterInt64.write(value.durationMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAccelWindow_lift(_ buf: RustBuffer) throws -> AccelWindow {
+    return try FfiConverterTypeAccelWindow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAccelWindow_lower(_ value: AccelWindow) -> RustBuffer {
+    return FfiConverterTypeAccelWindow.lower(value)
+}
 
 
 /**
@@ -3820,6 +4627,75 @@ public func FfiConverterTypeBudgetAdjustmentEvent_lower(_ value: BudgetAdjustmen
 
 
 /**
+ * Classifier tuning.
+ */
+public struct ClassifierConfig: Equatable, Hashable {
+    /**
+     * A candidate mode must persist this long (ms) before it commits.
+     */
+    public var modeSwitchDwellMs: Int64
+    /**
+     * Below this confidence the result is reported as `Unknown`.
+     */
+    public var minConfidence: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * A candidate mode must persist this long (ms) before it commits.
+         */modeSwitchDwellMs: Int64, 
+        /**
+         * Below this confidence the result is reported as `Unknown`.
+         */minConfidence: Double) {
+        self.modeSwitchDwellMs = modeSwitchDwellMs
+        self.minConfidence = minConfidence
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ClassifierConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeClassifierConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ClassifierConfig {
+        return
+            try ClassifierConfig(
+                modeSwitchDwellMs: FfiConverterInt64.read(from: &buf), 
+                minConfidence: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ClassifierConfig, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.modeSwitchDwellMs, into: &buf)
+        FfiConverterDouble.write(value.minConfidence, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeClassifierConfig_lift(_ buf: RustBuffer) throws -> ClassifierConfig {
+    return try FfiConverterTypeClassifierConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeClassifierConfig_lower(_ value: ClassifierConfig) -> RustBuffer {
+    return FfiConverterTypeClassifierConfig.lower(value)
+}
+
+
+/**
  * Represents a 2D geographical coordinate using latitude and longitude.
  */
 public struct Coordinate: Equatable, Hashable {
@@ -4239,6 +5115,186 @@ public func FfiConverterTypeDbLocationRecord_lift(_ buf: RustBuffer) throws -> D
 #endif
 public func FfiConverterTypeDbLocationRecord_lower(_ value: DbLocationRecord) -> RustBuffer {
     return FfiConverterTypeDbLocationRecord.lower(value)
+}
+
+
+/**
+ * Represents a telematics event (crash, hard brake, etc.) persisted in the database.
+ */
+public struct DbTelematicsRecord: Equatable, Hashable {
+    public var id: Int64
+    public var eventType: String
+    public var severity: Double
+    public var latitude: Double
+    public var longitude: Double
+    public var timestamp: String
+    public var synced: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: Int64, eventType: String, severity: Double, latitude: Double, longitude: Double, timestamp: String, synced: Bool) {
+        self.id = id
+        self.eventType = eventType
+        self.severity = severity
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = timestamp
+        self.synced = synced
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbTelematicsRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbTelematicsRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbTelematicsRecord {
+        return
+            try DbTelematicsRecord(
+                id: FfiConverterInt64.read(from: &buf), 
+                eventType: FfiConverterString.read(from: &buf), 
+                severity: FfiConverterDouble.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                synced: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbTelematicsRecord, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.eventType, into: &buf)
+        FfiConverterDouble.write(value.severity, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterBool.write(value.synced, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbTelematicsRecord_lift(_ buf: RustBuffer) throws -> DbTelematicsRecord {
+    return try FfiConverterTypeDbTelematicsRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbTelematicsRecord_lower(_ value: DbTelematicsRecord) -> RustBuffer {
+    return FfiConverterTypeDbTelematicsRecord.lower(value)
+}
+
+
+/**
+ * A detected driving event.
+ */
+public struct DrivingEvent: Equatable, Hashable {
+    /**
+     * `harsh_braking` | `harsh_acceleration` | `harsh_cornering` | `speeding`.
+     */
+    public var kind: String
+    /**
+     * Normalized 0–1 severity (how far past the threshold).
+     */
+    public var severity: Double
+    /**
+     * Speed at the event (m/s).
+     */
+    public var speed: Double
+    /**
+     * The measured magnitude that triggered it: g for harsh events, km/h over
+     * the limit for speeding.
+     */
+    public var value: Double
+    public var latitude: Double
+    public var longitude: Double
+    public var timestampMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * `harsh_braking` | `harsh_acceleration` | `harsh_cornering` | `speeding`.
+         */kind: String, 
+        /**
+         * Normalized 0–1 severity (how far past the threshold).
+         */severity: Double, 
+        /**
+         * Speed at the event (m/s).
+         */speed: Double, 
+        /**
+         * The measured magnitude that triggered it: g for harsh events, km/h over
+         * the limit for speeding.
+         */value: Double, latitude: Double, longitude: Double, timestampMs: Int64) {
+        self.kind = kind
+        self.severity = severity
+        self.speed = speed
+        self.value = value
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestampMs = timestampMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DrivingEvent: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDrivingEvent: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DrivingEvent {
+        return
+            try DrivingEvent(
+                kind: FfiConverterString.read(from: &buf), 
+                severity: FfiConverterDouble.read(from: &buf), 
+                speed: FfiConverterDouble.read(from: &buf), 
+                value: FfiConverterDouble.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestampMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DrivingEvent, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.kind, into: &buf)
+        FfiConverterDouble.write(value.severity, into: &buf)
+        FfiConverterDouble.write(value.speed, into: &buf)
+        FfiConverterDouble.write(value.value, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterInt64.write(value.timestampMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrivingEvent_lift(_ buf: RustBuffer) throws -> DrivingEvent {
+    return try FfiConverterTypeDrivingEvent.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrivingEvent_lower(_ value: DrivingEvent) -> RustBuffer {
+    return FfiConverterTypeDrivingEvent.lower(value)
 }
 
 
@@ -5063,6 +6119,246 @@ public func FfiConverterTypeHttpConfig_lower(_ value: HttpConfig) -> RustBuffer 
 
 
 /**
+ * Impact detector tuning.
+ */
+public struct ImpactConfig: Equatable, Hashable {
+    /**
+     * Enable vehicle crash detection.
+     */
+    public var enableCrash: Bool
+    /**
+     * Enable personal fall detection (best-effort; more false positives).
+     */
+    public var enableFall: Bool
+    /**
+     * Impact magnitude (g) for a crash candidate.
+     */
+    public var crashGThreshold: Double
+    /**
+     * Pre-impact speed (km/h) required to corroborate a crash.
+     */
+    public var crashMinSpeedKmh: Double
+    /**
+     * Impact magnitude (g) for a fall candidate.
+     */
+    public var fallGThreshold: Double
+    /**
+     * Countdown (ms) before a candidate auto-confirms.
+     */
+    public var confirmWindowMs: Int64
+    /**
+     * Suppress candidates below this confidence.
+     */
+    public var minConfidence: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Enable vehicle crash detection.
+         */enableCrash: Bool, 
+        /**
+         * Enable personal fall detection (best-effort; more false positives).
+         */enableFall: Bool, 
+        /**
+         * Impact magnitude (g) for a crash candidate.
+         */crashGThreshold: Double, 
+        /**
+         * Pre-impact speed (km/h) required to corroborate a crash.
+         */crashMinSpeedKmh: Double, 
+        /**
+         * Impact magnitude (g) for a fall candidate.
+         */fallGThreshold: Double, 
+        /**
+         * Countdown (ms) before a candidate auto-confirms.
+         */confirmWindowMs: Int64, 
+        /**
+         * Suppress candidates below this confidence.
+         */minConfidence: Double) {
+        self.enableCrash = enableCrash
+        self.enableFall = enableFall
+        self.crashGThreshold = crashGThreshold
+        self.crashMinSpeedKmh = crashMinSpeedKmh
+        self.fallGThreshold = fallGThreshold
+        self.confirmWindowMs = confirmWindowMs
+        self.minConfidence = minConfidence
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ImpactConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeImpactConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImpactConfig {
+        return
+            try ImpactConfig(
+                enableCrash: FfiConverterBool.read(from: &buf), 
+                enableFall: FfiConverterBool.read(from: &buf), 
+                crashGThreshold: FfiConverterDouble.read(from: &buf), 
+                crashMinSpeedKmh: FfiConverterDouble.read(from: &buf), 
+                fallGThreshold: FfiConverterDouble.read(from: &buf), 
+                confirmWindowMs: FfiConverterInt64.read(from: &buf), 
+                minConfidence: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ImpactConfig, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.enableCrash, into: &buf)
+        FfiConverterBool.write(value.enableFall, into: &buf)
+        FfiConverterDouble.write(value.crashGThreshold, into: &buf)
+        FfiConverterDouble.write(value.crashMinSpeedKmh, into: &buf)
+        FfiConverterDouble.write(value.fallGThreshold, into: &buf)
+        FfiConverterInt64.write(value.confirmWindowMs, into: &buf)
+        FfiConverterDouble.write(value.minConfidence, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactConfig_lift(_ buf: RustBuffer) throws -> ImpactConfig {
+    return try FfiConverterTypeImpactConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactConfig_lower(_ value: ImpactConfig) -> RustBuffer {
+    return FfiConverterTypeImpactConfig.lower(value)
+}
+
+
+/**
+ * An impact event.
+ */
+public struct ImpactEvent: Equatable, Hashable {
+    /**
+     * `potential_crash` | `crash` | `potential_fall` | `fall`.
+     */
+    public var kind: String
+    /**
+     * Candidate id — pair `potential_*` with its later `confirm`/`cancel`.
+     */
+    public var id: Int64
+    /**
+     * 0–1 confidence.
+     */
+    public var confidence: Double
+    /**
+     * Peak magnitude (g) of the impact.
+     */
+    public var peakG: Double
+    /**
+     * Speed before impact (m/s).
+     */
+    public var speedBefore: Double
+    public var latitude: Double
+    public var longitude: Double
+    public var timestampMs: Int64
+    /**
+     * For `potential_*`: epoch ms at which it auto-confirms unless cancelled.
+     */
+    public var confirmDeadlineMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * `potential_crash` | `crash` | `potential_fall` | `fall`.
+         */kind: String, 
+        /**
+         * Candidate id — pair `potential_*` with its later `confirm`/`cancel`.
+         */id: Int64, 
+        /**
+         * 0–1 confidence.
+         */confidence: Double, 
+        /**
+         * Peak magnitude (g) of the impact.
+         */peakG: Double, 
+        /**
+         * Speed before impact (m/s).
+         */speedBefore: Double, latitude: Double, longitude: Double, timestampMs: Int64, 
+        /**
+         * For `potential_*`: epoch ms at which it auto-confirms unless cancelled.
+         */confirmDeadlineMs: Int64) {
+        self.kind = kind
+        self.id = id
+        self.confidence = confidence
+        self.peakG = peakG
+        self.speedBefore = speedBefore
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestampMs = timestampMs
+        self.confirmDeadlineMs = confirmDeadlineMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ImpactEvent: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeImpactEvent: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImpactEvent {
+        return
+            try ImpactEvent(
+                kind: FfiConverterString.read(from: &buf), 
+                id: FfiConverterInt64.read(from: &buf), 
+                confidence: FfiConverterDouble.read(from: &buf), 
+                peakG: FfiConverterDouble.read(from: &buf), 
+                speedBefore: FfiConverterDouble.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestampMs: FfiConverterInt64.read(from: &buf), 
+                confirmDeadlineMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ImpactEvent, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.kind, into: &buf)
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterDouble.write(value.confidence, into: &buf)
+        FfiConverterDouble.write(value.peakG, into: &buf)
+        FfiConverterDouble.write(value.speedBefore, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterInt64.write(value.timestampMs, into: &buf)
+        FfiConverterInt64.write(value.confirmDeadlineMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactEvent_lift(_ buf: RustBuffer) throws -> ImpactEvent {
+    return try FfiConverterTypeImpactEvent.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeImpactEvent_lower(_ value: ImpactEvent) -> RustBuffer {
+    return FfiConverterTypeImpactEvent.lower(value)
+}
+
+
+/**
  * A simple geographical point used for the smoothed output of the Kalman filter.
  */
 public struct LatLng: Equatable, Hashable {
@@ -5413,6 +6709,73 @@ public func FfiConverterTypeLogEntry_lift(_ buf: RustBuffer) throws -> LogEntry 
 #endif
 public func FfiConverterTypeLogEntry_lower(_ value: LogEntry) -> RustBuffer {
     return FfiConverterTypeLogEntry.lower(value)
+}
+
+
+/**
+ * Result of a classification step.
+ */
+public struct ModeResult: Equatable, Hashable {
+    public var mode: TransportMode
+    public var confidence: Double
+    /**
+     * True when this call committed a *change* from the previous committed mode.
+     */
+    public var changed: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(mode: TransportMode, confidence: Double, 
+        /**
+         * True when this call committed a *change* from the previous committed mode.
+         */changed: Bool) {
+        self.mode = mode
+        self.confidence = confidence
+        self.changed = changed
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ModeResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeModeResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ModeResult {
+        return
+            try ModeResult(
+                mode: FfiConverterTypeTransportMode.read(from: &buf), 
+                confidence: FfiConverterDouble.read(from: &buf), 
+                changed: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ModeResult, into buf: inout [UInt8]) {
+        FfiConverterTypeTransportMode.write(value.mode, into: &buf)
+        FfiConverterDouble.write(value.confidence, into: &buf)
+        FfiConverterBool.write(value.changed, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModeResult_lift(_ buf: RustBuffer) throws -> ModeResult {
+    return try FfiConverterTypeModeResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeModeResult_lower(_ value: ModeResult) -> RustBuffer {
+    return FfiConverterTypeModeResult.lower(value)
 }
 
 
@@ -5915,6 +7278,142 @@ public func FfiConverterTypeSecurityConfig_lift(_ buf: RustBuffer) throws -> Sec
 #endif
 public func FfiConverterTypeSecurityConfig_lower(_ value: SecurityConfig) -> RustBuffer {
     return FfiConverterTypeSecurityConfig.lower(value)
+}
+
+
+/**
+ * Tunable thresholds for driving-event detection. Defaults follow common
+ * usage-based-insurance / fleet practice and are overridable by the caller.
+ */
+public struct TelematicsConfig: Equatable, Hashable {
+    /**
+     * Longitudinal deceleration (g) above which `harsh_braking` fires.
+     */
+    public var harshBrakingG: Double
+    /**
+     * Longitudinal acceleration (g) above which `harsh_acceleration` fires.
+     */
+    public var harshAccelerationG: Double
+    /**
+     * Lateral acceleration (g) above which `harsh_cornering` fires.
+     */
+    public var harshCorneringG: Double
+    /**
+     * Global speed limit in km/h. `0` disables threshold-based speeding
+     * (per-geofence limits can still be applied by the caller).
+     */
+    public var speedLimitKmh: Double
+    /**
+     * Grace (km/h) added to the limit before speeding counts.
+     */
+    public var speedingToleranceKmh: Double
+    /**
+     * Sustained time over the limit (ms) before `speeding` fires.
+     */
+    public var speedingMinDurationMs: Int64
+    /**
+     * Suppress brake/accel/corner events below this speed (km/h) to avoid
+     * parking-lot / GPS-jitter noise.
+     */
+    public var minSpeedForEventsKmh: Double
+    /**
+     * Minimum time between two events of the same kind (ms) — debounce so a
+     * single maneuver spanning several fixes yields one event.
+     */
+    public var eventDebounceMs: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Longitudinal deceleration (g) above which `harsh_braking` fires.
+         */harshBrakingG: Double, 
+        /**
+         * Longitudinal acceleration (g) above which `harsh_acceleration` fires.
+         */harshAccelerationG: Double, 
+        /**
+         * Lateral acceleration (g) above which `harsh_cornering` fires.
+         */harshCorneringG: Double, 
+        /**
+         * Global speed limit in km/h. `0` disables threshold-based speeding
+         * (per-geofence limits can still be applied by the caller).
+         */speedLimitKmh: Double, 
+        /**
+         * Grace (km/h) added to the limit before speeding counts.
+         */speedingToleranceKmh: Double, 
+        /**
+         * Sustained time over the limit (ms) before `speeding` fires.
+         */speedingMinDurationMs: Int64, 
+        /**
+         * Suppress brake/accel/corner events below this speed (km/h) to avoid
+         * parking-lot / GPS-jitter noise.
+         */minSpeedForEventsKmh: Double, 
+        /**
+         * Minimum time between two events of the same kind (ms) — debounce so a
+         * single maneuver spanning several fixes yields one event.
+         */eventDebounceMs: Int64) {
+        self.harshBrakingG = harshBrakingG
+        self.harshAccelerationG = harshAccelerationG
+        self.harshCorneringG = harshCorneringG
+        self.speedLimitKmh = speedLimitKmh
+        self.speedingToleranceKmh = speedingToleranceKmh
+        self.speedingMinDurationMs = speedingMinDurationMs
+        self.minSpeedForEventsKmh = minSpeedForEventsKmh
+        self.eventDebounceMs = eventDebounceMs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension TelematicsConfig: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTelematicsConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TelematicsConfig {
+        return
+            try TelematicsConfig(
+                harshBrakingG: FfiConverterDouble.read(from: &buf), 
+                harshAccelerationG: FfiConverterDouble.read(from: &buf), 
+                harshCorneringG: FfiConverterDouble.read(from: &buf), 
+                speedLimitKmh: FfiConverterDouble.read(from: &buf), 
+                speedingToleranceKmh: FfiConverterDouble.read(from: &buf), 
+                speedingMinDurationMs: FfiConverterInt64.read(from: &buf), 
+                minSpeedForEventsKmh: FfiConverterDouble.read(from: &buf), 
+                eventDebounceMs: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TelematicsConfig, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.harshBrakingG, into: &buf)
+        FfiConverterDouble.write(value.harshAccelerationG, into: &buf)
+        FfiConverterDouble.write(value.harshCorneringG, into: &buf)
+        FfiConverterDouble.write(value.speedLimitKmh, into: &buf)
+        FfiConverterDouble.write(value.speedingToleranceKmh, into: &buf)
+        FfiConverterInt64.write(value.speedingMinDurationMs, into: &buf)
+        FfiConverterDouble.write(value.minSpeedForEventsKmh, into: &buf)
+        FfiConverterInt64.write(value.eventDebounceMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTelematicsConfig_lift(_ buf: RustBuffer) throws -> TelematicsConfig {
+    return try FfiConverterTypeTelematicsConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTelematicsConfig_lower(_ value: TelematicsConfig) -> RustBuffer {
+    return FfiConverterTypeTelematicsConfig.lower(value)
 }
 
 
@@ -6618,6 +8117,105 @@ public func FfiConverterTypeTrackingMode_lower(_ value: TrackingMode) -> RustBuf
 }
 
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
+ * Detected travel mode. Distinct from the platform `ActivityType` so adding
+ * `Cycling` here doesn't perturb existing activity plumbing.
+ */
+
+public enum TransportMode: Equatable, Hashable {
+    
+    case unknown
+    case still
+    case walking
+    case running
+    case cycling
+    case vehicle
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension TransportMode: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTransportMode: FfiConverterRustBuffer {
+    typealias SwiftType = TransportMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TransportMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .unknown
+        
+        case 2: return .still
+        
+        case 3: return .walking
+        
+        case 4: return .running
+        
+        case 5: return .cycling
+        
+        case 6: return .vehicle
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TransportMode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .unknown:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .still:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .walking:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .running:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .cycling:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .vehicle:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTransportMode_lift(_ buf: RustBuffer) throws -> TransportMode {
+    return try FfiConverterTypeTransportMode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTransportMode_lower(_ value: TransportMode) -> RustBuffer {
+    return FfiConverterTypeTransportMode.lower(value)
+}
+
+
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
@@ -6813,6 +8411,30 @@ fileprivate struct FfiConverterOptionTypeBudgetAdjustmentEvent: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeClassifierConfig: FfiConverterRustBuffer {
+    typealias SwiftType = ClassifierConfig?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeClassifierConfig.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeClassifierConfig.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeDbLocationRecord: FfiConverterRustBuffer {
     typealias SwiftType = DbLocationRecord?
 
@@ -6829,6 +8451,54 @@ fileprivate struct FfiConverterOptionTypeDbLocationRecord: FfiConverterRustBuffe
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeDbLocationRecord.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeImpactConfig: FfiConverterRustBuffer {
+    typealias SwiftType = ImpactConfig?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeImpactConfig.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeImpactConfig.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeImpactEvent: FfiConverterRustBuffer {
+    typealias SwiftType = ImpactEvent?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeImpactEvent.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeImpactEvent.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6877,6 +8547,30 @@ fileprivate struct FfiConverterOptionTypeLocationRecord: FfiConverterRustBuffer 
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeLocationRecord.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeTelematicsConfig: FfiConverterRustBuffer {
+    typealias SwiftType = TelematicsConfig?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeTelematicsConfig.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeTelematicsConfig.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6999,6 +8693,31 @@ fileprivate struct FfiConverterOptionDictionaryStringString: FfiConverterRustBuf
         case 1: return try FfiConverterDictionaryStringString.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceDouble: FfiConverterRustBuffer {
+    typealias SwiftType = [Double]
+
+    public static func write(_ value: [Double], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterDouble.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Double] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Double]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterDouble.read(from: &buf))
+        }
+        return seq
     }
 }
 
@@ -7180,6 +8899,56 @@ fileprivate struct FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuf
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeDbTelematicsRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbTelematicsRecord]
+
+    public static func write(_ value: [DbTelematicsRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbTelematicsRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbTelematicsRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbTelematicsRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbTelematicsRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeDrivingEvent: FfiConverterRustBuffer {
+    typealias SwiftType = [DrivingEvent]
+
+    public static func write(_ value: [DrivingEvent], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDrivingEvent.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DrivingEvent] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DrivingEvent]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDrivingEvent.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustBuffer {
     typealias SwiftType = [GeofenceTransition]
 
@@ -7197,6 +8966,31 @@ fileprivate struct FfiConverterSequenceTypeGeofenceTransition: FfiConverterRustB
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeGeofenceTransition.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeImpactEvent: FfiConverterRustBuffer {
+    typealias SwiftType = [ImpactEvent]
+
+    public static func write(_ value: [ImpactEvent], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeImpactEvent.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ImpactEvent] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ImpactEvent]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeImpactEvent.read(from: &buf))
         }
         return seq
     }
@@ -7304,6 +9098,18 @@ public func isPointInPolygon(lat: Double, lng: Double, vertices: [Coordinate]) -
 })
 }
 /**
+ * Computes [`AccelWindow`] features from a batch of gravity-subtracted
+ * magnitudes (g) spanning `duration_ms`.
+ */
+public func computeAccelWindow(magnitudesG: [Double], durationMs: Int64) -> AccelWindow  {
+    return try!  FfiConverterTypeAccelWindow_lift(try! rustCall() {
+    uniffi_tracelet_core_fn_func_compute_accel_window(
+        FfiConverterSequenceDouble.lower(magnitudesG),
+        FfiConverterInt64.lower(durationMs),$0
+    )
+})
+}
+/**
  * Builds a deterministic canonical string from a location record and its preceding chain hash.
  */
 public func buildCanonicalString(previousHash: String, chainIndex: Int32, loc: LocationRecord) -> String  {
@@ -7357,6 +9163,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_func_is_point_in_polygon() != 16595) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_func_compute_accel_window() != 29960) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_func_build_canonical_string() != 7071) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -7364,6 +9173,24 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_func_sha256() != 14625) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_cancel() != 42443) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations() != 9379) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 28969) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_reset() != 57860) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_kalmanlocationfilter_estimated_speed() != 64160) {
@@ -7397,6 +9224,24 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_scheduleparser_is_within_schedule() != 16562) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_telematicsengine_current_score() != 11738) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_telematicsengine_process_fix() != 30835) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_telematicsengine_reset() != 5304) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_transportmodeclassifier_classify() != 52837) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_transportmodeclassifier_current_mode() != 65278) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_transportmodeclassifier_reset() != 4812) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_tripmanager_is_trip_active() != 47274) {
@@ -7433,6 +9278,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_telematics_events() != 26123) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464) {
@@ -7474,6 +9322,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_telematics_events() != 50151) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -7489,7 +9340,16 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_telematics_event() != 45369) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_mark_telematics_synced() != 38059) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_prune_logs() != 51361) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884) {
@@ -7579,6 +9439,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_constructor_impactdetector_new() != 56951) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_constructor_kalmanlocationfilter_new() != 44956) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -7589,6 +9452,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_scheduleparser_new() != 36401) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_telematicsengine_new() != 15489) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_transportmodeclassifier_new() != 21163) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_tripmanager_new() != 53892) {

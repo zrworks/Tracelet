@@ -104,7 +104,17 @@ class TraceletLogger(
 
     /** Prune old logs based on config. */
     fun pruneOldLogs() {
-        // Not implemented
+        try {
+            val limit = when (config.getLogLevel()) {
+                LEVEL_ERROR, LEVEL_OFF -> 500
+                LEVEL_WARNING, LEVEL_INFO -> 1000
+                LEVEL_DEBUG, LEVEL_VERBOSE -> 2000
+                else -> 1000
+            }
+            rustDatabase?.pruneLogs(limit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to prune logs: ${e.message}")
+        }
     }
 
     // =========================================================================
@@ -128,6 +138,8 @@ class TraceletLogger(
         try {
             val levelName = levelToString(level)
             rustDatabase?.insertLog(levelName, message, "plugin")
+            // Prune to maintain dynamic limits
+            pruneOldLogs()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to persist log to Rust Database: ${e.message}")
         }

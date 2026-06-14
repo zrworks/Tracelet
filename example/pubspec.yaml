@@ -12,6 +12,10 @@ dependencies:
     sdk: flutter
   tracelet:
     path: ../packages/tracelet
+  # Exposes the flutter_rust_bridge engine handles used for on-device
+  # simulation of driving/crash/transport-mode logic in the example + tests.
+  tracelet_platform_interface:
+    path: ../packages/tracelet_platform_interface
   tracelet_sync:
     path: ../packages/tracelet_sync
   tracelet_android:

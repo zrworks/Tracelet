@@ -288,6 +288,60 @@ class EventDispatcher : TraceletEventSender {
     override fun sendTrip(data: Map<String, Any?>) = fallback("trip", data)
     override fun sendBudgetAdjustment(data: Map<String, Any?>) = fallback("budgetadjustment", data)
 
+    override fun sendDrivingEvent(data: Map<String, Any?>) {
+        val api = eventApi
+        if (api != null) {
+            val event = com.ikolvi.tracelet.TlDrivingEvent(
+                kind = data["kind"] as? String ?: "",
+                severity = num(data["severity"]),
+                speed = num(data["speed"]),
+                value = num(data["value"]),
+                latitude = num(data["latitude"]),
+                longitude = num(data["longitude"]),
+                timestampMs = lng(data["timestampMs"]),
+            )
+            postToMain { api.onDrivingEvent(event) {} }
+        } else {
+            fallback("drivingevent", data)
+        }
+    }
+
+    override fun sendImpact(data: Map<String, Any?>) {
+        val api = eventApi
+        if (api != null) {
+            val event = com.ikolvi.tracelet.TlImpactEvent(
+                kind = data["kind"] as? String ?: "",
+                id = lng(data["id"]),
+                confidence = num(data["confidence"]),
+                peakG = num(data["peakG"]),
+                speedBefore = num(data["speedBefore"]),
+                latitude = num(data["latitude"]),
+                longitude = num(data["longitude"]),
+                timestampMs = lng(data["timestampMs"]),
+                confirmDeadlineMs = lng(data["confirmDeadlineMs"]),
+            )
+            postToMain { api.onImpact(event) {} }
+        } else {
+            fallback("impact", data)
+        }
+    }
+
+    override fun sendModeChange(data: Map<String, Any?>) {
+        val api = eventApi
+        if (api != null) {
+            val event = com.ikolvi.tracelet.TlModeChangeEvent(
+                mode = data["mode"] as? String ?: "unknown",
+                confidence = num(data["confidence"]),
+            )
+            postToMain { api.onModeChange(event) {} }
+        } else {
+            fallback("modechange", data)
+        }
+    }
+
+    private fun num(v: Any?): Double = (v as? Number)?.toDouble() ?: 0.0
+    private fun lng(v: Any?): Long = (v as? Number)?.toLong() ?: 0L
+
     override fun hasListener(eventName: String): Boolean = eventApi != null
 
     // ---------------------------------------------------------------------------

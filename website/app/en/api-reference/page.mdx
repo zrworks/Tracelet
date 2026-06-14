@@ -39,8 +39,6 @@ Controls physical location, accuracy, and sampling logic. [See Geo Story 📖](/
   Meters to move in sparse mode.
 - **`sparseMaxIdleSeconds`**: `int` *(Default: `300`)*
   Max time without a sparse update.
-- **`batteryBudgetPerHour`**: `double` *(Default: `0.0`)*
-  Target max battery drain % per hour. 0.0 disables throttling.
 - **`enableDeadReckoning`**: `bool` *(Default: `false`)*
   Uses Accelerometer/Gyroscope to guess location when GPS is lost (e.g. tunnels).
 - **`deadReckoningActivationDelay`**: `int` *(Default: `0`)*
@@ -99,6 +97,10 @@ Android specific OS constraints. [See Android Story 📖](/en/getting-started/pl
 
 - **`locationUpdateInterval`**: `int` *(Default: `1000`)*
   Ms between GPS pings.
+- **`batteryBudgetPerHour`**: `double` *(Default: `0.0`)*
+  Target max battery drain % per hour. 0.0 disables throttling.
+- **`releaseWakelockWhenStationary`**: `bool` *(Default: `false`)*
+  When using `MotionDetectionMode.smart`, releases the tracking wakelock when the device is fully stationary to maximize deep sleep battery savings.
 - **`fastestLocationUpdateInterval`**: `int` *(Default: `500`)*
   Fastest ms between GPS pings if another app requests them.
 - **`deferTime`**: `int` *(Default: `0`)*

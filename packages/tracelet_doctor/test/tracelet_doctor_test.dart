@@ -49,6 +49,46 @@ void main() {
     });
   });
 
+  group('TraceletBugReport.redactConfig', () {
+    test('masks secret-looking keys, keeps the rest', () {
+      final input = <String, Object?>{
+        'http': {
+          'url': 'https://api.example.com/track',
+          'headers': {'Authorization': 'Bearer abc123'},
+          'params': {'apiKey': 'super-secret'},
+          'telematicsUrl': 'https://api.example.com/telematics',
+          'autoSync': true,
+          'maxBatchSize': 100,
+        },
+        'geo': {'distanceFilter': 10.0, 'desiredAccuracy': 0},
+      };
+
+      final out = TraceletBugReport.redactConfig(input);
+      final http = out['http']! as Map;
+      final geo = out['geo']! as Map;
+
+      // Secrets redacted.
+      expect(http['url'], '«redacted»');
+      expect(http['headers'], '«redacted»');
+      expect(http['params'], '«redacted»');
+      expect(http['telematicsUrl'], '«redacted»');
+
+      // Non-sensitive values preserved.
+      expect(http['autoSync'], true);
+      expect(http['maxBatchSize'], 100);
+      expect(geo['distanceFilter'], 10.0);
+      expect(geo['desiredAccuracy'], 0);
+    });
+
+    test('does not mutate the original map', () {
+      final input = <String, Object?>{
+        'http': {'url': 'https://x.test'},
+      };
+      TraceletBugReport.redactConfig(input);
+      expect((input['http']! as Map)['url'], 'https://x.test');
+    });
+  });
+
   group('HealthCheck model integration', () {
     test('HealthCheck can be constructed for Doctor consumption', () {
       final health = HealthCheck(

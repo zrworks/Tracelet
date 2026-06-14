@@ -21,6 +21,21 @@
 
 Battery-conscious motion-detection intelligence, geofencing, SQLite persistence, HTTP sync, and headless Dart execution for iOS & Android.
 
+---
+
+## 🆕 New in 3.3.0 — Driving & Safety
+
+On-device, opt-in, and battery-friendly — all detection runs in the shared Rust core (no cloud):
+
+- **🚗 Driving telematics** — harsh braking / acceleration / cornering / speeding, each with a `0–1` severity score. `TelematicsConfig` + `Tracelet.onDrivingEvent`.
+- **💥 Crash & fall detection** — corroborated impact detection with a user "I'm OK" cancel-countdown before escalating to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`.
+- **🚶 Transport-mode classifier** — still / walking / running / cycling / vehicle, fusing accelerometer + GPS. `ClassifierConfig` + `Tracelet.onModeChange`.
+- **🔋 Motion-gated wakelock (Android)** — drops the partial wakelock when stationary and re-asserts it on movement to cut idle battery drain. `AndroidConfig.releaseWakelockWhenStationary`.
+
+Everything is **default-off** and side-channel — when disabled, your existing tracking behaves exactly as before. → **[Driving & Safety guide](https://tracelet.ikolvi.com/en/core/driving-safety)**
+
+---
+
 > [!IMPORTANT]
 > **Tracelet 3.2.0**: The SQLCipher dependency is no longer required for database encryption (Tracelet Core now natively uses AES-GCM in Rust, reducing APK size by ~16MB). Additionally, HTTP sync logic has been moved to the `tracelet_sync` module, which must now be included if you require network synchronization.
 
@@ -47,6 +62,9 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 
 - **Background location tracking** — continuous GPS with configurable `distanceFilter` and `desiredAccuracy`
 - **Motion-detection intelligence** — accelerometer + activity recognition automatically toggle GPS to save battery
+- **Driving telematics** *(new in 3.3.0)* — on-device harsh braking / acceleration / cornering / speeding with severity scores via `TelematicsConfig` + `onDrivingEvent()`
+- **Crash & fall detection** *(new in 3.3.0)* — corroborated impact detection with a cancel-countdown via `ImpactConfig` + `onImpact()` / `confirmImpact()` / `cancelImpact()`
+- **Transport-mode classifier** *(new in 3.3.0)* — still / walking / running / cycling / vehicle from fused accelerometer + GPS via `ClassifierConfig` + `onModeChange()`
 - **Geofencing** — circular and polygon geofences with enter/exit/dwell events. **Unlimited geofences** via proximity-based auto-load/unload
 - **SQLite persistence** — all locations stored locally, queryable, with configurable retention limits
 - **HTTP auto-sync** — batch upload with retry, exponential backoff, offline queue, Wi-Fi-only option. 401-aware retry with headless JWT refresh via `registerHeadlessHeadersCallback()`
@@ -83,6 +101,7 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Adaptive sampling** — auto-adjusts `distanceFilter` based on detected activity, battery level, and speed for optimal battery/accuracy trade-off. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/ADAPTIVE-SAMPLING.md)
 - **Health check API** — `getHealth()` returns a comprehensive diagnostic snapshot covering permissions, battery, sensors, database, and geofence state with actionable warnings. [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HEALTH-CHECK.md)
 - **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
+- **Telematics & Diagnostics APIs** — Retrieve raw telematics events (`getTelematicsEvents`), simulate mock events for testing (`simulateTelematicsEvent`), and access system logs (`getLogs`, `clearLogs`) directly from Dart, Kotlin, and Swift.
 - **HTTP sync retry engine** — configurable retry with exponential backoff for transient server failures (5xx, 429, timeout). [Learn more →](https://github.com/Ikolvi/Tracelet/blob/main/help/HTTP-SYNC.md)
 - **Configurable motion sensitivity** — tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) for Low/Medium/High preset profiles or custom values
 

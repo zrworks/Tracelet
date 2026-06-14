@@ -667,7 +667,7 @@ class _DashboardPageState extends State<DashboardPage>
           http: tl.HttpConfig(
             url:
                 tl.Tracelet.activeConfig.http.url ??
-                'http://192.168.20.101:8099/locations',
+                'http://192.168.20.103:8099/locations',
             // ── New features ──
             autoSyncDelay: 5000,
           ),
@@ -980,7 +980,7 @@ class _DashboardPageState extends State<DashboardPage>
           http: tl.HttpConfig(
             url:
                 tl.Tracelet.activeConfig.http.url ??
-                'http://192.168.20.100:8099/locations',
+                'http://192.168.20.103:8099/locations',
             httpRootProperty: 'location_data',
             params: const {'user_id': 'ikolvi_tester', 'device': 'example_app'},
             extras: const {'session_key': 'super-secret-token'},

@@ -1,3 +1,20 @@
+## 3.3.2
+
+* **FIX** (Location data, Android/iOS): Several location-map fields surfaced as static/default values in the Dart layer because the native-map → platform-channel converters dropped or mis-keyed them ([#175](https://github.com/Ikolvi/Tracelet/issues/175)):
+  * `getCurrentPosition(extras:, desiredAccuracy:)` were silently ignored on Android (never forwarded to the SDK) — now applied.
+  * `battery.isCharging` was always `false` — the converter read `isCharging` instead of the native snake_case `is_charging`.
+  * `isMoving` was always `false` — read `isMoving` instead of native `is_moving`.
+
+  Converters now read the native keys (with camelCase fallback), and field-by-field regression tests over the converters were added on both platforms to prevent recurrence.
+* **TUNE** (Crash detection): Lowered the default `crashGThreshold` from `3.0 g` to `2.0 g`. Validation against the large [VZCrash](https://huggingface.co/datasets/vzc-research-chapter/VZCrash) field dataset showed the 3.0 g speed-gated rule missed ~48% of real crashes (median impact ~2.2 g) while the false-positive budget was small. Crash detection is opt-in with a cancel-countdown, so the default now favours recall — raise it if you see too many prompts. See [#173](https://github.com/Ikolvi/Tracelet/issues/173). *(Crash detection remains beta pending first-party field validation.)*
+
+## 3.3.1
+
+* **FIX** (Crash detection, Android/iOS): Confirmed `crash`/`fall` events are no longer lost when tracking stops right after the impact (the common crash → vehicle-at-rest → `stopTimeout` case). The confirmation countdown now runs independently of tracking state and self-terminates when no candidate is pending ([#169](https://github.com/Ikolvi/Tracelet/issues/169)).
+* **FIX** (Crash detection): The effective crash g-threshold matched the documented value — the confidence gate previously raised a 3.0 g threshold to ~3.6 g, increasing false negatives ([#170](https://github.com/Ikolvi/Tracelet/issues/170)).
+* **FIX** (Crash detection): A single crash (primary spike + bounce/secondary impacts) no longer raises multiple candidates; a refractory period debounces one event into one prompt ([#171](https://github.com/Ikolvi/Tracelet/issues/171)).
+* **IMPROVE** (Crash detection, Android/iOS): When crash/fall detection is enabled, the accelerometer is sampled at a higher rate (Android `SENSOR_DELAY_GAME` + no batch latency; iOS 100 Hz) so short impact peaks (~50–150 ms) are actually captured instead of missed between motion-detection samples ([#172](https://github.com/Ikolvi/Tracelet/issues/172)). Roadmap for research-grade robustness (Δv, sensor fusion, free-fall signature, process-death survival): [#173](https://github.com/Ikolvi/Tracelet/issues/173).
+
 ## 3.3.0
 
 * **FEAT** (Driving & Safety): On-device driving-behavior telematics — `harsh_braking` / `harsh_acceleration` / `harsh_cornering` / `speeding` via `TelematicsConfig` + `Tracelet.onDrivingEvent` (opt-in, default off) ([#163](https://github.com/Ikolvi/Tracelet/issues/163)).

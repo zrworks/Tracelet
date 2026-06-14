@@ -123,7 +123,7 @@ user cancels/confirms, or it auto-confirms to `crash` after `confirmWindowMs`.
 |---|---|---|
 | `enableCrashDetection` | `false` | vehicle crash |
 | `enableFallDetection` | `false` | personal fall (best-effort; more false alarms) |
-| `crashGThreshold` | `3.0` | impact strength (g) for a crash |
+| `crashGThreshold` | `2.0` | impact strength (g) for a crash (lowered from 3.0 — field data showed 3.0 g missed ~half of real crashes; the cancel-countdown offsets the extra alarms) |
 | `crashMinSpeedKmh` | `25` | must have been moving this fast (corroboration) |
 | `confirmWindowMs` | `15000` | cancel-countdown length |
 | `minImpactConfidence` | `0.6` | suppress low-confidence candidates |

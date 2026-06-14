@@ -247,7 +247,7 @@ class ImpactConfig {
   const ImpactConfig({
     this.enableCrashDetection = false,
     this.enableFallDetection = false,
-    this.crashGThreshold = 3.0,
+    this.crashGThreshold = 2.0,
     this.crashMinSpeedKmh = 25.0,
     this.fallGThreshold = 2.5,
     this.confirmWindowMs = 15000,
@@ -265,7 +265,7 @@ class ImpactConfig {
         map['enableFallDetection'],
         fallback: false,
       ),
-      crashGThreshold: ensureDouble(map['crashGThreshold'], fallback: 3),
+      crashGThreshold: ensureDouble(map['crashGThreshold'], fallback: 2),
       crashMinSpeedKmh: ensureDouble(map['crashMinSpeedKmh'], fallback: 25),
       fallGThreshold: ensureDouble(map['fallGThreshold'], fallback: 2.5),
       confirmWindowMs: ensureInt(map['confirmWindowMs'], fallback: 15000),
@@ -282,7 +282,9 @@ class ImpactConfig {
   /// Personal fall detection (best-effort; default `false`).
   final bool enableFallDetection;
 
-  /// Impact magnitude (g) for a crash candidate. Default `3.0`.
+  /// Impact magnitude (g) for a crash candidate. Default `2.0` (lowered from 3.0
+  /// after a field-data study found 3.0 g missed ~half of real crashes; the
+  /// cancel-countdown offsets the extra false alarms).
   final double crashGThreshold;
 
   /// Pre-impact speed (km/h) required to corroborate a crash. Default `25`.

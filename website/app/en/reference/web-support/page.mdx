@@ -16,6 +16,7 @@ Tracelet ships a **web implementation** (`tracelet_web`), so the same Dart API c
 | Odometer & carbon estimate | Computed from the foreground track. |
 | Permissions & connectivity | `navigator.permissions` for location; `navigator.onLine` for connectivity. |
 | Local persistence | In-memory, with a `localStorage` backup when available (may be cleared in some incognito modes). |
+| Logging API | `getLogs()`, `clearLogs()`, and `log()` work as an in-memory log buffer. |
 | Foreground scheduling | Simple interval-based start/stop timers. |
 
 ## What is **not** available on web
@@ -31,6 +32,7 @@ Tracelet ships a **web implementation** (`tracelet_web`), so the same Dart API c
 | **Encrypted database (`encryptDatabase`)** | Web storage is in-memory / `localStorage` (not encrypted) — the flag is a no-op. |
 | **Device attestation** | No browser equivalent. |
 | **Dead reckoning** | Not implemented on web. |
+| **Telematics & Custom Sync** | No hardware telematics (`getTelematicsEvents()`, `simulateTelematicsEvent()`) or custom background sync (`connectCustomSync()`). |
 | **`emailLog`, `playSound`, exact alarms** | No web equivalent (no-ops / unsupported). |
 
 Calls to unsupported APIs **do not crash** — they log a clear `[Tracelet Web] … not supported on web` message and return a safe default, so shared cross-platform code keeps running.

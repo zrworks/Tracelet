@@ -90,6 +90,7 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Wi-Fi-only sync** — `disableAutoSyncOnCellular` skips HTTP auto-sync on cellular networks, syncing only when connected to Wi-Fi. Supported on Android, iOS, and Web.
 - **Periodic mode** — Configurable one-shot location fixes at intervals from 60 seconds to 12 hours. Android supports sub-15-minute intervals via foreground service and exact alarms via `AlarmManager`.
 - **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
+- **Telematics & Diagnostics APIs** — Retrieve raw telematics events (`getTelematicsEvents`), simulate mock events for testing (`simulateTelematicsEvent`), and access system logs (`getLogs`, `clearLogs`) directly from Dart, Kotlin, and Swift.
 - **Live map view** — Built-in example with OpenStreetMap tiles, speed-colored route trail, geofence visualization, trip overlay, and real-time status overlay.
 
 ## Architecture

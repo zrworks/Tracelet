@@ -30,6 +30,8 @@ melos:
 
   command:
     version:
+      linkTo:
+        - "tracelet*"
       # The native SDKs (Android gradle.properties, the iOS podspecs, and the
       # plugins' native-dependency pins) are not Dart packages, so Melos cannot
       # version them. This hook runs after Melos updates the Flutter pubspecs and

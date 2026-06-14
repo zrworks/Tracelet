@@ -112,4 +112,29 @@ void main() {
       expect(map['batteryBudgetPerHour'], 2.5);
     });
   });
+
+  group('AndroidConfig', () {
+    testWidgets('AndroidConfig accepts releaseWakelockWhenStationary', (
+      tester,
+    ) async {
+      const config = AndroidConfig(releaseWakelockWhenStationary: true);
+      expect(config.releaseWakelockWhenStationary, isTrue);
+    });
+
+    testWidgets(
+      'AndroidConfig defaults releaseWakelockWhenStationary to false',
+      (tester) async {
+        const config = AndroidConfig();
+        expect(config.releaseWakelockWhenStationary, isFalse);
+      },
+    );
+
+    testWidgets('AndroidConfig.toMap includes releaseWakelockWhenStationary', (
+      tester,
+    ) async {
+      const config = AndroidConfig(releaseWakelockWhenStationary: true);
+      final map = config.toMap();
+      expect(map['releaseWakelockWhenStationary'], isTrue);
+    });
+  });
 }

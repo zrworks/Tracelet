@@ -40,7 +40,10 @@ class AuditTrailManager(
         private val HEX_CHARS = "0123456789abcdef".toCharArray()
 
         /** Bump this whenever the hashing logic changes so stale chains auto-reset. */
-        private const val AUDIT_HASH_VERSION = 3
+        // v4: audit links are now created at the single persistence chokepoint and
+        // uuid-less records are no longer chained — reset any orphaned/incomplete
+        // chains produced by the prior partial-coverage logic.
+        private const val AUDIT_HASH_VERSION = 4
         private const val KEY_HASH_VERSION = "audit_hash_version"
     }
 
@@ -136,6 +139,7 @@ class AuditTrailManager(
      * @return A map with `audit_hash`, `audit_previous_hash`, `audit_chain_index`
      *         to be merged into the location record, or `null` if audit is disabled.
      */
+    @Synchronized
     fun appendToChain(locationMap: Map<String, Any?>): Map<String, Any?>? {
         if (!isEnabled()) {
             android.util.Log.d("Tracelet", "AUDIT: appendToChain — audit disabled, skipping")

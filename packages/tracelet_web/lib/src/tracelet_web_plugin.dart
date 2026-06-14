@@ -616,6 +616,11 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
+  Future<void> clearLogs() async {
+    await _storage.destroyLog();
+  }
+
+  @override
   Future<bool> emailLog(String email) async {
     // Could open mailto: link but impractical. Log a warning.
     _events.log('warning', '[Tracelet Web] emailLog() is not supported on web');
@@ -625,6 +630,42 @@ class TraceletWebPlugin extends TraceletPlatform {
   @override
   Future<bool> log(String level, String message) {
     return _storage.log(level, message);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Telematics & Custom Sync
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> connectCustomSync(String url, String jwt) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] connectCustomSync() is not supported on web',
+    );
+  }
+
+  @override
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
+    return <TlTelematicsRecord?>[];
+  }
+
+  @override
+  Future<bool> destroyTelematicsEvents() async {
+    return true;
+  }
+
+  @override
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] simulateTelematicsEvent() is not supported on web',
+    );
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -738,6 +779,28 @@ class TraceletWebPlugin extends TraceletPlatform {
     Map<String, Object?>? query,
   ]) async {
     return _carbonEngine.getCarbonReport(query);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Driving & Safety (Crash / Fall Detection — not supported on web)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<bool> confirmImpact(int id) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] confirmImpact() is not supported on web',
+    );
+    return false;
+  }
+
+  @override
+  Future<bool> cancelImpact(int id) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] cancelImpact() is not supported on web',
+    );
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -1016,6 +1079,9 @@ class TraceletWebPlugin extends TraceletPlatform {
       // dedicated controller added to WebEventDispatcher in a future iteration.
       // For now return empty — the speed motion state is tracked internally.
       const Stream.empty();
+
+  @override
+  Stream<TlImpactEvent> get impactEvents => const Stream.empty();
 
   void _assertReady() {
     if (!_isReady) {

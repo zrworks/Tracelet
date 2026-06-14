@@ -1326,7 +1326,32 @@ class TraceletSdk private constructor(private val context: Context) {
         if (eventType == "location") { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
-        val auditHash = params["audit_hash"] as? String
+
+        // Audit trail (Enterprise): the canonical place audit links are created.
+        // The LocationEngine.dispatch() path pre-computes `audit_hash` and passes
+        // it in `params`. But background/headless persists — PeriodicLocationWorker,
+        // LocationService, geofence events — call insertLocation() directly and
+        // never went through dispatch(), so they previously skipped the chain
+        // entirely. That left location_events rows with no matching audit_trail
+        // row, so getAuditProof() returned null for any such record. Generate the
+        // audit link here when it wasn't pre-computed, so EVERY persisted location
+        // is covered regardless of source.
+        var auditHash = params["audit_hash"] as? String
+        var auditPrevHash = params["audit_previous_hash"]
+        var auditChainIndex = params["audit_chain_index"]
+        if (auditHash == null && uuid != null && ::auditTrailManager.isInitialized) {
+            val auditFields = try {
+                auditTrailManager.appendToChain(params)
+            } catch (e: Exception) {
+                logger.error("audit appendToChain failed: ${e.message}")
+                null
+            }
+            if (auditFields != null) {
+                auditHash = auditFields["audit_hash"] as? String
+                auditPrevHash = auditFields["audit_previous_hash"]
+                auditChainIndex = auditFields["audit_chain_index"]
+            }
+        }
         if (auditHash != null) {
             try {
                 val jsonMap = if (routeContext != null) {
@@ -1335,14 +1360,14 @@ class TraceletSdk private constructor(private val context: Context) {
                     org.json.JSONObject()
                 }
                 jsonMap.put("audit_hash", auditHash)
-                if (params["audit_previous_hash"] != null) jsonMap.put("audit_previous_hash", params["audit_previous_hash"])
-                if (params["audit_chain_index"] != null) jsonMap.put("audit_chain_index", params["audit_chain_index"])
+                if (auditPrevHash != null) jsonMap.put("audit_previous_hash", auditPrevHash)
+                if (auditChainIndex != null) jsonMap.put("audit_chain_index", auditChainIndex)
                 routeContext = jsonMap.toString()
             } catch (e: Exception) {
                 // Ignore and use base route context
             }
         }
-        
+
         return try {
             val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp, eventType, eventPayload)
             // Notify the sync plugin so it can trigger auto-sync
@@ -1384,20 +1409,55 @@ class TraceletSdk private constructor(private val context: Context) {
                     offset = null,
                     orderDescending = null
                 ))
-                if (records.isEmpty()) {
+                var configHttp = config.http
+                val syncTelematics = configManager.getConfig().let { cfg ->
+                    val http = cfg["http"] as? Map<*,*>
+                    http?.get("syncTelematics") as? Boolean ?: false
+                }
+                
+                var telematicsCleared = false
+                if (syncTelematics) {
+                    val telematics = db.getTelematicsEvents(250)
+                    if (telematics.isNotEmpty()) {
+                        val jsonArray = org.json.JSONArray()
+                        telematics.forEach { event ->
+                            val obj = org.json.JSONObject()
+                            obj.put("id", event.id)
+                            obj.put("event_type", event.eventType)
+                            obj.put("severity", event.severity)
+                            obj.put("latitude", event.latitude)
+                            obj.put("longitude", event.longitude)
+                            obj.put("timestamp", event.timestamp)
+                            obj.put("synced", event.synced)
+                            jsonArray.put(obj)
+                        }
+                        val newExtras = (configHttp.extras ?: emptyMap()).toMutableMap()
+                        newExtras["__telematics"] = jsonArray.toString()
+                        configHttp = configHttp.copy(extras = newExtras)
+                        telematicsCleared = true
+                    }
+                }
+                
+                val hasTelematics = telematicsCleared
+                if (records.isEmpty() && !hasTelematics) {
                     mainHandler.post { callback(emptyList()) }
                     return@Thread
                 }
                 
-                val count = provider.syncBatchBlocking(config.http, records)
-                if (count > 0L) {
-                    val syncedCount = count.toInt()
-                    val successfullySynced = records.take(syncedCount)
-                    successfullySynced.lastOrNull()?.let { lastRecord ->
-                        db.clearLocationsUpTo(lastRecord.id)
-                        syncedLocationsRemoved.addAndGet(count)
+                val count = provider.syncBatchBlocking(configHttp, records)
+                if (count > 0L || hasTelematics) {
+                    if (count > 0L) {
+                        val syncedCount = count.toInt()
+                        val successfullySynced = records.take(syncedCount)
+                        successfullySynced.lastOrNull()?.let { lastRecord ->
+                            db.clearLocationsUpTo(lastRecord.id)
+                            syncedLocationsRemoved.addAndGet(count)
+                        }
                     }
-                    logger.info("TraceletSdk: Synced and cleared $count locations via SyncProvider.")
+                    if (telematicsCleared) {
+                        db.clearTelematicsEvents()
+                    }
+                    logger.info("TraceletSdk: Synced locations ($count) and telematics ($hasTelematics)")
                 }
                 
                 mainHandler.post {
@@ -1674,6 +1734,61 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     // =========================================================================
+    // Telematics
+    // =========================================================================
+
+    fun getTelematicsEvents(limit: Int): List<uniffi.tracelet_core.DbTelematicsRecord> {
+        if (!isReady) return emptyList()
+        return try {
+            rustDatabase?.getTelematicsEvents(limit) ?: emptyList()
+        } catch (e: Exception) {
+            logger.error("Failed to get telematics events: ${e.message}")
+            emptyList()
+        }
+    }
+
+    fun getLogs(limit: Int): List<uniffi.tracelet_core.LogEntry> {
+        val db = rustDatabase ?: return emptyList()
+        return try {
+            db.getLogs(limit)
+        } catch (e: Exception) {
+            logger.error("Failed to get logs: ${e.message}")
+            emptyList()
+        }
+    }
+    
+    fun clearLogs() {
+        val db = rustDatabase ?: return
+        try {
+            db.clearLogs()
+        } catch (e: Exception) {
+            logger.error("Failed to clear logs: ${e.message}")
+        }
+    }
+
+    fun destroyTelematicsEvents(): Boolean {
+        if (!isReady) return false
+        return try {
+            rustDatabase?.clearTelematicsEvents()
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to clear telematics events: ${e.message}")
+            false
+        }
+    }
+
+    fun simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double): Boolean {
+        if (!isReady) return false
+        return try {
+            rustDatabase?.insertTelematicsEvent(eventType, severity, latitude, longitude)
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to simulate telematics event: ${e.message}")
+            false
+        }
+    }
+
+    // =========================================================================
     // Scheduling
     // =========================================================================
 
@@ -1889,6 +2004,24 @@ class TraceletSdk private constructor(private val context: Context) {
             // while still allowing the system to wake from stationary when the
             // coordinator determines real movement has begun.
             val action = smartMotionCoordinator.onAccelStateChange(isMoving)
+            
+            if (configManager.isForegroundServiceEnabled()) {
+                if (isMoving) {
+                    // Re-assert the wakelock on the moving transition (idempotent
+                    // if already held) so CPU stays awake during active tracking.
+                    LocationService.acquireWakelock(context)
+                } else if (configManager.getReleaseWakelockWhenStationary() &&
+                    motionDetector.getSensors()["significantMotion"] == true
+                ) {
+                    // Drop the wakelock when stationary to save battery — but only
+                    // when the hardware TYPE_SIGNIFICANT_MOTION wake-up sensor is
+                    // present, so the device can still wake from Doze on real
+                    // movement. Without it we keep the wakelock (safe default) to
+                    // avoid stranding the detector in the stationary state (#162).
+                    LocationService.releaseWakelock(context)
+                }
+            }
+            
             if (action == uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_CONTINUOUS
                 && ::speedMotionManager.isInitialized) {
                 speedMotionManager.onManualPaceChange(true)
@@ -2121,6 +2254,13 @@ class TraceletSdk private constructor(private val context: Context) {
                     "timestampMs" to e.timestampMs,
                 ),
             )
+            // Persist to the telematics DB so getTelematicsEvents() returns the
+            // real history (not just Doctor-simulated events).
+            try {
+                rustDatabase?.insertTelematicsEvent(e.kind, e.severity, e.latitude, e.longitude)
+            } catch (ex: Exception) {
+                logger.error("Failed to persist driving event: ${ex.message}")
+            }
         }
     }
 
@@ -2215,6 +2355,15 @@ class TraceletSdk private constructor(private val context: Context) {
                 "confirmDeadlineMs" to e.confirmDeadlineMs,
             ),
         )
+        // Persist confirmed impacts (not transient potential_* candidates, which
+        // may still be cancelled) to the telematics DB for history/retrieval.
+        if (e.kind == "crash" || e.kind == "fall") {
+            try {
+                rustDatabase?.insertTelematicsEvent(e.kind, e.confidence, e.latitude, e.longitude)
+            } catch (ex: Exception) {
+                logger.error("Failed to persist impact event: ${ex.message}")
+            }
+        }
     }
 
     /** Confirms a pending impact candidate (called from the Pigeon host API). */

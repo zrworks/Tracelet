@@ -277,6 +277,10 @@ public struct TraceletAndroidConfig {
     public var periodicUseExactAlarms: Bool
     public var scheduleUseAlarmManager: Bool
     public var foregroundService: TraceletForegroundServiceConfig
+    /// Android-only. Drops the OEM Wakelock when the device enters a fully stationary state.
+    /// Has no effect on iOS.
+    /// Resolves Issue #162.
+    public var releaseWakelockWhenStationary: Bool
 
     public init(
         locationUpdateInterval: Int = 1000,
@@ -287,7 +291,8 @@ public struct TraceletAndroidConfig {
         periodicUseForegroundService: Bool = false,
         periodicUseExactAlarms: Bool = false,
         scheduleUseAlarmManager: Bool = false,
-        foregroundService: TraceletForegroundServiceConfig = .init()
+        foregroundService: TraceletForegroundServiceConfig = .init(),
+        releaseWakelockWhenStationary: Bool = false
     ) {
         self.locationUpdateInterval = locationUpdateInterval
         self.fastestLocationUpdateInterval = fastestLocationUpdateInterval
@@ -298,6 +303,7 @@ public struct TraceletAndroidConfig {
         self.periodicUseExactAlarms = periodicUseExactAlarms
         self.scheduleUseAlarmManager = scheduleUseAlarmManager
         self.foregroundService = foregroundService
+        self.releaseWakelockWhenStationary = releaseWakelockWhenStationary
     }
 
     public func toMap() -> [String: Any] {
@@ -310,7 +316,8 @@ public struct TraceletAndroidConfig {
             "periodicUseForegroundService": periodicUseForegroundService,
             "periodicUseExactAlarms": periodicUseExactAlarms,
             "scheduleUseAlarmManager": scheduleUseAlarmManager,
-            "foregroundService": foregroundService.toMap()
+            "foregroundService": foregroundService.toMap(),
+            "releaseWakelockWhenStationary": releaseWakelockWhenStationary
         ]
     }
 
@@ -324,7 +331,8 @@ public struct TraceletAndroidConfig {
             periodicUseForegroundService: map["periodicUseForegroundService"] as? Bool ?? false,
             periodicUseExactAlarms: map["periodicUseExactAlarms"] as? Bool ?? false,
             scheduleUseAlarmManager: map["scheduleUseAlarmManager"] as? Bool ?? false,
-            foregroundService: (map["foregroundService"] as? [String: Any]).map { TraceletForegroundServiceConfig.fromMap($0) } ?? .init()
+            foregroundService: (map["foregroundService"] as? [String: Any]).map { TraceletForegroundServiceConfig.fromMap($0) } ?? .init(),
+            releaseWakelockWhenStationary: map["releaseWakelockWhenStationary"] as? Bool ?? false
         )
     }
 }

@@ -193,6 +193,7 @@ class TlAndroidConfig {
     required this.periodicUseExactAlarms,
     required this.scheduleUseAlarmManager,
     required this.foregroundService,
+    required this.releaseWakelockWhenStationary,
   });
 
   final int locationUpdateInterval;
@@ -204,6 +205,10 @@ class TlAndroidConfig {
   final bool periodicUseExactAlarms;
   final bool scheduleUseAlarmManager;
   final TlForegroundServiceConfig foregroundService;
+
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  final bool releaseWakelockWhenStationary;
 }
 
 class TlIosConfig {
@@ -230,7 +235,8 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
+    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, required this.syncTelematics, this.url,
+    this.telematicsUrl,
     this.headers,
     this.params,
     this.sslPinningFingerprints,
@@ -262,6 +268,8 @@ class TlHttpConfig {
   final int retryBackoffCap;
   final bool enableDeltaCompression;
   final int deltaCoordinatePrecision;
+  final bool syncTelematics;
+  final String? telematicsUrl;
 }
 
 class TlConfig {
@@ -334,7 +342,9 @@ class TlMotionConfig {
     required this.disableStopDetection,
     required this.stopDetectionDelay,
     required this.stopOnStationary,
-    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval, required this.stationaryPeriodicAccuracy, required this.speedWakeConfirmCount, this.activityTypes,
+    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval,    required this.stationaryPeriodicAccuracy,
+    required this.speedWakeConfirmCount,
+    this.activityTypes,
   });
   final int stopTimeout;
   final int motionTriggerDelay;
@@ -1003,12 +1013,76 @@ abstract class TraceletHostApi {
 
   @async
   Map<String?, Object?>? getAttestationToken();
-
   @async
   Map<String?, Object?>? getDeadReckoningState();
 
   @async
-  Map<String?, Object?> getCarbonReport(Map<String?, Object?>? query);
+  Map<String, Object?> getCarbonReport(Map<String, Object?>? query);
+
+  @async
+  bool simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  );
+
+  @async
+  List<TlTelematicsRecord?> getTelematicsEvents(int limit);
+
+  @async
+  bool destroyTelematicsEvents();
+
+  @async
+  List<TlLogEntry?> getLogs(int limit);
+
+  @async
+  void clearLogs();
+}
+
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The type of telematics event.
+  final String eventType;
+  /// The severity of the event.
+  final double severity;
+  /// The latitude.
+  final double latitude;
+  /// The longitude.
+  final double longitude;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
+  /// Whether the event has been synced to the server.
+  final bool synced;
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  final int id;
+  /// The log level.
+  final String level;
+  /// The log message.
+  final String message;
+  /// The ISO8601 timestamp string.
+  final String timestamp;
 }
 
 // =============================================================================

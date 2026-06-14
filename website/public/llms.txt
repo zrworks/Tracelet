@@ -1,5 +1,33 @@
-# Tracelet LLM Configuration Dump
-This file contains the absolute source of truth for Tracelet's configuration API. It is optimized for LLMs and AI agents for code generation.
+# Tracelet
+
+> Tracelet is a high-accuracy, battery-aware background geolocation SDK for
+> Flutter (Android, iOS, Web) with a shared Rust core. It provides continuous &
+> geofence tracking, motion detection, offline persistence + HTTP sync, and
+> on-device driving telematics, transport-mode classification, and crash/fall
+> detection.
+
+## Documentation
+
+- [Quick Start](https://tracelet.ikolvi.com/en/quick-start): get tracking in a few lines
+- [Installation](https://tracelet.ikolvi.com/en/installation): add Tracelet to a Flutter app
+- [Configuration](https://tracelet.ikolvi.com/en/config/configuration): the full `Config` reference
+- [Android setup](https://tracelet.ikolvi.com/en/getting-started/platform-setup/android): permissions, manifest, OEM survival
+- [iOS setup](https://tracelet.ikolvi.com/en/getting-started/platform-setup/ios): Info.plist, background modes
+- [Core concepts](https://tracelet.ikolvi.com/en/core/core-concepts): lifecycle, events, state
+- [Motion detection](https://tracelet.ikolvi.com/en/core/motion-detection): SMART/SPEED/accelerometer modes
+- [Driving & Safety](https://tracelet.ikolvi.com/en/core/driving-safety): telematics, transport mode, crash/fall (3.3.0)
+- [Geofencing](https://tracelet.ikolvi.com/en/core/geofencing): circular & polygon geofences
+- [Data persistence](https://tracelet.ikolvi.com/en/core/persistence): the location database
+- [Tracelet Sync](https://tracelet.ikolvi.com/en/core/tracelet-sync): HTTP upload of the offline queue
+- [OEM power management](https://tracelet.ikolvi.com/en/core/oem-power-management): surviving aggressive OEMs
+- [API reference](https://tracelet.ikolvi.com/en/api-reference): all public methods & streams
+- [FAQ](https://tracelet.ikolvi.com/en/reference/faq): common questions
+- [Migrating from flutter_background_geolocation](https://tracelet.ikolvi.com/en/migrating-from-fbg): a porting guide
+
+## Configuration reference
+
+The remainder is the authoritative `Config` API (classes, fields, defaults),
+optimized for LLM/agent code generation.
 
 ## class Config
 Compound top-level configuration.
@@ -16,6 +44,9 @@ Compound top-level configuration.
 - `privacyZone`: PrivacyZoneConfig
 - `security`: SecurityConfig
 - `attestation`: AttestationConfig
+- `telematics`: TelematicsConfig
+- `classifier`: ClassifierConfig
+- `impact`: ImpactConfig
 
 ## class GeoConfig
 - `desiredAccuracy`: DesiredAccuracy (Default: DesiredAccuracy.high)
@@ -33,7 +64,6 @@ Compound top-level configuration.
 - `enableSparseUpdates`: bool (Default: false)
 - `sparseDistanceThreshold`: double (Default: 50.0)
 - `sparseMaxIdleSeconds`: int (Default: 300)
-- `batteryBudgetPerHour`: double (Default: 0.0)
 - `enableDeadReckoning`: bool (Default: false)
 - `deadReckoningActivationDelay`: int (Default: 0)
 - `deadReckoningMaxDuration`: int (Default: 0)
@@ -62,6 +92,8 @@ Compound top-level configuration.
 ## class AndroidConfig
 - `locationUpdateInterval`: int (Default: 1000)
 - `fastestLocationUpdateInterval`: int (Default: 500)
+- `batteryBudgetPerHour`: double (Default: 0.0)
+- `releaseWakelockWhenStationary`: bool (Default: false)
 - `deferTime`: int (Default: 0)
 - `allowIdenticalLocations`: bool (Default: false)
 - `geofenceModeHighAccuracy`: bool (Default: false)
@@ -115,3 +147,32 @@ Compound top-level configuration.
 - `deltaCoordinatePrecision`: int (Default: 5)
 - `sslPinningFingerprints`: List<String>? (Default: null)
 - `sslPinningCertificates`: List<String>? (Default: null)
+
+## class TelematicsConfig
+Driving-behavior events (opt-in, default off). Emits `Tracelet.onDrivingEvent`.
+- `enableDrivingEvents`: bool (Default: false)
+- `harshBrakingG`: double (Default: 0.40)
+- `harshAccelerationG`: double (Default: 0.35)
+- `harshCorneringG`: double (Default: 0.40)
+- `speedLimitKmh`: double (Default: 0.0)  // 0 disables speeding
+- `speedingToleranceKmh`: double (Default: 5.0)
+- `speedingMinDurationMs`: int (Default: 3000)
+- `minSpeedForEventsKmh`: double (Default: 5.0)
+- `eventDebounceMs`: int (Default: 2000)
+
+## class ClassifierConfig
+On-device transport-mode classifier (opt-in, default off). Emits `Tracelet.onModeChange` (still/walking/running/cycling/vehicle).
+- `enableFusedClassifier`: bool (Default: false)
+- `fusedClassifierAuthoritative`: bool (Default: false)
+- `modeSwitchDwellMs`: int (Default: 8000)
+- `minModeConfidence`: double (Default: 0.6)
+
+## class ImpactConfig
+Crash & fall detection (opt-in, default off). Emits `Tracelet.onImpact` (potential_crash/crash/potential_fall/fall); cancel/confirm via `Tracelet.cancelImpact(id)` / `Tracelet.confirmImpact(id)`.
+- `enableCrashDetection`: bool (Default: false)
+- `enableFallDetection`: bool (Default: false)
+- `crashGThreshold`: double (Default: 3.0)
+- `crashMinSpeedKmh`: double (Default: 25.0)
+- `fallGThreshold`: double (Default: 2.5)
+- `confirmWindowMs`: int (Default: 15000)
+- `minImpactConfidence`: double (Default: 0.6)

@@ -761,7 +761,12 @@ data class TlAndroidConfig (
   val periodicUseForegroundService: Boolean,
   val periodicUseExactAlarms: Boolean,
   val scheduleUseAlarmManager: Boolean,
-  val foregroundService: TlForegroundServiceConfig
+  val foregroundService: TlForegroundServiceConfig,
+  /**
+   * Drops the OEM Wakelock when the device enters a fully stationary state.
+   * Resolves Issue #162.
+   */
+  val releaseWakelockWhenStationary: Boolean
 )
  {
   companion object {
@@ -775,7 +780,8 @@ data class TlAndroidConfig (
       val periodicUseExactAlarms = pigeonVar_list[6] as Boolean
       val scheduleUseAlarmManager = pigeonVar_list[7] as Boolean
       val foregroundService = pigeonVar_list[8] as TlForegroundServiceConfig
-      return TlAndroidConfig(locationUpdateInterval, fastestLocationUpdateInterval, deferTime, allowIdenticalLocations, geofenceModeHighAccuracy, periodicUseForegroundService, periodicUseExactAlarms, scheduleUseAlarmManager, foregroundService)
+      val releaseWakelockWhenStationary = pigeonVar_list[9] as Boolean
+      return TlAndroidConfig(locationUpdateInterval, fastestLocationUpdateInterval, deferTime, allowIdenticalLocations, geofenceModeHighAccuracy, periodicUseForegroundService, periodicUseExactAlarms, scheduleUseAlarmManager, foregroundService, releaseWakelockWhenStationary)
     }
   }
   fun toList(): List<Any?> {
@@ -789,6 +795,7 @@ data class TlAndroidConfig (
       periodicUseExactAlarms,
       scheduleUseAlarmManager,
       foregroundService,
+      releaseWakelockWhenStationary,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -799,7 +806,7 @@ data class TlAndroidConfig (
       return true
     }
     val other = other as TlAndroidConfig
-    return TraceletApiPigeonUtils.deepEquals(this.locationUpdateInterval, other.locationUpdateInterval) && TraceletApiPigeonUtils.deepEquals(this.fastestLocationUpdateInterval, other.fastestLocationUpdateInterval) && TraceletApiPigeonUtils.deepEquals(this.deferTime, other.deferTime) && TraceletApiPigeonUtils.deepEquals(this.allowIdenticalLocations, other.allowIdenticalLocations) && TraceletApiPigeonUtils.deepEquals(this.geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) && TraceletApiPigeonUtils.deepEquals(this.periodicUseForegroundService, other.periodicUseForegroundService) && TraceletApiPigeonUtils.deepEquals(this.periodicUseExactAlarms, other.periodicUseExactAlarms) && TraceletApiPigeonUtils.deepEquals(this.scheduleUseAlarmManager, other.scheduleUseAlarmManager) && TraceletApiPigeonUtils.deepEquals(this.foregroundService, other.foregroundService)
+    return TraceletApiPigeonUtils.deepEquals(this.locationUpdateInterval, other.locationUpdateInterval) && TraceletApiPigeonUtils.deepEquals(this.fastestLocationUpdateInterval, other.fastestLocationUpdateInterval) && TraceletApiPigeonUtils.deepEquals(this.deferTime, other.deferTime) && TraceletApiPigeonUtils.deepEquals(this.allowIdenticalLocations, other.allowIdenticalLocations) && TraceletApiPigeonUtils.deepEquals(this.geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) && TraceletApiPigeonUtils.deepEquals(this.periodicUseForegroundService, other.periodicUseForegroundService) && TraceletApiPigeonUtils.deepEquals(this.periodicUseExactAlarms, other.periodicUseExactAlarms) && TraceletApiPigeonUtils.deepEquals(this.scheduleUseAlarmManager, other.scheduleUseAlarmManager) && TraceletApiPigeonUtils.deepEquals(this.foregroundService, other.foregroundService) && TraceletApiPigeonUtils.deepEquals(this.releaseWakelockWhenStationary, other.releaseWakelockWhenStationary)
   }
 
   override fun hashCode(): Int {
@@ -813,6 +820,7 @@ data class TlAndroidConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.periodicUseExactAlarms)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.scheduleUseAlarmManager)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.foregroundService)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.releaseWakelockWhenStationary)
     return result
   }
 }
@@ -898,7 +906,9 @@ data class TlHttpConfig (
   val retryBackoffBase: Long,
   val retryBackoffCap: Long,
   val enableDeltaCompression: Boolean,
-  val deltaCoordinatePrecision: Long
+  val deltaCoordinatePrecision: Long,
+  val syncTelematics: Boolean,
+  val telematicsUrl: String? = null
 )
  {
   companion object {
@@ -925,7 +935,9 @@ data class TlHttpConfig (
       val retryBackoffCap = pigeonVar_list[19] as Long
       val enableDeltaCompression = pigeonVar_list[20] as Boolean
       val deltaCoordinatePrecision = pigeonVar_list[21] as Long
-      return TlHttpConfig(url, method, headers, params, autoSync, batchSync, maxBatchSize, sslPinningFingerprints, sslPinningCertificates, httpRootProperty, autoSyncThreshold, autoSyncDelay, syncInterval, httpTimeout, locationsOrderDirection, extras, disableAutoSyncOnCellular, maxRetries, retryBackoffBase, retryBackoffCap, enableDeltaCompression, deltaCoordinatePrecision)
+      val syncTelematics = pigeonVar_list[22] as Boolean
+      val telematicsUrl = pigeonVar_list[23] as String?
+      return TlHttpConfig(url, method, headers, params, autoSync, batchSync, maxBatchSize, sslPinningFingerprints, sslPinningCertificates, httpRootProperty, autoSyncThreshold, autoSyncDelay, syncInterval, httpTimeout, locationsOrderDirection, extras, disableAutoSyncOnCellular, maxRetries, retryBackoffBase, retryBackoffCap, enableDeltaCompression, deltaCoordinatePrecision, syncTelematics, telematicsUrl)
     }
   }
   fun toList(): List<Any?> {
@@ -952,6 +964,8 @@ data class TlHttpConfig (
       retryBackoffCap,
       enableDeltaCompression,
       deltaCoordinatePrecision,
+      syncTelematics,
+      telematicsUrl,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -962,7 +976,7 @@ data class TlHttpConfig (
       return true
     }
     val other = other as TlHttpConfig
-    return TraceletApiPigeonUtils.deepEquals(this.url, other.url) && TraceletApiPigeonUtils.deepEquals(this.method, other.method) && TraceletApiPigeonUtils.deepEquals(this.headers, other.headers) && TraceletApiPigeonUtils.deepEquals(this.params, other.params) && TraceletApiPigeonUtils.deepEquals(this.autoSync, other.autoSync) && TraceletApiPigeonUtils.deepEquals(this.batchSync, other.batchSync) && TraceletApiPigeonUtils.deepEquals(this.maxBatchSize, other.maxBatchSize) && TraceletApiPigeonUtils.deepEquals(this.sslPinningFingerprints, other.sslPinningFingerprints) && TraceletApiPigeonUtils.deepEquals(this.sslPinningCertificates, other.sslPinningCertificates) && TraceletApiPigeonUtils.deepEquals(this.httpRootProperty, other.httpRootProperty) && TraceletApiPigeonUtils.deepEquals(this.autoSyncThreshold, other.autoSyncThreshold) && TraceletApiPigeonUtils.deepEquals(this.autoSyncDelay, other.autoSyncDelay) && TraceletApiPigeonUtils.deepEquals(this.syncInterval, other.syncInterval) && TraceletApiPigeonUtils.deepEquals(this.httpTimeout, other.httpTimeout) && TraceletApiPigeonUtils.deepEquals(this.locationsOrderDirection, other.locationsOrderDirection) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras) && TraceletApiPigeonUtils.deepEquals(this.disableAutoSyncOnCellular, other.disableAutoSyncOnCellular) && TraceletApiPigeonUtils.deepEquals(this.maxRetries, other.maxRetries) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffBase, other.retryBackoffBase) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffCap, other.retryBackoffCap) && TraceletApiPigeonUtils.deepEquals(this.enableDeltaCompression, other.enableDeltaCompression) && TraceletApiPigeonUtils.deepEquals(this.deltaCoordinatePrecision, other.deltaCoordinatePrecision)
+    return TraceletApiPigeonUtils.deepEquals(this.url, other.url) && TraceletApiPigeonUtils.deepEquals(this.method, other.method) && TraceletApiPigeonUtils.deepEquals(this.headers, other.headers) && TraceletApiPigeonUtils.deepEquals(this.params, other.params) && TraceletApiPigeonUtils.deepEquals(this.autoSync, other.autoSync) && TraceletApiPigeonUtils.deepEquals(this.batchSync, other.batchSync) && TraceletApiPigeonUtils.deepEquals(this.maxBatchSize, other.maxBatchSize) && TraceletApiPigeonUtils.deepEquals(this.sslPinningFingerprints, other.sslPinningFingerprints) && TraceletApiPigeonUtils.deepEquals(this.sslPinningCertificates, other.sslPinningCertificates) && TraceletApiPigeonUtils.deepEquals(this.httpRootProperty, other.httpRootProperty) && TraceletApiPigeonUtils.deepEquals(this.autoSyncThreshold, other.autoSyncThreshold) && TraceletApiPigeonUtils.deepEquals(this.autoSyncDelay, other.autoSyncDelay) && TraceletApiPigeonUtils.deepEquals(this.syncInterval, other.syncInterval) && TraceletApiPigeonUtils.deepEquals(this.httpTimeout, other.httpTimeout) && TraceletApiPigeonUtils.deepEquals(this.locationsOrderDirection, other.locationsOrderDirection) && TraceletApiPigeonUtils.deepEquals(this.extras, other.extras) && TraceletApiPigeonUtils.deepEquals(this.disableAutoSyncOnCellular, other.disableAutoSyncOnCellular) && TraceletApiPigeonUtils.deepEquals(this.maxRetries, other.maxRetries) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffBase, other.retryBackoffBase) && TraceletApiPigeonUtils.deepEquals(this.retryBackoffCap, other.retryBackoffCap) && TraceletApiPigeonUtils.deepEquals(this.enableDeltaCompression, other.enableDeltaCompression) && TraceletApiPigeonUtils.deepEquals(this.deltaCoordinatePrecision, other.deltaCoordinatePrecision) && TraceletApiPigeonUtils.deepEquals(this.syncTelematics, other.syncTelematics) && TraceletApiPigeonUtils.deepEquals(this.telematicsUrl, other.telematicsUrl)
   }
 
   override fun hashCode(): Int {
@@ -989,6 +1003,8 @@ data class TlHttpConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.retryBackoffCap)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.enableDeltaCompression)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.deltaCoordinatePrecision)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.syncTelematics)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.telematicsUrl)
     return result
   }
 }
@@ -2658,6 +2674,121 @@ data class TlModeChangeEvent (
     return result
   }
 }
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlTelematicsRecord (
+  /** The primary key. */
+  val id: Long,
+  /** The type of telematics event. */
+  val eventType: String,
+  /** The severity of the event. */
+  val severity: Double,
+  /** The latitude. */
+  val latitude: Double,
+  /** The longitude. */
+  val longitude: Double,
+  /** The ISO8601 timestamp string. */
+  val timestamp: String,
+  /** Whether the event has been synced to the server. */
+  val synced: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlTelematicsRecord {
+      val id = pigeonVar_list[0] as Long
+      val eventType = pigeonVar_list[1] as String
+      val severity = pigeonVar_list[2] as Double
+      val latitude = pigeonVar_list[3] as Double
+      val longitude = pigeonVar_list[4] as Double
+      val timestamp = pigeonVar_list[5] as String
+      val synced = pigeonVar_list[6] as Boolean
+      return TlTelematicsRecord(id, eventType, severity, latitude, longitude, timestamp, synced)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      id,
+      eventType,
+      severity,
+      latitude,
+      longitude,
+      timestamp,
+      synced,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlTelematicsRecord
+    return TraceletApiPigeonUtils.deepEquals(this.id, other.id) && TraceletApiPigeonUtils.deepEquals(this.eventType, other.eventType) && TraceletApiPigeonUtils.deepEquals(this.severity, other.severity) && TraceletApiPigeonUtils.deepEquals(this.latitude, other.latitude) && TraceletApiPigeonUtils.deepEquals(this.longitude, other.longitude) && TraceletApiPigeonUtils.deepEquals(this.timestamp, other.timestamp) && TraceletApiPigeonUtils.deepEquals(this.synced, other.synced)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.id)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.eventType)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.severity)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.latitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.longitude)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.timestamp)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.synced)
+    return result
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class TlLogEntry (
+  /** The primary key. */
+  val id: Long,
+  /** The log level. */
+  val level: String,
+  /** The log message. */
+  val message: String,
+  /** The ISO8601 timestamp string. */
+  val timestamp: String
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlLogEntry {
+      val id = pigeonVar_list[0] as Long
+      val level = pigeonVar_list[1] as String
+      val message = pigeonVar_list[2] as String
+      val timestamp = pigeonVar_list[3] as String
+      return TlLogEntry(id, level, message, timestamp)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      id,
+      level,
+      message,
+      timestamp,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlLogEntry
+    return TraceletApiPigeonUtils.deepEquals(this.id, other.id) && TraceletApiPigeonUtils.deepEquals(this.level, other.level) && TraceletApiPigeonUtils.deepEquals(this.message, other.message) && TraceletApiPigeonUtils.deepEquals(this.timestamp, other.timestamp)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.id)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.level)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.message)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.timestamp)
+    return result
+  }
+}
 private open class TraceletApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -2951,6 +3082,16 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
           TlModeChangeEvent.fromList(it)
         }
       }
+      187.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlTelematicsRecord.fromList(it)
+        }
+      }
+      188.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlLogEntry.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -3188,6 +3329,14 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(186)
         writeValue(stream, value.toList())
       }
+      is TlTelematicsRecord -> {
+        stream.write(187)
+        writeValue(stream, value.toList())
+      }
+      is TlLogEntry -> {
+        stream.write(188)
+        writeValue(stream, value.toList())
+      }
       else -> super.writeValue(stream, value)
     }
   }
@@ -3275,7 +3424,12 @@ interface TraceletHostApi {
   fun encryptDatabase(callback: (Result<Boolean>) -> Unit)
   fun getAttestationToken(callback: (Result<Map<String?, Any?>?>) -> Unit)
   fun getDeadReckoningState(callback: (Result<Map<String?, Any?>?>) -> Unit)
-  fun getCarbonReport(query: Map<String?, Any?>?, callback: (Result<Map<String?, Any?>>) -> Unit)
+  fun getCarbonReport(query: Map<String, Any?>?, callback: (Result<Map<String, Any?>>) -> Unit)
+  fun simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, callback: (Result<Boolean>) -> Unit)
+  fun getTelematicsEvents(limit: Long, callback: (Result<List<TlTelematicsRecord?>>) -> Unit)
+  fun destroyTelematicsEvents(callback: (Result<Boolean>) -> Unit)
+  fun getLogs(limit: Long, callback: (Result<List<TlLogEntry?>>) -> Unit)
+  fun clearLogs(callback: (Result<Unit>) -> Unit)
 
   companion object {
     /** The codec used by TraceletHostApi. */
@@ -4746,14 +4900,112 @@ interface TraceletHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val queryArg = args[0] as Map<String?, Any?>?
-            api.getCarbonReport(queryArg) { result: Result<Map<String?, Any?>> ->
+            val queryArg = args[0] as Map<String, Any?>?
+            api.getCarbonReport(queryArg) { result: Result<Map<String, Any?>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
               } else {
                 val data = result.getOrNull()
                 reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.simulateTelematicsEvent$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val eventTypeArg = args[0] as String
+            val severityArg = args[1] as Double
+            val latitudeArg = args[2] as Double
+            val longitudeArg = args[3] as Double
+            api.simulateTelematicsEvent(eventTypeArg, severityArg, latitudeArg, longitudeArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getTelematicsEvents$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val limitArg = args[0] as Long
+            api.getTelematicsEvents(limitArg) { result: Result<List<TlTelematicsRecord?>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyTelematicsEvents$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.destroyTelematicsEvents{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val limitArg = args[0] as Long
+            api.getLogs(limitArg) { result: Result<List<TlLogEntry?>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearLogs$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.clearLogs{ result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                reply.reply(TraceletApiPigeonUtils.wrapResult(null))
               }
             }
           }

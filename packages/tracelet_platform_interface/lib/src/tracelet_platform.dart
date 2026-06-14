@@ -548,6 +548,45 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('emailLog() has not been implemented.');
   }
 
+  /// Connects to a custom sync URL.
+  Future<void> connectCustomSync(String url, String jwt) async {
+    throw UnimplementedError('connectCustomSync() has not been implemented.');
+  }
+
+  /// Gets telematics events up to a given [limit].
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) {
+    throw UnimplementedError('getTelematicsEvents() has not been implemented.');
+  }
+
+  /// Destroys all telematics events
+  Future<bool> destroyTelematicsEvents() {
+    throw UnimplementedError(
+      'destroyTelematicsEvents() has not been implemented.',
+    );
+  }
+
+  /// Simulates a telematics event
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) {
+    throw UnimplementedError(
+      'simulateTelematicsEvent() has not been implemented.',
+    );
+  }
+
+  /// Gets log entries up to a given [limit].
+  Future<List<TlLogEntry?>> getLogs(int limit) {
+    throw UnimplementedError('getLogs() has not been implemented.');
+  }
+
+  /// Clears all system log entries.
+  Future<void> clearLogs() {
+    throw UnimplementedError('clearLogs() has not been implemented.');
+  }
+
   /// Write a custom log entry at [level] with [message].
   Future<bool> log(String level, String message) {
     throw UnimplementedError('log() has not been implemented.');
@@ -687,7 +726,9 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// `distanceByMode`, and `totalTrips` fields.
   ///
   /// Optionally filter by [query] with `from` and `to` timestamps.
-  Future<Map<String, Object?>> getCarbonReport([Map<String, Object?>? query]) {
+  Future<Map<String, Object?>> getCarbonReport([
+    Map<String, Object?>? query,
+  ]) async {
     throw UnimplementedError('getCarbonReport() has not been implemented.');
   }
 

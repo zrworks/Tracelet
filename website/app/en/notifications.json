@@ -1,0 +1,10 @@
+{
+  "badgeTitle": "New in 3.3.0",
+  "items": [
+    {
+      "title": "Driving & Safety Features",
+      "description": "Driving events, transport mode, crash detection, and new telematics APIs.",
+      "href": "/core/driving-safety"
+    }
+  ]
+}

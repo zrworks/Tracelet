@@ -1108,6 +1108,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
      */
     func clearPrivacyZones() throws 
     
+    /**
+     * Clears all telematics events from the database.
+     */
+    func clearTelematicsEvents() throws 
+    
     func decryptPayload(payload: Data)  -> Data?
     
     func deleteGeofence(identifier: String) throws 
@@ -1164,6 +1169,11 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func getPrivacyZones() throws  -> [CorePrivacyZone]
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+    func getTelematicsEvents(limit: Int32) throws  -> [DbTelematicsRecord]
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
     func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32) throws 
@@ -1197,9 +1207,24 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius: Double, action: Int32, degradedAccuracy: Double) throws 
     
     /**
+     * Inserts a telematics event into the database.
+     */
+    func insertTelematicsEvent(eventType: String, severity: Double, lat: Double, lng: Double) throws  -> Int64
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
     func isEmpty() throws  -> Bool
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+    func markTelematicsSynced(maxId: Int64) throws 
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+    func pruneLogs(limit: Int32) throws 
     
     /**
      * Sets the encryption key (32 bytes max). If the string is empty or invalid, encryption is disabled.
@@ -1319,6 +1344,16 @@ open func clearLogs()throws   {try rustCallWithError(FfiConverterTypeTraceletErr
      */
 open func clearPrivacyZones()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_clear_privacy_zones(
+            self.uniffiCloneHandle(),$0
+    )
+}
+}
+    
+    /**
+     * Clears all telematics events from the database.
+     */
+open func clearTelematicsEvents()throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_clear_telematics_events(
             self.uniffiCloneHandle(),$0
     )
 }
@@ -1462,6 +1497,18 @@ open func getPrivacyZones()throws  -> [CorePrivacyZone]  {
 }
     
     /**
+     * Retrieves a batch of unsynced telematics events.
+     */
+open func getTelematicsEvents(limit: Int32)throws  -> [DbTelematicsRecord]  {
+    return try  FfiConverterSequenceTypeDbTelematicsRecord.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_get_telematics_events(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+})
+}
+    
+    /**
      * Inserts or replaces a validated tamper-proof cryptographic audit trail record.
      */
 open func insertAuditTrail(uuid: String, hash: String, prevHash: String, index: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
@@ -1554,6 +1601,21 @@ open func insertPrivacyZone(identifier: String, lat: Double, lng: Double, radius
 }
     
     /**
+     * Inserts a telematics event into the database.
+     */
+open func insertTelematicsEvent(eventType: String, severity: Double, lat: Double, lng: Double)throws  -> Int64  {
+    return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_insert_telematics_event(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(eventType),
+        FfiConverterDouble.lower(severity),
+        FfiConverterDouble.lower(lat),
+        FfiConverterDouble.lower(lng),$0
+    )
+})
+}
+    
+    /**
      * Gets the total count of locations persisted in the database.
      */
 open func isEmpty()throws  -> Bool  {
@@ -1562,6 +1624,28 @@ open func isEmpty()throws  -> Bool  {
             self.uniffiCloneHandle(),$0
     )
 })
+}
+    
+    /**
+     * Marks telematics events up to max_id as synced.
+     */
+open func markTelematicsSynced(maxId: Int64)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_mark_telematics_synced(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(maxId),$0
+    )
+}
+}
+    
+    /**
+     * Prunes the logs to retain only the specified limit of latest entries.
+     */
+open func pruneLogs(limit: Int32)throws   {try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_method_databasemanager_prune_logs(
+            self.uniffiCloneHandle(),
+        FfiConverterInt32.lower(limit),$0
+    )
+}
 }
     
     /**
@@ -5031,6 +5115,83 @@ public func FfiConverterTypeDbLocationRecord_lift(_ buf: RustBuffer) throws -> D
 #endif
 public func FfiConverterTypeDbLocationRecord_lower(_ value: DbLocationRecord) -> RustBuffer {
     return FfiConverterTypeDbLocationRecord.lower(value)
+}
+
+
+/**
+ * Represents a telematics event (crash, hard brake, etc.) persisted in the database.
+ */
+public struct DbTelematicsRecord: Equatable, Hashable {
+    public var id: Int64
+    public var eventType: String
+    public var severity: Double
+    public var latitude: Double
+    public var longitude: Double
+    public var timestamp: String
+    public var synced: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: Int64, eventType: String, severity: Double, latitude: Double, longitude: Double, timestamp: String, synced: Bool) {
+        self.id = id
+        self.eventType = eventType
+        self.severity = severity
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = timestamp
+        self.synced = synced
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DbTelematicsRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDbTelematicsRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DbTelematicsRecord {
+        return
+            try DbTelematicsRecord(
+                id: FfiConverterInt64.read(from: &buf), 
+                eventType: FfiConverterString.read(from: &buf), 
+                severity: FfiConverterDouble.read(from: &buf), 
+                latitude: FfiConverterDouble.read(from: &buf), 
+                longitude: FfiConverterDouble.read(from: &buf), 
+                timestamp: FfiConverterString.read(from: &buf), 
+                synced: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DbTelematicsRecord, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterString.write(value.eventType, into: &buf)
+        FfiConverterDouble.write(value.severity, into: &buf)
+        FfiConverterDouble.write(value.latitude, into: &buf)
+        FfiConverterDouble.write(value.longitude, into: &buf)
+        FfiConverterString.write(value.timestamp, into: &buf)
+        FfiConverterBool.write(value.synced, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbTelematicsRecord_lift(_ buf: RustBuffer) throws -> DbTelematicsRecord {
+    return try FfiConverterTypeDbTelematicsRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDbTelematicsRecord_lower(_ value: DbTelematicsRecord) -> RustBuffer {
+    return FfiConverterTypeDbTelematicsRecord.lower(value)
 }
 
 
@@ -8738,6 +8899,31 @@ fileprivate struct FfiConverterSequenceTypeDbLocationRecord: FfiConverterRustBuf
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeDbTelematicsRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [DbTelematicsRecord]
+
+    public static func write(_ value: [DbTelematicsRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeDbTelematicsRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [DbTelematicsRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [DbTelematicsRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeDbTelematicsRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeDrivingEvent: FfiConverterRustBuffer {
     typealias SwiftType = [DrivingEvent]
 
@@ -9094,6 +9280,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_clear_privacy_zones() != 62490) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_clear_telematics_events() != 26123) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_decrypt_payload() != 4464) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9133,6 +9322,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_get_privacy_zones() != 61961) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_get_telematics_events() != 50151) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_audit_trail() != 2860) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9148,7 +9340,16 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_privacy_zone() != 38263) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_telematics_event() != 45369) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_databasemanager_is_empty() != 5940) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_mark_telematics_synced() != 38059) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_databasemanager_prune_logs() != 51361) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_set_encryption_key() != 2884) {

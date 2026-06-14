@@ -616,6 +616,11 @@ class TraceletWebPlugin extends TraceletPlatform {
   }
 
   @override
+  Future<void> clearLogs() async {
+    await _storage.destroyLog();
+  }
+
+  @override
   Future<bool> emailLog(String email) async {
     // Could open mailto: link but impractical. Log a warning.
     _events.log('warning', '[Tracelet Web] emailLog() is not supported on web');
@@ -625,6 +630,42 @@ class TraceletWebPlugin extends TraceletPlatform {
   @override
   Future<bool> log(String level, String message) {
     return _storage.log(level, message);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Telematics & Custom Sync
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> connectCustomSync(String url, String jwt) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] connectCustomSync() is not supported on web',
+    );
+  }
+
+  @override
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
+    return <TlTelematicsRecord?>[];
+  }
+
+  @override
+  Future<int> clearTelematicsEvents() async {
+    return 0;
+  }
+
+  @override
+  Future<int> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] simulateTelematicsEvent() is not supported on web',
+    );
+    return 0;
   }
 
   // ---------------------------------------------------------------------------

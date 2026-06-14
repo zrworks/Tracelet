@@ -4,6 +4,7 @@ import { Head } from 'nextra/components'
 import RainBackground from './RainBackground'
 import LanguagePrompt from './LanguagePrompt'
 import TrackedLink from './TrackedLink'
+import NotificationBell from './NotificationBell'
 import { LocaleSwitch } from 'nextra-theme-docs'
 import 'nextra-theme-docs/style.css'
 
@@ -86,7 +87,10 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
           </div>
         }>
           <div className="hidden md:flex ml-4">
-            <LocaleSwitch />
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1rem' }}>
+              <NotificationBell />
+              <LocaleSwitch />
+            </div>
           </div>
         </Navbar>}
         footer={<Footer>

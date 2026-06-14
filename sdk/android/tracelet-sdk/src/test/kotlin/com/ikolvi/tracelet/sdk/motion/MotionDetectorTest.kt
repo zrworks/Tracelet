@@ -158,6 +158,9 @@ class MotionDetectorTest {
     }
 
     private class DummyEventSender : TraceletEventSender {
+        override fun sendDrivingEvent(data: Map<String, Any?>) {}
+        override fun sendImpact(data: Map<String, Any?>) {}
+        override fun sendModeChange(data: Map<String, Any?>) {}
         override fun sendMotionChange(data: Map<String, Any?>) {}
         override fun sendSpeedMotionChange(data: Map<String, Any?>) {}
         override fun sendLocation(data: Map<String, Any?>) {}

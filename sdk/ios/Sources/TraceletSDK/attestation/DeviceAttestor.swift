@@ -35,14 +35,14 @@ public final class DeviceAttestor {
 
         let service = DCAppAttestService.shared
         guard service.isSupported else {
-            NSLog("[DeviceAttestor] App Attest not supported on this device")
+            TraceletLog.debug("[DeviceAttestor] App Attest not supported on this device")
             completion(nil)
             return
         }
 
         service.generateKey { [weak self] keyId, error in
             guard let keyId = keyId else {
-                NSLog("[DeviceAttestor] Key generation failed: \(error?.localizedDescription ?? "unknown")")
+                TraceletLog.error("[DeviceAttestor] Key generation failed: \(error?.localizedDescription ?? "unknown")")
                 completion(nil)
                 return
             }
@@ -52,7 +52,7 @@ public final class DeviceAttestor {
 
             service.attestKey(keyId, clientDataHash: hash) { [weak self] attestation, error in
                 guard let attestation = attestation else {
-                    NSLog("[DeviceAttestor] Attestation failed: \(error?.localizedDescription ?? "unknown")")
+                    TraceletLog.error("[DeviceAttestor] Attestation failed: \(error?.localizedDescription ?? "unknown")")
                     completion(nil)
                     return
                 }

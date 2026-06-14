@@ -124,7 +124,7 @@ public final class ScheduleManager {
             try BGTaskScheduler.shared.submit(startRequest)
             try BGTaskScheduler.shared.submit(stopRequest)
         } catch {
-            NSLog("[Tracelet] Failed to schedule BGTask: \(error.localizedDescription)")
+            TraceletLog.error("[Tracelet] Failed to schedule BGTask: \(error.localizedDescription)")
         }
     }
 }

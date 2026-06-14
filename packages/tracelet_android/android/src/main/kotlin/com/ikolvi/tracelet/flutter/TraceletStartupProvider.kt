@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.flutter
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -44,7 +45,7 @@ class TraceletStartupProvider : ContentProvider() {
             }
         } catch (t: Throwable) {
             // Never break host-app startup over background-sync wiring.
-            Log.w(TAG, "Headless sync bridge wiring failed at process start: ${t.message}")
+            TraceletLog.warning("Headless sync bridge wiring failed at process start: ${t.message}")
         }
         return true
     }

@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.flutter
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.app.Activity
 import android.content.Context
@@ -77,7 +78,7 @@ class TraceletAndroidPlugin :
                 System.loadLibrary("tracelet_core")
             } catch (e: UnsatisfiedLinkError) {
                 // Ignore in test environments like Robolectric
-                android.util.Log.w(TAG, "Failed to load tracelet_core library, expected in tests", e)
+                TraceletLog.warning("Failed to load tracelet_core library, expected in tests", e)
             }
         }
 

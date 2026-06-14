@@ -78,7 +78,7 @@ public final class PeriodicRefreshScheduler {
         currentInterval = max(interval, 60) // floor at 1 minute
         isActive = true
         scheduleNext()
-        NSLog("[Tracelet] PeriodicRefreshScheduler started (interval=\(Int(currentInterval))s)")
+        TraceletLog.debug("[Tracelet] PeriodicRefreshScheduler started (interval=\(Int(currentInterval))s)")
     }
 
     /// Stop scheduling periodic refresh wake-ups and cancel pending requests.
@@ -89,7 +89,7 @@ public final class PeriodicRefreshScheduler {
                 taskRequestWithIdentifier: PeriodicRefreshScheduler.taskIdentifier
             )
         }
-        NSLog("[Tracelet] PeriodicRefreshScheduler stopped")
+        TraceletLog.debug("[Tracelet] PeriodicRefreshScheduler stopped")
     }
 
     // MARK: - Scheduling
@@ -106,9 +106,9 @@ public final class PeriodicRefreshScheduler {
 
         do {
             try BGTaskScheduler.shared.submit(request)
-            NSLog("[Tracelet] Scheduled next periodic refresh in \(Int(currentInterval))s")
+            TraceletLog.debug("[Tracelet] Scheduled next periodic refresh in \(Int(currentInterval))s")
         } catch {
-            NSLog("[Tracelet] Failed to schedule periodic refresh: \(error.localizedDescription)")
+            TraceletLog.error("[Tracelet] Failed to schedule periodic refresh: \(error.localizedDescription)")
         }
     }
 
@@ -122,7 +122,7 @@ public final class PeriodicRefreshScheduler {
             return
         }
 
-        NSLog("[Tracelet] BGAppRefreshTask fired — performing periodic location fix")
+        TraceletLog.debug("[Tracelet] BGAppRefreshTask fired — performing periodic location fix")
 
         // Request background execution time for the location fix
         let bgTaskId = BackgroundTaskHelper.shared.begin("periodicRefreshFix")

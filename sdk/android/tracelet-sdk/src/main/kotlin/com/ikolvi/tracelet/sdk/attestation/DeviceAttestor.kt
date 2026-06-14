@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.attestation
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.Context
 import android.os.Handler
@@ -71,7 +72,7 @@ class DeviceAttestor(private val context: Context) {
      */
     fun requestToken(callback: (Map<String, Any?>?) -> Unit) {
         if (!isAvailable()) {
-            Log.w(TAG, "Play Integrity not available. " +
+            TraceletLog.warning("Play Integrity not available. " +
                 "Add implementation(\"com.google.android.play:integrity:1.6.0\") " +
                 "to your app's build.gradle.")
             callback(null)
@@ -100,14 +101,14 @@ class DeviceAttestor(private val context: Context) {
                     callback(result)
                 },
                 onFailure = { e ->
-                    Log.w(TAG, "Play Integrity request failed: ${e.message}")
+                    TraceletLog.warning("Play Integrity request failed: ${e.message}")
                     callback(null)
                 }
             ) ?: run {
                 callback(null)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Play Integrity unavailable: ${e.message}")
+            TraceletLog.warning("Play Integrity unavailable: ${e.message}")
             callback(null)
         }
     }

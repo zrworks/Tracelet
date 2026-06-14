@@ -211,7 +211,7 @@ public final class TraceletSdk {
     }
 
     @objc private func handleWillEnterForeground() {
-        NSLog("Tracelet: App moving to FOREGROUND — requesting state flush to Dart")
+        TraceletLog.debug("Tracelet: App moving to FOREGROUND — requesting state flush to Dart")
         requestStateFlush()
     }
 
@@ -249,7 +249,7 @@ public final class TraceletSdk {
                 try state.updateConfig(newConfig: newConfig)
                 // DB encryption is now entirely managed by rustDatabase directly.
             } catch {
-                NSLog("Auto-encrypt database failed: \(error)")
+                TraceletLog.error("Auto-encrypt database failed: \(error)")
             }
         }
 
@@ -293,13 +293,13 @@ public final class TraceletSdk {
         if stateManager.enabled {
             switch stateManager.trackingMode {
             case .continuous:
-                NSLog("[Tracelet] ready: Resuming continuous tracking")
+                TraceletLog.debug("[Tracelet] ready: Resuming continuous tracking")
                 start(isResume: true)
             case .periodic:
-                NSLog("[Tracelet] ready: Resuming periodic tracking")
+                TraceletLog.debug("[Tracelet] ready: Resuming periodic tracking")
                 startPeriodic()
             case .geofences:
-                NSLog("[Tracelet] ready: Resuming geofence tracking")
+                TraceletLog.debug("[Tracelet] ready: Resuming geofence tracking")
                 startGeofences()
             }
         }
@@ -622,7 +622,7 @@ public final class TraceletSdk {
     private func checkSyncProvider() {
         let url = configManager.getUrl()
         if !url.isEmpty, syncProvider == nil {
-            NSLog("⚠️ WARNING [Tracelet]: HTTP sync URL is configured (\"\(url)\"), but no SyncProvider is registered. Location synchronization will NOT work without the tracelet_sync package. Please ensure tracelet_sync is installed and initialized.")
+            TraceletLog.warning("⚠️ WARNING [Tracelet]: HTTP sync URL is configured (\"\(url)\"), but no SyncProvider is registered. Location synchronization will NOT work without the tracelet_sync package. Please ensure tracelet_sync is installed and initialized.")
         }
     }
 
@@ -874,7 +874,7 @@ public final class TraceletSdk {
             let records = try db.getLocationsBatch(query: rustQuery)
             return records.map { mapRecordToLocation($0) }
         } catch {
-            NSLog("getLocations failed: \(error)")
+            TraceletLog.error("getLocations failed: \(error)")
             return []
         }
     }
@@ -934,7 +934,7 @@ public final class TraceletSdk {
             ))
             return records.count
         } catch {
-            NSLog("getCount failed: \(error)")
+            TraceletLog.error("getCount failed: \(error)")
             return 0
         }
     }
@@ -950,7 +950,7 @@ public final class TraceletSdk {
             try db.destroyLocations()
             return true
         } catch {
-            NSLog("destroyLocations failed: \(error)")
+            TraceletLog.error("destroyLocations failed: \(error)")
             return false
         }
     }
@@ -988,7 +988,7 @@ public final class TraceletSdk {
             try db.destroyLocation(id: id)
             return true
         } catch {
-            NSLog("destroyLocation failed: \(error)")
+            TraceletLog.error("destroyLocation failed: \(error)")
             return false
         }
     }
@@ -1096,7 +1096,7 @@ public final class TraceletSdk {
             }
             return newRowId.description
         } catch {
-            NSLog("insertLocation failed: \(error)")
+            TraceletLog.error("insertLocation failed: \(error)")
             return ""
         }
     }
@@ -1165,7 +1165,7 @@ public final class TraceletSdk {
                 }
                 
                 guard let syncProvider = syncProvider else {
-                    NSLog("Sync failed: No SyncProvider registered (is tracelet_sync installed?)")
+                    TraceletLog.error("Sync failed: No SyncProvider registered (is tracelet_sync installed?)")
                     DispatchQueue.main.async { completion?([]) }
                     return
                 }
@@ -1189,7 +1189,7 @@ public final class TraceletSdk {
                     DispatchQueue.main.async { completion?([]) }
                 }
             } catch {
-                NSLog("Sync failed: \(error)")
+                TraceletLog.error("Sync failed: \(error)")
                 DispatchQueue.main.async { completion?([]) }
             }
         }
@@ -1223,7 +1223,7 @@ public final class TraceletSdk {
                 rustEngineState?.setRouteContext(json: jsonString)
             }
         } catch {
-            NSLog("Failed to serialize routeContext: \(error)")
+            TraceletLog.error("Failed to serialize routeContext: \(error)")
         }
     }
 
@@ -1362,7 +1362,7 @@ public final class TraceletSdk {
         do {
             return try db.getTelematicsEvents(limit: Int32(limit))
         } catch {
-            NSLog("Failed to get telematics events: \(error)")
+            TraceletLog.error("Failed to get telematics events: \(error)")
             return []
         }
     }
@@ -1372,7 +1372,7 @@ public final class TraceletSdk {
         do {
             return try db.getLogs(limit: Int32(limit))
         } catch {
-            NSLog("Failed to get logs: \(error)")
+            TraceletLog.error("Failed to get logs: \(error)")
             return []
         }
     }
@@ -1382,7 +1382,7 @@ public final class TraceletSdk {
         do {
             try db.clearLogs()
         } catch {
-            NSLog("Failed to clear logs: \(error)")
+            TraceletLog.error("Failed to clear logs: \(error)")
         }
     }
 
@@ -1631,14 +1631,15 @@ public final class TraceletSdk {
             self.rustEngineState = state
             self.rustPluginEventDispatcher = dispatcher
             syncConfigToRustFlat()
-            NSLog("Tracelet: Rust Core initialized at \(dbPath)")
+            TraceletLog.debug("Tracelet: Rust Core initialized at \(dbPath)")
         } catch {
-            NSLog("Tracelet: Failed to initialize Rust Core: \(error)")
+            TraceletLog.error("Tracelet: Failed to initialize Rust Core: \(error)")
         }
 
         // Logger
         logger = TraceletLogger(configManager: configManager)
         logger.rustDatabase = rustDatabase
+        TraceletLog.attach(logger)
 
         // Enterprise features
         auditTrailManager = AuditTrailManager(configManager: configManager, rustDatabase: rustDatabase)
@@ -1768,7 +1769,7 @@ public final class TraceletSdk {
             return
         }
 
-        NSLog("[Tracelet] Motion state changed: isMoving=\(isMoving)")
+        TraceletLog.debug("[Tracelet] Motion state changed: isMoving=\(isMoving)")
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.stateManager.isMoving = isMoving
@@ -1823,10 +1824,10 @@ public final class TraceletSdk {
                 repeats: true
             ) { [weak self] _ in
                 guard let self = self else { return }
-                NSLog("[Tracelet] Heartbeat fired")
+                TraceletLog.debug("[Tracelet] Heartbeat fired")
                 guard let location = self.locationEngine.getLastGpsLocation() else {
                     if self.configManager.isDebug() {
-                        NSLog("[Tracelet] Heartbeat: no cached location, skipping")
+                        TraceletLog.debug("[Tracelet] Heartbeat: no cached location, skipping")
                     }
                     return
                 }
@@ -1849,9 +1850,9 @@ public final class TraceletSdk {
                 // Always send the event so Flutter UI stays alive
                 let data: [String: Any] = ["location": locationMap]
                 self.eventSender.sendHeartbeat(data)
-                NSLog("[Tracelet] Heartbeat: lat=%.6f, lon=%.6f, accuracy=%.1fm",
+                TraceletLog.debug(String(format: "[Tracelet] Heartbeat: lat=%.6f, lon=%.6f, accuracy=%.1fm",
                       location.coordinate.latitude, location.coordinate.longitude,
-                      location.horizontalAccuracy)
+                      location.horizontalAccuracy))
             }
         }
     }
@@ -1884,7 +1885,7 @@ public final class TraceletSdk {
                 self.sync(completion: nil)
             }
         }
-        NSLog("[Tracelet] syncInterval timer started (%ds)", interval)
+        TraceletLog.debug(String(format: "[Tracelet] syncInterval timer started (%ds)", interval))
     }
 
     private func stopSyncIntervalTimer() {
@@ -1923,6 +1924,12 @@ public final class TraceletSdk {
                 confirmWindowMs: configManager.getConfirmWindowMs(),
                 minConfidence: configManager.getMinImpactConfidence()))
             : nil
+
+        // Crash/fall impulses peak in ~50-150 ms, far faster than the 10 Hz used
+        // for motion detection. When impact detection is active, sample the
+        // accelerometer at a higher rate so the peak is actually captured (battery
+        // cost is accepted because the feature is opt-in).
+        motionDetector?.impactHighRate = (impactDetector != nil)
     }
 
     /// Feeds an accepted location fix to the telematics engine and emits events.
@@ -1967,20 +1974,42 @@ public final class TraceletSdk {
             self.accelWindowTimer = Timer.scheduledTimer(withTimeInterval: Self.accelWindowInterval, repeats: true) { [weak self] _ in
                 self?.processAccelWindow()
             }
-            if self.impactDetector != nil {
-                self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                    guard let self = self, let detector = self.impactDetector else { return }
-                    let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-                    for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
-                }
-            }
         }
     }
 
     private func stopBehaviorSampling() {
         accelWindowTimer?.invalidate(); accelWindowTimer = nil
-        impactConfirmTimer?.invalidate(); impactConfirmTimer = nil
         accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
+        // NOTE: the impact confirmation loop is intentionally NOT stopped here.
+        // A crash typically ends in the vehicle stopping, which disables tracking
+        // (stopTimeout) and would otherwise abandon a pending `potential_crash`
+        // before its countdown elapses — so the confirmed `crash` would never
+        // fire. The confirmation loop runs independently and self-terminates once
+        // no candidates remain (see `ensureImpactConfirmLoop`).
+    }
+
+    /// Ensures the impact confirmation poll is running. Decoupled from tracking
+    /// state: once a candidate is pending it keeps polling — across a tracking
+    /// stop — until every candidate has confirmed (deadline elapsed), been
+    /// confirmed explicitly, or cancelled. Self-terminates when nothing pends.
+    private func ensureImpactConfirmLoop() {
+        guard impactConfirmTimer == nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.impactConfirmTimer == nil else { return }
+            self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+                guard let self = self, let detector = self.impactDetector else {
+                    timer.invalidate()
+                    self?.impactConfirmTimer = nil
+                    return
+                }
+                let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+                for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
+                if detector.pendingCount() == 0 {
+                    timer.invalidate()
+                    self.impactConfirmTimer = nil
+                }
+            }
+        }
     }
 
     private func processAccelWindow() {
@@ -2005,6 +2034,9 @@ public final class TraceletSdk {
             let onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
             if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
                 emitImpact(candidate)
+                // Keep the countdown alive even if tracking stops right after the
+                // crash (vehicle comes to rest → stopTimeout disables tracking).
+                ensureImpactConfirmLoop()
             }
         }
     }
@@ -2165,7 +2197,7 @@ public final class TraceletSdk {
         guard stateManager != nil, stateManager.enabled else { return }
         guard configManager != nil, !configManager.getStopOnTerminate() else { return }
 
-        NSLog("[Tracelet] onAppWillTerminate: stopOnTerminate=false, ensuring significant location monitoring")
+        TraceletLog.debug("[Tracelet] onAppWillTerminate: stopOnTerminate=false, ensuring significant location monitoring")
 
         // Create a standalone CLLocationManager that outlives the current
         // singleton teardown. By starting significant location monitoring
@@ -2176,7 +2208,7 @@ public final class TraceletSdk {
         // Store in a static to prevent deallocation before the process ends.
         TraceletSdk._terminationLocationManager = terminationManager
 
-        NSLog("[Tracelet] onAppWillTerminate: significant location monitoring registered on termination manager")
+        TraceletLog.debug("[Tracelet] onAppWillTerminate: significant location monitoring registered on termination manager")
     }
 
     /// Holds a reference to the CLLocationManager created at termination
@@ -2191,37 +2223,37 @@ public final class TraceletSdk {
     /// Call this from `application(_:didFinishLaunchingWithOptions:)` when
     /// `LaunchOptionsKey.location` is present.
     public func autoResumeTracking() {
-        NSLog("[Tracelet] autoResumeTracking: starting")
+        TraceletLog.debug("[Tracelet] autoResumeTracking: starting")
         if configManager == nil {
-            NSLog("[Tracelet] autoResumeTracking: configManager nil, calling initialize()")
+            TraceletLog.debug("[Tracelet] autoResumeTracking: configManager nil, calling initialize()")
             initialize()
         }
 
         // Guard: stopOnTerminate means we should NOT resume after kill.
         if configManager.getStopOnTerminate() {
-            NSLog("[Tracelet] autoResumeTracking: stopOnTerminate=true, aborting")
+            TraceletLog.debug("[Tracelet] autoResumeTracking: stopOnTerminate=true, aborting")
             stateManager.enabled = false
             return
         }
 
         guard stateManager.enabled else {
-            NSLog("[Tracelet] autoResumeTracking: stateManager.enabled=false, aborting")
+            TraceletLog.debug("[Tracelet] autoResumeTracking: stateManager.enabled=false, aborting")
             return
         }
 
         let authStatus = locationEngine.getAuthorizationStatus()
         guard authStatus == 3 else { // authorizedAlways
-            NSLog("[Tracelet] autoResumeTracking: authStatus=\(authStatus), need 3 (Always), disabling")
+            TraceletLog.debug("[Tracelet] autoResumeTracking: authStatus=\(authStatus), need 3 (Always), disabling")
             stateManager.enabled = false
             return
         }
 
         stateManager.didLaunchInBackground = true
         let trackingMode = stateManager.trackingMode
-        NSLog("[Tracelet] autoResumeTracking: trackingMode=\(trackingMode), resuming")
+        TraceletLog.debug("[Tracelet] autoResumeTracking: trackingMode=\(trackingMode), resuming")
 
         // HTTP Sync is auto-started by Rust Core Config
-        NSLog("[Tracelet] autoResumeTracking: Rust SyncManager active")
+        TraceletLog.debug("[Tracelet] autoResumeTracking: Rust SyncManager active")
 
         // Wire onLocationPersisted so persisted locations trigger HTTP auto-sync.
         // Without this, locations accumulate in SQLite but never sync.
@@ -2438,8 +2470,8 @@ public final class TraceletSdk {
         // Feed the last known GPS speed immediately on startup to prevent deadlocks when physically stationary
         smm.onLocation(speed: locationEngine.lastEffectiveSpeed)
 
-        NSLog("[Tracelet] Speed motion mode started (threshold=%.1f, delay=%ds, stationary=%@)",
-              smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode == .geofences ? "geofences" : "periodic")
+        TraceletLog.debug(String(format: "[Tracelet] Speed motion mode started (threshold=%.1f, delay=%ds, stationary=%@)",
+              smm.speedMovingThreshold, smm.speedStationaryDelay, smm.stationaryTrackingMode == .geofences ? "geofences" : "periodic"))
 
         // Sync stateManager.isMoving with restored speed motion state if not forcing
         if !forceMoving {
@@ -2714,9 +2746,9 @@ extension TraceletSdk: SpeedMotionDelegate {
                 )
             )
             try state.updateConfig(newConfig: newConfig)
-            NSLog("Tracelet: Successfully synchronized ConfigManager state to Rust Core.")
+            TraceletLog.debug("Tracelet: Successfully synchronized ConfigManager state to Rust Core.")
         } catch {
-            NSLog("Tracelet: Failed to sync config to Rust Core: \(error)")
+            TraceletLog.error("Tracelet: Failed to sync config to Rust Core: \(error)")
         }
     }
 }

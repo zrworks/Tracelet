@@ -42,6 +42,23 @@ You must define usage descriptions and background modes in your `ios/Runner/Info
 
 ### 3. Android Setup
 
+#### Recommended dependency: high-accuracy GMS location
+
+To get the **fused location provider** (best accuracy + battery), hardware **activity recognition**, and hardware **geofencing**, add Google Play Services Location to your app. It is **not bundled** by Tracelet (to stay lightweight and support Google-less devices), so you opt in:
+
+```kotlin
+// android/app/build.gradle.kts
+dependencies {
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+}
+```
+
+<Callout type="info">
+**Without this dependency, Tracelet falls back to the AOSP `LocationManager` (plain GPS)** — tracking still works, but you lose the `FusedLocationProviderClient`'s accuracy/battery benefits, hardware activity recognition, and hardware geofencing. **Add it unless you specifically target Google-less / AOSP devices.** See [Android platform setup](/en/getting-started/platform-setup/android#optional-dependency-high-accuracy-gms-location) for the full comparison.
+</Callout>
+
+#### Permissions
+
 By default, Tracelet automatically injects all required permissions into your compiled Android manifest via Manifest Merger. You **do not** need to manually add `<uses-permission>` tags to your `AndroidManifest.xml` unless you want to override them.
 
 The injected permissions are:

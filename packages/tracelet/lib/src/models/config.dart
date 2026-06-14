@@ -104,12 +104,8 @@ class Config {
       privacyZone: PrivacyZoneConfig.fromMap(privacyMap ?? map),
       security: SecurityConfig.fromMap(securityMap ?? map),
       attestation: AttestationConfig.fromMap(attestMap ?? map),
-      telematics: TelematicsConfig.fromMap(
-        safeMap(map['telematics']) ?? map,
-      ),
-      classifier: ClassifierConfig.fromMap(
-        safeMap(map['classifier']) ?? map,
-      ),
+      telematics: TelematicsConfig.fromMap(safeMap(map['telematics']) ?? map),
+      classifier: ClassifierConfig.fromMap(safeMap(map['classifier']) ?? map),
       impact: ImpactConfig.fromMap(safeMap(map['impact']) ?? map),
     );
   }

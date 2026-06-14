@@ -16,8 +16,11 @@ over time and adjusts parameters to meet a **target drain rate** (%/hour).
 import 'package:tracelet/tracelet.dart' as tl;
 
 await tl.Tracelet.ready(tl.Config.balanced().copyWith(
-  geo: tl.GeoConfig(
+  android: const tl.AndroidConfig(
     batteryBudgetPerHour: 3.0,  // Target: max 3% battery drain per hour
+    releaseWakelockWhenStationary: true, // Optional: Drop wakelocks when stopped
+  ),
+  geo: const tl.GeoConfig(
     distanceFilter: 10.0,       // Initial distance filter (will be adjusted)
     desiredAccuracy: tl.DesiredAccuracy.high,  // Initial accuracy (will be adjusted)
   ),
@@ -91,7 +94,8 @@ The engine clamps adjusted values to prevent extreme behavior:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `batteryBudgetPerHour` | `double` | `0.0` | Target max battery drain per hour (%). `0` = disabled. |
+| `batteryBudgetPerHour` | `double` | `0.0` | Target max battery drain per hour (%). `0` = disabled. (Geo Config) |
+| `releaseWakelockWhenStationary` | `bool` | `false` | Android only. When using `MotionDetectionMode.smart`, releases the tracking wakelock when the device is fully stationary to maximize deep sleep battery savings. |
 
 ### Recommended Values
 

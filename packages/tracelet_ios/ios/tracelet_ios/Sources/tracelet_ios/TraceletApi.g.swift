@@ -663,6 +663,9 @@ struct TlAndroidConfig: Hashable {
   var periodicUseExactAlarms: Bool
   var scheduleUseAlarmManager: Bool
   var foregroundService: TlForegroundServiceConfig
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  var releaseWakelockWhenStationary: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -676,6 +679,7 @@ struct TlAndroidConfig: Hashable {
     let periodicUseExactAlarms = pigeonVar_list[6] as! Bool
     let scheduleUseAlarmManager = pigeonVar_list[7] as! Bool
     let foregroundService = pigeonVar_list[8] as! TlForegroundServiceConfig
+    let releaseWakelockWhenStationary = pigeonVar_list[9] as! Bool
 
     return TlAndroidConfig(
       locationUpdateInterval: locationUpdateInterval,
@@ -686,7 +690,8 @@ struct TlAndroidConfig: Hashable {
       periodicUseForegroundService: periodicUseForegroundService,
       periodicUseExactAlarms: periodicUseExactAlarms,
       scheduleUseAlarmManager: scheduleUseAlarmManager,
-      foregroundService: foregroundService
+      foregroundService: foregroundService,
+      releaseWakelockWhenStationary: releaseWakelockWhenStationary
     )
   }
   func toList() -> [Any?] {
@@ -700,13 +705,14 @@ struct TlAndroidConfig: Hashable {
       periodicUseExactAlarms,
       scheduleUseAlarmManager,
       foregroundService,
+      releaseWakelockWhenStationary,
     ]
   }
   static func == (lhs: TlAndroidConfig, rhs: TlAndroidConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.locationUpdateInterval, rhs.locationUpdateInterval) && deepEqualsTraceletApi(lhs.fastestLocationUpdateInterval, rhs.fastestLocationUpdateInterval) && deepEqualsTraceletApi(lhs.deferTime, rhs.deferTime) && deepEqualsTraceletApi(lhs.allowIdenticalLocations, rhs.allowIdenticalLocations) && deepEqualsTraceletApi(lhs.geofenceModeHighAccuracy, rhs.geofenceModeHighAccuracy) && deepEqualsTraceletApi(lhs.periodicUseForegroundService, rhs.periodicUseForegroundService) && deepEqualsTraceletApi(lhs.periodicUseExactAlarms, rhs.periodicUseExactAlarms) && deepEqualsTraceletApi(lhs.scheduleUseAlarmManager, rhs.scheduleUseAlarmManager) && deepEqualsTraceletApi(lhs.foregroundService, rhs.foregroundService)
+    return deepEqualsTraceletApi(lhs.locationUpdateInterval, rhs.locationUpdateInterval) && deepEqualsTraceletApi(lhs.fastestLocationUpdateInterval, rhs.fastestLocationUpdateInterval) && deepEqualsTraceletApi(lhs.deferTime, rhs.deferTime) && deepEqualsTraceletApi(lhs.allowIdenticalLocations, rhs.allowIdenticalLocations) && deepEqualsTraceletApi(lhs.geofenceModeHighAccuracy, rhs.geofenceModeHighAccuracy) && deepEqualsTraceletApi(lhs.periodicUseForegroundService, rhs.periodicUseForegroundService) && deepEqualsTraceletApi(lhs.periodicUseExactAlarms, rhs.periodicUseExactAlarms) && deepEqualsTraceletApi(lhs.scheduleUseAlarmManager, rhs.scheduleUseAlarmManager) && deepEqualsTraceletApi(lhs.foregroundService, rhs.foregroundService) && deepEqualsTraceletApi(lhs.releaseWakelockWhenStationary, rhs.releaseWakelockWhenStationary)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -720,6 +726,7 @@ struct TlAndroidConfig: Hashable {
     deepHashTraceletApi(value: periodicUseExactAlarms, hasher: &hasher)
     deepHashTraceletApi(value: scheduleUseAlarmManager, hasher: &hasher)
     deepHashTraceletApi(value: foregroundService, hasher: &hasher)
+    deepHashTraceletApi(value: releaseWakelockWhenStationary, hasher: &hasher)
   }
 }
 

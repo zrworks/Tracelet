@@ -203,6 +203,7 @@ class TraceletHostApiImpl(
             put("periodicUseForegroundService", c.android.periodicUseForegroundService)
             put("periodicUseExactAlarms", c.android.periodicUseExactAlarms)
             put("scheduleUseAlarmManager", c.android.scheduleUseAlarmManager)
+            put("releaseWakelockWhenStationary", c.android.releaseWakelockWhenStationary)
             put("foregroundService", buildMap {
                 put("enabled", c.android.foregroundService.enabled)
                 put("channelId", c.android.foregroundService.channelId)

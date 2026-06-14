@@ -33,7 +33,6 @@ Compound top-level configuration.
 - `enableSparseUpdates`: bool (Default: false)
 - `sparseDistanceThreshold`: double (Default: 50.0)
 - `sparseMaxIdleSeconds`: int (Default: 300)
-- `batteryBudgetPerHour`: double (Default: 0.0)
 - `enableDeadReckoning`: bool (Default: false)
 - `deadReckoningActivationDelay`: int (Default: 0)
 - `deadReckoningMaxDuration`: int (Default: 0)
@@ -62,6 +61,8 @@ Compound top-level configuration.
 ## class AndroidConfig
 - `locationUpdateInterval`: int (Default: 1000)
 - `fastestLocationUpdateInterval`: int (Default: 500)
+- `batteryBudgetPerHour`: double (Default: 0.0)
+- `releaseWakelockWhenStationary`: bool (Default: false)
 - `deferTime`: int (Default: 0)
 - `allowIdenticalLocations`: bool (Default: false)
 - `geofenceModeHighAccuracy`: bool (Default: false)

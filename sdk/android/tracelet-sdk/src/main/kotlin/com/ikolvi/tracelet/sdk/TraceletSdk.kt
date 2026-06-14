@@ -1889,6 +1889,24 @@ class TraceletSdk private constructor(private val context: Context) {
             // while still allowing the system to wake from stationary when the
             // coordinator determines real movement has begun.
             val action = smartMotionCoordinator.onAccelStateChange(isMoving)
+            
+            if (configManager.isForegroundServiceEnabled()) {
+                if (isMoving) {
+                    // Re-assert the wakelock on the moving transition (idempotent
+                    // if already held) so CPU stays awake during active tracking.
+                    LocationService.acquireWakelock(context)
+                } else if (configManager.getReleaseWakelockWhenStationary() &&
+                    motionDetector.getSensors()["significantMotion"] == true
+                ) {
+                    // Drop the wakelock when stationary to save battery — but only
+                    // when the hardware TYPE_SIGNIFICANT_MOTION wake-up sensor is
+                    // present, so the device can still wake from Doze on real
+                    // movement. Without it we keep the wakelock (safe default) to
+                    // avoid stranding the detector in the stationary state (#162).
+                    LocationService.releaseWakelock(context)
+                }
+            }
+            
             if (action == uniffi.tracelet_core.CoordinatorAction.SWITCH_TO_CONTINUOUS
                 && ::speedMotionManager.isInitialized) {
                 speedMotionManager.onManualPaceChange(true)

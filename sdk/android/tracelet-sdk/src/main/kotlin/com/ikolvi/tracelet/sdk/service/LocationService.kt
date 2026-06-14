@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.service
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.Manifest
 import android.app.*
@@ -194,7 +195,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
 
             // Fire first fix after one interval.
             handler.postDelayed(runnable, intervalMs)
-            Log.d(TAG, "switchToStationaryPeriodic() — interval=${intervalMs}ms, accuracy=$accuracy")
+            TraceletLog.debug("switchToStationaryPeriodic() — interval=${intervalMs}ms, accuracy=$accuracy")
         }
 
         /**
@@ -206,7 +207,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
             // Mark state as stationary so motion change events fire correctly
             state.isMoving = false
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.GEOFENCES
-            Log.d(TAG, "switchToStationaryGeofences() — continuous stopped, geofences active")
+            TraceletLog.debug("switchToStationaryGeofences() — continuous stopped, geofences active")
         }
 
         /**
@@ -218,7 +219,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
             state.isMoving = true
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
             engine.start()
-            Log.d(TAG, "switchToContinuous() — continuous tracking resumed")
+            TraceletLog.debug("switchToContinuous() — continuous tracking resumed")
         }
 
         /** Cancels the stationary periodic timer if active. */
@@ -288,9 +289,9 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     // deferred start would never fire and tracking would silently
                     // never resume. Report the failure so BootReceiver can fall
                     // back to a background-eligible mechanism (WorkManager/alarms).
-                    Log.w(TAG, "Boot foreground-service start blocked (Android 12+ background restriction): ${e.message}. Caller will fall back to WorkManager.")
+                    TraceletLog.warning("Boot foreground-service start blocked (Android 12+ background restriction): ${e.message}. Caller will fall back to WorkManager.")
                 } else {
-                    Log.w(TAG, "startForegroundService blocked (app likely backgrounded on Android 12+): ${e.message}. Deferring until foreground.")
+                    TraceletLog.warning("startForegroundService blocked (app likely backgrounded on Android 12+): ${e.message}. Deferring until foreground.")
                     scheduleDeferredStart(appContext, isBoot)
                 }
                 false
@@ -328,9 +329,9 @@ class LocationService : Service(), DefaultLifecycleObserver {
                             } else {
                                 appContext.startService(retryIntent)
                             }
-                            Log.d(TAG, "Deferred foreground-service start succeeded after returning to foreground")
+                            TraceletLog.debug("Deferred foreground-service start succeeded after returning to foreground")
                         } catch (e: IllegalStateException) {
-                            Log.w(TAG, "Deferred foreground-service start still blocked: ${e.message}")
+                            TraceletLog.warning("Deferred foreground-service start still blocked: ${e.message}")
                         }
                     }
                 }
@@ -384,7 +385,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
             bootLocationEngine?.speedMotionSpeedSink = null
             bootLocationEngine?.destroy()
             bootLocationEngine = null
-            Log.d(TAG, "Boot-mode native tracking stopped — ready() taking over")
+            TraceletLog.debug("Boot-mode native tracking stopped — ready() taking over")
         }
 
         private fun stopBootHeartbeat() {
@@ -417,7 +418,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        Log.d(TAG, "App moved to FOREGROUND — checking notification visibility")
+        TraceletLog.debug("App moved to FOREGROUND — checking notification visibility")
         // ProcessLifecycleOwner is authoritative about UI foreground state —
         // pass it explicitly so we don't depend on the laggy process-importance
         // heuristic (which our own foreground service also skews).
@@ -425,16 +426,16 @@ class LocationService : Service(), DefaultLifecycleObserver {
         try {
             val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
             if (sdk.isReady) {
-                Log.d(TAG, "App moved to FOREGROUND — requesting state flush to Dart")
+                TraceletLog.debug("App moved to FOREGROUND — requesting state flush to Dart")
                 sdk.requestStateFlush()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error flushing state on foreground transition: ${e.message}")
+            TraceletLog.error("Error flushing state on foreground transition: ${e.message}")
         }
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        Log.d(TAG, "App moved to BACKGROUND — checking notification visibility")
+        TraceletLog.debug("App moved to BACKGROUND — checking notification visibility")
         // Authoritative background transition — show the pause-only notification
         // even though the OS process importance may still report foreground
         // (our foreground service pins it, and importance updates lag).
@@ -442,7 +443,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand: action=${intent?.action}")
+        TraceletLog.debug("onStartCommand: action=${intent?.action}")
         
         // Initial setup for the very first start command
         if (lastInForeground == null) {
@@ -456,7 +457,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
         }
 
         if (!isForegroundService) {
-            Log.d(TAG, "Satisfying foreground contract...")
+            TraceletLog.debug("Satisfying foreground contract...")
             startForegroundWithNotification()
             isForegroundService = true
         }
@@ -473,7 +474,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 }
             }
             ACTION_STOP -> {
-                Log.d(TAG, "Stopping service via ACTION_STOP")
+                TraceletLog.debug("Stopping service via ACTION_STOP")
                 stopBootTrackingInternal()
                 releaseOemWakelock()
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -508,7 +509,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     stopSelf()
                     isRunning = false
                 } else {
-                    Log.d(TAG, "Sticky restart detected — bootstrapping native tracking")
+                    TraceletLog.debug("Sticky restart detected — bootstrapping native tracking")
                     acquireOemWakelock()
                     startBootTracking()
                 }
@@ -535,7 +536,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     applicationContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
                 if (!hasBackground) {
-                    Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted — stopping tracking on task removal")
+                    TraceletLog.warning("ACCESS_BACKGROUND_LOCATION not granted — stopping tracking on task removal")
                     stopBootTrackingInternal()
                     releaseOemWakelock()
                     stopForeground(STOP_FOREGROUND_REMOVE)
@@ -543,7 +544,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     isRunning = false
                     return
                 }
-                Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted — continuing tracking after task removal")
+                TraceletLog.debug("ACCESS_BACKGROUND_LOCATION granted — continuing tracking after task removal")
             }
 
             val state = StateManager(applicationContext)
@@ -570,7 +571,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         configManager.getPeriodicLocationInterval(),
                     )
                 }
-                Log.d(TAG, "Task removed — periodic mode continues via WorkManager/AlarmManager")
+                TraceletLog.debug("Task removed — periodic mode continues via WorkManager/AlarmManager")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 isRunning = false
@@ -595,7 +596,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "onDestroy")
+        TraceletLog.debug("onDestroy")
         stopBootTrackingInternal()
         releaseOemWakelock()
         isRunning = false
@@ -623,10 +624,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()
-                Log.d(TAG, "Released OEM wakelock")
+                TraceletLog.debug("Released OEM wakelock")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error releasing wakelock: ${e.message}")
+            TraceletLog.error("Error releasing wakelock: ${e.message}")
         }
         wakeLock = null
     }
@@ -661,10 +662,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 ctx, Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
-                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted \u2014 cannot bootstrap boot tracking")
+                TraceletLog.warning("ACCESS_BACKGROUND_LOCATION not granted \u2014 cannot bootstrap boot tracking")
                 return
             }
-            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 bootstrapping native tracking")
+            TraceletLog.debug("ACCESS_BACKGROUND_LOCATION granted \u2014 bootstrapping native tracking")
         }
 
         val config = ConfigManager.getInstance(ctx)
@@ -683,7 +684,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 // Fallback: use a no-op ListenerEventSender so native tracking
                 // and HTTP sync still work even when the Flutter engine hasn't
                 // set the factory (e.g., cold boot before plugin initialization).
-                Log.w(TAG, "No event sender factory — falling back to ListenerEventSender for boot tracking")
+                TraceletLog.warning("No event sender factory — falling back to ListenerEventSender for boot tracking")
                 ListenerEventSender()
             }
 
@@ -700,7 +701,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
         sdk.bootstrapForBackground(eventSender)
 
         val trackingMode = state.trackingMode
-        Log.d(TAG, "Bootstrapping native tracking after boot/task-removal (trackingMode=$trackingMode, isMoving=${state.isMoving}, speedState=${state.speedMotionState}, enabled=${state.enabled})")
+        TraceletLog.debug("Bootstrapping native tracking after boot/task-removal (trackingMode=$trackingMode, isMoving=${state.isMoving}, speedState=${state.speedMotionState}, enabled=${state.enabled})")
 
         when (trackingMode) {
             TrackingMode.PERIODIC -> {
@@ -713,7 +714,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     val engine = LocationEngine(ctx, config, state, eventSender)
                     engine.startPeriodic()
                     bootLocationEngine = engine
-                    Log.d(TAG, "Periodic mode restored with foreground-service timer")
+                    TraceletLog.debug("Periodic mode restored with foreground-service timer")
                 } else if (config.getPeriodicUseExactAlarms()) {
                     // Exact alarms + OneTimeWorkRequest — no LocationEngine needed
                     PeriodicLocationWorker.scheduleOneTime(ctx)
@@ -721,7 +722,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         ctx,
                         config.getPeriodicLocationInterval(),
                     )
-                    Log.d(TAG, "Periodic mode restored with exact alarms")
+                    TraceletLog.debug("Periodic mode restored with exact alarms")
                 } else {
                     // WorkManager — already survives app kill natively,
                     // but explicitly re-schedule to ensure consistency after boot
@@ -729,7 +730,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         ctx,
                         config.getPeriodicLocationInterval(),
                     )
-                    Log.d(TAG, "Periodic mode restored with WorkManager")
+                    TraceletLog.debug("Periodic mode restored with WorkManager")
                 }
 
                 // Start heartbeat for periodic mode if configured
@@ -742,7 +743,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 val engine = LocationEngine(ctx, config, state, eventSender)
                 engine.start()
                 bootLocationEngine = engine
-                Log.d(TAG, "Boot-mode native tracking started (trackingMode=$trackingMode)")
+                TraceletLog.debug("Boot-mode native tracking started (trackingMode=$trackingMode)")
                 startBootHeartbeat(config, engine, eventSender)
             }
         }
@@ -797,7 +798,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     smm.start()
                     bootSpeedMotionManager = smm
                     engine.speedMotionSpeedSink = { speed -> smm.onLocation(speed) }
-                    Log.d(TAG, "Speed-based motion detection started (boot mode)")
+                    TraceletLog.debug("Speed-based motion detection started (boot mode)")
 
                     // If persisted state was STATIONARY, immediately switch to
                     // the appropriate stationary tracking mode.
@@ -806,7 +807,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                             com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state)
                             else -> LocationService.switchToStationaryPeriodic(engine, config, state)
                         }
-                        Log.d(TAG, "Restored stationary mode from persisted speed state")
+                        TraceletLog.debug("Restored stationary mode from persisted speed state")
                     }
                 } else if (motionMode == com.ikolvi.tracelet.sdk.model.MotionDetectionMode.SMART) {
                     val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
@@ -838,15 +839,15 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     engine.speedMotionSpeedSink = { speed -> smm.onLocation(speed) }
 
                     coordinator.syncCurrentMode()
-                    Log.d(TAG, "Boot SMART: syncCurrentMode done (trackingMode=$trackingMode)")
+                    TraceletLog.debug("Boot SMART: syncCurrentMode done (trackingMode=$trackingMode)")
                     
                     // Sync restored states to the coordinator so it doesn't default to true/false blindly
                     val restoredSpeedMoving = state.speedMotionState == com.ikolvi.tracelet.sdk.model.SpeedMotionState.MOVING || 
                                               state.speedMotionState == com.ikolvi.tracelet.sdk.model.SpeedMotionState.SLOWING
-                    Log.d(TAG, "Boot SMART: restoring coordinator — speedMoving=$restoredSpeedMoving (speedState=${state.speedMotionState}), accelMoving=${state.isMoving}")
+                    TraceletLog.debug("Boot SMART: restoring coordinator — speedMoving=$restoredSpeedMoving (speedState=${state.speedMotionState}), accelMoving=${state.isMoving}")
                     val speedAction = coordinator.onSpeedStateChange(restoredSpeedMoving)
                     val accelAction = coordinator.onAccelStateChange(state.isMoving)
-                    Log.d(TAG, "Boot SMART: coordinator restored — speedAction=$speedAction, accelAction=$accelAction, isAccelMoving=${coordinator.isAccelMoving}, isSpeedMoving=${coordinator.isSpeedMoving}")
+                    TraceletLog.debug("Boot SMART: coordinator restored — speedAction=$speedAction, accelAction=$accelAction, isAccelMoving=${coordinator.isAccelMoving}, isSpeedMoving=${coordinator.isSpeedMoving}")
                     
                     // CRITICAL FIX: If the persisted state was STATIONARY but the engine
                     // was started in continuous mode (because trackingMode was CONTINUOUS
@@ -854,18 +855,18 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     // engine to the correct mode. The coordinator's syncCurrentMode()
                     // only updates internal Rust state, not the actual native engine.
                     if (!restoredSpeedMoving && !state.isMoving && trackingMode != TrackingMode.PERIODIC) {
-                        Log.d(TAG, "Boot SMART: persisted state is STATIONARY but engine started in continuous — switching engine to stationary periodic")
+                        TraceletLog.debug("Boot SMART: persisted state is STATIONARY but engine started in continuous — switching engine to stationary periodic")
                         LocationService.switchToStationaryPeriodic(engine, config, state)
                     }
 
                     detector.onMotionStateChanged = { isMoving ->
-                        Log.d(TAG, "Boot SMART: MotionDetector state changed — isMoving=$isMoving")
+                        TraceletLog.debug("Boot SMART: MotionDetector state changed — isMoving=$isMoving")
                         
                         // Call coordinator first so it can switch the engine state (e.g. engine.start())
                         // This prevents engine.start() from overwriting forcePersistNextFilteredLocation to false.
                         bootSpeedMotionManager?.onManualPaceChange(isMoving)
                         val action = coordinator.onAccelStateChange(isMoving)
-                        Log.d(TAG, "Boot SMART: coordinator accelAction=$action, isAccelMoving=${coordinator.isAccelMoving}, isSpeedMoving=${coordinator.isSpeedMoving}")
+                        TraceletLog.debug("Boot SMART: coordinator accelAction=$action, isAccelMoving=${coordinator.isAccelMoving}, isSpeedMoving=${coordinator.isSpeedMoving}")
                         
                         // Fire event to Dart / headless so UI and listeners know about the pace change
                         val locMap = engine.getLastLocation()?.let { 
@@ -883,11 +884,11 @@ class LocationService : Service(), DefaultLifecycleObserver {
                                 sdk.insertLocation(locMap)
                                 sdk.sync {}
                             } else {
-                                Log.d(TAG, "Boot SMART: No cached location available to persist motion change. Forcing next GPS fix to be accepted.")
+                                TraceletLog.debug("Boot SMART: No cached location available to persist motion change. Forcing next GPS fix to be accepted.")
                                 engine.forcePersistNextFilteredLocation = true
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to persist motion change location: ${e.message}")
+                            TraceletLog.error("Failed to persist motion change location: ${e.message}")
                         }
                     }
                     detector.onStopRequested = {}
@@ -899,12 +900,12 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         if (hasMotion) {
                             detector.start()
                         } else {
-                            Log.w(TAG, "ACTIVITY_RECOGNITION not granted in boot mode")
+                            TraceletLog.warning("ACTIVITY_RECOGNITION not granted in boot mode")
                         }
                     } else {
                         detector.start()
                     }
-                    Log.d(TAG, "Smart-based motion detection started (boot mode)")
+                    TraceletLog.debug("Smart-based motion detection started (boot mode)")
                 } else {
                     // Accelerometer / Activity Recognition only
                     val detector = com.ikolvi.tracelet.sdk.motion.MotionDetector(
@@ -933,12 +934,12 @@ class LocationService : Service(), DefaultLifecycleObserver {
                         if (hasMotion) {
                             detector.start()
                         } else {
-                            Log.w(TAG, "ACTIVITY_RECOGNITION not granted in boot mode")
+                            TraceletLog.warning("ACTIVITY_RECOGNITION not granted in boot mode")
                         }
                     } else {
                         detector.start()
                     }
-                    Log.d(TAG, "Accelerometer-based motion detection started (boot mode)")
+                    TraceletLog.debug("Accelerometer-based motion detection started (boot mode)")
                 }
             } // end let
 
@@ -949,7 +950,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 val geoManager = GeofenceManager(ctx, config, eventSender)
                 geoManager.reRegisterAll()
                 GeofenceBroadcastReceiver.geofenceManager = geoManager
-                Log.d(TAG, "Geofence registrations restored after boot/task-removal")
+                TraceletLog.debug("Geofence registrations restored after boot/task-removal")
             }
         }
 
@@ -974,21 +975,21 @@ class LocationService : Service(), DefaultLifecycleObserver {
         val runnable = object : Runnable {
             override fun run() {
                 if (bootLocationEngine == null) return // Tracking stopped
-                Log.d(TAG, "Boot heartbeat fired")
+                TraceletLog.debug("Boot heartbeat fired")
                 val cached = engine.getLastGpsLocation()
                 if (cached != null) {
                     val locationData = engine.enrichLocation(cached, "heartbeat").toMutableMap()
                     dispatcher.sendHeartbeat(mapOf("location" to locationData))
-                    Log.d(TAG, "Boot heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, acc=${cached.accuracy}m")
+                    TraceletLog.debug("Boot heartbeat: lat=${cached.latitude}, lon=${cached.longitude}, acc=${cached.accuracy}m")
                 } else {
-                    Log.d(TAG, "Boot heartbeat: no cached location, skipping")
+                    TraceletLog.debug("Boot heartbeat: no cached location, skipping")
                 }
                 handler.postDelayed(this, intervalSeconds * 1000L)
             }
         }
         bootHeartbeatRunnable = runnable
         handler.postDelayed(runnable, intervalSeconds * 1000L)
-        Log.d(TAG, "Boot-mode heartbeat started (interval=${intervalSeconds}s)")
+        TraceletLog.debug("Boot-mode heartbeat started (interval=${intervalSeconds}s)")
     }
 
     private fun stopBootTrackingInternal() {
@@ -1130,14 +1131,14 @@ class LocationService : Service(), DefaultLifecycleObserver {
         if (showOnPauseOnly) {
             if (inForeground) {
                 if (isForegroundService) {
-                    Log.d(TAG, "Suppressing notification (App in foreground)")
+                    TraceletLog.debug("Suppressing notification (App in foreground)")
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     isForegroundService = false
                 }
             } else {
                 // Show in background if not already shown OR if we just transitioned.
                 if (!isForegroundService || changed) {
-                    Log.d(TAG, "Showing notification (App in background)")
+                    TraceletLog.debug("Showing notification (App in background)")
                     startForegroundWithNotification()
                     isForegroundService = true
                 }
@@ -1145,13 +1146,13 @@ class LocationService : Service(), DefaultLifecycleObserver {
         } else {
             // Persistent mode: Always ensure it's shown.
             if (!isForegroundService) {
-                Log.d(TAG, "Showing persistent notification")
+                TraceletLog.debug("Showing persistent notification")
                 startForegroundWithNotification()
                 isForegroundService = true
             } else if (changed && !inForeground) {
                 // Optimization: Re-show when moving to background in case it was
                 // manually dismissed while the app was in the foreground.
-                Log.d(TAG, "Restoring persistent notification on background transition")
+                TraceletLog.debug("Restoring persistent notification on background transition")
                 startForegroundWithNotification()
                 isForegroundService = true
             }
@@ -1174,7 +1175,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
         val importanceForeground = processInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE &&
             processInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
 
-        Log.d(TAG, "Foreground check: lifecycle=$lifecycleState, importance=${processInfo.importance}")
+        TraceletLog.debug("Foreground check: lifecycle=$lifecycleState, importance=${processInfo.importance}")
 
         return lifecycleForeground || importanceForeground
     }

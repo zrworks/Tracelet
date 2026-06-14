@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.receiver
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -21,20 +22,20 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null || context == null) return
-        Log.d(TAG, "onReceive: Activity transition broadcast received")
+        TraceletLog.debug("onReceive: Activity transition broadcast received")
 
         try {
             val sdk = TraceletSdk.getInstance(context)
             if (sdk.isReady) {
-                Log.d(TAG, "Forwarding transition event to active SDK MotionDetector")
+                TraceletLog.debug("Forwarding transition event to active SDK MotionDetector")
                 sdk.motionDetector.handleTransitionIntent(intent)
             } else {
-                Log.d(TAG, "SDK not ready — attempting to route transition event to boot-mode MotionDetector")
+                TraceletLog.debug("SDK not ready — attempting to route transition event to boot-mode MotionDetector")
                 val bootMotionDetector = LocationService.bootMotionDetector
                 if (bootMotionDetector != null) {
                     bootMotionDetector.handleTransitionIntent(intent)
                 } else {
-                    Log.w(TAG, "No active or boot-mode MotionDetector found to handle transition")
+                    TraceletLog.warning("No active or boot-mode MotionDetector found to handle transition")
                     val state = com.ikolvi.tracelet.sdk.StateManager(context)
                     if (state.enabled) {
                         val extractor = com.ikolvi.tracelet.sdk.wrapper.TraceletServices.getInstance(context).getEventExtractor()
@@ -45,7 +46,7 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
                                 if (event.transitionType == 0) {
                                     if (event.activityType != 3) {
                                         if (state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.PERIODIC) {
-                                            Log.d(TAG, "Detected moving transition while in killed periodic mode — waking up SDK!")
+                                            TraceletLog.debug("Detected moving transition while in killed periodic mode — waking up SDK!")
                                             state.isMoving = true
                                             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS
                                             LocationService.startFromBoot(context)
@@ -53,7 +54,7 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
                                         }
                                     } else {
                                         if (state.trackingMode == com.ikolvi.tracelet.sdk.model.TrackingMode.CONTINUOUS) {
-                                            Log.d(TAG, "Detected STILL transition while in killed continuous mode — switching to stationary!")
+                                            TraceletLog.debug("Detected STILL transition while in killed continuous mode — switching to stationary!")
                                             state.isMoving = false
                                             val configManager = com.ikolvi.tracelet.sdk.ConfigManager.getInstance(context)
                                             val useForeground = configManager.isForegroundServiceEnabled()
@@ -85,7 +86,7 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error processing activity transition: ${e.message}", e)
+            TraceletLog.error("Error processing activity transition: ${e.message}", e)
         }
     }
 }

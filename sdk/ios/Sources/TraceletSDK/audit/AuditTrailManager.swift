@@ -49,7 +49,7 @@ public final class AuditTrailManager {
         // --- Migration: auto-reset chain if hash logic version changed ---
         let storedVersion = defaults.integer(forKey: Self.auditHashVersionKey)
         if storedVersion < Self.auditHashVersion {
-            NSLog("AuditTrailManager: hash logic upgraded (v\(storedVersion) → v\(Self.auditHashVersion)) — resetting chain")
+            TraceletLog.debug("AuditTrailManager: hash logic upgraded (v\(storedVersion) → v\(Self.auditHashVersion)) — resetting chain")
             try? rustDatabase?.clearAuditTrail()
             let genesisHash = computeGenesisHash(deviceId: vendorId)
             defaults.set([
@@ -97,7 +97,7 @@ public final class AuditTrailManager {
         // permanently breaks verifyChain ("missing location record"). Skip it —
         // mirrors the Android AuditTrailManager guard.
         guard let uuid = locationMap["uuid"] as? String, !uuid.isEmpty else {
-            NSLog("AuditTrailManager: appendToChain — no uuid, skipping")
+            TraceletLog.debug("AuditTrailManager: appendToChain — no uuid, skipping")
             return nil
         }
         let timestamp = locationMap["timestamp"] as? String ?? ""
@@ -121,7 +121,7 @@ public final class AuditTrailManager {
             isMoving: isMoving
         )
 
-        NSLog("AuditTrailManager: appendToChain [uuid=\(uuid), ts=\(timestamp), lat=\(lat), lng=\(lng), speed=\(speed), heading=\(heading), acc=\(accuracy), alt=\(altitude), isMoving=\(isMoving)]")
+        TraceletLog.debug("AuditTrailManager: appendToChain [uuid=\(uuid), ts=\(timestamp), lat=\(lat), lng=\(lng), speed=\(speed), heading=\(heading), acc=\(accuracy), alt=\(altitude), isMoving=\(isMoving)]")
 
         // Delegate next hash generation to the Rust Core engine
         let result = engine.generateNextHash(loc: loc)
@@ -135,7 +135,7 @@ public final class AuditTrailManager {
                 index: result.chainIndex
             )
         } catch {
-            NSLog("AuditTrailManager: Failed to write audit trail to Rust Core DB: \(error)")
+            TraceletLog.error("AuditTrailManager: Failed to write audit trail to Rust Core DB: \(error)")
         }
 
         // Persist the updated chain cursor locally
@@ -199,12 +199,12 @@ public final class AuditTrailManager {
         // Run full cryptographic chain audit verification in Rust Core
         let result = engine.verifyChain(records: rustRecords)
 
-        NSLog("AuditTrailManager: Full Audit Trail Dump:")
+        TraceletLog.debug("AuditTrailManager: Full Audit Trail Dump:")
         for record in rustRecords {
             if let loc = record.location {
-                NSLog("AuditTrailManager: Record [index=\(record.chainIndex), uuid=\(loc.uuid), hash=\(record.hash), prevHash=\(record.previousHash), ts=\(loc.timestamp), speed=\(loc.speed), heading=\(loc.heading), acc=\(loc.accuracy), isMoving=\(loc.isMoving)]")
+                TraceletLog.debug("AuditTrailManager: Record [index=\(record.chainIndex), uuid=\(loc.uuid), hash=\(record.hash), prevHash=\(record.previousHash), ts=\(loc.timestamp), speed=\(loc.speed), heading=\(loc.heading), acc=\(loc.accuracy), isMoving=\(loc.isMoving)]")
             } else {
-                NSLog("AuditTrailManager: Record [index=\(record.chainIndex), NO LOCATION, hash=\(record.hash), prevHash=\(record.previousHash)]")
+                TraceletLog.debug("AuditTrailManager: Record [index=\(record.chainIndex), NO LOCATION, hash=\(record.hash), prevHash=\(record.previousHash)]")
             }
         }
 
@@ -223,7 +223,7 @@ public final class AuditTrailManager {
             map["error"] = err
         }
 
-        NSLog("AuditTrailManager: verifyChain result: \(map)")
+        TraceletLog.debug("AuditTrailManager: verifyChain result: \(map)")
 
         return map
     }

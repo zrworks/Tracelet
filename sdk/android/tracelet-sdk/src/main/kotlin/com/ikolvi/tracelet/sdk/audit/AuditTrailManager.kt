@@ -2,6 +2,7 @@ package com.ikolvi.tracelet.sdk.audit
 
 import android.content.Context
 import com.ikolvi.tracelet.sdk.ConfigManager
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -60,7 +61,7 @@ class AuditTrailManager(
         // --- Migration: auto-reset chain if hash logic version changed ---
         val storedVersion = prefs.getInt(KEY_HASH_VERSION, 0)
         if (storedVersion < AUDIT_HASH_VERSION) {
-            android.util.Log.i("Tracelet", "AUDIT: hash logic upgraded (v$storedVersion → v$AUDIT_HASH_VERSION) — resetting chain")
+            TraceletLog.info("AUDIT: hash logic upgraded (v$storedVersion → v$AUDIT_HASH_VERSION) — resetting chain")
             prefs.edit().clear().apply()
             try { rustDatabase?.clearAuditTrail() } catch (_: Exception) {}
             prefs.edit().putInt(KEY_HASH_VERSION, AUDIT_HASH_VERSION).apply()
@@ -142,7 +143,7 @@ class AuditTrailManager(
     @Synchronized
     fun appendToChain(locationMap: Map<String, Any?>): Map<String, Any?>? {
         if (!isEnabled()) {
-            android.util.Log.d("Tracelet", "AUDIT: appendToChain — audit disabled, skipping")
+            TraceletLog.debug("AUDIT: appendToChain — audit disabled, skipping")
             return null
         }
 
@@ -178,9 +179,9 @@ class AuditTrailManager(
         // Store in audit_trail table
         try {
             rustDatabase?.insertAuditTrail(uuid, result.hash, result.previousHash, result.chainIndex)
-            android.util.Log.d("Tracelet", "AUDIT: appended chain index=${result.chainIndex} uuid=$uuid lat=$latitude lng=$longitude")
+            TraceletLog.debug("AUDIT: appended chain index=${result.chainIndex} uuid=$uuid lat=$latitude lng=$longitude")
         } catch (e: Exception) {
-            android.util.Log.e("Tracelet", "Failed to persist audit trail to Rust DB", e)
+            TraceletLog.error("Failed to persist audit trail to Rust DB", e)
         }
 
         // Update chain state
@@ -248,9 +249,9 @@ class AuditTrailManager(
         // Delegate cryptographic verification to the Rust engine
         val result = engine.verifyChain(rustRecords)
 
-        android.util.Log.i("Tracelet", "AUDIT: Full Audit Trail Dump:")
+        TraceletLog.info("AUDIT: Full Audit Trail Dump:")
         rustRecords.forEach { record ->
-            android.util.Log.i("Tracelet", "AUDIT: Record [index=${record.chainIndex}, uuid=${record.location?.uuid}, hash=${record.hash}, prevHash=${record.previousHash}]")
+            TraceletLog.info("AUDIT: Record [index=${record.chainIndex}, uuid=${record.location?.uuid}, hash=${record.hash}, prevHash=${record.previousHash}]")
         }
 
         val map = mutableMapOf<String, Any?>(
@@ -262,10 +263,7 @@ class AuditTrailManager(
         if (result.brokenAtUuid != null) { map["brokenAtUuid"] = result.brokenAtUuid }
         if (result.error != null) { map["error"] = result.error }
 
-        android.util.Log.i(
-            "Tracelet",
-            "AUDIT: verifyChain result: $map"
-        )
+        TraceletLog.info("AUDIT: verifyChain result: $map")
 
         return map
     }

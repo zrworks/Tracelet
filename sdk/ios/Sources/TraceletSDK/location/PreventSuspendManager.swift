@@ -38,9 +38,9 @@ public final class PreventSuspendManager {
             audioPlayer?.play()
 
             isRunning = true
-            NSLog("[Tracelet] preventSuspend started — silent audio loop active")
+            TraceletLog.debug("[Tracelet] preventSuspend started — silent audio loop active")
         } catch {
-            NSLog("[Tracelet] preventSuspend failed to start: \(error.localizedDescription)")
+            TraceletLog.error("[Tracelet] preventSuspend failed to start: \(error.localizedDescription)")
         }
     }
 
@@ -53,7 +53,7 @@ public final class PreventSuspendManager {
 
         // Deactivate audio session
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        NSLog("[Tracelet] preventSuspend stopped")
+        TraceletLog.debug("[Tracelet] preventSuspend stopped")
     }
 
     // MARK: - Silent WAV generation

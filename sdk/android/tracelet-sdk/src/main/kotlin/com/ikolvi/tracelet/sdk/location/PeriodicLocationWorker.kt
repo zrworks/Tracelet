@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.location
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -67,7 +68,7 @@ class PeriodicLocationWorker(
                 ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
-            Log.d(TAG, "Scheduled periodic location work: interval=${interval}s")
+            TraceletLog.debug("Scheduled periodic location work: interval=${interval}s")
         }
 
         fun scheduleOneTime(context: Context) {
@@ -86,7 +87,7 @@ class PeriodicLocationWorker(
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
             WorkManager.getInstance(context).cancelUniqueWork("${WORK_NAME}_onetime")
             cancelExactAlarm(context)
-            Log.d(TAG, "Cancelled periodic location work")
+            TraceletLog.debug("Cancelled periodic location work")
         }
 
         fun scheduleExactAlarm(context: Context, intervalSeconds: Int) {
@@ -98,7 +99,7 @@ class PeriodicLocationWorker(
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (!alarmManager.canScheduleExactAlarms()) {
-                    Log.w(TAG, "SCHEDULE_EXACT_ALARM not granted \u2014 using setAndAllowWhileIdle")
+                    TraceletLog.warning("SCHEDULE_EXACT_ALARM not granted \u2014 using setAndAllowWhileIdle")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
                     } else {
@@ -116,9 +117,9 @@ class PeriodicLocationWorker(
                 } else {
                     alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
                 }
-                Log.d(TAG, "Scheduled exact alarm in ${intervalSeconds}s")
+                TraceletLog.debug("Scheduled exact alarm in ${intervalSeconds}s")
             } catch (e: SecurityException) {
-                Log.w(TAG, "Exact alarm SecurityException \u2014 using setAndAllowWhileIdle", e)
+                TraceletLog.warning("Exact alarm SecurityException \u2014 using setAndAllowWhileIdle", e)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pi)
                 } else {
@@ -131,7 +132,7 @@ class PeriodicLocationWorker(
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE)
                 as? AlarmManager ?: return
             alarmManager.cancel(createAlarmPendingIntent(context))
-            Log.d(TAG, "Cancelled exact periodic alarm")
+            TraceletLog.debug("Cancelled exact periodic alarm")
         }
 
         fun canScheduleExactAlarms(context: Context): Boolean {
@@ -159,7 +160,7 @@ class PeriodicLocationWorker(
                 applicationContext, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
-                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION revoked \u2014 stopping periodic work")
+                TraceletLog.warning("ACCESS_BACKGROUND_LOCATION revoked \u2014 stopping periodic work")
                 StateManager(applicationContext).apply {
                     enabled = false
                 }
@@ -193,7 +194,7 @@ class PeriodicLocationWorker(
 
                 // Dispatch to the event sender which will route to UI/Headless
                 dispatchLocation(locationMap)
-                Log.d(TAG, "Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
+                TraceletLog.debug("Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
 
                 // Feed speed to motion coordinators to allow wake up from stationary
                 if (sdk.isReady) {
@@ -215,7 +216,7 @@ class PeriodicLocationWorker(
             val httpConfig = traceletSdk.rustEngineState?.getConfig()?.http
             if (httpConfig != null && httpConfig.autoSync) {
                 val delayMs = httpConfig.autoSyncDelay.toLong()
-                Log.d(TAG, "Delaying worker exit for ${delayMs + 1000L} ms to allow tracelet_sync background upload...")
+                TraceletLog.debug("Delaying worker exit for ${delayMs + 1000L} ms to allow tracelet_sync background upload...")
                 kotlinx.coroutines.delay(delayMs + 1000L)
             }
 
@@ -226,10 +227,10 @@ class PeriodicLocationWorker(
             // cancelled this periodic job while we were holding it open for the
             // sync delay above. Never swallow CancellationException; let it
             // propagate so WorkManager records the work as cancelled cleanly.
-            Log.d(TAG, "Periodic location work cancelled")
+            TraceletLog.debug("Periodic location work cancelled")
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Periodic location work failed: ${e.message}", e)
+            TraceletLog.error("Periodic location work failed: ${e.message}", e)
             Result.retry()
         }
     }

@@ -87,7 +87,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
             do {
                 try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius, vertices: vertices, extras: extrasStr)
             } catch {
-                NSLog("GeofenceManager: Failed to write geofence to Rust Core DB: \(error)")
+                TraceletLog.error("GeofenceManager: Failed to write geofence to Rust Core DB: \(error)")
             }
         }
 
@@ -133,7 +133,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
                 do {
                     try rustDatabase?.insertGeofence(identifier: identifier, lat: lat, lng: lng, radius: radius, vertices: vertices, extras: extrasStr)
                 } catch {
-                    NSLog("GeofenceManager: Failed to write batch geofence to Rust Core DB: \(error)")
+                    TraceletLog.error("GeofenceManager: Failed to write batch geofence to Rust Core DB: \(error)")
                 }
             }
         }
@@ -161,7 +161,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         do {
             try rustDatabase?.deleteGeofence(identifier: identifier)
         } catch {
-            NSLog("GeofenceManager: Failed to delete geofence from Rust Core DB: \(error)")
+            TraceletLog.error("GeofenceManager: Failed to delete geofence from Rust Core DB: \(error)")
         }
 
         cachedGeofences = nil
@@ -179,7 +179,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
         do {
             try rustDatabase?.clearGeofences()
         } catch {
-            NSLog("GeofenceManager: Failed to clear geofences from Rust Core DB: \(error)")
+            TraceletLog.error("GeofenceManager: Failed to clear geofences from Rust Core DB: \(error)")
         }
 
         cachedGeofences = nil
@@ -392,7 +392,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
             eventDispatcher.sendGeofencesChange(["on": on, "off": off])
         }
 
-        NSLog("[Tracelet] Proximity update: \(activeGeofenceIds.count) active, +\(toAdd.count)/-\(toRemove.count)")
+        TraceletLog.debug("[Tracelet] Proximity update: \(activeGeofenceIds.count) active, +\(toAdd.count)/-\(toRemove.count)")
     }
 
     /// Clear high-accuracy tracking state.
@@ -426,7 +426,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     private func registerWithSystem(_ data: [String: Any]) {
         guard CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else {
-            NSLog("[Tracelet] Geofence monitoring not available")
+            TraceletLog.debug("[Tracelet] Geofence monitoring not available")
             return
         }
 
@@ -437,7 +437,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
         // Guard against invalid radius (e.g. polygon geofences with radius=0)
         guard radius > 0 else {
-            NSLog("[Tracelet] Skipping geofence \(identifier): invalid radius \(radius)")
+            TraceletLog.debug("[Tracelet] Skipping geofence \(identifier): invalid radius \(radius)")
             return
         }
 
@@ -481,7 +481,7 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
     }
 
     public func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        NSLog("[Tracelet] Geofence monitoring failed for \(region?.identifier ?? "unknown"): \(error.localizedDescription)")
+        TraceletLog.error("[Tracelet] Geofence monitoring failed for \(region?.identifier ?? "unknown"): \(error.localizedDescription)")
     }
 
     // MARK: - Transition handling

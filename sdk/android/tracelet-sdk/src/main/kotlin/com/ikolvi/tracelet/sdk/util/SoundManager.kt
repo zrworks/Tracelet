@@ -69,7 +69,7 @@ class SoundManager(
         val pool = soundPool ?: return false
         val soundId = soundIds[name]
         if (soundId == null) {
-            Log.w(TAG, "Sound not found: $name")
+            TraceletLog.warning("Sound not found: $name")
             return false
         }
         pool.play(soundId, 1.0f, 1.0f, 1, 0, 1.0f)

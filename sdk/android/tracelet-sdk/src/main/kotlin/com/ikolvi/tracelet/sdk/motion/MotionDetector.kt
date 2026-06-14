@@ -160,6 +160,24 @@ class MotionDetector(
      */
     var onAccelSample: ((magnitudeG: Double) -> Unit)? = null
 
+    /**
+     * When `true` (crash/fall detection enabled), the accelerometer is sampled at
+     * a higher rate so short impact spikes (~50-150 ms) are actually captured
+     * instead of being missed between the ~5 Hz motion-detection samples. Applies
+     * on the next listener registration (i.e. the next start). Costs more battery,
+     * which is acceptable because impact detection is opt-in.
+     */
+    var impactHighRate: Boolean = false
+
+    /** Accelerometer sampling rate — faster when impact detection is active. */
+    private fun accelSamplingDelay(): Int =
+        if (impactHighRate) SensorManager.SENSOR_DELAY_GAME else SensorManager.SENSOR_DELAY_NORMAL
+
+    /** Batch latency — disabled under high-rate so impact spikes arrive promptly,
+     *  otherwise the caller's normal batching latency. */
+    private fun accelBatchLatencyUs(normalUs: Int): Int =
+        if (impactHighRate) 0 else normalUs
+
     /** Callback: request full tracking stop (`stopOnStationary` mode). */
     var onStopRequested: (() -> Unit)? = null
 
@@ -631,8 +649,8 @@ class MotionDetector(
 
         val success = sm.registerListener(
             accelerometerListener, accelerometer,
-            SensorManager.SENSOR_DELAY_NORMAL,
-            SENSOR_BATCH_LATENCY_US
+            accelSamplingDelay(),
+            accelBatchLatencyUs(SENSOR_BATCH_LATENCY_US)
         )
         isMonitoringAccelerometer = success
         logger.debug("startAccelerometerMonitoring() [SHAKE] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")
@@ -789,8 +807,8 @@ class MotionDetector(
 
         val success = sm.registerListener(
             accelerometerListener, accelerometer,
-            SensorManager.SENSOR_DELAY_NORMAL,
-            STILLNESS_BATCH_LATENCY_US
+            accelSamplingDelay(),
+            accelBatchLatencyUs(STILLNESS_BATCH_LATENCY_US)
         )
         isMonitoringAccelerometer = success
         logger.debug("startAccelerometerStillnessMonitoring() [STILLNESS] registered — success=$success, isMonitoringAccel=$isMonitoringAccelerometer")

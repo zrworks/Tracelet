@@ -7,6 +7,7 @@ export default {
   "advanced-geo": "Advanced Geolocation",
   "geofencing": "Geofencing",
   "persistence": "Data Persistence",
+  "diagnostics": "Diagnostics & Bug Reports",
   "rust-architecture": "Rust Core Architecture",
   "oem-power-management": "OEM Power Management"
 }

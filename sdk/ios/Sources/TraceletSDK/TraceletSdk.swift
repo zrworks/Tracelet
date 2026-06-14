@@ -1039,7 +1039,24 @@ public final class TraceletSdk {
         if eventType == "location" { lastInsertedTimestamp = timestamp }
         
         var routeContext = rustEngineState?.getRouteContext()
-        if let auditHash = params["audit_hash"] as? String {
+
+        // Audit trail (Enterprise): the canonical place audit links are created.
+        // The LocationEngine.dispatch() path pre-computes `audit_hash` and passes
+        // it in `params`. But background/headless persists that call insertLocation()
+        // directly (autoResumeTracking, geofence events, etc.) never went through
+        // dispatch(), so they previously skipped the chain entirely — leaving
+        // location_events rows with no matching audit_trail row, so getAuditProof()
+        // returned nil for any such record. Generate the audit link here when it
+        // wasn't pre-computed, so EVERY persisted location is covered.
+        var auditHash = params["audit_hash"] as? String
+        var auditPrevHash = params["audit_previous_hash"]
+        var auditChainIndex = params["audit_chain_index"]
+        if auditHash == nil, let auditFields = auditTrailManager?.appendToChain(params) {
+            auditHash = auditFields["audit_hash"] as? String
+            auditPrevHash = auditFields["audit_previous_hash"]
+            auditChainIndex = auditFields["audit_chain_index"]
+        }
+        if let auditHash = auditHash {
             var contextDict: [String: Any] = [:]
             if let rc = routeContext, let data = rc.data(using: .utf8) {
                 if let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
@@ -1047,9 +1064,9 @@ public final class TraceletSdk {
                 }
             }
             contextDict["audit_hash"] = auditHash
-            if let prevHash = params["audit_previous_hash"] { contextDict["audit_previous_hash"] = prevHash }
-            if let chainIndex = params["audit_chain_index"] { contextDict["audit_chain_index"] = chainIndex }
-            
+            if let prevHash = auditPrevHash { contextDict["audit_previous_hash"] = prevHash }
+            if let chainIndex = auditChainIndex { contextDict["audit_chain_index"] = chainIndex }
+
             if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
                let jsonString = String(data: jsonData, encoding: .utf8) {
                 routeContext = jsonString

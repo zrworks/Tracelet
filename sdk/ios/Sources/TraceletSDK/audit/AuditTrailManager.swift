@@ -22,6 +22,11 @@ public final class AuditTrailManager {
     private let defaults = UserDefaults.standard
     private let prefsKey = "com.tracelet.audit"
 
+    /// Serializes chain mutations. `appendToChain` is now reachable from both the
+    /// foreground dispatch path and direct background persists, possibly on
+    /// different threads, so the chain cursor must be updated atomically.
+    private let chainLock = NSLock()
+
     /// Bump this version whenever the hashing logic changes.
     /// On init, if the stored version doesn't match, the chain is
     /// automatically reset so stale hashes don't cause false "broken" reports.
@@ -72,6 +77,8 @@ public final class AuditTrailManager {
     /// - Returns: Audit fields (hash, previous_hash, chain_index) to merge into the location map.
     public func appendToChain(_ locationMap: [String: Any]) -> [String: Any]? {
         guard configManager.getAuditEnabled() else { return nil }
+        chainLock.lock()
+        defer { chainLock.unlock() }
 
         // Standardize coordinates extraction supporting both flat and nested models
         let coords = locationMap["coords"] as? [String: Any]

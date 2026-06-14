@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 
+import 'package:tracelet_doctor/src/bug_report.dart';
 import 'package:tracelet_doctor/src/doctor_theme.dart';
 import 'package:tracelet_doctor/src/widgets/battery_oem_card.dart';
 import 'package:tracelet_doctor/src/widgets/config_review_card.dart';
@@ -119,25 +121,62 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
     }
   }
 
-  Future<void> _copyReport() async {
-    final health = _health;
-    if (health == null) return;
+  bool _busyReport = false;
 
-    final json = const JsonEncoder.withIndent('  ').convert(health.toMap());
-    await Clipboard.setData(ClipboardData(text: json));
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Diagnostic report copied to clipboard'),
-          backgroundColor: DoctorTheme.accent,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+  /// Builds the full bug report (health + config + logs + telematics).
+  Future<String?> _buildReport() async {
+    setState(() => _busyReport = true);
+    try {
+      return await TraceletBugReport.build();
+    } catch (e) {
+      if (mounted) _toast('Could not build report: $e', error: true);
+      return null;
+    } finally {
+      if (mounted) setState(() => _busyReport = false);
     }
+  }
+
+  /// Copies the complete bug report to the clipboard — ready to paste into a
+  /// GitHub issue alongside any app logs.
+  Future<void> _copyReport() async {
+    final report = await _buildReport();
+    if (report == null) return;
+    await Clipboard.setData(ClipboardData(text: report));
+    if (mounted) {
+      _toast('Full bug report copied — paste it into your issue');
+    }
+  }
+
+  /// Shares / downloads the complete bug report as a `.md` file (email, chat,
+  /// save to Files).
+  Future<void> _shareReport() async {
+    final report = await _buildReport();
+    if (report == null) return;
+    final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(':', '-');
+    final fileName = 'tracelet-bug-report-$stamp.md';
+    final file = XFile.fromData(
+      Uint8List.fromList(utf8.encode(report)),
+      mimeType: 'text/markdown',
+      name: fileName,
+    );
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [file],
+        fileNameOverrides: [fileName],
+        subject: 'Tracelet bug report',
+      ),
+    );
+  }
+
+  void _toast(String message, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? DoctorTheme.error : DoctorTheme.accent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -240,8 +279,15 @@ class _DoctorSheetContentState extends State<_DoctorSheetContent>
             const SizedBox(width: 6),
             _HeaderButton(
               icon: Icons.copy_rounded,
-              tooltip: 'Copy Report',
-              onPressed: _copyReport,
+              tooltip: 'Copy Bug Report',
+              onPressed: _busyReport ? null : _copyReport,
+              busy: _busyReport,
+            ),
+            const SizedBox(width: 6),
+            _HeaderButton(
+              icon: Icons.ios_share_rounded,
+              tooltip: 'Share Bug Report',
+              onPressed: _busyReport ? null : _shareReport,
             ),
             const SizedBox(width: 6),
             _HeaderButton(
@@ -511,13 +557,16 @@ class _HeaderButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.busy = false,
   });
   final IconData icon;
   final String tooltip;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = onPressed == null;
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -530,7 +579,22 @@ class _HeaderButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: DoctorTheme.cardBorder, width: 0.5),
           ),
-          child: Icon(icon, size: 18, color: DoctorTheme.accent),
+          child: busy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: DoctorTheme.accent,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 18,
+                  color: disabled
+                      ? DoctorTheme.accent.withValues(alpha: 0.4)
+                      : DoctorTheme.accent,
+                ),
         ),
       ),
     );

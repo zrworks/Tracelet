@@ -38,7 +38,10 @@ impl Default for ImpactConfig {
         Self {
             enable_crash: false,
             enable_fall: false,
-            crash_g_threshold: 3.0,
+            // 2.0 g (not 3.0) based on the VZCrash field-data study (#173): at 3.0 g
+            // the speed-gated rule missed ~48% of real crashes (median impact ~2.2 g).
+            // Crash detection is opt-in with a cancel-countdown, so favour recall.
+            crash_g_threshold: 2.0,
             crash_min_speed_kmh: 25.0,
             fall_g_threshold: 2.5,
             confirm_window_ms: 15000,
@@ -363,16 +366,17 @@ mod tests {
 
     #[test]
     fn weak_spike_below_threshold_ignored() {
+        // 1.0 g is below the 2.0 g default threshold ⇒ not a crash.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        assert!(d.on_impact_window(2.0, 60.0 / 3.6, false, 0.0, 0.0, 0).is_none());
+        assert!(d.on_impact_window(1.0, 60.0 / 3.6, false, 0.0, 0.0, 0).is_none());
     }
 
     #[test]
     fn crash_at_exact_threshold_fires() {
-        // A fully-corroborated crash exactly at the documented 3.0 g threshold
-        // must register — the confidence gate must not silently raise it.
+        // A fully-corroborated crash exactly at the default 2.0 g threshold must
+        // register — the confidence gate must not silently raise it.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(3.0, 60.0 / 3.6, false, 0.0, 0.0, 1000);
+        let cand = d.on_impact_window(2.0, 60.0 / 3.6, false, 0.0, 0.0, 1000);
         assert!(cand.is_some());
         assert_eq!(cand.unwrap().kind, "potential_crash");
     }

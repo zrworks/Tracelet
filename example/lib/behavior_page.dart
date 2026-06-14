@@ -12,6 +12,7 @@ import 'package:tracelet_platform_interface/src/rust/api_dart/transport_mode.dar
 import 'package:tracelet_platform_interface/src/rust/algorithms/impact.dart'
     as frb
     show ImpactConfig;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Demo page for the 3.3.0 behavior features: driving telematics, crash/fall
 /// detection, and the fused transport-mode classifier.
@@ -170,14 +171,14 @@ class _BehaviorPageState extends State<BehaviorPage> {
             heading: 90,
             latitude: 0,
             longitude: 0,
-            timestampMs: 0,
+            timestampMs: PlatformInt64Util.from(0),
           );
           for (final ev in e.processFix(
             speed: 5,
             heading: 90,
             latitude: 0,
             longitude: 0,
-            timestampMs: 1000,
+            timestampMs: PlatformInt64Util.from(1000),
           )) {
             _logLine(
               '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
@@ -190,14 +191,14 @@ class _BehaviorPageState extends State<BehaviorPage> {
             heading: 90,
             latitude: 0,
             longitude: 0,
-            timestampMs: 0,
+            timestampMs: PlatformInt64Util.from(0),
           );
           for (final ev in e.processFix(
             speed: 15,
             heading: 90,
             latitude: 0,
             longitude: 0,
-            timestampMs: 1000,
+            timestampMs: PlatformInt64Util.from(1000),
           )) {
             _logLine(
               '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
@@ -210,14 +211,14 @@ class _BehaviorPageState extends State<BehaviorPage> {
             heading: 0,
             latitude: 0,
             longitude: 0,
-            timestampMs: 0,
+            timestampMs: PlatformInt64Util.from(0),
           );
           for (final ev in e.processFix(
             speed: 15,
             heading: 45,
             latitude: 0,
             longitude: 0,
-            timestampMs: 1000,
+            timestampMs: PlatformInt64Util.from(1000),
           )) {
             _logLine(
               '🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)',
@@ -225,13 +226,13 @@ class _BehaviorPageState extends State<BehaviorPage> {
           }
         case 'crash':
           final d = ImpactDetectorDart(
-            config: const frb.ImpactConfig(
+            config: frb.ImpactConfig(
               enableCrash: true,
               enableFall: false,
               crashGThreshold: 3,
               crashMinSpeedKmh: 25,
               fallGThreshold: 2.5,
-              confirmWindowMs: 15000,
+              confirmWindowMs: PlatformInt64Util.from(15000),
               minConfidence: 0.6,
             ),
           );
@@ -241,12 +242,12 @@ class _BehaviorPageState extends State<BehaviorPage> {
             isOnFoot: false,
             latitude: 0,
             longitude: 0,
-            nowMs: 0,
+            nowMs: PlatformInt64Util.from(0),
           );
           if (c != null) {
             _logLine(
               '🆘 ${c.kind}  peak=${c.peakG.toStringAsFixed(1)}g (sim) '
-              '→ would auto-confirm in ${(c.confirmDeadlineMs / 1000).round()}s',
+              '→ would auto-confirm in ${((c.confirmDeadlineMs is BigInt ? (c.confirmDeadlineMs as dynamic).toInt() : c.confirmDeadlineMs) / 1000).round()}s',
             );
           }
         case 'vehicle':
@@ -254,15 +255,15 @@ class _BehaviorPageState extends State<BehaviorPage> {
           final steady = List<double>.filled(10, 0.05);
           cl.classifySamples(
             magnitudesG: steady,
-            durationMs: 1000,
+            durationMs: PlatformInt64Util.from(1000),
             speedMps: 60 / 3.6,
-            nowMs: 0,
+            nowMs: PlatformInt64Util.from(0),
           );
           final r = cl.classifySamples(
             magnitudesG: steady,
-            durationMs: 1000,
+            durationMs: PlatformInt64Util.from(1000),
             speedMps: 60 / 3.6,
-            nowMs: 9000,
+            nowMs: PlatformInt64Util.from(9000),
           );
           _logLine(
             '🚦 mode → ${r.mode.name} (${r.confidence.toStringAsFixed(2)}) (sim)',

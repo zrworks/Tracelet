@@ -13,6 +13,7 @@ import 'package:tracelet_platform_interface/src/rust/algorithms/impact.dart'
     show ImpactConfig;
 import 'package:tracelet_platform_interface/src/rust/algorithms/transport_mode.dart'
     show TransportMode;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// On-device simulation of the 3.3.0 behavior engines.
 ///
@@ -36,14 +37,14 @@ void main() {
       heading: 90,
       latitude: 0,
       longitude: 0,
-      timestampMs: 0,
+      timestampMs: PlatformInt64Util.from(0),
     );
     final events = engine.processFix(
       speed: 5,
       heading: 90,
       latitude: 0,
       longitude: 0,
-      timestampMs: 1000,
+      timestampMs: PlatformInt64Util.from(1000),
     );
     expect(events.any((e) => e.kind == 'harsh_braking'), isTrue);
   });
@@ -55,27 +56,27 @@ void main() {
       heading: 90,
       latitude: 0,
       longitude: 0,
-      timestampMs: 0,
+      timestampMs: PlatformInt64Util.from(0),
     );
     final events = engine.processFix(
       speed: 14,
       heading: 90,
       latitude: 0,
       longitude: 0,
-      timestampMs: 1000,
+      timestampMs: PlatformInt64Util.from(1000),
     );
     expect(events.any((e) => e.kind == 'harsh_acceleration'), isTrue);
   });
 
   testWidgets('simulate crash candidate then auto-confirm', (tester) async {
     final detector = ImpactDetectorDart(
-      config: const frb.ImpactConfig(
+      config: frb.ImpactConfig(
         enableCrash: true,
         enableFall: false,
         crashGThreshold: 3,
         crashMinSpeedKmh: 25,
         fallGThreshold: 2.5,
-        confirmWindowMs: 15000,
+        confirmWindowMs: PlatformInt64Util.from(15000),
         minConfidence: 0.6,
       ),
     );
@@ -86,26 +87,28 @@ void main() {
       isOnFoot: false,
       latitude: 0,
       longitude: 0,
-      nowMs: 0,
+      nowMs: PlatformInt64Util.from(0),
     );
     expect(candidate, isNotNull);
     expect(candidate!.kind, 'potential_crash');
 
     // Not cancelled before the deadline → confirmed crash.
-    final confirmed = detector.checkConfirmations(nowMs: 20000);
+    final confirmed = detector.checkConfirmations(
+      nowMs: PlatformInt64Util.from(20000),
+    );
     expect(confirmed.length, 1);
     expect(confirmed.first.kind, 'crash');
   });
 
   testWidgets('simulate crash cancelled within window', (tester) async {
     final detector = ImpactDetectorDart(
-      config: const frb.ImpactConfig(
+      config: frb.ImpactConfig(
         enableCrash: true,
         enableFall: false,
         crashGThreshold: 3,
         crashMinSpeedKmh: 25,
         fallGThreshold: 2.5,
-        confirmWindowMs: 15000,
+        confirmWindowMs: PlatformInt64Util.from(15000),
         minConfidence: 0.6,
       ),
     );
@@ -115,10 +118,13 @@ void main() {
       isOnFoot: false,
       latitude: 0,
       longitude: 0,
-      nowMs: 0,
+      nowMs: PlatformInt64Util.from(0),
     )!;
     expect(detector.cancel(id: candidate.id), isTrue);
-    expect(detector.checkConfirmations(nowMs: 60000), isEmpty);
+    expect(
+      detector.checkConfirmations(nowMs: PlatformInt64Util.from(60000)),
+      isEmpty,
+    );
   });
 
   testWidgets('simulate vehicle transport mode', (tester) async {
@@ -127,15 +133,15 @@ void main() {
     // 60 km/h, sustained past the dwell window → commits to vehicle.
     classifier.classifySamples(
       magnitudesG: steady,
-      durationMs: 1000,
+      durationMs: PlatformInt64Util.from(1000),
       speedMps: 60 / 3.6,
-      nowMs: 0,
+      nowMs: PlatformInt64Util.from(0),
     );
     final result = classifier.classifySamples(
       magnitudesG: steady,
-      durationMs: 1000,
+      durationMs: PlatformInt64Util.from(1000),
       speedMps: 60 / 3.6,
-      nowMs: 9000,
+      nowMs: PlatformInt64Util.from(9000),
     );
     expect(result.mode, TransportMode.vehicle);
   });

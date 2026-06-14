@@ -15,6 +15,47 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`tracelet_android` - `v3.3.2`](#tracelet_android---v332)
+ - [`tracelet_ios` - `v3.3.2`](#tracelet_ios---v332)
+ - [`tracelet` - `v3.3.2`](#tracelet---v332)
+ - [`tracelet_sync` - `v3.3.2`](#tracelet_sync---v332)
+ - [`tracelet_doctor` - `v3.3.2`](#tracelet_doctor---v332)
+ - [`tracelet_supabase` - `v3.3.2`](#tracelet_supabase---v332)
+ - [`tracelet_firebase` - `v3.3.2`](#tracelet_firebase---v332)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet` - `v3.3.2`
+ - `tracelet_sync` - `v3.3.2`
+ - `tracelet_doctor` - `v3.3.2`
+ - `tracelet_supabase` - `v3.3.2`
+ - `tracelet_firebase` - `v3.3.2`
+
+---
+
+#### `tracelet_android` - `v3.3.2`
+
+ - **FIX**(plugin): correct native-map -> Pigeon field mapping ([#175](https://github.com/Ikolvi/Tracelet/issues/175)). ([feb17dcf](https://github.com/Ikolvi/Tracelet/commit/feb17dcf550b6502d2c6a5897b6447e70e646396))
+
+#### `tracelet_ios` - `v3.3.2`
+
+ - **FIX**(plugin): correct native-map -> Pigeon field mapping ([#175](https://github.com/Ikolvi/Tracelet/issues/175)). ([feb17dcf](https://github.com/Ikolvi/Tracelet/commit/feb17dcf550b6502d2c6a5897b6447e70e646396))
+
+
+## 2026-06-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`tracelet` - `v3.3.1`](#tracelet---v331)
  - [`tracelet_android` - `v3.3.1`](#tracelet_android---v331)
  - [`tracelet_sync` - `v3.3.1`](#tracelet_sync---v331)

@@ -1,3 +1,7 @@
+## 3.3.2
+
+ - **FIX**(plugin): correct native-map -> Pigeon field mapping ([#175](https://github.com/Ikolvi/Tracelet/issues/175)). ([feb17dcf](https://github.com/Ikolvi/Tracelet/commit/feb17dcf550b6502d2c6a5897b6447e70e646396))
+
 ## 3.3.1
 
  - **REFACTOR**(logging): route all SDK logs through TraceletLogger (no raw Log/NSLog). ([e42b676a](https://github.com/Ikolvi/Tracelet/commit/e42b676ae63581d80cee4ac6e35c6103cf7dd0f6))

@@ -62,17 +62,20 @@ export default function NotificationBell() {
   };
 
   return (
-    <div style={{ position: 'relative' }} ref={dropdownRef}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }} ref={dropdownRef}>
       <button 
         onClick={toggleOpen}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '8px' }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '6px', display: 'flex', alignItems: 'center', color: 'currentColor' }}
         aria-label="Notifications"
       >
-        <span style={{ fontSize: '1.25rem' }}>🔔</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
         {showBadge && (
           <span style={{
-            position: 'absolute', top: '0', right: '0', background: '#ef4444', color: 'white',
-            borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px',
+            position: 'absolute', top: '0px', right: '0px', background: '#ef4444', color: 'white',
+            borderRadius: '50%', width: '14px', height: '14px', fontSize: '9px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
           }}>
             1
@@ -83,11 +86,11 @@ export default function NotificationBell() {
       {isOpen && (
         <div style={{
           position: 'absolute', top: '100%', right: '0', marginTop: '0.5rem',
-          background: 'white', border: '1px solid #e5e7eb', borderRadius: '0.5rem',
+          backgroundColor: 'var(--nextra-bg, white)', border: '1px solid var(--nextra-border, #e5e7eb)', borderRadius: '0.5rem',
           boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', width: '300px', zIndex: 100,
-          color: '#1f2937'
+          color: 'var(--nextra-fg, #1f2937)'
         }}>
-          <div style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', fontWeight: 600, fontSize: '0.875rem' }}>
+          <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--nextra-border, #e5e7eb)', fontWeight: 600, fontSize: '0.875rem' }}>
             {data.badgeTitle}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -96,10 +99,10 @@ export default function NotificationBell() {
                 key={idx}
                 onClick={() => handleNavigate(item.href)}
                 style={{
-                  padding: '0.75rem', background: 'none', border: 'none', borderBottom: idx < data.items.length - 1 ? '1px solid #f3f4f6' : 'none',
+                  padding: '0.75rem', background: 'none', border: 'none', borderBottom: idx < data.items.length - 1 ? '1px solid var(--nextra-border, #f3f4f6)' : 'none',
                   textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.25rem'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--nextra-primary-hue, rgba(15, 157, 88, 0.05))'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F9D58' }}>{item.title}</span>

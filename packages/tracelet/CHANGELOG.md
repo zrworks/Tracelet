@@ -1,3 +1,7 @@
+## 3.3.2
+
+ - Update a dependency to the latest release.
+
 ## 3.3.1
 
 * **FIX** (Crash detection, Android/iOS): Confirmed `crash`/`fall` events are no longer lost when tracking stops right after the impact (the common crash → vehicle-at-rest → `stopTimeout` case). The confirmation countdown now runs independently of tracking state and self-terminates when no candidate is pending ([#169](https://github.com/Ikolvi/Tracelet/issues/169)).

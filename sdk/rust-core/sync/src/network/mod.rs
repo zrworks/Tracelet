@@ -181,45 +181,48 @@ impl SyncManager {
                 }
                 base_json
             }).collect();
-            let root_key = config.http_root_property.as_deref().unwrap_or("location");
             let mut map = serde_json::Map::new();
-            map.insert(root_key.to_string(), serde_json::Value::Array(json_records));
+            if !json_records.is_empty() {
+                let root_key = config.http_root_property.as_deref().unwrap_or("location");
+                map.insert(root_key.to_string(), serde_json::Value::Array(json_records));
+            }
             serde_json::Value::Object(map)
         } else {
             // For non-batch, just send the latest record
-            let r = records.last().unwrap();
-            let mut base_json = json!({
-                "id": r.id,
-                "uuid": r.uuid,
-                "timestamp": r.timestamp,
-                "coords": {
-                    "latitude": r.latitude,
-                    "longitude": r.longitude,
-                    "accuracy": r.accuracy,
-                    "speed": r.speed,
-                    "heading": r.heading,
-                    "altitude": r.altitude,
-                },
-                "is_mock": r.is_mock,
-                    "is_moving": r.is_moving,
-                    "activity": r.activity,
-                    "event": r.event
-            });
-            let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
-                .and_then(|rc| serde_json::from_str(rc).ok());
-                
-            if let Some(ref rc) = record_route_context {
-                if let Some(obj) = base_json.as_object_mut() {
-                    if let Some(rc_obj) = rc.as_object() {
-                        for (k, v) in rc_obj.iter() {
-                            obj.insert(k.clone(), v.clone());
+            let mut map = serde_json::Map::new();
+            if let Some(r) = records.last() {
+                let mut base_json = json!({
+                    "id": r.id,
+                    "uuid": r.uuid,
+                    "timestamp": r.timestamp,
+                    "coords": {
+                        "latitude": r.latitude,
+                        "longitude": r.longitude,
+                        "accuracy": r.accuracy,
+                        "speed": r.speed,
+                        "heading": r.heading,
+                        "altitude": r.altitude,
+                    },
+                    "is_mock": r.is_mock,
+                        "is_moving": r.is_moving,
+                        "activity": r.activity,
+                        "event": r.event
+                });
+                let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
+                    .and_then(|rc| serde_json::from_str(rc).ok());
+                    
+                if let Some(ref rc) = record_route_context {
+                    if let Some(obj) = base_json.as_object_mut() {
+                        if let Some(rc_obj) = rc.as_object() {
+                            for (k, v) in rc_obj.iter() {
+                                obj.insert(k.clone(), v.clone());
+                            }
                         }
                     }
                 }
+                let root_key = config.http_root_property.as_deref().unwrap_or("location");
+                map.insert(root_key.to_string(), base_json);
             }
-            let root_key = config.http_root_property.as_deref().unwrap_or("location");
-            let mut map = serde_json::Map::new();
-            map.insert(root_key.to_string(), base_json);
             serde_json::Value::Object(map)
         };
 
@@ -236,10 +239,17 @@ impl SyncManager {
             if let Some(extras) = &config.extras {
                 let mut extras_obj = serde_json::Map::new();
                 for (k, v) in extras {
-                    let parsed_val = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
-                    extras_obj.insert(k.clone(), parsed_val);
+                    if k == "__telematics" {
+                        let parsed_val = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                        obj.insert("telematics".to_string(), parsed_val);
+                    } else {
+                        let parsed_val = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                        extras_obj.insert(k.clone(), parsed_val);
+                    }
                 }
-                obj.insert("extras".to_string(), serde_json::Value::Object(extras_obj));
+                if !extras_obj.is_empty() {
+                    obj.insert("extras".to_string(), serde_json::Value::Object(extras_obj));
+                }
             }
         }
         
@@ -257,8 +267,9 @@ impl SyncManager {
             }
         };
 
-        if records.is_empty() {
-            tracelet_core::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty.");
+        let has_telematics = config.extras.as_ref().map_or(false, |e| e.contains_key("__telematics"));
+        if records.is_empty() && !has_telematics {
+            tracelet_core::logger::info("[Rust Core] ℹ️ Sync skipped: Location batch is empty and no telematics.");
             return Ok(0);
         }
 

@@ -2620,6 +2620,124 @@ struct TlModeChangeEvent: Hashable {
   }
 }
 
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlTelematicsRecord: Hashable {
+  /// The primary key.
+  var id: Int64
+  /// The type of telematics event.
+  var eventType: String
+  /// The severity of the event.
+  var severity: Double
+  /// The latitude.
+  var latitude: Double
+  /// The longitude.
+  var longitude: Double
+  /// The ISO8601 timestamp string.
+  var timestamp: String
+  /// Whether the event has been synced to the server.
+  var synced: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlTelematicsRecord? {
+    let id = pigeonVar_list[0] as! Int64
+    let eventType = pigeonVar_list[1] as! String
+    let severity = pigeonVar_list[2] as! Double
+    let latitude = pigeonVar_list[3] as! Double
+    let longitude = pigeonVar_list[4] as! Double
+    let timestamp = pigeonVar_list[5] as! String
+    let synced = pigeonVar_list[6] as! Bool
+
+    return TlTelematicsRecord(
+      id: id,
+      eventType: eventType,
+      severity: severity,
+      latitude: latitude,
+      longitude: longitude,
+      timestamp: timestamp,
+      synced: synced
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      eventType,
+      severity,
+      latitude,
+      longitude,
+      timestamp,
+      synced,
+    ]
+  }
+  static func == (lhs: TlTelematicsRecord, rhs: TlTelematicsRecord) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.id, rhs.id) && deepEqualsTraceletApi(lhs.eventType, rhs.eventType) && deepEqualsTraceletApi(lhs.severity, rhs.severity) && deepEqualsTraceletApi(lhs.latitude, rhs.latitude) && deepEqualsTraceletApi(lhs.longitude, rhs.longitude) && deepEqualsTraceletApi(lhs.timestamp, rhs.timestamp) && deepEqualsTraceletApi(lhs.synced, rhs.synced)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlTelematicsRecord")
+    deepHashTraceletApi(value: id, hasher: &hasher)
+    deepHashTraceletApi(value: eventType, hasher: &hasher)
+    deepHashTraceletApi(value: severity, hasher: &hasher)
+    deepHashTraceletApi(value: latitude, hasher: &hasher)
+    deepHashTraceletApi(value: longitude, hasher: &hasher)
+    deepHashTraceletApi(value: timestamp, hasher: &hasher)
+    deepHashTraceletApi(value: synced, hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlLogEntry: Hashable {
+  /// The primary key.
+  var id: Int64
+  /// The log level.
+  var level: String
+  /// The log message.
+  var message: String
+  /// The ISO8601 timestamp string.
+  var timestamp: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlLogEntry? {
+    let id = pigeonVar_list[0] as! Int64
+    let level = pigeonVar_list[1] as! String
+    let message = pigeonVar_list[2] as! String
+    let timestamp = pigeonVar_list[3] as! String
+
+    return TlLogEntry(
+      id: id,
+      level: level,
+      message: message,
+      timestamp: timestamp
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      level,
+      message,
+      timestamp,
+    ]
+  }
+  static func == (lhs: TlLogEntry, rhs: TlLogEntry) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.id, rhs.id) && deepEqualsTraceletApi(lhs.level, rhs.level) && deepEqualsTraceletApi(lhs.message, rhs.message) && deepEqualsTraceletApi(lhs.timestamp, rhs.timestamp)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlLogEntry")
+    deepHashTraceletApi(value: id, hasher: &hasher)
+    deepHashTraceletApi(value: level, hasher: &hasher)
+    deepHashTraceletApi(value: message, hasher: &hasher)
+    deepHashTraceletApi(value: timestamp, hasher: &hasher)
+  }
+}
+
 private class TraceletApiPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -2815,6 +2933,10 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
       return TlImpactEvent.fromList(self.readValue() as! [Any?])
     case 186:
       return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
+    case 187:
+      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+    case 188:
+      return TlLogEntry.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -2997,6 +3119,12 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlModeChangeEvent {
       super.writeByte(186)
       super.writeValue(value.toList())
+    } else if let value = value as? TlTelematicsRecord {
+      super.writeByte(187)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLogEntry {
+      super.writeByte(188)
+      super.writeValue(value.toList())
     } else {
       super.writeValue(value)
     }
@@ -3099,7 +3227,12 @@ protocol TraceletHostApi {
   func encryptDatabase(completion: @escaping (Result<Bool, Error>) -> Void)
   func getAttestationToken(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
   func getDeadReckoningState(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
-  func getCarbonReport(query: [String?: Any?]?, completion: @escaping (Result<[String?: Any?], Error>) -> Void)
+  func getCarbonReport(query: [String: Any?]?, completion: @escaping (Result<[String: Any?], Error>) -> Void)
+  func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, completion: @escaping (Result<Int64, Error>) -> Void)
+  func getTelematicsEvents(limit: Int64, completion: @escaping (Result<[TlTelematicsRecord?], Error>) -> Void)
+  func clearTelematicsEvents(completion: @escaping (Result<Int64, Error>) -> Void)
+  func getLogs(limit: Int64, completion: @escaping (Result<[TlLogEntry?], Error>) -> Void)
+  func clearLogs(completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -4340,7 +4473,7 @@ class TraceletHostApiSetup {
     if let api = api {
       getCarbonReportChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let queryArg: [String?: Any?]? = nilOrValue(args[0])
+        let queryArg: [String: Any?]? = nilOrValue(args[0])
         api.getCarbonReport(query: queryArg) { result in
           switch result {
           case .success(let res):
@@ -4352,6 +4485,90 @@ class TraceletHostApiSetup {
       }
     } else {
       getCarbonReportChannel.setMessageHandler(nil)
+    }
+    let simulateTelematicsEventChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.simulateTelematicsEvent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      simulateTelematicsEventChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let eventTypeArg = args[0] as! String
+        let severityArg = args[1] as! Double
+        let latitudeArg = args[2] as! Double
+        let longitudeArg = args[3] as! Double
+        api.simulateTelematicsEvent(eventType: eventTypeArg, severity: severityArg, latitude: latitudeArg, longitude: longitudeArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      simulateTelematicsEventChannel.setMessageHandler(nil)
+    }
+    let getTelematicsEventsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getTelematicsEvents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getTelematicsEventsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let limitArg = args[0] as! Int64
+        api.getTelematicsEvents(limit: limitArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getTelematicsEventsChannel.setMessageHandler(nil)
+    }
+    let clearTelematicsEventsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearTelematicsEvents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearTelematicsEventsChannel.setMessageHandler { _, reply in
+        api.clearTelematicsEvents { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      clearTelematicsEventsChannel.setMessageHandler(nil)
+    }
+    let getLogsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getLogsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let limitArg = args[0] as! Int64
+        api.getLogs(limit: limitArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getLogsChannel.setMessageHandler(nil)
+    }
+    let clearLogsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearLogs\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearLogsChannel.setMessageHandler { _, reply in
+        api.clearLogs { result in
+          switch result {
+          case .success:
+            reply(wrapResult(nil))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      clearLogsChannel.setMessageHandler(nil)
     }
   }
 }

@@ -107,6 +107,8 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["retryBackoffCap"] = c.http.retryBackoffCap
         dict["enableDeltaCompression"] = c.http.enableDeltaCompression
         dict["deltaCoordinatePrecision"] = c.http.deltaCoordinatePrecision
+        dict["syncTelematics"] = c.http.syncTelematics
+        if let telematicsUrl = c.http.telematicsUrl { dict["telematicsUrl"] = telematicsUrl }
 
         // Logger
         dict["logLevel"] = c.logger.logLevel.rawValue
@@ -701,6 +703,32 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(true))
     }
 
+    // MARK: - Telematics
+
+    func getTelematicsEvents(limit: Int64, completion: @escaping (Result<[TlTelematicsRecord?], Error>) -> Void) {
+        let events = sdk.getTelematicsEvents(limit: Int(limit))
+        let mapped = events.map { e in
+            TlTelematicsRecord(
+                id: e.id,
+                eventType: e.eventType,
+                severity: e.severity,
+                latitude: e.latitude,
+                longitude: e.longitude,
+                timestamp: e.timestamp,
+                synced: e.synced
+            )
+        }
+        completion(.success(mapped))
+    }
+
+    func destroyTelematicsEvents(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(sdk.destroyTelematicsEvents()))
+    }
+
+    func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(sdk.simulateTelematicsEvent(eventType: eventType, severity: severity, latitude: latitude, longitude: longitude)))
+    }
+
     // MARK: - Scheduling
 
     func startSchedule(completion: @escaping (Result<TlState, Error>) -> Void) {
@@ -816,9 +844,39 @@ class TraceletHostApiImpl: TraceletHostApi {
     // MARK: - Enterprise: Carbon Estimator
 
     func getCarbonReport(query: [String?: Any?]?, completion: @escaping (Result<[String?: Any?], Error>) -> Void) {
-        let q = (query as? [String: Any?])?.compactMapValues { $0 }
-        completion(.success(sdk.getCarbonReport(query: q as? [String: Any])))
+        do {
+            let nonOptionalQuery = query?.reduce(into: [String: Any]()) { result, pair in
+                if let key = pair.key, let value = pair.value {
+                    result[key] = value
+                }
+            }
+            let report = try sdk.getCarbonReport(query: nonOptionalQuery)
+            let resultReport = report.reduce(into: [String?: Any?]()) { result, pair in
+                result[pair.key] = pair.value
+            }
+            completion(.success(resultReport))
+        } catch {
+            completion(.failure(error))
+        }
     }
+
+    func getLogs(limit: Int64, completion: @escaping (Result<[TlLogEntry?], Error>) -> Void) {
+        let records = sdk.getLogs(limit: Int(limit))
+        let mapped = records.map { r in
+            TlLogEntry(
+                id: Int64(r.id),
+                level: r.level,
+                message: r.message,
+                timestamp: r.timestamp
+            )
+        }
+        completion(.success(mapped))
+    }
+
+    func clearLogs(completion: @escaping (Result<Void, Error>) -> Void) {
+        sdk.clearLogs()
+        completion(.success(()))
+    } 
 
     // MARK: - Enterprise: Dead Reckoning
 

@@ -194,6 +194,52 @@ class DatabaseCard extends StatelessWidget {
             label: 'OS Version',
             value: health.osVersion.isNotEmpty ? health.osVersion : '—',
           ),
+          const SizedBox(height: 12),
+          const Divider(color: DoctorTheme.cardBorder, height: 1),
+          const SizedBox(height: 12),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Lifetime Stats', style: DoctorTheme.sectionStyle),
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<Map<String?, Object?>?>(
+            future: Tracelet.getCarbonReport(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: DoctorTheme.accent,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return const InfoRow(
+                  label: 'Error',
+                  value: 'Could not load stats',
+                );
+              }
+              final data = snapshot.data;
+              if (data == null || data.isEmpty) {
+                return const InfoRow(label: 'No stats available', value: '—');
+              }
+              return Column(
+                children: data.entries.map((e) {
+                  return InfoRow(
+                    label: e.key?.toString() ?? 'Unknown',
+                    value: e.value?.toString() ?? '—',
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );

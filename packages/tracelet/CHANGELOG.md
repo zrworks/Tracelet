@@ -1,3 +1,7 @@
+## 3.3.1
+
+ - **FIX**(crash): harden crash/fall detection (confirmation survival, threshold, debounce, sample rate). ([0a17e804](https://github.com/Ikolvi/Tracelet/commit/0a17e804a8d05adba02becf21756fa328c4caec9))
+
 ## 3.3.0
 
 * **FIX** (Crash detection, Android/iOS): Confirmed `crash`/`fall` events are no longer lost when tracking stops right after the impact (the common crash → vehicle-at-rest → `stopTimeout` case). The confirmation countdown now runs independently of tracking state and self-terminates when no candidate is pending ([#169](https://github.com/Ikolvi/Tracelet/issues/169)).

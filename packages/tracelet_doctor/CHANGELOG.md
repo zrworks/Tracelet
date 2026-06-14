@@ -1,3 +1,7 @@
+## 3.3.1
+
+ - Update a dependency to the latest release.
+
 ## 3.3.0
 
 * **FEAT** (Doctor): One-tap **bug report** — the *Copy* button now bundles health + active configuration (secrets redacted) + recent logs + telematics into a single Markdown report, and a new *Share* button exports it as a downloadable `.md` file. Available programmatically via `TraceletBugReport.build()` and `TraceletBugReport.redactConfig()`.

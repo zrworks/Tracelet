@@ -235,7 +235,8 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, this.url,
+    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, required this.syncTelematics, this.url,
+    this.telematicsUrl,
     this.headers,
     this.params,
     this.sslPinningFingerprints,
@@ -267,6 +268,8 @@ class TlHttpConfig {
   final int retryBackoffCap;
   final bool enableDeltaCompression;
   final int deltaCoordinatePrecision;
+  final bool syncTelematics;
+  final String? telematicsUrl;
 }
 
 class TlConfig {
@@ -1010,7 +1013,6 @@ abstract class TraceletHostApi {
 
   @async
   Map<String?, Object?>? getAttestationToken();
-
   @async
   Map<String?, Object?>? getDeadReckoningState();
 
@@ -1018,7 +1020,7 @@ abstract class TraceletHostApi {
   Map<String, Object?> getCarbonReport(Map<String, Object?>? query);
 
   @async
-  int simulateTelematicsEvent(
+  bool simulateTelematicsEvent(
     String eventType,
     double severity,
     double latitude,
@@ -1029,7 +1031,7 @@ abstract class TraceletHostApi {
   List<TlTelematicsRecord?> getTelematicsEvents(int limit);
 
   @async
-  int clearTelematicsEvents();
+  bool destroyTelematicsEvents();
 
   @async
   List<TlLogEntry?> getLogs(int limit);

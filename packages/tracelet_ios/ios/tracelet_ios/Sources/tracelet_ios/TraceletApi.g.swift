@@ -815,6 +815,8 @@ struct TlHttpConfig: Hashable {
   var retryBackoffCap: Int64
   var enableDeltaCompression: Bool
   var deltaCoordinatePrecision: Int64
+  var syncTelematics: Bool
+  var telematicsUrl: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -841,6 +843,8 @@ struct TlHttpConfig: Hashable {
     let retryBackoffCap = pigeonVar_list[19] as! Int64
     let enableDeltaCompression = pigeonVar_list[20] as! Bool
     let deltaCoordinatePrecision = pigeonVar_list[21] as! Int64
+    let syncTelematics = pigeonVar_list[22] as! Bool
+    let telematicsUrl: String? = nilOrValue(pigeonVar_list[23])
 
     return TlHttpConfig(
       url: url,
@@ -864,7 +868,9 @@ struct TlHttpConfig: Hashable {
       retryBackoffBase: retryBackoffBase,
       retryBackoffCap: retryBackoffCap,
       enableDeltaCompression: enableDeltaCompression,
-      deltaCoordinatePrecision: deltaCoordinatePrecision
+      deltaCoordinatePrecision: deltaCoordinatePrecision,
+      syncTelematics: syncTelematics,
+      telematicsUrl: telematicsUrl
     )
   }
   func toList() -> [Any?] {
@@ -891,13 +897,15 @@ struct TlHttpConfig: Hashable {
       retryBackoffCap,
       enableDeltaCompression,
       deltaCoordinatePrecision,
+      syncTelematics,
+      telematicsUrl,
     ]
   }
   static func == (lhs: TlHttpConfig, rhs: TlHttpConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.url, rhs.url) && deepEqualsTraceletApi(lhs.method, rhs.method) && deepEqualsTraceletApi(lhs.headers, rhs.headers) && deepEqualsTraceletApi(lhs.params, rhs.params) && deepEqualsTraceletApi(lhs.autoSync, rhs.autoSync) && deepEqualsTraceletApi(lhs.batchSync, rhs.batchSync) && deepEqualsTraceletApi(lhs.maxBatchSize, rhs.maxBatchSize) && deepEqualsTraceletApi(lhs.sslPinningFingerprints, rhs.sslPinningFingerprints) && deepEqualsTraceletApi(lhs.sslPinningCertificates, rhs.sslPinningCertificates) && deepEqualsTraceletApi(lhs.httpRootProperty, rhs.httpRootProperty) && deepEqualsTraceletApi(lhs.autoSyncThreshold, rhs.autoSyncThreshold) && deepEqualsTraceletApi(lhs.autoSyncDelay, rhs.autoSyncDelay) && deepEqualsTraceletApi(lhs.syncInterval, rhs.syncInterval) && deepEqualsTraceletApi(lhs.httpTimeout, rhs.httpTimeout) && deepEqualsTraceletApi(lhs.locationsOrderDirection, rhs.locationsOrderDirection) && deepEqualsTraceletApi(lhs.extras, rhs.extras) && deepEqualsTraceletApi(lhs.disableAutoSyncOnCellular, rhs.disableAutoSyncOnCellular) && deepEqualsTraceletApi(lhs.maxRetries, rhs.maxRetries) && deepEqualsTraceletApi(lhs.retryBackoffBase, rhs.retryBackoffBase) && deepEqualsTraceletApi(lhs.retryBackoffCap, rhs.retryBackoffCap) && deepEqualsTraceletApi(lhs.enableDeltaCompression, rhs.enableDeltaCompression) && deepEqualsTraceletApi(lhs.deltaCoordinatePrecision, rhs.deltaCoordinatePrecision)
+    return deepEqualsTraceletApi(lhs.url, rhs.url) && deepEqualsTraceletApi(lhs.method, rhs.method) && deepEqualsTraceletApi(lhs.headers, rhs.headers) && deepEqualsTraceletApi(lhs.params, rhs.params) && deepEqualsTraceletApi(lhs.autoSync, rhs.autoSync) && deepEqualsTraceletApi(lhs.batchSync, rhs.batchSync) && deepEqualsTraceletApi(lhs.maxBatchSize, rhs.maxBatchSize) && deepEqualsTraceletApi(lhs.sslPinningFingerprints, rhs.sslPinningFingerprints) && deepEqualsTraceletApi(lhs.sslPinningCertificates, rhs.sslPinningCertificates) && deepEqualsTraceletApi(lhs.httpRootProperty, rhs.httpRootProperty) && deepEqualsTraceletApi(lhs.autoSyncThreshold, rhs.autoSyncThreshold) && deepEqualsTraceletApi(lhs.autoSyncDelay, rhs.autoSyncDelay) && deepEqualsTraceletApi(lhs.syncInterval, rhs.syncInterval) && deepEqualsTraceletApi(lhs.httpTimeout, rhs.httpTimeout) && deepEqualsTraceletApi(lhs.locationsOrderDirection, rhs.locationsOrderDirection) && deepEqualsTraceletApi(lhs.extras, rhs.extras) && deepEqualsTraceletApi(lhs.disableAutoSyncOnCellular, rhs.disableAutoSyncOnCellular) && deepEqualsTraceletApi(lhs.maxRetries, rhs.maxRetries) && deepEqualsTraceletApi(lhs.retryBackoffBase, rhs.retryBackoffBase) && deepEqualsTraceletApi(lhs.retryBackoffCap, rhs.retryBackoffCap) && deepEqualsTraceletApi(lhs.enableDeltaCompression, rhs.enableDeltaCompression) && deepEqualsTraceletApi(lhs.deltaCoordinatePrecision, rhs.deltaCoordinatePrecision) && deepEqualsTraceletApi(lhs.syncTelematics, rhs.syncTelematics) && deepEqualsTraceletApi(lhs.telematicsUrl, rhs.telematicsUrl)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -924,6 +932,8 @@ struct TlHttpConfig: Hashable {
     deepHashTraceletApi(value: retryBackoffCap, hasher: &hasher)
     deepHashTraceletApi(value: enableDeltaCompression, hasher: &hasher)
     deepHashTraceletApi(value: deltaCoordinatePrecision, hasher: &hasher)
+    deepHashTraceletApi(value: syncTelematics, hasher: &hasher)
+    deepHashTraceletApi(value: telematicsUrl, hasher: &hasher)
   }
 }
 
@@ -3228,9 +3238,9 @@ protocol TraceletHostApi {
   func getAttestationToken(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
   func getDeadReckoningState(completion: @escaping (Result<[String?: Any?]?, Error>) -> Void)
   func getCarbonReport(query: [String: Any?]?, completion: @escaping (Result<[String: Any?], Error>) -> Void)
-  func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, completion: @escaping (Result<Int64, Error>) -> Void)
+  func simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, completion: @escaping (Result<Bool, Error>) -> Void)
   func getTelematicsEvents(limit: Int64, completion: @escaping (Result<[TlTelematicsRecord?], Error>) -> Void)
-  func clearTelematicsEvents(completion: @escaping (Result<Int64, Error>) -> Void)
+  func destroyTelematicsEvents(completion: @escaping (Result<Bool, Error>) -> Void)
   func getLogs(limit: Int64, completion: @escaping (Result<[TlLogEntry?], Error>) -> Void)
   func clearLogs(completion: @escaping (Result<Void, Error>) -> Void)
 }
@@ -4523,10 +4533,10 @@ class TraceletHostApiSetup {
     } else {
       getTelematicsEventsChannel.setMessageHandler(nil)
     }
-    let clearTelematicsEventsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearTelematicsEvents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyTelematicsEventsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyTelematicsEvents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      clearTelematicsEventsChannel.setMessageHandler { _, reply in
-        api.clearTelematicsEvents { result in
+      destroyTelematicsEventsChannel.setMessageHandler { _, reply in
+        api.destroyTelematicsEvents { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -4536,7 +4546,7 @@ class TraceletHostApiSetup {
         }
       }
     } else {
-      clearTelematicsEventsChannel.setMessageHandler(nil)
+      destroyTelematicsEventsChannel.setMessageHandler(nil)
     }
     let getLogsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

@@ -558,15 +558,15 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('getTelematicsEvents() has not been implemented.');
   }
 
-  /// Clears all telematics events from the local database.
-  Future<int> clearTelematicsEvents() {
+  /// Destroys all telematics events
+  Future<bool> destroyTelematicsEvents() {
     throw UnimplementedError(
-      'clearTelematicsEvents() has not been implemented.',
+      'destroyTelematicsEvents() has not been implemented.',
     );
   }
 
-  /// Simulates a telematics event (e.g., for Doctor UI).
-  Future<int> simulateTelematicsEvent(
+  /// Simulates a telematics event
+  Future<bool> simulateTelematicsEvent(
     String eventType,
     double severity,
     double latitude,

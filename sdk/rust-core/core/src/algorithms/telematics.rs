@@ -73,7 +73,7 @@ pub struct DrivingEvent {
     pub timestamp_ms: i64,
 }
 
-struct EngineState {
+struct TelematicsState {
     prev_speed: Option<f64>,
     prev_heading: Option<f64>,
     prev_ts: Option<i64>,
@@ -89,7 +89,7 @@ struct EngineState {
     penalty: f64,
 }
 
-impl EngineState {
+impl TelematicsState {
     fn new() -> Self {
         Self {
             prev_speed: None,
@@ -109,7 +109,7 @@ impl EngineState {
 #[derive(uniffi::Object)]
 pub struct TelematicsEngine {
     config: TelematicsConfig,
-    state: Mutex<EngineState>,
+    state: Mutex<TelematicsState>,
 }
 
 /// Normalizes a heading delta (degrees) to the range [-180, 180].
@@ -138,7 +138,7 @@ impl TelematicsEngine {
     pub fn new(config: Option<TelematicsConfig>) -> Self {
         Self {
             config: config.unwrap_or_default(),
-            state: Mutex::new(EngineState::new()),
+            state: Mutex::new(TelematicsState::new()),
         }
     }
 
@@ -288,7 +288,7 @@ impl TelematicsEngine {
 
     /// Clears all state (call on trip start / tracking restart).
     pub fn reset(&self) {
-        *self.state.lock().unwrap() = EngineState::new();
+        *self.state.lock().unwrap() = TelematicsState::new();
     }
 }
 

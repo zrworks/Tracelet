@@ -2,6 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:tracelet/tracelet.dart' as tl;
+// FRB engine handles — drive the real Rust detection logic with synthetic
+// input so the features can be demoed without actually driving/crashing.
+// ignore_for_file: implementation_imports
+import 'package:tracelet_platform_interface/src/rust/api_dart/telematics.dart';
+import 'package:tracelet_platform_interface/src/rust/api_dart/impact.dart';
+import 'package:tracelet_platform_interface/src/rust/api_dart/transport_mode.dart';
+import 'package:tracelet_platform_interface/src/rust/algorithms/impact.dart'
+    as frb show ImpactConfig;
 
 /// Demo page for the 3.3.0 behavior features: driving telematics, crash/fall
 /// detection, and the fused transport-mode classifier.
@@ -121,6 +129,91 @@ class _BehaviorPageState extends State<BehaviorPage> {
     _logLine('✋ cancelled impact #${e.id}');
   }
 
+  /// Runs the real Rust engines (via flutter_rust_bridge) with synthetic input
+  /// so each detection can be demoed on-device without actually driving. This
+  /// is a self-contained demo: it does not require tracking to be started.
+  void _simulate(String scenario) {
+    try {
+      switch (scenario) {
+        case 'brake':
+          final e = TelematicsEngineDart();
+          e.processFix(
+              speed: 22, heading: 90, latitude: 0, longitude: 0, timestampMs: 0);
+          for (final ev in e.processFix(
+              speed: 5,
+              heading: 90,
+              latitude: 0,
+              longitude: 0,
+              timestampMs: 1000)) {
+            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+          }
+        case 'accel':
+          final e = TelematicsEngineDart();
+          e.processFix(
+              speed: 4, heading: 90, latitude: 0, longitude: 0, timestampMs: 0);
+          for (final ev in e.processFix(
+              speed: 15,
+              heading: 90,
+              latitude: 0,
+              longitude: 0,
+              timestampMs: 1000)) {
+            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+          }
+        case 'corner':
+          final e = TelematicsEngineDart();
+          e.processFix(
+              speed: 15, heading: 0, latitude: 0, longitude: 0, timestampMs: 0);
+          for (final ev in e.processFix(
+              speed: 15,
+              heading: 45,
+              latitude: 0,
+              longitude: 0,
+              timestampMs: 1000)) {
+            _logLine('🚗 ${ev.kind}  val=${ev.value.toStringAsFixed(2)}g (sim)');
+          }
+        case 'crash':
+          final d = ImpactDetectorDart(
+            config: const frb.ImpactConfig(
+              enableCrash: true,
+              enableFall: false,
+              crashGThreshold: 3,
+              crashMinSpeedKmh: 25,
+              fallGThreshold: 2.5,
+              confirmWindowMs: 15000,
+              minConfidence: 0.6,
+            ),
+          );
+          final c = d.onImpactWindow(
+              peakG: 5,
+              speedBeforeMps: 60 / 3.6,
+              isOnFoot: false,
+              latitude: 0,
+              longitude: 0,
+              nowMs: 0);
+          if (c != null) {
+            _logLine('🆘 ${c.kind}  peak=${c.peakG.toStringAsFixed(1)}g (sim) '
+                '→ would auto-confirm in ${(c.confirmDeadlineMs / 1000).round()}s');
+          }
+        case 'vehicle':
+          final cl = TransportModeClassifierDart();
+          final steady = List<double>.filled(10, 0.05);
+          cl.classifySamples(
+              magnitudesG: steady,
+              durationMs: 1000,
+              speedMps: 60 / 3.6,
+              nowMs: 0);
+          final r = cl.classifySamples(
+              magnitudesG: steady,
+              durationMs: 1000,
+              speedMps: 60 / 3.6,
+              nowMs: 9000);
+          _logLine('🚦 mode → ${r.mode.name} (${r.confidence.toStringAsFixed(2)}) (sim)');
+      }
+    } catch (e) {
+      _logLine('⚠️ simulate failed: $e (is the SDK initialized?)');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,6 +264,38 @@ class _BehaviorPageState extends State<BehaviorPage> {
                 ),
               ),
             ),
+          const Divider(height: 32),
+          const Text(
+            'Simulate (runs the real Rust engines with synthetic input)',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: () => _simulate('brake'),
+                child: const Text('Hard brake'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('accel'),
+                child: const Text('Rapid accel'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('corner'),
+                child: const Text('Sharp turn'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('crash'),
+                child: const Text('Crash'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('vehicle'),
+                child: const Text('Vehicle mode'),
+              ),
+            ],
+          ),
           const Divider(height: 32),
           const Text(
             'Event log',

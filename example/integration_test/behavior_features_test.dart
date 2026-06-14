@@ -60,13 +60,18 @@ void main() {
           impact: ImpactConfig(enableCrashDetection: true),
         ),
       );
+      // Subscribing must wire the native event channels without throwing. We
+      // intentionally do NOT call start() here: starting tracking pulls in
+      // runtime location-permission / foreground-service externalities that are
+      // orthogonal to these features and can't complete in a headless test
+      // harness. Event *detection* is covered by the Rust unit suite and the
+      // FRB simulation tests.
       final subs = <StreamSubscription<dynamic>>[
         Tracelet.drivingEventStream.listen((_) {}),
         Tracelet.impactStream.listen((_) {}),
         Tracelet.modeChangeStream.listen((_) {}),
       ];
-      await Tracelet.start();
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 200));
       for (final s in subs) {
         await s.cancel();
       }
@@ -95,9 +100,10 @@ void main() {
         Tracelet.impactStream.listen((_) => impact++),
       ];
 
+      // With the features at their defaults (off), the native engines are never
+      // instantiated, so the streams must stay silent. (No start() — see above.)
       await Tracelet.ready(const Config());
-      await Tracelet.start();
-      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 1));
 
       for (final s in subs) {
         await s.cancel();

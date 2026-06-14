@@ -35,6 +35,8 @@ import 'package:tracelet/src/models/state.dart';
 import 'package:tracelet/src/models/sync_body_context.dart';
 import 'package:tracelet/src/models/trip_event.dart';
 import 'package:tracelet/src/models/speed_motion_event.dart';
+import 'package:tracelet/src/models/log_entry.dart';
+import 'package:tracelet/src/models/telematics_record.dart';
 
 /// Production-grade background geolocation for Flutter.
 ///
@@ -633,8 +635,50 @@ class Tracelet {
   }
 
   // ---------------------------------------------------------------------------
-  // Persistence
+  // Persistence & Logs & Telematics
   // ---------------------------------------------------------------------------
+
+  /// Get stored logs from the native SQLite database.
+  ///
+  /// The [limit] controls the maximum number of logs returned.
+  static Future<List<LogEntry>> getLogs(int limit) async {
+    final result = await _platform.getLogs(limit);
+    return result.whereType<TlLogEntry>().map(LogEntry.fromTl).toList();
+  }
+
+  /// Delete all stored background logs from the native SQLite database.
+  static Future<void> clearLogs() async {
+    await _platform.clearLogs();
+  }
+
+  /// Get stored telematics events.
+  static Future<List<TelematicsRecord>> getTelematicsEvents(int limit) async {
+    final result = await _platform.getTelematicsEvents(limit);
+    return result
+        .whereType<TlTelematicsRecord>()
+        .map(TelematicsRecord.fromTl)
+        .toList();
+  }
+
+  /// Destroy all stored telematics events.
+  static Future<bool> destroyTelematicsEvents() {
+    return _platform.destroyTelematicsEvents();
+  }
+
+  /// Manually insert a telematics event (e.g. for testing with the Doctor UI).
+  static Future<bool> simulateTelematicsEvent({
+    required String eventType,
+    required double severity,
+    required double latitude,
+    required double longitude,
+  }) async {
+    return _platform.simulateTelematicsEvent(
+      eventType,
+      severity,
+      latitude,
+      longitude,
+    );
+  }
 
   /// Get stored locations from the local database.
   ///
@@ -1697,8 +1741,9 @@ class Tracelet {
   /// ```
   static Future<Map<String, Object?>> getCarbonReport([
     Map<String, Object?>? query,
-  ]) {
-    return _platform.getCarbonReport(query);
+  ]) async {
+    final result = await _platform.getCarbonReport(query);
+    return result.cast<String, Object?>();
   }
 
   // ---------------------------------------------------------------------------

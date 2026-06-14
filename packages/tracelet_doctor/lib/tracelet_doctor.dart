@@ -13,5 +13,6 @@
 /// ```
 library tracelet_doctor;
 
+export 'src/bug_report.dart';
 export 'src/doctor_sheet.dart';
 export 'src/doctor_theme.dart';

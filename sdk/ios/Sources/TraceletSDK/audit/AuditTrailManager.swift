@@ -22,10 +22,18 @@ public final class AuditTrailManager {
     private let defaults = UserDefaults.standard
     private let prefsKey = "com.tracelet.audit"
 
+    /// Serializes chain mutations. `appendToChain` is now reachable from both the
+    /// foreground dispatch path and direct background persists, possibly on
+    /// different threads, so the chain cursor must be updated atomically.
+    private let chainLock = NSLock()
+
     /// Bump this version whenever the hashing logic changes.
     /// On init, if the stored version doesn't match, the chain is
     /// automatically reset so stale hashes don't cause false "broken" reports.
-    private static let auditHashVersion = 3
+    // v4: audit links are now created at the single persistence chokepoint and
+    // uuid-less records are no longer chained — reset any orphaned/incomplete
+    // chains produced by the prior partial-coverage logic.
+    private static let auditHashVersion = 4
     private static let auditHashVersionKey = "com.tracelet.audit.hashVersion"
 
     public init(configManager: ConfigManager, rustDatabase: DatabaseManager? = nil) {
@@ -72,6 +80,8 @@ public final class AuditTrailManager {
     /// - Returns: Audit fields (hash, previous_hash, chain_index) to merge into the location map.
     public func appendToChain(_ locationMap: [String: Any]) -> [String: Any]? {
         guard configManager.getAuditEnabled() else { return nil }
+        chainLock.lock()
+        defer { chainLock.unlock() }
 
         // Standardize coordinates extraction supporting both flat and nested models
         let coords = locationMap["coords"] as? [String: Any]
@@ -82,7 +92,14 @@ public final class AuditTrailManager {
         let heading = coords?["heading"] as? Double ?? locationMap["heading"] as? Double ?? -1.0
         let accuracy = coords?["accuracy"] as? Double ?? locationMap["accuracy"] as? Double ?? -1.0
 
-        let uuid = locationMap["uuid"] as? String ?? ""
+        // A record with no uuid cannot be looked up by getLocationForAudit during
+        // verification, so chaining it would create an orphan audit row that
+        // permanently breaks verifyChain ("missing location record"). Skip it —
+        // mirrors the Android AuditTrailManager guard.
+        guard let uuid = locationMap["uuid"] as? String, !uuid.isEmpty else {
+            NSLog("AuditTrailManager: appendToChain — no uuid, skipping")
+            return nil
+        }
         let timestamp = locationMap["timestamp"] as? String ?? ""
         // Odometer is not persisted in location_events, so we must hash it as 0.0 to match verifyChain
         let odometer = 0.0

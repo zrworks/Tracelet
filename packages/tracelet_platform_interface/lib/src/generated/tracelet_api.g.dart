@@ -10,9 +10,9 @@ import 'package:flutter/services.dart';
 import 'package:meta/meta.dart' show immutable, protected, visibleForTesting;
 
 Object? _extractReplyValueOrThrow(
-    List<Object?>? replyList,
-    String channelName, {
-    required bool isNullValid,
+  List<Object?>? replyList,
+  String channelName, {
+  required bool isNullValid,
 }) {
   if (replyList == null) {
     throw PlatformException(
@@ -34,8 +34,11 @@ Object? _extractReplyValueOrThrow(
   return replyList.firstOrNull;
 }
 
-
-List<Object?> wrapResponse({Object? result, PlatformException? error, bool empty = false}) {
+List<Object?> wrapResponse({
+  Object? result,
+  PlatformException? error,
+  bool empty = false,
+}) {
   if (empty) {
     return <Object?>[];
   }
@@ -44,6 +47,7 @@ List<Object?> wrapResponse({Object? result, PlatformException? error, bool empty
   }
   return <Object?>[error.code, error.message, error.details];
 }
+
 bool _deepEquals(Object? a, Object? b) {
   if (identical(a, b)) {
     return true;
@@ -56,8 +60,9 @@ bool _deepEquals(Object? a, Object? b) {
   }
   if (a is List && b is List) {
     return a.length == b.length &&
-        a.indexed
-            .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
+        a.indexed.every(
+          ((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]),
+        );
   }
   if (a is Map && b is Map) {
     if (a.length != b.length) {
@@ -106,37 +111,15 @@ int _deepHash(Object? value) {
   return value.hashCode;
 }
 
+enum TlDesiredAccuracy { high, medium, low, veryLow, passive }
 
-enum TlDesiredAccuracy {
-  high,
-  medium,
-  low,
-  veryLow,
-  passive,
-}
+enum TlTrackingMode { location, geofences, periodic }
 
-enum TlTrackingMode {
-  location,
-  geofences,
-  periodic,
-}
+enum TlMotionDetectionMode { accelerometer, speed, smart }
 
-enum TlMotionDetectionMode {
-  accelerometer,
-  speed,
-  smart,
-}
+enum TlStationaryTrackingMode { periodic, geofences }
 
-enum TlStationaryTrackingMode {
-  periodic,
-  geofences,
-}
-
-enum TlGeofenceAction {
-  enter,
-  exit,
-  dwell,
-}
+enum TlGeofenceAction { enter, exit, dwell }
 
 enum TlAuthorizationStatus {
   notDetermined,
@@ -164,37 +147,15 @@ enum TlNotificationAuthorizationStatus {
   ephemeral,
 }
 
-enum TlHttpMethod {
-  post,
-  put,
-}
+enum TlHttpMethod { post, put }
 
-enum TlIosActivityType {
-  other,
-  automotive,
-  fitness,
-  otherNavigation,
-  airborne,
-}
+enum TlIosActivityType { other, automotive, fitness, otherNavigation, airborne }
 
-enum TlNotificationPriority {
-  min,
-  low,
-  defaultPriority,
-  high,
-  max,
-}
+enum TlNotificationPriority { min, low, defaultPriority, high, max }
 
-enum TlLocationFilterPolicy {
-  adjust,
-  ignore,
-  discard,
-}
+enum TlLocationFilterPolicy { adjust, ignore, discard }
 
-enum TlLocationOrderDirection {
-  ascending,
-  descending,
-}
+enum TlLocationOrderDirection { ascending, descending }
 
 enum TlLocationActivityType {
   still,
@@ -206,36 +167,15 @@ enum TlLocationActivityType {
   unknown,
 }
 
-enum TlLogLevel {
-  off,
-  error,
-  warn,
-  info,
-  debug,
-  verbose,
-}
+enum TlLogLevel { off, error, warn, info, debug, verbose }
 
-enum TlPersistMode {
-  all,
-  location,
-  geofence,
-  none,
-}
+enum TlPersistMode { all, location, geofence, none }
 
-enum TlHashAlgorithm {
-  sha256,
-}
+enum TlHashAlgorithm { sha256 }
 
-enum TlAuthorizationRequest {
-  always,
-  whenInUse,
-}
+enum TlAuthorizationRequest { always, whenInUse }
 
-enum TlSpeedMotionState {
-  moving,
-  slowing,
-  stationary,
-}
+enum TlSpeedMotionState { moving, slowing, stationary }
 
 class TlLocationFilter {
   TlLocationFilter({
@@ -275,7 +215,8 @@ class TlLocationFilter {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlLocationFilter decode(Object result) {
     result as List<Object?>;
@@ -299,7 +240,19 @@ class TlLocationFilter {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(trackingAccuracyThreshold, other.trackingAccuracyThreshold) && _deepEquals(maxImpliedSpeed, other.maxImpliedSpeed) && _deepEquals(odometerAccuracyThreshold, other.odometerAccuracyThreshold) && _deepEquals(policy, other.policy) && _deepEquals(rejectMockLocations, other.rejectMockLocations) && _deepEquals(mockDetectionLevel, other.mockDetectionLevel) && _deepEquals(useKalmanFilter, other.useKalmanFilter);
+    return _deepEquals(
+          trackingAccuracyThreshold,
+          other.trackingAccuracyThreshold,
+        ) &&
+        _deepEquals(maxImpliedSpeed, other.maxImpliedSpeed) &&
+        _deepEquals(
+          odometerAccuracyThreshold,
+          other.odometerAccuracyThreshold,
+        ) &&
+        _deepEquals(policy, other.policy) &&
+        _deepEquals(rejectMockLocations, other.rejectMockLocations) &&
+        _deepEquals(mockDetectionLevel, other.mockDetectionLevel) &&
+        _deepEquals(useKalmanFilter, other.useKalmanFilter);
   }
 
   @override
@@ -401,7 +354,8 @@ class TlGeoConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlGeoConfig decode(Object result) {
     result as List<Object?>;
@@ -439,7 +393,30 @@ class TlGeoConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(desiredAccuracy, other.desiredAccuracy) && _deepEquals(distanceFilter, other.distanceFilter) && _deepEquals(stationaryRadius, other.stationaryRadius) && _deepEquals(locationTimeout, other.locationTimeout) && _deepEquals(disableElasticity, other.disableElasticity) && _deepEquals(elasticityMultiplier, other.elasticityMultiplier) && _deepEquals(stopAfterElapsedMinutes, other.stopAfterElapsedMinutes) && _deepEquals(maxMonitoredGeofences, other.maxMonitoredGeofences) && _deepEquals(enableTimestampMeta, other.enableTimestampMeta) && _deepEquals(enableAdaptiveMode, other.enableAdaptiveMode) && _deepEquals(periodicLocationInterval, other.periodicLocationInterval) && _deepEquals(periodicDesiredAccuracy, other.periodicDesiredAccuracy) && _deepEquals(enableSparseUpdates, other.enableSparseUpdates) && _deepEquals(sparseDistanceThreshold, other.sparseDistanceThreshold) && _deepEquals(sparseMaxIdleSeconds, other.sparseMaxIdleSeconds) && _deepEquals(enableDeadReckoning, other.enableDeadReckoning) && _deepEquals(deadReckoningActivationDelay, other.deadReckoningActivationDelay) && _deepEquals(deadReckoningMaxDuration, other.deadReckoningMaxDuration) && _deepEquals(batteryBudgetPerHour, other.batteryBudgetPerHour) && _deepEquals(filter, other.filter) && _deepEquals(resolveAddress, other.resolveAddress);
+    return _deepEquals(desiredAccuracy, other.desiredAccuracy) &&
+        _deepEquals(distanceFilter, other.distanceFilter) &&
+        _deepEquals(stationaryRadius, other.stationaryRadius) &&
+        _deepEquals(locationTimeout, other.locationTimeout) &&
+        _deepEquals(disableElasticity, other.disableElasticity) &&
+        _deepEquals(elasticityMultiplier, other.elasticityMultiplier) &&
+        _deepEquals(stopAfterElapsedMinutes, other.stopAfterElapsedMinutes) &&
+        _deepEquals(maxMonitoredGeofences, other.maxMonitoredGeofences) &&
+        _deepEquals(enableTimestampMeta, other.enableTimestampMeta) &&
+        _deepEquals(enableAdaptiveMode, other.enableAdaptiveMode) &&
+        _deepEquals(periodicLocationInterval, other.periodicLocationInterval) &&
+        _deepEquals(periodicDesiredAccuracy, other.periodicDesiredAccuracy) &&
+        _deepEquals(enableSparseUpdates, other.enableSparseUpdates) &&
+        _deepEquals(sparseDistanceThreshold, other.sparseDistanceThreshold) &&
+        _deepEquals(sparseMaxIdleSeconds, other.sparseMaxIdleSeconds) &&
+        _deepEquals(enableDeadReckoning, other.enableDeadReckoning) &&
+        _deepEquals(
+          deadReckoningActivationDelay,
+          other.deadReckoningActivationDelay,
+        ) &&
+        _deepEquals(deadReckoningMaxDuration, other.deadReckoningMaxDuration) &&
+        _deepEquals(batteryBudgetPerHour, other.batteryBudgetPerHour) &&
+        _deepEquals(filter, other.filter) &&
+        _deepEquals(resolveAddress, other.resolveAddress);
   }
 
   @override
@@ -489,7 +466,8 @@ class TlAppConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAppConfig decode(Object result) {
     result as List<Object?>;
@@ -499,7 +477,8 @@ class TlAppConfig {
       heartbeatInterval: result[2]! as int,
       schedule: (result[3]! as List<Object?>).cast<String?>(),
       remoteConfigUrl: result[4] as String?,
-      remoteConfigHeaders: (result[5] as Map<Object?, Object?>?)?.cast<String?, String?>(),
+      remoteConfigHeaders: (result[5] as Map<Object?, Object?>?)
+          ?.cast<String?, String?>(),
       remoteConfigTimeout: result[6]! as int,
       remoteConfigRefreshInterval: result[7]! as int,
     );
@@ -514,7 +493,17 @@ class TlAppConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(stopOnTerminate, other.stopOnTerminate) && _deepEquals(startOnBoot, other.startOnBoot) && _deepEquals(heartbeatInterval, other.heartbeatInterval) && _deepEquals(schedule, other.schedule) && _deepEquals(remoteConfigUrl, other.remoteConfigUrl) && _deepEquals(remoteConfigHeaders, other.remoteConfigHeaders) && _deepEquals(remoteConfigTimeout, other.remoteConfigTimeout) && _deepEquals(remoteConfigRefreshInterval, other.remoteConfigRefreshInterval);
+    return _deepEquals(stopOnTerminate, other.stopOnTerminate) &&
+        _deepEquals(startOnBoot, other.startOnBoot) &&
+        _deepEquals(heartbeatInterval, other.heartbeatInterval) &&
+        _deepEquals(schedule, other.schedule) &&
+        _deepEquals(remoteConfigUrl, other.remoteConfigUrl) &&
+        _deepEquals(remoteConfigHeaders, other.remoteConfigHeaders) &&
+        _deepEquals(remoteConfigTimeout, other.remoteConfigTimeout) &&
+        _deepEquals(
+          remoteConfigRefreshInterval,
+          other.remoteConfigRefreshInterval,
+        );
   }
 
   @override
@@ -580,7 +569,8 @@ class TlForegroundServiceConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlForegroundServiceConfig decode(Object result) {
     result as List<Object?>;
@@ -603,13 +593,28 @@ class TlForegroundServiceConfig {
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) {
-    if (other is! TlForegroundServiceConfig || other.runtimeType != runtimeType) {
+    if (other is! TlForegroundServiceConfig ||
+        other.runtimeType != runtimeType) {
       return false;
     }
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enabled, other.enabled) && _deepEquals(channelId, other.channelId) && _deepEquals(channelName, other.channelName) && _deepEquals(notificationTitle, other.notificationTitle) && _deepEquals(notificationText, other.notificationText) && _deepEquals(notificationColor, other.notificationColor) && _deepEquals(notificationSmallIcon, other.notificationSmallIcon) && _deepEquals(notificationLargeIcon, other.notificationLargeIcon) && _deepEquals(notificationPriority, other.notificationPriority) && _deepEquals(notificationOngoing, other.notificationOngoing) && _deepEquals(showNotificationOnPauseOnly, other.showNotificationOnPauseOnly) && _deepEquals(actions, other.actions);
+    return _deepEquals(enabled, other.enabled) &&
+        _deepEquals(channelId, other.channelId) &&
+        _deepEquals(channelName, other.channelName) &&
+        _deepEquals(notificationTitle, other.notificationTitle) &&
+        _deepEquals(notificationText, other.notificationText) &&
+        _deepEquals(notificationColor, other.notificationColor) &&
+        _deepEquals(notificationSmallIcon, other.notificationSmallIcon) &&
+        _deepEquals(notificationLargeIcon, other.notificationLargeIcon) &&
+        _deepEquals(notificationPriority, other.notificationPriority) &&
+        _deepEquals(notificationOngoing, other.notificationOngoing) &&
+        _deepEquals(
+          showNotificationOnPauseOnly,
+          other.showNotificationOnPauseOnly,
+        ) &&
+        _deepEquals(actions, other.actions);
   }
 
   @override
@@ -628,6 +633,7 @@ class TlAndroidConfig {
     required this.periodicUseExactAlarms,
     required this.scheduleUseAlarmManager,
     required this.foregroundService,
+    required this.releaseWakelockWhenStationary,
   });
 
   int locationUpdateInterval;
@@ -648,6 +654,10 @@ class TlAndroidConfig {
 
   TlForegroundServiceConfig foregroundService;
 
+  /// Drops the OEM Wakelock when the device enters a fully stationary state.
+  /// Resolves Issue #162.
+  bool releaseWakelockWhenStationary;
+
   List<Object?> _toList() {
     return <Object?>[
       locationUpdateInterval,
@@ -659,11 +669,13 @@ class TlAndroidConfig {
       periodicUseExactAlarms,
       scheduleUseAlarmManager,
       foregroundService,
+      releaseWakelockWhenStationary,
     ];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAndroidConfig decode(Object result) {
     result as List<Object?>;
@@ -677,6 +689,7 @@ class TlAndroidConfig {
       periodicUseExactAlarms: result[6]! as bool,
       scheduleUseAlarmManager: result[7]! as bool,
       foregroundService: result[8]! as TlForegroundServiceConfig,
+      releaseWakelockWhenStationary: result[9]! as bool,
     );
   }
 
@@ -689,7 +702,25 @@ class TlAndroidConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(locationUpdateInterval, other.locationUpdateInterval) && _deepEquals(fastestLocationUpdateInterval, other.fastestLocationUpdateInterval) && _deepEquals(deferTime, other.deferTime) && _deepEquals(allowIdenticalLocations, other.allowIdenticalLocations) && _deepEquals(geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) && _deepEquals(periodicUseForegroundService, other.periodicUseForegroundService) && _deepEquals(periodicUseExactAlarms, other.periodicUseExactAlarms) && _deepEquals(scheduleUseAlarmManager, other.scheduleUseAlarmManager) && _deepEquals(foregroundService, other.foregroundService);
+    return _deepEquals(locationUpdateInterval, other.locationUpdateInterval) &&
+        _deepEquals(
+          fastestLocationUpdateInterval,
+          other.fastestLocationUpdateInterval,
+        ) &&
+        _deepEquals(deferTime, other.deferTime) &&
+        _deepEquals(allowIdenticalLocations, other.allowIdenticalLocations) &&
+        _deepEquals(geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) &&
+        _deepEquals(
+          periodicUseForegroundService,
+          other.periodicUseForegroundService,
+        ) &&
+        _deepEquals(periodicUseExactAlarms, other.periodicUseExactAlarms) &&
+        _deepEquals(scheduleUseAlarmManager, other.scheduleUseAlarmManager) &&
+        _deepEquals(foregroundService, other.foregroundService) &&
+        _deepEquals(
+          releaseWakelockWhenStationary,
+          other.releaseWakelockWhenStationary,
+        );
   }
 
   @override
@@ -735,7 +766,8 @@ class TlIosConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlIosConfig decode(Object result) {
     result as List<Object?>;
@@ -759,7 +791,28 @@ class TlIosConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(activityType, other.activityType) && _deepEquals(useSignificantChangesOnly, other.useSignificantChangesOnly) && _deepEquals(showsBackgroundLocationIndicator, other.showsBackgroundLocationIndicator) && _deepEquals(pausesLocationUpdatesAutomatically, other.pausesLocationUpdatesAutomatically) && _deepEquals(locationAuthorizationRequest, other.locationAuthorizationRequest) && _deepEquals(disableLocationAuthorizationAlert, other.disableLocationAuthorizationAlert) && _deepEquals(preventSuspend, other.preventSuspend);
+    return _deepEquals(activityType, other.activityType) &&
+        _deepEquals(
+          useSignificantChangesOnly,
+          other.useSignificantChangesOnly,
+        ) &&
+        _deepEquals(
+          showsBackgroundLocationIndicator,
+          other.showsBackgroundLocationIndicator,
+        ) &&
+        _deepEquals(
+          pausesLocationUpdatesAutomatically,
+          other.pausesLocationUpdatesAutomatically,
+        ) &&
+        _deepEquals(
+          locationAuthorizationRequest,
+          other.locationAuthorizationRequest,
+        ) &&
+        _deepEquals(
+          disableLocationAuthorizationAlert,
+          other.disableLocationAuthorizationAlert,
+        ) &&
+        _deepEquals(preventSuspend, other.preventSuspend);
   }
 
   @override
@@ -791,6 +844,8 @@ class TlHttpConfig {
     required this.retryBackoffCap,
     required this.enableDeltaCompression,
     required this.deltaCoordinatePrecision,
+    required this.syncTelematics,
+    this.telematicsUrl,
   });
 
   String? url;
@@ -837,6 +892,10 @@ class TlHttpConfig {
 
   int deltaCoordinatePrecision;
 
+  bool syncTelematics;
+
+  String? telematicsUrl;
+
   List<Object?> _toList() {
     return <Object?>[
       url,
@@ -861,11 +920,14 @@ class TlHttpConfig {
       retryBackoffCap,
       enableDeltaCompression,
       deltaCoordinatePrecision,
+      syncTelematics,
+      telematicsUrl,
     ];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlHttpConfig decode(Object result) {
     result as List<Object?>;
@@ -892,6 +954,8 @@ class TlHttpConfig {
       retryBackoffCap: result[19]! as int,
       enableDeltaCompression: result[20]! as bool,
       deltaCoordinatePrecision: result[21]! as int,
+      syncTelematics: result[22]! as bool,
+      telematicsUrl: result[23] as String?,
     );
   }
 
@@ -904,7 +968,33 @@ class TlHttpConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(url, other.url) && _deepEquals(method, other.method) && _deepEquals(headers, other.headers) && _deepEquals(params, other.params) && _deepEquals(autoSync, other.autoSync) && _deepEquals(batchSync, other.batchSync) && _deepEquals(maxBatchSize, other.maxBatchSize) && _deepEquals(sslPinningFingerprints, other.sslPinningFingerprints) && _deepEquals(sslPinningCertificates, other.sslPinningCertificates) && _deepEquals(httpRootProperty, other.httpRootProperty) && _deepEquals(autoSyncThreshold, other.autoSyncThreshold) && _deepEquals(autoSyncDelay, other.autoSyncDelay) && _deepEquals(syncInterval, other.syncInterval) && _deepEquals(httpTimeout, other.httpTimeout) && _deepEquals(locationsOrderDirection, other.locationsOrderDirection) && _deepEquals(extras, other.extras) && _deepEquals(disableAutoSyncOnCellular, other.disableAutoSyncOnCellular) && _deepEquals(maxRetries, other.maxRetries) && _deepEquals(retryBackoffBase, other.retryBackoffBase) && _deepEquals(retryBackoffCap, other.retryBackoffCap) && _deepEquals(enableDeltaCompression, other.enableDeltaCompression) && _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision);
+    return _deepEquals(url, other.url) &&
+        _deepEquals(method, other.method) &&
+        _deepEquals(headers, other.headers) &&
+        _deepEquals(params, other.params) &&
+        _deepEquals(autoSync, other.autoSync) &&
+        _deepEquals(batchSync, other.batchSync) &&
+        _deepEquals(maxBatchSize, other.maxBatchSize) &&
+        _deepEquals(sslPinningFingerprints, other.sslPinningFingerprints) &&
+        _deepEquals(sslPinningCertificates, other.sslPinningCertificates) &&
+        _deepEquals(httpRootProperty, other.httpRootProperty) &&
+        _deepEquals(autoSyncThreshold, other.autoSyncThreshold) &&
+        _deepEquals(autoSyncDelay, other.autoSyncDelay) &&
+        _deepEquals(syncInterval, other.syncInterval) &&
+        _deepEquals(httpTimeout, other.httpTimeout) &&
+        _deepEquals(locationsOrderDirection, other.locationsOrderDirection) &&
+        _deepEquals(extras, other.extras) &&
+        _deepEquals(
+          disableAutoSyncOnCellular,
+          other.disableAutoSyncOnCellular,
+        ) &&
+        _deepEquals(maxRetries, other.maxRetries) &&
+        _deepEquals(retryBackoffBase, other.retryBackoffBase) &&
+        _deepEquals(retryBackoffCap, other.retryBackoffCap) &&
+        _deepEquals(enableDeltaCompression, other.enableDeltaCompression) &&
+        _deepEquals(deltaCoordinatePrecision, other.deltaCoordinatePrecision) &&
+        _deepEquals(syncTelematics, other.syncTelematics) &&
+        _deepEquals(telematicsUrl, other.telematicsUrl);
   }
 
   @override
@@ -986,7 +1076,8 @@ class TlConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlConfig decode(Object result) {
     result as List<Object?>;
@@ -1019,7 +1110,22 @@ class TlConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(geo, other.geo) && _deepEquals(app, other.app) && _deepEquals(android, other.android) && _deepEquals(ios, other.ios) && _deepEquals(http, other.http) && _deepEquals(logger, other.logger) && _deepEquals(motion, other.motion) && _deepEquals(geofence, other.geofence) && _deepEquals(persistence, other.persistence) && _deepEquals(audit, other.audit) && _deepEquals(privacyZone, other.privacyZone) && _deepEquals(security, other.security) && _deepEquals(attestation, other.attestation) && _deepEquals(telematics, other.telematics) && _deepEquals(classifier, other.classifier) && _deepEquals(impact, other.impact);
+    return _deepEquals(geo, other.geo) &&
+        _deepEquals(app, other.app) &&
+        _deepEquals(android, other.android) &&
+        _deepEquals(ios, other.ios) &&
+        _deepEquals(http, other.http) &&
+        _deepEquals(logger, other.logger) &&
+        _deepEquals(motion, other.motion) &&
+        _deepEquals(geofence, other.geofence) &&
+        _deepEquals(persistence, other.persistence) &&
+        _deepEquals(audit, other.audit) &&
+        _deepEquals(privacyZone, other.privacyZone) &&
+        _deepEquals(security, other.security) &&
+        _deepEquals(attestation, other.attestation) &&
+        _deepEquals(telematics, other.telematics) &&
+        _deepEquals(classifier, other.classifier) &&
+        _deepEquals(impact, other.impact);
   }
 
   @override
@@ -1041,15 +1147,12 @@ class TlLoggerConfig {
   bool debug;
 
   List<Object?> _toList() {
-    return <Object?>[
-      logLevel,
-      logMaxDays,
-      debug,
-    ];
+    return <Object?>[logLevel, logMaxDays, debug];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlLoggerConfig decode(Object result) {
     result as List<Object?>;
@@ -1069,7 +1172,9 @@ class TlLoggerConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(logLevel, other.logLevel) && _deepEquals(logMaxDays, other.logMaxDays) && _deepEquals(debug, other.debug);
+    return _deepEquals(logLevel, other.logLevel) &&
+        _deepEquals(logMaxDays, other.logMaxDays) &&
+        _deepEquals(debug, other.debug);
   }
 
   @override
@@ -1175,7 +1280,8 @@ class TlMotionConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlMotionConfig decode(Object result) {
     result as List<Object?>;
@@ -1189,7 +1295,8 @@ class TlMotionConfig {
       disableStopDetection: result[6]! as bool,
       stopDetectionDelay: result[7]! as int,
       stopOnStationary: result[8]! as bool,
-      activityTypes: (result[9] as List<Object?>?)?.cast<TlLocationActivityType?>(),
+      activityTypes: (result[9] as List<Object?>?)
+          ?.cast<TlLocationActivityType?>(),
       stationaryRadius: result[10]! as double,
       useSignificantChangesOnly: result[11]! as bool,
       shakeThreshold: result[12]! as double,
@@ -1214,7 +1321,46 @@ class TlMotionConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(stopTimeout, other.stopTimeout) && _deepEquals(motionTriggerDelay, other.motionTriggerDelay) && _deepEquals(disableMotionActivityUpdates, other.disableMotionActivityUpdates) && _deepEquals(isMoving, other.isMoving) && _deepEquals(activityRecognitionInterval, other.activityRecognitionInterval) && _deepEquals(minimumActivityRecognitionConfidence, other.minimumActivityRecognitionConfidence) && _deepEquals(disableStopDetection, other.disableStopDetection) && _deepEquals(stopDetectionDelay, other.stopDetectionDelay) && _deepEquals(stopOnStationary, other.stopOnStationary) && _deepEquals(activityTypes, other.activityTypes) && _deepEquals(stationaryRadius, other.stationaryRadius) && _deepEquals(useSignificantChangesOnly, other.useSignificantChangesOnly) && _deepEquals(shakeThreshold, other.shakeThreshold) && _deepEquals(stillThreshold, other.stillThreshold) && _deepEquals(stillSampleCount, other.stillSampleCount) && _deepEquals(motionDetectionMode, other.motionDetectionMode) && _deepEquals(speedMovingThreshold, other.speedMovingThreshold) && _deepEquals(speedStationaryDelay, other.speedStationaryDelay) && _deepEquals(stationaryTrackingMode, other.stationaryTrackingMode) && _deepEquals(stationaryPeriodicInterval, other.stationaryPeriodicInterval) && _deepEquals(stationaryPeriodicAccuracy, other.stationaryPeriodicAccuracy) && _deepEquals(speedWakeConfirmCount, other.speedWakeConfirmCount);
+    return _deepEquals(stopTimeout, other.stopTimeout) &&
+        _deepEquals(motionTriggerDelay, other.motionTriggerDelay) &&
+        _deepEquals(
+          disableMotionActivityUpdates,
+          other.disableMotionActivityUpdates,
+        ) &&
+        _deepEquals(isMoving, other.isMoving) &&
+        _deepEquals(
+          activityRecognitionInterval,
+          other.activityRecognitionInterval,
+        ) &&
+        _deepEquals(
+          minimumActivityRecognitionConfidence,
+          other.minimumActivityRecognitionConfidence,
+        ) &&
+        _deepEquals(disableStopDetection, other.disableStopDetection) &&
+        _deepEquals(stopDetectionDelay, other.stopDetectionDelay) &&
+        _deepEquals(stopOnStationary, other.stopOnStationary) &&
+        _deepEquals(activityTypes, other.activityTypes) &&
+        _deepEquals(stationaryRadius, other.stationaryRadius) &&
+        _deepEquals(
+          useSignificantChangesOnly,
+          other.useSignificantChangesOnly,
+        ) &&
+        _deepEquals(shakeThreshold, other.shakeThreshold) &&
+        _deepEquals(stillThreshold, other.stillThreshold) &&
+        _deepEquals(stillSampleCount, other.stillSampleCount) &&
+        _deepEquals(motionDetectionMode, other.motionDetectionMode) &&
+        _deepEquals(speedMovingThreshold, other.speedMovingThreshold) &&
+        _deepEquals(speedStationaryDelay, other.speedStationaryDelay) &&
+        _deepEquals(stationaryTrackingMode, other.stationaryTrackingMode) &&
+        _deepEquals(
+          stationaryPeriodicInterval,
+          other.stationaryPeriodicInterval,
+        ) &&
+        _deepEquals(
+          stationaryPeriodicAccuracy,
+          other.stationaryPeriodicAccuracy,
+        ) &&
+        _deepEquals(speedWakeConfirmCount, other.speedWakeConfirmCount);
   }
 
   @override
@@ -1248,7 +1394,8 @@ class TlGeofenceConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlGeofenceConfig decode(Object result) {
     result as List<Object?>;
@@ -1269,7 +1416,16 @@ class TlGeofenceConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) && _deepEquals(geofenceInitialTriggerEntry, other.geofenceInitialTriggerEntry) && _deepEquals(geofenceProximityRadius, other.geofenceProximityRadius) && _deepEquals(geofenceInitialTrigger, other.geofenceInitialTrigger);
+    return _deepEquals(
+          geofenceModeHighAccuracy,
+          other.geofenceModeHighAccuracy,
+        ) &&
+        _deepEquals(
+          geofenceInitialTriggerEntry,
+          other.geofenceInitialTriggerEntry,
+        ) &&
+        _deepEquals(geofenceProximityRadius, other.geofenceProximityRadius) &&
+        _deepEquals(geofenceInitialTrigger, other.geofenceInitialTrigger);
   }
 
   @override
@@ -1303,7 +1459,8 @@ class TlPersistenceConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlPersistenceConfig decode(Object result) {
     result as List<Object?>;
@@ -1324,7 +1481,13 @@ class TlPersistenceConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(persistMode, other.persistMode) && _deepEquals(maxDaysToPersist, other.maxDaysToPersist) && _deepEquals(maxRecordsToPersist, other.maxRecordsToPersist) && _deepEquals(disableProviderChangeRecord, other.disableProviderChangeRecord);
+    return _deepEquals(persistMode, other.persistMode) &&
+        _deepEquals(maxDaysToPersist, other.maxDaysToPersist) &&
+        _deepEquals(maxRecordsToPersist, other.maxRecordsToPersist) &&
+        _deepEquals(
+          disableProviderChangeRecord,
+          other.disableProviderChangeRecord,
+        );
   }
 
   @override
@@ -1333,24 +1496,19 @@ class TlPersistenceConfig {
 }
 
 class TlAuditConfig {
-  TlAuditConfig({
-    required this.enabled,
-    required this.hashAlgorithm,
-  });
+  TlAuditConfig({required this.enabled, required this.hashAlgorithm});
 
   bool enabled;
 
   TlHashAlgorithm hashAlgorithm;
 
   List<Object?> _toList() {
-    return <Object?>[
-      enabled,
-      hashAlgorithm,
-    ];
+    return <Object?>[enabled, hashAlgorithm];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAuditConfig decode(Object result) {
     result as List<Object?>;
@@ -1369,7 +1527,8 @@ class TlAuditConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enabled, other.enabled) && _deepEquals(hashAlgorithm, other.hashAlgorithm);
+    return _deepEquals(enabled, other.enabled) &&
+        _deepEquals(hashAlgorithm, other.hashAlgorithm);
   }
 
   @override
@@ -1378,26 +1537,21 @@ class TlAuditConfig {
 }
 
 class TlPrivacyZoneConfig {
-  TlPrivacyZoneConfig({
-    required this.enabled,
-  });
+  TlPrivacyZoneConfig({required this.enabled});
 
   bool enabled;
 
   List<Object?> _toList() {
-    return <Object?>[
-      enabled,
-    ];
+    return <Object?>[enabled];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlPrivacyZoneConfig decode(Object result) {
     result as List<Object?>;
-    return TlPrivacyZoneConfig(
-      enabled: result[0]! as bool,
-    );
+    return TlPrivacyZoneConfig(enabled: result[0]! as bool);
   }
 
   @override
@@ -1418,26 +1572,21 @@ class TlPrivacyZoneConfig {
 }
 
 class TlSecurityConfig {
-  TlSecurityConfig({
-    required this.encryptDatabase,
-  });
+  TlSecurityConfig({required this.encryptDatabase});
 
   bool encryptDatabase;
 
   List<Object?> _toList() {
-    return <Object?>[
-      encryptDatabase,
-    ];
+    return <Object?>[encryptDatabase];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlSecurityConfig decode(Object result) {
     result as List<Object?>;
-    return TlSecurityConfig(
-      encryptDatabase: result[0]! as bool,
-    );
+    return TlSecurityConfig(encryptDatabase: result[0]! as bool);
   }
 
   @override
@@ -1458,24 +1607,19 @@ class TlSecurityConfig {
 }
 
 class TlAttestationConfig {
-  TlAttestationConfig({
-    required this.enabled,
-    required this.refreshInterval,
-  });
+  TlAttestationConfig({required this.enabled, required this.refreshInterval});
 
   bool enabled;
 
   int refreshInterval;
 
   List<Object?> _toList() {
-    return <Object?>[
-      enabled,
-      refreshInterval,
-    ];
+    return <Object?>[enabled, refreshInterval];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAttestationConfig decode(Object result) {
     result as List<Object?>;
@@ -1494,7 +1638,8 @@ class TlAttestationConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enabled, other.enabled) && _deepEquals(refreshInterval, other.refreshInterval);
+    return _deepEquals(enabled, other.enabled) &&
+        _deepEquals(refreshInterval, other.refreshInterval);
   }
 
   @override
@@ -1549,7 +1694,8 @@ class TlTelematicsConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlTelematicsConfig decode(Object result) {
     result as List<Object?>;
@@ -1575,7 +1721,15 @@ class TlTelematicsConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enableDrivingEvents, other.enableDrivingEvents) && _deepEquals(harshBrakingG, other.harshBrakingG) && _deepEquals(harshAccelerationG, other.harshAccelerationG) && _deepEquals(harshCorneringG, other.harshCorneringG) && _deepEquals(speedLimitKmh, other.speedLimitKmh) && _deepEquals(speedingToleranceKmh, other.speedingToleranceKmh) && _deepEquals(speedingMinDurationMs, other.speedingMinDurationMs) && _deepEquals(minSpeedForEventsKmh, other.minSpeedForEventsKmh) && _deepEquals(eventDebounceMs, other.eventDebounceMs);
+    return _deepEquals(enableDrivingEvents, other.enableDrivingEvents) &&
+        _deepEquals(harshBrakingG, other.harshBrakingG) &&
+        _deepEquals(harshAccelerationG, other.harshAccelerationG) &&
+        _deepEquals(harshCorneringG, other.harshCorneringG) &&
+        _deepEquals(speedLimitKmh, other.speedLimitKmh) &&
+        _deepEquals(speedingToleranceKmh, other.speedingToleranceKmh) &&
+        _deepEquals(speedingMinDurationMs, other.speedingMinDurationMs) &&
+        _deepEquals(minSpeedForEventsKmh, other.minSpeedForEventsKmh) &&
+        _deepEquals(eventDebounceMs, other.eventDebounceMs);
   }
 
   @override
@@ -1610,7 +1764,8 @@ class TlClassifierConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlClassifierConfig decode(Object result) {
     result as List<Object?>;
@@ -1631,7 +1786,13 @@ class TlClassifierConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enableFusedClassifier, other.enableFusedClassifier) && _deepEquals(fusedClassifierAuthoritative, other.fusedClassifierAuthoritative) && _deepEquals(modeSwitchDwellMs, other.modeSwitchDwellMs) && _deepEquals(minModeConfidence, other.minModeConfidence);
+    return _deepEquals(enableFusedClassifier, other.enableFusedClassifier) &&
+        _deepEquals(
+          fusedClassifierAuthoritative,
+          other.fusedClassifierAuthoritative,
+        ) &&
+        _deepEquals(modeSwitchDwellMs, other.modeSwitchDwellMs) &&
+        _deepEquals(minModeConfidence, other.minModeConfidence);
   }
 
   @override
@@ -1678,7 +1839,8 @@ class TlImpactConfig {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlImpactConfig decode(Object result) {
     result as List<Object?>;
@@ -1702,7 +1864,13 @@ class TlImpactConfig {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enableCrashDetection, other.enableCrashDetection) && _deepEquals(enableFallDetection, other.enableFallDetection) && _deepEquals(crashGThreshold, other.crashGThreshold) && _deepEquals(crashMinSpeedKmh, other.crashMinSpeedKmh) && _deepEquals(fallGThreshold, other.fallGThreshold) && _deepEquals(confirmWindowMs, other.confirmWindowMs) && _deepEquals(minImpactConfidence, other.minImpactConfidence);
+    return _deepEquals(enableCrashDetection, other.enableCrashDetection) &&
+        _deepEquals(enableFallDetection, other.enableFallDetection) &&
+        _deepEquals(crashGThreshold, other.crashGThreshold) &&
+        _deepEquals(crashMinSpeedKmh, other.crashMinSpeedKmh) &&
+        _deepEquals(fallGThreshold, other.fallGThreshold) &&
+        _deepEquals(confirmWindowMs, other.confirmWindowMs) &&
+        _deepEquals(minImpactConfidence, other.minImpactConfidence);
   }
 
   @override
@@ -1764,7 +1932,8 @@ class TlCoords {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlCoords decode(Object result) {
     result as List<Object?>;
@@ -1792,7 +1961,17 @@ class TlCoords {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(accuracy, other.accuracy) && _deepEquals(speed, other.speed) && _deepEquals(heading, other.heading) && _deepEquals(altitude, other.altitude) && _deepEquals(altitudeAccuracy, other.altitudeAccuracy) && _deepEquals(speedAccuracy, other.speedAccuracy) && _deepEquals(headingAccuracy, other.headingAccuracy) && _deepEquals(ellipsoidalAltitude, other.ellipsoidalAltitude) && _deepEquals(floor, other.floor);
+    return _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(accuracy, other.accuracy) &&
+        _deepEquals(speed, other.speed) &&
+        _deepEquals(heading, other.heading) &&
+        _deepEquals(altitude, other.altitude) &&
+        _deepEquals(altitudeAccuracy, other.altitudeAccuracy) &&
+        _deepEquals(speedAccuracy, other.speedAccuracy) &&
+        _deepEquals(headingAccuracy, other.headingAccuracy) &&
+        _deepEquals(ellipsoidalAltitude, other.ellipsoidalAltitude) &&
+        _deepEquals(floor, other.floor);
   }
 
   @override
@@ -1801,24 +1980,19 @@ class TlCoords {
 }
 
 class TlBattery {
-  TlBattery({
-    required this.level,
-    required this.isCharging,
-  });
+  TlBattery({required this.level, required this.isCharging});
 
   double level;
 
   bool isCharging;
 
   List<Object?> _toList() {
-    return <Object?>[
-      level,
-      isCharging,
-    ];
+    return <Object?>[level, isCharging];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlBattery decode(Object result) {
     result as List<Object?>;
@@ -1837,7 +2011,8 @@ class TlBattery {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(level, other.level) && _deepEquals(isCharging, other.isCharging);
+    return _deepEquals(level, other.level) &&
+        _deepEquals(isCharging, other.isCharging);
   }
 
   @override
@@ -1865,17 +2040,12 @@ class TlAddress {
   String? country;
 
   List<Object?> _toList() {
-    return <Object?>[
-      street,
-      city,
-      state,
-      postalCode,
-      country,
-    ];
+    return <Object?>[street, city, state, postalCode, country];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAddress decode(Object result) {
     result as List<Object?>;
@@ -1897,7 +2067,11 @@ class TlAddress {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(street, other.street) && _deepEquals(city, other.city) && _deepEquals(state, other.state) && _deepEquals(postalCode, other.postalCode) && _deepEquals(country, other.country);
+    return _deepEquals(street, other.street) &&
+        _deepEquals(city, other.city) &&
+        _deepEquals(state, other.state) &&
+        _deepEquals(postalCode, other.postalCode) &&
+        _deepEquals(country, other.country);
   }
 
   @override
@@ -1955,7 +2129,8 @@ class TlLocation {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlLocation decode(Object result) {
     result as List<Object?>;
@@ -1982,7 +2157,16 @@ class TlLocation {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(coords, other.coords) && _deepEquals(battery, other.battery) && _deepEquals(timestamp, other.timestamp) && _deepEquals(uuid, other.uuid) && _deepEquals(isMoving, other.isMoving) && _deepEquals(odometer, other.odometer) && _deepEquals(event, other.event) && _deepEquals(activity, other.activity) && _deepEquals(extras, other.extras) && _deepEquals(address, other.address);
+    return _deepEquals(coords, other.coords) &&
+        _deepEquals(battery, other.battery) &&
+        _deepEquals(timestamp, other.timestamp) &&
+        _deepEquals(uuid, other.uuid) &&
+        _deepEquals(isMoving, other.isMoving) &&
+        _deepEquals(odometer, other.odometer) &&
+        _deepEquals(event, other.event) &&
+        _deepEquals(activity, other.activity) &&
+        _deepEquals(extras, other.extras) &&
+        _deepEquals(address, other.address);
   }
 
   @override
@@ -1991,24 +2175,19 @@ class TlLocation {
 }
 
 class TlActivity {
-  TlActivity({
-    required this.type,
-    required this.confidence,
-  });
+  TlActivity({required this.type, required this.confidence});
 
   String type;
 
   int confidence;
 
   List<Object?> _toList() {
-    return <Object?>[
-      type,
-      confidence,
-    ];
+    return <Object?>[type, confidence];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlActivity decode(Object result) {
     result as List<Object?>;
@@ -2027,7 +2206,8 @@ class TlActivity {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(type, other.type) && _deepEquals(confidence, other.confidence);
+    return _deepEquals(type, other.type) &&
+        _deepEquals(confidence, other.confidence);
   }
 
   @override
@@ -2069,7 +2249,8 @@ class TlState {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlState decode(Object result) {
     result as List<Object?>;
@@ -2092,7 +2273,12 @@ class TlState {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enabled, other.enabled) && _deepEquals(isMoving, other.isMoving) && _deepEquals(trackingMode, other.trackingMode) && _deepEquals(schedulerEnabled, other.schedulerEnabled) && _deepEquals(odometer, other.odometer) && _deepEquals(lastLocationTimestamp, other.lastLocationTimestamp);
+    return _deepEquals(enabled, other.enabled) &&
+        _deepEquals(isMoving, other.isMoving) &&
+        _deepEquals(trackingMode, other.trackingMode) &&
+        _deepEquals(schedulerEnabled, other.schedulerEnabled) &&
+        _deepEquals(odometer, other.odometer) &&
+        _deepEquals(lastLocationTimestamp, other.lastLocationTimestamp);
   }
 
   @override
@@ -2150,7 +2336,8 @@ class TlGeofence {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlGeofence decode(Object result) {
     result as List<Object?>;
@@ -2177,7 +2364,16 @@ class TlGeofence {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(identifier, other.identifier) && _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(radius, other.radius) && _deepEquals(notifyOnEntry, other.notifyOnEntry) && _deepEquals(notifyOnExit, other.notifyOnExit) && _deepEquals(notifyOnDwell, other.notifyOnDwell) && _deepEquals(loiteringDelay, other.loiteringDelay) && _deepEquals(extras, other.extras) && _deepEquals(vertices, other.vertices);
+    return _deepEquals(identifier, other.identifier) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(radius, other.radius) &&
+        _deepEquals(notifyOnEntry, other.notifyOnEntry) &&
+        _deepEquals(notifyOnExit, other.notifyOnExit) &&
+        _deepEquals(notifyOnDwell, other.notifyOnDwell) &&
+        _deepEquals(loiteringDelay, other.loiteringDelay) &&
+        _deepEquals(extras, other.extras) &&
+        _deepEquals(vertices, other.vertices);
   }
 
   @override
@@ -2202,16 +2398,12 @@ class TlGeofenceEvent {
   Map<String?, Object?>? extras;
 
   List<Object?> _toList() {
-    return <Object?>[
-      identifier,
-      action,
-      location,
-      extras,
-    ];
+    return <Object?>[identifier, action, location, extras];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlGeofenceEvent decode(Object result) {
     result as List<Object?>;
@@ -2232,7 +2424,10 @@ class TlGeofenceEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(identifier, other.identifier) && _deepEquals(action, other.action) && _deepEquals(location, other.location) && _deepEquals(extras, other.extras);
+    return _deepEquals(identifier, other.identifier) &&
+        _deepEquals(action, other.action) &&
+        _deepEquals(location, other.location) &&
+        _deepEquals(extras, other.extras);
   }
 
   @override
@@ -2254,15 +2449,12 @@ class TlHttpEvent {
   String responseText;
 
   List<Object?> _toList() {
-    return <Object?>[
-      isSuccess,
-      status,
-      responseText,
-    ];
+    return <Object?>[isSuccess, status, responseText];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlHttpEvent decode(Object result) {
     result as List<Object?>;
@@ -2282,7 +2474,9 @@ class TlHttpEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(isSuccess, other.isSuccess) && _deepEquals(status, other.status) && _deepEquals(responseText, other.responseText);
+    return _deepEquals(isSuccess, other.isSuccess) &&
+        _deepEquals(status, other.status) &&
+        _deepEquals(responseText, other.responseText);
   }
 
   @override
@@ -2310,17 +2504,12 @@ class TlProviderChangeEvent {
   int? accuracyAuthorization;
 
   List<Object?> _toList() {
-    return <Object?>[
-      enabled,
-      gps,
-      network,
-      status,
-      accuracyAuthorization,
-    ];
+    return <Object?>[enabled, gps, network, status, accuracyAuthorization];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlProviderChangeEvent decode(Object result) {
     result as List<Object?>;
@@ -2342,7 +2531,11 @@ class TlProviderChangeEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(enabled, other.enabled) && _deepEquals(gps, other.gps) && _deepEquals(network, other.network) && _deepEquals(status, other.status) && _deepEquals(accuracyAuthorization, other.accuracyAuthorization);
+    return _deepEquals(enabled, other.enabled) &&
+        _deepEquals(gps, other.gps) &&
+        _deepEquals(network, other.network) &&
+        _deepEquals(status, other.status) &&
+        _deepEquals(accuracyAuthorization, other.accuracyAuthorization);
   }
 
   @override
@@ -2384,7 +2577,8 @@ class TlCurrentPositionOptions {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlCurrentPositionOptions decode(Object result) {
     result as List<Object?>;
@@ -2401,13 +2595,19 @@ class TlCurrentPositionOptions {
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) {
-    if (other is! TlCurrentPositionOptions || other.runtimeType != runtimeType) {
+    if (other is! TlCurrentPositionOptions ||
+        other.runtimeType != runtimeType) {
       return false;
     }
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(desiredAccuracy, other.desiredAccuracy) && _deepEquals(timeout, other.timeout) && _deepEquals(maximumAge, other.maximumAge) && _deepEquals(persist, other.persist) && _deepEquals(samples, other.samples) && _deepEquals(extras, other.extras);
+    return _deepEquals(desiredAccuracy, other.desiredAccuracy) &&
+        _deepEquals(timeout, other.timeout) &&
+        _deepEquals(maximumAge, other.maximumAge) &&
+        _deepEquals(persist, other.persist) &&
+        _deepEquals(samples, other.samples) &&
+        _deepEquals(extras, other.extras);
   }
 
   @override
@@ -2416,24 +2616,19 @@ class TlCurrentPositionOptions {
 }
 
 class TlActivityChangeEvent {
-  TlActivityChangeEvent({
-    required this.activity,
-    required this.confidence,
-  });
+  TlActivityChangeEvent({required this.activity, required this.confidence});
 
   String activity;
 
   int confidence;
 
   List<Object?> _toList() {
-    return <Object?>[
-      activity,
-      confidence,
-    ];
+    return <Object?>[activity, confidence];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlActivityChangeEvent decode(Object result) {
     result as List<Object?>;
@@ -2452,7 +2647,8 @@ class TlActivityChangeEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(activity, other.activity) && _deepEquals(confidence, other.confidence);
+    return _deepEquals(activity, other.activity) &&
+        _deepEquals(confidence, other.confidence);
   }
 
   @override
@@ -2461,24 +2657,19 @@ class TlActivityChangeEvent {
 }
 
 class TlGeofencesChangeEvent {
-  TlGeofencesChangeEvent({
-    this.on,
-    this.off,
-  });
+  TlGeofencesChangeEvent({this.on, this.off});
 
   List<TlGeofence?>? on;
 
   List<TlGeofence?>? off;
 
   List<Object?> _toList() {
-    return <Object?>[
-      on,
-      off,
-    ];
+    return <Object?>[on, off];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlGeofencesChangeEvent decode(Object result) {
     result as List<Object?>;
@@ -2506,26 +2697,21 @@ class TlGeofencesChangeEvent {
 }
 
 class TlHeartbeatEvent {
-  TlHeartbeatEvent({
-    required this.location,
-  });
+  TlHeartbeatEvent({required this.location});
 
   TlLocation location;
 
   List<Object?> _toList() {
-    return <Object?>[
-      location,
-    ];
+    return <Object?>[location];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlHeartbeatEvent decode(Object result) {
     result as List<Object?>;
-    return TlHeartbeatEvent(
-      location: result[0]! as TlLocation,
-    );
+    return TlHeartbeatEvent(location: result[0]! as TlLocation);
   }
 
   @override
@@ -2563,15 +2749,12 @@ class TlSpeedMotionEvent {
   TlTrackingMode trackingMode;
 
   List<Object?> _toList() {
-    return <Object?>[
-      state,
-      previousState,
-      trackingMode,
-    ];
+    return <Object?>[state, previousState, trackingMode];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlSpeedMotionEvent decode(Object result) {
     result as List<Object?>;
@@ -2591,7 +2774,9 @@ class TlSpeedMotionEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(state, other.state) && _deepEquals(previousState, other.previousState) && _deepEquals(trackingMode, other.trackingMode);
+    return _deepEquals(state, other.state) &&
+        _deepEquals(previousState, other.previousState) &&
+        _deepEquals(trackingMode, other.trackingMode);
   }
 
   @override
@@ -2613,15 +2798,12 @@ class TlAuthorizationEvent {
   String response;
 
   List<Object?> _toList() {
-    return <Object?>[
-      success,
-      status,
-      response,
-    ];
+    return <Object?>[success, status, response];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlAuthorizationEvent decode(Object result) {
     result as List<Object?>;
@@ -2641,7 +2823,9 @@ class TlAuthorizationEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(success, other.success) && _deepEquals(status, other.status) && _deepEquals(response, other.response);
+    return _deepEquals(success, other.success) &&
+        _deepEquals(status, other.status) &&
+        _deepEquals(response, other.response);
   }
 
   @override
@@ -2650,32 +2834,28 @@ class TlAuthorizationEvent {
 }
 
 class TlConnectivityChangeEvent {
-  TlConnectivityChangeEvent({
-    required this.connected,
-  });
+  TlConnectivityChangeEvent({required this.connected});
 
   bool connected;
 
   List<Object?> _toList() {
-    return <Object?>[
-      connected,
-    ];
+    return <Object?>[connected];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlConnectivityChangeEvent decode(Object result) {
     result as List<Object?>;
-    return TlConnectivityChangeEvent(
-      connected: result[0]! as bool,
-    );
+    return TlConnectivityChangeEvent(connected: result[0]! as bool);
   }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(Object other) {
-    if (other is! TlConnectivityChangeEvent || other.runtimeType != runtimeType) {
+    if (other is! TlConnectivityChangeEvent ||
+        other.runtimeType != runtimeType) {
       return false;
     }
     if (identical(this, other)) {
@@ -2728,7 +2908,8 @@ class TlDrivingEvent {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlDrivingEvent decode(Object result) {
     result as List<Object?>;
@@ -2752,7 +2933,13 @@ class TlDrivingEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(kind, other.kind) && _deepEquals(severity, other.severity) && _deepEquals(speed, other.speed) && _deepEquals(value, other.value) && _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(timestampMs, other.timestampMs);
+    return _deepEquals(kind, other.kind) &&
+        _deepEquals(severity, other.severity) &&
+        _deepEquals(speed, other.speed) &&
+        _deepEquals(value, other.value) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestampMs, other.timestampMs);
   }
 
   @override
@@ -2807,7 +2994,8 @@ class TlImpactEvent {
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlImpactEvent decode(Object result) {
     result as List<Object?>;
@@ -2833,7 +3021,15 @@ class TlImpactEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(kind, other.kind) && _deepEquals(id, other.id) && _deepEquals(confidence, other.confidence) && _deepEquals(peakG, other.peakG) && _deepEquals(speedBefore, other.speedBefore) && _deepEquals(latitude, other.latitude) && _deepEquals(longitude, other.longitude) && _deepEquals(timestampMs, other.timestampMs) && _deepEquals(confirmDeadlineMs, other.confirmDeadlineMs);
+    return _deepEquals(kind, other.kind) &&
+        _deepEquals(id, other.id) &&
+        _deepEquals(confidence, other.confidence) &&
+        _deepEquals(peakG, other.peakG) &&
+        _deepEquals(speedBefore, other.speedBefore) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestampMs, other.timestampMs) &&
+        _deepEquals(confirmDeadlineMs, other.confirmDeadlineMs);
   }
 
   @override
@@ -2843,24 +3039,19 @@ class TlImpactEvent {
 
 /// A fused transport-mode change.
 class TlModeChangeEvent {
-  TlModeChangeEvent({
-    required this.mode,
-    required this.confidence,
-  });
+  TlModeChangeEvent({required this.mode, required this.confidence});
 
   String mode;
 
   double confidence;
 
   List<Object?> _toList() {
-    return <Object?>[
-      mode,
-      confidence,
-    ];
+    return <Object?>[mode, confidence];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static TlModeChangeEvent decode(Object result) {
     result as List<Object?>;
@@ -2879,7 +3070,8 @@ class TlModeChangeEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(mode, other.mode) && _deepEquals(confidence, other.confidence);
+    return _deepEquals(mode, other.mode) &&
+        _deepEquals(confidence, other.confidence);
   }
 
   @override
@@ -2887,6 +3079,147 @@ class TlModeChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+class TlTelematicsRecord {
+  TlTelematicsRecord({
+    required this.id,
+    required this.eventType,
+    required this.severity,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    required this.synced,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The type of telematics event.
+  String eventType;
+
+  /// The severity of the event.
+  double severity;
+
+  /// The latitude.
+  double latitude;
+
+  /// The longitude.
+  double longitude;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  /// Whether the event has been synced to the server.
+  bool synced;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      eventType,
+      severity,
+      latitude,
+      longitude,
+      timestamp,
+      synced,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlTelematicsRecord decode(Object result) {
+    result as List<Object?>;
+    return TlTelematicsRecord(
+      id: result[0]! as int,
+      eventType: result[1]! as String,
+      severity: result[2]! as double,
+      latitude: result[3]! as double,
+      longitude: result[4]! as double,
+      timestamp: result[5]! as String,
+      synced: result[6]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlTelematicsRecord || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(eventType, other.eventType) &&
+        _deepEquals(severity, other.severity) &&
+        _deepEquals(latitude, other.latitude) &&
+        _deepEquals(longitude, other.longitude) &&
+        _deepEquals(timestamp, other.timestamp) &&
+        _deepEquals(synced, other.synced);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+class TlLogEntry {
+  TlLogEntry({
+    required this.id,
+    required this.level,
+    required this.message,
+    required this.timestamp,
+  });
+
+  /// The primary key.
+  int id;
+
+  /// The log level.
+  String level;
+
+  /// The log message.
+  String message;
+
+  /// The ISO8601 timestamp string.
+  String timestamp;
+
+  List<Object?> _toList() {
+    return <Object?>[id, level, message, timestamp];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlLogEntry decode(Object result) {
+    result as List<Object?>;
+    return TlLogEntry(
+      id: result[0]! as int,
+      level: result[1]! as String,
+      message: result[2]! as String,
+      timestamp: result[3]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlLogEntry || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(level, other.level) &&
+        _deepEquals(message, other.message) &&
+        _deepEquals(timestamp, other.timestamp);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -2895,179 +3228,185 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is TlDesiredAccuracy) {
+    } else if (value is TlDesiredAccuracy) {
       buffer.putUint8(129);
       writeValue(buffer, value.index);
-    }    else if (value is TlTrackingMode) {
+    } else if (value is TlTrackingMode) {
       buffer.putUint8(130);
       writeValue(buffer, value.index);
-    }    else if (value is TlMotionDetectionMode) {
+    } else if (value is TlMotionDetectionMode) {
       buffer.putUint8(131);
       writeValue(buffer, value.index);
-    }    else if (value is TlStationaryTrackingMode) {
+    } else if (value is TlStationaryTrackingMode) {
       buffer.putUint8(132);
       writeValue(buffer, value.index);
-    }    else if (value is TlGeofenceAction) {
+    } else if (value is TlGeofenceAction) {
       buffer.putUint8(133);
       writeValue(buffer, value.index);
-    }    else if (value is TlAuthorizationStatus) {
+    } else if (value is TlAuthorizationStatus) {
       buffer.putUint8(134);
       writeValue(buffer, value.index);
-    }    else if (value is TlMotionAuthorizationStatus) {
+    } else if (value is TlMotionAuthorizationStatus) {
       buffer.putUint8(135);
       writeValue(buffer, value.index);
-    }    else if (value is TlNotificationAuthorizationStatus) {
+    } else if (value is TlNotificationAuthorizationStatus) {
       buffer.putUint8(136);
       writeValue(buffer, value.index);
-    }    else if (value is TlHttpMethod) {
+    } else if (value is TlHttpMethod) {
       buffer.putUint8(137);
       writeValue(buffer, value.index);
-    }    else if (value is TlIosActivityType) {
+    } else if (value is TlIosActivityType) {
       buffer.putUint8(138);
       writeValue(buffer, value.index);
-    }    else if (value is TlNotificationPriority) {
+    } else if (value is TlNotificationPriority) {
       buffer.putUint8(139);
       writeValue(buffer, value.index);
-    }    else if (value is TlLocationFilterPolicy) {
+    } else if (value is TlLocationFilterPolicy) {
       buffer.putUint8(140);
       writeValue(buffer, value.index);
-    }    else if (value is TlLocationOrderDirection) {
+    } else if (value is TlLocationOrderDirection) {
       buffer.putUint8(141);
       writeValue(buffer, value.index);
-    }    else if (value is TlLocationActivityType) {
+    } else if (value is TlLocationActivityType) {
       buffer.putUint8(142);
       writeValue(buffer, value.index);
-    }    else if (value is TlLogLevel) {
+    } else if (value is TlLogLevel) {
       buffer.putUint8(143);
       writeValue(buffer, value.index);
-    }    else if (value is TlPersistMode) {
+    } else if (value is TlPersistMode) {
       buffer.putUint8(144);
       writeValue(buffer, value.index);
-    }    else if (value is TlHashAlgorithm) {
+    } else if (value is TlHashAlgorithm) {
       buffer.putUint8(145);
       writeValue(buffer, value.index);
-    }    else if (value is TlAuthorizationRequest) {
+    } else if (value is TlAuthorizationRequest) {
       buffer.putUint8(146);
       writeValue(buffer, value.index);
-    }    else if (value is TlSpeedMotionState) {
+    } else if (value is TlSpeedMotionState) {
       buffer.putUint8(147);
       writeValue(buffer, value.index);
-    }    else if (value is TlLocationFilter) {
+    } else if (value is TlLocationFilter) {
       buffer.putUint8(148);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeoConfig) {
+    } else if (value is TlGeoConfig) {
       buffer.putUint8(149);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAppConfig) {
+    } else if (value is TlAppConfig) {
       buffer.putUint8(150);
       writeValue(buffer, value.encode());
-    }    else if (value is TlForegroundServiceConfig) {
+    } else if (value is TlForegroundServiceConfig) {
       buffer.putUint8(151);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAndroidConfig) {
+    } else if (value is TlAndroidConfig) {
       buffer.putUint8(152);
       writeValue(buffer, value.encode());
-    }    else if (value is TlIosConfig) {
+    } else if (value is TlIosConfig) {
       buffer.putUint8(153);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHttpConfig) {
+    } else if (value is TlHttpConfig) {
       buffer.putUint8(154);
       writeValue(buffer, value.encode());
-    }    else if (value is TlConfig) {
+    } else if (value is TlConfig) {
       buffer.putUint8(155);
       writeValue(buffer, value.encode());
-    }    else if (value is TlLoggerConfig) {
+    } else if (value is TlLoggerConfig) {
       buffer.putUint8(156);
       writeValue(buffer, value.encode());
-    }    else if (value is TlMotionConfig) {
+    } else if (value is TlMotionConfig) {
       buffer.putUint8(157);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofenceConfig) {
+    } else if (value is TlGeofenceConfig) {
       buffer.putUint8(158);
       writeValue(buffer, value.encode());
-    }    else if (value is TlPersistenceConfig) {
+    } else if (value is TlPersistenceConfig) {
       buffer.putUint8(159);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAuditConfig) {
+    } else if (value is TlAuditConfig) {
       buffer.putUint8(160);
       writeValue(buffer, value.encode());
-    }    else if (value is TlPrivacyZoneConfig) {
+    } else if (value is TlPrivacyZoneConfig) {
       buffer.putUint8(161);
       writeValue(buffer, value.encode());
-    }    else if (value is TlSecurityConfig) {
+    } else if (value is TlSecurityConfig) {
       buffer.putUint8(162);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAttestationConfig) {
+    } else if (value is TlAttestationConfig) {
       buffer.putUint8(163);
       writeValue(buffer, value.encode());
-    }    else if (value is TlTelematicsConfig) {
+    } else if (value is TlTelematicsConfig) {
       buffer.putUint8(164);
       writeValue(buffer, value.encode());
-    }    else if (value is TlClassifierConfig) {
+    } else if (value is TlClassifierConfig) {
       buffer.putUint8(165);
       writeValue(buffer, value.encode());
-    }    else if (value is TlImpactConfig) {
+    } else if (value is TlImpactConfig) {
       buffer.putUint8(166);
       writeValue(buffer, value.encode());
-    }    else if (value is TlCoords) {
+    } else if (value is TlCoords) {
       buffer.putUint8(167);
       writeValue(buffer, value.encode());
-    }    else if (value is TlBattery) {
+    } else if (value is TlBattery) {
       buffer.putUint8(168);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAddress) {
+    } else if (value is TlAddress) {
       buffer.putUint8(169);
       writeValue(buffer, value.encode());
-    }    else if (value is TlLocation) {
+    } else if (value is TlLocation) {
       buffer.putUint8(170);
       writeValue(buffer, value.encode());
-    }    else if (value is TlActivity) {
+    } else if (value is TlActivity) {
       buffer.putUint8(171);
       writeValue(buffer, value.encode());
-    }    else if (value is TlState) {
+    } else if (value is TlState) {
       buffer.putUint8(172);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofence) {
+    } else if (value is TlGeofence) {
       buffer.putUint8(173);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofenceEvent) {
+    } else if (value is TlGeofenceEvent) {
       buffer.putUint8(174);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHttpEvent) {
+    } else if (value is TlHttpEvent) {
       buffer.putUint8(175);
       writeValue(buffer, value.encode());
-    }    else if (value is TlProviderChangeEvent) {
+    } else if (value is TlProviderChangeEvent) {
       buffer.putUint8(176);
       writeValue(buffer, value.encode());
-    }    else if (value is TlCurrentPositionOptions) {
+    } else if (value is TlCurrentPositionOptions) {
       buffer.putUint8(177);
       writeValue(buffer, value.encode());
-    }    else if (value is TlActivityChangeEvent) {
+    } else if (value is TlActivityChangeEvent) {
       buffer.putUint8(178);
       writeValue(buffer, value.encode());
-    }    else if (value is TlGeofencesChangeEvent) {
+    } else if (value is TlGeofencesChangeEvent) {
       buffer.putUint8(179);
       writeValue(buffer, value.encode());
-    }    else if (value is TlHeartbeatEvent) {
+    } else if (value is TlHeartbeatEvent) {
       buffer.putUint8(180);
       writeValue(buffer, value.encode());
-    }    else if (value is TlSpeedMotionEvent) {
+    } else if (value is TlSpeedMotionEvent) {
       buffer.putUint8(181);
       writeValue(buffer, value.encode());
-    }    else if (value is TlAuthorizationEvent) {
+    } else if (value is TlAuthorizationEvent) {
       buffer.putUint8(182);
       writeValue(buffer, value.encode());
-    }    else if (value is TlConnectivityChangeEvent) {
+    } else if (value is TlConnectivityChangeEvent) {
       buffer.putUint8(183);
       writeValue(buffer, value.encode());
-    }    else if (value is TlDrivingEvent) {
+    } else if (value is TlDrivingEvent) {
       buffer.putUint8(184);
       writeValue(buffer, value.encode());
-    }    else if (value is TlImpactEvent) {
+    } else if (value is TlImpactEvent) {
       buffer.putUint8(185);
       writeValue(buffer, value.encode());
-    }    else if (value is TlModeChangeEvent) {
+    } else if (value is TlModeChangeEvent) {
       buffer.putUint8(186);
+      writeValue(buffer, value.encode());
+    } else if (value is TlTelematicsRecord) {
+      buffer.putUint8(187);
+      writeValue(buffer, value.encode());
+    } else if (value is TlLogEntry) {
+      buffer.putUint8(188);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -3100,7 +3439,9 @@ class _PigeonCodec extends StandardMessageCodec {
         return value == null ? null : TlMotionAuthorizationStatus.values[value];
       case 136:
         final value = readValue(buffer) as int?;
-        return value == null ? null : TlNotificationAuthorizationStatus.values[value];
+        return value == null
+            ? null
+            : TlNotificationAuthorizationStatus.values[value];
       case 137:
         final value = readValue(buffer) as int?;
         return value == null ? null : TlHttpMethod.values[value];
@@ -3212,6 +3553,10 @@ class _PigeonCodec extends StandardMessageCodec {
         return TlImpactEvent.decode(readValue(buffer)!);
       case 186:
         return TlModeChangeEvent.decode(readValue(buffer)!);
+      case 187:
+        return TlTelematicsRecord.decode(readValue(buffer)!);
+      case 188:
+        return TlLogEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -3222,9 +3567,13 @@ class TraceletHostApi {
   /// Constructor for [TraceletHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  TraceletHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
-      : pigeonVar_binaryMessenger = binaryMessenger,
-        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+  TraceletHostApi({
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) : pigeonVar_binaryMessenger = binaryMessenger,
+       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
+           ? '.$messageChannelSuffix'
+           : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -3232,7 +3581,8 @@ class TraceletHostApi {
   final String pigeonVar_messageChannelSuffix;
 
   Future<void> requestStateFlush() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestStateFlush$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestStateFlush$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3242,34 +3592,36 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
   }
 
   Future<TlState> ready(TlConfig config) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.ready$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.ready$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[config]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[config],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> start() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.start$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.start$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3279,16 +3631,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> stop() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stop$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stop$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3298,16 +3650,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> startGeofences() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startGeofences$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startGeofences$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3317,16 +3669,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> startPeriodic() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startPeriodic$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startPeriodic$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3336,16 +3688,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> getState() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getState$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getState$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3355,189 +3707,211 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> setConfig(TlConfig config) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setConfig$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setConfig$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[config]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[config],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> reset(TlConfig? config) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.reset$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.reset$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[config]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[config],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
-  Future<TlLocation> getCurrentPosition(TlCurrentPositionOptions options) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCurrentPosition$pigeonVar_messageChannelSuffix';
+  Future<TlLocation> getCurrentPosition(
+    TlCurrentPositionOptions options,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCurrentPosition$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[options]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[options],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlLocation;
   }
 
-  Future<TlLocation?> getLastKnownLocation(TlCurrentPositionOptions? options) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLastKnownLocation$pigeonVar_messageChannelSuffix';
+  Future<TlLocation?> getLastKnownLocation(
+    TlCurrentPositionOptions? options,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLastKnownLocation$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[options]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[options],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
     return pigeonVar_replyValue as TlLocation?;
   }
 
   Future<int> watchPosition(TlCurrentPositionOptions options) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.watchPosition$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.watchPosition$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[options]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[options],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<bool> stopWatchPosition(int watchId) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopWatchPosition$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopWatchPosition$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[watchId]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[watchId],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> changePace(bool isMoving) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.changePace$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.changePace$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[isMoving]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[isMoving],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   /// Confirms a pending impact candidate (by [id]) as a real emergency now.
   Future<bool> confirmImpact(int id) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.confirmImpact$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[id]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[id],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   /// Cancels a pending impact candidate (by [id]) — no confirmed event fires.
   Future<bool> cancelImpact(int id) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.cancelImpact$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[id]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[id],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<double> getOdometer() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getOdometer$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getOdometer$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3547,92 +3921,100 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as double;
   }
 
   Future<TlLocation> setOdometer(double value) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setOdometer$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setOdometer$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[value]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[value],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlLocation;
   }
 
   Future<bool> addGeofence(TlGeofence geofence) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofence$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofence$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[geofence]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[geofence],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> addGeofences(List<TlGeofence> geofences) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofences$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addGeofences$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[geofences]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[geofences],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> removeGeofence(String identifier) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofence$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofence$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[identifier]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[identifier],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> removeGeofences() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofences$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removeGeofences$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3642,16 +4024,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<List<TlGeofence?>> getGeofences() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofences$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofences$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3661,111 +4043,121 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return (pigeonVar_replyValue! as List<Object?>).cast<TlGeofence?>();
   }
 
   Future<TlGeofence?> getGeofence(String identifier) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofence$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getGeofence$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[identifier]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[identifier],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
     return pigeonVar_replyValue as TlGeofence?;
   }
 
   Future<bool> geofenceExists(String identifier) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.geofenceExists$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.geofenceExists$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[identifier]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[identifier],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<List<TlLocation?>> getLocations(Map<String?, Object?>? query) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLocations$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLocations$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[query]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[query],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return (pigeonVar_replyValue! as List<Object?>).cast<TlLocation?>();
   }
 
   Future<int> getCount(Map<String?, Object?>? query) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCount$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCount$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[query]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[query],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<String> insertLocation(Map<String?, Object?> params) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.insertLocation$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[params]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[params],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as String;
   }
 
   Future<bool> destroyLocations() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocations$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocations$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3775,16 +4167,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<int> destroySyncedLocations() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroySyncedLocations$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroySyncedLocations$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3794,35 +4186,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<bool> destroyLocation(String uuid) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocation$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLocation$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[uuid]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uuid],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<List<TlLocation?>> sync() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.sync$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.sync$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3832,54 +4226,58 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return (pigeonVar_replyValue! as List<Object?>).cast<TlLocation?>();
   }
 
   Future<bool> setDynamicHeaders(Map<String?, String?> headers) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setDynamicHeaders$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setDynamicHeaders$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[headers]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[headers],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> setRouteContext(Map<String?, Object?> context) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setRouteContext$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.setRouteContext$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[context]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[context],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> clearRouteContext() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearRouteContext$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearRouteContext$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3889,54 +4287,58 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> registerHeadlessHeadersCallback(List<int?> callbackIds) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessHeadersCallback$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[callbackIds]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[callbackIds],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> registerHeadlessSyncBodyBuilder(List<int?> callbackIds) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessSyncBodyBuilder$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[callbackIds]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[callbackIds],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<TlAuthorizationStatus> getPermissionStatus() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPermissionStatus$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPermissionStatus$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3946,16 +4348,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlAuthorizationStatus;
   }
 
   Future<TlAuthorizationStatus> requestPermission() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestPermission$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestPermission$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3965,16 +4367,17 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlAuthorizationStatus;
   }
 
-  Future<TlNotificationAuthorizationStatus> getNotificationPermissionStatus() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getNotificationPermissionStatus$pigeonVar_messageChannelSuffix';
+  Future<TlNotificationAuthorizationStatus>
+  getNotificationPermissionStatus() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getNotificationPermissionStatus$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -3984,16 +4387,17 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlNotificationAuthorizationStatus;
   }
 
-  Future<TlNotificationAuthorizationStatus> requestNotificationPermission() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestNotificationPermission$pigeonVar_messageChannelSuffix';
+  Future<TlNotificationAuthorizationStatus>
+  requestNotificationPermission() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestNotificationPermission$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4003,16 +4407,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlNotificationAuthorizationStatus;
   }
 
   Future<bool> canScheduleExactAlarms() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.canScheduleExactAlarms$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.canScheduleExactAlarms$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4022,16 +4426,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> openExactAlarmSettings() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openExactAlarmSettings$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openExactAlarmSettings$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4041,16 +4445,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<TlMotionAuthorizationStatus> getMotionPermissionStatus() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getMotionPermissionStatus$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getMotionPermissionStatus$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4060,16 +4464,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlMotionAuthorizationStatus;
   }
 
   Future<TlMotionAuthorizationStatus> requestMotionPermission() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestMotionPermission$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestMotionPermission$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4079,35 +4483,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlMotionAuthorizationStatus;
   }
 
   Future<int> requestTemporaryFullAccuracy(String purpose) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestTemporaryFullAccuracy$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestTemporaryFullAccuracy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[purpose]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[purpose],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<bool> isPowerSaveMode() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isPowerSaveMode$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isPowerSaveMode$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4117,16 +4523,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<TlProviderChangeEvent> getProviderState() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getProviderState$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getProviderState$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4136,16 +4542,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlProviderChangeEvent;
   }
 
   Future<Map<String?, Object?>> getDeviceInfo() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeviceInfo$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeviceInfo$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4155,54 +4561,59 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
-    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String?, Object?>();
   }
 
   Future<bool> log(String level, String message) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.log$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.log$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[level, message]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[level, message],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> playSound(String name) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.playSound$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.playSound$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[name]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[name],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> isIgnoringBatteryOptimizations() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isIgnoringBatteryOptimizations$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isIgnoringBatteryOptimizations$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4212,54 +4623,58 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> requestSettings(String action) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestSettings$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.requestSettings$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[action]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[action],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> showSettings(String action) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showSettings$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showSettings$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[action]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[action],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<TlState> startSchedule() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startSchedule$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startSchedule$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4269,16 +4684,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<TlState> stopSchedule() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopSchedule$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopSchedule$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4288,35 +4703,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as TlState;
   }
 
   Future<bool> registerHeadlessTask(List<int?> callbackIds) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.registerHeadlessTask$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[callbackIds]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[callbackIds],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<int> startBackgroundTask() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startBackgroundTask$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.startBackgroundTask$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4326,35 +4743,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<int> stopBackgroundTask(int taskId) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopBackgroundTask$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.stopBackgroundTask$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[taskId]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[taskId],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as int;
   }
 
   Future<Map<String?, Object?>> getSensors() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSensors$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4364,16 +4783,17 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
-    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String?, Object?>();
   }
 
   Future<Map<String?, Object?>> getSettingsHealth() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSettingsHealth$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getSettingsHealth$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4383,35 +4803,38 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
-    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String?, Object?>();
   }
 
   Future<bool> openOemSettings(String label) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openOemSettings$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.openOemSettings$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[label]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[label],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> showPowerManager() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showPowerManager$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.showPowerManager$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4421,35 +4844,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<String> getLog(Map<String?, Object?>? query) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLog$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLog$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[query]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[query],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as String;
   }
 
   Future<bool> destroyLog() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLog$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyLog$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4459,35 +4884,37 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> emailLog(String email) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.emailLog$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.emailLog$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[email]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[email],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<Map<String?, Object?>> verifyAuditTrail() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.verifyAuditTrail$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.verifyAuditTrail$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4497,92 +4924,102 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
-    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String?, Object?>();
   }
 
   Future<Map<String?, Object?>?> getAuditProof(String uuid) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAuditProof$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAuditProof$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[uuid]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uuid],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
-    return (pigeonVar_replyValue as Map<Object?, Object?>?)?.cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return (pigeonVar_replyValue as Map<Object?, Object?>?)
+        ?.cast<String?, Object?>();
   }
 
   Future<bool> addPrivacyZone(Map<String?, Object?> zone) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZone$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZone$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[zone]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[zone],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> addPrivacyZones(List<Map<String?, Object?>?> zones) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZones$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.addPrivacyZones$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[zones]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[zones],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> removePrivacyZone(String identifier) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZone$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZone$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[identifier]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[identifier],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> removePrivacyZones() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZones$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.removePrivacyZones$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4592,16 +5029,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<List<Object?>> getPrivacyZones() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPrivacyZones$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getPrivacyZones$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4611,16 +5048,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as List<Object?>;
   }
 
   Future<bool> isDatabaseEncrypted() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isDatabaseEncrypted$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.isDatabaseEncrypted$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4630,16 +5067,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<bool> encryptDatabase() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.encryptDatabase$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.encryptDatabase$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4649,16 +5086,16 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as bool;
   }
 
   Future<Map<String?, Object?>?> getAttestationToken() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAttestationToken$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getAttestationToken$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4668,16 +5105,17 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
-    return (pigeonVar_replyValue as Map<Object?, Object?>?)?.cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return (pigeonVar_replyValue as Map<Object?, Object?>?)
+        ?.cast<String?, Object?>();
   }
 
   Future<Map<String?, Object?>?> getDeadReckoningState() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeadReckoningState$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getDeadReckoningState$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -4687,31 +5125,141 @@ class TraceletHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: true,
-    )
-    ;
-    return (pigeonVar_replyValue as Map<Object?, Object?>?)?.cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return (pigeonVar_replyValue as Map<Object?, Object?>?)
+        ?.cast<String?, Object?>();
   }
 
-  Future<Map<String?, Object?>> getCarbonReport(Map<String?, Object?>? query) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport$pigeonVar_messageChannelSuffix';
+  Future<Map<String, Object?>> getCarbonReport(
+    Map<String, Object?>? query,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getCarbonReport$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[query]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[query],
+    );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
-    return (pigeonVar_replyValue! as Map<Object?, Object?>).cast<String?, Object?>();
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String, Object?>();
+  }
+
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.simulateTelematicsEvent$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[eventType, severity, latitude, longitude],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlTelematicsRecord?>();
+  }
+
+  Future<bool> destroyTelematicsEvents() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.destroyTelematicsEvents$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<List<TlLogEntry?>> getLogs(int limit) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.getLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[limit],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<TlLogEntry?>();
+  }
+
+  Future<void> clearLogs() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.clearLogs$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
   }
 }
 
@@ -4722,33 +5270,46 @@ abstract class TraceletFlutterApi {
 
   Future<Map<String?, String?>> onHeadlessHeaders();
 
-  static void setUp(TraceletFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
-    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+  static void setUp(
+    TraceletFlutterApi? api, {
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty
+        ? '.$messageChannelSuffix'
+        : '';
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessEvent$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessEvent$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final Map<String?, Object?> arg_event = (args[0]! as Map<Object?, Object?>).cast<String?, Object?>();
+          final Map<String?, Object?> arg_event =
+              (args[0]! as Map<Object?, Object?>).cast<String?, Object?>();
           try {
             api.onHeadlessEvent(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessHeaders$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletFlutterApi.onHeadlessHeaders$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4758,8 +5319,10 @@ abstract class TraceletFlutterApi {
             return wrapResponse(result: output);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
@@ -4808,12 +5371,20 @@ abstract class TraceletEventApi {
 
   void onModeChange(TlModeChangeEvent event);
 
-  static void setUp(TraceletEventApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
-    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+  static void setUp(
+    TraceletEventApi? api, {
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty
+        ? '.$messageChannelSuffix'
+        : '';
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onLocation$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onLocation$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4825,16 +5396,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onMotionChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onMotionChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4846,16 +5421,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onMotionModeChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onMotionModeChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4867,58 +5446,72 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onActivityChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onActivityChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final TlActivityChangeEvent arg_event = args[0]! as TlActivityChangeEvent;
+          final TlActivityChangeEvent arg_event =
+              args[0]! as TlActivityChangeEvent;
           try {
             api.onActivityChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onProviderChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onProviderChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final TlProviderChangeEvent arg_event = args[0]! as TlProviderChangeEvent;
+          final TlProviderChangeEvent arg_event =
+              args[0]! as TlProviderChangeEvent;
           try {
             api.onProviderChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofence$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofence$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4930,37 +5523,46 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofencesChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onGeofencesChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final TlGeofencesChangeEvent arg_event = args[0]! as TlGeofencesChangeEvent;
+          final TlGeofencesChangeEvent arg_event =
+              args[0]! as TlGeofencesChangeEvent;
           try {
             api.onGeofencesChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHeartbeat$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHeartbeat$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4972,16 +5574,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHttp$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onHttp$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -4993,16 +5599,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onSchedule$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onSchedule$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5014,16 +5624,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onPowerSaveChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onPowerSaveChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5035,37 +5649,46 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onConnectivityChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onConnectivityChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final TlConnectivityChangeEvent arg_event = args[0]! as TlConnectivityChangeEvent;
+          final TlConnectivityChangeEvent arg_event =
+              args[0]! as TlConnectivityChangeEvent;
           try {
             api.onConnectivityChange(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onEnabledChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onEnabledChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5077,16 +5700,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onNotificationAction$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onNotificationAction$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5098,37 +5725,46 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onAuthorization$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onAuthorization$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           final List<Object?> args = message! as List<Object?>;
-          final TlAuthorizationEvent arg_event = args[0]! as TlAuthorizationEvent;
+          final TlAuthorizationEvent arg_event =
+              args[0]! as TlAuthorizationEvent;
           try {
             api.onAuthorization(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onWatchPosition$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onWatchPosition$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5140,16 +5776,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onDrivingEvent$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5161,16 +5801,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onImpact$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5182,16 +5826,20 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }
     }
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$messageChannelSuffix', pigeonChannelCodec,
-          binaryMessenger: binaryMessenger);
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -5203,8 +5851,10 @@ abstract class TraceletEventApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          }          catch (e) {
-            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
           }
         });
       }

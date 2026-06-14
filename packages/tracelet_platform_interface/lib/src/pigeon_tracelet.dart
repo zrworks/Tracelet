@@ -582,6 +582,41 @@ class PigeonTracelet extends TraceletPlatform {
     return result.cast<String, Object?>();
   }
 
+  @override
+  Future<List<TlTelematicsRecord?>> getTelematicsEvents(int limit) {
+    return _api.getTelematicsEvents(limit);
+  }
+
+  @override
+  Future<bool> destroyTelematicsEvents() async {
+    return _api.destroyTelematicsEvents();
+  }
+
+  @override
+  Future<bool> simulateTelematicsEvent(
+    String eventType,
+    double severity,
+    double latitude,
+    double longitude,
+  ) async {
+    return _api.simulateTelematicsEvent(
+      eventType,
+      severity,
+      latitude,
+      longitude,
+    );
+  }
+
+  @override
+  Future<List<TlLogEntry?>> getLogs(int limit) {
+    return _api.getLogs(limit);
+  }
+
+  @override
+  Future<void> clearLogs() {
+    return _api.clearLogs();
+  }
+
   // ---------------------------------------------------------------------------
   // Enterprise: Dead Reckoning
   // ---------------------------------------------------------------------------

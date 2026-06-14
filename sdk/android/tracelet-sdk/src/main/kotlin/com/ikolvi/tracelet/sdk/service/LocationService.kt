@@ -54,6 +54,8 @@ class LocationService : Service(), DefaultLifecycleObserver {
         const val ACTION_STOP = "com.tracelet.ACTION_STOP"
         const val ACTION_UPDATE_NOTIFICATION = "com.tracelet.ACTION_UPDATE_NOTIFICATION"
         const val ACTION_BUTTON = "com.tracelet.ACTION_BUTTON"
+        const val ACTION_ACQUIRE_WAKELOCK = "com.tracelet.ACTION_ACQUIRE_WAKELOCK"
+        const val ACTION_RELEASE_WAKELOCK = "com.tracelet.ACTION_RELEASE_WAKELOCK"
         const val EXTRA_BUTTON_ACTION = "button_action"
         const val EXTRA_BOOT_START = "boot_start"
 
@@ -351,6 +353,20 @@ class LocationService : Service(), DefaultLifecycleObserver {
             context.startService(intent)
         }
 
+        fun acquireWakelock(context: Context) {
+            val intent = Intent(context, LocationService::class.java).apply {
+                action = ACTION_ACQUIRE_WAKELOCK
+            }
+            context.startService(intent)
+        }
+
+        fun releaseWakelock(context: Context) {
+            val intent = Intent(context, LocationService::class.java).apply {
+                action = ACTION_RELEASE_WAKELOCK
+            }
+            context.startService(intent)
+        }
+
         /**
          * Stops and releases the boot-mode LocationEngine.
          *
@@ -473,6 +489,12 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 if (action != null) {
                     onNotificationAction?.invoke(action)
                 }
+            }
+            ACTION_ACQUIRE_WAKELOCK -> {
+                acquireOemWakelock()
+            }
+            ACTION_RELEASE_WAKELOCK -> {
+                releaseOemWakelock()
             }
             null -> {
                 // Sticky restart after system kill

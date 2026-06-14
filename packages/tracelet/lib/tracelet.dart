@@ -74,6 +74,8 @@ export 'src/models/health_check.dart';
 export 'src/models/heartbeat_event.dart';
 export 'src/models/http_event.dart';
 export 'src/models/location.dart';
+export 'src/models/log_entry.dart';
+export 'src/models/telematics_record.dart';
 export 'src/models/privacy_zone.dart';
 export 'src/models/privacy_zone_config.dart';
 export 'src/models/provider_change_event.dart';

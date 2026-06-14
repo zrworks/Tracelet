@@ -518,8 +518,8 @@ class FakeHostApi extends TraceletHostApi {
 
   // Enterprise: Carbon
   @override
-  Future<Map<String?, Object?>> getCarbonReport(
-    Map<String?, Object?>? query,
+  Future<Map<String, Object?>> getCarbonReport(
+    Map<String, Object?>? query,
   ) async {
     _record('getCarbonReport', [query]);
     return {'co2_grams': 42.0};
@@ -584,6 +584,32 @@ void main() {
         remoteConfigTimeout: 30,
         remoteConfigRefreshInterval: 3600,
       ),
+      classifier: TlClassifierConfig(
+        enableFusedClassifier: false,
+        fusedClassifierAuthoritative: false,
+        modeSwitchDwellMs: 1000,
+        minModeConfidence: 50,
+      ),
+      impact: TlImpactConfig(
+        enableCrashDetection: false,
+        enableFallDetection: false,
+        crashGThreshold: 4,
+        crashMinSpeedKmh: 20,
+        fallGThreshold: 3,
+        confirmWindowMs: 5000,
+        minImpactConfidence: 50,
+      ),
+      telematics: TlTelematicsConfig(
+        enableDrivingEvents: false,
+        harshBrakingG: 0.5,
+        harshAccelerationG: 0.5,
+        harshCorneringG: 0.5,
+        speedLimitKmh: 120,
+        speedingToleranceKmh: 10,
+        speedingMinDurationMs: 5000,
+        minSpeedForEventsKmh: 20,
+        eventDebounceMs: 1000,
+      ),
       android: TlAndroidConfig(
         locationUpdateInterval: 1000,
         fastestLocationUpdateInterval: 500,
@@ -593,6 +619,7 @@ void main() {
         periodicUseForegroundService: false,
         periodicUseExactAlarms: false,
         scheduleUseAlarmManager: false,
+        releaseWakelockWhenStationary: false,
         foregroundService: TlForegroundServiceConfig(
           enabled: true,
           channelId: 'tracelet',
@@ -615,6 +642,7 @@ void main() {
         preventSuspend: false,
       ),
       http: TlHttpConfig(
+        syncTelematics: false,
         autoSync: true,
         batchSync: false,
         maxBatchSize: 250,

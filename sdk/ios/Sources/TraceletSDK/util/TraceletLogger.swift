@@ -104,7 +104,22 @@ public final class TraceletLogger {
     }
 
     public func pruneOldLogs() {
-        // Not implemented
+        do {
+            let limit: Int32
+            switch configManager.getLogLevel() {
+            case Level.error.rawValue, Level.off.rawValue:
+                limit = 500
+            case Level.warning.rawValue, Level.info.rawValue:
+                limit = 1000
+            case Level.debug.rawValue, Level.verbose.rawValue:
+                limit = 2000
+            default:
+                limit = 1000
+            }
+            try rustDatabase?.pruneLogs(limit: limit)
+        } catch {
+            NSLog("[Tracelet] Failed to prune logs: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Core
@@ -124,9 +139,11 @@ public final class TraceletLogger {
         // SQLite log — persisted off the caller thread so motion callbacks (and
         // any other hot path) never block on a synchronous DB write (#130).
         let db = rustDatabase
-        persistQueue.async {
+        persistQueue.async { [weak self] in
             do {
                 try db?.insertLog(level: level.label, message: built, source: source)
+                // Prune old logs to maintain dynamic limits
+                self?.pruneOldLogs()
             } catch {
                 NSLog("[Tracelet] Failed to persist log to Rust Database: \(error.localizedDescription)")
             }

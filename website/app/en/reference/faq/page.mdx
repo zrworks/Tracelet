@@ -30,7 +30,8 @@ If you still want a periodic "I'm here" location while stationary, set `heartbea
 
 Tracelet already sleeps the GPS when stationary, but you have several levers:
 
-- **Battery budget** — set `batteryBudgetPerHour` (e.g. `3.0` for 3%/hr). Tracelet then auto-adjusts `distanceFilter` and `desiredAccuracy` at runtime to stay under that target.
+- **Battery budget** — set `batteryBudgetPerHour` in `GeoConfig` (e.g. `3.0` for 3%/hr). Tracelet then auto-adjusts `distanceFilter` and `desiredAccuracy` at runtime to stay under that target.
+- **Wakelock release** — set `releaseWakelockWhenStationary: true` in `AndroidConfig` to let the CPU sleep fully when the user is stationary (requires `MotionDetectionMode.smart`).
 - **Distance filter** — a larger `distanceFilter` (metres) records fewer fixes while moving.
 - **Lower accuracy** — `desiredAccuracy` of `medium`/`low` draws less power than `high`/`best`.
 - **Periodic mode** — for "roughly where are they" use cases, periodic one-shot fixes (`startPeriodic`) are dramatically cheaper than continuous tracking.

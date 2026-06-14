@@ -286,6 +286,35 @@ async function translateMetaJs(content, targetLang, engine) {
   return translatedLines.join('\n');
 }
 
+async function translateJson(content, targetLang, engine) {
+  const data = JSON.parse(content);
+  
+  // Translate badgeTitle
+  if (data.badgeTitle) {
+    data.badgeTitle = engine === 'google' 
+      ? await translateLineGoogle(data.badgeTitle, targetLang)
+      : await translateLineBing(data.badgeTitle, targetLang);
+  }
+  
+  // Translate items
+  if (data.items && Array.isArray(data.items)) {
+    for (let item of data.items) {
+      if (item.title) {
+        item.title = engine === 'google'
+          ? await translateLineGoogle(item.title, targetLang)
+          : await translateLineBing(item.title, targetLang);
+      }
+      if (item.description) {
+        item.description = engine === 'google'
+          ? await translateLineGoogle(item.description, targetLang)
+          : await translateLineBing(item.description, targetLang);
+      }
+    }
+  }
+  
+  return JSON.stringify(data, null, 2);
+}
+
 function getAllFiles(dirPath, arrayOfFiles) {
   let files = fs.readdirSync(dirPath)
   arrayOfFiles = arrayOfFiles || []
@@ -307,7 +336,7 @@ async function run() {
     const baseDir = path.join(__dirname, '../app/en');
     const allFiles = getAllFiles(baseDir);
     filesToTranslate = allFiles.filter(f => 
-      (f.endsWith('.mdx') || f.endsWith('_meta.js')) && 
+      (f.endsWith('.mdx') || f.endsWith('_meta.js') || f.endsWith('notifications.json')) && 
       !f.includes('/privacy/') && 
       !f.includes('/terms/') &&
       !f.includes('/license/')
@@ -320,7 +349,7 @@ async function run() {
       const diffOutput = execSync('git diff --name-only HEAD~1').toString();
       filesToTranslate = diffOutput.split('\n').filter(file => 
         file.includes(`app/${baseLang}/`) && 
-        file.endsWith('.mdx') &&
+        (file.endsWith('.mdx') || file.endsWith('notifications.json')) &&
         !file.includes('/privacy/') &&
         !file.includes('/terms/') &&
         !file.includes('/license/')
@@ -390,6 +419,8 @@ async function run() {
           translated = translated.replace(/\]\(\/en\//g, `](/${task.targetLocale}/`);
         } else if (task.srcPath.endsWith('_meta.js')) {
           translated = await translateMetaJs(content, task.targetLocale, engine);
+        } else if (task.srcPath.endsWith('.json')) {
+          translated = await translateJson(content, task.targetLocale, engine);
         }
 
         fs.mkdirSync(path.dirname(task.destPath), { recursive: true });

@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.location
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.Manifest
 import android.content.Context
@@ -222,7 +223,7 @@ class LocationEngine(
      */
     fun start() {
         if (!hasPermission()) {
-            Log.w(TAG, "start() — no location permission granted, dispatching providerChange(status=0)")
+            TraceletLog.warning("start() — no location permission granted, dispatching providerChange(status=0)")
             events.sendProviderChange(buildProviderState())
             return
         }
@@ -243,11 +244,11 @@ class LocationEngine(
 
                 if (gpsFallbackActive && gpsNowEnabled) {
                     // GPS was re-enabled — restore original priority.
-                    Log.d(TAG, "GPS re-enabled — restoring original priority")
+                    TraceletLog.debug("GPS re-enabled — restoring original priority")
                     restoreOriginalPriority()
                 } else if (!gpsFallbackActive && !gpsNowEnabled && isHighAccuracyConfigured()) {
                     // GPS just disabled while we were expecting it — downgrade.
-                    Log.d(TAG, "GPS disabled during tracking — downgrading to Wi-Fi/cell")
+                    TraceletLog.debug("GPS disabled during tracking — downgrading to Wi-Fi/cell")
                     activateGpsFallback()
                 }
 
@@ -303,22 +304,22 @@ class LocationEngine(
      */
     fun startPeriodic() {
         if (!hasPermission()) {
-            Log.w(TAG, "startPeriodic() — no location permission, aborting")
+            TraceletLog.warning("startPeriodic() — no location permission, aborting")
             return
         }
         stopPeriodic()
 
         val intervalMs = config.getPeriodicLocationInterval() * 1000L
-        Log.d(TAG, "startPeriodic() — interval=${intervalMs}ms")
+        TraceletLog.debug("startPeriodic() — interval=${intervalMs}ms")
 
         periodicRunnable = object : Runnable {
             override fun run() {
                 if (!state.enabled) {
-                    Log.d(TAG, "periodic tick — state.enabled=false, skipping")
+                    TraceletLog.debug("periodic tick — state.enabled=false, skipping")
                     return
                 }
 
-                Log.d(TAG, "periodic tick — requesting one-shot fix")
+                TraceletLog.debug("periodic tick — requesting one-shot fix")
 
                 // Perform a one-shot fix using the periodic accuracy setting
                 val options = mapOf<String, Any?>(
@@ -329,7 +330,7 @@ class LocationEngine(
                 getCurrentPosition(options) { location ->
                     val resolved = location ?: run {
                         // Fallback: use last known location if fresh fix failed
-                        Log.w(TAG, "periodic fix returned null — trying lastKnownLocation fallback")
+                        TraceletLog.warning("periodic fix returned null — trying lastKnownLocation fallback")
                         val last = getLastLocation()
                         if (last != null) enrichLocation(last, "periodic") else null
                     }
@@ -369,14 +370,14 @@ class LocationEngine(
                         speedMotionSpeedSink?.invoke(speed)
                         
                         events.sendLocation(enriched)
-                        Log.d(TAG, "periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy, speed=$speed")
+                        TraceletLog.debug("periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy, speed=$speed")
 
                         // Notify proximity-based geofence monitoring
                         if (lat != null && lng != null) {
                             onLocationUpdate?.invoke(lat, lng)
                         }
                     } else {
-                        Log.w(TAG, "periodic fix — no location available (fresh + fallback both null)")
+                        TraceletLog.warning("periodic fix — no location available (fresh + fallback both null)")
                     }
                 }
 
@@ -745,7 +746,7 @@ class LocationEngine(
         if (gpsEnabled && isGpsFix(location)) {
             resetGpsLossTimer()
             if (deadReckoningEngine?.isActive == true) {
-                Log.d(TAG, "GPS signal recovered — deactivating dead reckoning")
+                TraceletLog.debug("GPS signal recovered — deactivating dead reckoning")
                 deactivateDeadReckoning()
             }
         }
@@ -815,11 +816,11 @@ class LocationEngine(
         var isForcedAccept = false
         if (!result.accepted) {
             if (forcePersistNextFilteredLocation) {
-                Log.d(TAG, "Location filtered by Rust processor, but FORCE ACCEPTING due to pending motion change.")
+                TraceletLog.debug("Location filtered by Rust processor, but FORCE ACCEPTING due to pending motion change.")
                 isForcedAccept = true
                 forcePersistNextFilteredLocation = false
             } else {
-                Log.d(TAG, "Location filtered by Rust processor: ${result.reason}")
+                TraceletLog.debug("Location filtered by Rust processor: ${result.reason}")
                 // Still update odometer if the processor computed a delta
                 if (result.odometerDelta > 0) {
                     state.addOdometer(result.odometerDelta)
@@ -1138,7 +1139,7 @@ class LocationEngine(
             !isGpsProviderEnabled(context)
         ) {
             gpsFallbackActive = true
-            Log.d(TAG, "GPS provider disabled — using BALANCED_POWER_ACCURACY (Wi-Fi/cell)")
+            TraceletLog.debug("GPS provider disabled — using BALANCED_POWER_ACCURACY (Wi-Fi/cell)")
             TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY
         } else {
             gpsFallbackActive = false
@@ -1182,7 +1183,7 @@ class LocationEngine(
         try {
             // Re-subscribe with lower priority (replaces existing request).
             fusedClient.requestLocationUpdates(fallbackRequest, callback, Looper.getMainLooper())
-            Log.d(TAG, "GPS fallback active — now using Wi-Fi/cell positioning")
+            TraceletLog.debug("GPS fallback active — now using Wi-Fi/cell positioning")
             val providerState = buildProviderState().toMutableMap()
             providerState["gpsFallback"] = true
             events.sendProviderChange(providerState)
@@ -1202,7 +1203,7 @@ class LocationEngine(
 
         try {
             fusedClient.requestLocationUpdates(originalRequest, callback, Looper.getMainLooper())
-            Log.d(TAG, "GPS restored — using original priority")
+            TraceletLog.debug("GPS restored — using original priority")
             val providerState = buildProviderState().toMutableMap()
             providerState["gpsFallback"] = false
             events.sendProviderChange(providerState)
@@ -1289,7 +1290,7 @@ class LocationEngine(
             location.isFromMockProvider
         }
         
-        Log.d(TAG, "isLocationMock: platformFlag=$platformFlag, level=$level")
+        TraceletLog.debug("isLocationMock: platformFlag=$platformFlag, level=$level")
         
         if (platformFlag) return true
         if (level < 2) return false
@@ -1299,10 +1300,10 @@ class LocationEngine(
         val extras = location.extras
         val satellites = extras?.getInt("satellites", -1) ?: -1
         
-        Log.d(TAG, "isLocationMock: heuristic check — satellites=$satellites, gpsEnabled=$gpsEnabled, accuracy=${location.accuracy}")
+        TraceletLog.debug("isLocationMock: heuristic check — satellites=$satellites, gpsEnabled=$gpsEnabled, accuracy=${location.accuracy}")
 
         if (gpsEnabled && satellites == 0 && location.accuracy < 50.0) {
-            Log.d(TAG, "isLocationMock: detected via 0 satellites")
+            TraceletLog.debug("isLocationMock: detected via 0 satellites")
             return true
         }
 
@@ -1311,10 +1312,10 @@ class LocationEngine(
         val driftNanos = currentElapsedNanos - locationElapsedNanos
         val driftMs = driftNanos / 1_000_000.0
         
-        Log.d(TAG, "isLocationMock: driftMs=$driftMs ms")
+        TraceletLog.debug("isLocationMock: driftMs=$driftMs ms")
 
         if (driftMs < -500.0) {
-            Log.d(TAG, "isLocationMock: detected via negative elapsedRealtime drift (location from the future: $driftMs ms)")
+            TraceletLog.debug("isLocationMock: detected via negative elapsedRealtime drift (location from the future: $driftMs ms)")
             return true
         }
         
@@ -1329,9 +1330,9 @@ class LocationEngine(
         // or the elapsedRealtime was manipulated (common in mock location apps).
         val discrepancyMs = kotlin.math.abs(ageByWallClockMs - ageByMonotonicMs)
         val maxDriftMs = 10000L + config.getDeferTime()
-        Log.d(TAG, "isLocationMock: discrepancyMs=$discrepancyMs ms, maxDriftMs=$maxDriftMs ms")
+        TraceletLog.debug("isLocationMock: discrepancyMs=$discrepancyMs ms, maxDriftMs=$maxDriftMs ms")
         if (discrepancyMs > maxDriftMs) {
-            Log.d(TAG, "isLocationMock: detected via timestamp/elapsed mismatch (>10s)")
+            TraceletLog.debug("isLocationMock: detected via timestamp/elapsed mismatch (>10s)")
             return true
         }
 
@@ -1364,7 +1365,7 @@ class LocationEngine(
         cancelGpsLossTimer()
 
         val delayMs = config.getDeadReckoningActivationDelay() * 1000L
-        Log.d(TAG, "DR: GPS-loss timer started (${delayMs}ms)")
+        TraceletLog.debug("DR: GPS-loss timer started (${delayMs}ms)")
         gpsLossRunnable = Runnable { activateDeadReckoning() }
         drHandler.postDelayed(gpsLossRunnable!!, delayMs)
     }
@@ -1385,17 +1386,17 @@ class LocationEngine(
     private fun activateDeadReckoning() {
         val last = lastLocation
         if (last == null) {
-            Log.w(TAG, "DR: Cannot activate — no last known location")
+            TraceletLog.warning("DR: Cannot activate — no last known location")
             // Restart timer so we try again once a location arrives.
             startGpsLossTimer()
             return
         }
-        Log.d(TAG, "DR: GPS lost for ${config.getDeadReckoningActivationDelay()}s — activating (last=${last.latitude},${last.longitude} acc=${last.accuracy})")
+        TraceletLog.debug("DR: GPS lost for ${config.getDeadReckoningActivationDelay()}s — activating (last=${last.latitude},${last.longitude} acc=${last.accuracy})")
 
         val engine = DeadReckoningEngine(context, config)
         engine.onEstimatedLocation = { drLocation -> onDrLocationEstimated(drLocation) }
         engine.onDeactivated = {
-            Log.d(TAG, "Dead reckoning auto-stopped (max duration)")
+            TraceletLog.debug("Dead reckoning auto-stopped (max duration)")
         }
         engine.activate(
             lat = last.latitude,
@@ -1490,19 +1491,19 @@ class LocationEngine(
     ) {
         val resolveEnabled = config.getResolveAddress()
         val geocoderPresent = android.location.Geocoder.isPresent()
-        Log.d(TAG, "resolveAddressAndDispatch: resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
+        TraceletLog.debug("resolveAddressAndDispatch: resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
         
         if (resolveEnabled && geocoderPresent) {
-            Log.d(TAG, "resolveAddressAndDispatch: Starting reverse geocode lookup for lat=${location.latitude}, lng=${location.longitude} on background thread.")
+            TraceletLog.debug("resolveAddressAndDispatch: Starting reverse geocode lookup for lat=${location.latitude}, lng=${location.longitude} on background thread.")
             java.util.concurrent.Executors.newSingleThreadExecutor().execute {
                 try {
                     val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
                     val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                     
                     if (!addresses.isNullOrEmpty()) {
-                        Log.d(TAG, "resolveAddressAndDispatch: Geocoder returned ${addresses.size} addresses.")
+                        TraceletLog.debug("resolveAddressAndDispatch: Geocoder returned ${addresses.size} addresses.")
                         val addr = addresses[0]
-                        Log.d(TAG, "resolveAddressAndDispatch: First address: $addr")
+                        TraceletLog.debug("resolveAddressAndDispatch: First address: $addr")
                         
                         val addressMap = mutableMapOf<String, Any?>()
                         addr.thoroughfare?.let { addressMap["street"] = it }
@@ -1514,23 +1515,23 @@ class LocationEngine(
                             addressMap["street"] = addr.featureName
                         }
                         
-                        Log.d(TAG, "resolveAddressAndDispatch: Parsed addressMap: $addressMap")
+                        TraceletLog.debug("resolveAddressAndDispatch: Parsed addressMap: $addressMap")
                         
                         val mutableEnriched = enriched.toMutableMap()
                         if (addressMap.isNotEmpty()) mutableEnriched["address"] = addressMap
                         
                         android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(mutableEnriched) }
                     } else {
-                        Log.w(TAG, "resolveAddressAndDispatch: Geocoder returned empty address list for lat=${location.latitude}, lng=${location.longitude}")
+                        TraceletLog.warning("resolveAddressAndDispatch: Geocoder returned empty address list for lat=${location.latitude}, lng=${location.longitude}")
                         android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
                     }
                 } catch (e: java.lang.Exception) {
-                    Log.e(TAG, "resolveAddressAndDispatch: Exception during reverse geocoding", e)
+                    TraceletLog.error("resolveAddressAndDispatch: Exception during reverse geocoding", e)
                     android.os.Handler(android.os.Looper.getMainLooper()).post { dispatch(enriched) }
                 }
             }
         } else {
-            Log.d(TAG, "resolveAddressAndDispatch: Skipping geocoding. resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
+            TraceletLog.debug("resolveAddressAndDispatch: Skipping geocoding. resolveAddressConfig=$resolveEnabled, geocoderPresent=$geocoderPresent")
             dispatch(enriched)
         }
     }

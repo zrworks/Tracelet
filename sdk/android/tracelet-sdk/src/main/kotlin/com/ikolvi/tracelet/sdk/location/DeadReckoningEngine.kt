@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.location
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.Context
 import android.hardware.Sensor
@@ -157,7 +158,7 @@ class DeadReckoningEngine(
         hasGravity = false
         hasMagnetic = false
 
-        Log.d(TAG, "Activated at ($lat, $lng), heading=$heading, activity=$activity")
+        TraceletLog.debug("Activated at ($lat, $lng), heading=$heading, activity=$activity")
 
         startSensors()
         startEmitTimer()
@@ -173,7 +174,7 @@ class DeadReckoningEngine(
         stopEmitTimer()
         stopMaxDurationTimer()
 
-        Log.d(TAG, "Deactivated after ${getElapsedSeconds()}s, $stepCount steps")
+        TraceletLog.debug("Deactivated after ${getElapsedSeconds()}s, $stepCount steps")
     }
 
     /** Returns the current DR state, or null if not active. */
@@ -474,7 +475,7 @@ class DeadReckoningEngine(
     private fun startMaxDurationTimer() {
         val maxDurationMs = config.getDeadReckoningMaxDuration() * 1000L
         maxDurationRunnable = Runnable {
-            Log.d(TAG, "Max duration reached (${config.getDeadReckoningMaxDuration()}s)")
+            TraceletLog.debug("Max duration reached (${config.getDeadReckoningMaxDuration()}s)")
             deactivate()
             onDeactivated?.invoke()
         }

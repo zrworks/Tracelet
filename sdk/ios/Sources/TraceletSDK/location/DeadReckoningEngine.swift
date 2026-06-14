@@ -125,7 +125,7 @@ public final class DeadReckoningEngine {
         filteredAccelY = 0
         lastAccelMagnitude = 0
 
-        NSLog("[Tracelet] DeadReckoning activated at (\(lat), \(lng)), heading=\(heading), activity=\(activity)")
+        TraceletLog.debug("[Tracelet] DeadReckoning activated at (\(lat), \(lng)), heading=\(heading), activity=\(activity)")
 
         startSensors()
         startEmitTimer()
@@ -141,7 +141,7 @@ public final class DeadReckoningEngine {
         stopEmitTimer()
         stopMaxDurationTimer()
 
-        NSLog("[Tracelet] DeadReckoning deactivated after \(getElapsedSeconds())s, \(stepCount) steps")
+        TraceletLog.debug("[Tracelet] DeadReckoning deactivated after \(getElapsedSeconds())s, \(stepCount) steps")
     }
 
     /// Returns the current DR state, or nil if not active.
@@ -361,7 +361,7 @@ public final class DeadReckoningEngine {
                 repeats: false
             ) { [weak self] _ in
                 guard let self = self else { return }
-                NSLog("[Tracelet] DeadReckoning max duration reached (\(Int(maxDuration))s)")
+                TraceletLog.debug("[Tracelet] DeadReckoning max duration reached (\(Int(maxDuration))s)")
                 self.deactivate()
                 self.onDeactivated?()
             }

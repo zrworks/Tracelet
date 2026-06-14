@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.receiver
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -45,7 +46,7 @@ class PeriodicAlarmReceiver : BroadcastReceiver() {
         // Verify periodic tracking is still enabled
         val state = StateManager(context)
         if (!state.enabled || state.trackingMode != TrackingMode.PERIODIC) {
-            Log.d(TAG, "Periodic tracking no longer active — ignoring alarm")
+            TraceletLog.debug("Periodic tracking no longer active — ignoring alarm")
             return
         }
         // Guard: require background location permission.
@@ -54,12 +55,12 @@ class PeriodicAlarmReceiver : BroadcastReceiver() {
                 context, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
-                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted \u2014 ignoring periodic alarm")
+                TraceletLog.warning("ACCESS_BACKGROUND_LOCATION not granted \u2014 ignoring periodic alarm")
                 return
             }
-            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted \u2014 processing periodic alarm")
+            TraceletLog.debug("ACCESS_BACKGROUND_LOCATION granted \u2014 processing periodic alarm")
         }
-        Log.d(TAG, "Exact alarm fired — enqueuing one-time location work")
+        TraceletLog.debug("Exact alarm fired — enqueuing one-time location work")
         PeriodicLocationWorker.scheduleOneTime(context)
     }
 }

@@ -45,12 +45,12 @@ public final class BackgroundTaskHelper {
         taskId = UIApplication.shared.beginBackgroundTask(withName: "com.tracelet.\(name)") { [weak self] in
             // Expiration handler — iOS is about to kill us.
             // We MUST call endBackgroundTask here.
-            NSLog("[Tracelet] ⚠️ Background task '\(name)' expired by iOS — ending")
+            TraceletLog.warning("[Tracelet] ⚠️ Background task '\(name)' expired by iOS — ending")
             self?.end(taskId)
         }
 
         guard taskId != .invalid else {
-            NSLog("[Tracelet] Background task '\(name)' denied by iOS")
+            TraceletLog.debug("[Tracelet] Background task '\(name)' denied by iOS")
             return nil
         }
 
@@ -58,7 +58,7 @@ public final class BackgroundTaskHelper {
             activeTasks[taskId] = name
         }
 
-        NSLog("[Tracelet] Background task '\(name)' started (id=\(taskId.rawValue))")
+        TraceletLog.debug("[Tracelet] Background task '\(name)' started (id=\(taskId.rawValue))")
         return taskId
     }
 
@@ -80,7 +80,7 @@ public final class BackgroundTaskHelper {
         }
 
         UIApplication.shared.endBackgroundTask(taskId)
-        NSLog("[Tracelet] Background task '\(name!)' ended (id=\(taskId.rawValue))")
+        TraceletLog.debug("[Tracelet] Background task '\(name!)' ended (id=\(taskId.rawValue))")
     }
 
     /// Convenience: execute a synchronous block within a background task.

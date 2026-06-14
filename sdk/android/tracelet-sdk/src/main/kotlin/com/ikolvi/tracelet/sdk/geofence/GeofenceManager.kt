@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.geofence
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.Manifest
 import android.app.PendingIntent
@@ -107,7 +108,7 @@ class GeofenceManager(
                 }
                 result["extras"] = map
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to parse geofence extras from DB: ${e.message}")
+                TraceletLog.warning("Failed to parse geofence extras from DB: ${e.message}")
             }
         }
         return result
@@ -161,14 +162,14 @@ class GeofenceManager(
             try {
                 extrasStr = org.json.JSONObject(extrasRaw).toString()
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to stringify geofence extras: ${e.message}")
+                TraceletLog.warning("Failed to stringify geofence extras: ${e.message}")
             }
         }
         
         try {
             rustDatabase?.insertGeofence(identifier, lat, lng, radius, coreVertices, extrasStr)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to persist geofence to Rust DB", e)
+            TraceletLog.error("Failed to persist geofence to Rust DB", e)
         }
         
         invalidateGeofenceCache()
@@ -205,7 +206,7 @@ class GeofenceManager(
         try {
             rustDatabase?.deleteGeofence(identifier)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete geofence from Rust DB", e)
+            TraceletLog.error("Failed to delete geofence from Rust DB", e)
         }
         invalidateGeofenceCache()
         return unregisterGeofence(identifier)
@@ -216,7 +217,7 @@ class GeofenceManager(
         try {
             rustDatabase?.clearGeofences()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to clear geofences from Rust DB", e)
+            TraceletLog.error("Failed to clear geofences from Rust DB", e)
         }
         return unregisterAllGeofences()
     }
@@ -463,7 +464,7 @@ class GeofenceManager(
             events.sendGeofencesChange(mapOf("on" to on, "off" to off))
         }
 
-        Log.d(TAG, "Proximity update: ${activeGeofenceIds.size} active, +${toAdd.size}/-${toRemove.size}")
+        TraceletLog.debug("Proximity update: ${activeGeofenceIds.size} active, +${toAdd.size}/-${toRemove.size}")
     }
 
     /** Clear high-accuracy tracking state. */
@@ -531,11 +532,11 @@ class GeofenceManager(
                     activeGeofenceIds.add(identifier)
                     success = true
                     latch.countDown()
-                    Log.d(TAG, "Geofence registered: $identifier")
+                    TraceletLog.debug("Geofence registered: $identifier")
                 },
                 onFailure = { e ->
                     latch.countDown()
-                    Log.e(TAG, "Failed to register geofence $identifier: ${e.message}")
+                    TraceletLog.error("Failed to register geofence $identifier: ${e.message}")
                 }
             )
             if (Looper.myLooper() != Looper.getMainLooper()) {
@@ -543,7 +544,7 @@ class GeofenceManager(
             }
             success
         } catch (e: SecurityException) {
-            Log.e(TAG, "Permission denied for geofencing: ${e.message}")
+            TraceletLog.error("Permission denied for geofencing: ${e.message}")
             false
         }
     }
@@ -555,11 +556,11 @@ class GeofenceManager(
             onSuccess = {
                 activeGeofenceIds.remove(identifier)
                 latch.countDown()
-                Log.d(TAG, "Geofence removed: $identifier")
+                TraceletLog.debug("Geofence removed: $identifier")
             },
             onFailure = { e ->
                 latch.countDown()
-                Log.w(TAG, "Failed to remove geofence $identifier: ${e.message}")
+                TraceletLog.warning("Failed to remove geofence $identifier: ${e.message}")
             }
         )
         if (Looper.myLooper() != Looper.getMainLooper()) {
@@ -574,10 +575,10 @@ class GeofenceManager(
                 pendingIntent = it,
                 onSuccess = {
                     activeGeofenceIds.clear()
-                    Log.d(TAG, "All geofences removed")
+                    TraceletLog.debug("All geofences removed")
                 },
                 onFailure = { e ->
-                    Log.w(TAG, "Failed to remove all geofences: ${e.message}")
+                    TraceletLog.warning("Failed to remove all geofences: ${e.message}")
                 }
             )
         }
@@ -652,7 +653,7 @@ class GeofenceManager(
             try {
                 extrasStr = org.json.JSONObject(extrasRaw).toString()
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to stringify geofence extras: ${e.message}")
+                TraceletLog.warning("Failed to stringify geofence extras: ${e.message}")
             }
         }
         return CoreGeofence(identifier, latitude, longitude, radius, vertices, extrasStr)

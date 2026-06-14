@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.wrapper
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -117,11 +118,11 @@ object TraceletServices {
             val isAvailableMethod = apiAvailabilityClass.getMethod("isGooglePlayServicesAvailable", Context::class.java)
             val resultCode = isAvailableMethod.invoke(availabilityInstance, context) as Int
             
-            Log.d("TraceletServices", "GooglePlayServices availability check resultCode: $resultCode")
+            TraceletLog.debug("GooglePlayServices availability check resultCode: $resultCode")
             // ConnectionResult.SUCCESS is 0
             resultCode == 0
         } catch (e: Throwable) {
-            Log.e("TraceletServices", "Exception in isGmsAvailable reflection check: ${e.message}", e)
+            TraceletLog.error("Exception in isGmsAvailable reflection check: ${e.message}", e)
             false
         }
     }
@@ -132,16 +133,16 @@ object TraceletServices {
         if (provider == null) {
             provider = try {
                 if (isGmsAvailable(context)) {
-                    Log.i("TraceletServices", "GMS Location classes detected & active on device. Loading PlayServicesProvider.")
+                    TraceletLog.info("GMS Location classes detected & active on device. Loading PlayServicesProvider.")
                     Class.forName("com.ikolvi.tracelet.sdk.wrapper.PlayServicesProvider")
                         .getDeclaredConstructor()
                         .newInstance() as TraceletServicesProvider
                 } else {
-                    Log.i("TraceletServices", "GMS Location NOT available on device. Using AOSP fallback.")
+                    TraceletLog.info("GMS Location NOT available on device. Using AOSP fallback.")
                     AospServicesProvider()
                 }
             } catch (e: Throwable) {
-                Log.e("TraceletServices", "Failed to initialize GMS provider, falling back to AOSP: ${e.message}")
+                TraceletLog.error("Failed to initialize GMS provider, falling back to AOSP: ${e.message}")
                 AospServicesProvider()
             }
         }

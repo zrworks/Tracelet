@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.receiver
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -34,16 +35,16 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
 
-        Log.d(TAG, "Boot completed — checking startOnBoot config")
+        TraceletLog.debug("Boot completed — checking startOnBoot config")
 
         val configManager = ConfigManager.getInstance(context)
         if (!configManager.hasConfig()) {
-            Log.d(TAG, "No persisted config found, skipping")
+            TraceletLog.debug("No persisted config found, skipping")
             return
         }
 
         if (!configManager.getStartOnBoot()) {
-            Log.d(TAG, "startOnBoot is false, skipping")
+            TraceletLog.debug("startOnBoot is false, skipping")
             return
         }
 
@@ -55,13 +56,13 @@ class BootReceiver : BroadcastReceiver() {
                 context, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
-                Log.w(TAG, "ACCESS_BACKGROUND_LOCATION not granted — cannot restart tracking on boot")
+                TraceletLog.warning("ACCESS_BACKGROUND_LOCATION not granted — cannot restart tracking on boot")
                 // Persist disabled state so the plugin doesn't retry on next boot
                 val statePrefs = context.getSharedPreferences("com.tracelet.state", Context.MODE_PRIVATE)
                 statePrefs.edit().putBoolean("enabled", false).apply()
                 return
             }
-            Log.d(TAG, "ACCESS_BACKGROUND_LOCATION granted — proceeding with boot restart")
+            TraceletLog.debug("ACCESS_BACKGROUND_LOCATION granted — proceeding with boot restart")
         }
 
         val stateManager = StateManager(context)
@@ -70,13 +71,13 @@ class BootReceiver : BroadcastReceiver() {
         // If the user explicitly called stop(), a reboot must not resurrect
         // tracking — startOnBoot means "survive reboots", not "auto-start".
         if (!stateManager.enabled) {
-            Log.d(TAG, "Tracking was stopped before reboot — not resuming")
+            TraceletLog.debug("Tracking was stopped before reboot — not resuming")
             return
         }
 
         val trackingMode = stateManager.trackingMode
 
-        Log.d(TAG, "startOnBoot=true, trackingMode=$trackingMode — restoring tracking")
+        TraceletLog.debug("startOnBoot=true, trackingMode=$trackingMode — restoring tracking")
 
         // Acquire a temporary OEM-safe wakelock to prevent aggressive power
         // managers (Huawei PowerGenie, Xiaomi MIUI) from killing our process
@@ -106,7 +107,7 @@ class BootReceiver : BroadcastReceiver() {
                 // disallows starting a location-type FGS from BOOT_COMPLETED). Don't
                 // give up — fall back to the background-eligible WorkManager/alarm
                 // path so tracking still resumes after the reboot.
-                Log.w(TAG, "Boot foreground service refused by OS — falling back to background WorkManager/alarm tracking")
+                TraceletLog.warning("Boot foreground service refused by OS — falling back to background WorkManager/alarm tracking")
                 scheduleBackgroundFallback(context, configManager)
             }
         }
@@ -131,10 +132,10 @@ class BootReceiver : BroadcastReceiver() {
         if (useExactAlarms) {
             PeriodicLocationWorker.scheduleOneTime(context)
             PeriodicLocationWorker.scheduleExactAlarm(context, interval)
-            Log.d(TAG, "Background tracking scheduled with exact alarms (interval=${interval}s)")
+            TraceletLog.debug("Background tracking scheduled with exact alarms (interval=${interval}s)")
         } else {
             PeriodicLocationWorker.schedule(context, interval)
-            Log.d(TAG, "Background tracking scheduled with WorkManager (interval=${interval}s)")
+            TraceletLog.debug("Background tracking scheduled with WorkManager (interval=${interval}s)")
         }
     }
 }

@@ -1,4 +1,5 @@
 package com.ikolvi.tracelet.sdk.motion
+import com.ikolvi.tracelet.sdk.util.TraceletLog
 
 import android.os.SystemClock
 import android.util.Log
@@ -84,15 +85,15 @@ class SpeedMotionManager(
         val rawDelay = config.getSpeedStationaryDelay()
         speedStationaryDelay = rawDelay.coerceAtLeast(0)
         if (rawDelay < 0) {
-            Log.w(TAG, "speedStationaryDelay was $rawDelay, clamped to 0")
+            TraceletLog.warning("speedStationaryDelay was $rawDelay, clamped to 0")
         } else if (rawDelay == 0) {
-            Log.w(TAG, "speedStationaryDelay is 0 — device will transition to STATIONARY immediately after a single low-speed fix")
+            TraceletLog.warning("speedStationaryDelay is 0 — device will transition to STATIONARY immediately after a single low-speed fix")
         }
 
         val rawWakeCount = config.getSpeedWakeConfirmCount()
         speedWakeConfirmCount = rawWakeCount.coerceAtLeast(1)
         if (rawWakeCount < 1) {
-            Log.w(TAG, "speedWakeConfirmCount was $rawWakeCount, clamped to 1")
+            TraceletLog.warning("speedWakeConfirmCount was $rawWakeCount, clamped to 1")
         }
 
         // Restore persisted state
@@ -110,9 +111,9 @@ class SpeedMotionManager(
             state.speedLowCount = 0
             state.speedWakeCount = 0
             state.isMoving = true
-            Log.d(TAG, "start() — forced to MOVING state")
+            TraceletLog.debug("start() — forced to MOVING state")
         } else {
-            Log.d(TAG, "start() — restored state=$currentState, lowCount=$lowSpeedCount, wakeCount=$wakeCount")
+            TraceletLog.debug("start() — restored state=$currentState, lowCount=$lowSpeedCount, wakeCount=$wakeCount")
 
             if (currentState == SpeedMotionState.STATIONARY) {
                 switchToStationary()
@@ -127,7 +128,7 @@ class SpeedMotionManager(
     fun stop() {
         if (!started) return
         started = false
-        Log.d(TAG, "stop()")
+        TraceletLog.debug("stop()")
     }
 
     /**
@@ -135,7 +136,7 @@ class SpeedMotionManager(
      */
     fun onManualPaceChange(isMoving: Boolean) {
         if (!started) return
-        Log.d(TAG, "onManualPaceChange(isMoving=$isMoving)")
+        TraceletLog.debug("onManualPaceChange(isMoving=$isMoving)")
         if (isMoving) {
             lowSpeedCount = 0
             wakeCount = 0
@@ -194,7 +195,7 @@ class SpeedMotionManager(
 
     private fun onLocationMoving(speed: Double) {
         if (speed < speedMovingThreshold) {
-            Log.d(TAG, "MOVING -> SLOWING (speed=${formatSpeed(speed)} < threshold=$speedMovingThreshold)")
+            TraceletLog.debug("MOVING -> SLOWING (speed=${formatSpeed(speed)} < threshold=$speedMovingThreshold)")
             lowSpeedCount = 1
             slowingStartTimeMs = SystemClock.elapsedRealtime()
             transitionTo(SpeedMotionState.SLOWING)
@@ -211,7 +212,7 @@ class SpeedMotionManager(
         val delayMs = speedStationaryDelay * 1000L
         slowingTimerRunnable = java.lang.Runnable {
             if (currentState == SpeedMotionState.SLOWING) {
-                Log.d(TAG, "SLOWING timer expired -> STATIONARY")
+                TraceletLog.debug("SLOWING timer expired -> STATIONARY")
                 lowSpeedCount = 0
                 wakeCount = 0
                 transitionTo(SpeedMotionState.STATIONARY)
@@ -229,11 +230,11 @@ class SpeedMotionManager(
     private fun switchToStationary() {
         when (stationaryTrackingMode) {
             StationaryTrackingMode.GEOFENCES -> {
-                Log.d(TAG, "Switching to stationary geofences mode")
+                TraceletLog.debug("Switching to stationary geofences mode")
                 callback.switchToStationaryGeofences()
             }
             else -> {
-                Log.d(TAG, "Switching to stationary periodic mode")
+                TraceletLog.debug("Switching to stationary periodic mode")
                 callback.switchToStationaryPeriodic()
             }
         }
@@ -241,7 +242,7 @@ class SpeedMotionManager(
 
     private fun onLocationSlowing(speed: Double) {
         if (speed >= speedMovingThreshold) {
-            Log.d(TAG, "SLOWING -> MOVING (speed=${formatSpeed(speed)} >= threshold=$speedMovingThreshold)")
+            TraceletLog.debug("SLOWING -> MOVING (speed=${formatSpeed(speed)} >= threshold=$speedMovingThreshold)")
             lowSpeedCount = 0
             stopSlowingTimer()
             transitionTo(SpeedMotionState.MOVING)
@@ -254,10 +255,10 @@ class SpeedMotionManager(
         val elapsedMs = SystemClock.elapsedRealtime() - slowingStartTimeMs
         val delayMs = speedStationaryDelay * 1000L
 
-        Log.d(TAG, "SLOWING: lowCount=$lowSpeedCount, elapsed=${elapsedMs}ms, delay=${delayMs}ms, speed=${formatSpeed(speed)}")
+        TraceletLog.debug("SLOWING: lowCount=$lowSpeedCount, elapsed=${elapsedMs}ms, delay=${delayMs}ms, speed=${formatSpeed(speed)}")
 
         if (elapsedMs >= delayMs) {
-            Log.d(TAG, "SLOWING -> STATIONARY (elapsed ${elapsedMs}ms >= delay ${delayMs}ms)")
+            TraceletLog.debug("SLOWING -> STATIONARY (elapsed ${elapsedMs}ms >= delay ${delayMs}ms)")
             lowSpeedCount = 0
             wakeCount = 0
             stopSlowingTimer()
@@ -270,10 +271,10 @@ class SpeedMotionManager(
         if (speed >= speedMovingThreshold) {
             wakeCount++
             state.speedWakeCount = wakeCount
-            Log.d(TAG, "STATIONARY: wake fix (speed=${formatSpeed(speed)}), wakeCount=$wakeCount/$speedWakeConfirmCount")
+            TraceletLog.debug("STATIONARY: wake fix (speed=${formatSpeed(speed)}), wakeCount=$wakeCount/$speedWakeConfirmCount")
 
             if (wakeCount >= speedWakeConfirmCount) {
-                Log.d(TAG, "STATIONARY -> MOVING (wakeCount=$wakeCount >= confirm=$speedWakeConfirmCount)")
+                TraceletLog.debug("STATIONARY -> MOVING (wakeCount=$wakeCount >= confirm=$speedWakeConfirmCount)")
                 wakeCount = 0
                 transitionTo(SpeedMotionState.MOVING)
                 callback.switchToContinuous()
@@ -281,7 +282,7 @@ class SpeedMotionManager(
         } else {
             // Low speed — reset wake counter, stay stationary
             if (wakeCount > 0) {
-                Log.d(TAG, "STATIONARY: low speed, resetting wakeCount ($wakeCount -> 0)")
+                TraceletLog.debug("STATIONARY: low speed, resetting wakeCount ($wakeCount -> 0)")
             }
             wakeCount = 0
             state.speedWakeCount = 0
@@ -316,7 +317,7 @@ class SpeedMotionManager(
         )
         events.sendSpeedMotionChange(eventData)
 
-        Log.d(TAG, "State transition: ${previousState.name} -> ${newState.name}")
+        TraceletLog.debug("State transition: ${previousState.name} -> ${newState.name}")
     }
 
     private fun formatSpeed(speed: Double): String = "%.2f m/s".format(speed)

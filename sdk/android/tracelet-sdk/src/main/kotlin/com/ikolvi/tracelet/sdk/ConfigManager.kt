@@ -798,7 +798,7 @@ class ConfigManager(context: Context) {
 
     fun getEnableCrashDetection(): Boolean = getBool("enableCrashDetection", false)
     fun getEnableFallDetection(): Boolean = getBool("enableFallDetection", false)
-    fun getCrashGThreshold(): Double = getDouble("crashGThreshold", 3.0)
+    fun getCrashGThreshold(): Double = getDouble("crashGThreshold", 2.0)
     fun getCrashMinSpeedKmh(): Double = getDouble("crashMinSpeedKmh", 25.0)
     fun getFallGThreshold(): Double = getDouble("fallGThreshold", 2.5)
     fun getConfirmWindowMs(): Long = getInt("confirmWindowMs", 15000).toLong()

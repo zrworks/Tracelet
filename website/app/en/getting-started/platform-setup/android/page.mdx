@@ -11,6 +11,36 @@ import LottiePlayer from '../../../../../components/LottiePlayer'
 
 ---
 
+## Optional dependency: high-accuracy GMS location
+
+Tracelet's Android SDK can use **Google Play Services Location** — `FusedLocationProviderClient`
+(better accuracy and battery), hardware **activity recognition** (walking / driving / still),
+and hardware **geofencing**. To keep the SDK lightweight and usable on Google-less devices, this
+dependency is **not bundled**. You add it only if you want the high-accuracy path:
+
+```kotlin
+// android/app/build.gradle.kts
+dependencies {
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+}
+```
+
+<Callout type="info">
+**It's optional, and the SDK degrades gracefully.** Without `play-services-location`, Tracelet
+falls back to the standard AOSP `LocationManager` (plain GPS). Tracking still works — you just
+lose the fused provider's accuracy/battery benefits, hardware activity recognition, and hardware
+geofencing. **Recommended:** add it unless you specifically target Google-less / AOSP devices
+(e.g. Huawei without GMS, or de-Googled ROMs).
+</Callout>
+
+| With `play-services-location` | Without it (AOSP fallback) |
+|---|---|
+| Fused location (best accuracy + battery) | Raw GPS / network via `LocationManager` |
+| Hardware activity recognition (`onActivityChange`) | Accelerometer-only motion detection |
+| Hardware geofencing | Software (in-SDK) geofence evaluation |
+
+---
+
 ## Permissions & Manifest Setup
 
 Tracelet automatically injects the necessary permissions into your `AndroidManifest.xml` when you compile your app. By default, it requests:

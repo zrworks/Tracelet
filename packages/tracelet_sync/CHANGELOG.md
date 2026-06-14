@@ -1,3 +1,7 @@
+## 3.3.1
+
+ - Update a dependency to the latest release.
+
 ## 3.3.0
 
 * **FEAT** (Driving & Safety): On-device driving-behavior telematics — `harsh_braking` / `harsh_acceleration` / `harsh_cornering` / `speeding` via `TelematicsConfig` + `Tracelet.onDrivingEvent` (opt-in, default off) ([#163](https://github.com/Ikolvi/Tracelet/issues/163)).

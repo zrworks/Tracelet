@@ -3,6 +3,45 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.3.1`](#tracelet---v331)
+ - [`tracelet_android` - `v3.3.1`](#tracelet_android---v331)
+ - [`tracelet_sync` - `v3.3.1`](#tracelet_sync---v331)
+ - [`tracelet_doctor` - `v3.3.1`](#tracelet_doctor---v331)
+ - [`tracelet_supabase` - `v3.3.1`](#tracelet_supabase---v331)
+ - [`tracelet_firebase` - `v3.3.1`](#tracelet_firebase---v331)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_sync` - `v3.3.1`
+ - `tracelet_doctor` - `v3.3.1`
+ - `tracelet_supabase` - `v3.3.1`
+ - `tracelet_firebase` - `v3.3.1`
+
+---
+
+#### `tracelet` - `v3.3.1`
+
+ - **FIX**(crash): harden crash/fall detection (confirmation survival, threshold, debounce, sample rate). ([0a17e804](https://github.com/Ikolvi/Tracelet/commit/0a17e804a8d05adba02becf21756fa328c4caec9))
+
+#### `tracelet_android` - `v3.3.1`
+
+ - **REFACTOR**(logging): route all SDK logs through TraceletLogger (no raw Log/NSLog). ([e42b676a](https://github.com/Ikolvi/Tracelet/commit/e42b676ae63581d80cee4ac6e35c6103cf7dd0f6))
+
+
 ## 2026-06-11
 
 ### Changes

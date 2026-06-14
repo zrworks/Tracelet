@@ -1,3 +1,7 @@
+## 3.3.1
+
+ - **REFACTOR**(logging): route all SDK logs through TraceletLogger (no raw Log/NSLog). ([e42b676a](https://github.com/Ikolvi/Tracelet/commit/e42b676ae63581d80cee4ac6e35c6103cf7dd0f6))
+
 ## 3.3.0
 
 * **FEAT** (Battery, Android): Motion-gated wakelock — drop the OEM partial wakelock when stationary and re-assert it on movement, via `AndroidConfig.releaseWakelockWhenStationary` (opt-in, default off; gated on the hardware significant-motion wake sensor) ([#162](https://github.com/Ikolvi/Tracelet/issues/162)).

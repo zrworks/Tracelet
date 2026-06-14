@@ -35,8 +35,10 @@ void main() {
   var tsCounter = DateTime.now().millisecondsSinceEpoch;
   String nextTimestamp() {
     tsCounter += 1000;
-    return DateTime.fromMillisecondsSinceEpoch(tsCounter, isUtc: true)
-        .toIso8601String();
+    return DateTime.fromMillisecondsSinceEpoch(
+      tsCounter,
+      isUtc: true,
+    ).toIso8601String();
   }
 
   Map<String, Object?> locationParams({
@@ -78,7 +80,11 @@ void main() {
 
       // ...and that link must be retrievable as a proof (the coverage fix).
       final proof = await Tracelet.getAuditProof(uuid);
-      expect(proof, isNotNull, reason: 'background-path location must be chained');
+      expect(
+        proof,
+        isNotNull,
+        reason: 'background-path location must be chained',
+      );
       expect(proof!.uuid, uuid);
       expect(proof.hash, isNotEmpty);
       expect(proof.previousHash, isNotEmpty);

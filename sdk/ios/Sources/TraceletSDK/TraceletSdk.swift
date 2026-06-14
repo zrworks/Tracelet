@@ -1924,6 +1924,12 @@ public final class TraceletSdk {
                 confirmWindowMs: configManager.getConfirmWindowMs(),
                 minConfidence: configManager.getMinImpactConfidence()))
             : nil
+
+        // Crash/fall impulses peak in ~50-150 ms, far faster than the 10 Hz used
+        // for motion detection. When impact detection is active, sample the
+        // accelerometer at a higher rate so the peak is actually captured (battery
+        // cost is accepted because the feature is opt-in).
+        motionDetector?.impactHighRate = (impactDetector != nil)
     }
 
     /// Feeds an accepted location fix to the telematics engine and emits events.
@@ -1968,20 +1974,42 @@ public final class TraceletSdk {
             self.accelWindowTimer = Timer.scheduledTimer(withTimeInterval: Self.accelWindowInterval, repeats: true) { [weak self] _ in
                 self?.processAccelWindow()
             }
-            if self.impactDetector != nil {
-                self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                    guard let self = self, let detector = self.impactDetector else { return }
-                    let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-                    for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
-                }
-            }
         }
     }
 
     private func stopBehaviorSampling() {
         accelWindowTimer?.invalidate(); accelWindowTimer = nil
-        impactConfirmTimer?.invalidate(); impactConfirmTimer = nil
         accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
+        // NOTE: the impact confirmation loop is intentionally NOT stopped here.
+        // A crash typically ends in the vehicle stopping, which disables tracking
+        // (stopTimeout) and would otherwise abandon a pending `potential_crash`
+        // before its countdown elapses — so the confirmed `crash` would never
+        // fire. The confirmation loop runs independently and self-terminates once
+        // no candidates remain (see `ensureImpactConfirmLoop`).
+    }
+
+    /// Ensures the impact confirmation poll is running. Decoupled from tracking
+    /// state: once a candidate is pending it keeps polling — across a tracking
+    /// stop — until every candidate has confirmed (deadline elapsed), been
+    /// confirmed explicitly, or cancelled. Self-terminates when nothing pends.
+    private func ensureImpactConfirmLoop() {
+        guard impactConfirmTimer == nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.impactConfirmTimer == nil else { return }
+            self.impactConfirmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+                guard let self = self, let detector = self.impactDetector else {
+                    timer.invalidate()
+                    self?.impactConfirmTimer = nil
+                    return
+                }
+                let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+                for e in detector.checkConfirmations(nowMs: nowMs) { self.emitImpact(e) }
+                if detector.pendingCount() == 0 {
+                    timer.invalidate()
+                    self.impactConfirmTimer = nil
+                }
+            }
+        }
     }
 
     private func processAccelWindow() {
@@ -2006,6 +2034,9 @@ public final class TraceletSdk {
             let onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
             if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
                 emitImpact(candidate)
+                // Keep the countdown alive even if tracking stops right after the
+                // crash (vehicle comes to rest → stopTimeout disables tracking).
+                ensureImpactConfirmLoop()
             }
         }
     }

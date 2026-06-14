@@ -107,6 +107,15 @@ public final class MotionDetector {
     /// in g — feeds the 3.3.0 transport-mode classifier and impact detector.
     public var onAccelSample: ((Double) -> Void)?
 
+    /// When `true` (crash/fall detection enabled), the accelerometer is sampled at
+    /// a higher rate so short impact spikes (~50-150 ms) are actually captured
+    /// instead of being missed between the 10 Hz motion-detection samples. Applies
+    /// on the next start. Costs more battery, acceptable for opt-in impact detection.
+    public var impactHighRate: Bool = false
+
+    /// Accelerometer update interval — faster when impact detection is active.
+    private var accelUpdateInterval: TimeInterval { impactHighRate ? 1.0 / 100.0 : 1.0 / 10.0 }
+
     /// Called when stopOnStationary fires — requests full tracking stop.
     public var onStopRequested: (() -> Void)?
 
@@ -247,13 +256,15 @@ public final class MotionDetector {
         stopDutyCycle()
         consecutiveStillSamples = 0
         consecutiveMotionSamples = 0
-        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+        motionManager.accelerometerUpdateInterval = accelUpdateInterval
         if !motionManager.isAccelerometerActive {
             motionManager.startAccelerometerUpdates()   // no handler → pull model
         }
         movingSampler?.cancel()
         let timer = DispatchSource.makeTimerSource(queue: motionQueue)
-        timer.schedule(deadline: .now() + 0.1, repeating: 0.1)   // 10Hz
+        // Pull-model read cadence governs the effective sample rate (10 Hz
+        // normally, 100 Hz when impact detection is active so crash spikes land).
+        timer.schedule(deadline: .now() + accelUpdateInterval, repeating: accelUpdateInterval)
         timer.setEventHandler { [weak self] in
             guard let self = self, let data = self.motionManager.accelerometerData else { return }
             self.handleAcceleration(data.acceleration)
@@ -289,7 +300,7 @@ public final class MotionDetector {
     /// One duty-cycle burst: power the sensor on and sample for `dutyBurstSeconds`.
     private func runDutyBurst() {
         guard isRunning, !stateManager.isMoving else { return }
-        motionManager.accelerometerUpdateInterval = 1.0 / 10.0
+        motionManager.accelerometerUpdateInterval = accelUpdateInterval
         if !motionManager.isAccelerometerActive {
             motionManager.startAccelerometerUpdates()
         }

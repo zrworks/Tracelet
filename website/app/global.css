@@ -160,3 +160,45 @@ aside button[role="combobox"] {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+
+/* Notification Bell Dropdown */
+.notification-dropdown {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
+}
+
+html.dark .notification-dropdown {
+  background-color: #171717;
+  border-color: #262626;
+  color: #f3f4f6;
+}
+
+.notification-dropdown-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+html.dark .notification-dropdown-header {
+  border-bottom: 1px solid #262626;
+}
+
+.notification-dropdown-item {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+html.dark .notification-dropdown-item {
+  border-bottom: 1px solid #262626;
+}
+
+.notification-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.notification-dropdown-item:hover {
+  background-color: #f9fafb;
+}
+
+html.dark .notification-dropdown-item:hover {
+  background-color: rgba(15, 157, 88, 0.1);
+}

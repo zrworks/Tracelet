@@ -33,7 +33,15 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
-        if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
+        // Accept the standard boot broadcast plus the OEM quick-boot variants that
+        // some devices emit instead of BOOT_COMPLETED on fast power-on.
+        val action = intent?.action
+        if (action != Intent.ACTION_BOOT_COMPLETED &&
+            action != "android.intent.action.QUICKBOOT_POWERON" &&
+            action != "com.htc.intent.action.QUICKBOOT_POWERON"
+        ) {
+            return
+        }
 
         TraceletLog.debug("Boot completed — checking startOnBoot config")
 

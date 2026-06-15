@@ -49,16 +49,16 @@ Packages with dependency updates only:
 
 #### `tracelet_platform_interface` - `v3.3.3`
 
- - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+ - **FIX**: Correct the pigeon mock stub for `TlGeofenceConfig` to accommodate removed fields and update config tests. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
  - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))
 
 #### `tracelet_sync` - `v3.3.3`
 
- - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+ - **FIX**: Centralize HTTP sync event reporting to guarantee exactly one onHttp event emission per sync attempt on all failure paths, resolving silently dropped events for custom builder timeouts and 0-count executions ([#192](https://github.com/Ikolvi/Tracelet/issues/192)). ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
 
 #### `tracelet_web` - `v3.3.3`
 
- - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+ - **FIX**: Correct the `geofenceModeHighAccuracy` config mapping in Web plugin to prevent runtime getter errors. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
 
 
 ## 2026-06-15

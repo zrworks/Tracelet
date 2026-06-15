@@ -373,11 +373,23 @@ class _DashboardPageState extends State<DashboardPage>
             ? ' [${loc.locationSource.toUpperCase()}]'
             : '';
         final reducedTag = loc.reducedAccuracy ? ' [REDUCED]' : '';
+        // #187: surface the reverse-geocoded address (resolveAddress: true) so it
+        // is visible live, independent of the DB-sourced sync batch.
+        final addr = loc.address;
+        final addrTag = addr != null
+            ? '  addr=[${[
+                addr.street,
+                addr.city,
+                addr.state,
+                addr.postalCode,
+                addr.country,
+              ].where((e) => e != null && e.isNotEmpty).join(', ')}]'
+            : '';
         _addLog(
           tag,
           '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}  '
           'acc=${loc.coords.accuracy.toStringAsFixed(1)}m  spd=${loc.coords.speed.toStringAsFixed(1)}m/s  '
-          'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo$srcTag$reducedTag',
+          'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo$srcTag$reducedTag$addrTag',
         );
       }),
     );
@@ -615,6 +627,7 @@ class _DashboardPageState extends State<DashboardPage>
         tl.Config(
           geo: const tl.GeoConfig(
             distanceFilter: 0,
+            resolveAddress: true,
             filter: tl.LocationFilter(
               useKalmanFilter: true,
               mockDetectionLevel: 2, // 2 = HEURISTIC

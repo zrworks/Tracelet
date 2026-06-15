@@ -658,6 +658,8 @@ fn wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(
             >>::sse_decode(&mut deserializer);
             let api_peak_g = <f64>::sse_decode(&mut deserializer);
             let api_speed_before_mps = <f64>::sse_decode(&mut deserializer);
+            let api_gyro_peak_dps = <f64>::sse_decode(&mut deserializer);
+            let api_was_in_free_fall = <bool>::sse_decode(&mut deserializer);
             let api_is_on_foot = <bool>::sse_decode(&mut deserializer);
             let api_latitude = <f64>::sse_decode(&mut deserializer);
             let api_longitude = <f64>::sse_decode(&mut deserializer);
@@ -683,6 +685,8 @@ fn wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(
                         &*api_that_guard,
                         api_peak_g,
                         api_speed_before_mps,
+                        api_gyro_peak_dps,
+                        api_was_in_free_fall,
                         api_is_on_foot,
                         api_latitude,
                         api_longitude,

@@ -112,6 +112,10 @@ public final class TraceletSdk {
     private var impactDetector: ImpactDetector?
     private var accelBuffer: [Double] = []
     private let accelBufferLock = NSLock()
+    private var gyroBuffer: [Double] = []
+    private let gyroBufferLock = NSLock()
+    private var rawAccelBuffer: [Double] = []
+    private let rawAccelBufferLock = NSLock()
     private var accelWindowTimer: Timer?
     private var impactConfirmTimer: Timer?
     private var lastSpeedMps: Double = 0
@@ -1689,6 +1693,20 @@ public final class TraceletSdk {
         motionDetector.onAccelSample = { [weak self] magnitudeG in
             self?.feedAccelSample(magnitudeG)
         }
+        // #179: feed gyroscope samples (deg/s) for crash corroboration.
+        motionDetector.onGyroSample = { [weak self] dps in
+            guard let self = self, self.impactDetector != nil else { return }
+            self.gyroBufferLock.lock()
+            self.gyroBuffer.append(dps)
+            self.gyroBufferLock.unlock()
+        }
+        // #180: buffer raw total-g to detect a free-fall preceding a fall impact.
+        motionDetector.onAccelRawSample = { [weak self] totalG in
+            guard let self = self, self.impactDetector != nil else { return }
+            self.rawAccelBufferLock.lock()
+            self.rawAccelBuffer.append(totalG)
+            self.rawAccelBufferLock.unlock()
+        }
         motionDetector.onStopTimeoutStarted = { [weak self] in
             self?.locationEngine.overrideDistanceFilter(forStopTimeout: true, source: "MotionDetector")
         }
@@ -1930,6 +1948,7 @@ public final class TraceletSdk {
         // accelerometer at a higher rate so the peak is actually captured (battery
         // cost is accepted because the feature is opt-in).
         motionDetector?.impactHighRate = (impactDetector != nil)
+        motionDetector?.gyroEnabled = (impactDetector != nil)   // #179 gyro corroboration
     }
 
     /// Feeds an accepted location fix to the telematics engine and emits events.
@@ -1980,6 +1999,8 @@ public final class TraceletSdk {
     private func stopBehaviorSampling() {
         accelWindowTimer?.invalidate(); accelWindowTimer = nil
         accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
+        gyroBufferLock.lock(); gyroBuffer.removeAll(); gyroBufferLock.unlock()
+        rawAccelBufferLock.lock(); rawAccelBuffer.removeAll(); rawAccelBufferLock.unlock()
         // NOTE: the impact confirmation loop is intentionally NOT stopped here.
         // A crash typically ends in the vehicle stopping, which disables tracking
         // (stopTimeout) and would otherwise abandon a pending `potential_crash`
@@ -2032,7 +2053,18 @@ public final class TraceletSdk {
         }
         if let detector = impactDetector {
             let onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
-            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
+            // Peak rotation (deg/s) over this window — crash corroboration (#179).
+            gyroBufferLock.lock()
+            let gyroPeak = gyroBuffer.max() ?? 0.0
+            gyroBuffer.removeAll()
+            gyroBufferLock.unlock()
+            // Free-fall preceding the impact — fall corroboration (#180).
+            rawAccelBufferLock.lock()
+            let minTotalG = rawAccelBuffer.min()
+            rawAccelBuffer.removeAll()
+            rawAccelBufferLock.unlock()
+            let wasInFreeFall = (minTotalG ?? 1.0) < 0.5
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
                 emitImpact(candidate)
                 // Keep the countdown alive even if tracking stops right after the
                 // crash (vehicle comes to rest → stopTimeout disables tracking).

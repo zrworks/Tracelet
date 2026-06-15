@@ -133,6 +133,10 @@ result to drive battery/sampling behaviour.
 
 ## 3. Crash & fall detection
 
+<Callout type="warning">
+**BETA:** Crash & fall detection is currently in **Beta**. Before deploying to production, please review [Issue #183](https://github.com/Ikolvi/Tracelet/issues/183) regarding the licensing of the underlying crash detection dataset.
+</Callout>
+
 Detects a likely crash (a hard impact **while moving**) or, optionally, a
 personal fall. Because false alarms are costly, detection is **corroborated**
 (a big jolt alone is never enough) and gives the user a **countdown to cancel**.

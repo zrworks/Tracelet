@@ -69,37 +69,11 @@ actor SyncCoordinator {
             if count > 0, let lastId = coreRecords.last?.id {
                 try db.clearLocationsUpTo(maxId: lastId)
                 TraceletSdk.shared.logger.debug("Synced and cleared \(count) locations.")
-                TraceletSdk.shared.getEventSender().sendHttp([
-                    "success": true,
-                    "status": 200,
-                    "responseText": "Synced \(count) locations",
-                    "isRetry": false,
-                    "retryCount": 0
-                ])
             } else {
-                // count == 0 with a non-empty batch means the sync attempt
-                // failed (e.g. unreachable endpoint or aborted custom body).
-                // Emit a failure event so it is observable via onHttp — matching
-                // the Android NativeSyncProvider behaviour — instead of failing
-                // silently.
                 TraceletSdk.shared.logger.debug("No locations synced or count was 0.")
-                TraceletSdk.shared.getEventSender().sendHttp([
-                    "success": false,
-                    "status": 0,
-                    "responseText": "Sync attempt synced 0 locations",
-                    "isRetry": false,
-                    "retryCount": 0
-                ])
             }
         } catch {
             TraceletSdk.shared.logger.debug("Sync failed with error: \(error)")
-            TraceletSdk.shared.getEventSender().sendHttp([
-                "success": false,
-                "status": 0,
-                "responseText": error.localizedDescription,
-                "isRetry": false,
-                "retryCount": 0
-            ])
         }
     }
 
@@ -206,6 +180,13 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 // exists, so nil here unambiguously means failure: abort the sync
                 // rather than posting an error object or the default payload.
                 TraceletSdk.shared.logger.error("Custom sync body failed to build; aborting sync.")
+                TraceletSdk.shared.getEventSender().sendHttp([
+                    "success": false,
+                    "status": 0,
+                    "responseText": "custom sync body failed to build",
+                    "isRetry": false,
+                    "retryCount": 0
+                ])
                 return 0
             }
             if let body = customBody, body != traceletNoSyncBodyBuilderSentinel {
@@ -221,9 +202,23 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 sem.wait()
 
                 if fallbackSuccess {
+                    TraceletSdk.shared.getEventSender().sendHttp([
+                        "success": true,
+                        "status": 200,
+                        "responseText": "Synced \(records.count) locations via custom body",
+                        "isRetry": false,
+                        "retryCount": 0
+                    ])
                     return UInt32(records.count)
                 } else {
                     TraceletSdk.shared.logger.debug("Custom body sync failed in syncBatchBlocking")
+                    TraceletSdk.shared.getEventSender().sendHttp([
+                        "success": false,
+                        "status": 0,
+                        "responseText": "Custom body sync failed",
+                        "isRetry": false,
+                        "retryCount": 0
+                    ])
                     return 0
                 }
             }
@@ -252,7 +247,36 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
         )
         
         let syncManager = SyncManager()
-        return try syncManager.syncBatchBlocking(config: syncHttp, records: syncRecords)
+        do {
+            let count = try syncManager.syncBatchBlocking(config: syncHttp, records: syncRecords)
+            if count > 0 {
+                TraceletSdk.shared.getEventSender().sendHttp([
+                    "success": true,
+                    "status": 200,
+                    "responseText": "Synced \(count) locations",
+                    "isRetry": false,
+                    "retryCount": 0
+                ])
+            } else {
+                TraceletSdk.shared.getEventSender().sendHttp([
+                    "success": false,
+                    "status": 0,
+                    "responseText": "Sync failed",
+                    "isRetry": false,
+                    "retryCount": 0
+                ])
+            }
+            return count
+        } catch {
+            TraceletSdk.shared.getEventSender().sendHttp([
+                "success": false,
+                "status": 0,
+                "responseText": error.localizedDescription,
+                "isRetry": false,
+                "retryCount": 0
+            ])
+            throw error
+        }
     }
 }
 

@@ -80,23 +80,9 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                         db.clearLocationsUpTo(lastId)
                         sdk.logger.info("Synced and cleared $count locations.")
                     }
-                    sdk.getEventSender().sendHttp(mapOf(
-                        "success" to true,
-                        "status" to 200,
-                        "responseText" to "Synced $count locations",
-                        "isRetry" to false,
-                        "retryCount" to 0
-                    ))
                 }
             } catch (e: Exception) {
                 sdk.logger.error("Sync failed: ${e.message}")
-                sdk.getEventSender().sendHttp(mapOf(
-                    "success" to false,
-                    "status" to 0,
-                    "responseText" to (e.message ?: "Unknown error"),
-                    "isRetry" to false,
-                    "retryCount" to 0
-                ))
             }
         }
     }
@@ -154,19 +140,74 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
             if (customBody == null) {
                 // Builder registered but failed → abort (0 = nothing synced).
                 sdk.logger.error("Custom sync body failed to build; aborting sync")
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to false,
+                    "status" to 0,
+                    "responseText" to "custom sync body failed to build",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
                 return 0L
             }
             if (customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
                     sdk.logger.debug("executeFallbackHttpSync success: $success")
-                    if (success) records.size.toLong() else 0L
+                    if (success) {
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to true,
+                            "status" to 200,
+                            "responseText" to "Synced ${records.size} locations via custom body",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                        records.size.toLong()
+                    } else {
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to false,
+                            "status" to 0,
+                            "responseText" to "Custom body sync failed",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                        0L
+                    }
                 }
             }
             // sentinel → no builder → fall through to the default sync below.
         }
 
-        return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+        try {
+            val count = syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+            if (count > 0L) {
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to true,
+                    "status" to 200,
+                    "responseText" to "Synced $count locations",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
+            } else {
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to false,
+                    "status" to 0,
+                    "responseText" to "Sync failed",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
+            }
+            return count
+        } catch (e: Exception) {
+            sdk.logger.error("Sync failed: ${e.message}")
+            sdk.getEventSender().sendHttp(mapOf(
+                "success" to false,
+                "status" to 0,
+                "responseText" to (e.message ?: "Unknown error"),
+                "isRetry" to false,
+                "retryCount" to 0
+            ))
+            throw e
+        }
     }
 
     private suspend fun executeFallbackHttpSync(

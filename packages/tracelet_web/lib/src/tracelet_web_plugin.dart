@@ -878,7 +878,7 @@ class TraceletWebPlugin extends TraceletPlatform {
         'useSignificantChangesOnly': c.motion.useSignificantChangesOnly,
       },
       'geofence': {
-        'geofenceModeHighAccuracy': c.geofence.geofenceModeHighAccuracy,
+        'geofenceModeHighAccuracy': c.android.geofenceModeHighAccuracy,
         'geofenceInitialTriggerEntry': c.geofence.geofenceInitialTriggerEntry,
         'geofenceProximityRadius': c.geofence.geofenceProximityRadius,
         'geofenceInitialTrigger': c.geofence.geofenceInitialTrigger,

@@ -47,6 +47,11 @@
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- Some OEMs (older Samsung/HTC/others) emit a quick-boot broadcast
+                     instead of BOOT_COMPLETED when powering on from fast-boot. No extra
+                     permission required and not a restricted action (no Play policy impact). -->
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
 

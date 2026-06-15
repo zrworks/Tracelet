@@ -1643,7 +1643,9 @@ class _IssuesPageState extends State<IssuesPage> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('#185 — persisted geofence events (${geofenceHits.length})'),
+          title: Text(
+            '#185 — persisted geofence events (${geofenceHits.length})',
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: SingleChildScrollView(

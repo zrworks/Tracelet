@@ -127,6 +127,10 @@ public final class MotionDetector {
 
     private var gyroSampler: DispatchSourceTimer?
 
+    /// Emitted per accelerometer sample with the raw total magnitude in g
+    /// (gravity included; ~1 g rest, ~0 g free-fall) for fall detection (#180).
+    public var onAccelRawSample: ((Double) -> Void)?
+
     /// Called when stopOnStationary fires — requests full tracking stop.
     public var onStopRequested: (() -> Void)?
 
@@ -365,6 +369,9 @@ public final class MotionDetector {
         // reports in g units, so this residual is already in g.
         let magnitude = sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) - 1.0
         onAccelSample?(abs(magnitude))
+        // Raw total g (gravity included) for free-fall detection (#180): ~1 g at
+        // rest, ~0 g in free-fall. CMAccelerometer reports in g already.
+        onAccelRawSample?(magnitude + 1.0)
 
         if stateManager.isMoving {
             // Currently moving — detect sustained stillness

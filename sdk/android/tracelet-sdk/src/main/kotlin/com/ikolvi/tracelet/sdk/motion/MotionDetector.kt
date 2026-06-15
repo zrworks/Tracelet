@@ -195,6 +195,14 @@ class MotionDetector(
 
     private var gyroscopeListener: SensorEventListener? = null
 
+    /**
+     * Emitted per accelerometer sample with the **raw total** magnitude in g
+     * (gravity included; ~1 g at rest, ~0 g in free-fall). Used to detect the
+     * free-fall phase of a fall (#180); the gravity-subtracted [onAccelSample]
+     * can't distinguish free-fall (0 g total) from a 2 g impact.
+     */
+    var onAccelRawSample: ((totalG: Double) -> Unit)? = null
+
     // Current detected activity (full mode only)
     private var currentActivity: String = "unknown"
     private var currentConfidence: Int = -1
@@ -664,6 +672,7 @@ class MotionDetector(
                 // Track max magnitude in last 10 samples
                 val absMag = Math.abs(magnitude)
                 onAccelSample?.invoke(absMag / 9.81)
+                onAccelRawSample?.invoke((magnitude + 9.81) / 9.81)
                 if (absMag > maxMagLast10) {
                     maxMagLast10 = absMag
                 }
@@ -794,6 +803,7 @@ class MotionDetector(
                 // Track max magnitude in last 10 samples
                 val absMag = Math.abs(magnitude)
                 onAccelSample?.invoke(absMag / 9.81)
+                onAccelRawSample?.invoke((magnitude + 9.81) / 9.81)
                 if (absMag > maxMagLast10) {
                     maxMagLast10 = absMag
                 }

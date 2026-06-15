@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart';
@@ -59,6 +60,7 @@ class _IssuesPageState extends State<IssuesPage> {
     154,
     159,
     162,
+    185,
   ];
 
   bool _isIssue134Tracking = false;
@@ -103,6 +105,10 @@ class _IssuesPageState extends State<IssuesPage> {
     _issue155Sub?.cancel();
     _issue157Sub?.cancel();
     _issue162Sub?.cancel();
+    _issue185Sub?.cancel();
+    _issue185LatController.dispose();
+    _issue185LngController.dispose();
+    _issue185RadiusController.dispose();
     super.dispose();
   }
 
@@ -1421,6 +1427,18 @@ class _IssuesPageState extends State<IssuesPage> {
   StreamSubscription? _issue162Sub;
   String _issue162Details = '';
 
+  // ==== ISSUE 185: high-accuracy geofence transitions after reboot ====
+  bool _isIssue185Tracking = false;
+  bool _issue185Polygon = false;
+  StreamSubscription? _issue185Sub;
+  int _issue185EventCount = 0;
+  final TextEditingController _issue185LatController =
+      TextEditingController(text: '21.189504');
+  final TextEditingController _issue185LngController =
+      TextEditingController(text: '72.789831');
+  final TextEditingController _issue185RadiusController =
+      TextEditingController(text: '150');
+
   Future<void> _toggleIssue162() async {
     if (_isIssue162Tracking) {
       await Tracelet.stop();
@@ -1470,6 +1488,175 @@ class _IssuesPageState extends State<IssuesPage> {
       });
     } catch (e) {
       _setStatus(162, '❌ FAILED: $e');
+    }
+  }
+
+  // ==== ISSUE 185: high-accuracy geofence transitions after reboot ====
+  // Reproduces ccsframes/tracelet_demo: geofenceModeHighAccuracy + startOnBoot.
+  // High-accuracy mode suppresses OS-level geofence events and detects
+  // transitions purely from the location stream. The boot/task-removal path
+  // used to skip wiring that stream, so after a reboot NO enter/exit fired.
+  // Fills the lat/lng fields from the device's current GPS fix, so you can drop
+  // a geofence on where you are standing instead of typing coordinates.
+  Future<void> _useIssue185CurrentLocation() async {
+    _setStatus(185, 'Getting current position...');
+    try {
+      await Tracelet.requestLocationAuthorization();
+      final loc = await Tracelet.getCurrentPosition(
+        desiredAccuracy: DesiredAccuracy.high,
+        samples: 2,
+      );
+      setState(() {
+        _issue185LatController.text = loc.coords.latitude.toStringAsFixed(6);
+        _issue185LngController.text = loc.coords.longitude.toStringAsFixed(6);
+      });
+      _setStatus(
+        185,
+        '📍 Current location filled '
+        '(${_issue185LatController.text}, ${_issue185LngController.text}). '
+        'Now tap "Start Geofencing".',
+      );
+    } catch (e) {
+      _setStatus(185, '❌ FAILED getting position: $e');
+    }
+  }
+
+  // Builds a square polygon (4 corners) centred on [lat]/[lng], using [radius]
+  // metres as the half-edge. Each vertex is [latitude, longitude].
+  List<List<double>> _squarePolygon(double lat, double lng, double radius) {
+    final dLat = radius / 111320.0;
+    final dLng = radius / (111320.0 * math.cos(lat * math.pi / 180.0));
+    return <List<double>>[
+      [lat - dLat, lng - dLng],
+      [lat - dLat, lng + dLng],
+      [lat + dLat, lng + dLng],
+      [lat + dLat, lng - dLng],
+    ];
+  }
+
+  Future<void> _startIssue185() async {
+    _setStatus(185, 'Requesting permissions...');
+    try {
+      await Tracelet.requestLocationAuthorization();
+
+      final lat = double.tryParse(_issue185LatController.text.trim());
+      final lng = double.tryParse(_issue185LngController.text.trim());
+      final radius =
+          double.tryParse(_issue185RadiusController.text.trim()) ?? 150.0;
+      if (lat == null || lng == null) {
+        _setStatus(185, '❌ FAILED: enter valid latitude/longitude first.');
+        return;
+      }
+
+      await Tracelet.ready(
+        const Config(
+          app: AppConfig(startOnBoot: true, stopOnTerminate: false),
+          android: AndroidConfig(geofenceModeHighAccuracy: true),
+        ),
+      );
+
+      _issue185EventCount = 0;
+      await _issue185Sub?.cancel();
+      _issue185Sub = Tracelet.onGeofence((event) {
+        _issue185EventCount++;
+        _setStatus(
+          185,
+          '✅ Geofence ${event.action.name.toUpperCase()} #$_issue185EventCount '
+          '@ ${event.location.coords.latitude.toStringAsFixed(5)}, '
+          '${event.location.coords.longitude.toStringAsFixed(5)}',
+        );
+      });
+
+      await Tracelet.removeGeofences();
+      await Tracelet.addGeofence(
+        Geofence(
+          identifier: 'ISSUE_185_ZONE',
+          latitude: lat,
+          longitude: lng,
+          radius: radius,
+          vertices: _issue185Polygon
+              ? _squarePolygon(lat, lng, radius)
+              : const <List<double>>[],
+        ),
+      );
+
+      await Tracelet.startGeofences();
+      setState(() => _isIssue185Tracking = true);
+      _setStatus(
+        185,
+        '🟢 High-accuracy geofencing active '
+        '(${_issue185Polygon ? 'POLYGON' : 'CIRCLE'}, startOnBoot=true).\n'
+        '1) Mock-location: cross IN/OUT of the zone → expect ENTER/EXIT.\n'
+        '2) REBOOT the device (a real reboot, not adb broadcast).\n'
+        '3) WITHOUT reopening the app, cross the zone again with the mock app.\n'
+        'Fixed → ENTER/EXIT fire after reboot. Bug → nothing fires after reboot.\n'
+        '(Samsung: set battery usage to Unrestricted.)',
+      );
+    } catch (e) {
+      _setStatus(185, '❌ FAILED: $e');
+    }
+  }
+
+  Future<void> _stopIssue185() async {
+    await _issue185Sub?.cancel();
+    _issue185Sub = null;
+    try {
+      await Tracelet.stop();
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isIssue185Tracking = false);
+      _setStatus(185, 'Stopped.');
+    }
+  }
+
+  // After a reboot the app is killed, so the in-app onGeofence callback above
+  // cannot fire — transitions are handled HEADLESSLY. Tracelet persists every
+  // transition to its SQLite log store, so reopening and reading the log proves
+  // the headless geofence events fired while the UI was dead.
+  Future<void> _viewIssue185Logs() async {
+    try {
+      final log = await Tracelet.getLog();
+      final relevant = const LineSplitter()
+          .convert(log)
+          .where(
+            (l) =>
+                l.toLowerCase().contains('geofence') ||
+                l.contains('ENTER') ||
+                l.contains('EXIT') ||
+                l.toLowerCase().contains('boot') ||
+                l.toLowerCase().contains('proximity'),
+          )
+          .toList();
+      final body = relevant.isEmpty
+          ? 'No geofence/boot lines in the persisted log yet.\n\n'
+                'Cross the zone (mock location) — after a reboot too — then reopen '
+                'and tap this again. Headless transitions are written here even '
+                'when the UI is dead.'
+          : relevant.reversed.take(80).toList().reversed.join('\n');
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('#185 — persisted log (geofence/boot)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                body,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _setStatus(185, '❌ FAILED reading log: $e');
     }
   }
 
@@ -2100,6 +2287,138 @@ class _IssuesPageState extends State<IssuesPage> {
                       ),
                       label: Text(
                         _isIssue162Tracking ? 'Stop' : 'Start tracking',
+                      ),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 185,
+                  title: 'Geofence dead after reboot (high-accuracy)',
+                  description:
+                      'Reproduces ccsframes/tracelet_demo: geofenceModeHighAccuracy '
+                      '+ startOnBoot. High-accuracy mode suppresses OS-level geofence '
+                      'events and detects transitions purely from the location stream. '
+                      'The boot/task-removal path used to skip wiring that stream, so '
+                      'after a reboot NO enter/exit fired. Tap "Use My Location" to drop '
+                      'the zone where you are, pick Circle or Polygon, then test with a '
+                      'mock-location app before AND after a real reboot. Radius doubles '
+                      'as the polygon half-edge.',
+                  actions: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _issue185LatController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Latitude',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _issue185LngController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Longitude',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                        signed: true,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: _issue185RadiusController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Radius',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: _isIssue185Tracking
+                                    ? null
+                                    : _useIssue185CurrentLocation,
+                                icon: const Icon(Icons.gps_fixed),
+                                label: const Text('Use My Location'),
+                              ),
+                              SegmentedButton<bool>(
+                                segments: const [
+                                  ButtonSegment(
+                                    value: false,
+                                    icon: Icon(Icons.circle_outlined),
+                                    label: Text('Circle'),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    icon: Icon(Icons.pentagon_outlined),
+                                    label: Text('Polygon'),
+                                  ),
+                                ],
+                                selected: {_issue185Polygon},
+                                onSelectionChanged: _isIssue185Tracking
+                                    ? null
+                                    : (s) => setState(
+                                        () => _issue185Polygon = s.first,
+                                      ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilledButton.icon(
+                                onPressed: _isIssue185Tracking
+                                    ? null
+                                    : _startIssue185,
+                                icon: const Icon(Icons.my_location),
+                                label: const Text('Start Geofencing'),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: _isIssue185Tracking
+                                    ? _stopIssue185
+                                    : null,
+                                icon: const Icon(Icons.stop),
+                                label: const Text('Stop'),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: _viewIssue185Logs,
+                                icon: const Icon(Icons.receipt_long),
+                                label: const Text('View Logs'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],

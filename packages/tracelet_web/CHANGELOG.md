@@ -1,3 +1,7 @@
+## 3.3.3
+
+ - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+
 ## 3.3.1
 
 - **CHORE**: version bump for patch release

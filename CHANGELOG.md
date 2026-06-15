@@ -15,6 +15,64 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`tracelet` - `v3.3.3`](#tracelet---v333)
+ - [`tracelet_android` - `v3.3.3`](#tracelet_android---v333)
+ - [`tracelet_ios` - `v3.3.3`](#tracelet_ios---v333)
+ - [`tracelet_platform_interface` - `v3.3.3`](#tracelet_platform_interface---v333)
+ - [`tracelet_sync` - `v3.3.3`](#tracelet_sync---v333)
+ - [`tracelet_web` - `v3.3.3`](#tracelet_web---v333)
+ - [`tracelet_doctor` - `v3.3.3`](#tracelet_doctor---v333)
+ - [`tracelet_supabase` - `v3.3.3`](#tracelet_supabase---v333)
+ - [`tracelet_firebase` - `v3.3.3`](#tracelet_firebase---v333)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_doctor` - `v3.3.3`
+ - `tracelet_supabase` - `v3.3.3`
+ - `tracelet_firebase` - `v3.3.3`
+
+---
+
+#### `tracelet` - `v3.3.3`
+
+ - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))
+
+#### `tracelet_android` - `v3.3.3`
+
+ - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))
+
+#### `tracelet_ios` - `v3.3.3`
+
+ - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))
+
+#### `tracelet_platform_interface` - `v3.3.3`
+
+ - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+ - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))
+
+#### `tracelet_sync` - `v3.3.3`
+
+ - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+
+#### `tracelet_web` - `v3.3.3`
+
+ - **REFACTOR**: standardize HTTP sync event reporting across iOS and Android and fix geofence configuration mapping in web plugin. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))
+
+
+## 2026-06-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`tracelet_android` - `v3.3.2`](#tracelet_android---v332)
  - [`tracelet_ios` - `v3.3.2`](#tracelet_ios---v332)
  - [`tracelet` - `v3.3.2`](#tracelet---v332)

@@ -738,7 +738,6 @@ class MethodChannelTracelet extends TraceletPlatform {
   };
 
   Map<String, Object?> _geofenceToMap(TlGeofenceConfig c) => {
-    'geofenceModeHighAccuracy': c.geofenceModeHighAccuracy,
     'geofenceInitialTriggerEntry': c.geofenceInitialTriggerEntry,
     'geofenceProximityRadius': c.geofenceProximityRadius,
   };

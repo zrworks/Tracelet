@@ -42,6 +42,7 @@ object LocationMapper {
         odometer: Double,
         eventType: String = "location",
         eventPayload: String? = null,
+        address: String? = null,
     ): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>(
             "uuid" to (uuid ?: id.toString()),
@@ -75,7 +76,18 @@ object LocationMapper {
                 // ignore
             }
         }
-        
+
+        // #187: surface the persisted reverse-geocoded address into the same
+        // nested shape used by the live onLocation event, so it appears in
+        // getLocations() and the sync payload.
+        if (!address.isNullOrBlank()) {
+            try {
+                map["address"] = jsonToKotlin(JSONObject(address))
+            } catch (e: Exception) {
+                // ignore malformed address JSON
+            }
+        }
+
         applyRouteContext(map, routeContext)
         return map
     }

@@ -39,6 +39,24 @@ class TraceletStartupProvider : ContentProvider() {
                     HeadlessTaskService(c, ConfigManager.getInstance(c))
                 }
             }
+            // Wire the headless EVENT bridge too. Without this, a cold boot
+            // (BootReceiver → LocationService, no Flutter engine) leaves
+            // eventSenderFactory null, so LocationService.startBootTracking falls
+            // back to a no-op ListenerEventSender and background location / motion
+            // / geofence events (incl. geofenceModeHighAccuracy enter/exit) are
+            // silently dropped instead of reaching the registered headless task.
+            // Mirrors TraceletAndroidPlugin.onAttachedToEngine; overridden by the
+            // richer main-engine path when the app is later opened.
+            if (TraceletBootstrap.eventSenderFactory == null) {
+                TraceletBootstrap.eventSenderFactory = { c ->
+                    val dispatcher = EventDispatcher()
+                    val h = HeadlessTaskService(c, ConfigManager.getInstance(c))
+                    dispatcher.headlessFallback = { name, data ->
+                        if (h.isRegistered()) h.dispatchEvent(name, data)
+                    }
+                    dispatcher
+                }
+            }
             val sdk = TraceletSdk.getInstance(ctx)
             if (sdk.dartSyncInterceptor == null) {
                 sdk.dartSyncInterceptor = HeadlessSyncInterceptor(ctx)

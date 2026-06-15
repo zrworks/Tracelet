@@ -67,9 +67,9 @@ class OemConfigOverrideTest {
         configManager.setConfig(mapOf(
             "android" to mapOf(
                 "foregroundService" to mapOf("enabled" to false),
-                "periodicUseForegroundService" to true
-            ),
-            "geofence" to mapOf("geofenceModeHighAccuracy" to true)
+                "periodicUseForegroundService" to true,
+                "geofenceModeHighAccuracy" to true
+            )
         ))
 
         assertFalse(configManager.isForegroundServiceEnabled())

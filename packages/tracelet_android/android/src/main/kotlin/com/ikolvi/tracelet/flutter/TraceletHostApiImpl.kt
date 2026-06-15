@@ -281,7 +281,6 @@ class TraceletHostApiImpl(
             put("speedWakeConfirmCount", c.motion.speedWakeConfirmCount)
         })
         put("geofence", buildMap {
-            put("geofenceModeHighAccuracy", c.geofence.geofenceModeHighAccuracy)
             put("geofenceInitialTriggerEntry", c.geofence.geofenceInitialTriggerEntry)
             put("geofenceProximityRadius", c.geofence.geofenceProximityRadius)
             put("geofenceInitialTrigger", c.geofence.geofenceInitialTrigger)

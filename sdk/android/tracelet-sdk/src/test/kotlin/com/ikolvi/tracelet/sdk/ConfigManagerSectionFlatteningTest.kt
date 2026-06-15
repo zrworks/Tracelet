@@ -666,7 +666,6 @@ internal class ConfigManagerSectionFlatteningTest {
                 "isMoving" to false
             ),
             "geofence" to mapOf<String, Any?>(
-                "geofenceModeHighAccuracy" to false,
                 "geofenceInitialTriggerEntry" to true,
                 "geofenceProximityRadius" to 1000,
                 "geofenceInitialTrigger" to true

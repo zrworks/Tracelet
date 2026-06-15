@@ -1760,7 +1760,6 @@ class MotionConfig {
 class GeofenceConfig {
   /// Creates a new [GeofenceConfig] with optional overrides.
   const GeofenceConfig({
-    this.geofenceModeHighAccuracy = false,
     this.geofenceInitialTriggerEntry = true,
     this.geofenceInitialTrigger = true,
     this.geofenceProximityRadius = 1000,
@@ -1769,10 +1768,6 @@ class GeofenceConfig {
   /// Creates a [GeofenceConfig] from a map.
   factory GeofenceConfig.fromMap(Map<String, Object?> map) {
     return GeofenceConfig(
-      geofenceModeHighAccuracy: ensureBool(
-        map['geofenceModeHighAccuracy'],
-        fallback: false,
-      ),
       geofenceInitialTriggerEntry: ensureBool(
         map['geofenceInitialTriggerEntry'],
         fallback: true,
@@ -1787,10 +1782,6 @@ class GeofenceConfig {
       ),
     );
   }
-
-  /// Enable high-accuracy location tracking during geofence monitoring (Android only).
-  /// Defaults to `false`.
-  final bool geofenceModeHighAccuracy;
 
   /// Fire enter trigger immediately upon registration if device is already inside the geofence.
   /// Defaults to `true`.
@@ -1808,7 +1799,6 @@ class GeofenceConfig {
   /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      'geofenceModeHighAccuracy': geofenceModeHighAccuracy,
       'geofenceInitialTriggerEntry': geofenceInitialTriggerEntry,
       'geofenceInitialTrigger': geofenceInitialTrigger,
       'geofenceProximityRadius': geofenceProximityRadius,
@@ -1817,7 +1807,6 @@ class GeofenceConfig {
 
   /// Converts to Pigeon [TlGeofenceConfig].
   TlGeofenceConfig toTlConfig() => TlGeofenceConfig(
-    geofenceModeHighAccuracy: geofenceModeHighAccuracy,
     geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
     geofenceProximityRadius: geofenceProximityRadius,
     geofenceInitialTrigger: geofenceInitialTrigger,
@@ -1828,14 +1817,12 @@ class GeofenceConfig {
       identical(this, other) ||
       other is GeofenceConfig &&
           runtimeType == other.runtimeType &&
-          geofenceModeHighAccuracy == other.geofenceModeHighAccuracy &&
           geofenceInitialTriggerEntry == other.geofenceInitialTriggerEntry &&
           geofenceInitialTrigger == other.geofenceInitialTrigger &&
           geofenceProximityRadius == other.geofenceProximityRadius;
 
   @override
   int get hashCode => Object.hash(
-    geofenceModeHighAccuracy,
     geofenceInitialTriggerEntry,
     geofenceInitialTrigger,
     geofenceProximityRadius,

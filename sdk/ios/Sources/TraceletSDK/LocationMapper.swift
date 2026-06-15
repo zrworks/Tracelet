@@ -34,7 +34,8 @@ public enum LocationMapper {
         isMoving: Bool,
         odometer: Double,
         eventType: String? = nil,
-        eventPayload: String? = nil
+        eventPayload: String? = nil,
+        address: String? = nil
     ) -> [String: Any] {
         var map: [String: Any] = [
             "uuid": uuid ?? String(id),
@@ -67,7 +68,15 @@ public enum LocationMapper {
                 map[eventType] = json
             }
         }
-        
+
+        // #187: surface the persisted reverse-geocoded address into the same
+        // nested shape used by the live onLocation event.
+        if let address = address,
+           let data = address.data(using: .utf8),
+           let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+            map["address"] = json
+        }
+
         applyRouteContext(&map, routeContext)
         return map
     }

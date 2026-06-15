@@ -205,16 +205,23 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       final state = await tl.Tracelet.getState();
       if (state.enabled) {
-        // We're already tracking, bypass initialization and hook up the UI
+        // Tracking was active (persisted state says enabled), but on a fresh
+        // process the NATIVE runtime is not `ready()` yet — getState() reads
+        // persisted state, it does not initialize the engine. We MUST call
+        // ready() again here, otherwise a later start()/changePace() throws
+        // NOT_READY ("Call ready() before start()"). ready() is idempotent and
+        // does not stop active tracking. (#187 repro: stop `flutter run`, run
+        // again, press start → NOT_READY.)
         _subscribeEvents();
+        final readyState = await tl.Tracelet.ready(_buildConfig());
         setState(() {
           _isReady = true;
-          _isTracking = state.enabled;
-          _isMoving = state.isMoving;
-          _isPeriodicMode = state.trackingMode == tl.TrackingMode.periodic;
-          _pluginState = state;
+          _isTracking = readyState.enabled;
+          _isMoving = readyState.isMoving;
+          _isPeriodicMode = readyState.trackingMode == tl.TrackingMode.periodic;
+          _pluginState = readyState;
         });
-        _addLog('RESTORE', 'Restored active tracking state from background');
+        _addLog('RESTORE', 'Restored active tracking state + re-ran ready()');
 
         // Grab the most recent location to populate the map/UI immediately
         final locs = await tl.Tracelet.getLocations();
@@ -373,11 +380,17 @@ class _DashboardPageState extends State<DashboardPage>
             ? ' [${loc.locationSource.toUpperCase()}]'
             : '';
         final reducedTag = loc.reducedAccuracy ? ' [REDUCED]' : '';
+        // #187: surface the reverse-geocoded address (resolveAddress: true) so it
+        // is visible live, independent of the DB-sourced sync batch.
+        final addr = loc.address;
+        final addrTag = addr != null
+            ? '  addr=[${[addr.street, addr.city, addr.state, addr.postalCode, addr.country].where((e) => e != null && e.isNotEmpty).join(', ')}]'
+            : '';
         _addLog(
           tag,
           '${loc.coords.latitude.toStringAsFixed(6)}, ${loc.coords.longitude.toStringAsFixed(6)}  '
           'acc=${loc.coords.accuracy.toStringAsFixed(1)}m  spd=${loc.coords.speed.toStringAsFixed(1)}m/s  '
-          'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo$srcTag$reducedTag',
+          'odo=${loc.odometer.toStringAsFixed(0)}m$mockTag$heuristicsInfo$srcTag$reducedTag$addrTag',
         );
       }),
     );
@@ -559,6 +572,78 @@ class _DashboardPageState extends State<DashboardPage>
   // ── Lifecycle ───────────────────────────────────────────────────────────
 
   /// Initialize with the *full-featured* config showcasing all new features.
+  /// The canonical Tracelet configuration for this demo. Used by BOTH the
+  /// initial `ready()` and the restore path, so a re-launched app re-establishes
+  /// the native runtime instead of assuming it's still ready (see #187 repro:
+  /// `flutter run` again → start() failed with NOT_READY because the restore
+  /// path set `_isReady = true` without ever calling `ready()`).
+  tl.Config _buildConfig() {
+    return tl.Config(
+      geo: const tl.GeoConfig(
+        distanceFilter: 0,
+        resolveAddress: true,
+        filter: tl.LocationFilter(
+          useKalmanFilter: true,
+          mockDetectionLevel: 2, // 2 = HEURISTIC
+        ),
+        // ── Battery budget (auto-adjusts tracking to save battery) ──
+        batteryBudgetPerHour: 3, // 3% max drain per hour
+      ),
+      app: const tl.AppConfig(
+        stopOnTerminate: false,
+        startOnBoot: true,
+        heartbeatInterval: 10,
+      ),
+      android: tl.AndroidConfig(
+        periodicUseForegroundService: true, // KEEP NOTIFICATION ALIVE
+        locationUpdateInterval: 2000, // 2s
+        deferTime: 1000, // 10s — batches ~5 locations every 10s
+        foregroundService: _isAndroid
+            ? const tl.ForegroundServiceConfig(
+                notificationTitle: '📍 Tracelet Demo Active',
+                notificationText:
+                    'Smart Notifications — disappears when app is open!',
+                channelId: 'tracelet_demo_channel',
+                channelName: 'Tracelet Demo Background',
+                notificationPriority: tl.NotificationPriority.high,
+                showNotificationOnPauseOnly:
+                    true, // ✨ Smart Visibility — hide while app is foregrounded
+              )
+            : const tl.ForegroundServiceConfig(enabled: false),
+        scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
+      ),
+      ios: tl.IosConfig(
+        activityType: _isAndroid
+            ? tl.LocationActivityType.other
+            : tl.LocationActivityType.otherNavigation,
+        preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
+      ),
+      motion: const tl.MotionConfig(
+        stopTimeout: 1, // 1 minute for fast stop-timeout testing
+        motionDetectionMode: tl.MotionDetectionMode.smart,
+        shakeThreshold: 2, // prevent ultra-sensitive motion triggering
+        speedStationaryDelay: 30, // Make it quicker for demo testing
+        stationaryPeriodicInterval: 60, // Quick checks when stationary
+      ),
+      http: tl.HttpConfig(
+        url:
+            tl.Tracelet.activeConfig.http.url ??
+            'http://192.168.20.103:8099/locations',
+        autoSyncDelay: 5000,
+      ),
+      audit: const tl.AuditConfig(enabled: true),
+      security: const tl.SecurityConfig(encryptDatabase: true),
+      persistence: const tl.PersistenceConfig(
+        maxDaysToPersist: 7,
+        maxRecordsToPersist: 5000,
+      ),
+      logger: const tl.LoggerConfig(
+        logLevel: tl.LogLevel.verbose,
+        debug: true,
+      ),
+    );
+  }
+
   Future<void> _initialize() async {
     try {
       _subscribeEvents();
@@ -611,78 +696,7 @@ class _DashboardPageState extends State<DashboardPage>
         );
       }
 
-      final state = await tl.Tracelet.ready(
-        tl.Config(
-          geo: const tl.GeoConfig(
-            distanceFilter: 0,
-            filter: tl.LocationFilter(
-              useKalmanFilter: true,
-              mockDetectionLevel: 2, // 2 = HEURISTIC
-            ),
-            // ── Battery budget (auto-adjusts tracking to save battery) ──
-            batteryBudgetPerHour: 3, // 3% max drain per hour
-          ),
-          app: const tl.AppConfig(
-            stopOnTerminate: false,
-            startOnBoot: true,
-            heartbeatInterval: 10,
-          ),
-          // ── Issue #74 fix verification ──
-          // Custom Android config with distinctive notification and deferTime.
-          // Before the fix, these values were silently ignored and defaults
-          // were used instead. After the fix, the notification should show
-          // the custom title/text and deferTime should be 60s.
-          android: tl.AndroidConfig(
-            periodicUseForegroundService: true, // KEEP NOTIFICATION ALIVE
-            locationUpdateInterval: 2000, // 2s
-            deferTime: 1000, // 10s — batches ~5 locations every 10s
-            foregroundService: _isAndroid
-                ? const tl.ForegroundServiceConfig(
-                    notificationTitle: '📍 Tracelet Demo Active',
-                    notificationText:
-                        'Smart Notifications — disappears when app is open!',
-                    channelId: 'tracelet_demo_channel',
-                    channelName: 'Tracelet Demo Background',
-                    notificationPriority: tl.NotificationPriority.high,
-                    showNotificationOnPauseOnly:
-                        true, // ✨ New Feature: Smart Visibility — hide while app is foregrounded
-                  )
-                : const tl.ForegroundServiceConfig(enabled: false),
-            scheduleUseAlarmManager: _isAndroid, // Android-only: exact alarms
-          ),
-          ios: tl.IosConfig(
-            activityType: _isAndroid
-                ? tl.LocationActivityType.other
-                : tl.LocationActivityType.otherNavigation,
-            preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
-          ),
-          motion: const tl.MotionConfig(
-            stopTimeout: 1, // 1 minute for fast stop-timeout testing
-            motionDetectionMode: tl.MotionDetectionMode.smart,
-            shakeThreshold:
-                2, // Increased to 2.0 to prevent ultra-sensitive motion triggering
-            speedStationaryDelay: 30, // Make it quicker for demo testing
-            stationaryPeriodicInterval: 60, // Quick checks when stationary
-          ),
-          http: tl.HttpConfig(
-            url:
-                tl.Tracelet.activeConfig.http.url ??
-                'http://192.168.20.103:8099/locations',
-            // ── New features ──
-            autoSyncDelay: 5000,
-          ),
-          audit: const tl.AuditConfig(enabled: true),
-          security: const tl.SecurityConfig(encryptDatabase: true),
-          persistence: const tl.PersistenceConfig(
-            maxDaysToPersist: 7,
-            maxRecordsToPersist: 5000,
-          ),
-          logger: const tl.LoggerConfig(
-            logLevel: tl.LogLevel.verbose,
-            debug: true,
-          ),
-        ),
-      );
+      final state = await tl.Tracelet.ready(_buildConfig());
 
       // Verify the new RouteContext feature
       await tl.Tracelet.setRouteContext(
@@ -3018,7 +3032,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       await tl.Tracelet.setConfig(
         const tl.Config(
-          geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: true),
+          android: tl.AndroidConfig(geofenceModeHighAccuracy: true),
         ),
       );
       final state = await tl.Tracelet.startGeofences();

@@ -1432,12 +1432,15 @@ class _IssuesPageState extends State<IssuesPage> {
   bool _issue185Polygon = false;
   StreamSubscription? _issue185Sub;
   int _issue185EventCount = 0;
-  final TextEditingController _issue185LatController =
-      TextEditingController(text: '21.189504');
-  final TextEditingController _issue185LngController =
-      TextEditingController(text: '72.789831');
-  final TextEditingController _issue185RadiusController =
-      TextEditingController(text: '150');
+  final TextEditingController _issue185LatController = TextEditingController(
+    text: '21.189504',
+  );
+  final TextEditingController _issue185LngController = TextEditingController(
+    text: '72.789831',
+  );
+  final TextEditingController _issue185RadiusController = TextEditingController(
+    text: '150',
+  );
 
   Future<void> _toggleIssue162() async {
     if (_isIssue162Tracking) {

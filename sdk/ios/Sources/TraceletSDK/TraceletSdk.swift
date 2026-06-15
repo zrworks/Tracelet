@@ -906,7 +906,8 @@ public final class TraceletSdk {
             isMoving: record.isMoving,
             odometer: locationEngine.getOdometer(),
             eventType: record.eventType,
-            eventPayload: record.eventPayload
+            eventPayload: record.eventPayload,
+            address: record.address
         )
     }
 
@@ -1035,6 +1036,16 @@ public final class TraceletSdk {
                 eventPayload = jsonString
             }
         }
+
+        // #187: persist the reverse-geocoded address (added by resolveAddress) so
+        // it survives into the DB-sourced sync payload, not just the live event.
+        var address: String? = params["address"] as? String
+        if address == nil, let addressData = params["address"] as? [String: Any] {
+            if let jsonData = try? JSONSerialization.data(withJSONObject: addressData, options: []),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                address = jsonString
+            }
+        }
         
         // Prevent duplicate insertions of the exact same GPS fix
         if eventType == "location", let ts = timestamp, ts == lastInsertedTimestamp {
@@ -1092,7 +1103,8 @@ public final class TraceletSdk {
                 routeContext: routeContext,
                 timestampOverride: timestamp,
                 eventType: eventType,
-                eventPayload: eventPayload
+                eventPayload: eventPayload,
+                address: address
             )
             // Notify the sync plugin so it can trigger auto-sync
             if let sink = syncProvider as? LocationDataSink {

@@ -1183,7 +1183,7 @@ public protocol DatabaseManagerProtocol: AnyObject, Sendable {
     /**
      * Inserts a new location record into the database.
      */
-    func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?) throws  -> Int64
+    func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?, address: String?) throws  -> Int64
     
     /**
      * Inserts a log entry into the database.
@@ -1538,7 +1538,7 @@ open func insertGeofence(identifier: String, lat: Double, lng: Double, radius: D
     /**
      * Inserts a new location record into the database.
      */
-open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?)throws  -> Int64  {
+open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, isMoving: Bool, activity: String, routeContext: String?, timestampOverride: String?, eventType: String?, eventPayload: String?, address: String?)throws  -> Int64  {
     return try  FfiConverterInt64.lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
     uniffi_tracelet_core_fn_method_databasemanager_insert_location(
             self.uniffiCloneHandle(),
@@ -1555,7 +1555,8 @@ open func insertLocation(uuid: String?, lat: Double, lng: Double, acc: Double, s
         FfiConverterOptionString.lower(routeContext),
         FfiConverterOptionString.lower(timestampOverride),
         FfiConverterOptionString.lower(eventType),
-        FfiConverterOptionString.lower(eventPayload),$0
+        FfiConverterOptionString.lower(eventPayload),
+        FfiConverterOptionString.lower(address),$0
     )
 })
 }
@@ -5023,6 +5024,12 @@ public struct DbLocationRecord: Equatable, Hashable {
      * and action). `None` for plain location records.
      */
     public var eventPayload: String?
+    /**
+     * Optional reverse-geocoded address as a JSON object string (e.g.
+     * `{"street":..,"city":..,"state":..,"postalCode":..,"country":..}`).
+     * Populated when `resolveAddress` is enabled (#187). `None` otherwise.
+     */
+    public var address: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -5033,7 +5040,12 @@ public struct DbLocationRecord: Equatable, Hashable {
         /**
          * Optional JSON payload with event-specific data (e.g. geofence identifier
          * and action). `None` for plain location records.
-         */eventPayload: String?) {
+         */eventPayload: String?, 
+        /**
+         * Optional reverse-geocoded address as a JSON object string (e.g.
+         * `{"street":..,"city":..,"state":..,"postalCode":..,"country":..}`).
+         * Populated when `resolveAddress` is enabled (#187). `None` otherwise.
+         */address: String?) {
         self.id = id
         self.uuid = uuid
         self.timestamp = timestamp
@@ -5049,6 +5061,7 @@ public struct DbLocationRecord: Equatable, Hashable {
         self.routeContext = routeContext
         self.eventType = eventType
         self.eventPayload = eventPayload
+        self.address = address
     }
 
     
@@ -5081,7 +5094,8 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
                 activity: FfiConverterString.read(from: &buf), 
                 routeContext: FfiConverterOptionString.read(from: &buf), 
                 eventType: FfiConverterString.read(from: &buf), 
-                eventPayload: FfiConverterOptionString.read(from: &buf)
+                eventPayload: FfiConverterOptionString.read(from: &buf), 
+                address: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -5101,6 +5115,7 @@ public struct FfiConverterTypeDbLocationRecord: FfiConverterRustBuffer {
         FfiConverterOptionString.write(value.routeContext, into: &buf)
         FfiConverterString.write(value.eventType, into: &buf)
         FfiConverterOptionString.write(value.eventPayload, into: &buf)
+        FfiConverterOptionString.write(value.address, into: &buf)
     }
 }
 
@@ -9333,7 +9348,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_geofence() != 35448) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 14450) {
+    if (uniffi_tracelet_core_checksum_method_databasemanager_insert_location() != 41177) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_databasemanager_insert_log() != 43891) {

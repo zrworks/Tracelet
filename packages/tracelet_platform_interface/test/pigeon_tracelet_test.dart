@@ -687,7 +687,6 @@ void main() {
         speedWakeConfirmCount: 1,
       ),
       geofence: TlGeofenceConfig(
-        geofenceModeHighAccuracy: false,
         geofenceInitialTriggerEntry: true,
         geofenceProximityRadius: 1000,
         geofenceInitialTrigger: true,

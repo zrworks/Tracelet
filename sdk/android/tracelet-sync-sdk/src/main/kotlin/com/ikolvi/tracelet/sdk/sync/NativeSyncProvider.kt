@@ -101,6 +101,13 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                     // builder exists). Abort instead of posting an error object
                     // or the default payload.
                     sdk.logger.error("NativeSyncProvider: custom sync body failed to build; aborting sync")
+                    sdk.getEventSender().sendHttp(mapOf(
+                        "success" to false,
+                        "status" to 0,
+                        "responseText" to "custom sync body failed to build",
+                        "isRetry" to false,
+                        "retryCount" to 0
+                    ))
                     return
                 }
 
@@ -184,6 +191,14 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
                         "isRetry" to false,
                         "retryCount" to 0
                     ))
+                } else {
+                    sdk.getEventSender().sendHttp(mapOf(
+                        "success" to false,
+                        "status" to 0,
+                        "responseText" to "Sync failed",
+                        "isRetry" to false,
+                        "retryCount" to 0
+                    ))
                 }
             } catch (e: Exception) {
                 sdk.logger.error("NativeSyncProvider: Sync failed: ${e.message}")
@@ -248,19 +263,74 @@ class NativeSyncProvider(private val sdk: TraceletSdk) : LocationDataSink, Trace
             if (customBody == null) {
                 // Builder registered but failed → abort (0 = nothing synced).
                 sdk.logger.error("NativeSyncProvider: custom sync body failed to build; aborting sync")
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to false,
+                    "status" to 0,
+                    "responseText" to "custom sync body failed to build",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
                 return 0L
             }
             if (customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                 return kotlinx.coroutines.runBlocking {
                     val success = executeFallbackHttpSync(config, customBody, interceptor)
                     sdk.logger.debug("NativeSyncProvider: Fallback HTTP success: $success")
-                    if (success) records.size.toLong() else 0L
+                    if (success) {
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to true,
+                            "status" to 200,
+                            "responseText" to "Synced ${records.size} locations via custom body",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                        records.size.toLong()
+                    } else {
+                        sdk.getEventSender().sendHttp(mapOf(
+                            "success" to false,
+                            "status" to 0,
+                            "responseText" to "Custom body sync failed",
+                            "isRetry" to false,
+                            "retryCount" to 0
+                        ))
+                        0L
+                    }
                 }
             }
             // sentinel → no builder → fall through to the default sync below.
         }
 
-        return syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+        try {
+            val count = syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
+            if (count > 0L) {
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to true,
+                    "status" to 200,
+                    "responseText" to "Synced $count locations",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
+            } else {
+                sdk.getEventSender().sendHttp(mapOf(
+                    "success" to false,
+                    "status" to 0,
+                    "responseText" to "Sync failed",
+                    "isRetry" to false,
+                    "retryCount" to 0
+                ))
+            }
+            return count
+        } catch (e: Exception) {
+            sdk.logger.error("NativeSyncProvider: Sync failed: ${e.message}")
+            sdk.getEventSender().sendHttp(mapOf(
+                "success" to false,
+                "status" to 0,
+                "responseText" to (e.message ?: "Unknown error"),
+                "isRetry" to false,
+                "retryCount" to 0
+            ))
+            throw e
+        }
     }
 
     private suspend fun executeFallbackHttpSync(

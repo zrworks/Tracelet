@@ -41,7 +41,8 @@ class TraceletDatabaseQueryTest {
             routeContext = null,
             timestampOverride = java.time.Instant.ofEpochMilli(timestamp).toString(),
             eventType = null,
-            eventPayload = null
+            eventPayload = null,
+            address = null
         )
     }
 

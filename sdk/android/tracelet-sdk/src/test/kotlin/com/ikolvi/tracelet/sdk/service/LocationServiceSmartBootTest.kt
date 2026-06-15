@@ -121,6 +121,37 @@ class LocationServiceSmartBootTest {
     }
 
     @Test
+    fun `boot start in high-accuracy geofence mode wires the proximity location stream (issue 185)`() {
+        // Regression: geofenceModeHighAccuracy suppresses OS-level geofence
+        // transitions and relies ENTIRELY on per-location proximity evaluation
+        // (LocationEngine.onLocationUpdate -> evaluateHighAccuracyProximity). The
+        // boot/task-removal path used to re-register geofences but never wire that
+        // callback, so after a reboot NO enter/exit events ever fired even though
+        // the foreground service and engine were running.
+        config.setConfig(mapOf(
+            "trackingMode" to 1, // GEOFENCES
+            "motionDetectionMode" to 2, // SMART
+            "geofenceModeHighAccuracy" to true,
+            "foregroundChannelId" to "test_channel",
+            "bootStrategy" to true,
+        ))
+        state.enabled = true
+        state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.GEOFENCES
+
+        val intent = android.content.Intent(context, LocationService::class.java)
+        intent.action = LocationService.ACTION_START
+        intent.putExtra("boot_start", true)
+        serviceController.create().withIntent(intent).startCommand(0, 1)
+
+        val engine = LocationService.bootLocationEngine
+        assertNotNull(engine, "bootLocationEngine should be initialized in geofence boot mode")
+        assertNotNull(
+            engine.onLocationUpdate,
+            "onLocationUpdate must be wired after boot so high-accuracy geofence transitions can fire",
+        )
+    }
+
+    @Test
     fun `when killed state detects motion WITH cached location, sync is called immediately`() {
         val intent = android.content.Intent(context, LocationService::class.java)
         intent.action = LocationService.ACTION_START

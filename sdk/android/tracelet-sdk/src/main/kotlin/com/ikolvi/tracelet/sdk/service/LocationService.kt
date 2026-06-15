@@ -950,7 +950,24 @@ class LocationService : Service(), DefaultLifecycleObserver {
                 val geoManager = GeofenceManager(ctx, config, eventSender)
                 geoManager.reRegisterAll()
                 GeofenceBroadcastReceiver.geofenceManager = geoManager
-                TraceletLog.debug("Geofence registrations restored after boot/task-removal")
+
+                // Wire the location stream into proximity evaluation. Without this,
+                // geofenceModeHighAccuracy — which suppresses OS-level geofence
+                // transitions and relies entirely on per-location proximity checks
+                // (see GeofenceManager.handleGeofenceEvent / evaluateHighAccuracyProximity)
+                // — produces NO enter/exit events after a reboot or task removal:
+                // the foreground service and engine run, but transitions never fire.
+                // Mirrors TraceletSdk.startGeofences().
+                if (config.getGeofenceModeHighAccuracy()) {
+                    geoManager.clearHighAccuracyState()
+                }
+                bootLocationEngine?.onLocationUpdate = { lat, lng ->
+                    geoManager.updateProximity(lat, lng)
+                    if (config.getGeofenceModeHighAccuracy()) {
+                        geoManager.evaluateHighAccuracyProximity(lat, lng)
+                    }
+                }
+                TraceletLog.debug("Geofence registrations restored after boot/task-removal (proximity stream wired)")
             }
         }
 

@@ -433,9 +433,13 @@ class TraceletSdk private constructor(private val context: Context) {
                     }
                     val useForeground = configManager.isForegroundServiceEnabled()
                     if (useForeground) {
-                        LocationService.switchToStationaryGeofences(locationEngine, stateManager)
+                        LocationService.switchToStationaryGeofences(locationEngine, stateManager, configManager)
                     } else {
-                        locationEngine.stop()
+                        if (configManager.getGeofenceModeHighAccuracy()) {
+                            locationEngine.start()
+                        } else {
+                            locationEngine.stop()
+                        }
                         stateManager.trackingMode = TrackingMode.GEOFENCES
                     }
                     // Dispatch motionchange event so Flutter UI updates _isMoving
@@ -1224,6 +1228,7 @@ class TraceletSdk private constructor(private val context: Context) {
             odometer = odometer,
             eventType = record.eventType,
             eventPayload = record.eventPayload,
+            address = record.address,
         )
     }
 
@@ -1335,6 +1340,10 @@ class TraceletSdk private constructor(private val context: Context) {
         val eventType = (params["event"] as? String) ?: "location"
         val eventPayload: String? = (params["event_payload"] as? String)
             ?: (params["geofence"] as? Map<*, *>)?.let { org.json.JSONObject(it as Map<String, Any?>).toString() }
+        // #187: persist the reverse-geocoded address (added by resolveAddress) so
+        // it survives into the DB-sourced sync payload, not just the live event.
+        val address: String? = (params["address"] as? String)
+            ?: (params["address"] as? Map<*, *>)?.let { org.json.JSONObject(it as Map<String, Any?>).toString() }
         
         // Prevent duplicate insertions of the exact same GPS fix (e.g. from PeriodicLocationWorker)
         if (eventType == "location" && timestamp != null && timestamp == lastInsertedTimestamp) {
@@ -1386,7 +1395,7 @@ class TraceletSdk private constructor(private val context: Context) {
         }
 
         return try {
-            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp, eventType, eventPayload)
+            val newRowId = db.insertLocation(uuid, lat, lng, acc, speed, heading, altitude, isMock, isMoving, activity, routeContext, timestamp, eventType, eventPayload, address)
             // Notify the sync plugin so it can trigger auto-sync
             (syncProvider as? com.ikolvi.tracelet.sdk.location.LocationDataSink)?.insertLocation(params)
             newRowId.toString()

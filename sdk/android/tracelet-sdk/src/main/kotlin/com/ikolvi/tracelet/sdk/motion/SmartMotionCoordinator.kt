@@ -127,9 +127,13 @@ class SmartMotionCoordinator(
                 logger.info("SmartMotionCoordinator: Switching to STATIONARY_GEOFENCES")
                 val useForeground = configManager.isForegroundServiceEnabled()
                 if (useForeground) {
-                    LocationService.switchToStationaryGeofences(locationEngine, stateManager)
+                    LocationService.switchToStationaryGeofences(locationEngine, stateManager, configManager)
                 } else {
-                    locationEngine.stop()
+                    if (configManager.getGeofenceModeHighAccuracy()) {
+                        locationEngine.start()
+                    } else {
+                        locationEngine.stop()
+                    }
                 }
                 stateManager.isMoving = false
                 motionDetector.onManualPaceChange(false)

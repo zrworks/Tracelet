@@ -31,10 +31,8 @@ void main() {
         // 1) Initialize Tracelet with high-accuracy geofence mode
         await Tracelet.ready(
           const Config(
-            geofence: GeofenceConfig(
-              geofenceProximityRadius: 10000,
-              geofenceModeHighAccuracy: true,
-            ),
+            android: AndroidConfig(geofenceModeHighAccuracy: true),
+            geofence: GeofenceConfig(geofenceProximityRadius: 10000),
             geo: GeoConfig(distanceFilter: 0),
             logger: LoggerConfig(debug: true, logLevel: LogLevel.verbose),
           ),

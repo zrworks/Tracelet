@@ -1370,13 +1370,10 @@ class TlMotionConfig {
 
 class TlGeofenceConfig {
   TlGeofenceConfig({
-    required this.geofenceModeHighAccuracy,
     required this.geofenceInitialTriggerEntry,
     required this.geofenceProximityRadius,
     required this.geofenceInitialTrigger,
   });
-
-  bool geofenceModeHighAccuracy;
 
   bool geofenceInitialTriggerEntry;
 
@@ -1386,7 +1383,6 @@ class TlGeofenceConfig {
 
   List<Object?> _toList() {
     return <Object?>[
-      geofenceModeHighAccuracy,
       geofenceInitialTriggerEntry,
       geofenceProximityRadius,
       geofenceInitialTrigger,
@@ -1400,10 +1396,9 @@ class TlGeofenceConfig {
   static TlGeofenceConfig decode(Object result) {
     result as List<Object?>;
     return TlGeofenceConfig(
-      geofenceModeHighAccuracy: result[0]! as bool,
-      geofenceInitialTriggerEntry: result[1]! as bool,
-      geofenceProximityRadius: result[2]! as int,
-      geofenceInitialTrigger: result[3]! as bool,
+      geofenceInitialTriggerEntry: result[0]! as bool,
+      geofenceProximityRadius: result[1]! as int,
+      geofenceInitialTrigger: result[2]! as bool,
     );
   }
 
@@ -1417,10 +1412,6 @@ class TlGeofenceConfig {
       return true;
     }
     return _deepEquals(
-          geofenceModeHighAccuracy,
-          other.geofenceModeHighAccuracy,
-        ) &&
-        _deepEquals(
           geofenceInitialTriggerEntry,
           other.geofenceInitialTriggerEntry,
         ) &&

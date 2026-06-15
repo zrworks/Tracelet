@@ -135,6 +135,7 @@ class TraceletSdk private constructor(private val context: Context) {
     private var transportClassifier: uniffi.tracelet_core.TransportModeClassifier? = null
     private var impactDetector: uniffi.tracelet_core.ImpactDetector? = null
     private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
+    private val gyroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private var accelWindowRunnable: Runnable? = null
     private var impactConfirmRunnable: Runnable? = null
     @Volatile private var lastSpeedMps: Double = 0.0
@@ -335,6 +336,12 @@ class TraceletSdk private constructor(private val context: Context) {
         motionDetector.onAccelSample = { magnitudeG ->
             if (transportClassifier != null || impactDetector != null) {
                 accelBuffer.add(magnitudeG)
+            }
+        }
+        // 3.3.0/#179: feed gyroscope samples (deg/s) for crash corroboration.
+        motionDetector.onGyroSample = { dps ->
+            if (impactDetector != null) {
+                gyroBuffer.add(dps)
             }
         }
         motionDetector.onStopRequested = {
@@ -2233,6 +2240,8 @@ class TraceletSdk private constructor(private val context: Context) {
         // opt-in). Falls back to the normal rate otherwise.
         if (::motionDetector.isInitialized) {
             motionDetector.impactHighRate = impactDetector != null
+            // Gyroscope corroboration (#179) — only sample gyro when crash/fall is on.
+            motionDetector.gyroEnabled = impactDetector != null
         }
     }
 
@@ -2282,6 +2291,7 @@ class TraceletSdk private constructor(private val context: Context) {
         if (transportClassifier == null && impactDetector == null) return
 
         accelBuffer.clear()
+        gyroBuffer.clear()
         accelWindowRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
@@ -2296,6 +2306,7 @@ class TraceletSdk private constructor(private val context: Context) {
         accelWindowRunnable?.let { mainHandler.removeCallbacks(it) }
         accelWindowRunnable = null
         accelBuffer.clear()
+        gyroBuffer.clear()
         // NOTE: the impact confirmation loop is intentionally NOT stopped here.
         // A crash typically ends in the vehicle stopping, which disables tracking
         // (stopTimeout) and would otherwise abandon a pending `potential_crash`
@@ -2362,9 +2373,16 @@ class TraceletSdk private constructor(private val context: Context) {
 
         impactDetector?.let { detector ->
             val onFoot = lastSpeedMps * 3.6 < configManager.getCrashMinSpeedKmh()
+            // Peak rotation (deg/s) over this window — crash corroboration (#179).
+            val gyroPeak: Double
+            synchronized(gyroBuffer) {
+                gyroPeak = gyroBuffer.maxOrNull() ?: 0.0
+                gyroBuffer.clear()
+            }
             val candidate = detector.onImpactWindow(
                 window.peakG,
                 lastSpeedMps,
+                gyroPeak,
                 onFoot,
                 lastLat,
                 lastLng,

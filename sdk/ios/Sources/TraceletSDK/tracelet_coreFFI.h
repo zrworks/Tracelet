@@ -275,7 +275,7 @@ RustBuffer uniffi_tracelet_core_fn_method_impactdetector_confirm(uint64_t ptr, i
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
-RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, double gyro_peak_dps, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_PENDING_COUNT

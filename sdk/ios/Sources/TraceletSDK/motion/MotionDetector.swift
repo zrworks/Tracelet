@@ -116,6 +116,17 @@ public final class MotionDetector {
     /// Accelerometer update interval — faster when impact detection is active.
     private var accelUpdateInterval: TimeInterval { impactHighRate ? 1.0 / 100.0 : 1.0 / 10.0 }
 
+    /// Emitted per gyroscope sample with the rotation-rate magnitude in deg/s,
+    /// for crash corroboration (#179). Only sampled while `gyroEnabled` is set
+    /// (crash/fall detection on). Decoupled from the motion-detection state
+    /// machine — gyro never affects stationary/moving decisions.
+    public var onGyroSample: ((Double) -> Void)?
+
+    /// Enables gyroscope sampling (set when crash/fall detection is active).
+    public var gyroEnabled: Bool = false
+
+    private var gyroSampler: DispatchSourceTimer?
+
     /// Called when stopOnStationary fires — requests full tracking stop.
     public var onStopRequested: (() -> Void)?
 
@@ -151,11 +162,35 @@ public final class MotionDetector {
         guard !isRunning else { return }
         isRunning = true
 
+        if gyroEnabled { startGyroMonitoring() }
         if isAccelerometerOnlyMode {
             startAccelerometerOnlyMode()
         } else {
             startFullMode()
         }
+    }
+
+    /// Gyroscope sampler (crash corroboration). Pull-model read of rotation rate,
+    /// magnitude emitted in deg/s.
+    private func startGyroMonitoring() {
+        guard motionManager.isGyroAvailable else { return }
+        motionManager.gyroUpdateInterval = accelUpdateInterval
+        if !motionManager.isGyroActive { motionManager.startGyroUpdates() }
+        gyroSampler?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: motionQueue)
+        timer.schedule(deadline: .now() + accelUpdateInterval, repeating: accelUpdateInterval)
+        timer.setEventHandler { [weak self] in
+            guard let self = self, let r = self.motionManager.gyroData?.rotationRate else { return }
+            let dps = (r.x * r.x + r.y * r.y + r.z * r.z).squareRoot() * (180.0 / Double.pi)
+            self.onGyroSample?(dps)
+        }
+        timer.resume()
+        gyroSampler = timer
+    }
+
+    private func stopGyroMonitoring() {
+        gyroSampler?.cancel(); gyroSampler = nil
+        motionManager.stopGyroUpdates()
     }
 
     public func stop() {
@@ -172,6 +207,7 @@ public final class MotionDetector {
         // Sampler / duty-cycle cleanup, then power down the sensor.
         stopMovingSampler()
         stopDutyCycle()
+        stopGyroMonitoring()
         motionManager.stopAccelerometerUpdates()
 
         // Shared cleanup

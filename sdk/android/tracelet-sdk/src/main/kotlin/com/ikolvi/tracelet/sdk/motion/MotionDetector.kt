@@ -181,6 +181,20 @@ class MotionDetector(
     /** Callback: request full tracking stop (`stopOnStationary` mode). */
     var onStopRequested: (() -> Unit)? = null
 
+    /**
+     * Emitted per gyroscope sample with the rotation-rate magnitude in deg/s,
+     * for crash corroboration (#179). Only sampled while [gyroEnabled] is set
+     * (i.e. crash/fall detection is on), so there's no battery cost otherwise.
+     * Decoupled from the motion-detection state machine — gyro samples never
+     * affect stationary/moving decisions.
+     */
+    var onGyroSample: ((dps: Double) -> Unit)? = null
+
+    /** Enables gyroscope sampling (set when crash/fall detection is active). */
+    var gyroEnabled: Boolean = false
+
+    private var gyroscopeListener: SensorEventListener? = null
+
     // Current detected activity (full mode only)
     private var currentActivity: String = "unknown"
     private var currentConfidence: Int = -1
@@ -226,6 +240,7 @@ class MotionDetector(
             return
         }
         isRunning = true
+        if (gyroEnabled) startGyroMonitoring()
         if (isAccelerometerOnlyMode) {
             logger.debug("start() → startAccelerometerOnlyMode()")
             startAccelerometerOnlyMode()
@@ -233,6 +248,32 @@ class MotionDetector(
             logger.debug("start() → startFullMode()")
             startFullMode()
         }
+    }
+
+    /** Registers a gyroscope listener (crash corroboration). Emits deg/s magnitudes. */
+    private fun startGyroMonitoring() {
+        val sm = sensorManager ?: (context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager)
+            ?.also { sensorManager = it } ?: return
+        val gyro = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE) ?: return
+        if (gyroscopeListener != null) return
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                // TYPE_GYROSCOPE values are rad/s; convert magnitude to deg/s.
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+                val dps = sqrt((x * x + y * y + z * z).toDouble()) * (180.0 / Math.PI)
+                onGyroSample?.invoke(dps)
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        sm.registerListener(listener, gyro, accelSamplingDelay(), accelBatchLatencyUs(SENSOR_BATCH_LATENCY_US))
+        gyroscopeListener = listener
+    }
+
+    private fun stopGyroMonitoring() {
+        gyroscopeListener?.let { sensorManager?.unregisterListener(it) }
+        gyroscopeListener = null
     }
 
     /** Stop all motion detection and clean up resources. */
@@ -246,6 +287,7 @@ class MotionDetector(
         unregisterActivityTransitions()
         cancelStopTimeout()
         stopAccelerometerMonitoring()
+        stopGyroMonitoring()
         cancelSignificantMotionListener()
         logger.debug("stop() complete")
     }

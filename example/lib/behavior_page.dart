@@ -239,6 +239,8 @@ class _BehaviorPageState extends State<BehaviorPage> {
           final c = d.onImpactWindow(
             peakG: 5,
             speedBeforeMps: 60 / 3.6,
+            gyroPeakDps: 0,
+            wasInFreeFall: false,
             isOnFoot: false,
             latitude: 0,
             longitude: 0,

@@ -1,6 +1,11 @@
 {
-  "badgeTitle": "New in 3.3.0",
+  "badgeTitle": "New in 3.3.3",
   "items": [
+    {
+      "title": "Bug Fixes & Stability Updates",
+      "description": "Fixed headless geofence events, enhanced custom sync timeouts, and resolved iOS parity issues in version 3.3.3.",
+      "href": "/whats-new"
+    },
     {
       "title": "Driving & Safety Features",
       "description": "Driving events, transport mode, crash detection, and new telematics APIs.",

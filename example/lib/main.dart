@@ -637,10 +637,7 @@ class _DashboardPageState extends State<DashboardPage>
         maxDaysToPersist: 7,
         maxRecordsToPersist: 5000,
       ),
-      logger: const tl.LoggerConfig(
-        logLevel: tl.LogLevel.verbose,
-        debug: true,
-      ),
+      logger: const tl.LoggerConfig(logLevel: tl.LogLevel.verbose, debug: true),
     );
   }
 

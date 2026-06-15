@@ -140,7 +140,6 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["speedWakeConfirmCount"] = c.motion.speedWakeConfirmCount
 
         // Geofence
-        dict["geofenceModeHighAccuracy"] = c.geofence.geofenceModeHighAccuracy
         dict["geofenceInitialTriggerEntry"] = c.geofence.geofenceInitialTriggerEntry
         dict["geofenceProximityRadius"] = c.geofence.geofenceProximityRadius
         dict["geofenceInitialTrigger"] = c.geofence.geofenceInitialTrigger

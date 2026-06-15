@@ -456,21 +456,19 @@ data class MotionConfig(
 }
 
 data class GeofenceConfig(
-    val geofenceModeHighAccuracy: Boolean = false,
     val geofenceInitialTriggerEntry: Boolean = true,
     val geofenceInitialTrigger: Boolean = true,
     val geofenceProximityRadius: Int = 1000
 ) {
     companion object { 
         fun fromMap(m: Map<String, Any?>) = GeofenceConfig(
-            geofenceModeHighAccuracy = m["geofenceModeHighAccuracy"] as? Boolean ?: false,
             geofenceInitialTriggerEntry = m["geofenceInitialTriggerEntry"] as? Boolean ?: true,
             geofenceInitialTrigger = m["geofenceInitialTrigger"] as? Boolean ?: true,
             geofenceProximityRadius = (m["geofenceProximityRadius"] as? Number)?.toInt() ?: 1000
         )
     }
     fun toMap(): Map<String, Any?> = mapOf(
-        "geofenceModeHighAccuracy" to geofenceModeHighAccuracy, "geofenceInitialTriggerEntry" to geofenceInitialTriggerEntry,
+        "geofenceInitialTriggerEntry" to geofenceInitialTriggerEntry,
         "geofenceInitialTrigger" to geofenceInitialTrigger, "geofenceProximityRadius" to geofenceProximityRadius
     )
 }

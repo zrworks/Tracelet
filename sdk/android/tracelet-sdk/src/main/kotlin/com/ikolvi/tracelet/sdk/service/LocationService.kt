@@ -201,9 +201,17 @@ class LocationService : Service(), DefaultLifecycleObserver {
         /**
          * Switches to stationary geofences mode.
          */
-        fun switchToStationaryGeofences(engine: com.ikolvi.tracelet.sdk.location.LocationEngine, state: StateManager) {
+        fun switchToStationaryGeofences(
+            engine: com.ikolvi.tracelet.sdk.location.LocationEngine,
+            state: StateManager,
+            config: com.ikolvi.tracelet.sdk.ConfigManager
+        ) {
             stopStationaryTimer()
-            engine.stop()
+            if (config.getGeofenceModeHighAccuracy()) {
+                engine.start()
+            } else {
+                engine.stop()
+            }
             // Mark state as stationary so motion change events fire correctly
             state.isMoving = false
             state.trackingMode = com.ikolvi.tracelet.sdk.model.TrackingMode.GEOFENCES
@@ -786,7 +794,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                                 }
                             }
                             override fun switchToStationaryGeofences() {
-                                LocationService.switchToStationaryGeofences(engine, state)
+                                LocationService.switchToStationaryGeofences(engine, state, config)
                                 if (state.isMoving) {
                                     state.isMoving = false
                                     val locMap = engine.getLastLocation()?.let { engine.enrichLocation(it, "motionchange") } ?: mapOf("is_moving" to false)
@@ -804,7 +812,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     // the appropriate stationary tracking mode.
                     if (state.speedMotionState == com.ikolvi.tracelet.sdk.model.SpeedMotionState.STATIONARY) {
                         when (config.getStationaryTrackingMode()) {
-                            com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state)
+                            com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state, config)
                             else -> LocationService.switchToStationaryPeriodic(engine, config, state)
                         }
                         TraceletLog.debug("Restored stationary mode from persisted speed state")
@@ -920,7 +928,7 @@ class LocationService : Service(), DefaultLifecycleObserver {
                             LocationService.switchToContinuous(engine, state)
                         } else {
                             when (config.getStationaryTrackingMode()) {
-                                com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state)
+                                com.ikolvi.tracelet.sdk.model.StationaryTrackingMode.GEOFENCES -> LocationService.switchToStationaryGeofences(engine, state, config)
                                 else -> LocationService.switchToStationaryPeriodic(engine, config, state)
                             }
                         }
@@ -946,29 +954,29 @@ class LocationService : Service(), DefaultLifecycleObserver {
             // Geofence mode: re-register persisted geofences with Play Services
             // and restore the static BroadcastReceiver reference so transition
             // events are not silently dropped after process death.
+            val geoManager = sdk.geofenceManager
             if (trackingMode == TrackingMode.GEOFENCES) {
-                val geoManager = GeofenceManager(ctx, config, eventSender)
                 geoManager.reRegisterAll()
-                GeofenceBroadcastReceiver.geofenceManager = geoManager
-
-                // Wire the location stream into proximity evaluation. Without this,
-                // geofenceModeHighAccuracy — which suppresses OS-level geofence
-                // transitions and relies entirely on per-location proximity checks
-                // (see GeofenceManager.handleGeofenceEvent / evaluateHighAccuracyProximity)
-                // — produces NO enter/exit events after a reboot or task removal:
-                // the foreground service and engine run, but transitions never fire.
-                // Mirrors TraceletSdk.startGeofences().
-                if (config.getGeofenceModeHighAccuracy()) {
-                    geoManager.clearHighAccuracyState()
-                }
-                bootLocationEngine?.onLocationUpdate = { lat, lng ->
-                    geoManager.updateProximity(lat, lng)
-                    if (config.getGeofenceModeHighAccuracy()) {
-                        geoManager.evaluateHighAccuracyProximity(lat, lng)
-                    }
-                }
-                TraceletLog.debug("Geofence registrations restored after boot/task-removal (proximity stream wired)")
             }
+            GeofenceBroadcastReceiver.geofenceManager = geoManager
+
+            // Wire the location stream into proximity evaluation. Without this,
+            // geofenceModeHighAccuracy — which suppresses OS-level geofence
+            // transitions and relies entirely on per-location proximity checks
+            // (see GeofenceManager.handleGeofenceEvent / evaluateHighAccuracyProximity)
+            // — produces NO enter/exit events after a reboot or task removal:
+            // the foreground service and engine run, but transitions never fire.
+            // Mirrors TraceletSdk.startGeofences() and TraceletSdk.start().
+            if (config.getGeofenceModeHighAccuracy()) {
+                geoManager.clearHighAccuracyState()
+            }
+            bootLocationEngine?.onLocationUpdate = { lat, lng ->
+                geoManager.updateProximity(lat, lng)
+                if (config.getGeofenceModeHighAccuracy()) {
+                    geoManager.evaluateHighAccuracyProximity(lat, lng)
+                }
+            }
+            TraceletLog.debug("Geofence registrations restored after boot/task-removal (proximity stream wired)")
         }
 
     /**

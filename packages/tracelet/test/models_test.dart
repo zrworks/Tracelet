@@ -47,10 +47,7 @@ void main() {
           batchSync: true,
         ),
         motion: MotionConfig(stopTimeout: 10, isMoving: true),
-        geofence: GeofenceConfig(
-          geofenceInitialTriggerEntry: false,
-          geofenceModeHighAccuracy: true,
-        ),
+        geofence: GeofenceConfig(geofenceInitialTriggerEntry: false),
         logger: LoggerConfig(logMaxDays: 7, debug: true),
       );
 
@@ -70,7 +67,6 @@ void main() {
       expect(restored.motion.stopTimeout, 10);
       expect(restored.motion.isMoving, true);
       expect(restored.geofence.geofenceInitialTriggerEntry, false);
-      expect(restored.geofence.geofenceModeHighAccuracy, true);
       expect(restored.logger.logLevel, LogLevel.info);
       expect(restored.logger.logMaxDays, 7);
       expect(restored.logger.debug, true);

@@ -1222,7 +1222,6 @@ struct TlMotionConfig: Hashable {
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlGeofenceConfig: Hashable {
-  var geofenceModeHighAccuracy: Bool
   var geofenceInitialTriggerEntry: Bool
   var geofenceProximityRadius: Int64
   var geofenceInitialTrigger: Bool
@@ -1230,13 +1229,11 @@ struct TlGeofenceConfig: Hashable {
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> TlGeofenceConfig? {
-    let geofenceModeHighAccuracy = pigeonVar_list[0] as! Bool
-    let geofenceInitialTriggerEntry = pigeonVar_list[1] as! Bool
-    let geofenceProximityRadius = pigeonVar_list[2] as! Int64
-    let geofenceInitialTrigger = pigeonVar_list[3] as! Bool
+    let geofenceInitialTriggerEntry = pigeonVar_list[0] as! Bool
+    let geofenceProximityRadius = pigeonVar_list[1] as! Int64
+    let geofenceInitialTrigger = pigeonVar_list[2] as! Bool
 
     return TlGeofenceConfig(
-      geofenceModeHighAccuracy: geofenceModeHighAccuracy,
       geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
       geofenceProximityRadius: geofenceProximityRadius,
       geofenceInitialTrigger: geofenceInitialTrigger
@@ -1244,7 +1241,6 @@ struct TlGeofenceConfig: Hashable {
   }
   func toList() -> [Any?] {
     return [
-      geofenceModeHighAccuracy,
       geofenceInitialTriggerEntry,
       geofenceProximityRadius,
       geofenceInitialTrigger,
@@ -1254,12 +1250,11 @@ struct TlGeofenceConfig: Hashable {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.geofenceModeHighAccuracy, rhs.geofenceModeHighAccuracy) && deepEqualsTraceletApi(lhs.geofenceInitialTriggerEntry, rhs.geofenceInitialTriggerEntry) && deepEqualsTraceletApi(lhs.geofenceProximityRadius, rhs.geofenceProximityRadius) && deepEqualsTraceletApi(lhs.geofenceInitialTrigger, rhs.geofenceInitialTrigger)
+    return deepEqualsTraceletApi(lhs.geofenceInitialTriggerEntry, rhs.geofenceInitialTriggerEntry) && deepEqualsTraceletApi(lhs.geofenceProximityRadius, rhs.geofenceProximityRadius) && deepEqualsTraceletApi(lhs.geofenceInitialTrigger, rhs.geofenceInitialTrigger)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("TlGeofenceConfig")
-    deepHashTraceletApi(value: geofenceModeHighAccuracy, hasher: &hasher)
     deepHashTraceletApi(value: geofenceInitialTriggerEntry, hasher: &hasher)
     deepHashTraceletApi(value: geofenceProximityRadius, hasher: &hasher)
     deepHashTraceletApi(value: geofenceInitialTrigger, hasher: &hasher)

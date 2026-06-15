@@ -1265,7 +1265,6 @@ data class TlMotionConfig (
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class TlGeofenceConfig (
-  val geofenceModeHighAccuracy: Boolean,
   val geofenceInitialTriggerEntry: Boolean,
   val geofenceProximityRadius: Long,
   val geofenceInitialTrigger: Boolean
@@ -1273,16 +1272,14 @@ data class TlGeofenceConfig (
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): TlGeofenceConfig {
-      val geofenceModeHighAccuracy = pigeonVar_list[0] as Boolean
-      val geofenceInitialTriggerEntry = pigeonVar_list[1] as Boolean
-      val geofenceProximityRadius = pigeonVar_list[2] as Long
-      val geofenceInitialTrigger = pigeonVar_list[3] as Boolean
-      return TlGeofenceConfig(geofenceModeHighAccuracy, geofenceInitialTriggerEntry, geofenceProximityRadius, geofenceInitialTrigger)
+      val geofenceInitialTriggerEntry = pigeonVar_list[0] as Boolean
+      val geofenceProximityRadius = pigeonVar_list[1] as Long
+      val geofenceInitialTrigger = pigeonVar_list[2] as Boolean
+      return TlGeofenceConfig(geofenceInitialTriggerEntry, geofenceProximityRadius, geofenceInitialTrigger)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
-      geofenceModeHighAccuracy,
       geofenceInitialTriggerEntry,
       geofenceProximityRadius,
       geofenceInitialTrigger,
@@ -1296,12 +1293,11 @@ data class TlGeofenceConfig (
       return true
     }
     val other = other as TlGeofenceConfig
-    return TraceletApiPigeonUtils.deepEquals(this.geofenceModeHighAccuracy, other.geofenceModeHighAccuracy) && TraceletApiPigeonUtils.deepEquals(this.geofenceInitialTriggerEntry, other.geofenceInitialTriggerEntry) && TraceletApiPigeonUtils.deepEquals(this.geofenceProximityRadius, other.geofenceProximityRadius) && TraceletApiPigeonUtils.deepEquals(this.geofenceInitialTrigger, other.geofenceInitialTrigger)
+    return TraceletApiPigeonUtils.deepEquals(this.geofenceInitialTriggerEntry, other.geofenceInitialTriggerEntry) && TraceletApiPigeonUtils.deepEquals(this.geofenceProximityRadius, other.geofenceProximityRadius) && TraceletApiPigeonUtils.deepEquals(this.geofenceInitialTrigger, other.geofenceInitialTrigger)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
-    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.geofenceModeHighAccuracy)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.geofenceInitialTriggerEntry)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.geofenceProximityRadius)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.geofenceInitialTrigger)

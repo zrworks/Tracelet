@@ -372,12 +372,10 @@ class TlMotionConfig {
 
 class TlGeofenceConfig {
   TlGeofenceConfig({
-    required this.geofenceModeHighAccuracy,
     required this.geofenceInitialTriggerEntry,
     required this.geofenceProximityRadius,
     required this.geofenceInitialTrigger,
   });
-  final bool geofenceModeHighAccuracy;
   final bool geofenceInitialTriggerEntry;
   final int geofenceProximityRadius;
   final bool geofenceInitialTrigger;

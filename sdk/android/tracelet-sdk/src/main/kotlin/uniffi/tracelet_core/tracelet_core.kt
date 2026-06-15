@@ -886,7 +886,7 @@ external fun uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(`
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_impactdetector_confirm(`ptr`: Long,`id`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-external fun uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(`ptr`: Long,`peakG`: Double,`speedBeforeMps`: Double,`isOnFoot`: Byte,`latitude`: Double,`longitude`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(`ptr`: Long,`peakG`: Double,`speedBeforeMps`: Double,`gyroPeakDps`: Double,`wasInFreeFall`: Byte,`isOnFoot`: Byte,`latitude`: Double,`longitude`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_impactdetector_pending_count(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
@@ -1304,7 +1304,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 28969.toShort()) {
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 1298.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414.toShort()) {
@@ -4922,7 +4922,7 @@ public interface ImpactDetectorInterface {
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-    fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent?
+    fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `gyroPeakDps`: kotlin.Double, `wasInFreeFall`: kotlin.Boolean, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent?
     
     /**
      * Number of candidates awaiting confirmation.
@@ -5101,13 +5101,13 @@ open class ImpactDetector: Disposable, AutoCloseable, ImpactDetectorInterface
      * Feeds one accel window's peak plus motion context. Returns a
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
-     */override fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent? {
+     */override fun `onImpactWindow`(`peakG`: kotlin.Double, `speedBeforeMps`: kotlin.Double, `gyroPeakDps`: kotlin.Double, `wasInFreeFall`: kotlin.Boolean, `isOnFoot`: kotlin.Boolean, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `nowMs`: kotlin.Long): ImpactEvent? {
             return FfiConverterOptionalTypeImpactEvent.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
         it,
-        FfiConverterDouble.lower(`peakG`),FfiConverterDouble.lower(`speedBeforeMps`),FfiConverterBoolean.lower(`isOnFoot`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterLong.lower(`nowMs`),_status)
+        FfiConverterDouble.lower(`peakG`),FfiConverterDouble.lower(`speedBeforeMps`),FfiConverterDouble.lower(`gyroPeakDps`),FfiConverterBoolean.lower(`wasInFreeFall`),FfiConverterBoolean.lower(`isOnFoot`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterLong.lower(`nowMs`),_status)
 }
     }
     )

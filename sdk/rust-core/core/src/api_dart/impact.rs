@@ -27,6 +27,8 @@ impl ImpactDetectorDart {
         &self,
         peak_g: f64,
         speed_before_mps: f64,
+        gyro_peak_dps: f64,
+        was_in_free_fall: bool,
         is_on_foot: bool,
         latitude: f64,
         longitude: f64,
@@ -35,6 +37,8 @@ impl ImpactDetectorDart {
         self.inner.on_impact_window(
             peak_g,
             speed_before_mps,
+            gyro_peak_dps,
+            was_in_free_fall,
             is_on_foot,
             latitude,
             longitude,

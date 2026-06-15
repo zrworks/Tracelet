@@ -68,6 +68,49 @@ void main() {
     expect(events.any((e) => e.kind == 'harsh_acceleration'), isTrue);
   });
 
+  testWidgets('gyroscope rotation rescues a sub-threshold crash (#179)', (
+    tester,
+  ) async {
+    ImpactDetectorDart detector() => ImpactDetectorDart(
+      config: frb.ImpactConfig(
+        enableCrash: true,
+        enableFall: false,
+        crashGThreshold: 2,
+        crashMinSpeedKmh: 25,
+        fallGThreshold: 2.5,
+        confirmWindowMs: PlatformInt64Util.from(15000),
+        minConfidence: 0.6,
+      ),
+    );
+
+    // 1.6 g (< 2.0 g threshold) at 60 km/h, no rotation → NOT a crash.
+    final withoutGyro = detector().onImpactWindow(
+      peakG: 1.6,
+      speedBeforeMps: 60 / 3.6,
+      gyroPeakDps: 0,
+      wasInFreeFall: false,
+      isOnFoot: false,
+      latitude: 0,
+      longitude: 0,
+      nowMs: PlatformInt64Util.from(0),
+    );
+    expect(withoutGyro, isNull);
+
+    // Same jolt with a hard spin (150 deg/s) → potential_crash.
+    final withGyro = detector().onImpactWindow(
+      peakG: 1.6,
+      speedBeforeMps: 60 / 3.6,
+      gyroPeakDps: 150,
+      wasInFreeFall: false,
+      isOnFoot: false,
+      latitude: 0,
+      longitude: 0,
+      nowMs: PlatformInt64Util.from(0),
+    );
+    expect(withGyro, isNotNull);
+    expect(withGyro!.kind, 'potential_crash');
+  });
+
   testWidgets('simulate crash candidate then auto-confirm', (tester) async {
     final detector = ImpactDetectorDart(
       config: frb.ImpactConfig(
@@ -80,10 +123,12 @@ void main() {
         minConfidence: 0.6,
       ),
     );
-    // 5 g spike while moving 60 km/h → potential_crash.
+    // 5 g spike while moving 60 km/h → potential_crash (no rotation needed).
     final candidate = detector.onImpactWindow(
       peakG: 5,
       speedBeforeMps: 60 / 3.6,
+      gyroPeakDps: 0,
+      wasInFreeFall: false,
       isOnFoot: false,
       latitude: 0,
       longitude: 0,
@@ -115,6 +160,8 @@ void main() {
     final candidate = detector.onImpactWindow(
       peakG: 6,
       speedBeforeMps: 70 / 3.6,
+      gyroPeakDps: 0,
+      wasInFreeFall: false,
       isOnFoot: false,
       latitude: 0,
       longitude: 0,

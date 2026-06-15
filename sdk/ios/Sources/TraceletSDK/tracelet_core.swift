@@ -2321,7 +2321,7 @@ public protocol ImpactDetectorProtocol: AnyObject, Sendable {
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-    func onImpactWindow(peakG: Double, speedBeforeMps: Double, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64)  -> ImpactEvent?
+    func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64)  -> ImpactEvent?
     
     /**
      * Number of candidates awaiting confirmation.
@@ -2444,12 +2444,14 @@ open func confirm(id: Int64, nowMs: Int64) -> ImpactEvent?  {
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-open func onImpactWindow(peakG: Double, speedBeforeMps: Double, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64) -> ImpactEvent?  {
+open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64) -> ImpactEvent?  {
     return try!  FfiConverterOptionTypeImpactEvent.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
             self.uniffiCloneHandle(),
         FfiConverterDouble.lower(peakG),
         FfiConverterDouble.lower(speedBeforeMps),
+        FfiConverterDouble.lower(gyroPeakDps),
+        FfiConverterBool.lower(wasInFreeFall),
         FfiConverterBool.lower(isOnFoot),
         FfiConverterDouble.lower(latitude),
         FfiConverterDouble.lower(longitude),
@@ -9184,7 +9186,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 28969) {
+    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 1298) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414) {

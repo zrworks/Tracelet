@@ -433,9 +433,13 @@ class TraceletSdk private constructor(private val context: Context) {
                     }
                     val useForeground = configManager.isForegroundServiceEnabled()
                     if (useForeground) {
-                        LocationService.switchToStationaryGeofences(locationEngine, stateManager)
+                        LocationService.switchToStationaryGeofences(locationEngine, stateManager, configManager)
                     } else {
-                        locationEngine.stop()
+                        if (configManager.getGeofenceModeHighAccuracy()) {
+                            locationEngine.start()
+                        } else {
+                            locationEngine.stop()
+                        }
                         stateManager.trackingMode = TrackingMode.GEOFENCES
                     }
                     // Dispatch motionchange event so Flutter UI updates _isMoving

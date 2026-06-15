@@ -219,6 +219,7 @@ class GeofenceManager(
         } catch (e: Exception) {
             TraceletLog.error("Failed to clear geofences from Rust DB", e)
         }
+        invalidateGeofenceCache()
         return unregisterAllGeofences()
     }
 

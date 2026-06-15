@@ -1614,33 +1614,36 @@ class _IssuesPageState extends State<IssuesPage> {
 
   // After a reboot the app is killed, so the in-app onGeofence callback above
   // cannot fire — transitions are handled HEADLESSLY. Tracelet persists every
-  // transition to its SQLite log store, so reopening and reading the log proves
-  // the headless geofence events fired while the UI was dead.
+  // geofence transition to the DB as a location row with event == 'geofence',
+  // so reopening and reading them back proves the headless events fired while
+  // the UI was dead.
   Future<void> _viewIssue185Logs() async {
     try {
-      final log = await Tracelet.getLog();
-      final relevant = const LineSplitter()
-          .convert(log)
-          .where(
-            (l) =>
-                l.toLowerCase().contains('geofence') ||
-                l.contains('ENTER') ||
-                l.contains('EXIT') ||
-                l.toLowerCase().contains('boot') ||
-                l.toLowerCase().contains('proximity'),
-          )
+      final locations = await Tracelet.getLocations();
+      final geofenceHits = locations
+          .where((l) => (l.event ?? '').toLowerCase().contains('geofence'))
           .toList();
-      final body = relevant.isEmpty
-          ? 'No geofence/boot lines in the persisted log yet.\n\n'
+      final body = geofenceHits.isEmpty
+          ? 'No geofence events persisted yet.\n\n'
                 'Cross the zone (mock location) — after a reboot too — then reopen '
-                'and tap this again. Headless transitions are written here even '
-                'when the UI is dead.'
-          : relevant.reversed.take(80).toList().reversed.join('\n');
+                'and tap this again. Headless ENTER/EXIT are written to the DB even '
+                'when the UI is dead.\n\n'
+                '(Tip: `adb logcat | grep -i geofence` shows them live as '
+                '"[Headless] geofence: … action: ENTER/EXIT".)'
+          : geofenceHits.reversed
+                .take(80)
+                .map(
+                  (l) =>
+                      '[${l.timestamp}] ${l.event} '
+                      '@ ${l.coords.latitude.toStringAsFixed(5)}, '
+                      '${l.coords.longitude.toStringAsFixed(5)}',
+                )
+                .join('\n');
       if (!mounted) return;
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('#185 — persisted log (geofence/boot)'),
+          title: Text('#185 — persisted geofence events (${geofenceHits.length})'),
           content: SizedBox(
             width: double.maxFinite,
             child: SingleChildScrollView(
@@ -2417,7 +2420,7 @@ class _IssuesPageState extends State<IssuesPage> {
                               OutlinedButton.icon(
                                 onPressed: _viewIssue185Logs,
                                 icon: const Icon(Icons.receipt_long),
-                                label: const Text('View Logs'),
+                                label: const Text('View Events'),
                               ),
                             ],
                           ),

@@ -3018,7 +3018,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       await tl.Tracelet.setConfig(
         const tl.Config(
-          geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: true),
+          android: tl.AndroidConfig(geofenceModeHighAccuracy: true),
         ),
       );
       final state = await tl.Tracelet.startGeofences();

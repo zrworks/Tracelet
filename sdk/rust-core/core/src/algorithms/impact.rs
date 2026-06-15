@@ -107,6 +107,14 @@ const GYRO_THRESHOLD_RELAX: f64 = 0.7;
 /// Small confidence bump applied when rotation corroborates the impact.
 const GYRO_CONFIDENCE_BOOST: f64 = 0.1;
 
+/// When a free-fall precedes the impact (#180), the fall g-threshold is relaxed
+/// by this factor. Free-fall (near-0 total acceleration) is the canonical first
+/// phase of a real fall, so it strongly corroborates the subsequent jolt.
+const FREEFALL_THRESHOLD_RELAX: f64 = 0.7;
+
+/// Confidence bump when a free-fall precedes the impact.
+const FREEFALL_CONFIDENCE_BOOST: f64 = 0.15;
+
 /// Detects crash/fall impacts with a confirmation window.
 #[derive(uniffi::Object)]
 pub struct ImpactDetector {
@@ -156,6 +164,7 @@ impl ImpactDetector {
         peak_g: f64,
         speed_before_mps: f64,
         gyro_peak_dps: f64,
+        was_in_free_fall: bool,
         is_on_foot: bool,
         latitude: f64,
         longitude: f64,
@@ -199,13 +208,24 @@ impl ImpactDetector {
         }
 
         // ── Fall: spike while on foot at low speed (best-effort, opt-in) ──
+        // A preceding free-fall (#180) is the canonical first phase of a real
+        // fall, so it relaxes the threshold and boosts confidence. Without it,
+        // behaviour is unchanged (no regression).
+        let fall_threshold = if was_in_free_fall {
+            cfg.fall_g_threshold * FREEFALL_THRESHOLD_RELAX
+        } else {
+            cfg.fall_g_threshold
+        };
         if cfg.enable_fall
             && is_on_foot
-            && peak_g >= cfg.fall_g_threshold
+            && peak_g >= fall_threshold
             && speed_kmh < cfg.crash_min_speed_kmh
         {
             // On-foot context gives weaker corroboration ⇒ scale confidence down.
-            let conf = confidence(peak_g, cfg.fall_g_threshold, 0.85);
+            let mut conf = confidence(peak_g, cfg.fall_g_threshold, 0.85);
+            if was_in_free_fall {
+                conf = (conf + FREEFALL_CONFIDENCE_BOOST).min(1.0);
+            }
             if conf >= cfg.min_confidence {
                 return Some(self.register(false, conf, peak_g, speed_before_mps, latitude, longitude, now_ms));
             }
@@ -331,14 +351,14 @@ mod tests {
     fn lone_spike_without_speed_is_not_a_crash() {
         let d = ImpactDetector::new(Some(crash_cfg()));
         // 4 g but stationary ⇒ no crash (corroboration fails).
-        assert!(d.on_impact_window(4.0, 0.0, 0.0, false, 0.0, 0.0, 0).is_none());
+        assert!(d.on_impact_window(4.0, 0.0, 0.0, false, false, 0.0, 0.0, 0).is_none());
     }
 
     #[test]
     fn crash_candidate_then_auto_confirm() {
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
-        let cand = d.on_impact_window(4.0, speed, 0.0, false, 1.0, 2.0, 1000).unwrap();
+        let cand = d.on_impact_window(4.0, speed, 0.0, false, false, 1.0, 2.0, 1000).unwrap();
         assert_eq!(cand.kind, "potential_crash");
         assert_eq!(d.pending_count(), 1);
 
@@ -355,7 +375,7 @@ mod tests {
     #[test]
     fn cancel_prevents_confirmation() {
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(5.0, 70.0 / 3.6, 0.0, false, 0.0, 0.0, 0).unwrap();
+        let cand = d.on_impact_window(5.0, 70.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0).unwrap();
         assert!(d.cancel(cand.id));
         assert!(d.check_confirmations(60000).is_empty());
         assert_eq!(d.pending_count(), 0);
@@ -364,7 +384,7 @@ mod tests {
     #[test]
     fn explicit_confirm_fires_immediately_and_once() {
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(4.5, 80.0 / 3.6, 0.0, false, 0.0, 0.0, 0).unwrap();
+        let cand = d.on_impact_window(4.5, 80.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0).unwrap();
         let ev = d.confirm(cand.id, 2000).unwrap();
         assert_eq!(ev.kind, "crash");
         // Not double-emitted later.
@@ -374,7 +394,7 @@ mod tests {
     #[test]
     fn fall_disabled_by_default() {
         let d = ImpactDetector::new(Some(crash_cfg())); // enable_fall = false
-        assert!(d.on_impact_window(3.0, 1.0, 0.0, true, 0.0, 0.0, 0).is_none());
+        assert!(d.on_impact_window(3.0, 1.0, 0.0, false, true, 0.0, 0.0, 0).is_none());
     }
 
     #[test]
@@ -386,17 +406,33 @@ mod tests {
         let d = ImpactDetector::new(Some(cfg));
         // A real fall spikes well past the 2.5 g floor; 3.0 g is below the
         // confidence gate by design (weak corroboration on foot).
-        let cand = d.on_impact_window(5.0, 0.5, 0.0, true, 0.0, 0.0, 0).unwrap();
+        let cand = d.on_impact_window(5.0, 0.5, 0.0, false, true, 0.0, 0.0, 0).unwrap();
         assert_eq!(cand.kind, "potential_fall");
         let confirmed = d.check_confirmations(60000);
         assert_eq!(confirmed[0].kind, "fall");
     }
 
     #[test]
+    fn free_fall_rescues_a_sub_threshold_fall() {
+        // 2.0 g is below the 2.5 g fall threshold, so on its own it's not a fall...
+        let cfg = ImpactConfig { enable_fall: true, ..Default::default() };
+        let no_ff = ImpactDetector::new(Some(cfg));
+        assert!(
+            no_ff.on_impact_window(2.0, 0.5, 0.0, false, true, 0.0, 0.0, 0).is_none(),
+            "sub-threshold jolt with no free-fall must NOT fire (no regression)"
+        );
+        // ...but a preceding free-fall corroborates it ⇒ fall.
+        let with_ff = ImpactDetector::new(Some(ImpactConfig { enable_fall: true, ..Default::default() }));
+        let cand = with_ff.on_impact_window(2.0, 0.5, 0.0, true, true, 0.0, 0.0, 0);
+        assert!(cand.is_some(), "free-fall must rescue a sub-threshold fall (#180)");
+        assert_eq!(cand.unwrap().kind, "potential_fall");
+    }
+
+    #[test]
     fn weak_spike_below_threshold_ignored() {
         // 1.0 g is below the 2.0 g default threshold ⇒ not a crash.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 0.0, false, 0.0, 0.0, 0).is_none());
+        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0).is_none());
     }
 
     #[test]
@@ -404,7 +440,7 @@ mod tests {
         // A fully-corroborated crash exactly at the default 2.0 g threshold must
         // register — the confidence gate must not silently raise it.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(2.0, 60.0 / 3.6, 0.0, false, 0.0, 0.0, 1000);
+        let cand = d.on_impact_window(2.0, 60.0 / 3.6, 0.0, false, false, 0.0, 0.0, 1000);
         assert!(cand.is_some());
         assert_eq!(cand.unwrap().kind, "potential_crash");
     }
@@ -415,12 +451,12 @@ mod tests {
         let speed = 60.0 / 3.6;
         let no_gyro = ImpactDetector::new(Some(crash_cfg()));
         assert!(
-            no_gyro.on_impact_window(1.6, speed, 0.0, false, 0.0, 0.0, 0).is_none(),
+            no_gyro.on_impact_window(1.6, speed, 0.0, false, false, 0.0, 0.0, 0).is_none(),
             "sub-threshold jolt with no rotation must NOT fire (no regression)"
         );
         // ...but a hard spin (>= 100 deg/s) corroborates it ⇒ crash.
         let with_gyro = ImpactDetector::new(Some(crash_cfg()));
-        let cand = with_gyro.on_impact_window(1.6, speed, 150.0, false, 0.0, 0.0, 0);
+        let cand = with_gyro.on_impact_window(1.6, speed, 150.0, false, false, 0.0, 0.0, 0);
         assert!(cand.is_some(), "rotation must rescue a sub-threshold crash (#179)");
         assert_eq!(cand.unwrap().kind, "potential_crash");
     }
@@ -429,7 +465,7 @@ mod tests {
     fn gyro_does_not_rescue_far_below_threshold() {
         // 1.0 g is below even the rotation-relaxed threshold (2.0 * 0.7 = 1.4) ⇒ no crash.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 200.0, false, 0.0, 0.0, 0).is_none());
+        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 200.0, false, false, 0.0, 0.0, 0).is_none());
     }
 
     #[test]
@@ -438,12 +474,12 @@ mod tests {
         // must not spawn multiple candidates.
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
-        assert!(d.on_impact_window(5.0, speed, 0.0, false, 0.0, 0.0, 1000).is_some());
-        assert!(d.on_impact_window(4.0, speed, 0.0, false, 0.0, 0.0, 1500).is_none()); // bounce
-        assert!(d.on_impact_window(6.0, speed, 0.0, false, 0.0, 0.0, 2000).is_none()); // secondary
+        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, 0.0, 0.0, 1000).is_some());
+        assert!(d.on_impact_window(4.0, speed, 0.0, false, false, 0.0, 0.0, 1500).is_none()); // bounce
+        assert!(d.on_impact_window(6.0, speed, 0.0, false, false, 0.0, 0.0, 2000).is_none()); // secondary
         assert_eq!(d.pending_count(), 1);
         // A genuinely separate impact after the refractory period is allowed.
-        assert!(d.on_impact_window(5.0, speed, 0.0, false, 0.0, 0.0, 1000 + REGISTER_REFRACTORY_MS).is_some());
+        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, 0.0, 0.0, 1000 + REGISTER_REFRACTORY_MS).is_some());
         assert_eq!(d.pending_count(), 2);
     }
 }

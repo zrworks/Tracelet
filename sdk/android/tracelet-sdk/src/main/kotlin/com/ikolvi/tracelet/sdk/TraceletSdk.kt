@@ -136,6 +136,7 @@ class TraceletSdk private constructor(private val context: Context) {
     private var impactDetector: uniffi.tracelet_core.ImpactDetector? = null
     private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val gyroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
+    private val rawAccelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private var accelWindowRunnable: Runnable? = null
     private var impactConfirmRunnable: Runnable? = null
     @Volatile private var lastSpeedMps: Double = 0.0
@@ -342,6 +343,12 @@ class TraceletSdk private constructor(private val context: Context) {
         motionDetector.onGyroSample = { dps ->
             if (impactDetector != null) {
                 gyroBuffer.add(dps)
+            }
+        }
+        // #180: buffer raw total-g to detect a free-fall preceding a fall impact.
+        motionDetector.onAccelRawSample = { totalG ->
+            if (impactDetector != null) {
+                rawAccelBuffer.add(totalG)
             }
         }
         motionDetector.onStopRequested = {
@@ -2292,6 +2299,7 @@ class TraceletSdk private constructor(private val context: Context) {
 
         accelBuffer.clear()
         gyroBuffer.clear()
+        rawAccelBuffer.clear()
         accelWindowRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
@@ -2307,6 +2315,7 @@ class TraceletSdk private constructor(private val context: Context) {
         accelWindowRunnable = null
         accelBuffer.clear()
         gyroBuffer.clear()
+        rawAccelBuffer.clear()
         // NOTE: the impact confirmation loop is intentionally NOT stopped here.
         // A crash typically ends in the vehicle stopping, which disables tracking
         // (stopTimeout) and would otherwise abandon a pending `potential_crash`
@@ -2379,10 +2388,19 @@ class TraceletSdk private constructor(private val context: Context) {
                 gyroPeak = gyroBuffer.maxOrNull() ?: 0.0
                 gyroBuffer.clear()
             }
+            // Free-fall preceding the impact — fall corroboration (#180). Total
+            // acceleration dipping below ~0.5 g indicates the device was falling.
+            val wasInFreeFall: Boolean
+            synchronized(rawAccelBuffer) {
+                val minTotalG = rawAccelBuffer.minOrNull()
+                wasInFreeFall = minTotalG != null && minTotalG < 0.5
+                rawAccelBuffer.clear()
+            }
             val candidate = detector.onImpactWindow(
                 window.peakG,
                 lastSpeedMps,
                 gyroPeak,
+                wasInFreeFall,
                 onFoot,
                 lastLat,
                 lastLng,

@@ -213,6 +213,7 @@ internal class LocationEnginePeriodicTest {
             null,
             null,
             null,
+            null,
             null
         )
         Mockito.verify(db).insertLocation(
@@ -226,6 +227,7 @@ internal class LocationEnginePeriodicTest {
             false,
             false,
             "still",
+            null,
             null,
             null,
             null,

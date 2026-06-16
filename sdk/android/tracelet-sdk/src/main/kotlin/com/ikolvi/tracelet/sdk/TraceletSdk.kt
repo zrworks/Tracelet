@@ -2741,7 +2741,12 @@ class TraceletSdk private constructor(private val context: Context) {
                     disableAutoSyncOnCellular = configManager.getDisableAutoSyncOnCellular(),
                     enableDeltaCompression = configManager.getEnableDeltaCompression(),
                     deltaCoordinatePrecision = configManager.getDeltaCoordinatePrecision(),
-                    locationsOrderDirection = configManager.getLocationsOrderDirection()
+                    locationsOrderDirection = configManager.getLocationsOrderDirection(),
+                    autoSyncThreshold = configManager.getAutoSyncThreshold(),
+                    httpTimeout = configManager.getHttpTimeout(),
+                    syncInterval = configManager.getSyncInterval(),
+                    syncTelematics = configManager.getSyncTelematics(),
+                    telematicsUrl = configManager.getTelematicsUrl()
                 ),
                 geofence = uniffi.tracelet_core.GeofenceConfig(
                     geofenceInitialTrigger = configManager.getGeofenceInitialTrigger(),

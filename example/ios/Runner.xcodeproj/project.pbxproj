@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -26,6 +26,7 @@
 		C1D2E3F4A5B60001CCDDEE01 /* TraceletDatabaseGeofenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60002CCDDEE01 /* TraceletDatabaseGeofenceTests.swift */; };
 		D1E2F3A4B5C60001DDEEFF01 /* TraceletDatabaseMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A4B5C60002DDEEFF01 /* TraceletDatabaseMigrationTests.swift */; };
 		D2E3F4A5B6C70001DDEEFF02 /* DeadReckoningEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70002DDEEFF02 /* DeadReckoningEngineTests.swift */; };
+		DC0874B375D4E421EB5F7E36 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 3A6A09028337339A05FA3BA7 /* FlutterGeneratedPluginSwiftPackage */; };
 		E1F2A3B4C5D60001EEFFAA01 /* ConfigManagerHttpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D60002EEFFAA01 /* ConfigManagerHttpTests.swift */; };
 		E3F4A5B6C7D80001EEFF0003 /* LocationEngineGpsFixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F4A5B6C7D80002EEFF0003 /* LocationEngineGpsFixTests.swift */; };
 		F1A2B3C4D5E60001FFAABB01 /* GeofencePreservationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60002FFAABB01 /* GeofencePreservationTests.swift */; };
@@ -108,7 +109,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8433561E2FE14F860004AD4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		8433561E2FE14F860004AD4A /* Exceptions for "TraceletWidget" folder in "TraceletWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -118,7 +119,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		843356092FE14F850004AD4A /* TraceletWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (8433561E2FE14F860004AD4A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = TraceletWidget; sourceTree = "<group>"; };
+		843356092FE14F850004AD4A /* TraceletWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8433561E2FE14F860004AD4A /* Exceptions for "TraceletWidget" folder in "TraceletWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = TraceletWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +147,7 @@
 			files = (
 				843356082FE14F850004AD4A /* SwiftUI.framework in Frameworks */,
 				843356062FE14F850004AD4A /* WidgetKit.framework in Frameworks */,
+				DC0874B375D4E421EB5F7E36 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,6 +286,7 @@
 			);
 			name = TraceletWidgetExtension;
 			packageProductDependencies = (
+				3A6A09028337339A05FA3BA7 /* FlutterGeneratedPluginSwiftPackage */,
 			);
 			productName = TraceletWidgetExtension;
 			productReference = 843356032FE14F850004AD4A /* TraceletWidgetExtension.appex */;
@@ -287,8 +301,8 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
-				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				8433561A2FE14F860004AD4A /* Embed Foundation Extensions */,
+				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 			);
 			buildRules = (
 			);
@@ -337,7 +351,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
+				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -546,6 +560,7 @@
 				DEVELOPMENT_TEAM = 28GSXHNVQW;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -634,7 +649,7 @@
 				INFOPLIST_FILE = TraceletWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TraceletWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -678,7 +693,7 @@
 				INFOPLIST_FILE = TraceletWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TraceletWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -719,7 +734,7 @@
 				INFOPLIST_FILE = TraceletWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TraceletWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -861,6 +876,7 @@
 				DEVELOPMENT_TEAM = 28GSXHNVQW;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -890,6 +906,7 @@
 				DEVELOPMENT_TEAM = 28GSXHNVQW;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -954,13 +971,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */ = {
+		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		3A6A09028337339A05FA3BA7 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */;
+			productName = FlutterGeneratedPluginSwiftPackage;
+		};
 		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;

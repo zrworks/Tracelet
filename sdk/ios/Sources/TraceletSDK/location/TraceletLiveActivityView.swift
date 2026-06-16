@@ -2,8 +2,12 @@ import SwiftUI
 #if canImport(ActivityKit)
 import ActivityKit
 #endif
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 /// A default SwiftUI View that developers can use inside their Live Activity Widget.
+#if canImport(ActivityKit) && canImport(WidgetKit)
 @available(iOS 16.1, *)
 public struct TraceletLiveActivityView: View {
     public let context: ActivityViewContext<TraceletActivityAttributes>
@@ -30,3 +34,4 @@ public struct TraceletLiveActivityView: View {
         .activitySystemActionForegroundColor(Color.white)
     }
 }
+#endif

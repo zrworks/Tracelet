@@ -8,73 +8,34 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import tracelet_ios
+import TraceletSDK
 
-struct TraceletWidgetAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var emoji: String
-    }
-
-    // Fixed non-changing properties about your activity go here!
-    var name: String
-}
-
+@available(iOS 16.2, *)
 struct TraceletWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: TraceletWidgetAttributes.self) { context in
-            // Lock screen/banner UI goes here
-            VStack {
-                Text("Hello \(context.state.emoji)")
-            }
-            .activityBackgroundTint(Color.cyan)
-            .activitySystemActionForegroundColor(Color.black)
-
+        ActivityConfiguration(for: TraceletActivityAttributes.self) { context in
+            // Lock screen/banner UI
+            TraceletLiveActivityView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI goes here.  Compose the expanded UI through
-                // various regions, like leading/trailing/center/bottom
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Leading")
+                    Text("Tracking")
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Trailing")
+                    Text("Live")
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text("Bottom \(context.state.emoji)")
-                    // more content
+                    Text(context.state.status)
                 }
             } compactLeading: {
-                Text("L")
+                Image(systemName: "location.fill").foregroundColor(.blue)
             } compactTrailing: {
-                Text("T \(context.state.emoji)")
+                Text("Live")
             } minimal: {
-                Text(context.state.emoji)
+                Image(systemName: "location.fill").foregroundColor(.blue)
             }
-            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
         }
     }
 }
 
-extension TraceletWidgetAttributes {
-    fileprivate static var preview: TraceletWidgetAttributes {
-        TraceletWidgetAttributes(name: "World")
-    }
-}
-
-extension TraceletWidgetAttributes.ContentState {
-    fileprivate static var smiley: TraceletWidgetAttributes.ContentState {
-        TraceletWidgetAttributes.ContentState(emoji: "😀")
-     }
-     
-     fileprivate static var starEyes: TraceletWidgetAttributes.ContentState {
-         TraceletWidgetAttributes.ContentState(emoji: "🤩")
-     }
-}
-
-#Preview("Notification", as: .content, using: TraceletWidgetAttributes.preview) {
-   TraceletWidgetLiveActivity()
-} contentStates: {
-    TraceletWidgetAttributes.ContentState.smiley
-    TraceletWidgetAttributes.ContentState.starEyes
-}

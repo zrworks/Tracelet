@@ -180,7 +180,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         if #available(iOS 17.0, *) {
             if let liveConfig = configManager.getLiveActivityConfig() {
+                #if canImport(ActivityKit)
                 LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
+                #endif
                 startLiveUpdateStream()
             } else if configManager.getUseBackgroundActivitySession() {
                 backgroundActivitySession = CLBackgroundActivitySession()
@@ -199,7 +201,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         stopPeriodicTimer()
         
         if #available(iOS 17.0, *) {
+            #if canImport(ActivityKit)
             LiveActivityManager.shared.stopLiveActivity()
+            #endif
             stopLiveUpdateStream()
             (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
             backgroundActivitySession = nil
@@ -211,7 +215,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         (liveUpdateTask as? Task<Void, Never>)?.cancel()
         liveUpdateTask = Task { [weak self] in
             do {
-                let updates = CLLiveUpdate.Updates()
+                let updates = CLLocationUpdate.liveUpdates()
                 for try await update in updates {
                     guard !Task.isCancelled, let self = self else { break }
                     if let location = update.location {
@@ -222,7 +226,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                     }
                 }
             } catch {
-                TraceletLog.error("[Tracelet] CLLiveUpdate stream error: \\(error.localizedDescription)")
+                TraceletLog.error("[Tracelet] CLLocationUpdate stream error: \(error.localizedDescription)")
             }
         }
     }

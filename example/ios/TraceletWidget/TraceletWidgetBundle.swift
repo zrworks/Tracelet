@@ -9,6 +9,7 @@ import WidgetKit
 import SwiftUI
 
 @main
+@available(iOS 18.0, *)
 struct TraceletWidgetBundle: WidgetBundle {
     var body: some Widget {
         TraceletWidget()

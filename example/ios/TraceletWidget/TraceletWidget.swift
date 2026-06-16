@@ -8,6 +8,7 @@
 import WidgetKit
 import SwiftUI
 
+@available(iOS 18.0, *)
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
@@ -36,11 +37,13 @@ struct Provider: AppIntentTimelineProvider {
 //    }
 }
 
+@available(iOS 18.0, *)
 struct SimpleEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
 }
 
+@available(iOS 18.0, *)
 struct TraceletWidgetEntryView : View {
     var entry: Provider.Entry
 
@@ -55,6 +58,7 @@ struct TraceletWidgetEntryView : View {
     }
 }
 
+@available(iOS 18.0, *)
 struct TraceletWidget: Widget {
     let kind: String = "TraceletWidget"
 
@@ -66,6 +70,7 @@ struct TraceletWidget: Widget {
     }
 }
 
+@available(iOS 18.0, *)
 extension ConfigurationAppIntent {
     fileprivate static var smiley: ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
@@ -80,6 +85,7 @@ extension ConfigurationAppIntent {
     }
 }
 
+@available(iOS 18.0, *)
 #Preview(as: .systemSmall) {
     TraceletWidget()
 } timeline: {

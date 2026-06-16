@@ -1,7 +1,6 @@
 import Foundation
 #if canImport(ActivityKit)
 import ActivityKit
-#endif
 
 @available(iOS 16.1, *)
 internal class LiveActivityManager {
@@ -25,7 +24,13 @@ internal class LiveActivityManager {
         // Clean up any orphaned activities from previous app sessions
         for activity in Activity<TraceletActivityAttributes>.activities {
             Task {
-                await activity.end(nil, dismissalPolicy: .immediate)
+                let finalState = TraceletActivityAttributes.ContentState(status: "Tracking stopped")
+                if #available(iOS 16.2, *) {
+                    let content = ActivityContent(state: finalState, staleDate: nil)
+                    await activity.end(content, dismissalPolicy: .immediate)
+                } else {
+                    await activity.end(using: finalState, dismissalPolicy: .immediate)
+                }
             }
         }
         
@@ -61,3 +66,4 @@ internal class LiveActivityManager {
         }
     }
 }
+#endif

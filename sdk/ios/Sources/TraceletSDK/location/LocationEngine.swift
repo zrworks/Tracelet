@@ -434,12 +434,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         let accuracy = configManager.getDesiredAccuracy()
         switch accuracy {
-        case -2: locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-        case -1: locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        case 10: locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        case 100: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        case 1000: locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-        case 3000: locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+        case 0: locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        case 1: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        case 2: locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        case 3, 4: locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
         default: locationManager.desiredAccuracy = kCLLocationAccuracyBest
         }
 

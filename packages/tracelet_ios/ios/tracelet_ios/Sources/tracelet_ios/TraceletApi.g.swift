@@ -731,6 +731,42 @@ struct TlAndroidConfig: Hashable {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
+struct TlLiveActivityConfig: Hashable {
+  var title: String
+  var body: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlLiveActivityConfig? {
+    let title = pigeonVar_list[0] as! String
+    let body = pigeonVar_list[1] as! String
+
+    return TlLiveActivityConfig(
+      title: title,
+      body: body
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      title,
+      body,
+    ]
+  }
+  static func == (lhs: TlLiveActivityConfig, rhs: TlLiveActivityConfig) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.title, rhs.title) && deepEqualsTraceletApi(lhs.body, rhs.body)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlLiveActivityConfig")
+    deepHashTraceletApi(value: title, hasher: &hasher)
+    deepHashTraceletApi(value: body, hasher: &hasher)
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
 struct TlIosConfig: Hashable {
   var activityType: TlIosActivityType
   var useSignificantChangesOnly: Bool
@@ -740,6 +776,7 @@ struct TlIosConfig: Hashable {
   var disableLocationAuthorizationAlert: Bool
   var preventSuspend: Bool
   var useBackgroundActivitySession: Bool
+  var liveActivityConfig: TlLiveActivityConfig? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -752,6 +789,7 @@ struct TlIosConfig: Hashable {
     let disableLocationAuthorizationAlert = pigeonVar_list[5] as! Bool
     let preventSuspend = pigeonVar_list[6] as! Bool
     let useBackgroundActivitySession = pigeonVar_list[7] as! Bool
+    let liveActivityConfig: TlLiveActivityConfig? = nilOrValue(pigeonVar_list[8])
 
     return TlIosConfig(
       activityType: activityType,
@@ -761,7 +799,8 @@ struct TlIosConfig: Hashable {
       locationAuthorizationRequest: locationAuthorizationRequest,
       disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
       preventSuspend: preventSuspend,
-      useBackgroundActivitySession: useBackgroundActivitySession
+      useBackgroundActivitySession: useBackgroundActivitySession,
+      liveActivityConfig: liveActivityConfig
     )
   }
   func toList() -> [Any?] {
@@ -774,13 +813,14 @@ struct TlIosConfig: Hashable {
       disableLocationAuthorizationAlert,
       preventSuspend,
       useBackgroundActivitySession,
+      liveActivityConfig,
     ]
   }
   static func == (lhs: TlIosConfig, rhs: TlIosConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.activityType, rhs.activityType) && deepEqualsTraceletApi(lhs.useSignificantChangesOnly, rhs.useSignificantChangesOnly) && deepEqualsTraceletApi(lhs.showsBackgroundLocationIndicator, rhs.showsBackgroundLocationIndicator) && deepEqualsTraceletApi(lhs.pausesLocationUpdatesAutomatically, rhs.pausesLocationUpdatesAutomatically) && deepEqualsTraceletApi(lhs.locationAuthorizationRequest, rhs.locationAuthorizationRequest) && deepEqualsTraceletApi(lhs.disableLocationAuthorizationAlert, rhs.disableLocationAuthorizationAlert) && deepEqualsTraceletApi(lhs.preventSuspend, rhs.preventSuspend) && deepEqualsTraceletApi(lhs.useBackgroundActivitySession, rhs.useBackgroundActivitySession)
+    return deepEqualsTraceletApi(lhs.activityType, rhs.activityType) && deepEqualsTraceletApi(lhs.useSignificantChangesOnly, rhs.useSignificantChangesOnly) && deepEqualsTraceletApi(lhs.showsBackgroundLocationIndicator, rhs.showsBackgroundLocationIndicator) && deepEqualsTraceletApi(lhs.pausesLocationUpdatesAutomatically, rhs.pausesLocationUpdatesAutomatically) && deepEqualsTraceletApi(lhs.locationAuthorizationRequest, rhs.locationAuthorizationRequest) && deepEqualsTraceletApi(lhs.disableLocationAuthorizationAlert, rhs.disableLocationAuthorizationAlert) && deepEqualsTraceletApi(lhs.preventSuspend, rhs.preventSuspend) && deepEqualsTraceletApi(lhs.useBackgroundActivitySession, rhs.useBackgroundActivitySession) && deepEqualsTraceletApi(lhs.liveActivityConfig, rhs.liveActivityConfig)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -793,6 +833,7 @@ struct TlIosConfig: Hashable {
     deepHashTraceletApi(value: disableLocationAuthorizationAlert, hasher: &hasher)
     deepHashTraceletApi(value: preventSuspend, hasher: &hasher)
     deepHashTraceletApi(value: useBackgroundActivitySession, hasher: &hasher)
+    deepHashTraceletApi(value: liveActivityConfig, hasher: &hasher)
   }
 }
 
@@ -2876,76 +2917,78 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
     case 152:
       return TlAndroidConfig.fromList(self.readValue() as! [Any?])
     case 153:
-      return TlIosConfig.fromList(self.readValue() as! [Any?])
+      return TlLiveActivityConfig.fromList(self.readValue() as! [Any?])
     case 154:
-      return TlHttpConfig.fromList(self.readValue() as! [Any?])
+      return TlIosConfig.fromList(self.readValue() as! [Any?])
     case 155:
-      return TlConfig.fromList(self.readValue() as! [Any?])
+      return TlHttpConfig.fromList(self.readValue() as! [Any?])
     case 156:
-      return TlLoggerConfig.fromList(self.readValue() as! [Any?])
+      return TlConfig.fromList(self.readValue() as! [Any?])
     case 157:
-      return TlMotionConfig.fromList(self.readValue() as! [Any?])
+      return TlLoggerConfig.fromList(self.readValue() as! [Any?])
     case 158:
-      return TlGeofenceConfig.fromList(self.readValue() as! [Any?])
+      return TlMotionConfig.fromList(self.readValue() as! [Any?])
     case 159:
-      return TlPersistenceConfig.fromList(self.readValue() as! [Any?])
+      return TlGeofenceConfig.fromList(self.readValue() as! [Any?])
     case 160:
-      return TlAuditConfig.fromList(self.readValue() as! [Any?])
+      return TlPersistenceConfig.fromList(self.readValue() as! [Any?])
     case 161:
-      return TlPrivacyZoneConfig.fromList(self.readValue() as! [Any?])
+      return TlAuditConfig.fromList(self.readValue() as! [Any?])
     case 162:
-      return TlSecurityConfig.fromList(self.readValue() as! [Any?])
+      return TlPrivacyZoneConfig.fromList(self.readValue() as! [Any?])
     case 163:
-      return TlAttestationConfig.fromList(self.readValue() as! [Any?])
+      return TlSecurityConfig.fromList(self.readValue() as! [Any?])
     case 164:
-      return TlTelematicsConfig.fromList(self.readValue() as! [Any?])
+      return TlAttestationConfig.fromList(self.readValue() as! [Any?])
     case 165:
-      return TlClassifierConfig.fromList(self.readValue() as! [Any?])
+      return TlTelematicsConfig.fromList(self.readValue() as! [Any?])
     case 166:
-      return TlImpactConfig.fromList(self.readValue() as! [Any?])
+      return TlClassifierConfig.fromList(self.readValue() as! [Any?])
     case 167:
-      return TlCoords.fromList(self.readValue() as! [Any?])
+      return TlImpactConfig.fromList(self.readValue() as! [Any?])
     case 168:
-      return TlBattery.fromList(self.readValue() as! [Any?])
+      return TlCoords.fromList(self.readValue() as! [Any?])
     case 169:
-      return TlAddress.fromList(self.readValue() as! [Any?])
+      return TlBattery.fromList(self.readValue() as! [Any?])
     case 170:
-      return TlLocation.fromList(self.readValue() as! [Any?])
+      return TlAddress.fromList(self.readValue() as! [Any?])
     case 171:
-      return TlActivity.fromList(self.readValue() as! [Any?])
+      return TlLocation.fromList(self.readValue() as! [Any?])
     case 172:
-      return TlState.fromList(self.readValue() as! [Any?])
+      return TlActivity.fromList(self.readValue() as! [Any?])
     case 173:
-      return TlGeofence.fromList(self.readValue() as! [Any?])
+      return TlState.fromList(self.readValue() as! [Any?])
     case 174:
-      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofence.fromList(self.readValue() as! [Any?])
     case 175:
-      return TlHttpEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofenceEvent.fromList(self.readValue() as! [Any?])
     case 176:
-      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlHttpEvent.fromList(self.readValue() as! [Any?])
     case 177:
-      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
+      return TlProviderChangeEvent.fromList(self.readValue() as! [Any?])
     case 178:
-      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlCurrentPositionOptions.fromList(self.readValue() as! [Any?])
     case 179:
-      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlActivityChangeEvent.fromList(self.readValue() as! [Any?])
     case 180:
-      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
+      return TlGeofencesChangeEvent.fromList(self.readValue() as! [Any?])
     case 181:
-      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
+      return TlHeartbeatEvent.fromList(self.readValue() as! [Any?])
     case 182:
-      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
+      return TlSpeedMotionEvent.fromList(self.readValue() as! [Any?])
     case 183:
-      return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlAuthorizationEvent.fromList(self.readValue() as! [Any?])
     case 184:
-      return TlDrivingEvent.fromList(self.readValue() as! [Any?])
+      return TlConnectivityChangeEvent.fromList(self.readValue() as! [Any?])
     case 185:
-      return TlImpactEvent.fromList(self.readValue() as! [Any?])
+      return TlDrivingEvent.fromList(self.readValue() as! [Any?])
     case 186:
-      return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
+      return TlImpactEvent.fromList(self.readValue() as! [Any?])
     case 187:
-      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+      return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
     case 188:
+      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+    case 189:
       return TlLogEntry.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -3027,113 +3070,116 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlAndroidConfig {
       super.writeByte(152)
       super.writeValue(value.toList())
-    } else if let value = value as? TlIosConfig {
+    } else if let value = value as? TlLiveActivityConfig {
       super.writeByte(153)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpConfig {
+    } else if let value = value as? TlIosConfig {
       super.writeByte(154)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConfig {
+    } else if let value = value as? TlHttpConfig {
       super.writeByte(155)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLoggerConfig {
+    } else if let value = value as? TlConfig {
       super.writeByte(156)
       super.writeValue(value.toList())
-    } else if let value = value as? TlMotionConfig {
+    } else if let value = value as? TlLoggerConfig {
       super.writeByte(157)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceConfig {
+    } else if let value = value as? TlMotionConfig {
       super.writeByte(158)
       super.writeValue(value.toList())
-    } else if let value = value as? TlPersistenceConfig {
+    } else if let value = value as? TlGeofenceConfig {
       super.writeByte(159)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuditConfig {
+    } else if let value = value as? TlPersistenceConfig {
       super.writeByte(160)
       super.writeValue(value.toList())
-    } else if let value = value as? TlPrivacyZoneConfig {
+    } else if let value = value as? TlAuditConfig {
       super.writeByte(161)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSecurityConfig {
+    } else if let value = value as? TlPrivacyZoneConfig {
       super.writeByte(162)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAttestationConfig {
+    } else if let value = value as? TlSecurityConfig {
       super.writeByte(163)
       super.writeValue(value.toList())
-    } else if let value = value as? TlTelematicsConfig {
+    } else if let value = value as? TlAttestationConfig {
       super.writeByte(164)
       super.writeValue(value.toList())
-    } else if let value = value as? TlClassifierConfig {
+    } else if let value = value as? TlTelematicsConfig {
       super.writeByte(165)
       super.writeValue(value.toList())
-    } else if let value = value as? TlImpactConfig {
+    } else if let value = value as? TlClassifierConfig {
       super.writeByte(166)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCoords {
+    } else if let value = value as? TlImpactConfig {
       super.writeByte(167)
       super.writeValue(value.toList())
-    } else if let value = value as? TlBattery {
+    } else if let value = value as? TlCoords {
       super.writeByte(168)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAddress {
+    } else if let value = value as? TlBattery {
       super.writeByte(169)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLocation {
+    } else if let value = value as? TlAddress {
       super.writeByte(170)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivity {
+    } else if let value = value as? TlLocation {
       super.writeByte(171)
       super.writeValue(value.toList())
-    } else if let value = value as? TlState {
+    } else if let value = value as? TlActivity {
       super.writeByte(172)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofence {
+    } else if let value = value as? TlState {
       super.writeByte(173)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofenceEvent {
+    } else if let value = value as? TlGeofence {
       super.writeByte(174)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHttpEvent {
+    } else if let value = value as? TlGeofenceEvent {
       super.writeByte(175)
       super.writeValue(value.toList())
-    } else if let value = value as? TlProviderChangeEvent {
+    } else if let value = value as? TlHttpEvent {
       super.writeByte(176)
       super.writeValue(value.toList())
-    } else if let value = value as? TlCurrentPositionOptions {
+    } else if let value = value as? TlProviderChangeEvent {
       super.writeByte(177)
       super.writeValue(value.toList())
-    } else if let value = value as? TlActivityChangeEvent {
+    } else if let value = value as? TlCurrentPositionOptions {
       super.writeByte(178)
       super.writeValue(value.toList())
-    } else if let value = value as? TlGeofencesChangeEvent {
+    } else if let value = value as? TlActivityChangeEvent {
       super.writeByte(179)
       super.writeValue(value.toList())
-    } else if let value = value as? TlHeartbeatEvent {
+    } else if let value = value as? TlGeofencesChangeEvent {
       super.writeByte(180)
       super.writeValue(value.toList())
-    } else if let value = value as? TlSpeedMotionEvent {
+    } else if let value = value as? TlHeartbeatEvent {
       super.writeByte(181)
       super.writeValue(value.toList())
-    } else if let value = value as? TlAuthorizationEvent {
+    } else if let value = value as? TlSpeedMotionEvent {
       super.writeByte(182)
       super.writeValue(value.toList())
-    } else if let value = value as? TlConnectivityChangeEvent {
+    } else if let value = value as? TlAuthorizationEvent {
       super.writeByte(183)
       super.writeValue(value.toList())
-    } else if let value = value as? TlDrivingEvent {
+    } else if let value = value as? TlConnectivityChangeEvent {
       super.writeByte(184)
       super.writeValue(value.toList())
-    } else if let value = value as? TlImpactEvent {
+    } else if let value = value as? TlDrivingEvent {
       super.writeByte(185)
       super.writeValue(value.toList())
-    } else if let value = value as? TlModeChangeEvent {
+    } else if let value = value as? TlImpactEvent {
       super.writeByte(186)
       super.writeValue(value.toList())
-    } else if let value = value as? TlTelematicsRecord {
+    } else if let value = value as? TlModeChangeEvent {
       super.writeByte(187)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLogEntry {
+    } else if let value = value as? TlTelematicsRecord {
       super.writeByte(188)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLogEntry {
+      super.writeByte(189)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

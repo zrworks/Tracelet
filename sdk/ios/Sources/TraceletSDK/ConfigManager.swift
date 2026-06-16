@@ -147,6 +147,18 @@ public final class ConfigManager {
     public func getSchedule() -> [String] { cache["schedule"] as? [String] ?? [] }
     public func getPreventSuspend() -> Bool { cache["preventSuspend"] as? Bool ?? false }
     public func getUseBackgroundActivitySession() -> Bool { cache["useBackgroundActivitySession"] as? Bool ?? false }
+    
+    public struct LiveActivityConfig {
+        public let title: String
+        public let body: String
+    }
+
+    public func getLiveActivityConfig() -> LiveActivityConfig? {
+        guard let map = cache["liveActivityConfig"] as? [String: Any],
+              let title = map["title"] as? String,
+              let body = map["body"] as? String else { return nil }
+        return LiveActivityConfig(title: title, body: body)
+    }
 
     // MotionConfig
     public func getIsMoving() -> Bool { cache["isMoving"] as? Bool ?? false }
@@ -245,6 +257,8 @@ public final class ConfigManager {
     public func getEnableDeltaCompression() -> Bool { cache["enableDeltaCompression"] as? Bool ?? false }
     // Default must match the Dart HttpConfig default (5), not 6 (Issue #137).
     public func getDeltaCoordinatePrecision() -> Int { (cache["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 5 }
+    public func getSyncTelematics() -> Bool { cache["syncTelematics"] as? Bool ?? false }
+    public func getTelematicsUrl() -> String { cache["telematicsUrl"] as? String ?? "" }
     
     public func getHttpParams() -> [String: Any] {
         if let params = cache["params"] as? [String: Any] {
@@ -428,7 +442,6 @@ public final class ConfigManager {
             "startOnBoot": false,
             "heartbeatInterval": 60,
             "schedule": [] as [String],
-            "preventSuspend": false,
             "isMoving": false,
             "stopTimeout": 5,
             "motionTriggerDelay": 0,

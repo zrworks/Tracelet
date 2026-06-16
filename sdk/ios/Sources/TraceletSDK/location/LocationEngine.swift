@@ -178,7 +178,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         if #available(iOS 17.0, *) {
-            if configManager.getUseBackgroundActivitySession() {
+            if let liveConfig = configManager.getLiveActivityConfig() {
+                // The Live Activity is a UI layer over the existing location
+                // pipeline. Background delivery is provided by the standard
+                // startUpdatingLocation() path plus BackgroundActivitySession/
+                // ServiceSession (owned by TraceletSdk) — we deliberately do NOT
+                // open a second CLLocationUpdate.liveUpdates() stream, which would
+                // double GPS work and duplicate every fix.
+                #if canImport(ActivityKit)
+                LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
+                #endif
+            } else if configManager.getUseBackgroundActivitySession() {
                 backgroundActivitySession = CLBackgroundActivitySession()
             }
         }
@@ -195,6 +205,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         stopPeriodicTimer()
         
         if #available(iOS 17.0, *) {
+            #if canImport(ActivityKit)
+            LiveActivityManager.shared.stopLiveActivity()
+            #endif
             (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
             backgroundActivitySession = nil
         }

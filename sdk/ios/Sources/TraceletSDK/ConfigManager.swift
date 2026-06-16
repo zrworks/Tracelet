@@ -442,7 +442,6 @@ public final class ConfigManager {
             "startOnBoot": false,
             "heartbeatInterval": 60,
             "schedule": [] as [String],
-            "preventSuspend": false,
             "isMoving": false,
             "stopTimeout": 5,
             "motionTriggerDelay": 0,

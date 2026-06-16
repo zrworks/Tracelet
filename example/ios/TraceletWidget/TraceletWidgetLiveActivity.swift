@@ -8,9 +8,6 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
-import tracelet_ios
-import TraceletSDK
-
 @available(iOS 16.2, *)
 struct TraceletWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {

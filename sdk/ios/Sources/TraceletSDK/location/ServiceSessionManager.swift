@@ -1,7 +1,7 @@
 import CoreLocation
 import Foundation
 
-/// Manages a `CLServiceSession` (iOS 17+) to maintain the app's location
+/// Manages a `CLServiceSession` (iOS 18+) to maintain the app's location
 /// authorization state across background transitions and app relaunches.
 ///
 /// ## Purpose

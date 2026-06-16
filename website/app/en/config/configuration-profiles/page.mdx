@@ -59,6 +59,22 @@ final config = Config.lowPower(
 await Tracelet.ready(config);
 ```
 
+## 4. Passive (`Config.passive()`)
+This profile represents the extreme end of battery optimization. On Android, it will not actively turn on the GPS or Wi-Fi scanners; instead, it passively "piggybacks" on location requests made by other apps (e.g., Google Maps, Weather apps) or the OS. On iOS, which lacks a true passive API, this falls back to the lowest possible accuracy (`kCLLocationAccuracyThreeKilometers`), functioning similarly to the Low Power profile.
+
+* **Target Use Case:** Extreme battery saving, background data collection without user impact.
+* **Accuracy:** Variable (depends on what other apps request on Android; 3km on iOS)
+* **Battery Drain:** Zero to negligible
+* **Adaptive Sampling:** Disabled
+
+```dart
+final config = Config.passive(
+  stopOnTerminate: false,
+  startOnBoot: true,
+);
+await Tracelet.ready(config);
+```
+
 ## Customizing Profiles
 
 Profiles are just pre-configured `Config` instances. You can start with a profile and override specific fields using `.copyWith()`:

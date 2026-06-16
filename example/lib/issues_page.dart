@@ -62,6 +62,7 @@ class _IssuesPageState extends State<IssuesPage> {
     162,
     175,
     185,
+    198,
   ];
 
   bool _isIssue134Tracking = false;
@@ -110,6 +111,8 @@ class _IssuesPageState extends State<IssuesPage> {
     _issue185LatController.dispose();
     _issue185LngController.dispose();
     _issue185RadiusController.dispose();
+
+    _issue198Sub?.cancel();
     super.dispose();
   }
 
@@ -1716,6 +1719,60 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  // ==== ISSUE 198: Passive Profile Testing ====
+  bool _isIssue198Tracking = false;
+  StreamSubscription? _issue198Sub;
+
+  Future<void> _startIssue198() async {
+    _setStatus(198, 'Requesting permissions...');
+    final status = await Tracelet.requestLocationAuthorization();
+    if (status != AuthorizationStatus.always &&
+        status != AuthorizationStatus.whenInUse) {
+      _setStatus(198, '❌ Permission denied');
+      return;
+    }
+
+    try {
+      await _issue198Sub?.cancel();
+      _issue198Sub = Tracelet.onLocation((loc) {
+        _setStatus(
+          198,
+          '✅ Passive fix: ${loc.coords.latitude}, ${loc.coords.longitude} (age: ${DateTime.now().difference(DateTime.parse(loc.timestamp)).inSeconds}s)',
+        );
+      });
+
+      // Start with passive profile
+      await Tracelet.ready(
+        Config.passive().copyWith(
+          app: const AppConfig(stopOnTerminate: false),
+          logger: const LoggerConfig(debug: true, logLevel: LogLevel.verbose),
+        ),
+      );
+
+      await Tracelet.start();
+
+      setState(() => _isIssue198Tracking = true);
+      _setStatus(
+        198,
+        'Started Passive Mode. It will only receive locations when other apps request GPS.',
+      );
+    } catch (e) {
+      _setStatus(198, '❌ Error: $e');
+    }
+  }
+
+  Future<void> _stopIssue198() async {
+    try {
+      await _issue198Sub?.cancel();
+      _issue198Sub = null;
+      await Tracelet.stop();
+      setState(() => _isIssue198Tracking = false);
+      _setStatus(198, 'Stopped.');
+    } catch (e) {
+      _setStatus(198, '❌ Stop failed: $e');
+    }
+  }
+
   Widget _buildIssueCard({
     required int issueNumber,
     required String title,
@@ -2491,6 +2548,24 @@ class _IssuesPageState extends State<IssuesPage> {
                           ),
                         ],
                       ),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 198,
+                  title: 'Passive Profile Battery Optimization',
+                  description:
+                      'Tests the extreme battery saving Config.passive() profile. It should not activate the GPS radio itself but will log locations when other apps request them.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _isIssue198Tracking ? null : _startIssue198,
+                      icon: const Icon(Icons.battery_saver),
+                      label: const Text('Start Passive'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isIssue198Tracking ? _stopIssue198 : null,
+                      icon: const Icon(Icons.stop),
+                      label: const Text('Stop'),
                     ),
                   ],
                 ),

@@ -120,7 +120,6 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     // Dead Reckoning
     private var deadReckoningEngine: DeadReckoningEngine?
     private var gpsLossTimer: Timer?
-    private var liveUpdateTask: Any?
 
     /// Current activity type — set by MotionDetector for DR algorithm selection.
     public var currentActivityType: String = "unknown"
@@ -180,10 +179,15 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         if #available(iOS 17.0, *) {
             if let liveConfig = configManager.getLiveActivityConfig() {
+                // The Live Activity is a UI layer over the existing location
+                // pipeline. Background delivery is provided by the standard
+                // startUpdatingLocation() path plus BackgroundActivitySession/
+                // ServiceSession (owned by TraceletSdk) — we deliberately do NOT
+                // open a second CLLocationUpdate.liveUpdates() stream, which would
+                // double GPS work and duplicate every fix.
                 #if canImport(ActivityKit)
                 LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
                 #endif
-                startLiveUpdateStream()
             } else if configManager.getUseBackgroundActivitySession() {
                 backgroundActivitySession = CLBackgroundActivitySession()
             }
@@ -204,37 +208,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             #if canImport(ActivityKit)
             LiveActivityManager.shared.stopLiveActivity()
             #endif
-            stopLiveUpdateStream()
             (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
             backgroundActivitySession = nil
         }
-    }
-
-    @available(iOS 17.0, *)
-    private func startLiveUpdateStream() {
-        (liveUpdateTask as? Task<Void, Never>)?.cancel()
-        liveUpdateTask = Task { [weak self] in
-            do {
-                let updates = CLLocationUpdate.liveUpdates()
-                for try await update in updates {
-                    guard !Task.isCancelled, let self = self else { break }
-                    if let location = update.location {
-                        // Forward to existing delegate pipeline on the main thread
-                        await MainActor.run {
-                            self.locationManager(self.locationManager, didUpdateLocations: [location])
-                        }
-                    }
-                }
-            } catch {
-                TraceletLog.error("[Tracelet] CLLocationUpdate stream error: \(error.localizedDescription)")
-            }
-        }
-    }
-
-    @available(iOS 17.0, *)
-    private func stopLiveUpdateStream() {
-        (liveUpdateTask as? Task<Void, Never>)?.cancel()
-        liveUpdateTask = nil
     }
 
     // MARK: - Periodic one-shot tracking

@@ -8,6 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:tracelet/tracelet.dart' hide State;
 import 'package:tracelet_example/issues/issue_185_card.dart';
 import 'package:tracelet_example/issues/issue_198_card.dart';
+import 'package:tracelet_example/issues/issue_201_card.dart';
+import 'package:tracelet_example/issues/issue_204_card.dart';
 
 @pragma('vm:entry-point')
 void headlessSyncBodyBuilder136(HeadlessEvent event) {
@@ -34,7 +36,7 @@ class _RecentIssuesTabState extends State<RecentIssuesTab> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [147, 149, 154, 159, 162, 175, 185, 198];
+  final List<int> _allIssues = [147, 149, 154, 159, 162, 175, 185, 198, 201, 204];
 
   bool _isIssue134Tracking = false;
   bool _isIssue140Tracking = false;
@@ -1719,6 +1721,8 @@ class _RecentIssuesTabState extends State<RecentIssuesTab> {
                 ),
                 const Issue185Card(),
                 const Issue198Card(),
+                const Issue201Card(),
+                const Issue204Card(),
               ],
             ),
           ),

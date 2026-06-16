@@ -139,6 +139,17 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         sinks.append(sink)
     }
 
+    /// Merges per-call [local] extras on top of any existing (global) extras in
+    /// the location map instead of replacing them, so both the global HTTP extras
+    /// and the extras passed to getCurrentPosition / getLastKnownLocation survive
+    /// into the synced payload (Issue #201).
+    private func mergedExtras(base: Any?, local: [String: Any]) -> Any? {
+        if local.isEmpty { return base }
+        var merged = (base as? [String: Any]) ?? [:]
+        for (key, value) in local { merged[key] = value }
+        return merged
+    }
+
     // MARK: - Start / Stop
 
     public func start() {
@@ -575,7 +586,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             let ageMs = Int64(Date().timeIntervalSince(cached.timestamp) * 1000)
             if ageMs <= maximumAge {
                 var locationMap = buildLocationMap(cached)
-                if !extras.isEmpty { locationMap["extras"] = extras }
+                locationMap["extras"] = mergedExtras(base: locationMap["extras"], local: extras)
                 if persist {
                     self.sinks.forEach { $0.insertLocation(locationMap) }
                     self.onLocationPersisted?()
@@ -611,7 +622,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         var locationMap = buildLocationMap(location)
-        if !extras.isEmpty { locationMap["extras"] = extras }
+        locationMap["extras"] = mergedExtras(base: locationMap["extras"], local: extras)
         locationMap["event"] = "getLastKnownLocation"
         if persist {
             self.sinks.forEach { $0.insertLocation(locationMap) }
@@ -1152,7 +1163,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             return
         }
         var locationMap = buildLocationMap(best)
-        if !extras.isEmpty { locationMap["extras"] = extras }
+        locationMap["extras"] = mergedExtras(base: locationMap["extras"], local: extras)
         
         enrichWithAddressIfNeeded(locationMap: locationMap, location: best) { [weak self] enrichedMap in
             if persist {

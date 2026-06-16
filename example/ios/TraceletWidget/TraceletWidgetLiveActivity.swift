@@ -15,25 +15,71 @@ import TraceletSDK
 struct TraceletWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TraceletActivityAttributes.self) { context in
-            // Lock screen/banner UI
-            TraceletLiveActivityView(context: context)
+            // Custom Lock screen/banner UI
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.cyan)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(context.attributes.title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(context.state.status)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineLimit(2)
+                }
+                Spacer()
+                
+                VStack {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .foregroundColor(.cyan)
+                        .font(.headline)
+                    Text("LIVE")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.cyan)
+                        .padding(.top, 2)
+                }
+            }
+            .padding()
+            .activityBackgroundTint(Color(red: 0.05, green: 0.05, blue: 0.1))
+            .activitySystemActionForegroundColor(Color.white)
+            
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Tracking")
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.cyan)
+                        Text("Tracking")
+                            .fontWeight(.bold)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Live")
+                    Text("LIVE")
+                        .fontWeight(.bold)
+                        .foregroundColor(.red)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     Text(context.state.status)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                 }
             } compactLeading: {
-                Image(systemName: "location.fill").foregroundColor(.blue)
+                Image(systemName: "paperplane.fill").foregroundColor(.cyan)
             } compactTrailing: {
-                Text("Live")
+                Text("LIVE").foregroundColor(.red).fontWeight(.bold)
             } minimal: {
-                Image(systemName: "location.fill").foregroundColor(.blue)
+                Image(systemName: "paperplane.fill").foregroundColor(.cyan)
             }
         }
     }

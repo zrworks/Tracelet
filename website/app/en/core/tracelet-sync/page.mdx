@@ -206,22 +206,24 @@ Your backend receives thousands of raw coordinates. But a coordinate alone doesn
 2. **The Resulting JSON Payload**
    When Tracelet syncs to your backend, every location in the array will include the `context` object, guaranteeing your backend knows exactly which task this location belongs to.
 
-   ```json
-   {
-     "locations": [
-       {
-         "coords": { "latitude": 37.7749, "longitude": -122.4194 },
-         "context": {
-           "taskId": "delivery-1234",
-           "driverId": "john_doe",
-           "custom": {
-             "shift_id": "morning-shift-001"
-           }
-         }
-       }
-     ]
-   }
-   ```
+    ```json
+    {
+      "locations": [
+        {
+          "coords": { "latitude": 37.7749, "longitude": -122.4194 },
+          "battery": { "level": 0.85, "isCharging": true },
+          "extras": { "your_custom_key": "your_value" },
+          "context": {
+            "taskId": "delivery-1234",
+            "driverId": "john_doe",
+            "custom": {
+              "shift_id": "morning-shift-001"
+            }
+          }
+        }
+      ]
+    }
+    ```
 
 3. **Clearing Context**
    When the driver finishes their delivery, clear the context. Subsequent locations will no longer be tagged.

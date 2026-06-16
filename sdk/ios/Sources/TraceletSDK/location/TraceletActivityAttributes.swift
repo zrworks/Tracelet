@@ -1,4 +1,5 @@
 import Foundation
+#if canImport(ActivityKit)
 import ActivityKit
 
 /// The attributes required to launch the Tracelet Live Activity.
@@ -21,3 +22,4 @@ public struct TraceletActivityAttributes: ActivityAttributes {
         self.title = title
     }
 }
+#endif

@@ -168,6 +168,7 @@ public struct TraceletGeoConfig {
     public var deadReckoningMaxDuration: Int
     public var batteryBudgetPerHour: Double
     public var filter: TraceletLocationFilter?
+    public var resolveAddress: Bool
 
     public init(
         desiredAccuracy: TraceletDesiredAccuracy = .high,
@@ -189,7 +190,8 @@ public struct TraceletGeoConfig {
         deadReckoningActivationDelay: Int = 10,
         deadReckoningMaxDuration: Int = 120,
         batteryBudgetPerHour: Double = 0.0,
-        filter: TraceletLocationFilter? = nil
+        filter: TraceletLocationFilter? = nil,
+        resolveAddress: Bool = false
     ) {
         self.desiredAccuracy = desiredAccuracy
         self.distanceFilter = distanceFilter
@@ -211,6 +213,7 @@ public struct TraceletGeoConfig {
         self.deadReckoningMaxDuration = deadReckoningMaxDuration
         self.batteryBudgetPerHour = batteryBudgetPerHour
         self.filter = filter
+        self.resolveAddress = resolveAddress
     }
 
     public func toMap() -> [String: Any] {
@@ -234,6 +237,7 @@ public struct TraceletGeoConfig {
             "deadReckoningActivationDelay": deadReckoningActivationDelay,
             "deadReckoningMaxDuration": deadReckoningMaxDuration,
             "batteryBudgetPerHour": batteryBudgetPerHour,
+            "resolveAddress": resolveAddress
         ]
         if let filter = filter { map["filter"] = filter.toMap() }
         return map
@@ -260,7 +264,8 @@ public struct TraceletGeoConfig {
             deadReckoningActivationDelay: (map["deadReckoningActivationDelay"] as? NSNumber)?.intValue ?? 10,
             deadReckoningMaxDuration: (map["deadReckoningMaxDuration"] as? NSNumber)?.intValue ?? 120,
             batteryBudgetPerHour: (map["batteryBudgetPerHour"] as? NSNumber)?.doubleValue ?? 0.0,
-            filter: (map["filter"] as? [String: Any]).map { TraceletLocationFilter.fromMap($0) }
+            filter: (map["filter"] as? [String: Any]).map { TraceletLocationFilter.fromMap($0) },
+            resolveAddress: map["resolveAddress"] as? Bool ?? false
         )
     }
 }
@@ -339,6 +344,24 @@ public struct TraceletAndroidConfig {
 
 // MARK: - IosConfig
 
+public struct TraceletLiveActivityConfig {
+    public var title: String
+    public var body: String
+    public init(title: String = "Tracking Location", body: String = "Your location is being updated in the background.") {
+        self.title = title
+        self.body = body
+    }
+    public func toMap() -> [String: Any] {
+        return ["title": title, "body": body]
+    }
+    public static func fromMap(_ map: [String: Any]) -> TraceletLiveActivityConfig {
+        return TraceletLiveActivityConfig(
+            title: map["title"] as? String ?? "Tracking Location",
+            body: map["body"] as? String ?? "Your location is being updated in the background."
+        )
+    }
+}
+
 public struct TraceletIosConfig {
     public var activityType: TraceletActivityType
     public var useSignificantChangesOnly: Bool
@@ -348,6 +371,7 @@ public struct TraceletIosConfig {
     public var disableLocationAuthorizationAlert: Bool
     public var preventSuspend: Bool
     public var useBackgroundActivitySession: Bool
+    public var liveActivityConfig: TraceletLiveActivityConfig?
 
     public init(
         activityType: TraceletActivityType = .other,
@@ -357,7 +381,8 @@ public struct TraceletIosConfig {
         locationAuthorizationRequest: TraceletAuthorizationRequest = .always,
         disableLocationAuthorizationAlert: Bool = false,
         preventSuspend: Bool = false,
-        useBackgroundActivitySession: Bool = false
+        useBackgroundActivitySession: Bool = false,
+        liveActivityConfig: TraceletLiveActivityConfig? = nil
     ) {
         self.activityType = activityType
         self.useSignificantChangesOnly = useSignificantChangesOnly
@@ -367,10 +392,11 @@ public struct TraceletIosConfig {
         self.disableLocationAuthorizationAlert = disableLocationAuthorizationAlert
         self.preventSuspend = preventSuspend
         self.useBackgroundActivitySession = useBackgroundActivitySession
+        self.liveActivityConfig = liveActivityConfig
     }
 
     public func toMap() -> [String: Any] {
-        [
+        var map: [String: Any] = [
             "activityType": activityType.rawValue,
             "useSignificantChangesOnly": useSignificantChangesOnly,
             "showsBackgroundLocationIndicator": showsBackgroundLocationIndicator,
@@ -380,10 +406,18 @@ public struct TraceletIosConfig {
             "preventSuspend": preventSuspend,
             "useBackgroundActivitySession": useBackgroundActivitySession
         ]
+        if let liveActivityConfig = liveActivityConfig {
+            map["liveActivityConfig"] = liveActivityConfig.toMap()
+        }
+        return map
     }
 
     public static func fromMap(_ map: [String: Any]) -> TraceletIosConfig {
-        TraceletIosConfig(
+        var liveConfig: TraceletLiveActivityConfig? = nil
+        if let liveMap = map["liveActivityConfig"] as? [String: Any] {
+            liveConfig = TraceletLiveActivityConfig.fromMap(liveMap)
+        }
+        return TraceletIosConfig(
             activityType: TraceletActivityType(rawValue: (map["activityType"] as? NSNumber)?.intValue ?? 0) ?? .other,
             useSignificantChangesOnly: map["useSignificantChangesOnly"] as? Bool ?? false,
             showsBackgroundLocationIndicator: map["showsBackgroundLocationIndicator"] as? Bool ?? false,
@@ -391,7 +425,8 @@ public struct TraceletIosConfig {
             locationAuthorizationRequest: (map["locationAuthorizationRequest"] as? String) == "WhenInUse" ? .whenInUse : .always,
             disableLocationAuthorizationAlert: map["disableLocationAuthorizationAlert"] as? Bool ?? false,
             preventSuspend: map["preventSuspend"] as? Bool ?? false,
-            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false
+            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false,
+            liveActivityConfig: liveConfig
         )
     }
 }
@@ -444,9 +479,14 @@ public struct TraceletHttpConfig {
     public var maxRetries: Int, retryBackoffBase: Int, retryBackoffCap: Int
     public var enableDeltaCompression: Bool, deltaCoordinatePrecision: Int
     public var sslPinningCertificates: [String], sslPinningFingerprints: [String]
-    public init(url: String? = nil, method: TraceletHttpMethod = .post, headers: [String: String] = [:], httpRootProperty: String = "location", batchSync: Bool = false, maxBatchSize: Int = 250, autoSync: Bool = true, autoSyncThreshold: Int = 0, httpTimeout: Int = 60000, params: [String: Any] = [:], locationsOrderDirection: TraceletLocationOrder = .asc, extras: [String: Any] = [:], disableAutoSyncOnCellular: Bool = false, maxRetries: Int = 10, retryBackoffBase: Int = 1000, retryBackoffCap: Int = 300000, enableDeltaCompression: Bool = false, deltaCoordinatePrecision: Int = 5, sslPinningCertificates: [String] = [], sslPinningFingerprints: [String] = []) { self.url = url; self.method = method; self.headers = headers; self.httpRootProperty = httpRootProperty; self.batchSync = batchSync; self.maxBatchSize = maxBatchSize; self.autoSync = autoSync; self.autoSyncThreshold = autoSyncThreshold; self.httpTimeout = httpTimeout; self.params = params; self.locationsOrderDirection = locationsOrderDirection; self.extras = extras; self.disableAutoSyncOnCellular = disableAutoSyncOnCellular; self.maxRetries = maxRetries; self.retryBackoffBase = retryBackoffBase; self.retryBackoffCap = retryBackoffCap; self.enableDeltaCompression = enableDeltaCompression; self.deltaCoordinatePrecision = deltaCoordinatePrecision; self.sslPinningCertificates = sslPinningCertificates; self.sslPinningFingerprints = sslPinningFingerprints }
-    public func toMap() -> [String: Any] { var map: [String: Any] = ["method": method.rawValue, "headers": headers, "httpRootProperty": httpRootProperty, "batchSync": batchSync, "maxBatchSize": maxBatchSize, "autoSync": autoSync, "autoSyncThreshold": autoSyncThreshold, "httpTimeout": httpTimeout, "params": params, "locationsOrderDirection": locationsOrderDirection.rawValue, "httpExtras": extras, "disableAutoSyncOnCellular": disableAutoSyncOnCellular, "maxRetries": maxRetries, "retryBackoffBase": retryBackoffBase, "retryBackoffCap": retryBackoffCap, "enableDeltaCompression": enableDeltaCompression, "deltaCoordinatePrecision": deltaCoordinatePrecision, "sslPinningCertificates": sslPinningCertificates, "sslPinningFingerprints": sslPinningFingerprints]; if let url = url { map["url"] = url }; return map }
-    public static func fromMap(_ map: [String: Any]) -> TraceletHttpConfig { TraceletHttpConfig(url: map["url"] as? String, method: TraceletHttpMethod(rawValue: (map["method"] as? NSNumber)?.intValue ?? 0) ?? .post, headers: map["headers"] as? [String: String] ?? [:], httpRootProperty: map["httpRootProperty"] as? String ?? "location", batchSync: map["batchSync"] as? Bool ?? false, maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250, autoSync: map["autoSync"] as? Bool ?? true, autoSyncThreshold: (map["autoSyncThreshold"] as? NSNumber)?.intValue ?? 0, httpTimeout: (map["httpTimeout"] as? NSNumber)?.intValue ?? 60000, params: map["params"] as? [String: Any] ?? [:], locationsOrderDirection: TraceletLocationOrder(rawValue: (map["locationsOrderDirection"] as? NSNumber)?.intValue ?? 0) ?? .asc, extras: map["httpExtras"] as? [String: Any] ?? [:], disableAutoSyncOnCellular: map["disableAutoSyncOnCellular"] as? Bool ?? false, maxRetries: (map["maxRetries"] as? NSNumber)?.intValue ?? 10, retryBackoffBase: (map["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000, retryBackoffCap: (map["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000, enableDeltaCompression: map["enableDeltaCompression"] as? Bool ?? false, deltaCoordinatePrecision: (map["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 5, sslPinningCertificates: map["sslPinningCertificates"] as? [String] ?? [], sslPinningFingerprints: map["sslPinningFingerprints"] as? [String] ?? []) }
+    public var autoSyncDelay: Int?, syncInterval: Int
+    public var syncTelematics: Bool, telematicsUrl: String?
+
+    public init(url: String? = nil, method: TraceletHttpMethod = .post, headers: [String: String] = [:], httpRootProperty: String = "location", batchSync: Bool = false, maxBatchSize: Int = 250, autoSync: Bool = true, autoSyncThreshold: Int = 0, httpTimeout: Int = 60000, params: [String: Any] = [:], locationsOrderDirection: TraceletLocationOrder = .asc, extras: [String: Any] = [:], disableAutoSyncOnCellular: Bool = false, maxRetries: Int = 10, retryBackoffBase: Int = 1000, retryBackoffCap: Int = 300000, enableDeltaCompression: Bool = false, deltaCoordinatePrecision: Int = 5, sslPinningCertificates: [String] = [], sslPinningFingerprints: [String] = [], autoSyncDelay: Int? = nil, syncInterval: Int = 900000, syncTelematics: Bool = false, telematicsUrl: String? = nil) { self.url = url; self.method = method; self.headers = headers; self.httpRootProperty = httpRootProperty; self.batchSync = batchSync; self.maxBatchSize = maxBatchSize; self.autoSync = autoSync; self.autoSyncThreshold = autoSyncThreshold; self.httpTimeout = httpTimeout; self.params = params; self.locationsOrderDirection = locationsOrderDirection; self.extras = extras; self.disableAutoSyncOnCellular = disableAutoSyncOnCellular; self.maxRetries = maxRetries; self.retryBackoffBase = retryBackoffBase; self.retryBackoffCap = retryBackoffCap; self.enableDeltaCompression = enableDeltaCompression; self.deltaCoordinatePrecision = deltaCoordinatePrecision; self.sslPinningCertificates = sslPinningCertificates; self.sslPinningFingerprints = sslPinningFingerprints; self.autoSyncDelay = autoSyncDelay; self.syncInterval = syncInterval; self.syncTelematics = syncTelematics; self.telematicsUrl = telematicsUrl }
+
+    public func toMap() -> [String: Any] { var map: [String: Any] = ["method": method.rawValue, "headers": headers, "httpRootProperty": httpRootProperty, "batchSync": batchSync, "maxBatchSize": maxBatchSize, "autoSync": autoSync, "autoSyncThreshold": autoSyncThreshold, "httpTimeout": httpTimeout, "params": params, "locationsOrderDirection": locationsOrderDirection.rawValue, "httpExtras": extras, "disableAutoSyncOnCellular": disableAutoSyncOnCellular, "maxRetries": maxRetries, "retryBackoffBase": retryBackoffBase, "retryBackoffCap": retryBackoffCap, "enableDeltaCompression": enableDeltaCompression, "deltaCoordinatePrecision": deltaCoordinatePrecision, "sslPinningCertificates": sslPinningCertificates, "sslPinningFingerprints": sslPinningFingerprints, "syncInterval": syncInterval, "syncTelematics": syncTelematics]; if let url = url { map["url"] = url }; if let t = telematicsUrl { map["telematicsUrl"] = t }; if let d = autoSyncDelay { map["autoSyncDelay"] = d }; return map }
+
+    public static func fromMap(_ map: [String: Any]) -> TraceletHttpConfig { TraceletHttpConfig(url: map["url"] as? String, method: TraceletHttpMethod(rawValue: (map["method"] as? NSNumber)?.intValue ?? 0) ?? .post, headers: map["headers"] as? [String: String] ?? [:], httpRootProperty: map["httpRootProperty"] as? String ?? "location", batchSync: map["batchSync"] as? Bool ?? false, maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250, autoSync: map["autoSync"] as? Bool ?? true, autoSyncThreshold: (map["autoSyncThreshold"] as? NSNumber)?.intValue ?? 0, httpTimeout: (map["httpTimeout"] as? NSNumber)?.intValue ?? 60000, params: map["params"] as? [String: Any] ?? [:], locationsOrderDirection: TraceletLocationOrder(rawValue: (map["locationsOrderDirection"] as? NSNumber)?.intValue ?? 0) ?? .asc, extras: map["httpExtras"] as? [String: Any] ?? [:], disableAutoSyncOnCellular: map["disableAutoSyncOnCellular"] as? Bool ?? false, maxRetries: (map["maxRetries"] as? NSNumber)?.intValue ?? 10, retryBackoffBase: (map["retryBackoffBase"] as? NSNumber)?.intValue ?? 1000, retryBackoffCap: (map["retryBackoffCap"] as? NSNumber)?.intValue ?? 300000, enableDeltaCompression: map["enableDeltaCompression"] as? Bool ?? false, deltaCoordinatePrecision: (map["deltaCoordinatePrecision"] as? NSNumber)?.intValue ?? 5, sslPinningCertificates: map["sslPinningCertificates"] as? [String] ?? [], sslPinningFingerprints: map["sslPinningFingerprints"] as? [String] ?? [], autoSyncDelay: map["autoSyncDelay"] as? Int, syncInterval: (map["syncInterval"] as? NSNumber)?.intValue ?? 900000, syncTelematics: map["syncTelematics"] as? Bool ?? false, telematicsUrl: map["telematicsUrl"] as? String) }
 }
 
 // MARK: - TraceletLoggerConfig
@@ -462,9 +502,15 @@ public struct TraceletMotionConfig {
     public var stopTimeout: Int, motionTriggerDelay: Int, disableMotionActivityUpdates: Bool, isMoving: Bool
     public var activityRecognitionInterval: Int, minimumActivityRecognitionConfidence: Int, disableStopDetection: Bool, stopDetectionDelay: Int, stopOnStationary: Bool
     public var activityTypes: [TraceletMotionActivityType]
-    public init(stopTimeout: Int = 5, motionTriggerDelay: Int = 0, disableMotionActivityUpdates: Bool = false, isMoving: Bool = false, activityRecognitionInterval: Int = 10000, minimumActivityRecognitionConfidence: Int = 75, disableStopDetection: Bool = false, stopDetectionDelay: Int = 0, stopOnStationary: Bool = false, activityTypes: [TraceletMotionActivityType] = [.still, .onFoot, .walking, .running, .onBicycle, .inVehicle]) { self.stopTimeout = stopTimeout; self.motionTriggerDelay = motionTriggerDelay; self.disableMotionActivityUpdates = disableMotionActivityUpdates; self.isMoving = isMoving; self.activityRecognitionInterval = activityRecognitionInterval; self.minimumActivityRecognitionConfidence = minimumActivityRecognitionConfidence; self.disableStopDetection = disableStopDetection; self.stopDetectionDelay = stopDetectionDelay; self.stopOnStationary = stopOnStationary; self.activityTypes = activityTypes }
-    public func toMap() -> [String: Any] { ["stopTimeout": stopTimeout, "motionTriggerDelay": motionTriggerDelay, "disableMotionActivityUpdates": disableMotionActivityUpdates, "isMoving": isMoving, "activityRecognitionInterval": activityRecognitionInterval, "minimumActivityRecognitionConfidence": minimumActivityRecognitionConfidence, "disableStopDetection": disableStopDetection, "stopDetectionDelay": stopDetectionDelay, "stopOnStationary": stopOnStationary, "activityTypes": activityTypes.map { $0.rawValue }] }
-    public static func fromMap(_ map: [String: Any]) -> TraceletMotionConfig { TraceletMotionConfig(stopTimeout: (map["stopTimeout"] as? NSNumber)?.intValue ?? 5, motionTriggerDelay: (map["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0, disableMotionActivityUpdates: map["disableMotionActivityUpdates"] as? Bool ?? false, isMoving: map["isMoving"] as? Bool ?? false, activityRecognitionInterval: (map["activityRecognitionInterval"] as? NSNumber)?.intValue ?? 10000, minimumActivityRecognitionConfidence: (map["minimumActivityRecognitionConfidence"] as? NSNumber)?.intValue ?? 75, disableStopDetection: map["disableStopDetection"] as? Bool ?? false, stopDetectionDelay: (map["stopDetectionDelay"] as? NSNumber)?.intValue ?? 0, stopOnStationary: map["stopOnStationary"] as? Bool ?? false, activityTypes: (map["activityTypes"] as? [String] ?? []).compactMap { TraceletMotionActivityType(rawValue: $0) }) }
+    public var stationaryRadius: Double, useSignificantChangesOnly: Bool, shakeThreshold: Double, stillThreshold: Double, stillSampleCount: Int
+    public var motionDetectionMode: Int, speedMovingThreshold: Double, speedStationaryDelay: Int, stationaryTrackingMode: Int
+    public var stationaryPeriodicInterval: Int, stationaryPeriodicAccuracy: Int, speedWakeConfirmCount: Int
+
+    public init(stopTimeout: Int = 5, motionTriggerDelay: Int = 0, disableMotionActivityUpdates: Bool = false, isMoving: Bool = false, activityRecognitionInterval: Int = 10000, minimumActivityRecognitionConfidence: Int = 75, disableStopDetection: Bool = false, stopDetectionDelay: Int = 0, stopOnStationary: Bool = false, activityTypes: [TraceletMotionActivityType] = [.still, .onFoot, .walking, .running, .onBicycle, .inVehicle], stationaryRadius: Double = 25.0, useSignificantChangesOnly: Bool = false, shakeThreshold: Double = 2.5, stillThreshold: Double = 0.4, stillSampleCount: Int = 25, motionDetectionMode: Int = 0, speedMovingThreshold: Double = 1.5, speedStationaryDelay: Int = 180, stationaryTrackingMode: Int = 0, stationaryPeriodicInterval: Int = 120, stationaryPeriodicAccuracy: Int = 0, speedWakeConfirmCount: Int = 1) { self.stopTimeout = stopTimeout; self.motionTriggerDelay = motionTriggerDelay; self.disableMotionActivityUpdates = disableMotionActivityUpdates; self.isMoving = isMoving; self.activityRecognitionInterval = activityRecognitionInterval; self.minimumActivityRecognitionConfidence = minimumActivityRecognitionConfidence; self.disableStopDetection = disableStopDetection; self.stopDetectionDelay = stopDetectionDelay; self.stopOnStationary = stopOnStationary; self.activityTypes = activityTypes; self.stationaryRadius = stationaryRadius; self.useSignificantChangesOnly = useSignificantChangesOnly; self.shakeThreshold = shakeThreshold; self.stillThreshold = stillThreshold; self.stillSampleCount = stillSampleCount; self.motionDetectionMode = motionDetectionMode; self.speedMovingThreshold = speedMovingThreshold; self.speedStationaryDelay = speedStationaryDelay; self.stationaryTrackingMode = stationaryTrackingMode; self.stationaryPeriodicInterval = stationaryPeriodicInterval; self.stationaryPeriodicAccuracy = stationaryPeriodicAccuracy; self.speedWakeConfirmCount = speedWakeConfirmCount }
+
+    public func toMap() -> [String: Any] { ["stopTimeout": stopTimeout, "motionTriggerDelay": motionTriggerDelay, "disableMotionActivityUpdates": disableMotionActivityUpdates, "isMoving": isMoving, "activityRecognitionInterval": activityRecognitionInterval, "minimumActivityRecognitionConfidence": minimumActivityRecognitionConfidence, "disableStopDetection": disableStopDetection, "stopDetectionDelay": stopDetectionDelay, "stopOnStationary": stopOnStationary, "activityTypes": activityTypes.map { $0.rawValue }, "stationaryRadius": stationaryRadius, "useSignificantChangesOnly": useSignificantChangesOnly, "shakeThreshold": shakeThreshold, "stillThreshold": stillThreshold, "stillSampleCount": stillSampleCount, "motionDetectionMode": motionDetectionMode, "speedMovingThreshold": speedMovingThreshold, "speedStationaryDelay": speedStationaryDelay, "stationaryTrackingMode": stationaryTrackingMode, "stationaryPeriodicInterval": stationaryPeriodicInterval, "stationaryPeriodicAccuracy": stationaryPeriodicAccuracy, "speedWakeConfirmCount": speedWakeConfirmCount] }
+
+    public static func fromMap(_ map: [String: Any]) -> TraceletMotionConfig { TraceletMotionConfig(stopTimeout: (map["stopTimeout"] as? NSNumber)?.intValue ?? 5, motionTriggerDelay: (map["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0, disableMotionActivityUpdates: map["disableMotionActivityUpdates"] as? Bool ?? false, isMoving: map["isMoving"] as? Bool ?? false, activityRecognitionInterval: (map["activityRecognitionInterval"] as? NSNumber)?.intValue ?? 10000, minimumActivityRecognitionConfidence: (map["minimumActivityRecognitionConfidence"] as? NSNumber)?.intValue ?? 75, disableStopDetection: map["disableStopDetection"] as? Bool ?? false, stopDetectionDelay: (map["stopDetectionDelay"] as? NSNumber)?.intValue ?? 0, stopOnStationary: map["stopOnStationary"] as? Bool ?? false, activityTypes: (map["activityTypes"] as? [String] ?? []).compactMap { TraceletMotionActivityType(rawValue: $0) }, stationaryRadius: (map["stationaryRadius"] as? NSNumber)?.doubleValue ?? 25.0, useSignificantChangesOnly: map["useSignificantChangesOnly"] as? Bool ?? false, shakeThreshold: (map["shakeThreshold"] as? NSNumber)?.doubleValue ?? 2.5, stillThreshold: (map["stillThreshold"] as? NSNumber)?.doubleValue ?? 0.4, stillSampleCount: (map["stillSampleCount"] as? NSNumber)?.intValue ?? 25, motionDetectionMode: (map["motionDetectionMode"] as? NSNumber)?.intValue ?? 0, speedMovingThreshold: (map["speedMovingThreshold"] as? NSNumber)?.doubleValue ?? 1.5, speedStationaryDelay: (map["speedStationaryDelay"] as? NSNumber)?.intValue ?? 180, stationaryTrackingMode: (map["stationaryTrackingMode"] as? NSNumber)?.intValue ?? 0, stationaryPeriodicInterval: (map["stationaryPeriodicInterval"] as? NSNumber)?.intValue ?? 120, stationaryPeriodicAccuracy: (map["stationaryPeriodicAccuracy"] as? NSNumber)?.intValue ?? 0, speedWakeConfirmCount: (map["speedWakeConfirmCount"] as? NSNumber)?.intValue ?? 1) }
 }
 
 // MARK: - TraceletGeofenceConfig

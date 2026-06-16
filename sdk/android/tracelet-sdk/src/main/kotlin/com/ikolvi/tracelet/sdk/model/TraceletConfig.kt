@@ -358,6 +358,23 @@ data class HttpConfig(
     val maxBatchSize: Int = 250,
     val autoSync: Boolean = true,
     val params: Map<String, Any?> = emptyMap(),
+    val autoSyncThreshold: Int = 0,
+    val autoSyncDelay: Int? = null,
+    val syncInterval: Int = 900000,
+    val httpTimeout: Int = 60000,
+    val locationsOrderDirection: LocationOrder = LocationOrder.ASC,
+    val disableAutoSyncOnCellular: Boolean = false,
+    val maxRetries: Int = 3,
+    val retryBackoffBase: Int = 1000,
+    val retryBackoffCap: Int = 60000,
+    val enableDeltaCompression: Boolean = false,
+    val deltaCoordinatePrecision: Int = 5,
+    val syncTelematics: Boolean = false,
+    val telematicsUrl: String? = null,
+    val sslPinningFingerprints: List<String>? = null,
+    val sslPinningCertificates: List<String>? = null,
+    val httpRootProperty: String = "location",
+    val extras: Map<String, Any?> = emptyMap(),
 ) {
     companion object {
         fun fromMap(m: Map<String, Any?>) = HttpConfig(
@@ -367,12 +384,38 @@ data class HttpConfig(
             batchSync = m["batchSync"] as? Boolean ?: false,
             maxBatchSize = (m["maxBatchSize"] as? Number)?.toInt() ?: 250,
             autoSync = m["autoSync"] as? Boolean ?: true,
-            params = (m["params"] as? Map<String, Any?>) ?: emptyMap()
+            params = (m["params"] as? Map<String, Any?>) ?: emptyMap(),
+            autoSyncThreshold = (m["autoSyncThreshold"] as? Number)?.toInt() ?: 0,
+            autoSyncDelay = (m["autoSyncDelay"] as? Number)?.toInt(),
+            syncInterval = (m["syncInterval"] as? Number)?.toInt() ?: 900000,
+            httpTimeout = (m["httpTimeout"] as? Number)?.toInt() ?: 60000,
+            locationsOrderDirection = LocationOrder.fromValue((m["locationsOrderDirection"] as? Number)?.toInt() ?: 0),
+            disableAutoSyncOnCellular = m["disableAutoSyncOnCellular"] as? Boolean ?: false,
+            maxRetries = (m["maxRetries"] as? Number)?.toInt() ?: 3,
+            retryBackoffBase = (m["retryBackoffBase"] as? Number)?.toInt() ?: 1000,
+            retryBackoffCap = (m["retryBackoffCap"] as? Number)?.toInt() ?: 60000,
+            enableDeltaCompression = m["enableDeltaCompression"] as? Boolean ?: false,
+            deltaCoordinatePrecision = (m["deltaCoordinatePrecision"] as? Number)?.toInt() ?: 5,
+            syncTelematics = m["syncTelematics"] as? Boolean ?: false,
+            telematicsUrl = m["telematicsUrl"] as? String,
+            sslPinningFingerprints = (m["sslPinningFingerprints"] as? List<*>)?.mapNotNull { it as? String },
+            sslPinningCertificates = (m["sslPinningCertificates"] as? List<*>)?.mapNotNull { it as? String },
+            httpRootProperty = m["httpRootProperty"] as? String ?: "location",
+            extras = (m["extras"] as? Map<String, Any?>) ?: emptyMap()
         )
     }
     fun toMap(): Map<String, Any?> = mapOf(
         "url" to url, "method" to method.value, "headers" to headers, "batchSync" to batchSync,
-        "maxBatchSize" to maxBatchSize, "autoSync" to autoSync, "params" to params
+        "maxBatchSize" to maxBatchSize, "autoSync" to autoSync, "params" to params,
+        "autoSyncThreshold" to autoSyncThreshold, "autoSyncDelay" to autoSyncDelay,
+        "syncInterval" to syncInterval, "httpTimeout" to httpTimeout,
+        "locationsOrderDirection" to locationsOrderDirection.value,
+        "disableAutoSyncOnCellular" to disableAutoSyncOnCellular,
+        "maxRetries" to maxRetries, "retryBackoffBase" to retryBackoffBase, "retryBackoffCap" to retryBackoffCap,
+        "enableDeltaCompression" to enableDeltaCompression, "deltaCoordinatePrecision" to deltaCoordinatePrecision,
+        "syncTelematics" to syncTelematics, "telematicsUrl" to telematicsUrl,
+        "sslPinningFingerprints" to sslPinningFingerprints, "sslPinningCertificates" to sslPinningCertificates,
+        "httpRootProperty" to httpRootProperty, "extras" to extras
     )
 }
 

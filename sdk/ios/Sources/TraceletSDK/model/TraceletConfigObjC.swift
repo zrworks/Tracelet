@@ -151,6 +151,7 @@ public final class TraceletGeoConfigObjC: NSObject {
     public let deadReckoningMaxDuration: Int
     public let batteryBudgetPerHour: Double
     public let filter: TraceletLocationFilterObjC?
+    public let resolveAddress: Bool
 
     public init(
         desiredAccuracy: Int = 0,
@@ -172,7 +173,8 @@ public final class TraceletGeoConfigObjC: NSObject {
         deadReckoningActivationDelay: Int = 10,
         deadReckoningMaxDuration: Int = 120,
         batteryBudgetPerHour: Double = 0.0,
-        filter: TraceletLocationFilterObjC? = nil
+        filter: TraceletLocationFilterObjC? = nil,
+        resolveAddress: Bool = false
     ) {
         self.desiredAccuracy = desiredAccuracy
         self.distanceFilter = distanceFilter
@@ -194,6 +196,7 @@ public final class TraceletGeoConfigObjC: NSObject {
         self.deadReckoningMaxDuration = deadReckoningMaxDuration
         self.batteryBudgetPerHour = batteryBudgetPerHour
         self.filter = filter
+        self.resolveAddress = resolveAddress
     }
 
     public func toMap() -> [String: Any] {
@@ -217,6 +220,7 @@ public final class TraceletGeoConfigObjC: NSObject {
             "deadReckoningActivationDelay": deadReckoningActivationDelay,
             "deadReckoningMaxDuration": deadReckoningMaxDuration,
             "batteryBudgetPerHour": batteryBudgetPerHour,
+            "resolveAddress": resolveAddress
         ]
         if let f = filter { map["filter"] = f.toMap() }
         return map
@@ -243,7 +247,8 @@ public final class TraceletGeoConfigObjC: NSObject {
             deadReckoningActivationDelay: deadReckoningActivationDelay,
             deadReckoningMaxDuration: deadReckoningMaxDuration,
             batteryBudgetPerHour: batteryBudgetPerHour,
-            filter: filter?.toSwift()
+            filter: filter?.toSwift(),
+            resolveAddress: resolveAddress
         )
     }
 
@@ -272,7 +277,8 @@ public final class TraceletGeoConfigObjC: NSObject {
             deadReckoningActivationDelay: (map["deadReckoningActivationDelay"] as? NSNumber)?.intValue ?? 10,
             deadReckoningMaxDuration: (map["deadReckoningMaxDuration"] as? NSNumber)?.intValue ?? 120,
             batteryBudgetPerHour: (map["batteryBudgetPerHour"] as? NSNumber)?.doubleValue ?? 0.0,
-            filter: filterObjC
+            filter: filterObjC,
+            resolveAddress: map["resolveAddress"] as? Bool ?? false
         )
     }
 }
@@ -368,6 +374,27 @@ public final class TraceletAndroidConfigObjC: NSObject {
 
 // MARK: - TraceletIosConfigObjC
 
+@objc(TraceletLiveActivityConfig_ObjC)
+@objcMembers
+public final class TraceletLiveActivityConfigObjC: NSObject {
+    public let title: String
+    public let body: String
+    
+    public init(title: String = "Tracking Location", body: String = "Your location is being updated in the background.") {
+        self.title = title
+        self.body = body
+    }
+    
+    public func toMap() -> [String: Any] {
+        return ["title": title, "body": body]
+    }
+    
+    public func toSwift() -> TraceletLiveActivityConfig {
+        TraceletLiveActivityConfig(title: title, body: body)
+    }
+}
+
+/// Objective-C wrapper for ``TraceletIosConfig``.
 @objc(TraceletIosConfig_ObjC)
 @objcMembers
 public final class TraceletIosConfigObjC: NSObject {
@@ -379,6 +406,7 @@ public final class TraceletIosConfigObjC: NSObject {
     public let disableLocationAuthorizationAlert: Bool
     @objc public let preventSuspend: Bool
     @objc public let useBackgroundActivitySession: Bool
+    @objc public let liveActivityConfig: TraceletLiveActivityConfigObjC?
 
     public init(
         activityType: Int = 0,
@@ -388,7 +416,8 @@ public final class TraceletIosConfigObjC: NSObject {
         locationAuthorizationRequest: String = "Always",
         disableLocationAuthorizationAlert: Bool = false,
         preventSuspend: Bool = false,
-        useBackgroundActivitySession: Bool = false
+        useBackgroundActivitySession: Bool = false,
+        liveActivityConfig: TraceletLiveActivityConfigObjC? = nil
     ) {
         self.activityType = activityType
         self.useSignificantChangesOnly = useSignificantChangesOnly
@@ -398,10 +427,11 @@ public final class TraceletIosConfigObjC: NSObject {
         self.disableLocationAuthorizationAlert = disableLocationAuthorizationAlert
         self.preventSuspend = preventSuspend
         self.useBackgroundActivitySession = useBackgroundActivitySession
+        self.liveActivityConfig = liveActivityConfig
     }
 
     public func toMap() -> [String: Any] {
-        [
+        var map: [String: Any] = [
             "activityType": activityType,
             "useSignificantChangesOnly": useSignificantChangesOnly,
             "showsBackgroundLocationIndicator": showsBackgroundLocationIndicator,
@@ -411,6 +441,10 @@ public final class TraceletIosConfigObjC: NSObject {
             "preventSuspend": preventSuspend,
             "useBackgroundActivitySession": useBackgroundActivitySession
         ]
+        if let liveActivityConfig = liveActivityConfig {
+            map["liveActivityConfig"] = liveActivityConfig.toMap()
+        }
+        return map
     }
 
     public func toSwift() -> TraceletIosConfig {
@@ -419,15 +453,23 @@ public final class TraceletIosConfigObjC: NSObject {
             useSignificantChangesOnly: useSignificantChangesOnly,
             showsBackgroundLocationIndicator: showsBackgroundLocationIndicator,
             pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
-            locationAuthorizationRequest: locationAuthorizationRequest == "Always" ? .always : .whenInUse,
+            locationAuthorizationRequest: locationAuthorizationRequest == "WhenInUse" ? .whenInUse : .always,
             disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
             preventSuspend: preventSuspend,
-            useBackgroundActivitySession: useBackgroundActivitySession
+            useBackgroundActivitySession: useBackgroundActivitySession,
+            liveActivityConfig: liveActivityConfig?.toSwift()
         )
     }
 
     @objc public class func fromMap(_ map: [String: Any]) -> TraceletIosConfigObjC {
-        TraceletIosConfigObjC(
+        var liveActivityConfigObjC: TraceletLiveActivityConfigObjC? = nil
+        if let configMap = map["liveActivityConfig"] as? [String: Any] {
+            liveActivityConfigObjC = TraceletLiveActivityConfigObjC(
+                title: configMap["title"] as? String ?? "Tracking Location",
+                body: configMap["body"] as? String ?? "Your location is being updated in the background."
+            )
+        }
+        return TraceletIosConfigObjC(
             activityType: (map["activityType"] as? NSNumber)?.intValue ?? 0,
             useSignificantChangesOnly: map["useSignificantChangesOnly"] as? Bool ?? false,
             showsBackgroundLocationIndicator: map["showsBackgroundLocationIndicator"] as? Bool ?? false,
@@ -435,7 +477,8 @@ public final class TraceletIosConfigObjC: NSObject {
             locationAuthorizationRequest: map["locationAuthorizationRequest"] as? String ?? "Always",
             disableLocationAuthorizationAlert: map["disableLocationAuthorizationAlert"] as? Bool ?? false,
             preventSuspend: map["preventSuspend"] as? Bool ?? false,
-            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false
+            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false,
+            liveActivityConfig: liveActivityConfigObjC
         )
     }
 }
@@ -698,6 +741,10 @@ public final class TraceletHttpConfigObjC: NSObject {
     public let autoSync: Bool
     public let sslPinningCertificates: [String]?
     public let sslPinningFingerprints: [String]?
+    public let autoSyncDelay: NSNumber?
+    public let syncInterval: Int
+    public let syncTelematics: Bool
+    public let telematicsUrl: String?
 
     public init(
         url: String? = nil,
@@ -708,7 +755,11 @@ public final class TraceletHttpConfigObjC: NSObject {
         maxBatchSize: Int = 250,
         autoSync: Bool = true,
         sslPinningCertificates: [String]? = nil,
-        sslPinningFingerprints: [String]? = nil
+        sslPinningFingerprints: [String]? = nil,
+        autoSyncDelay: NSNumber? = nil,
+        syncInterval: Int = 900000,
+        syncTelematics: Bool = false,
+        telematicsUrl: String? = nil
     ) {
         self.url = url
         self.method = method
@@ -719,6 +770,10 @@ public final class TraceletHttpConfigObjC: NSObject {
         self.autoSync = autoSync
         self.sslPinningCertificates = sslPinningCertificates
         self.sslPinningFingerprints = sslPinningFingerprints
+        self.autoSyncDelay = autoSyncDelay
+        self.syncInterval = syncInterval
+        self.syncTelematics = syncTelematics
+        self.telematicsUrl = telematicsUrl
     }
 
     public func toMap() -> [String: Any] {
@@ -729,10 +784,14 @@ public final class TraceletHttpConfigObjC: NSObject {
             "batchSync": batchSync,
             "maxBatchSize": maxBatchSize,
             "autoSync": autoSync,
+            "syncInterval": syncInterval,
+            "syncTelematics": syncTelematics
         ]
         if let u = url { map["url"] = u }
         if let certs = sslPinningCertificates { map["sslPinningCertificates"] = certs }
         if let fps = sslPinningFingerprints { map["sslPinningFingerprints"] = fps }
+        if let t = telematicsUrl { map["telematicsUrl"] = t }
+        if let d = autoSyncDelay { map["autoSyncDelay"] = d }
         return map
     }
 
@@ -746,7 +805,11 @@ public final class TraceletHttpConfigObjC: NSObject {
             autoSync: autoSync,
             params: params,
             sslPinningCertificates: sslPinningCertificates ?? [],
-            sslPinningFingerprints: sslPinningFingerprints ?? []
+            sslPinningFingerprints: sslPinningFingerprints ?? [],
+            autoSyncDelay: autoSyncDelay?.intValue,
+            syncInterval: syncInterval,
+            syncTelematics: syncTelematics,
+            telematicsUrl: telematicsUrl
         )
     }
 
@@ -760,7 +823,11 @@ public final class TraceletHttpConfigObjC: NSObject {
             maxBatchSize: (map["maxBatchSize"] as? NSNumber)?.intValue ?? 250,
             autoSync: map["autoSync"] as? Bool ?? true,
             sslPinningCertificates: map["sslPinningCertificates"] as? [String],
-            sslPinningFingerprints: map["sslPinningFingerprints"] as? [String]
+            sslPinningFingerprints: map["sslPinningFingerprints"] as? [String],
+            autoSyncDelay: map["autoSyncDelay"] as? NSNumber,
+            syncInterval: (map["syncInterval"] as? NSNumber)?.intValue ?? 900000,
+            syncTelematics: map["syncTelematics"] as? Bool ?? false,
+            telematicsUrl: map["telematicsUrl"] as? String
         )
     }
 }
@@ -813,17 +880,53 @@ public final class TraceletMotionConfigObjC: NSObject {
     public let motionTriggerDelay: Int
     public let disableMotionActivityUpdates: Bool
     public let isMoving: Bool
+    public let stationaryRadius: Double
+    public let useSignificantChangesOnly: Bool
+    public let shakeThreshold: Double
+    public let stillThreshold: Double
+    public let stillSampleCount: Int
+    public let motionDetectionMode: Int
+    public let speedMovingThreshold: Double
+    public let speedStationaryDelay: Int
+    public let stationaryTrackingMode: Int
+    public let stationaryPeriodicInterval: Int
+    public let stationaryPeriodicAccuracy: Int
+    public let speedWakeConfirmCount: Int
 
     public init(
         stopTimeout: Int = 5,
         motionTriggerDelay: Int = 0,
         disableMotionActivityUpdates: Bool = false,
-        isMoving: Bool = false
+        isMoving: Bool = false,
+        stationaryRadius: Double = 25.0,
+        useSignificantChangesOnly: Bool = false,
+        shakeThreshold: Double = 2.5,
+        stillThreshold: Double = 0.4,
+        stillSampleCount: Int = 25,
+        motionDetectionMode: Int = 0,
+        speedMovingThreshold: Double = 1.5,
+        speedStationaryDelay: Int = 180,
+        stationaryTrackingMode: Int = 0,
+        stationaryPeriodicInterval: Int = 120,
+        stationaryPeriodicAccuracy: Int = 0,
+        speedWakeConfirmCount: Int = 1
     ) {
         self.stopTimeout = stopTimeout
         self.motionTriggerDelay = motionTriggerDelay
         self.disableMotionActivityUpdates = disableMotionActivityUpdates
         self.isMoving = isMoving
+        self.stationaryRadius = stationaryRadius
+        self.useSignificantChangesOnly = useSignificantChangesOnly
+        self.shakeThreshold = shakeThreshold
+        self.stillThreshold = stillThreshold
+        self.stillSampleCount = stillSampleCount
+        self.motionDetectionMode = motionDetectionMode
+        self.speedMovingThreshold = speedMovingThreshold
+        self.speedStationaryDelay = speedStationaryDelay
+        self.stationaryTrackingMode = stationaryTrackingMode
+        self.stationaryPeriodicInterval = stationaryPeriodicInterval
+        self.stationaryPeriodicAccuracy = stationaryPeriodicAccuracy
+        self.speedWakeConfirmCount = speedWakeConfirmCount
     }
 
     public func toMap() -> [String: Any] {
@@ -831,7 +934,19 @@ public final class TraceletMotionConfigObjC: NSObject {
             "stopTimeout": stopTimeout,
             "motionTriggerDelay": motionTriggerDelay,
             "disableMotionActivityUpdates": disableMotionActivityUpdates,
-            "isMoving": isMoving
+            "isMoving": isMoving,
+            "stationaryRadius": stationaryRadius,
+            "useSignificantChangesOnly": useSignificantChangesOnly,
+            "shakeThreshold": shakeThreshold,
+            "stillThreshold": stillThreshold,
+            "stillSampleCount": stillSampleCount,
+            "motionDetectionMode": motionDetectionMode,
+            "speedMovingThreshold": speedMovingThreshold,
+            "speedStationaryDelay": speedStationaryDelay,
+            "stationaryTrackingMode": stationaryTrackingMode,
+            "stationaryPeriodicInterval": stationaryPeriodicInterval,
+            "stationaryPeriodicAccuracy": stationaryPeriodicAccuracy,
+            "speedWakeConfirmCount": speedWakeConfirmCount
         ]
     }
 
@@ -840,7 +955,19 @@ public final class TraceletMotionConfigObjC: NSObject {
             stopTimeout: stopTimeout,
             motionTriggerDelay: motionTriggerDelay,
             disableMotionActivityUpdates: disableMotionActivityUpdates,
-            isMoving: isMoving
+            isMoving: isMoving,
+            stationaryRadius: stationaryRadius,
+            useSignificantChangesOnly: useSignificantChangesOnly,
+            shakeThreshold: shakeThreshold,
+            stillThreshold: stillThreshold,
+            stillSampleCount: stillSampleCount,
+            motionDetectionMode: motionDetectionMode,
+            speedMovingThreshold: speedMovingThreshold,
+            speedStationaryDelay: speedStationaryDelay,
+            stationaryTrackingMode: stationaryTrackingMode,
+            stationaryPeriodicInterval: stationaryPeriodicInterval,
+            stationaryPeriodicAccuracy: stationaryPeriodicAccuracy,
+            speedWakeConfirmCount: speedWakeConfirmCount
         )
     }
 
@@ -849,7 +976,19 @@ public final class TraceletMotionConfigObjC: NSObject {
             stopTimeout: (map["stopTimeout"] as? NSNumber)?.intValue ?? 5,
             motionTriggerDelay: (map["motionTriggerDelay"] as? NSNumber)?.intValue ?? 0,
             disableMotionActivityUpdates: map["disableMotionActivityUpdates"] as? Bool ?? false,
-            isMoving: map["isMoving"] as? Bool ?? false
+            isMoving: map["isMoving"] as? Bool ?? false,
+            stationaryRadius: (map["stationaryRadius"] as? NSNumber)?.doubleValue ?? 25.0,
+            useSignificantChangesOnly: map["useSignificantChangesOnly"] as? Bool ?? false,
+            shakeThreshold: (map["shakeThreshold"] as? NSNumber)?.doubleValue ?? 2.5,
+            stillThreshold: (map["stillThreshold"] as? NSNumber)?.doubleValue ?? 0.4,
+            stillSampleCount: (map["stillSampleCount"] as? NSNumber)?.intValue ?? 25,
+            motionDetectionMode: (map["motionDetectionMode"] as? NSNumber)?.intValue ?? 0,
+            speedMovingThreshold: (map["speedMovingThreshold"] as? NSNumber)?.doubleValue ?? 1.5,
+            speedStationaryDelay: (map["speedStationaryDelay"] as? NSNumber)?.intValue ?? 180,
+            stationaryTrackingMode: (map["stationaryTrackingMode"] as? NSNumber)?.intValue ?? 0,
+            stationaryPeriodicInterval: (map["stationaryPeriodicInterval"] as? NSNumber)?.intValue ?? 120,
+            stationaryPeriodicAccuracy: (map["stationaryPeriodicAccuracy"] as? NSNumber)?.intValue ?? 0,
+            speedWakeConfirmCount: (map["speedWakeConfirmCount"] as? NSNumber)?.intValue ?? 1
         )
     }
 }

@@ -2783,7 +2783,12 @@ extension TraceletSdk: SpeedMotionDelegate {
                     disableAutoSyncOnCellular: configManager.getDisableAutoSyncOnCellular(),
                     enableDeltaCompression: configManager.getEnableDeltaCompression(),
                     deltaCoordinatePrecision: Int32(configManager.getDeltaCoordinatePrecision()),
-                    locationsOrderDirection: Int32(configManager.getLocationsOrderDirection())
+                    locationsOrderDirection: Int32(configManager.getLocationsOrderDirection()),
+                    autoSyncThreshold: Int32(configManager.getAutoSyncThreshold()),
+                    httpTimeout: Int32(configManager.getHttpTimeout()),
+                    syncInterval: Int32(configManager.getSyncInterval()),
+                    syncTelematics: configManager.getSyncTelematics(),
+                    telematicsUrl: configManager.getTelematicsUrl().isEmpty ? nil : configManager.getTelematicsUrl()
                 ),
                 geofence: GeofenceConfig(
                     geofenceInitialTrigger: configManager.getGeofenceInitialTrigger(),

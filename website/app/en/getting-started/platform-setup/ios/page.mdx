@@ -177,7 +177,11 @@ Unlike Android, Flutter plugins cannot dynamically create iOS widgets. You must 
 2. Go to **File -> New -> Target...** and select **Widget Extension**.
 3. Name it `TraceletWidget`. Make sure **Include Live Activity** is checked.
 4. In your `Info.plist`, you **must** add: `NSSupportsLiveActivities` = `YES`.
-5. Replace the auto-generated `TraceletWidgetLiveActivity.swift` content with the following:
+5. **Link the SDK to your Widget:** Because your widget needs to use the SDK's exact Activity types, you must link it.
+   - In Xcode, select your new `TraceletWidgetExtension` target.
+   - Go to **General** -> **Frameworks and Libraries**.
+   - Click the **+** button, select `FlutterGeneratedPluginSwiftPackage` (or `TraceletSDK`), and click **Add**.
+6. Replace the auto-generated `TraceletWidgetLiveActivity.swift` content with the following:
 
 ```swift
 import ActivityKit

@@ -1,3 +1,7 @@
+## 3.3.4
+
+**FIX**: resolve battery and extras DB persistence (#175)
+
 ## 3.3.3
 
  - **FIX**(android): deliver headless geofence events after reboot in high-accuracy mode ([#185](https://github.com/Ikolvi/Tracelet/issues/185)). ([b197dc5f](https://github.com/Ikolvi/Tracelet/commit/b197dc5f0e4b5f081590e806b27a6eb52a4ed253))

@@ -1,3 +1,7 @@
+## 3.3.4
+
+**CHORE**: bump version.
+
 ## 3.3.3
 
  - Update a dependency to the latest release.

@@ -5976,6 +5976,26 @@ public struct HttpConfig: Equatable, Hashable {
      * The chronological sort order for synced locations.
      */
     public var locationsOrderDirection: Int32
+    /**
+     * Auto sync threshold.
+     */
+    public var autoSyncThreshold: Int32
+    /**
+     * HTTP timeout in milliseconds.
+     */
+    public var httpTimeout: Int32
+    /**
+     * Sync interval in milliseconds.
+     */
+    public var syncInterval: Int32
+    /**
+     * Enable syncing of telematics data.
+     */
+    public var syncTelematics: Bool
+    /**
+     * URL to sync telematics data to.
+     */
+    public var telematicsUrl: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -6036,7 +6056,22 @@ public struct HttpConfig: Equatable, Hashable {
          */deltaCoordinatePrecision: Int32, 
         /**
          * The chronological sort order for synced locations.
-         */locationsOrderDirection: Int32) {
+         */locationsOrderDirection: Int32, 
+        /**
+         * Auto sync threshold.
+         */autoSyncThreshold: Int32, 
+        /**
+         * HTTP timeout in milliseconds.
+         */httpTimeout: Int32, 
+        /**
+         * Sync interval in milliseconds.
+         */syncInterval: Int32, 
+        /**
+         * Enable syncing of telematics data.
+         */syncTelematics: Bool, 
+        /**
+         * URL to sync telematics data to.
+         */telematicsUrl: String?) {
         self.url = url
         self.method = method
         self.headers = headers
@@ -6056,6 +6091,11 @@ public struct HttpConfig: Equatable, Hashable {
         self.enableDeltaCompression = enableDeltaCompression
         self.deltaCoordinatePrecision = deltaCoordinatePrecision
         self.locationsOrderDirection = locationsOrderDirection
+        self.autoSyncThreshold = autoSyncThreshold
+        self.httpTimeout = httpTimeout
+        self.syncInterval = syncInterval
+        self.syncTelematics = syncTelematics
+        self.telematicsUrl = telematicsUrl
     }
 
     
@@ -6092,7 +6132,12 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
                 disableAutoSyncOnCellular: FfiConverterBool.read(from: &buf), 
                 enableDeltaCompression: FfiConverterBool.read(from: &buf), 
                 deltaCoordinatePrecision: FfiConverterInt32.read(from: &buf), 
-                locationsOrderDirection: FfiConverterInt32.read(from: &buf)
+                locationsOrderDirection: FfiConverterInt32.read(from: &buf), 
+                autoSyncThreshold: FfiConverterInt32.read(from: &buf), 
+                httpTimeout: FfiConverterInt32.read(from: &buf), 
+                syncInterval: FfiConverterInt32.read(from: &buf), 
+                syncTelematics: FfiConverterBool.read(from: &buf), 
+                telematicsUrl: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -6116,6 +6161,11 @@ public struct FfiConverterTypeHttpConfig: FfiConverterRustBuffer {
         FfiConverterBool.write(value.enableDeltaCompression, into: &buf)
         FfiConverterInt32.write(value.deltaCoordinatePrecision, into: &buf)
         FfiConverterInt32.write(value.locationsOrderDirection, into: &buf)
+        FfiConverterInt32.write(value.autoSyncThreshold, into: &buf)
+        FfiConverterInt32.write(value.httpTimeout, into: &buf)
+        FfiConverterInt32.write(value.syncInterval, into: &buf)
+        FfiConverterBool.write(value.syncTelematics, into: &buf)
+        FfiConverterOptionString.write(value.telematicsUrl, into: &buf)
     }
 }
 

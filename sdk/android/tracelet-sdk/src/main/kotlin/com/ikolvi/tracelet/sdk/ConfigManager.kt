@@ -581,6 +581,12 @@ class ConfigManager(context: Context) {
         return emptyMap()
     }
 
+    fun getSyncTelematics(): Boolean =
+        getBool("syncTelematics", false)
+
+    fun getTelematicsUrl(): String? =
+        configCache["telematicsUrl"] as? String
+
     // ---------------------------------------------------------------------------
     // Typed Getters (LoggerConfig)
     // ---------------------------------------------------------------------------

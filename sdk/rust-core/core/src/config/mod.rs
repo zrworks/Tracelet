@@ -322,6 +322,21 @@ pub struct HttpConfig {
     /// The chronological sort order for synced locations.
     #[serde(default)]
     pub locations_order_direction: i32,
+    /// Auto sync threshold.
+    #[serde(default)]
+    pub auto_sync_threshold: i32,
+    /// HTTP timeout in milliseconds.
+    #[serde(default = "default_http_timeout")]
+    pub http_timeout: i32,
+    /// Sync interval in milliseconds.
+    #[serde(default = "default_sync_interval")]
+    pub sync_interval: i32,
+    /// Enable syncing of telematics data.
+    #[serde(default)]
+    pub sync_telematics: bool,
+    /// URL to sync telematics data to.
+    #[serde(default)]
+    pub telematics_url: Option<String>,
 }
 
 fn default_delta_coordinate_precision() -> i32 { 5 }
@@ -332,6 +347,8 @@ fn default_max_retries() -> i32 { 3 }
 fn default_retry_backoff_base() -> i32 { 1000 }
 fn default_retry_backoff_cap() -> i32 { 10000 }
 fn default_auto_sync_delay() -> i32 { 10000 }
+fn default_http_timeout() -> i32 { 60000 }
+fn default_sync_interval() -> i32 { 900000 }
 
 /// Configuration for monitoring geographic boundaries.
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]

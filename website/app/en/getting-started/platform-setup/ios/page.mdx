@@ -152,7 +152,111 @@ ios: tl.IosConfig(
 
 ---
 
-## Scenario 5: The Terminated State (App Force-Quit)
+## Scenario 5: Live Activities (Lock Screen & Dynamic Island UI)
+**Concepts Explored:** ActivityKit, Lock Screen Widgets, Dynamic Island
+
+### The Problem
+While tracking in the background on iOS 17+, you want a rich, glanceable indicator on the Lock Screen and Dynamic Island — so the user always knows tracking is active — instead of just the small blue location pill.
+
+### How Tracelet Solves It
+Tracelet integrates with Apple's **ActivityKit**. If you provide a `liveActivityConfig` and add a Widget Extension, Tracelet automatically starts a Live Activity when tracking starts and ends it when tracking stops.
+
+The Live Activity is a **UI layer** on top of Tracelet's standard background pipeline. Battery efficiency itself comes from the motion-detection engine pausing GPS when stationary and the background-session integration (Scenario 4) — not from the activity widget. Tracelet does **not** open a second `CLLocationUpdate.liveUpdates()` stream, which would duplicate GPS work.
+
+```dart
+ios: tl.IosConfig(
+  liveActivityConfig: tl.LiveActivityConfig(
+    title: 'Ride in progress',
+    body: 'Tracking your route to the destination...',
+  ),
+)
+```
+
+### Xcode Widget Extension Setup (Required)
+Unlike Android, Flutter plugins cannot dynamically create iOS widgets. You must add a **Widget Extension** target to your iOS app in Xcode.
+
+1. Open `ios/Runner.xcworkspace` in Xcode.
+2. Go to **File -> New -> Target...** and select **Widget Extension**.
+3. Name it `TraceletWidget`. Make sure **Include Live Activity** is checked.
+4. In BOTH your app's `Info.plist` AND your new Widget Extension's `Info.plist` (right click them in Xcode -> Open As -> Source Code), you **must** add the following key inside the main `<dict>`:
+```xml
+<key>NSSupportsLiveActivities</key>
+<true/>
+```
+5. **Sync the Extension Version (only matters for App Store submission):** Apple rejects an app extension whose `CFBundleShortVersionString` / `CFBundleVersion` don't match the host app. Set the widget target's **Version** and **Build** to match your app: select the **TraceletWidget** target → **General** → **Identity**, and set **Version** to your app's version and **Build** to your app's build number (the same values as your `pubspec.yaml`).
+
+  <Callout type="info">
+    Do **not** try to set these by pasting `$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)` into the widget's `Info.plist`. Those variables are only defined for the Runner target (via Flutter's `Generated.xcconfig`); in the widget target they resolve to empty, so the versions silently won't match. Use the target's build settings (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`) as above. This is a submission requirement only — a mismatch does not crash the app at runtime.
+  </Callout>
+6. **Do NOT Link Flutter Dependencies:** Do not link `FlutterGeneratedPluginSwiftPackage` or the Flutter engine to your Widget Extension. Doing so causes a launch-time `dyld` crash (`Library not loaded`) in Release mode, because Flutter does not embed its dynamic SPM frameworks into App Extensions.
+7. Replace the auto-generated `TraceletWidgetLiveActivity.swift` content with the following. Notice that we **manually define** the `TraceletActivityAttributes` struct here instead of importing the SDK — ActivityKit matches the activity by the struct's (unqualified) name and shape, so this keeps your Widget lightweight and avoids linking the SDK into the extension:
+
+```swift
+import ActivityKit
+import WidgetKit
+import SwiftUI
+
+// Define the exact struct expected by Tracelet's native core
+public struct TraceletActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var status: String
+        public init(status: String) { self.status = status }
+    }
+    public var title: String
+    public init(title: String) { self.title = title }
+}
+
+@main
+struct TraceletWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        TraceletWidgetLiveActivity()
+    }
+}
+
+struct TraceletWidgetLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: TraceletActivityAttributes.self) { context in
+            // Lock Screen / banner UI — fully self-contained (no SDK import needed)
+            HStack(spacing: 12) {
+                Image(systemName: "location.fill").foregroundColor(.blue)
+                VStack(alignment: .leading) {
+                    Text(context.attributes.title).font(.headline)
+                    Text(context.state.status).font(.subheadline).foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            .padding()
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Text("Tracking")
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("Live")
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text(context.state.status)
+                }
+            } compactLeading: {
+                Image(systemName: "location.fill").foregroundColor(.blue)
+            } compactTrailing: {
+                Text("Live")
+            } minimal: {
+                Image(systemName: "location.fill").foregroundColor(.blue)
+            }
+        }
+    }
+}
+```
+This SwiftUI view is fully yours to customize — style it however you like inside the `ActivityConfiguration` block, mapping the data from `context.attributes.title` and `context.state.status`.
+
+<Callout type="warning">
+  **Set the Widget Extension's deployment target to iOS 16.2.** Xcode's "Widget Extension" template often adds Control Widgets and an `@available(iOS 18.0, *)` annotation on the `@main` `WidgetBundle`. If that annotation is higher than the extension's deployment target, the widget bundle (and therefore your Live Activity) silently fails to register — the system logs `Activity had no descriptor` — and the extension can crash on older OS versions. Keep the `@main` bundle available at the extension's deployment floor, and wrap any iOS-18-only widgets (e.g. Control Widgets) in `if #available(iOS 18.0, *)`.
+</Callout>
+
+---
+
+## Scenario 6: The Terminated State (App Force-Quit)
 **Concepts Explored:** App Lifecycle, Force-Quit vs OS Suspension
 
 ### The Problem

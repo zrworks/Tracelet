@@ -826,6 +826,44 @@ data class TlAndroidConfig (
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
+data class TlLiveActivityConfig (
+  val title: String,
+  val body: String
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlLiveActivityConfig {
+      val title = pigeonVar_list[0] as String
+      val body = pigeonVar_list[1] as String
+      return TlLiveActivityConfig(title, body)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      title,
+      body,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlLiveActivityConfig
+    return TraceletApiPigeonUtils.deepEquals(this.title, other.title) && TraceletApiPigeonUtils.deepEquals(this.body, other.body)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.title)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.body)
+    return result
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
 data class TlIosConfig (
   val activityType: TlIosActivityType,
   val useSignificantChangesOnly: Boolean,
@@ -834,7 +872,8 @@ data class TlIosConfig (
   val locationAuthorizationRequest: TlAuthorizationRequest,
   val disableLocationAuthorizationAlert: Boolean,
   val preventSuspend: Boolean,
-  val useBackgroundActivitySession: Boolean
+  val useBackgroundActivitySession: Boolean,
+  val liveActivityConfig: TlLiveActivityConfig? = null
 )
  {
   companion object {
@@ -847,7 +886,8 @@ data class TlIosConfig (
       val disableLocationAuthorizationAlert = pigeonVar_list[5] as Boolean
       val preventSuspend = pigeonVar_list[6] as Boolean
       val useBackgroundActivitySession = pigeonVar_list[7] as Boolean
-      return TlIosConfig(activityType, useSignificantChangesOnly, showsBackgroundLocationIndicator, pausesLocationUpdatesAutomatically, locationAuthorizationRequest, disableLocationAuthorizationAlert, preventSuspend, useBackgroundActivitySession)
+      val liveActivityConfig = pigeonVar_list[8] as TlLiveActivityConfig?
+      return TlIosConfig(activityType, useSignificantChangesOnly, showsBackgroundLocationIndicator, pausesLocationUpdatesAutomatically, locationAuthorizationRequest, disableLocationAuthorizationAlert, preventSuspend, useBackgroundActivitySession, liveActivityConfig)
     }
   }
   fun toList(): List<Any?> {
@@ -860,6 +900,7 @@ data class TlIosConfig (
       disableLocationAuthorizationAlert,
       preventSuspend,
       useBackgroundActivitySession,
+      liveActivityConfig,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -870,7 +911,7 @@ data class TlIosConfig (
       return true
     }
     val other = other as TlIosConfig
-    return TraceletApiPigeonUtils.deepEquals(this.activityType, other.activityType) && TraceletApiPigeonUtils.deepEquals(this.useSignificantChangesOnly, other.useSignificantChangesOnly) && TraceletApiPigeonUtils.deepEquals(this.showsBackgroundLocationIndicator, other.showsBackgroundLocationIndicator) && TraceletApiPigeonUtils.deepEquals(this.pausesLocationUpdatesAutomatically, other.pausesLocationUpdatesAutomatically) && TraceletApiPigeonUtils.deepEquals(this.locationAuthorizationRequest, other.locationAuthorizationRequest) && TraceletApiPigeonUtils.deepEquals(this.disableLocationAuthorizationAlert, other.disableLocationAuthorizationAlert) && TraceletApiPigeonUtils.deepEquals(this.preventSuspend, other.preventSuspend) && TraceletApiPigeonUtils.deepEquals(this.useBackgroundActivitySession, other.useBackgroundActivitySession)
+    return TraceletApiPigeonUtils.deepEquals(this.activityType, other.activityType) && TraceletApiPigeonUtils.deepEquals(this.useSignificantChangesOnly, other.useSignificantChangesOnly) && TraceletApiPigeonUtils.deepEquals(this.showsBackgroundLocationIndicator, other.showsBackgroundLocationIndicator) && TraceletApiPigeonUtils.deepEquals(this.pausesLocationUpdatesAutomatically, other.pausesLocationUpdatesAutomatically) && TraceletApiPigeonUtils.deepEquals(this.locationAuthorizationRequest, other.locationAuthorizationRequest) && TraceletApiPigeonUtils.deepEquals(this.disableLocationAuthorizationAlert, other.disableLocationAuthorizationAlert) && TraceletApiPigeonUtils.deepEquals(this.preventSuspend, other.preventSuspend) && TraceletApiPigeonUtils.deepEquals(this.useBackgroundActivitySession, other.useBackgroundActivitySession) && TraceletApiPigeonUtils.deepEquals(this.liveActivityConfig, other.liveActivityConfig)
   }
 
   override fun hashCode(): Int {
@@ -883,6 +924,7 @@ data class TlIosConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.disableLocationAuthorizationAlert)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.preventSuspend)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.useBackgroundActivitySession)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.liveActivityConfig)
     return result
   }
 }
@@ -2914,180 +2956,185 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
       }
       153.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlIosConfig.fromList(it)
+          TlLiveActivityConfig.fromList(it)
         }
       }
       154.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpConfig.fromList(it)
+          TlIosConfig.fromList(it)
         }
       }
       155.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlConfig.fromList(it)
+          TlHttpConfig.fromList(it)
         }
       }
       156.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlLoggerConfig.fromList(it)
+          TlConfig.fromList(it)
         }
       }
       157.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlMotionConfig.fromList(it)
+          TlLoggerConfig.fromList(it)
         }
       }
       158.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceConfig.fromList(it)
+          TlMotionConfig.fromList(it)
         }
       }
       159.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlPersistenceConfig.fromList(it)
+          TlGeofenceConfig.fromList(it)
         }
       }
       160.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuditConfig.fromList(it)
+          TlPersistenceConfig.fromList(it)
         }
       }
       161.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlPrivacyZoneConfig.fromList(it)
+          TlAuditConfig.fromList(it)
         }
       }
       162.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlSecurityConfig.fromList(it)
+          TlPrivacyZoneConfig.fromList(it)
         }
       }
       163.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAttestationConfig.fromList(it)
+          TlSecurityConfig.fromList(it)
         }
       }
       164.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlTelematicsConfig.fromList(it)
+          TlAttestationConfig.fromList(it)
         }
       }
       165.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlClassifierConfig.fromList(it)
+          TlTelematicsConfig.fromList(it)
         }
       }
       166.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlImpactConfig.fromList(it)
+          TlClassifierConfig.fromList(it)
         }
       }
       167.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCoords.fromList(it)
+          TlImpactConfig.fromList(it)
         }
       }
       168.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlBattery.fromList(it)
+          TlCoords.fromList(it)
         }
       }
       169.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAddress.fromList(it)
+          TlBattery.fromList(it)
         }
       }
       170.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlLocation.fromList(it)
+          TlAddress.fromList(it)
         }
       }
       171.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivity.fromList(it)
+          TlLocation.fromList(it)
         }
       }
       172.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlState.fromList(it)
+          TlActivity.fromList(it)
         }
       }
       173.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofence.fromList(it)
+          TlState.fromList(it)
         }
       }
       174.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofenceEvent.fromList(it)
+          TlGeofence.fromList(it)
         }
       }
       175.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHttpEvent.fromList(it)
+          TlGeofenceEvent.fromList(it)
         }
       }
       176.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlProviderChangeEvent.fromList(it)
+          TlHttpEvent.fromList(it)
         }
       }
       177.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlCurrentPositionOptions.fromList(it)
+          TlProviderChangeEvent.fromList(it)
         }
       }
       178.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlActivityChangeEvent.fromList(it)
+          TlCurrentPositionOptions.fromList(it)
         }
       }
       179.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlGeofencesChangeEvent.fromList(it)
+          TlActivityChangeEvent.fromList(it)
         }
       }
       180.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlHeartbeatEvent.fromList(it)
+          TlGeofencesChangeEvent.fromList(it)
         }
       }
       181.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlSpeedMotionEvent.fromList(it)
+          TlHeartbeatEvent.fromList(it)
         }
       }
       182.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlAuthorizationEvent.fromList(it)
+          TlSpeedMotionEvent.fromList(it)
         }
       }
       183.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlConnectivityChangeEvent.fromList(it)
+          TlAuthorizationEvent.fromList(it)
         }
       }
       184.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlDrivingEvent.fromList(it)
+          TlConnectivityChangeEvent.fromList(it)
         }
       }
       185.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlImpactEvent.fromList(it)
+          TlDrivingEvent.fromList(it)
         }
       }
       186.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlModeChangeEvent.fromList(it)
+          TlImpactEvent.fromList(it)
         }
       }
       187.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlTelematicsRecord.fromList(it)
+          TlModeChangeEvent.fromList(it)
         }
       }
       188.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlTelematicsRecord.fromList(it)
+        }
+      }
+      189.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           TlLogEntry.fromList(it)
         }
@@ -3193,148 +3240,152 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(152)
         writeValue(stream, value.toList())
       }
-      is TlIosConfig -> {
+      is TlLiveActivityConfig -> {
         stream.write(153)
         writeValue(stream, value.toList())
       }
-      is TlHttpConfig -> {
+      is TlIosConfig -> {
         stream.write(154)
         writeValue(stream, value.toList())
       }
-      is TlConfig -> {
+      is TlHttpConfig -> {
         stream.write(155)
         writeValue(stream, value.toList())
       }
-      is TlLoggerConfig -> {
+      is TlConfig -> {
         stream.write(156)
         writeValue(stream, value.toList())
       }
-      is TlMotionConfig -> {
+      is TlLoggerConfig -> {
         stream.write(157)
         writeValue(stream, value.toList())
       }
-      is TlGeofenceConfig -> {
+      is TlMotionConfig -> {
         stream.write(158)
         writeValue(stream, value.toList())
       }
-      is TlPersistenceConfig -> {
+      is TlGeofenceConfig -> {
         stream.write(159)
         writeValue(stream, value.toList())
       }
-      is TlAuditConfig -> {
+      is TlPersistenceConfig -> {
         stream.write(160)
         writeValue(stream, value.toList())
       }
-      is TlPrivacyZoneConfig -> {
+      is TlAuditConfig -> {
         stream.write(161)
         writeValue(stream, value.toList())
       }
-      is TlSecurityConfig -> {
+      is TlPrivacyZoneConfig -> {
         stream.write(162)
         writeValue(stream, value.toList())
       }
-      is TlAttestationConfig -> {
+      is TlSecurityConfig -> {
         stream.write(163)
         writeValue(stream, value.toList())
       }
-      is TlTelematicsConfig -> {
+      is TlAttestationConfig -> {
         stream.write(164)
         writeValue(stream, value.toList())
       }
-      is TlClassifierConfig -> {
+      is TlTelematicsConfig -> {
         stream.write(165)
         writeValue(stream, value.toList())
       }
-      is TlImpactConfig -> {
+      is TlClassifierConfig -> {
         stream.write(166)
         writeValue(stream, value.toList())
       }
-      is TlCoords -> {
+      is TlImpactConfig -> {
         stream.write(167)
         writeValue(stream, value.toList())
       }
-      is TlBattery -> {
+      is TlCoords -> {
         stream.write(168)
         writeValue(stream, value.toList())
       }
-      is TlAddress -> {
+      is TlBattery -> {
         stream.write(169)
         writeValue(stream, value.toList())
       }
-      is TlLocation -> {
+      is TlAddress -> {
         stream.write(170)
         writeValue(stream, value.toList())
       }
-      is TlActivity -> {
+      is TlLocation -> {
         stream.write(171)
         writeValue(stream, value.toList())
       }
-      is TlState -> {
+      is TlActivity -> {
         stream.write(172)
         writeValue(stream, value.toList())
       }
-      is TlGeofence -> {
+      is TlState -> {
         stream.write(173)
         writeValue(stream, value.toList())
       }
-      is TlGeofenceEvent -> {
+      is TlGeofence -> {
         stream.write(174)
         writeValue(stream, value.toList())
       }
-      is TlHttpEvent -> {
+      is TlGeofenceEvent -> {
         stream.write(175)
         writeValue(stream, value.toList())
       }
-      is TlProviderChangeEvent -> {
+      is TlHttpEvent -> {
         stream.write(176)
         writeValue(stream, value.toList())
       }
-      is TlCurrentPositionOptions -> {
+      is TlProviderChangeEvent -> {
         stream.write(177)
         writeValue(stream, value.toList())
       }
-      is TlActivityChangeEvent -> {
+      is TlCurrentPositionOptions -> {
         stream.write(178)
         writeValue(stream, value.toList())
       }
-      is TlGeofencesChangeEvent -> {
+      is TlActivityChangeEvent -> {
         stream.write(179)
         writeValue(stream, value.toList())
       }
-      is TlHeartbeatEvent -> {
+      is TlGeofencesChangeEvent -> {
         stream.write(180)
         writeValue(stream, value.toList())
       }
-      is TlSpeedMotionEvent -> {
+      is TlHeartbeatEvent -> {
         stream.write(181)
         writeValue(stream, value.toList())
       }
-      is TlAuthorizationEvent -> {
+      is TlSpeedMotionEvent -> {
         stream.write(182)
         writeValue(stream, value.toList())
       }
-      is TlConnectivityChangeEvent -> {
+      is TlAuthorizationEvent -> {
         stream.write(183)
         writeValue(stream, value.toList())
       }
-      is TlDrivingEvent -> {
+      is TlConnectivityChangeEvent -> {
         stream.write(184)
         writeValue(stream, value.toList())
       }
-      is TlImpactEvent -> {
+      is TlDrivingEvent -> {
         stream.write(185)
         writeValue(stream, value.toList())
       }
-      is TlModeChangeEvent -> {
+      is TlImpactEvent -> {
         stream.write(186)
         writeValue(stream, value.toList())
       }
-      is TlTelematicsRecord -> {
+      is TlModeChangeEvent -> {
         stream.write(187)
         writeValue(stream, value.toList())
       }
-      is TlLogEntry -> {
+      is TlTelematicsRecord -> {
         stream.write(188)
+        writeValue(stream, value.toList())
+      }
+      is TlLogEntry -> {
+        stream.write(189)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

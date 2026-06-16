@@ -618,6 +618,12 @@ class _DashboardPageState extends State<DashboardPage>
             : tl.LocationActivityType.otherNavigation,
         preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
         useBackgroundActivitySession: !_isAndroid, // iOS 17+: Dynamic Island
+        liveActivityConfig: !_isAndroid
+            ? const tl.LiveActivityConfig(
+                title: 'Tracelet Active',
+                body: 'Tracking your route in background',
+              )
+            : null,
       ),
       motion: const tl.MotionConfig(
         stopTimeout: 1, // 1 minute for fast stop-timeout testing

@@ -211,6 +211,15 @@ class TlAndroidConfig {
   final bool releaseWakelockWhenStationary;
 }
 
+class TlLiveActivityConfig {
+  TlLiveActivityConfig({
+    required this.title,
+    required this.body,
+  });
+  final String title;
+  final String body;
+}
+
 class TlIosConfig {
   TlIosConfig({
     required this.activityType,
@@ -221,6 +230,7 @@ class TlIosConfig {
     required this.disableLocationAuthorizationAlert,
     required this.preventSuspend,
     required this.useBackgroundActivitySession,
+    this.liveActivityConfig,
   });
 
   final TlIosActivityType activityType;
@@ -231,6 +241,7 @@ class TlIosConfig {
   final bool disableLocationAuthorizationAlert;
   final bool preventSuspend;
   final bool useBackgroundActivitySession;
+  final TlLiveActivityConfig? liveActivityConfig;
 }
 
 enum TlLocationOrderDirection { ascending, descending }

@@ -2,6 +2,49 @@ import 'package:meta/meta.dart';
 import 'package:tracelet/src/models/_helpers.dart';
 import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
+/// Configuration for iOS 17+ Live Activities.
+@immutable
+class LiveActivityConfig {
+  /// Creates a new [LiveActivityConfig].
+  const LiveActivityConfig({required this.title, required this.body});
+
+  /// Creates a [LiveActivityConfig] from a map.
+  factory LiveActivityConfig.fromMap(Map<String, Object?> map) {
+    return LiveActivityConfig(
+      title: map['title'] as String? ?? 'Tracking Location',
+      body:
+          map['body'] as String? ??
+          'Your location is being updated in the background.',
+    );
+  }
+
+  /// The static title of the Live Activity.
+  final String title;
+
+  /// The dynamic status text.
+  final String body;
+
+  /// Serializes to a map.
+  Map<String, Object?> toMap() {
+    return <String, Object?>{'title': title, 'body': body};
+  }
+
+  /// Converts to Pigeon [TlLiveActivityConfig].
+  TlLiveActivityConfig toTlConfig() =>
+      TlLiveActivityConfig(title: title, body: body);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LiveActivityConfig &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          body == other.body;
+
+  @override
+  int get hashCode => Object.hash(title, body);
+}
+
 /// iOS-specific configuration settings.
 ///
 /// These settings are ignored on Android and Web.
@@ -17,6 +60,7 @@ class IosConfig {
     this.disableLocationAuthorizationAlert = false,
     this.preventSuspend = false,
     this.useBackgroundActivitySession = false,
+    this.liveActivityConfig,
   });
 
   /// Creates an [IosConfig] from a map.
@@ -51,6 +95,12 @@ class IosConfig {
         map['useBackgroundActivitySession'],
         fallback: false,
       ),
+      liveActivityConfig: map['liveActivityConfig'] != null
+          ? LiveActivityConfig.fromMap(
+              (map['liveActivityConfig']! as Map<dynamic, dynamic>)
+                  .cast<String, Object?>(),
+            )
+          : null,
     );
   }
 
@@ -87,6 +137,10 @@ class IosConfig {
   /// Defaults to `false`.
   final bool useBackgroundActivitySession;
 
+  /// Configuration to automatically start an ActivityKit Live Activity (iOS 17+).
+  /// If provided, Tracelet will use `CLLiveUpdate` for highly battery-optimized location tracking.
+  final LiveActivityConfig? liveActivityConfig;
+
   /// Converts to Pigeon [TlIosConfig].
   TlIosConfig toTlConfig() => TlIosConfig(
     activityType: TlIosActivityType.values[activityType.index],
@@ -100,6 +154,7 @@ class IosConfig {
     disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
     preventSuspend: preventSuspend,
     useBackgroundActivitySession: useBackgroundActivitySession,
+    liveActivityConfig: liveActivityConfig?.toTlConfig(),
   );
 
   /// Serializes to a map.
@@ -116,6 +171,8 @@ class IosConfig {
       'disableLocationAuthorizationAlert': disableLocationAuthorizationAlert,
       'preventSuspend': preventSuspend,
       'useBackgroundActivitySession': useBackgroundActivitySession,
+      if (liveActivityConfig != null)
+        'liveActivityConfig': liveActivityConfig!.toMap(),
     };
   }
 
@@ -123,7 +180,8 @@ class IosConfig {
   String toString() =>
       'IosConfig(activityType: $activityType, '
       'preventSuspend: $preventSuspend, '
-      'useBackgroundActivitySession: $useBackgroundActivitySession)';
+      'useBackgroundActivitySession: $useBackgroundActivitySession, '
+      'liveActivityConfig: $liveActivityConfig)';
 
   @override
   bool operator ==(Object other) =>
@@ -140,7 +198,8 @@ class IosConfig {
           disableLocationAuthorizationAlert ==
               other.disableLocationAuthorizationAlert &&
           preventSuspend == other.preventSuspend &&
-          useBackgroundActivitySession == other.useBackgroundActivitySession;
+          useBackgroundActivitySession == other.useBackgroundActivitySession &&
+          liveActivityConfig == other.liveActivityConfig;
 
   @override
   int get hashCode => Object.hash(
@@ -152,6 +211,7 @@ class IosConfig {
     disableLocationAuthorizationAlert,
     preventSuspend,
     useBackgroundActivitySession,
+    liveActivityConfig,
   );
 }
 

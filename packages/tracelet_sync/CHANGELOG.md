@@ -1,3 +1,7 @@
+## 3.3.4
+
+**CHORE**: bump version.
+
 ## 3.3.3
 
  - **FIX**: Centralize HTTP sync event reporting to guarantee exactly one onHttp event emission per sync attempt on all failure paths, resolving silently dropped events for custom builder timeouts and 0-count executions ([#192](https://github.com/Ikolvi/Tracelet/issues/192)). ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))

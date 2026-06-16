@@ -1,3 +1,7 @@
+## 3.3.4
+
+**CHORE**: bump version.
+
 ## 3.3.3
 
  - **FIX**: Correct the pigeon mock stub for `TlGeofenceConfig` to accommodate removed fields and update config tests. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))

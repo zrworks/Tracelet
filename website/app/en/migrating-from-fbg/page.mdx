@@ -2,7 +2,9 @@
 
 Switching from `flutter_background_geolocation` to **Tracelet**? Great choice! Tracelet is a fully open-source (Apache 2.0) alternative with a 1:1 compatible API — plus extras like Kalman filtering, mock detection, privacy zones, and more. No license keys, no proprietary SDKs, full source code.
 
-> 💡 Grab the latest version from [pub.dev/packages/tracelet](https://pub.dev/packages/tracelet). This guide always reflects the current release.
+import DynamicPubspec from '../../../components/DynamicPubspec'
+
+> 💡 This guide always reflects the current release.
 
 ---
 
@@ -16,11 +18,10 @@ Seriously, it's this fast.
 # Before
 dependencies:
   flutter_background_geolocation: ^5.x.x
+```
 
 # After ✨
-dependencies:
-  tracelet:    # grab latest from https://pub.dev/packages/tracelet
-```
+<DynamicPubspec />
 
 **Step 2 — Update imports:**
 
@@ -544,10 +545,7 @@ A few features from the previous plugin aren't available yet. They're either pla
 
 ### Step 1: Update `pubspec.yaml`
 
-```yaml
-dependencies:
-  tracelet:    # see https://pub.dev/packages/tracelet for latest version
-```
+<DynamicPubspec />
 
 Delete `flutter_background_geolocation` and any license-key packages. You won't need them anymore!
 

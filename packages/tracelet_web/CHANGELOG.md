@@ -1,3 +1,7 @@
+## 3.3.4
+
+**CHORE**: bump version.
+
 ## 3.3.3
 
  - **FIX**: Correct the `geofenceModeHighAccuracy` config mapping in Web plugin to prevent runtime getter errors. ([065b3bbc](https://github.com/Ikolvi/Tracelet/commit/065b3bbc631a367364eba2b666c54120174530cc))

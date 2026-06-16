@@ -13,13 +13,20 @@ internal class LiveActivityManager {
     
     func startLiveActivity(title: String, body: String) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            print("[Tracelet] Live Activities are not enabled.")
+            TraceletLog.debug("[Tracelet] Live Activities are not enabled.")
             return
         }
         
         // Don't start a new one if we already have an active one
         if currentActivity != nil {
             return
+        }
+        
+        // Clean up any orphaned activities from previous app sessions
+        for activity in Activity<TraceletActivityAttributes>.activities {
+            Task {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
         }
         
         let attributes = TraceletActivityAttributes(title: title)
@@ -32,9 +39,9 @@ internal class LiveActivityManager {
             } else {
                 currentActivity = try Activity.request(attributes: attributes, contentState: contentState, pushType: nil)
             }
-            print("[Tracelet] Live Activity started with ID: \(currentActivity?.id ?? "unknown")")
+            TraceletLog.debug("[Tracelet] Live Activity started with ID: \(currentActivity?.id ?? "unknown")")
         } catch {
-            print("[Tracelet] Error starting Live Activity: \(error.localizedDescription)")
+            TraceletLog.error("[Tracelet] Error starting Live Activity: \(error.localizedDescription)")
         }
     }
     
@@ -50,7 +57,7 @@ internal class LiveActivityManager {
                 await activity.end(using: finalState, dismissalPolicy: .immediate)
             }
             currentActivity = nil
-            print("[Tracelet] Live Activity stopped")
+            TraceletLog.debug("[Tracelet] Live Activity stopped")
         }
     }
 }

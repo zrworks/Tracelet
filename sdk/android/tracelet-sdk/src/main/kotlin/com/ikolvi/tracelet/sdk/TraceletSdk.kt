@@ -1378,16 +1378,31 @@ class TraceletSdk private constructor(private val context: Context) {
                 auditChainIndex = auditFields["audit_chain_index"]
             }
         }
-        if (auditHash != null) {
+        val batteryMap = params["battery"] as? Map<*, *>
+        val extrasMap = params["extras"] as? Map<*, *>
+
+        if (auditHash != null || batteryMap != null || (extrasMap != null && extrasMap.isNotEmpty())) {
             try {
                 val jsonMap = if (routeContext != null) {
                     org.json.JSONObject(routeContext)
                 } else {
                     org.json.JSONObject()
                 }
-                jsonMap.put("audit_hash", auditHash)
-                if (auditPrevHash != null) jsonMap.put("audit_previous_hash", auditPrevHash)
-                if (auditChainIndex != null) jsonMap.put("audit_chain_index", auditChainIndex)
+                if (auditHash != null) {
+                    jsonMap.put("audit_hash", auditHash)
+                    if (auditPrevHash != null) jsonMap.put("audit_previous_hash", auditPrevHash)
+                    if (auditChainIndex != null) jsonMap.put("audit_chain_index", auditChainIndex)
+                }
+                if (batteryMap != null) {
+                    val bObj = org.json.JSONObject()
+                    batteryMap["level"]?.let { bObj.put("level", it) }
+                    batteryMap["is_charging"]?.let { bObj.put("is_charging", it) }
+                    batteryMap["isCharging"]?.let { bObj.put("isCharging", it) }
+                    jsonMap.put("battery", bObj)
+                }
+                if (extrasMap != null && extrasMap.isNotEmpty()) {
+                    jsonMap.put("extras", org.json.JSONObject(extrasMap as Map<*, *>))
+                }
                 routeContext = jsonMap.toString()
             } catch (e: Exception) {
                 // Ignore and use base route context

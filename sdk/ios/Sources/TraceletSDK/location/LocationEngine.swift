@@ -1226,8 +1226,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             ],
             "battery": battery,
             "event": "",
-            "extras": [:] as [String: Any],
         ]
+
+        let extras = configManager.getHttpExtras()
+        result["extras"] = extras.isEmpty ? [:] as [String: Any] : extras
 
         // enableTimestampMeta: attach additional timing metadata
         if configManager.getEnableTimestampMeta() {

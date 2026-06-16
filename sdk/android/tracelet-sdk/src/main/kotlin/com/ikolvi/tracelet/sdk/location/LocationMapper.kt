@@ -106,11 +106,32 @@ object LocationMapper {
                 "audit_hash" -> map["audit_hash"] = json.optString(key)
                 "audit_previous_hash" -> map["audit_previous_hash"] = json.optString(key)
                 "audit_chain_index" -> map["audit_chain_index"] = json.optInt(key)
+                "battery" -> {
+                    val batteryJson = json.optJSONObject(key)
+                    if (batteryJson != null) {
+                        map["battery"] = mapOf(
+                            "level" to batteryJson.optDouble("level", -1.0),
+                            "isCharging" to batteryJson.optBoolean("is_charging", batteryJson.optBoolean("isCharging", false))
+                        )
+                    }
+                }
+                "extras" -> {
+                    val extrasJson = json.optJSONObject(key)
+                    if (extrasJson != null) {
+                        val parsed = jsonToKotlin(extrasJson)
+                        if (parsed is Map<*, *>) {
+                            map["extras"] = parsed
+                        }
+                    }
+                }
                 else -> extrasRouteContext[key] = jsonToKotlin(json.get(key))
             }
         }
         if (extrasRouteContext.isNotEmpty()) {
-            map["extras"] = mapOf("route_context" to extrasRouteContext)
+            val existingExtras = map["extras"] as? Map<*, *> ?: emptyMap<String, Any?>()
+            val newExtras = existingExtras.toMutableMap()
+            newExtras["route_context"] = extrasRouteContext
+            map["extras"] = newExtras
         }
     }
 

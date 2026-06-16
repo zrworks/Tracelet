@@ -289,6 +289,11 @@ class PeriodicLocationWorker(
         val batteryInfo = BatteryUtils.getBatteryInfo(applicationContext)
         map["battery"] = batteryInfo
 
+        val extras = config.getHttpExtras()
+        if (extras.isNotEmpty()) {
+            map["extras"] = extras
+        }
+
         val ageMs = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
         map["age"] = ageMs
 

@@ -1005,6 +1005,11 @@ class LocationEngine(
             "battery" to battery,
         )
 
+        val httpExtras = config.getHttpExtras()
+        if (httpExtras.isNotEmpty()) {
+            result["extras"] = httpExtras
+        }
+
         // enableTimestampMeta: attach additional timing metadata
         if (config.getEnableTimestampMeta()) {
             result["timestampMeta"] = mapOf(

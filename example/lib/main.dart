@@ -617,6 +617,7 @@ class _DashboardPageState extends State<DashboardPage>
             ? tl.LocationActivityType.other
             : tl.LocationActivityType.otherNavigation,
         preventSuspend: !_isAndroid, // iOS-only: silent-audio keep-alive
+        useBackgroundActivitySession: !_isAndroid, // iOS 17+: Dynamic Island
       ),
       motion: const tl.MotionConfig(
         stopTimeout: 1, // 1 minute for fast stop-timeout testing

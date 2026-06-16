@@ -282,6 +282,7 @@ When submitting to the App Store, Apple requires justification for background lo
 2. **Provide a demo video** showing the feature in action
 3. **Usage descriptions must be user-friendly** — explain the benefit to the user, not the technical reason
 4. **Use only the background modes you need** — remove `processing` if you don't use scheduling
+5. **Dynamic Island / Background Activity Session:** If you enable `useBackgroundActivitySession` in your config, Apple explicitly requires a clear explanation in your App Store review notes and app description as to why the user's location is needed persistently in the background. Without clear, user-facing justification, apps using this API will be rejected.
 
 ### Common Rejection Reasons
 

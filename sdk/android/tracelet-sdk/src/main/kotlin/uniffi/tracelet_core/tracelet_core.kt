@@ -9339,6 +9339,31 @@ data class HttpConfig (
      * The chronological sort order for synced locations.
      */
     var `locationsOrderDirection`: kotlin.Int
+    , 
+    /**
+     * Auto sync threshold.
+     */
+    var `autoSyncThreshold`: kotlin.Int
+    , 
+    /**
+     * HTTP timeout in milliseconds.
+     */
+    var `httpTimeout`: kotlin.Int
+    , 
+    /**
+     * Sync interval in milliseconds.
+     */
+    var `syncInterval`: kotlin.Int
+    , 
+    /**
+     * Enable syncing of telematics data.
+     */
+    var `syncTelematics`: kotlin.Boolean
+    , 
+    /**
+     * URL to sync telematics data to.
+     */
+    var `telematicsUrl`: kotlin.String?
     
 ){
     
@@ -9374,6 +9399,11 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterBoolean.read(buf),
             FfiConverterInt.read(buf),
             FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -9396,7 +9426,12 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterBoolean.allocationSize(value.`disableAutoSyncOnCellular`) +
             FfiConverterBoolean.allocationSize(value.`enableDeltaCompression`) +
             FfiConverterInt.allocationSize(value.`deltaCoordinatePrecision`) +
-            FfiConverterInt.allocationSize(value.`locationsOrderDirection`)
+            FfiConverterInt.allocationSize(value.`locationsOrderDirection`) +
+            FfiConverterInt.allocationSize(value.`autoSyncThreshold`) +
+            FfiConverterInt.allocationSize(value.`httpTimeout`) +
+            FfiConverterInt.allocationSize(value.`syncInterval`) +
+            FfiConverterBoolean.allocationSize(value.`syncTelematics`) +
+            FfiConverterOptionalString.allocationSize(value.`telematicsUrl`)
     )
 
     override fun write(value: HttpConfig, buf: ByteBuffer) {
@@ -9419,6 +9454,11 @@ public object FfiConverterTypeHttpConfig: FfiConverterRustBuffer<HttpConfig> {
             FfiConverterBoolean.write(value.`enableDeltaCompression`, buf)
             FfiConverterInt.write(value.`deltaCoordinatePrecision`, buf)
             FfiConverterInt.write(value.`locationsOrderDirection`, buf)
+            FfiConverterInt.write(value.`autoSyncThreshold`, buf)
+            FfiConverterInt.write(value.`httpTimeout`, buf)
+            FfiConverterInt.write(value.`syncInterval`, buf)
+            FfiConverterBoolean.write(value.`syncTelematics`, buf)
+            FfiConverterOptionalString.write(value.`telematicsUrl`, buf)
     }
 }
 

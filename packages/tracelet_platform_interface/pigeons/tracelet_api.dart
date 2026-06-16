@@ -220,6 +220,7 @@ class TlIosConfig {
     required this.locationAuthorizationRequest,
     required this.disableLocationAuthorizationAlert,
     required this.preventSuspend,
+    required this.useBackgroundActivitySession,
   });
 
   final TlIosActivityType activityType;
@@ -229,6 +230,7 @@ class TlIosConfig {
   final TlAuthorizationRequest locationAuthorizationRequest;
   final bool disableLocationAuthorizationAlert;
   final bool preventSuspend;
+  final bool useBackgroundActivitySession;
 }
 
 enum TlLocationOrderDirection { ascending, descending }

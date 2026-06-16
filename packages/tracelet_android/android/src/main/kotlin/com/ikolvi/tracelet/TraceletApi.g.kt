@@ -833,7 +833,8 @@ data class TlIosConfig (
   val pausesLocationUpdatesAutomatically: Boolean,
   val locationAuthorizationRequest: TlAuthorizationRequest,
   val disableLocationAuthorizationAlert: Boolean,
-  val preventSuspend: Boolean
+  val preventSuspend: Boolean,
+  val useBackgroundActivitySession: Boolean
 )
  {
   companion object {
@@ -845,7 +846,8 @@ data class TlIosConfig (
       val locationAuthorizationRequest = pigeonVar_list[4] as TlAuthorizationRequest
       val disableLocationAuthorizationAlert = pigeonVar_list[5] as Boolean
       val preventSuspend = pigeonVar_list[6] as Boolean
-      return TlIosConfig(activityType, useSignificantChangesOnly, showsBackgroundLocationIndicator, pausesLocationUpdatesAutomatically, locationAuthorizationRequest, disableLocationAuthorizationAlert, preventSuspend)
+      val useBackgroundActivitySession = pigeonVar_list[7] as Boolean
+      return TlIosConfig(activityType, useSignificantChangesOnly, showsBackgroundLocationIndicator, pausesLocationUpdatesAutomatically, locationAuthorizationRequest, disableLocationAuthorizationAlert, preventSuspend, useBackgroundActivitySession)
     }
   }
   fun toList(): List<Any?> {
@@ -857,6 +859,7 @@ data class TlIosConfig (
       locationAuthorizationRequest,
       disableLocationAuthorizationAlert,
       preventSuspend,
+      useBackgroundActivitySession,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -867,7 +870,7 @@ data class TlIosConfig (
       return true
     }
     val other = other as TlIosConfig
-    return TraceletApiPigeonUtils.deepEquals(this.activityType, other.activityType) && TraceletApiPigeonUtils.deepEquals(this.useSignificantChangesOnly, other.useSignificantChangesOnly) && TraceletApiPigeonUtils.deepEquals(this.showsBackgroundLocationIndicator, other.showsBackgroundLocationIndicator) && TraceletApiPigeonUtils.deepEquals(this.pausesLocationUpdatesAutomatically, other.pausesLocationUpdatesAutomatically) && TraceletApiPigeonUtils.deepEquals(this.locationAuthorizationRequest, other.locationAuthorizationRequest) && TraceletApiPigeonUtils.deepEquals(this.disableLocationAuthorizationAlert, other.disableLocationAuthorizationAlert) && TraceletApiPigeonUtils.deepEquals(this.preventSuspend, other.preventSuspend)
+    return TraceletApiPigeonUtils.deepEquals(this.activityType, other.activityType) && TraceletApiPigeonUtils.deepEquals(this.useSignificantChangesOnly, other.useSignificantChangesOnly) && TraceletApiPigeonUtils.deepEquals(this.showsBackgroundLocationIndicator, other.showsBackgroundLocationIndicator) && TraceletApiPigeonUtils.deepEquals(this.pausesLocationUpdatesAutomatically, other.pausesLocationUpdatesAutomatically) && TraceletApiPigeonUtils.deepEquals(this.locationAuthorizationRequest, other.locationAuthorizationRequest) && TraceletApiPigeonUtils.deepEquals(this.disableLocationAuthorizationAlert, other.disableLocationAuthorizationAlert) && TraceletApiPigeonUtils.deepEquals(this.preventSuspend, other.preventSuspend) && TraceletApiPigeonUtils.deepEquals(this.useBackgroundActivitySession, other.useBackgroundActivitySession)
   }
 
   override fun hashCode(): Int {
@@ -879,6 +882,7 @@ data class TlIosConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.locationAuthorizationRequest)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.disableLocationAuthorizationAlert)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.preventSuspend)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.useBackgroundActivitySession)
     return result
   }
 }

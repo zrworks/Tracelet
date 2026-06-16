@@ -347,6 +347,7 @@ public struct TraceletIosConfig {
     public var locationAuthorizationRequest: TraceletAuthorizationRequest
     public var disableLocationAuthorizationAlert: Bool
     public var preventSuspend: Bool
+    public var useBackgroundActivitySession: Bool
 
     public init(
         activityType: TraceletActivityType = .other,
@@ -355,7 +356,8 @@ public struct TraceletIosConfig {
         pausesLocationUpdatesAutomatically: Bool = false,
         locationAuthorizationRequest: TraceletAuthorizationRequest = .always,
         disableLocationAuthorizationAlert: Bool = false,
-        preventSuspend: Bool = false
+        preventSuspend: Bool = false,
+        useBackgroundActivitySession: Bool = false
     ) {
         self.activityType = activityType
         self.useSignificantChangesOnly = useSignificantChangesOnly
@@ -364,6 +366,7 @@ public struct TraceletIosConfig {
         self.locationAuthorizationRequest = locationAuthorizationRequest
         self.disableLocationAuthorizationAlert = disableLocationAuthorizationAlert
         self.preventSuspend = preventSuspend
+        self.useBackgroundActivitySession = useBackgroundActivitySession
     }
 
     public func toMap() -> [String: Any] {
@@ -374,7 +377,8 @@ public struct TraceletIosConfig {
             "pausesLocationUpdatesAutomatically": pausesLocationUpdatesAutomatically,
             "locationAuthorizationRequest": locationAuthorizationRequest == .always ? "Always" : "WhenInUse",
             "disableLocationAuthorizationAlert": disableLocationAuthorizationAlert,
-            "preventSuspend": preventSuspend
+            "preventSuspend": preventSuspend,
+            "useBackgroundActivitySession": useBackgroundActivitySession
         ]
     }
 
@@ -386,7 +390,8 @@ public struct TraceletIosConfig {
             pausesLocationUpdatesAutomatically: map["pausesLocationUpdatesAutomatically"] as? Bool ?? false,
             locationAuthorizationRequest: (map["locationAuthorizationRequest"] as? String) == "WhenInUse" ? .whenInUse : .always,
             disableLocationAuthorizationAlert: map["disableLocationAuthorizationAlert"] as? Bool ?? false,
-            preventSuspend: map["preventSuspend"] as? Bool ?? false
+            preventSuspend: map["preventSuspend"] as? Bool ?? false,
+            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false
         )
     }
 }

@@ -60,6 +60,7 @@ class _IssuesPageState extends State<IssuesPage> {
     154,
     159,
     162,
+    175,
     185,
   ];
 
@@ -858,6 +859,8 @@ class _IssuesPageState extends State<IssuesPage> {
         await _testIssue154();
       } else if (issue == 159) {
         await _testIssue159();
+      } else if (issue == 175) {
+        await _testIssue175();
       }
       await Future.delayed(const Duration(seconds: 2));
     }
@@ -1426,6 +1429,51 @@ class _IssuesPageState extends State<IssuesPage> {
   bool _isIssue162Tracking = false;
   StreamSubscription? _issue162Sub;
   String _issue162Details = '';
+
+  // ==== ISSUE 175 ====
+  Future<void> _testIssue175() async {
+    _setStatus(175, 'Testing Issue 175 (Battery & Extras DB Persistence)...');
+    try {
+      await Tracelet.destroyLocations();
+
+      await Tracelet.ready(
+        const Config(
+          http: HttpConfig(
+            url: 'http://127.0.0.1:8175',
+            autoSync: false,
+            extras: {'issue175_test': 'global_extra_value'},
+          ),
+        ),
+      );
+
+      // Fetch a real location from the OS and persist it directly.
+      await Tracelet.getCurrentPosition(maximumAge: 0, persist: true);
+
+      final locations = await Tracelet.getLocations();
+      if (locations.isEmpty) {
+        _setStatus(175, '❌ FAILED: No locations found in DB.');
+        return;
+      }
+      final loc = locations.first;
+      final batLevel = loc.battery.level;
+      final isCharging = loc.battery.isCharging;
+      final extras = loc.extras;
+
+      if (batLevel >= 0.0 && extras['issue175_test'] == 'global_extra_value') {
+        _setStatus(
+          175,
+          '✅ SUCCESS: E2E Battery & Extras saved! Level: $batLevel, Charging: $isCharging',
+        );
+      } else {
+        _setStatus(
+          175,
+          '❌ FAILED: Data lost. Battery: $batLevel, Extras: $extras',
+        );
+      }
+    } catch (e) {
+      _setStatus(175, '❌ FAILED: Issue 175 Error: $e');
+    }
+  }
 
   // ==== ISSUE 185: high-accuracy geofence transitions after reboot ====
   bool _isIssue185Tracking = false;
@@ -2296,6 +2344,21 @@ class _IssuesPageState extends State<IssuesPage> {
                       label: Text(
                         _isIssue162Tracking ? 'Stop' : 'Start tracking',
                       ),
+                    ),
+                  ],
+                ),
+                _buildIssueCard(
+                  issueNumber: 175,
+                  title: 'Battery & Extras DB Persistence',
+                  description:
+                      'Verifies that custom battery levels and globally configured extras '
+                      'are correctly serialized into the SQLite DB (via route_context) '
+                      'and successfully restored on retrieval instead of falling back to default values.',
+                  actions: [
+                    FilledButton.icon(
+                      onPressed: _testIssue175,
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Run Test'),
                     ),
                   ],
                 ),

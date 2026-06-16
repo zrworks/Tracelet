@@ -100,12 +100,25 @@ public enum LocationMapper {
                 map["audit_previous_hash"] = value
             case "audit_chain_index":
                 map["audit_chain_index"] = value
+            case "battery":
+                if let dict = value as? [String: Any] {
+                    var batteryMap: [String: Any] = [:]
+                    batteryMap["level"] = dict["level"] as? Double ?? -1.0
+                    batteryMap["isCharging"] = dict["is_charging"] as? Bool ?? dict["isCharging"] as? Bool ?? false
+                    map["battery"] = batteryMap
+                }
+            case "extras":
+                if let dict = value as? [String: Any] {
+                    map["extras"] = dict
+                }
             default:
                 extrasRouteContext[key] = value
             }
         }
         if !extrasRouteContext.isEmpty {
-            map["extras"] = ["route_context": extrasRouteContext]
+            var existingExtras = map["extras"] as? [String: Any] ?? [:]
+            existingExtras["route_context"] = extrasRouteContext
+            map["extras"] = existingExtras
         }
     }
 }

@@ -1071,16 +1071,31 @@ public final class TraceletSdk {
             auditPrevHash = auditFields["audit_previous_hash"]
             auditChainIndex = auditFields["audit_chain_index"]
         }
-        if let auditHash = auditHash {
+        let batteryMap = params["battery"] as? [String: Any]
+        let extrasMap = params["extras"] as? [String: Any]
+
+        if auditHash != nil || batteryMap != nil || (extrasMap != nil && !extrasMap!.isEmpty) {
             var contextDict: [String: Any] = [:]
             if let rc = routeContext, let data = rc.data(using: .utf8) {
                 if let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                     contextDict = dict
                 }
             }
-            contextDict["audit_hash"] = auditHash
-            if let prevHash = auditPrevHash { contextDict["audit_previous_hash"] = prevHash }
-            if let chainIndex = auditChainIndex { contextDict["audit_chain_index"] = chainIndex }
+            if let auditHash = auditHash {
+                contextDict["audit_hash"] = auditHash
+                if let prevHash = auditPrevHash { contextDict["audit_previous_hash"] = prevHash }
+                if let chainIndex = auditChainIndex { contextDict["audit_chain_index"] = chainIndex }
+            }
+            if let batteryMap = batteryMap {
+                var bObj: [String: Any] = [:]
+                if let level = batteryMap["level"] { bObj["level"] = level }
+                if let isCharging = batteryMap["is_charging"] { bObj["is_charging"] = isCharging }
+                else if let isCharging = batteryMap["isCharging"] { bObj["isCharging"] = isCharging }
+                contextDict["battery"] = bObj
+            }
+            if let extrasMap = extrasMap, !extrasMap.isEmpty {
+                contextDict["extras"] = extrasMap
+            }
 
             if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
                let jsonString = String(data: jsonData, encoding: .utf8) {

@@ -227,6 +227,22 @@ class TraceletSdk private constructor(private val context: Context) {
      * and ready() was bypassed.
      */
     fun registerSyncProvider(provider: SyncProvider) {
+        val previous = this.syncProvider
+        if (previous != null && previous !== provider) {
+            // A provider is already attached — typically the NativeSyncProvider
+            // fallback created during a background boot (checkSyncProvider). If we
+            // simply added the new one, BOTH would be registered as sinks and each
+            // would independently debounce + fire requestSyncBody for the same
+            // batch, causing duplicate uploads (Issue #204). Cancel and unregister
+            // the previous provider so exactly one sync provider is ever active.
+            previous.cancelPendingSync()
+            (previous as? com.ikolvi.tracelet.sdk.location.LocationDataSink)?.let { prev ->
+                if (::locationEngine.isInitialized) {
+                    locationEngine.unregisterSink(prev)
+                }
+                com.ikolvi.tracelet.sdk.service.LocationService.bootLocationEngine?.unregisterSink(prev)
+            }
+        }
         this.syncProvider = provider
         if (provider is com.ikolvi.tracelet.sdk.location.LocationDataSink) {
             if (::locationEngine.isInitialized) {

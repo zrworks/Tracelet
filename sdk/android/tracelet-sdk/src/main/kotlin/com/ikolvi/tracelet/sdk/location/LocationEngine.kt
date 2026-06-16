@@ -116,7 +116,30 @@ class LocationEngine(
     private val sinks: MutableList<LocationDataSink> = mutableListOf()
 
     fun registerSink(sink: LocationDataSink) {
-        sinks.add(sink)
+        // Dedupe: the same sink can otherwise be registered more than once across
+        // init / ready / reconfigure cycles, which would fan a single persisted
+        // location out to multiple sync triggers (Issue #204).
+        if (!sinks.contains(sink)) sinks.add(sink)
+    }
+
+    /** Removes a previously-registered sink (used when a sync provider is replaced). */
+    fun unregisterSink(sink: LocationDataSink) {
+        sinks.remove(sink)
+    }
+
+    /**
+     * Merges call-specific [extras] into the location map's existing extras
+     * (the global HTTP extras set by [enrichLocation]) instead of replacing them,
+     * so both global config extras and the per-call extras passed to
+     * getCurrentPosition / getLastKnownLocation survive into the synced payload
+     * (Issue #201).
+     */
+    private fun mergeExtras(target: MutableMap<String, Any?>, extras: Map<String, Any?>) {
+        if (extras.isEmpty()) return
+        @Suppress("UNCHECKED_CAST")
+        val merged = (target["extras"] as? Map<String, Any?>)?.toMutableMap() ?: mutableMapOf()
+        merged.putAll(extras)
+        target["extras"] = merged
     }
 
     // =========================================================================
@@ -435,7 +458,7 @@ class LocationEngine(
                 val age = System.currentTimeMillis() - cached.time
                 if (age <= maximumAge) {
                     val enriched = enrichLocation(cached, "getCurrentPosition").toMutableMap()
-                    if (extras.isNotEmpty()) enriched["extras"] = extras
+                    mergeExtras(enriched, extras)
                     resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
                         if (persist) {
                             onLocationPersisted?.invoke()
@@ -483,7 +506,7 @@ class LocationEngine(
             val cached = lastLocation
             if (cached != null) {
                 val enriched = enrichLocation(cached, "getLastKnownLocation").toMutableMap()
-                if (extras.isNotEmpty()) enriched["extras"] = extras
+                mergeExtras(enriched, extras)
                 resolveAddressAndDispatch(cached, enriched) { finalEnriched ->
                     if (persist) {
                         onLocationPersisted?.invoke()
@@ -500,7 +523,7 @@ class LocationEngine(
                 if (location != null) {
                     lastLocation = location
                     val enriched = enrichLocation(location, "getLastKnownLocation").toMutableMap()
-                    if (extras.isNotEmpty()) enriched["extras"] = extras
+                    mergeExtras(enriched, extras)
                     resolveAddressAndDispatch(location, enriched) { finalEnriched ->
                         if (persist) {
                             onLocationPersisted?.invoke()
@@ -514,7 +537,7 @@ class LocationEngine(
                     if (fallback != null) {
                         lastLocation = fallback
                         val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
-                        if (extras.isNotEmpty()) enriched["extras"] = extras
+                        mergeExtras(enriched, extras)
                         resolveAddressAndDispatch(fallback, enriched) { finalEnriched ->
                             if (persist) {
                                 onLocationPersisted?.invoke()
@@ -531,7 +554,7 @@ class LocationEngine(
                 if (fallback != null) {
                     lastLocation = fallback
                     val enriched = enrichLocation(fallback, "getLastKnownLocation").toMutableMap()
-                    if (extras.isNotEmpty()) enriched["extras"] = extras
+                    mergeExtras(enriched, extras)
                     if (persist) {
                         onLocationPersisted?.invoke()
                     }
@@ -1104,7 +1127,7 @@ class LocationEngine(
             return
         }
         val enriched = enrichLocation(best, "getCurrentPosition").toMutableMap()
-        if (extras.isNotEmpty()) enriched["extras"] = extras
+        mergeExtras(enriched, extras)
         resolveAddressAndDispatch(best, enriched) { finalEnriched ->
             if (persist) {
                 persistLocationIfAllowed(finalEnriched, "location")

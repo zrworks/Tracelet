@@ -83,6 +83,29 @@ await Tracelet.ready(Config.lowPower().copyWith(
 ));
 ```
 
+## 4. Passive (`Config.passive()`)
+
+> [!TIP]
+> **Recommended for extreme battery saving.** This profile never powers on the GPS hardware itself. Instead, it "piggybacks" on GPS requests made by other apps (like Google Maps or fitness trackers) to quietly collect location data.
+
+The Passive profile is the ultimate battery saver. It is highly effective on Android where the `FusedLocationProviderClient` supports a passive priority. On iOS, it degrades gracefully to a very low accuracy setting (`3000` meters) to minimize wakeups.
+
+### Key Characteristics
+- **Desired Accuracy:** Lowest Unbiased (`4`) - Maps to `PRIORITY_PASSIVE` on Android and `kCLLocationAccuracyThreeKilometers` on iOS.
+- **Distance Filter:** `0.0` meters - Collects everything it can passively grab.
+- **Stationary Radius:** `500.0` meters - Loose stop detection.
+- **Adaptive Mode:** `false` - It's already at the lowest possible state.
+- **Sparse Updates:** `true` - Drops duplicate passive locations within 50 meters.
+- **Android Location Update Interval:** `60000` ms (1 minute) to throttle aggressive passive streams.
+
+### Example
+```dart
+// Start with passive mode to steal GPS from other apps
+await Tracelet.ready(Config.passive().copyWith(
+  app: AppConfig(stopOnTerminate: true)
+));
+```
+
 ## How Profiles Map Internally
 
 When you call `Config.balanced()`, the SDK is internally deserializing a predefined JSON payload that sets all the core `GeoConfig`, `MotionConfig`, and `AndroidConfig` options. Any overrides you supply via `copyWith(...)` simply replace the values from the base profile.

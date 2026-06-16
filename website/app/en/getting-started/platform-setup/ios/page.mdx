@@ -108,7 +108,7 @@ ios: tl.IosConfig(
 
 ---
 
-## Scenario 3: The Blue Pill Indicator
+## Scenario 3: The Blue Pill Indicator (iOS 16 and below)
 **Concepts Explored:** Background Location Indicator
 
 ### The Problem
@@ -128,7 +128,31 @@ When the user locks their phone, a blue pill with an arrow will appear in the to
 
 ---
 
-## Scenario 4: The Terminated State (App Force-Quit)
+## Scenario 4: The Dynamic Island Indicator (iOS 17+)
+**Concepts Explored:** Background Activity Session
+
+### The Problem
+You want the benefits of the blue pill indicator, but you want a more modern, native integration with the Dynamic Island on modern iPhones, and you want to reduce the chances of the OS killing your background session.
+
+### How Tracelet Solves It
+Tracelet integrates with Apple's `CLBackgroundActivitySession` (introduced in iOS 17). This provides a prominent Dynamic Island indicator and creates a formal session with the OS, telling it not to suspend your app.
+
+```dart
+ios: tl.IosConfig(
+  useBackgroundActivitySession: true, 
+)
+```
+
+<Callout type="warning">
+  **App Store Review Requirements:** Apple explicitly requires a clear explanation of why your app needs persistent background location. If you use `CLBackgroundActivitySession`, you **must** provide justification in three places, or your app will be rejected:
+  1. **App Store Connect Review Notes:** You must provide a clear written explanation to the reviewer about *why* the app needs this feature, along with a link to a demo video showing the feature in action.
+  2. **App Store Description:** Your public app description must clearly state that the app uses background location (e.g., "This app uses background location to track your runs even when the app is closed.").
+  3. **In-App Onboarding:** Before requesting location permissions, your app's UI must clearly explain to the user why background location is needed.
+</Callout>
+
+---
+
+## Scenario 5: The Terminated State (App Force-Quit)
 **Concepts Explored:** App Lifecycle, Force-Quit vs OS Suspension
 
 ### The Problem

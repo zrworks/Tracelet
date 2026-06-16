@@ -83,6 +83,7 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["locationAuthorizationRequest"] = c.ios.locationAuthorizationRequest == .always ? "Always" : "WhenInUse"
         dict["disableLocationAuthorizationAlert"] = c.ios.disableLocationAuthorizationAlert
         dict["preventSuspend"] = c.ios.preventSuspend
+        dict["useBackgroundActivitySession"] = c.ios.useBackgroundActivitySession
 
         // HTTP
         if let url = c.http.url { dict["url"] = url }

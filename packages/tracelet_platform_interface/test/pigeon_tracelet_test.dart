@@ -640,6 +640,7 @@ void main() {
         locationAuthorizationRequest: TlAuthorizationRequest.always,
         disableLocationAuthorizationAlert: false,
         preventSuspend: false,
+        useBackgroundActivitySession: false,
       ),
       http: TlHttpConfig(
         syncTelematics: false,

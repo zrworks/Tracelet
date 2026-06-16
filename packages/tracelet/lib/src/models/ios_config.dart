@@ -16,6 +16,7 @@ class IosConfig {
     this.locationAuthorizationRequest = LocationAuthorizationRequest.always,
     this.disableLocationAuthorizationAlert = false,
     this.preventSuspend = false,
+    this.useBackgroundActivitySession = false,
   });
 
   /// Creates an [IosConfig] from a map.
@@ -46,6 +47,10 @@ class IosConfig {
         fallback: false,
       ),
       preventSuspend: ensureBool(map['preventSuspend'], fallback: false),
+      useBackgroundActivitySession: ensureBool(
+        map['useBackgroundActivitySession'],
+        fallback: false,
+      ),
     );
   }
 
@@ -77,6 +82,11 @@ class IosConfig {
   /// Defaults to `false`.
   final bool preventSuspend;
 
+  /// Keeps the app alive in the background using CLBackgroundActivitySession (iOS 17+).
+  /// This requires the app to have an active Live Activity or similar session.
+  /// Defaults to `false`.
+  final bool useBackgroundActivitySession;
+
   /// Converts to Pigeon [TlIosConfig].
   TlIosConfig toTlConfig() => TlIosConfig(
     activityType: TlIosActivityType.values[activityType.index],
@@ -89,6 +99,7 @@ class IosConfig {
         : TlAuthorizationRequest.whenInUse,
     disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
     preventSuspend: preventSuspend,
+    useBackgroundActivitySession: useBackgroundActivitySession,
   );
 
   /// Serializes to a map.
@@ -104,13 +115,15 @@ class IosConfig {
           : 'WhenInUse',
       'disableLocationAuthorizationAlert': disableLocationAuthorizationAlert,
       'preventSuspend': preventSuspend,
+      'useBackgroundActivitySession': useBackgroundActivitySession,
     };
   }
 
   @override
   String toString() =>
       'IosConfig(activityType: $activityType, '
-      'preventSuspend: $preventSuspend)';
+      'preventSuspend: $preventSuspend, '
+      'useBackgroundActivitySession: $useBackgroundActivitySession)';
 
   @override
   bool operator ==(Object other) =>
@@ -126,7 +139,8 @@ class IosConfig {
           locationAuthorizationRequest == other.locationAuthorizationRequest &&
           disableLocationAuthorizationAlert ==
               other.disableLocationAuthorizationAlert &&
-          preventSuspend == other.preventSuspend;
+          preventSuspend == other.preventSuspend &&
+          useBackgroundActivitySession == other.useBackgroundActivitySession;
 
   @override
   int get hashCode => Object.hash(
@@ -137,6 +151,7 @@ class IosConfig {
     locationAuthorizationRequest,
     disableLocationAuthorizationAlert,
     preventSuspend,
+    useBackgroundActivitySession,
   );
 }
 

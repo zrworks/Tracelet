@@ -739,6 +739,7 @@ struct TlIosConfig: Hashable {
   var locationAuthorizationRequest: TlAuthorizationRequest
   var disableLocationAuthorizationAlert: Bool
   var preventSuspend: Bool
+  var useBackgroundActivitySession: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -750,6 +751,7 @@ struct TlIosConfig: Hashable {
     let locationAuthorizationRequest = pigeonVar_list[4] as! TlAuthorizationRequest
     let disableLocationAuthorizationAlert = pigeonVar_list[5] as! Bool
     let preventSuspend = pigeonVar_list[6] as! Bool
+    let useBackgroundActivitySession = pigeonVar_list[7] as! Bool
 
     return TlIosConfig(
       activityType: activityType,
@@ -758,7 +760,8 @@ struct TlIosConfig: Hashable {
       pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
       locationAuthorizationRequest: locationAuthorizationRequest,
       disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
-      preventSuspend: preventSuspend
+      preventSuspend: preventSuspend,
+      useBackgroundActivitySession: useBackgroundActivitySession
     )
   }
   func toList() -> [Any?] {
@@ -770,13 +773,14 @@ struct TlIosConfig: Hashable {
       locationAuthorizationRequest,
       disableLocationAuthorizationAlert,
       preventSuspend,
+      useBackgroundActivitySession,
     ]
   }
   static func == (lhs: TlIosConfig, rhs: TlIosConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.activityType, rhs.activityType) && deepEqualsTraceletApi(lhs.useSignificantChangesOnly, rhs.useSignificantChangesOnly) && deepEqualsTraceletApi(lhs.showsBackgroundLocationIndicator, rhs.showsBackgroundLocationIndicator) && deepEqualsTraceletApi(lhs.pausesLocationUpdatesAutomatically, rhs.pausesLocationUpdatesAutomatically) && deepEqualsTraceletApi(lhs.locationAuthorizationRequest, rhs.locationAuthorizationRequest) && deepEqualsTraceletApi(lhs.disableLocationAuthorizationAlert, rhs.disableLocationAuthorizationAlert) && deepEqualsTraceletApi(lhs.preventSuspend, rhs.preventSuspend)
+    return deepEqualsTraceletApi(lhs.activityType, rhs.activityType) && deepEqualsTraceletApi(lhs.useSignificantChangesOnly, rhs.useSignificantChangesOnly) && deepEqualsTraceletApi(lhs.showsBackgroundLocationIndicator, rhs.showsBackgroundLocationIndicator) && deepEqualsTraceletApi(lhs.pausesLocationUpdatesAutomatically, rhs.pausesLocationUpdatesAutomatically) && deepEqualsTraceletApi(lhs.locationAuthorizationRequest, rhs.locationAuthorizationRequest) && deepEqualsTraceletApi(lhs.disableLocationAuthorizationAlert, rhs.disableLocationAuthorizationAlert) && deepEqualsTraceletApi(lhs.preventSuspend, rhs.preventSuspend) && deepEqualsTraceletApi(lhs.useBackgroundActivitySession, rhs.useBackgroundActivitySession)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -788,6 +792,7 @@ struct TlIosConfig: Hashable {
     deepHashTraceletApi(value: locationAuthorizationRequest, hasher: &hasher)
     deepHashTraceletApi(value: disableLocationAuthorizationAlert, hasher: &hasher)
     deepHashTraceletApi(value: preventSuspend, hasher: &hasher)
+    deepHashTraceletApi(value: useBackgroundActivitySession, hasher: &hasher)
   }
 }
 

@@ -180,10 +180,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         if #available(iOS 17.0, *) {
             if let liveConfig = configManager.getLiveActivityConfig() {
-                if #available(iOS 16.1, *) {
-                    LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
-                    startLiveUpdateStream()
-                }
+                LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
+                startLiveUpdateStream()
             } else if configManager.getUseBackgroundActivitySession() {
                 backgroundActivitySession = CLBackgroundActivitySession()
             }
@@ -201,9 +199,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         stopPeriodicTimer()
         
         if #available(iOS 17.0, *) {
-            if #available(iOS 16.1, *) {
-                LiveActivityManager.shared.stopLiveActivity()
-            }
+            LiveActivityManager.shared.stopLiveActivity()
             stopLiveUpdateStream()
             (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
             backgroundActivitySession = nil

@@ -219,8 +219,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 for try await update in updates {
                     guard !Task.isCancelled, let self = self else { break }
                     if let location = update.location {
-                        // Forward to existing delegate pipeline
-                        self.locationManager(self.locationManager, didUpdateLocations: [location])
+                        // Forward to existing delegate pipeline on the main thread
+                        await MainActor.run {
+                            self.locationManager(self.locationManager, didUpdateLocations: [location])
+                        }
                     }
                 }
             } catch {

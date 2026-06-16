@@ -152,6 +152,8 @@ iOS specific OS constraints. [See iOS Story 📖](/en/getting-started/platform-s
   Prevents the OS from prompting "Always Allow" if only "When In Use" is requested.
 - **`preventSuspend`**: `bool` *(Default: `false`)*
   Plays silent audio to keep the app alive 24/7. Requires `audio` Xcode capability. [See Prevent Suspend 📖](/en/getting-started/platform-setup/ios#scenario-1-the-un-killable-fleet-tracker-high-power)
+- **`useBackgroundActivitySession`**: `bool` *(Default: `false`)*
+  Uses `CLBackgroundActivitySession` (iOS 17+) to maintain a background location session with only "When In Use" authorization. This replaces the traditional blue pill with a Dynamic Island indicator. *Note: Apple App Store guidelines require apps using this to provide a clear explanation to users why background location is necessary.*
 
 ---
 

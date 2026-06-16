@@ -146,6 +146,7 @@ public final class ConfigManager {
     public func getHeartbeatInterval() -> Int { (cache["heartbeatInterval"] as? NSNumber)?.intValue ?? 60 }
     public func getSchedule() -> [String] { cache["schedule"] as? [String] ?? [] }
     public func getPreventSuspend() -> Bool { cache["preventSuspend"] as? Bool ?? false }
+    public func getUseBackgroundActivitySession() -> Bool { cache["useBackgroundActivitySession"] as? Bool ?? false }
 
     // MotionConfig
     public func getIsMoving() -> Bool { cache["isMoving"] as? Bool ?? false }
@@ -419,6 +420,8 @@ public final class ConfigManager {
             "pausesLocationUpdatesAutomatically": true,
             "disableLocationAuthorizationAlert": false,
             "locationAuthorizationRequest": "Always",
+            "preventSuspend": false,
+            "useBackgroundActivitySession": false,
             "debug": false,
             "logLevel": 5,
             "stopOnTerminate": true,

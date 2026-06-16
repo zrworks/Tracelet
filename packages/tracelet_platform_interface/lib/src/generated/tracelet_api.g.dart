@@ -737,6 +737,7 @@ class TlIosConfig {
     required this.locationAuthorizationRequest,
     required this.disableLocationAuthorizationAlert,
     required this.preventSuspend,
+    required this.useBackgroundActivitySession,
   });
 
   TlIosActivityType activityType;
@@ -753,6 +754,8 @@ class TlIosConfig {
 
   bool preventSuspend;
 
+  bool useBackgroundActivitySession;
+
   List<Object?> _toList() {
     return <Object?>[
       activityType,
@@ -762,6 +765,7 @@ class TlIosConfig {
       locationAuthorizationRequest,
       disableLocationAuthorizationAlert,
       preventSuspend,
+      useBackgroundActivitySession,
     ];
   }
 
@@ -779,6 +783,7 @@ class TlIosConfig {
       locationAuthorizationRequest: result[4]! as TlAuthorizationRequest,
       disableLocationAuthorizationAlert: result[5]! as bool,
       preventSuspend: result[6]! as bool,
+      useBackgroundActivitySession: result[7]! as bool,
     );
   }
 
@@ -812,7 +817,11 @@ class TlIosConfig {
           disableLocationAuthorizationAlert,
           other.disableLocationAuthorizationAlert,
         ) &&
-        _deepEquals(preventSuspend, other.preventSuspend);
+        _deepEquals(preventSuspend, other.preventSuspend) &&
+        _deepEquals(
+          useBackgroundActivitySession,
+          other.useBackgroundActivitySession,
+        );
   }
 
   @override

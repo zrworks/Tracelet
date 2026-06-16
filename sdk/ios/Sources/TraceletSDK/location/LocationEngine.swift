@@ -35,6 +35,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Cancellable timeout work item for periodic fix cleanup.
     private var periodicFixTimeoutWork: DispatchWorkItem?
 
+    /// Opaque reference to CLBackgroundActivitySession for iOS 17+ Live Updates
+    /// battery optimization. Kept opaque to allow compilation on older iOS targets.
+    private var backgroundActivitySession: Any?
+
     /// Last computed effective speed (m/s) from tracking location updates.
     /// Used by the plugin to provide speed in motionchange events, since the
     /// cached CLLocation.speed may be stale, 0, or -1.
@@ -172,6 +176,12 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             locationManager.startUpdatingLocation()
             startGpsLossTimer()
         }
+
+        if #available(iOS 17.0, *) {
+            if configManager.getUseBackgroundActivitySession() {
+                backgroundActivitySession = CLBackgroundActivitySession()
+            }
+        }
     }
 
     public func stop() {
@@ -183,6 +193,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         deactivateDeadReckoning()
         cancelGpsLossTimer()
         stopPeriodicTimer()
+        
+        if #available(iOS 17.0, *) {
+            (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
+            backgroundActivitySession = nil
+        }
     }
 
     // MARK: - Periodic one-shot tracking
@@ -434,12 +449,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         let accuracy = configManager.getDesiredAccuracy()
         switch accuracy {
-        case -2: locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-        case -1: locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        case 10: locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        case 100: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        case 1000: locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-        case 3000: locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+        case 0: locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        case 1: locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        case 2: locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        case 3, 4: locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
         default: locationManager.desiredAccuracy = kCLLocationAccuracyBest
         }
 

@@ -377,7 +377,8 @@ public final class TraceletIosConfigObjC: NSObject {
     public let pausesLocationUpdatesAutomatically: Bool
     public let locationAuthorizationRequest: String
     public let disableLocationAuthorizationAlert: Bool
-    public let preventSuspend: Bool
+    @objc public let preventSuspend: Bool
+    @objc public let useBackgroundActivitySession: Bool
 
     public init(
         activityType: Int = 0,
@@ -386,7 +387,8 @@ public final class TraceletIosConfigObjC: NSObject {
         pausesLocationUpdatesAutomatically: Bool = false,
         locationAuthorizationRequest: String = "Always",
         disableLocationAuthorizationAlert: Bool = false,
-        preventSuspend: Bool = false
+        preventSuspend: Bool = false,
+        useBackgroundActivitySession: Bool = false
     ) {
         self.activityType = activityType
         self.useSignificantChangesOnly = useSignificantChangesOnly
@@ -395,6 +397,7 @@ public final class TraceletIosConfigObjC: NSObject {
         self.locationAuthorizationRequest = locationAuthorizationRequest
         self.disableLocationAuthorizationAlert = disableLocationAuthorizationAlert
         self.preventSuspend = preventSuspend
+        self.useBackgroundActivitySession = useBackgroundActivitySession
     }
 
     public func toMap() -> [String: Any] {
@@ -405,7 +408,8 @@ public final class TraceletIosConfigObjC: NSObject {
             "pausesLocationUpdatesAutomatically": pausesLocationUpdatesAutomatically,
             "locationAuthorizationRequest": locationAuthorizationRequest,
             "disableLocationAuthorizationAlert": disableLocationAuthorizationAlert,
-            "preventSuspend": preventSuspend
+            "preventSuspend": preventSuspend,
+            "useBackgroundActivitySession": useBackgroundActivitySession
         ]
     }
 
@@ -417,7 +421,8 @@ public final class TraceletIosConfigObjC: NSObject {
             pausesLocationUpdatesAutomatically: pausesLocationUpdatesAutomatically,
             locationAuthorizationRequest: locationAuthorizationRequest == "Always" ? .always : .whenInUse,
             disableLocationAuthorizationAlert: disableLocationAuthorizationAlert,
-            preventSuspend: preventSuspend
+            preventSuspend: preventSuspend,
+            useBackgroundActivitySession: useBackgroundActivitySession
         )
     }
 
@@ -429,7 +434,8 @@ public final class TraceletIosConfigObjC: NSObject {
             pausesLocationUpdatesAutomatically: map["pausesLocationUpdatesAutomatically"] as? Bool ?? false,
             locationAuthorizationRequest: map["locationAuthorizationRequest"] as? String ?? "Always",
             disableLocationAuthorizationAlert: map["disableLocationAuthorizationAlert"] as? Bool ?? false,
-            preventSuspend: map["preventSuspend"] as? Bool ?? false
+            preventSuspend: map["preventSuspend"] as? Bool ?? false,
+            useBackgroundActivitySession: map["useBackgroundActivitySession"] as? Bool ?? false
         )
     }
 }

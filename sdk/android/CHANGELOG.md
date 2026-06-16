@@ -1,3 +1,7 @@
+## 3.3.4
+
+**FIX**: resolve battery and extras DB persistence (#175)
+
 ## 3.3.0
 
 * **FEAT** (Battery, Android): Motion-gated wakelock — drop the OEM partial wakelock when stationary and re-assert it on movement, via `AndroidConfig.releaseWakelockWhenStationary` (opt-in, default off; gated on the hardware significant-motion wake sensor) ([#162](https://github.com/Ikolvi/Tracelet/issues/162)).

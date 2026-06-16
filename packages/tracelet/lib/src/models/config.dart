@@ -25,6 +25,10 @@ enum TraceletProfile {
 
   /// Background-only, battery-sensitive tracking with sparse updates and cellular/wifi locations.
   lowPower,
+
+  /// Extreme battery saving. Never powers on the GPS hardware itself, but passively
+  /// receives locations when other apps (like Google Maps) request them.
+  passive,
 }
 
 /// Top-level compound configuration for Tracelet.
@@ -73,6 +77,10 @@ class Config {
 
   /// Low Power profile tailored for background-only coarse tracking to maximize battery life.
   factory Config.lowPower() => _fromProfile(TraceletProfile.lowPower);
+
+  /// Passive profile tailored for extreme battery saving. Never powers on the GPS hardware itself,
+  /// but passively receives locations when other apps request them. Most effective on Android.
+  factory Config.passive() => _fromProfile(TraceletProfile.passive);
 
   /// Creates a [Config] from a map. Supports both nested and flat formats.
   factory Config.fromMap(Map<String, Object?> map) {
@@ -204,6 +212,8 @@ class Config {
         '{"geo":{"desiredAccuracy":1,"distanceFilter":20.0,"stationaryRadius":50.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":1.0,"filter":{"useKalmanFilter":false}},"motion":{"motionDetectionMode":2,"stationaryTrackingMode":1,"stopTimeout":5},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":5000}}',
     TraceletProfile.lowPower:
         '{"geo":{"desiredAccuracy":2,"distanceFilter":50.0,"stationaryRadius":100.0,"enableAdaptiveMode":true,"disableElasticity":false,"elasticityMultiplier":2.0,"enableSparseUpdates":true,"sparseDistanceThreshold":100.0},"motion":{"motionDetectionMode":1,"stationaryTrackingMode":1,"stopTimeout":2},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":10000}}',
+    TraceletProfile.passive:
+        '{"geo":{"desiredAccuracy":4,"distanceFilter":0.0,"stationaryRadius":500.0,"enableAdaptiveMode":false,"enableSparseUpdates":true,"sparseDistanceThreshold":50.0},"motion":{"motionDetectionMode":1,"stationaryTrackingMode":1,"stopTimeout":2},"android":{"geofenceModeHighAccuracy":false,"locationUpdateInterval":60000}}',
   };
 
   /// Internal factory to load a profile

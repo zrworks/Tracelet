@@ -1220,7 +1220,8 @@ class LocationEngine(
             0 -> TraceletLocationPriority.PRIORITY_HIGH_ACCURACY       // high
             1 -> TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY // medium
             2 -> TraceletLocationPriority.PRIORITY_LOW_POWER            // low
-            3 -> TraceletLocationPriority.PRIORITY_PASSIVE              // passive
+            3 -> TraceletLocationPriority.PRIORITY_PASSIVE              // veryLow
+            4 -> TraceletLocationPriority.PRIORITY_PASSIVE              // passive
             else -> TraceletLocationPriority.PRIORITY_HIGH_ACCURACY
         }
     }

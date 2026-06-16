@@ -1,5 +1,6 @@
 ## 3.3.5
 
+ - **FEAT**(ios): implement CLLiveUpdate with ActivityKit for extreme battery optimization ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).
  - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
  - **FIX**: resolve accuracy priority mappings in Android and iOS. ([65f5127d](https://github.com/Ikolvi/Tracelet/commit/65f5127dd8a9d0ee1c3e2f832499076607ddad10))
 

@@ -108,7 +108,7 @@ ios: tl.IosConfig(
 
 ---
 
-## Scenario 3: The Blue Pill Indicator
+## Scenario 3: The Blue Pill Indicator (iOS 16 and below)
 **Concepts Explored:** Background Location Indicator
 
 ### The Problem
@@ -128,7 +128,28 @@ When the user locks their phone, a blue pill with an arrow will appear in the to
 
 ---
 
-## Scenario 4: The Terminated State (App Force-Quit)
+## Scenario 4: The Dynamic Island Indicator (iOS 17+)
+**Concepts Explored:** Background Activity Session
+
+### The Problem
+You want the benefits of the blue pill indicator, but you want a more modern, native integration with the Dynamic Island on modern iPhones, and you want to reduce the chances of the OS killing your background session.
+
+### How Tracelet Solves It
+Tracelet integrates with Apple's `CLBackgroundActivitySession` (introduced in iOS 17). This provides a prominent Dynamic Island indicator and creates a formal session with the OS, telling it not to suspend your app.
+
+```dart
+ios: tl.IosConfig(
+  useBackgroundActivitySession: true, 
+)
+```
+
+<Callout type="warning">
+  **App Store Review Note:** Apple explicitly requires a clear explanation in your App Store review notes and app description as to why the user's location is needed persistently in the background. Without clear, user-facing justification, apps using `CLBackgroundActivitySession` will be rejected.
+</Callout>
+
+---
+
+## Scenario 5: The Terminated State (App Force-Quit)
 **Concepts Explored:** App Lifecycle, Force-Quit vs OS Suspension
 
 ### The Problem

@@ -120,6 +120,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     // Dead Reckoning
     private var deadReckoningEngine: DeadReckoningEngine?
     private var gpsLossTimer: Timer?
+    private var liveUpdateTask: Any?
 
     /// Current activity type — set by MotionDetector for DR algorithm selection.
     public var currentActivityType: String = "unknown"
@@ -178,7 +179,12 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
 
         if #available(iOS 17.0, *) {
-            if configManager.getUseBackgroundActivitySession() {
+            if let liveConfig = configManager.getLiveActivityConfig() {
+                if #available(iOS 16.1, *) {
+                    LiveActivityManager.shared.startLiveActivity(title: liveConfig.title, body: liveConfig.body)
+                    startLiveUpdateStream()
+                }
+            } else if configManager.getUseBackgroundActivitySession() {
                 backgroundActivitySession = CLBackgroundActivitySession()
             }
         }
@@ -195,9 +201,38 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         stopPeriodicTimer()
         
         if #available(iOS 17.0, *) {
+            if #available(iOS 16.1, *) {
+                LiveActivityManager.shared.stopLiveActivity()
+            }
+            stopLiveUpdateStream()
             (backgroundActivitySession as? CLBackgroundActivitySession)?.invalidate()
             backgroundActivitySession = nil
         }
+    }
+
+    @available(iOS 17.0, *)
+    private func startLiveUpdateStream() {
+        (liveUpdateTask as? Task<Void, Never>)?.cancel()
+        liveUpdateTask = Task { [weak self] in
+            do {
+                let updates = CLLiveUpdate.Updates()
+                for try await update in updates {
+                    guard !Task.isCancelled, let self = self else { break }
+                    if let location = update.location {
+                        // Forward to existing delegate pipeline
+                        self.locationManager(self.locationManager, didUpdateLocations: [location])
+                    }
+                }
+            } catch {
+                TraceletLog.error("[Tracelet] CLLiveUpdate stream error: \\(error.localizedDescription)")
+            }
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private func stopLiveUpdateStream() {
+        (liveUpdateTask as? Task<Void, Never>)?.cancel()
+        liveUpdateTask = nil
     }
 
     // MARK: - Periodic one-shot tracking

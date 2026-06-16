@@ -147,6 +147,10 @@ public final class ConfigManager {
     public func getSchedule() -> [String] { cache["schedule"] as? [String] ?? [] }
     public func getPreventSuspend() -> Bool { cache["preventSuspend"] as? Bool ?? false }
     public func getUseBackgroundActivitySession() -> Bool { cache["useBackgroundActivitySession"] as? Bool ?? false }
+    
+    public func getLiveActivityConfig() -> TlLiveActivityConfig? {
+        return cache["liveActivityConfig"] as? TlLiveActivityConfig
+    }
 
     // MotionConfig
     public func getIsMoving() -> Bool { cache["isMoving"] as? Bool ?? false }

@@ -152,7 +152,78 @@ ios: tl.IosConfig(
 
 ---
 
-## Scenario 5: The Terminated State (App Force-Quit)
+## Scenario 5: Live Activities (Maximum Battery Optimization)
+**Concepts Explored:** `CLLiveUpdate`, ActivityKit, Lock Screen Widgets
+
+### The Problem
+You want continuous tracking with the lowest possible battery drain on iOS 17+. Apple introduced a new highly optimized background pipeline (`CLLiveUpdate`), but it absolutely requires an active Lock Screen "Live Activity" widget.
+
+### How Tracelet Solves It
+Tracelet natively implements `CLLiveUpdate`. If you configure it and setup a Widget Extension, Tracelet will automatically start the Live Activity when tracking starts, drastically extending battery life while keeping GPS active.
+
+```dart
+ios: tl.IosConfig(
+  liveActivityConfig: tl.LiveActivityConfig(
+    title: 'Ride in progress',
+    body: 'Tracking your route to the destination...',
+  ),
+)
+```
+
+### Xcode Widget Extension Setup (Required)
+Unlike Android, Flutter plugins cannot dynamically create iOS widgets. You must add a **Widget Extension** target to your iOS app in Xcode.
+
+1. Open `ios/Runner.xcworkspace` in Xcode.
+2. Go to **File -> New -> Target...** and select **Widget Extension**.
+3. Name it `TraceletWidget`. Make sure **Include Live Activity** is checked.
+4. In your `Info.plist`, you **must** add: `NSSupportsLiveActivities` = `YES`.
+5. Replace the auto-generated `TraceletWidgetLiveActivity.swift` content with the following:
+
+```swift
+import ActivityKit
+import WidgetKit
+import SwiftUI
+import tracelet_ios // Import the Tracelet SDK
+
+@main
+struct TraceletWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        TraceletWidgetLiveActivity()
+    }
+}
+
+struct TraceletWidgetLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: TraceletActivityAttributes.self) { context in
+            // Use Tracelet's default highly-styled UI
+            TraceletLiveActivityView(context: context)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Text("Tracking")
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("Live")
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text(context.state.status)
+                }
+            } compactLeading: {
+                Image(systemName: "location.fill").foregroundColor(.blue)
+            } compactTrailing: {
+                Text("Live")
+            } minimal: {
+                Image(systemName: "location.fill").foregroundColor(.blue)
+            }
+        }
+    }
+}
+```
+If you prefer to build your own custom UI instead of using `TraceletLiveActivityView`, you can design your own SwiftUI View inside the `ActivityConfiguration` block, mapping the data from `context.attributes.title` and `context.state.status`.
+
+---
+
+## Scenario 6: The Terminated State (App Force-Quit)
 **Concepts Explored:** App Lifecycle, Force-Quit vs OS Suspension
 
 ### The Problem

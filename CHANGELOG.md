@@ -3,6 +3,58 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-16
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.3.5`](#tracelet---v335)
+ - [`tracelet_android` - `v3.3.5`](#tracelet_android---v335)
+ - [`tracelet_ios` - `v3.3.5`](#tracelet_ios---v335)
+ - [`tracelet_platform_interface` - `v3.3.5`](#tracelet_platform_interface---v335)
+ - [`tracelet_sync` - `v3.3.5`](#tracelet_sync---v335)
+ - [`tracelet_doctor` - `v3.3.5`](#tracelet_doctor---v335)
+ - [`tracelet_supabase` - `v3.3.5`](#tracelet_supabase---v335)
+ - [`tracelet_firebase` - `v3.3.5`](#tracelet_firebase---v335)
+ - [`tracelet_web` - `v3.3.5`](#tracelet_web---v335)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_sync` - `v3.3.5`
+ - `tracelet_doctor` - `v3.3.5`
+ - `tracelet_supabase` - `v3.3.5`
+ - `tracelet_firebase` - `v3.3.5`
+ - `tracelet_web` - `v3.3.5`
+
+---
+
+#### `tracelet` - `v3.3.5`
+
+ - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
+ - **FIX**: resolve accuracy priority mappings in Android and iOS. ([65f5127d](https://github.com/Ikolvi/Tracelet/commit/65f5127dd8a9d0ee1c3e2f832499076607ddad10))
+
+#### `tracelet_android` - `v3.3.5`
+
+ - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
+
+#### `tracelet_ios` - `v3.3.5`
+
+ - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
+
+#### `tracelet_platform_interface` - `v3.3.5`
+
+ - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
+
+
 ## 2026-06-15
 
 ### Changes

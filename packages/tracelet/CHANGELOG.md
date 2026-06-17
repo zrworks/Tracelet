@@ -1,6 +1,10 @@
-## 3.3.5
+## 3.4.0
 
- - **FEAT**(ios): implement CLLiveUpdate with ActivityKit for extreme battery optimization ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).
+ - **FEAT**(ios): Live Activity for active tracking — a Lock Screen & Dynamic Island indicator backed by ActivityKit, layered over the standard background pipeline (no redundant second location stream) ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).
+ - **FIX**(ios): resolve release-mode launch crash (`SIGTRAP`) caused by a duplicate key in the default config, plus a Widget Extension availability gate that hid the Live Activity and could crash the extension on iOS < 18.
+ - **FIX**: per-call extras passed to `getCurrentPosition(extras:)` / `getLastKnownLocation(extras:)` are now forwarded to native and **merged** with the global `HttpConfig.extras` into the synced payload — the platform layer previously dropped per-call `extras` and `desiredAccuracy` ([#201](https://github.com/Ikolvi/Tracelet/issues/201)).
+ - **FIX**: `getCurrentPosition` now defaults to high accuracy and never silently runs at passive priority, which could fail an explicit one-shot request with `LOCATION_FAILURE`.
+ - **FIX**(android): a single location batch is now uploaded exactly once — duplicate sync providers no longer fire `requestSyncBody` twice for the same batch, preventing duplicate server uploads and duplicate DB rows ([#204](https://github.com/Ikolvi/Tracelet/issues/204)).
  - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
  - **FIX**: resolve accuracy priority mappings in Android and iOS. ([65f5127d](https://github.com/Ikolvi/Tracelet/commit/65f5127dd8a9d0ee1c3e2f832499076607ddad10))
 

@@ -777,6 +777,24 @@ void main() {
       expect(fakeApi.wasCalled('getCurrentPosition'), true);
     });
 
+    test(
+      'getCurrentPosition() forwards desiredAccuracy and extras (#201)',
+      () async {
+        await pigeon.getCurrentPosition({
+          'timeout': 30,
+          'desiredAccuracy': 0, // DesiredAccuracy.high
+          'extras': {'event_type': 'sos'},
+        });
+        final opts =
+            fakeApi.lastCallArgs('getCurrentPosition')!.first!
+                as TlCurrentPositionOptions;
+        // Previously _mapToOptions dropped these, so per-call extras never reached
+        // native and the local extra was missing from the payload (Issue #201).
+        expect(opts.desiredAccuracy, TlDesiredAccuracy.high);
+        expect(opts.extras?['event_type'], 'sos');
+      },
+    );
+
     test('getLastKnownLocation() returns location map', () async {
       final loc = await pigeon.getLastKnownLocation();
       expect(loc['uuid'], 'test-uuid-123');

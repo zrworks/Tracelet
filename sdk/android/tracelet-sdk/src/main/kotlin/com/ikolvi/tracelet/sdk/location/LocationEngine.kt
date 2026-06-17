@@ -449,7 +449,18 @@ class LocationEngine(
         val samples = (options["samples"] as? Number)?.toInt()?.coerceAtLeast(1) ?: 1
         @Suppress("UNCHECKED_CAST")
         val extras = options["extras"] as? Map<String, Any?> ?: emptyMap()
+        // An explicit one-shot getCurrentPosition() must actively obtain a fix.
+        // PRIORITY_PASSIVE (used by the passive tracking profile) only yields a
+        // location when *another* app is actively requesting one, so the fused
+        // client returns nothing and the request times out with LOCATION_FAILURE.
+        // Floor passive to BALANCED so an explicit position request always works,
+        // regardless of the background tracking profile.
         val priority = accuracyToPriority(desiredAccuracy)
+            .let {
+                if (it == TraceletLocationPriority.PRIORITY_PASSIVE)
+                    TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY
+                else it
+            }
 
         // Check if a cached location satisfies maximumAge
         if (maximumAge > 0) {

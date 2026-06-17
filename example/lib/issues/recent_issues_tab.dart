@@ -36,7 +36,18 @@ class _RecentIssuesTabState extends State<RecentIssuesTab> {
   final Map<int, String> _statuses = {};
   final Map<int, GlobalKey> _keys = {};
 
-  final List<int> _allIssues = [147, 149, 154, 159, 162, 175, 185, 198, 201, 204];
+  final List<int> _allIssues = [
+    147,
+    149,
+    154,
+    159,
+    162,
+    175,
+    185,
+    198,
+    201,
+    204,
+  ];
 
   bool _isIssue134Tracking = false;
   bool _isIssue140Tracking = false;

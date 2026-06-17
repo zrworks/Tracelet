@@ -1,5 +1,6 @@
-## 3.3.5
+## 3.4.0
 
+ - **FIX**: forward `desiredAccuracy` and per-call `extras` through the pigeon options conversion — they were silently dropped, so `getCurrentPosition(extras:/desiredAccuracy:)` never reached native ([#201](https://github.com/Ikolvi/Tracelet/issues/201)).
  - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
 
 ## 3.3.4

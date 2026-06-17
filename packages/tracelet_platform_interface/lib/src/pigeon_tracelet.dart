@@ -128,13 +128,27 @@ class PigeonTracelet extends TraceletPlatform {
     );
   }
 
-  TlCurrentPositionOptions _mapToOptions(Map<String, Object?> m) =>
-      TlCurrentPositionOptions(
-        timeout: m['timeout'] as int? ?? 30,
-        maximumAge: m['maximumAge'] as int? ?? 0,
-        persist: m['persist'] as bool? ?? true,
-        samples: m['samples'] as int? ?? 1,
-      );
+  TlCurrentPositionOptions _mapToOptions(Map<String, Object?> m) {
+    final accIndex = m['desiredAccuracy'] as int?;
+    final extrasRaw = m['extras'];
+    return TlCurrentPositionOptions(
+      timeout: m['timeout'] as int? ?? 30,
+      maximumAge: m['maximumAge'] as int? ?? 0,
+      persist: m['persist'] as bool? ?? true,
+      samples: m['samples'] as int? ?? 1,
+      // Forward desiredAccuracy and extras — previously dropped here, so
+      // getCurrentPosition(desiredAccuracy:/extras:) never reached native
+      // (Issue #201: local extras missing from payload).
+      desiredAccuracy: accIndex != null
+          ? TlDesiredAccuracy.values[accIndex]
+          : null,
+      extras: extrasRaw is Map
+          ? extrasRaw.map<String?, Object?>(
+              (Object? k, Object? v) => MapEntry(k as String?, v),
+            )
+          : null,
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Lifecycle

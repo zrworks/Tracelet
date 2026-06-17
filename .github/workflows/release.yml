@@ -1148,3 +1148,33 @@ jobs:
           target: 'tracelet-docs'
           channelId: 'live'
           entryPoint: './website'
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 7: Post to Discord Announcements
+  # ─────────────────────────────────────────────────────────────
+  discord_announcement:
+    name: Post Release to Discord
+    needs:
+      - validate
+      - publish-flutter
+    if: |
+      always() &&
+      !inputs.dry_run &&
+      needs.validate.result == 'success' &&
+      (needs.publish-flutter.result == 'success' || needs.publish-flutter.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Extract Changelog and Post
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.flutter_version }}
+        run: |
+          awk '/^## /{if (p) exit; p=1; print; next} p' packages/tracelet/CHANGELOG.md | python3 .github/scripts/post_discord_release.py

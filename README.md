@@ -45,6 +45,15 @@ Everything is **default-off** and side-channel — when disabled, your existing 
 
 ---
 
+### 💬 Community & Support
+
+Join our official [Discord Channel](https://discord.gg/B9TApeYEH)! It's the best place to:
+- Request new features and customizations.
+- Get help from the maintainers and the community.
+- Discuss best practices for background geolocation in Flutter.
+
+---
+
 ### 💖 Support Open-Source Development!
 
 Tracelet is a labor of love, built to provide a robust, fully open-source, battery-conscious background tracking experience for the Flutter community. If this library has saved you hours of work or is powering your production applications, **please consider supporting its active maintenance and future development!**

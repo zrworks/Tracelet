@@ -82,23 +82,26 @@ class MethodChannelTracelet extends TraceletPlatform {
 
   @override
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) async {
-    return _invokeMap('getCurrentPosition', options);
+    return _invokeMap('getCurrentPosition', _optionsToMap(options));
   }
 
   @override
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) async {
-    return _invokeMap('getLastKnownLocation', options);
+    return _invokeMap(
+      'getLastKnownLocation',
+      options != null ? _optionsToMap(options) : null,
+    );
   }
 
   @override
-  Future<int> watchPosition(Map<String, Object?> options) async {
+  Future<int> watchPosition(TlCurrentPositionOptions options) async {
     final result = await _methodChannel.invokeMethod<int>(
       'watchPosition',
-      options,
+      _optionsToMap(options),
     );
     return result ?? -1;
   }
@@ -137,22 +140,49 @@ class MethodChannelTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<bool> addGeofence(Map<String, Object?> geofence) async {
+  Future<bool> addGeofence(TlGeofence geofence) async {
     final result = await _methodChannel.invokeMethod<bool>(
       'addGeofence',
-      geofence,
+      _tlGeofenceToMap(geofence),
     );
     return result ?? false;
   }
 
   @override
-  Future<bool> addGeofences(List<Map<String, Object?>> geofences) async {
+  Future<bool> addGeofences(List<TlGeofence> geofences) async {
     final result = await _methodChannel.invokeMethod<bool>(
       'addGeofences',
-      geofences,
+      geofences.map(_tlGeofenceToMap).toList(),
     );
     return result ?? false;
   }
+
+  // Serialize typed Pigeon inputs to the channel map shape. (Legacy
+  // MethodChannel transport; the active path is PigeonTracelet, which passes
+  // the typed objects straight through — see #206.)
+  Map<String, Object?> _optionsToMap(
+    TlCurrentPositionOptions o,
+  ) => <String, Object?>{
+    if (o.desiredAccuracy != null) 'desiredAccuracy': o.desiredAccuracy!.index,
+    'timeout': o.timeout,
+    'maximumAge': o.maximumAge,
+    'persist': o.persist,
+    'samples': o.samples,
+    if (o.extras != null) 'extras': o.extras,
+  };
+
+  Map<String, Object?> _tlGeofenceToMap(TlGeofence g) => <String, Object?>{
+    'identifier': g.identifier,
+    'latitude': g.latitude,
+    'longitude': g.longitude,
+    'radius': g.radius,
+    'notifyOnEntry': g.notifyOnEntry,
+    'notifyOnExit': g.notifyOnExit,
+    'notifyOnDwell': g.notifyOnDwell,
+    'loiteringDelay': g.loiteringDelay,
+    if (g.extras != null) 'extras': g.extras,
+    if (g.vertices != null) 'vertices': g.vertices,
+  };
 
   @override
   Future<bool> removeGeofence(String identifier) async {

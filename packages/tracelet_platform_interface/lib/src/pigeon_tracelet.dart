@@ -96,60 +96,6 @@ class PigeonTracelet extends TraceletPlatform {
     'vertices': g.vertices,
   };
 
-  TlGeofence _mapToGeofence(Map<String, Object?> m) {
-    final extrasRaw = m['extras'];
-    final extras = extrasRaw is Map
-        ? extrasRaw.map<String?, Object?>(
-            (Object? k, Object? v) => MapEntry(k?.toString(), v),
-          )
-        : null;
-
-    final verticesRaw = m['vertices'];
-    final vertices = verticesRaw is List
-        ? verticesRaw.map<List<double?>?>((Object? row) {
-            if (row is! List) return null;
-            return row
-                .map<double?>((Object? v) => (v as num?)?.toDouble())
-                .toList();
-          }).toList()
-        : null;
-
-    return TlGeofence(
-      identifier: m['identifier']! as String,
-      latitude: (m['latitude']! as num).toDouble(),
-      longitude: (m['longitude']! as num).toDouble(),
-      radius: (m['radius']! as num).toDouble(),
-      notifyOnEntry: m['notifyOnEntry'] as bool? ?? true,
-      notifyOnExit: m['notifyOnExit'] as bool? ?? true,
-      notifyOnDwell: m['notifyOnDwell'] as bool? ?? false,
-      loiteringDelay: m['loiteringDelay'] as int? ?? 0,
-      extras: extras,
-      vertices: vertices,
-    );
-  }
-
-  TlCurrentPositionOptions _mapToOptions(Map<String, Object?> m) {
-    final accIndex = m['desiredAccuracy'] as int?;
-    final extrasRaw = m['extras'];
-    return TlCurrentPositionOptions(
-      timeout: m['timeout'] as int? ?? 30,
-      maximumAge: m['maximumAge'] as int? ?? 0,
-      persist: m['persist'] as bool? ?? true,
-      samples: m['samples'] as int? ?? 1,
-      // Forward desiredAccuracy and extras — previously dropped here, so
-      // getCurrentPosition(desiredAccuracy:/extras:) never reached native
-      // (Issue #201: local extras missing from payload).
-      desiredAccuracy: accIndex != null
-          ? TlDesiredAccuracy.values[accIndex]
-          : null,
-      extras: extrasRaw is Map
-          ? extrasRaw.map<String?, Object?>(
-              (Object? k, Object? v) => MapEntry(k as String?, v),
-            )
-          : null,
-    );
-  }
-
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
@@ -201,26 +147,24 @@ class PigeonTracelet extends TraceletPlatform {
 
   @override
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) async {
-    final location = await _api.getCurrentPosition(_mapToOptions(options));
+    final location = await _api.getCurrentPosition(options);
     return _locationToMap(location);
   }
 
   @override
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) async {
-    final location = await _api.getLastKnownLocation(
-      options != null ? _mapToOptions(options) : null,
-    );
+    final location = await _api.getLastKnownLocation(options);
     if (location == null) return <String, Object?>{};
     return _locationToMap(location);
   }
 
   @override
-  Future<int> watchPosition(Map<String, Object?> options) =>
-      _api.watchPosition(_mapToOptions(options));
+  Future<int> watchPosition(TlCurrentPositionOptions options) =>
+      _api.watchPosition(options);
 
   @override
   Future<bool> stopWatchPosition(int watchId) =>
@@ -248,12 +192,11 @@ class PigeonTracelet extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<bool> addGeofence(Map<String, Object?> geofence) =>
-      _api.addGeofence(_mapToGeofence(geofence));
+  Future<bool> addGeofence(TlGeofence geofence) => _api.addGeofence(geofence);
 
   @override
-  Future<bool> addGeofences(List<Map<String, Object?>> geofences) =>
-      _api.addGeofences(geofences.map(_mapToGeofence).toList());
+  Future<bool> addGeofences(List<TlGeofence> geofences) =>
+      _api.addGeofences(geofences);
 
   @override
   Future<bool> removeGeofence(String identifier) =>

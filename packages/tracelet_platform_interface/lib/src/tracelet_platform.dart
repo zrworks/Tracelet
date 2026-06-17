@@ -103,7 +103,7 @@ abstract class TraceletPlatform extends PlatformInterface {
   ///   the best one (highest accuracy). Defaults to `1`.
   /// - `extras` (`Map<String, Object?>`): Extra data to attach to the location.
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) {
     throw UnimplementedError('getCurrentPosition() has not been implemented.');
   }
@@ -119,7 +119,7 @@ abstract class TraceletPlatform extends PlatformInterface {
   ///   Defaults to `false`.
   /// - `extras` (`Map<String, Object?>`): Extra data to attach to the location.
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) {
     throw UnimplementedError(
       'getLastKnownLocation() has not been implemented.',
@@ -127,7 +127,7 @@ abstract class TraceletPlatform extends PlatformInterface {
   }
 
   /// Start watching position at an interval. Returns a watch ID.
-  Future<int> watchPosition(Map<String, Object?> options) {
+  Future<int> watchPosition(TlCurrentPositionOptions options) {
     throw UnimplementedError('watchPosition() has not been implemented.');
   }
 
@@ -166,12 +166,12 @@ abstract class TraceletPlatform extends PlatformInterface {
   // ---------------------------------------------------------------------------
 
   /// Add a single geofence. Returns `true` on success.
-  Future<bool> addGeofence(Map<String, Object?> geofence) {
+  Future<bool> addGeofence(TlGeofence geofence) {
     throw UnimplementedError('addGeofence() has not been implemented.');
   }
 
   /// Add multiple geofences. Returns `true` on success.
-  Future<bool> addGeofences(List<Map<String, Object?>> geofences) {
+  Future<bool> addGeofences(List<TlGeofence> geofences) {
     throw UnimplementedError('addGeofences() has not been implemented.');
   }
 

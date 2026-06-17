@@ -49,7 +49,9 @@ class _Issue201CardState extends State<Issue201Card> {
         ),
       );
 
-      _setStatus('Calling getCurrentPosition with LOCAL extras {event_type}...');
+      _setStatus(
+        'Calling getCurrentPosition with LOCAL extras {event_type}...',
+      );
       final loc = await Tracelet.getCurrentPosition(
         persist: true,
         samples: 1,

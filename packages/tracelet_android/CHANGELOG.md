@@ -1,5 +1,7 @@
-## 3.3.5
+## 3.4.0
 
+ - **FIX**: a single location batch is uploaded exactly once — replacing/cancelling a previously-registered sync provider prevents duplicate `requestSyncBody` calls and duplicate uploads/DB rows ([#204](https://github.com/Ikolvi/Tracelet/issues/204)).
+ - **FIX**: `getCurrentPosition` floors passive priority to balanced so an explicit one-shot always obtains a fix instead of failing with `LOCATION_FAILURE`; per-call extras merge with global extras ([#201](https://github.com/Ikolvi/Tracelet/issues/201)).
  - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
 
 ## 3.3.4

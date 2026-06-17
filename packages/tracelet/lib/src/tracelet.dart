@@ -426,8 +426,11 @@ class Tracelet {
   ///
   /// **Parameters:**
   ///
-  /// - [desiredAccuracy]: The accuracy level for this request. Overrides the
-  ///   configured accuracy. Defaults to the value in [GeoConfig].
+  /// - [desiredAccuracy]: The accuracy level for this request. Because this is
+  ///   an explicit one-shot request, it defaults to [DesiredAccuracy.high] —
+  ///   it does NOT inherit the (possibly passive) background tracking profile,
+  ///   which could otherwise never return a fix. Pass a lower value to trade
+  ///   accuracy for battery on this single call.
   /// - [timeout]: Maximum time (in seconds) to wait for a location fix.
   ///   Defaults to `30` seconds.
   /// - [maximumAge]: Maximum age (in milliseconds) of a cached location that
@@ -467,7 +470,7 @@ class Tracelet {
     Map<String, Object?>? extras,
   }) async {
     final options = <String, Object?>{
-      if (desiredAccuracy != null) 'desiredAccuracy': desiredAccuracy.index,
+      'desiredAccuracy': (desiredAccuracy ?? DesiredAccuracy.high).index,
       if (timeout != null) 'timeout': timeout,
       if (maximumAge != null) 'maximumAge': maximumAge,
       if (persist != null) 'persist': persist,

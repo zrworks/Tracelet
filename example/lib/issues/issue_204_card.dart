@@ -31,43 +31,49 @@ class _Issue204CardState extends State<Issue204Card> {
       _invocations = 0;
     });
     try {
-      _setStatus('Requesting permissions...');
-      final auth = await Tracelet.requestLocationAuthorization();
-      if (auth != AuthorizationStatus.always &&
-          auth != AuthorizationStatus.whenInUse) {
-        _setStatus('❌ FAILED: Permission denied');
-        return;
-      }
-
-      // Count every requestSyncBody invocation.
+      // Count every requestSyncBody invocation for ONE batch.
       await Tracelet.setSyncBodyBuilder((ctx) async {
         _invocations++;
         if (mounted) setState(() {});
         return {'records': ctx.locations};
       });
 
-      _setStatus('Configuring auto-sync (delay 2s, batch)...');
+      // Deterministic, single-batch repro: no continuous tracking (which would
+      // produce several legitimate batches), seed via insertLocation, then sync
+      // ONCE. A correct SDK invokes the builder exactly once for the batch.
+      _setStatus('Configuring (batch sync, no auto-sync)...');
       await Tracelet.ready(
         Config.passive().copyWith(
           http: const HttpConfig(
             url: 'https://httpbin.org/post',
             batchSync: true,
-            autoSyncDelay: 2000,
+            autoSync: false,
           ),
           logger: const LoggerConfig(debug: true, logLevel: LogLevel.verbose),
         ),
       );
 
-      await Tracelet.start();
+      _setStatus('Seeding 3 locations...');
+      await Tracelet.destroyLocations();
+      for (var i = 0; i < 3; i++) {
+        await Tracelet.insertLocation({
+          'uuid': 'issue-204-card-$i',
+          'timestamp': DateTime.now().toIso8601String(),
+          'latitude': 19.16 + i * 0.001,
+          'longitude': 73.00 + i * 0.001,
+          'accuracy': 10.0,
+          'speed': 0.0,
+          'heading': 0.0,
+          'altitude': 0.0,
+          'is_moving': true,
+          'event': 'location',
+        });
+      }
 
-      _setStatus('Seeding 2 locations...');
-      await Tracelet.getCurrentPosition(persist: true, samples: 1);
-      await Tracelet.getCurrentPosition(persist: true, samples: 1);
+      _setStatus('Syncing the batch once...');
+      await Tracelet.sync();
+      await Future<void>.delayed(const Duration(seconds: 2));
 
-      _setStatus('Waiting for auto-sync to fire...');
-      await Future<void>.delayed(const Duration(seconds: 6));
-
-      await Tracelet.stop();
       await Tracelet.setSyncBodyBuilder(null);
 
       if (_invocations == 0) {

@@ -1,5 +1,8 @@
-## 3.3.5
+## 3.4.0
 
+ - **FEAT**: Live Activity (Lock Screen & Dynamic Island) for active tracking via ActivityKit, layered over the standard background pipeline ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).
+ - **FIX**: resolve release-mode launch crash (`SIGTRAP`) from a duplicate default-config key, and a Widget Extension availability gate that hid the Live Activity / could crash the extension on iOS < 18.
+ - **FIX**: per-call extras from `getCurrentPosition`/`getLastKnownLocation` merge with global `HttpConfig.extras` instead of overwriting them ([#201](https://github.com/Ikolvi/Tracelet/issues/201)).
  - **REFACTOR**: extract issues 185 and 198, fix iOS config mapping. ([1d088e0d](https://github.com/Ikolvi/Tracelet/commit/1d088e0d58e863b11217c5040410381f91930e59))
 
 ## 3.3.4

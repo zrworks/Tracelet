@@ -246,7 +246,7 @@ class MockPermissionPlatform extends TraceletPlatform
 
   @override
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) async {
     calls.add((method: 'getCurrentPosition', args: options));
     if (throwOnGetCurrentPosition) {
@@ -260,7 +260,7 @@ class MockPermissionPlatform extends TraceletPlatform
 
   @override
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) async {
     calls.add((method: 'getLastKnownLocation', args: options));
     if (throwOnGetCurrentPosition) {

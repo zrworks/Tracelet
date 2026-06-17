@@ -469,14 +469,15 @@ class Tracelet {
     int? samples,
     Map<String, Object?>? extras,
   }) async {
-    final options = <String, Object?>{
-      'desiredAccuracy': (desiredAccuracy ?? DesiredAccuracy.high).index,
-      if (timeout != null) 'timeout': timeout,
-      if (maximumAge != null) 'maximumAge': maximumAge,
-      if (persist != null) 'persist': persist,
-      if (samples != null) 'samples': samples,
-      if (extras != null) 'extras': extras,
-    };
+    final options = TlCurrentPositionOptions(
+      desiredAccuracy: TlDesiredAccuracy
+          .values[(desiredAccuracy ?? DesiredAccuracy.high).index],
+      timeout: timeout ?? 30,
+      maximumAge: maximumAge ?? 0,
+      persist: persist ?? true,
+      samples: samples ?? 1,
+      extras: extras,
+    );
     final result = await _platform.getCurrentPosition(options);
     return Location.fromMap(result);
   }
@@ -515,10 +516,7 @@ class Tracelet {
     bool persist = false,
     Map<String, Object?>? extras,
   }) async {
-    final options = <String, Object?>{
-      'persist': persist,
-      if (extras != null) 'extras': extras,
-    };
+    final options = TlCurrentPositionOptions(persist: persist, extras: extras);
     final result = await _platform.getLastKnownLocation(options);
     if (result.isEmpty) return null;
     return Location.fromMap(result);
@@ -534,11 +532,14 @@ class Tracelet {
     DesiredAccuracy? desiredAccuracy,
     Map<String, Object?>? extras,
   }) async {
-    final options = <String, Object?>{
-      if (interval != null) 'interval': interval,
-      if (desiredAccuracy != null) 'desiredAccuracy': desiredAccuracy.index,
-      if (extras != null) 'extras': extras,
-    };
+    // Note: `interval` has no field on the typed pigeon options and was already
+    // dropped by the previous Map conversion, so behavior is unchanged (#206).
+    final options = TlCurrentPositionOptions(
+      desiredAccuracy: desiredAccuracy != null
+          ? TlDesiredAccuracy.values[desiredAccuracy.index]
+          : null,
+      extras: extras,
+    );
     final watchId = await _platform.watchPosition(options);
 
     // Listen to the watchPosition event stream for this watcher.
@@ -599,13 +600,13 @@ class Tracelet {
 
   /// Add a single [Geofence] to the monitoring list.
   static Future<bool> addGeofence(Geofence geofence) {
-    return _platform.addGeofence(geofence.toMap());
+    return _platform.addGeofence(geofence.toTlGeofence());
   }
 
   /// Add multiple [Geofence]s at once.
   static Future<bool> addGeofences(List<Geofence> geofences) {
     return _platform.addGeofences(
-      geofences.map((g) => g.toMap()).toList(growable: false),
+      geofences.map((g) => g.toTlGeofence()).toList(growable: false),
     );
   }
 

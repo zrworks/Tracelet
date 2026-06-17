@@ -28,7 +28,7 @@ class MockTraceletPlatform extends TraceletPlatform
 
   @override
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) async {
     calls.add((method: 'getCurrentPosition', args: options));
     if (failCurrentPosition) {
@@ -39,7 +39,7 @@ class MockTraceletPlatform extends TraceletPlatform
 
   @override
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) async {
     calls.add((method: 'getLastKnownLocation', args: options));
     return Map<String, Object?>.from(lastKnownResult);
@@ -80,58 +80,64 @@ void main() {
   // getCurrentPosition — parameter forwarding
   // ==========================================================================
   group('getCurrentPosition', () {
-    test('passes no options when called with defaults', () async {
+    test('uses typed defaults when called with no overrides', () async {
       final location = await Tracelet.getCurrentPosition();
 
       expect(location.uuid, 'test-uuid-001');
       expect(location.coords.latitude, 37.7749);
       expect(mock.calls.length, 1);
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args, isEmpty); // No overrides → empty options
+      // Phase 2 (#206): an explicit one-shot defaults to high accuracy.
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.desiredAccuracy, TlDesiredAccuracy.high);
+      expect(o.timeout, 30);
+      expect(o.maximumAge, 0);
+      expect(o.persist, true);
+      expect(o.samples, 1);
+      expect(o.extras, isNull);
     });
 
-    test('forwards desiredAccuracy as index', () async {
+    test('forwards desiredAccuracy', () async {
       await Tracelet.getCurrentPosition(
         desiredAccuracy: DesiredAccuracy.medium,
       );
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['desiredAccuracy'], DesiredAccuracy.medium.index);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.desiredAccuracy, TlDesiredAccuracy.medium);
     });
 
     test('forwards timeout', () async {
       await Tracelet.getCurrentPosition(timeout: 15);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['timeout'], 15);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.timeout, 15);
     });
 
     test('forwards maximumAge', () async {
       await Tracelet.getCurrentPosition(maximumAge: 5000);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['maximumAge'], 5000);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.maximumAge, 5000);
     });
 
     test('forwards persist: false', () async {
       await Tracelet.getCurrentPosition(persist: false);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['persist'], false);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.persist, false);
     });
 
     test('forwards persist: true explicitly', () async {
       await Tracelet.getCurrentPosition(persist: true);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['persist'], true);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.persist, true);
     });
 
     test('forwards samples', () async {
       await Tracelet.getCurrentPosition(samples: 3);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['samples'], 3);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.samples, 3);
     });
 
     test('forwards extras', () async {
@@ -139,8 +145,8 @@ void main() {
         extras: {'route': 'delivery-42', 'driver': 'A1'},
       );
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      final extras = args['extras']! as Map<String, Object?>;
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      final extras = o.extras!;
       expect(extras['route'], 'delivery-42');
       expect(extras['driver'], 'A1');
     });
@@ -155,13 +161,13 @@ void main() {
         extras: {'key': 'value'},
       );
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['desiredAccuracy'], DesiredAccuracy.high.index);
-      expect(args['timeout'], 20);
-      expect(args['maximumAge'], 10000);
-      expect(args['persist'], false);
-      expect(args['samples'], 5);
-      expect(args['extras'], {'key': 'value'});
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.desiredAccuracy, TlDesiredAccuracy.high);
+      expect(o.timeout, 20);
+      expect(o.maximumAge, 10000);
+      expect(o.persist, false);
+      expect(o.samples, 5);
+      expect(o.extras, {'key': 'value'});
     });
 
     test('returns Location on success', () async {
@@ -180,16 +186,16 @@ void main() {
       expect(Tracelet.getCurrentPosition, throwsA(isA<PlatformException>()));
     });
 
-    test('omits null parameters from options map', () async {
+    test('applies typed defaults when params omitted', () async {
       await Tracelet.getCurrentPosition();
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args.containsKey('desiredAccuracy'), false);
-      expect(args.containsKey('timeout'), false);
-      expect(args.containsKey('maximumAge'), false);
-      expect(args.containsKey('persist'), false);
-      expect(args.containsKey('samples'), false);
-      expect(args.containsKey('extras'), false);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.desiredAccuracy, TlDesiredAccuracy.high);
+      expect(o.timeout, 30);
+      expect(o.maximumAge, 0);
+      expect(o.persist, true);
+      expect(o.samples, 1);
+      expect(o.extras, isNull);
     });
   });
 
@@ -233,8 +239,8 @@ void main() {
 
       await Tracelet.getLastKnownLocation();
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['persist'], false);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.persist, false);
     });
 
     test('forwards persist: true when specified', () async {
@@ -246,8 +252,8 @@ void main() {
 
       await Tracelet.getLastKnownLocation(persist: true);
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['persist'], true);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.persist, true);
     });
 
     test('forwards extras', () async {
@@ -259,17 +265,17 @@ void main() {
 
       await Tracelet.getLastKnownLocation(extras: {'source': 'cache'});
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args['extras'], {'source': 'cache'});
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.extras, {'source': 'cache'});
     });
 
-    test('does not include extras key when extras is null', () async {
+    test('extras is null when not provided', () async {
       mock.lastKnownResult = {};
 
       await Tracelet.getLastKnownLocation();
 
-      final args = mock.calls.first.args! as Map<String, Object?>;
-      expect(args.containsKey('extras'), false);
+      final o = mock.calls.first.args! as TlCurrentPositionOptions;
+      expect(o.extras, isNull);
     });
   });
 

@@ -770,82 +770,27 @@ void main() {
 
   group('Location', () {
     test('getCurrentPosition() returns location map', () async {
-      final loc = await pigeon.getCurrentPosition({'timeout': 30});
+      final loc = await pigeon.getCurrentPosition(TlCurrentPositionOptions());
       expect(loc['uuid'], 'test-uuid-123');
       expect((loc['coords']! as Map)['latitude'], 37.4219983);
       expect(loc['isMoving'], true);
       expect(fakeApi.wasCalled('getCurrentPosition'), true);
     });
 
-    test(
-      'getCurrentPosition() forwards desiredAccuracy and extras (#201)',
-      () async {
-        await pigeon.getCurrentPosition({
-          'timeout': 30,
-          'desiredAccuracy': 0, // DesiredAccuracy.high
-          'extras': {'event_type': 'sos'},
-        });
-        final opts =
-            fakeApi.lastCallArgs('getCurrentPosition')!.first!
-                as TlCurrentPositionOptions;
-        // Previously _mapToOptions dropped these, so per-call extras never reached
-        // native and the local extra was missing from the payload (Issue #201).
-        expect(opts.desiredAccuracy, TlDesiredAccuracy.high);
-        expect(opts.extras?['event_type'], 'sos');
-      },
-    );
-
-    // Phase 1 (#206): completeness guards. Set every option key to a
-    // non-null sentinel and assert no field is null after conversion — a
-    // dropped/forgotten field in `_mapToOptions` surfaces as a null in
-    // `encode()` and fails the test automatically.
-    test('options conversion forwards every field (#206)', () async {
-      await pigeon.getCurrentPosition({
-        'desiredAccuracy': 4, // passive
-        'timeout': 11,
-        'maximumAge': 22,
-        'persist': false,
-        'samples': 3,
-        'extras': {'k': 'v'},
-      });
+    // Phase 2 (#206): options are passed as a typed Pigeon object straight
+    // through to the HostApi, so per-call fields (#201) can never be dropped.
+    test('getCurrentPosition() passes typed options through (#206)', () async {
+      await pigeon.getCurrentPosition(
+        TlCurrentPositionOptions(
+          desiredAccuracy: TlDesiredAccuracy.high,
+          extras: {'event_type': 'sos'},
+        ),
+      );
       final opts =
           fakeApi.lastCallArgs('getCurrentPosition')!.first!
               as TlCurrentPositionOptions;
-      final encoded = opts.encode() as List<Object?>;
-      expect(
-        encoded.where((Object? e) => e == null),
-        isEmpty,
-        reason:
-            'A TlCurrentPositionOptions field is null after conversion — '
-            '_mapToOptions likely dropped a newly-added field (#206).',
-      );
-    });
-
-    test('geofence conversion forwards every field (#206)', () async {
-      await pigeon.addGeofence({
-        'identifier': 'g1',
-        'latitude': 1.0,
-        'longitude': 2.0,
-        'radius': 3.0,
-        'notifyOnEntry': true,
-        'notifyOnExit': true,
-        'notifyOnDwell': true,
-        'loiteringDelay': 5,
-        'extras': {'k': 'v'},
-        'vertices': [
-          [1.0, 2.0],
-        ],
-      });
-      final g =
-          fakeApi.lastCallArgs('addGeofence')!.first! as TlGeofence;
-      final encoded = g.encode() as List<Object?>;
-      expect(
-        encoded.where((Object? e) => e == null),
-        isEmpty,
-        reason:
-            'A TlGeofence field is null after conversion — _mapToGeofence '
-            'likely dropped a newly-added field (#206).',
-      );
+      expect(opts.desiredAccuracy, TlDesiredAccuracy.high);
+      expect(opts.extras?['event_type'], 'sos');
     });
 
     test('getLastKnownLocation() returns location map', () async {
@@ -854,7 +799,9 @@ void main() {
     });
 
     test('watchPosition() returns watch id', () async {
-      final id = await pigeon.watchPosition({'persist': false});
+      final id = await pigeon.watchPosition(
+        TlCurrentPositionOptions(persist: false),
+      );
       expect(id, 42);
     });
 
@@ -882,12 +829,14 @@ void main() {
   group('Geofencing', () {
     test('addGeofence() delegates with typed geofence', () async {
       expect(
-        await pigeon.addGeofence({
-          'identifier': 'test',
-          'latitude': 37.42,
-          'longitude': -122.08,
-          'radius': 100.0,
-        }),
+        await pigeon.addGeofence(
+          TlGeofence(
+            identifier: 'test',
+            latitude: 37.42,
+            longitude: -122.08,
+            radius: 100,
+          ),
+        ),
         true,
       );
       expect(fakeApi.wasCalled('addGeofence'), true);
@@ -896,20 +845,22 @@ void main() {
     test(
       'addGeofence() forwards extras and vertices to TlGeofence (#58)',
       () async {
-        await pigeon.addGeofence({
-          'identifier': 'with-extras',
-          'latitude': 12.9716,
-          'longitude': 77.5946,
-          'radius': 250.0,
-          'extras': <String, Object?>{
-            'demo_test': 'Hello from the geofence extras!',
-            'Hello': 'World',
-          },
-          'vertices': <List<double>>[
-            [12.97, 77.59],
-            [12.98, 77.60],
-          ],
-        });
+        await pigeon.addGeofence(
+          TlGeofence(
+            identifier: 'with-extras',
+            latitude: 12.9716,
+            longitude: 77.5946,
+            radius: 250,
+            extras: <String?, Object?>{
+              'demo_test': 'Hello from the geofence extras!',
+              'Hello': 'World',
+            },
+            vertices: <List<double?>?>[
+              [12.97, 77.59],
+              [12.98, 77.60],
+            ],
+          ),
+        );
         final args = fakeApi.lastCallArgs('addGeofence');
         final forwarded = args!.first! as TlGeofence;
         expect(forwarded.extras, <String?, Object?>{
@@ -925,12 +876,12 @@ void main() {
     test('addGeofences() delegates with list', () async {
       expect(
         await pigeon.addGeofences([
-          {
-            'identifier': 'a',
-            'latitude': 37.0,
-            'longitude': -122.0,
-            'radius': 50.0,
-          },
+          TlGeofence(
+            identifier: 'a',
+            latitude: 37,
+            longitude: -122,
+            radius: 50,
+          ),
         ]),
         true,
       );
@@ -1249,7 +1200,9 @@ void main() {
 
   group('Converter fidelity', () {
     test('location map includes all nested fields', () async {
-      final loc = await pigeon.getCurrentPosition({'timeout': 10});
+      final loc = await pigeon.getCurrentPosition(
+        TlCurrentPositionOptions(timeout: 10),
+      );
       final coords = loc['coords']! as Map<String, Object?>;
       expect(coords['latitude'], 37.4219983);
       expect(coords['longitude'], -122.084);

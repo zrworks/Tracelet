@@ -3,6 +3,60 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-18
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`tracelet` - `v3.4.1`](#tracelet---v341)
+ - [`tracelet_android` - `v3.4.1`](#tracelet_android---v341)
+ - [`tracelet_ios` - `v3.4.1`](#tracelet_ios---v341)
+ - [`tracelet_platform_interface` - `v3.4.1`](#tracelet_platform_interface---v341)
+ - [`tracelet_sync` - `v3.4.1`](#tracelet_sync---v341)
+ - [`tracelet_doctor` - `v3.4.1`](#tracelet_doctor---v341)
+ - [`tracelet_supabase` - `v3.4.1`](#tracelet_supabase---v341)
+ - [`tracelet_firebase` - `v3.4.1`](#tracelet_firebase---v341)
+ - [`tracelet_web` - `v3.4.1`](#tracelet_web---v341)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_sync` - `v3.4.1`
+ - `tracelet_doctor` - `v3.4.1`
+ - `tracelet_supabase` - `v3.4.1`
+ - `tracelet_firebase` - `v3.4.1`
+ - `tracelet_web` - `v3.4.1`
+
+---
+
+#### `tracelet` - `v3.4.1`
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+ - **DOCS**: add Discord community invitation link to READMEs and website documentation. ([c3baa1c3](https://github.com/Ikolvi/Tracelet/commit/c3baa1c389f90463fb7f6cabc4d57d68d1d2d512))
+
+#### `tracelet_android` - `v3.4.1`
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+
+#### `tracelet_ios` - `v3.4.1`
+
+ - **FIX**(ios): don't apply Android geofenceModeHighAccuracy on iOS ([#210](https://github.com/Ikolvi/Tracelet/issues/210)). ([a2ecd611](https://github.com/Ikolvi/Tracelet/commit/a2ecd611d17286d52da9a04226f928a76d2730b8))
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+
+#### `tracelet_platform_interface` - `v3.4.1`
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+ - **DOCS**: update FAQ with iOS build setup and geofencing mock location testing details. ([063145fe](https://github.com/Ikolvi/Tracelet/commit/063145fe80e1285f876568fa7c81caad8b5ee7d2))
+
+
 ## 2026-06-16
 
 ### Changes

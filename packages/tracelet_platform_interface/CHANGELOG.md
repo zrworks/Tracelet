@@ -1,3 +1,8 @@
+## 3.4.1
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+ - **DOCS**: update FAQ with iOS build setup and geofencing mock location testing details. ([063145fe](https://github.com/Ikolvi/Tracelet/commit/063145fe80e1285f876568fa7c81caad8b5ee7d2))
+
 ## 3.4.0
 
  - **FIX**: forward `desiredAccuracy` and per-call `extras` through the pigeon options conversion — they were silently dropped, so `getCurrentPosition(extras:/desiredAccuracy:)` never reached native ([#201](https://github.com/Ikolvi/Tracelet/issues/201)).

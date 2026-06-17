@@ -466,7 +466,13 @@ public final class TraceletSdk {
             backgroundActivitySessionManager.start()
             serviceSessionManager.start()
         } else {
-            locationEngine.start()
+            // Standard (low-power) geofence mode: rely solely on native region
+            // monitoring (registered above via reRegisterAll). Do NOT start
+            // continuous location updates — that keeps the persistent blue
+            // location indicator on even with showsBackgroundLocationIndicator
+            // = false (Issue #210), and it isn't needed: CLLocationManager
+            // region monitoring fires enter/exit (and relaunches the app) even
+            // while suspended/terminated, without continuous GPS.
 
             if configManager.getPreventSuspend() {
                 preventSuspendManager.start()
@@ -474,11 +480,10 @@ public final class TraceletSdk {
                 preventSuspendManager.stop()
             }
 
-            // Explicitly stop CLBackgroundActivitySession if switching from High to Low
+            // Explicitly stop CLBackgroundActivitySession if switching from High to Low.
+            // Like continuous updates, it forces the location indicator on.
             backgroundActivitySessionManager.stop()
 
-            // Do NOT start CLBackgroundActivitySession for standard geofence mode.
-            // It causes a persistent blue location indicator in the status bar.
             // iOS 18+: Preserve authorization across suspension/termination.
             startServiceSessionForCurrentAuth()
         }

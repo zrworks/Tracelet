@@ -108,23 +108,45 @@ ios: tl.IosConfig(
 
 ---
 
-## Scenario 3: The Blue Pill Indicator (iOS 16 and below)
+## Scenario 3: The Blue Location Indicator (`showsBackgroundLocationIndicator`)
 **Concepts Explored:** Background Location Indicator
 
-### The Problem
-You only have "When In Use" permission, but you still want to track the user temporarily in the background while they complete a specific task (like picking up a rideshare passenger). 
+### What this flag actually does
+`showsBackgroundLocationIndicator` maps directly to Apple's
+[`CLLocationManager.showsBackgroundLocationIndicator`](https://developer.apple.com/documentation/corelocation/cllocationmanager/showsbackgroundlocationindicator). The name is counter‑intuitive — it is an **opt‑in to *show* the indicator, not a switch to hide it**:
 
-### How Tracelet Solves It
-By enabling the blue status bar indicator, Apple permits "When In Use" apps to continue receiving high-frequency updates in the background, because the user is clearly visually notified that tracking is happening.
+| Value | Meaning |
+|---|---|
+| `true` | **Show** the blue status‑bar pill / Dynamic Island indicator while the app uses location in the background. |
+| `false` *(default)* | **Request to hide** the indicator for background location use. |
+
+<Callout type="warning">
+  **Common misconception:** setting `showsBackgroundLocationIndicator: true` does **not** turn the blue indicator *off* — it turns it *on*. If your goal is to hide it, leave it `false` (the default). Setting it `true` is only useful when you *want* the pill visible (e.g. to satisfy "When In Use" background tracking, below).
+</Callout>
+
+### When you *want* the pill (temporary background tracking on "When In Use")
+You only have "When In Use" permission but want to keep tracking while the user completes a task (e.g. a rideshare pickup). iOS permits this **only if the indicator is visible**, so the user knows tracking is happening:
 
 ```dart
 ios: tl.IosConfig(
-  showsBackgroundLocationIndicator: true, 
+  showsBackgroundLocationIndicator: true,
 )
 ```
-When the user locks their phone, a blue pill with an arrow will appear in the top-left of their screen.
 
-**To enable this:** You must have the `location` Background Mode enabled in Xcode (**Signing & Capabilities** -> **Background Modes** -> **Location updates**).
+**To enable this:** the `location` Background Mode must be on in Xcode (**Signing & Capabilities → Background Modes → Location updates**).
+
+### Why `false` doesn't always hide it
+Even with `showsBackgroundLocationIndicator: false`, iOS **forces the indicator on** in these cases — the flag cannot override them:
+
+1. **"When In Use" authorization** — background location always shows the indicator. Only full **"Always"** authorization can suppress it.
+2. **`useBackgroundActivitySession: true`** (iOS 17+) — Apple requires the indicator while a `CLBackgroundActivitySession` is active (Scenario 4).
+3. **Live Activities** active (Scenario 5).
+4. **Any continuous background location session** — if the app is running `startUpdatingLocation` non‑stop, the indicator stays on regardless of the flag.
+
+### To actually keep the indicator hidden
+1. Obtain full **"Always"** authorization (note iOS may first grant a *provisional* "When In Use" until the user later confirms "Change to Always" — the pill appears until then).
+2. Keep `showsBackgroundLocationIndicator: false` (don't set it to `true`).
+3. Avoid unnecessary continuous background location. **Geofence‑only mode uses native region monitoring (no continuous GPS), so it shows no indicator** — `startGeofences()` does not run continuous updates in standard mode.
 
 ---
 

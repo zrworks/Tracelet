@@ -1,3 +1,7 @@
+## 3.4.1
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+
 ## 3.4.0
 
  - **FIX**: a single location batch is uploaded exactly once — replacing/cancelling a previously-registered sync provider prevents duplicate `requestSyncBody` calls and duplicate uploads/DB rows ([#204](https://github.com/Ikolvi/Tracelet/issues/204)).

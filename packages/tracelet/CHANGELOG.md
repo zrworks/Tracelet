@@ -1,3 +1,8 @@
+## 3.4.1
+
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+ - **DOCS**: add Discord community invitation link to READMEs and website documentation. ([c3baa1c3](https://github.com/Ikolvi/Tracelet/commit/c3baa1c389f90463fb7f6cabc4d57d68d1d2d512))
+
 ## 3.4.0
 
  - **FEAT**(ios): Live Activity for active tracking — a Lock Screen & Dynamic Island indicator backed by ActivityKit, layered over the standard background pipeline (no redundant second location stream) ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).

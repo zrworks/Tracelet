@@ -1,3 +1,8 @@
+## 3.4.1
+
+ - **FIX**(ios): don't apply Android geofenceModeHighAccuracy on iOS ([#210](https://github.com/Ikolvi/Tracelet/issues/210)). ([a2ecd611](https://github.com/Ikolvi/Tracelet/commit/a2ecd611d17286d52da9a04226f928a76d2730b8))
+ - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))
+
 ## 3.4.0
 
  - **FEAT**: Live Activity (Lock Screen & Dynamic Island) for active tracking via ActivityKit, layered over the standard background pipeline ([#202](https://github.com/Ikolvi/Tracelet/issues/202)).

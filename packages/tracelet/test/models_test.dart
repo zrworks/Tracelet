@@ -240,6 +240,24 @@ void main() {
       },
     );
 
+    test(
+      'GeofenceConfig round-trip preserves geofenceModeHighAccuracy (#210)',
+      () {
+        const config = GeofenceConfig(geofenceModeHighAccuracy: true);
+        final map = config.toMap();
+        expect(map['geofenceModeHighAccuracy'], true);
+
+        final restored = GeofenceConfig.fromMap(map);
+        expect(restored.geofenceModeHighAccuracy, true);
+
+        // Pigeon conversion carries the flag too.
+        expect(config.toTlConfig().geofenceModeHighAccuracy, true);
+
+        // Default stays false (standard region monitoring, no iOS indicator).
+        expect(const GeofenceConfig().geofenceModeHighAccuracy, false);
+      },
+    );
+
     test('ForegroundServiceConfig equality includes all fields', () {
       const a = ForegroundServiceConfig(
         channelId: 'ch1',

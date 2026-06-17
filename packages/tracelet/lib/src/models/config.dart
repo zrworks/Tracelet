@@ -1773,6 +1773,7 @@ class GeofenceConfig {
     this.geofenceInitialTriggerEntry = true,
     this.geofenceInitialTrigger = true,
     this.geofenceProximityRadius = 1000,
+    this.geofenceModeHighAccuracy = false,
   });
 
   /// Creates a [GeofenceConfig] from a map.
@@ -1790,6 +1791,10 @@ class GeofenceConfig {
         map['geofenceProximityRadius'],
         fallback: 1000,
       ),
+      geofenceModeHighAccuracy: ensureBool(
+        map['geofenceModeHighAccuracy'],
+        fallback: false,
+      ),
     );
   }
 
@@ -1806,12 +1811,30 @@ class GeofenceConfig {
   /// Defaults to `1000`.
   final int geofenceProximityRadius;
 
+  /// High-accuracy geofence mode.
+  ///
+  /// When `true`, geofence transitions are evaluated in-app from continuous GPS
+  /// fixes instead of the OS geofencing service. This makes **tight radii
+  /// (e.g. 5–50 m) and EXIT events reliable**, at the cost of higher battery use
+  /// and — on iOS — the system "location in use" (blue) status-bar indicator
+  /// (continuous GPS forces it; see issue #210).
+  ///
+  /// When `false` (default), geofencing uses the OS region-monitoring service:
+  /// low power, no iOS indicator, but the OS enforces a practical minimum radius
+  /// (~100 m) and small/EXIT transitions can be unreliable.
+  ///
+  /// Cross-platform (iOS + Android). This supersedes the deprecated
+  /// [AndroidConfig.geofenceModeHighAccuracy]; if either is `true`, high-accuracy
+  /// mode is enabled.
+  final bool geofenceModeHighAccuracy;
+
   /// Serializes to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
       'geofenceInitialTriggerEntry': geofenceInitialTriggerEntry,
       'geofenceInitialTrigger': geofenceInitialTrigger,
       'geofenceProximityRadius': geofenceProximityRadius,
+      'geofenceModeHighAccuracy': geofenceModeHighAccuracy,
     };
   }
 
@@ -1820,6 +1843,7 @@ class GeofenceConfig {
     geofenceInitialTriggerEntry: geofenceInitialTriggerEntry,
     geofenceProximityRadius: geofenceProximityRadius,
     geofenceInitialTrigger: geofenceInitialTrigger,
+    geofenceModeHighAccuracy: geofenceModeHighAccuracy,
   );
 
   @override
@@ -1829,13 +1853,15 @@ class GeofenceConfig {
           runtimeType == other.runtimeType &&
           geofenceInitialTriggerEntry == other.geofenceInitialTriggerEntry &&
           geofenceInitialTrigger == other.geofenceInitialTrigger &&
-          geofenceProximityRadius == other.geofenceProximityRadius;
+          geofenceProximityRadius == other.geofenceProximityRadius &&
+          geofenceModeHighAccuracy == other.geofenceModeHighAccuracy;
 
   @override
   int get hashCode => Object.hash(
     geofenceInitialTriggerEntry,
     geofenceInitialTrigger,
     geofenceProximityRadius,
+    geofenceModeHighAccuracy,
   );
 }
 

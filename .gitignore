@@ -174,3 +174,6 @@ website/app/ru/
 .supermemory/
 example/ios/build_out.txt
 my_log.txt
+
+# Local scratch / helper scripts (never commit — may contain secrets)
+scratch/

@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.StateManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
+import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationPriority
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

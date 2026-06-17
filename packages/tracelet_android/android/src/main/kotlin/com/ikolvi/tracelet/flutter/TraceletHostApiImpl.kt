@@ -205,7 +205,13 @@ class TraceletHostApiImpl(
             put("fastestLocationUpdateInterval", c.android.fastestLocationUpdateInterval)
             put("deferTime", c.android.deferTime)
             put("allowIdenticalLocations", c.android.allowIdenticalLocations)
-            put("geofenceModeHighAccuracy", c.android.geofenceModeHighAccuracy)
+            // High-accuracy geofencing: prefer the cross-platform GeofenceConfig
+            // flag, OR'd with the deprecated Android-only flag for backward
+            // compatibility (set further below in the Geofence section too).
+            put(
+                "geofenceModeHighAccuracy",
+                c.geofence.geofenceModeHighAccuracy || c.android.geofenceModeHighAccuracy,
+            )
             put("periodicUseForegroundService", c.android.periodicUseForegroundService)
             put("periodicUseExactAlarms", c.android.periodicUseExactAlarms)
             put("scheduleUseAlarmManager", c.android.scheduleUseAlarmManager)

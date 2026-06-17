@@ -50,7 +50,7 @@ class _Issue185CardState extends State<Issue185Card> {
     await Tracelet.ready(
       const Config(
         app: AppConfig(startOnBoot: true),
-        android: AndroidConfig(geofenceModeHighAccuracy: true),
+        geofence: GeofenceConfig(geofenceModeHighAccuracy: true),
       ),
     );
 

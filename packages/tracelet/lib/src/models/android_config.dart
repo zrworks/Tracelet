@@ -13,6 +13,10 @@ class AndroidConfig {
     this.fastestLocationUpdateInterval = 500,
     this.deferTime = 0,
     this.allowIdenticalLocations = false,
+    @Deprecated(
+      'Use GeofenceConfig.geofenceModeHighAccuracy (cross-platform) instead. '
+      'Still honored for now; will be removed in a future major version.',
+    )
     this.geofenceModeHighAccuracy = false,
     this.periodicUseForegroundService = false,
     this.periodicUseExactAlarms = false,
@@ -70,6 +74,10 @@ class AndroidConfig {
     int? fastestLocationUpdateInterval,
     int? deferTime,
     bool? allowIdenticalLocations,
+    @Deprecated(
+      'Use GeofenceConfig.geofenceModeHighAccuracy (cross-platform) instead. '
+      'Still honored for now; will be removed in a future major version.',
+    )
     bool? geofenceModeHighAccuracy,
     bool? periodicUseForegroundService,
     bool? periodicUseExactAlarms,
@@ -115,6 +123,16 @@ class AndroidConfig {
 
   /// Enable high-accuracy geofence monitoring during geofence-only mode.
   /// Defaults to `false`.
+  ///
+  /// Deprecated: use the cross-platform [GeofenceConfig.geofenceModeHighAccuracy]
+  /// instead. This Android-only flag is still honored for backward
+  /// compatibility — if either it or the GeofenceConfig flag is `true`,
+  /// high-accuracy mode is enabled — but it will be removed in a future major
+  /// version.
+  @Deprecated(
+    'Use GeofenceConfig.geofenceModeHighAccuracy (cross-platform) instead. '
+    'Still honored for now; will be removed in a future major version.',
+  )
   final bool geofenceModeHighAccuracy;
 
   /// Whether to use a foreground service for periodic mode.

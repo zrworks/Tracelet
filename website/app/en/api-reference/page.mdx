@@ -107,8 +107,12 @@ Android specific OS constraints. [See Android Story 📖](/en/getting-started/pl
   Allows Android to batch location updates for `X` ms.
 - **`allowIdenticalLocations`**: `bool` *(Default: `false`)*
   If false, duplicate exact coordinates are dropped.
-- **`geofenceModeHighAccuracy`**: `bool` *(Default: `false`)*
-  Forces GPS chip for geofences (heavy battery drain).
+- **`geofenceModeHighAccuracy`**: `bool` *(Default: `false`)* — ⚠️ **Deprecated**
+  Forces GPS chip for geofences (heavy battery drain). Use the cross-platform
+  `GeofenceConfig.geofenceModeHighAccuracy` (see the **GeofenceConfig** section below)
+  instead — it now controls both iOS and Android. This Android-only flag is still
+  honored for backward compatibility (if either is `true`, high-accuracy mode is
+  enabled) but will be removed in a future major version.
 - **`periodicUseForegroundService`**: `bool` *(Default: `false`)*
   Forces a persistent notification during periodic wakes.
 - **`periodicUseExactAlarms`**: `bool` *(Default: `false`)*
@@ -154,6 +158,24 @@ iOS specific OS constraints. [See iOS Story 📖](/en/getting-started/platform-s
   Plays silent audio to keep the app alive 24/7. Requires `audio` Xcode capability. [See Prevent Suspend 📖](/en/getting-started/platform-setup/ios#scenario-1-the-un-killable-fleet-tracker-high-power)
 - **`useBackgroundActivitySession`**: `bool` *(Default: `false`)*
   Uses `CLBackgroundActivitySession` (iOS 17+) to maintain a background location session with only "When In Use" authorization. This replaces the traditional blue pill with a Dynamic Island indicator. *Note: Apple App Store guidelines require apps using this to provide a clear explanation to users why background location is necessary.*
+
+---
+
+## 📍 GeofenceConfig (`config.geofence`)
+Cross-platform geofencing behavior (iOS + Android).
+
+- **`geofenceModeHighAccuracy`**: `bool` *(Default: `false`)*
+  Controls how geofence transitions are detected:
+  - **`false` (default)** — uses the OS region-monitoring service. **Low power, no iOS blue indicator**, but the OS enforces a practical minimum radius (~100 m) and small or EXIT transitions can be unreliable.
+  - **`true`** — evaluates transitions in-app from **continuous GPS**. Makes **tight radii (e.g. 5–50 m) and EXIT events reliable**, at the cost of higher battery use and — on iOS — the system "location in use" (**blue**) status-bar indicator (continuous GPS forces it). [See Blue Pill 📖](/en/getting-started/platform-setup/ios#scenario-3-the-blue-pill-indicator)
+
+  This supersedes the deprecated `AndroidConfig.geofenceModeHighAccuracy`; if either is `true`, high-accuracy mode is enabled.
+- **`geofenceInitialTrigger`**: `bool` *(Default: `true`)*
+  Evaluate geofence state on registration.
+- **`geofenceInitialTriggerEntry`**: `bool` *(Default: `true`)*
+  Fire an ENTER immediately if the device is already inside a geofence when it is registered.
+- **`geofenceProximityRadius`**: `int` *(Default: `1000`)*
+  Radius (meters) for proximity-based loading — only geofences within this distance are actively registered with the OS (lets you manage far more than the iOS 20-region limit).
 
 ---
 

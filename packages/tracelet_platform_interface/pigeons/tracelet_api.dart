@@ -142,7 +142,9 @@ class TlAppConfig {
     required this.startOnBoot,
     required this.heartbeatInterval,
     required this.schedule,
-    required this.remoteConfigTimeout, required this.remoteConfigRefreshInterval, this.remoteConfigUrl,
+    required this.remoteConfigTimeout,
+    required this.remoteConfigRefreshInterval,
+    this.remoteConfigUrl,
     this.remoteConfigHeaders,
   });
 
@@ -163,7 +165,11 @@ class TlForegroundServiceConfig {
     required this.channelName,
     required this.notificationTitle,
     required this.notificationText,
-    required this.notificationPriority, required this.notificationOngoing, required this.showNotificationOnPauseOnly, required this.actions, this.notificationColor,
+    required this.notificationPriority,
+    required this.notificationOngoing,
+    required this.showNotificationOnPauseOnly,
+    required this.actions,
+    this.notificationColor,
     this.notificationSmallIcon,
     this.notificationLargeIcon,
   });
@@ -212,10 +218,7 @@ class TlAndroidConfig {
 }
 
 class TlLiveActivityConfig {
-  TlLiveActivityConfig({
-    required this.title,
-    required this.body,
-  });
+  TlLiveActivityConfig({required this.title, required this.body});
   final String title;
   final String body;
 }
@@ -248,7 +251,22 @@ enum TlLocationOrderDirection { ascending, descending }
 
 class TlHttpConfig {
   TlHttpConfig({
-    required this.method, required this.autoSync, required this.batchSync, required this.maxBatchSize, required this.autoSyncThreshold, required this.syncInterval, required this.httpTimeout, required this.locationsOrderDirection, required this.disableAutoSyncOnCellular, required this.maxRetries, required this.retryBackoffBase, required this.retryBackoffCap, required this.enableDeltaCompression, required this.deltaCoordinatePrecision, required this.syncTelematics, this.url,
+    required this.method,
+    required this.autoSync,
+    required this.batchSync,
+    required this.maxBatchSize,
+    required this.autoSyncThreshold,
+    required this.syncInterval,
+    required this.httpTimeout,
+    required this.locationsOrderDirection,
+    required this.disableAutoSyncOnCellular,
+    required this.maxRetries,
+    required this.retryBackoffBase,
+    required this.retryBackoffCap,
+    required this.enableDeltaCompression,
+    required this.deltaCoordinatePrecision,
+    required this.syncTelematics,
+    this.url,
     this.telematicsUrl,
     this.headers,
     this.params,
@@ -355,7 +373,17 @@ class TlMotionConfig {
     required this.disableStopDetection,
     required this.stopDetectionDelay,
     required this.stopOnStationary,
-    required this.stationaryRadius, required this.useSignificantChangesOnly, required this.shakeThreshold, required this.stillThreshold, required this.stillSampleCount, required this.motionDetectionMode, required this.speedMovingThreshold, required this.speedStationaryDelay, required this.stationaryTrackingMode, required this.stationaryPeriodicInterval,    required this.stationaryPeriodicAccuracy,
+    required this.stationaryRadius,
+    required this.useSignificantChangesOnly,
+    required this.shakeThreshold,
+    required this.stillThreshold,
+    required this.stillSampleCount,
+    required this.motionDetectionMode,
+    required this.speedMovingThreshold,
+    required this.speedStationaryDelay,
+    required this.stationaryTrackingMode,
+    required this.stationaryPeriodicInterval,
+    required this.stationaryPeriodicAccuracy,
     required this.speedWakeConfirmCount,
     this.activityTypes,
   });
@@ -388,10 +416,12 @@ class TlGeofenceConfig {
     required this.geofenceInitialTriggerEntry,
     required this.geofenceProximityRadius,
     required this.geofenceInitialTrigger,
+    required this.geofenceModeHighAccuracy,
   });
   final bool geofenceInitialTriggerEntry;
   final int geofenceProximityRadius;
   final bool geofenceInitialTrigger;
+  final bool geofenceModeHighAccuracy;
 }
 
 class TlPersistenceConfig {
@@ -784,10 +814,7 @@ class TlImpactEvent {
 
 /// A fused transport-mode change.
 class TlModeChangeEvent {
-  TlModeChangeEvent({
-    required this.mode,
-    required this.confidence,
-  });
+  TlModeChangeEvent({required this.mode, required this.confidence});
   final String mode;
   final double confidence;
 }
@@ -1064,16 +1091,22 @@ class TlTelematicsRecord {
 
   /// The primary key.
   final int id;
+
   /// The type of telematics event.
   final String eventType;
+
   /// The severity of the event.
   final double severity;
+
   /// The latitude.
   final double latitude;
+
   /// The longitude.
   final double longitude;
+
   /// The ISO8601 timestamp string.
   final String timestamp;
+
   /// Whether the event has been synced to the server.
   final bool synced;
 }
@@ -1088,10 +1121,13 @@ class TlLogEntry {
 
   /// The primary key.
   final int id;
+
   /// The log level.
   final String level;
+
   /// The log message.
   final String message;
+
   /// The ISO8601 timestamp string.
   final String timestamp;
 }

@@ -70,12 +70,10 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["fastestLocationUpdateInterval"] = c.android.fastestLocationUpdateInterval
         dict["deferTime"] = c.android.deferTime
         dict["allowIdenticalLocations"] = c.android.allowIdenticalLocations
-        // NOTE: geofenceModeHighAccuracy is an Android-only setting and is
-        // intentionally NOT forwarded to iOS. On iOS it would switch geofencing
-        // to continuous GPS + CLBackgroundActivitySession, which Apple forces to
-        // display the location indicator permanently (Issue #210). iOS uses
-        // reliable native region monitoring instead, so it defaults to standard
-        // (low-power, no indicator) geofence mode.
+        // NOTE: the legacy Android-only `c.android.geofenceModeHighAccuracy` is no
+        // longer read directly on iOS (that leak caused the always-on indicator —
+        // Issue #210). High-accuracy geofencing is now driven by the cross-platform
+        // GeofenceConfig flag, handled in the Geofence section below.
         dict["periodicUseForegroundService"] = c.android.periodicUseForegroundService
         dict["periodicUseExactAlarms"] = c.android.periodicUseExactAlarms
         dict["scheduleUseAlarmManager"] = c.android.scheduleUseAlarmManager
@@ -155,6 +153,12 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["geofenceInitialTriggerEntry"] = c.geofence.geofenceInitialTriggerEntry
         dict["geofenceProximityRadius"] = c.geofence.geofenceProximityRadius
         dict["geofenceInitialTrigger"] = c.geofence.geofenceInitialTrigger
+        // High-accuracy geofencing: cross-platform GeofenceConfig flag, OR'd with
+        // the deprecated Android-only flag for backward compatibility. When true,
+        // iOS evaluates transitions from continuous GPS (reliable tight radii /
+        // EXIT) and the system location indicator is expected (Issue #210).
+        dict["geofenceModeHighAccuracy"] =
+            c.geofence.geofenceModeHighAccuracy || c.android.geofenceModeHighAccuracy
 
         // Persistence
         dict["persistMode"] = c.persistence.persistMode.rawValue

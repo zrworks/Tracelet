@@ -95,7 +95,7 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Configurable motion sensitivity** — Tune accelerometer thresholds (`shakeThreshold`, `stillThreshold`, `stillSampleCount`) from Dart. Use built-in presets (Low / Medium / High) or set custom values. iOS auto-converts m/s² to g-force.
 - **Activity recognition tuning** — Adjust confidence thresholds, stop-detection delays, and stationary behavior.
 - **Timestamp metadata** — Optional extra timing fields on each location record via `enableTimestampMeta`.
-- **Geofence high-accuracy mode** — Run the full GPS + motion pipeline in geofence-only mode (Android) via `geofenceModeHighAccuracy`.
+- **Geofence high-accuracy mode** — Run the full continuous-GPS pipeline in geofence-only mode for reliable tight radii (e.g. 5 m) and EXIT events via the cross-platform `GeofenceConfig.geofenceModeHighAccuracy` (iOS + Android). On iOS this enables continuous GPS and the system location indicator. The legacy `AndroidConfig.geofenceModeHighAccuracy` is deprecated but still honored.
 - **Prevent suspend (iOS)** — Silent audio keep-alive to prevent iOS from suspending the app in the background.
 - **iOS background task protection** — All critical native operations (location persist, HTTP sync, headless engine boot, lifecycle transitions) wrapped in `beginBackgroundTask` for safe background execution.
 - **iOS 17+ / 18+ session APIs** — `CLBackgroundActivitySession` (iOS 17+) and `CLServiceSession` (iOS 18+) for extended background runtime and authorization state.

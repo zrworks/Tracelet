@@ -882,10 +882,17 @@ class TraceletSdk private constructor(private val context: Context) {
             }
         }
 
+        // Only high-accuracy geofence mode needs continuous GPS (for in-app
+        // proximity detection). Standard mode relies solely on the native
+        // GeofencingClient, which detects enter/exit without continuous location
+        // updates — starting them keeps the persistent location indicator on and
+        // wastes battery for no benefit (parity with the iOS #210 fix).
         if (configManager.getGeofenceModeHighAccuracy()) {
             geofenceManager.clearHighAccuracyState()
+            locationEngine.start()
+        } else {
+            locationEngine.stop()
         }
-        locationEngine.start()
 
         if (configManager.isForegroundServiceEnabled()) {
             LocationService.start(context)

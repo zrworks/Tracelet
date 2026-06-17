@@ -254,7 +254,8 @@ class TraceletHostApiImpl: TraceletHostApi {
         )
     }
 
-    private func tlGeofenceToDict(_ g: TlGeofence) -> [String: Any] {
+    // internal (not private) so completeness guards in tests can call it (#206).
+    func tlGeofenceToDict(_ g: TlGeofence) -> [String: Any] {
         var d: [String: Any] = [
             "identifier": g.identifier,
             "latitude": g.latitude,
@@ -270,7 +271,8 @@ class TraceletHostApiImpl: TraceletHostApi {
         return d
     }
 
-    private func optionsToDict(_ o: TlCurrentPositionOptions) -> [String: Any] {
+    // internal (not private) so completeness guards in tests can call it (#206).
+    func optionsToDict(_ o: TlCurrentPositionOptions) -> [String: Any] {
         var d: [String: Any] = [
             "timeout": o.timeout,
             "maximumAge": o.maximumAge,

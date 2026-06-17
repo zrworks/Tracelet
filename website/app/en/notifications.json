@@ -1,15 +1,10 @@
 {
-  "badgeTitle": "New in 3.3.3",
+  "badgeTitle": "New in 3.4.0",
   "items": [
     {
-      "title": "Bug Fixes & Stability Updates",
-      "description": "Fixed headless geofence events, enhanced custom sync timeouts, and resolved iOS parity issues in version 3.3.3.",
-      "href": "/whats-new"
-    },
-    {
-      "title": "Driving & Safety Features",
-      "description": "Driving events, transport mode, crash detection, and new telematics APIs.",
-      "href": "/core/driving-safety"
+      "title": "Live Activity in iOS",
+      "description": "Rich, glanceable indicator on the Lock Screen and Dynamic Island for background tracking.",
+      "href": "/getting-started/platform-setup/ios#xcode-widget-extension-setup-required"
     }
   ]
 }

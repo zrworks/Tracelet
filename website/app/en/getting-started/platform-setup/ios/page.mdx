@@ -173,7 +173,19 @@ ios: tl.IosConfig(
 ```
 
 ### Xcode Widget Extension Setup (Required)
-Unlike Android, Flutter plugins cannot dynamically create iOS widgets. You must add a **Widget Extension** target to your iOS app in Xcode.
+
+<Callout type="info">
+  **What is this for?**
+  This setup allows your app to display a Live Activity on the iOS Lock Screen and Dynamic Island while tracking is active. It provides users with glanceable information about their ongoing session without opening the app.
+
+  **Does it save battery?**
+  **No.** The Live Activity is purely a UI layer and does not save battery. Battery efficiency comes entirely from Tracelet's core background engine (motion detection, pausing GPS when stationary, and background sessions).
+
+  **Is it mandatory?**
+  **No.** This setup is completely optional. If you skip this, Tracelet will still track perfectly in the background, but users will only see standard system indicators (like the blue location pill) instead of your custom UI.
+</Callout>
+
+Unlike Android, Flutter plugins cannot dynamically create iOS widgets. To enable Live Activities, you must add a **Widget Extension** target to your iOS app in Xcode:
 
 1. Open `ios/Runner.xcworkspace` in Xcode.
 2. Go to **File -> New -> Target...** and select **Widget Extension**.

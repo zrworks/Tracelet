@@ -70,7 +70,12 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["fastestLocationUpdateInterval"] = c.android.fastestLocationUpdateInterval
         dict["deferTime"] = c.android.deferTime
         dict["allowIdenticalLocations"] = c.android.allowIdenticalLocations
-        dict["geofenceModeHighAccuracy"] = c.android.geofenceModeHighAccuracy
+        // NOTE: geofenceModeHighAccuracy is an Android-only setting and is
+        // intentionally NOT forwarded to iOS. On iOS it would switch geofencing
+        // to continuous GPS + CLBackgroundActivitySession, which Apple forces to
+        // display the location indicator permanently (Issue #210). iOS uses
+        // reliable native region monitoring instead, so it defaults to standard
+        // (low-power, no indicator) geofence mode.
         dict["periodicUseForegroundService"] = c.android.periodicUseForegroundService
         dict["periodicUseExactAlarms"] = c.android.periodicUseExactAlarms
         dict["scheduleUseAlarmManager"] = c.android.scheduleUseAlarmManager

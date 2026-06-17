@@ -795,6 +795,59 @@ void main() {
       },
     );
 
+    // Phase 1 (#206): completeness guards. Set every option key to a
+    // non-null sentinel and assert no field is null after conversion — a
+    // dropped/forgotten field in `_mapToOptions` surfaces as a null in
+    // `encode()` and fails the test automatically.
+    test('options conversion forwards every field (#206)', () async {
+      await pigeon.getCurrentPosition({
+        'desiredAccuracy': 4, // passive
+        'timeout': 11,
+        'maximumAge': 22,
+        'persist': false,
+        'samples': 3,
+        'extras': {'k': 'v'},
+      });
+      final opts =
+          fakeApi.lastCallArgs('getCurrentPosition')!.first!
+              as TlCurrentPositionOptions;
+      final encoded = opts.encode() as List<Object?>;
+      expect(
+        encoded.where((Object? e) => e == null),
+        isEmpty,
+        reason:
+            'A TlCurrentPositionOptions field is null after conversion — '
+            '_mapToOptions likely dropped a newly-added field (#206).',
+      );
+    });
+
+    test('geofence conversion forwards every field (#206)', () async {
+      await pigeon.addGeofence({
+        'identifier': 'g1',
+        'latitude': 1.0,
+        'longitude': 2.0,
+        'radius': 3.0,
+        'notifyOnEntry': true,
+        'notifyOnExit': true,
+        'notifyOnDwell': true,
+        'loiteringDelay': 5,
+        'extras': {'k': 'v'},
+        'vertices': [
+          [1.0, 2.0],
+        ],
+      });
+      final g =
+          fakeApi.lastCallArgs('addGeofence')!.first! as TlGeofence;
+      final encoded = g.encode() as List<Object?>;
+      expect(
+        encoded.where((Object? e) => e == null),
+        isEmpty,
+        reason:
+            'A TlGeofence field is null after conversion — _mapToGeofence '
+            'likely dropped a newly-added field (#206).',
+      );
+    });
+
     test('getLastKnownLocation() returns location map', () async {
       final loc = await pigeon.getLastKnownLocation();
       expect(loc['uuid'], 'test-uuid-123');

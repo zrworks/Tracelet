@@ -13,6 +13,27 @@ import LottiePlayer from '../../../../components/LottiePlayer'
 **No, it will not crash.** If the `ACTIVITY_RECOGNITION` (Android) or `Motion & Fitness` (iOS) permission is not granted, Tracelet will automatically fall back to standard distance-based tracking. 
 However, **battery drain will increase significantly**. Without motion detection, Tracelet cannot put the GPS hardware to sleep when the device is stationary. It is highly recommended to request this permission for production apps to ensure optimal battery life.
 
+## iOS Build & Setup
+
+### iOS build fails with "Undefined symbol" Rust/UniFFI errors (`_ffi_tracelet_core_rustbuffer_free`, `_uniffi_tracelet_core_checksum_method_*`)
+
+**Enable Flutter's Swift Package Manager integration.** Tracelet's Rust core (`TraceletCore.xcframework`, which exposes the UniFFI symbols used by `tracelet_ios`) is linked through Swift Package Manager. On the legacy CocoaPods-only path the framework isn't linked into the `tracelet_ios` target, so Xcode's linker reports undefined symbols such as `_ffi_tracelet_core_rustbuffer_free` and `_uniffi_tracelet_core_checksum_method_*`.
+
+Fix it with:
+
+```bash
+flutter config --enable-swift-package-manager
+flutter clean
+flutter pub get
+flutter run        # or: flutter build ios
+```
+
+Notes:
+
+- Build/run from the **Flutter CLI or your IDE** (VS Code), which drives the SPM-aware build, rather than opening the `.xcworkspace` and building straight from Xcode.
+- This is a one-time global Flutter setting; you don't need to change it per project.
+- `flutter clean` + a fresh `pod install` alone will **not** resolve it — the missing piece is SPM linking the Rust framework, not stale Pods.
+
 ## Battery & Motion Sensors
 
 ### Does the motion sensor pull drain more battery when walking?
@@ -160,6 +181,36 @@ The sequence after a reboot is therefore:
 Not by default. Capturing locations before unlock requires Android **Direct Boot**, which means moving the data Tracelet needs into **device-encrypted** storage — readable before the user authenticates, a weaker at-rest guarantee than the credential-encrypted (and optionally `encryptDatabase`-protected) storage Tracelet uses normally. To keep your data fully protected, Tracelet does **not** enable Direct Boot out of the box. If pre-unlock tracking is a hard requirement for your use case, it can be enabled as an advanced, app-level opt-in — reach out before relying on it.
 
 ---
+
+## Geofencing
+
+### Geofence transitions don't fire when I test with mock / simulated locations (it worked in 1.x)
+
+**Mock locations still work — but in high-accuracy geofence mode your mocked fixes are being filtered out before the geofence is evaluated.** With `geofenceModeHighAccuracy: true`, transitions are computed **in-app** from the continuous-GPS stream, and the evaluator only runs on fixes that **pass** the location filter. Route-simulation tools usually "teleport" between points, and those jumps get rejected by:
+
+- **`maxImpliedSpeed`** — the implausible speed between two far-apart samples is treated as an outlier and dropped.
+- **`useKalmanFilter: true`** — the smoother fights abrupt, non-physical mock jumps.
+- **`trackingAccuracyThreshold`** — some mock providers report `accuracy = 0` or an unrealistic value that fails the threshold.
+
+A geofence placed on your **current** location still fires because `geofenceInitialTriggerEntry: true` emits an `ENTER` on registration (no movement needed) — so it never goes through the filter.
+
+**For mock testing in high-accuracy mode**, relax the filters:
+
+```dart
+filter: tl.LocationFilter(
+  rejectMockLocations: false,
+  useKalmanFilter: false,        // disable smoothing
+  maxImpliedSpeed: 0,            // 0 disables the implied-speed reject
+  trackingAccuracyThreshold: 0,  // accept regardless of reported accuracy
+),
+geo: tl.GeoConfig(distanceFilter: 0, disableElasticity: true),
+```
+
+Also select your mock app under **Developer Options → Select mock location app**, and advance the simulated route in small, realistic steps.
+
+**The simplest path** is to test in *standard* geofence mode (`geofenceModeHighAccuracy: false`), which delegates to the OS geofencing service. The OS evaluates against the fused provider and honors the system mock-location app **without** the SDK filters — use a radius of **≥ ~100 m** there, since the OS enforces a practical minimum and small/EXIT transitions are unreliable below that.
+
+With `debug: true` and `logLevel: verbose`, watch the logs for `Location filtered by Rust processor: <reason>` — it tells you exactly which filter dropped each mocked fix.
 
 ## Data Security & Privacy
 

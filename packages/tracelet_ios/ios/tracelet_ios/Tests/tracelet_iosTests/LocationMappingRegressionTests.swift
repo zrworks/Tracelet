@@ -68,4 +68,54 @@ final class LocationMappingRegressionTests: XCTestCase {
         XCTAssertTrue(loc.isMoving)
         XCTAssertTrue(loc.battery.isCharging)
     }
+
+    // MARK: - #206 completeness guards (pigeon → SDK dict input converters)
+
+    /// Every property of `TlCurrentPositionOptions` must survive into the SDK
+    /// dict. With all fields set, a forgotten/newly-added field in
+    /// `optionsToDict` (the #175/#201 failure mode) trips this automatically.
+    func testOptionsToDict_coversEveryPigeonField() {
+        let options = TlCurrentPositionOptions(
+            desiredAccuracy: .passive,
+            timeout: 11,
+            maximumAge: 22,
+            persist: false,
+            samples: 3,
+            extras: ["k": "v"]
+        )
+        let dict = hostApi().optionsToDict(options)
+
+        for child in Mirror(reflecting: options).children {
+            guard let label = child.label else { continue }
+            XCTAssertNotNil(
+                dict[label],
+                "optionsToDict dropped Pigeon field '\(label)' (#206) — add it to the converter"
+            )
+        }
+    }
+
+    /// Every property of `TlGeofence` must survive into the SDK dict.
+    func testGeofenceToDict_coversEveryPigeonField() {
+        let geofence = TlGeofence(
+            identifier: "g1",
+            latitude: 1.0,
+            longitude: 2.0,
+            radius: 3.0,
+            notifyOnEntry: true,
+            notifyOnExit: true,
+            notifyOnDwell: true,
+            loiteringDelay: 5,
+            extras: ["k": "v"],
+            vertices: [[1.0, 2.0]]
+        )
+        let dict = hostApi().tlGeofenceToDict(geofence)
+
+        for child in Mirror(reflecting: geofence).children {
+            guard let label = child.label else { continue }
+            XCTAssertNotNil(
+                dict[label],
+                "tlGeofenceToDict dropped Pigeon field '\(label)' (#206) — add it to the converter"
+            )
+        }
+    }
 }

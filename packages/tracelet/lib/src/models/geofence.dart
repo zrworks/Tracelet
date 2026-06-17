@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:tracelet_platform_interface/tracelet_platform_interface.dart';
 
 import 'package:tracelet/src/models/_helpers.dart';
 
@@ -137,6 +138,21 @@ class Geofence {
       'vertices': vertices,
     };
   }
+
+  /// Converts this [Geofence] to a Pigeon-generated [TlGeofence], passed
+  /// type-safely end-to-end (no lossy Map hop — see #206).
+  TlGeofence toTlGeofence() => TlGeofence(
+    identifier: identifier,
+    latitude: latitude,
+    longitude: longitude,
+    radius: radius,
+    notifyOnEntry: notifyOnEntry,
+    notifyOnExit: notifyOnExit,
+    notifyOnDwell: notifyOnDwell,
+    loiteringDelay: loiteringDelay,
+    extras: extras,
+    vertices: vertices,
+  );
 
   @override
   String toString() =>

@@ -305,11 +305,12 @@ class TraceletWebPlugin extends TraceletPlatform {
 
   @override
   Future<Map<String, Object?>> getCurrentPosition(
-    Map<String, Object?> options,
+    TlCurrentPositionOptions options,
   ) async {
-    final location = await _locationEngine.getCurrentPosition(options);
-    final persist = options['persist'] as bool? ?? true;
-    if (persist) {
+    final location = await _locationEngine.getCurrentPosition(
+      _optionsToMap(options),
+    );
+    if (options.persist) {
       await _storage.persistLocation(location);
       _httpEngine.onLocationInserted();
     }
@@ -318,14 +319,14 @@ class TraceletWebPlugin extends TraceletPlatform {
 
   @override
   Future<Map<String, Object?>> getLastKnownLocation([
-    Map<String, Object?>? options,
+    TlCurrentPositionOptions? options,
   ]) async {
     return _locationEngine.getLastKnownLocation();
   }
 
   @override
-  Future<int> watchPosition(Map<String, Object?> options) async {
-    return _locationEngine.addWatch(options);
+  Future<int> watchPosition(TlCurrentPositionOptions options) async {
+    return _locationEngine.addWatch(_optionsToMap(options));
   }
 
   @override
@@ -353,14 +354,39 @@ class TraceletWebPlugin extends TraceletPlatform {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<bool> addGeofence(Map<String, Object?> geofence) async {
-    return _geofenceEngine.addGeofence(geofence);
+  Future<bool> addGeofence(TlGeofence geofence) async {
+    return _geofenceEngine.addGeofence(_geofenceToMap(geofence));
   }
 
   @override
-  Future<bool> addGeofences(List<Map<String, Object?>> geofences) async {
-    return _geofenceEngine.addGeofences(geofences);
+  Future<bool> addGeofences(List<TlGeofence> geofences) async {
+    return _geofenceEngine.addGeofences(geofences.map(_geofenceToMap).toList());
   }
+
+  // Typed Pigeon inputs → the Map shape the web engines consume (#206).
+  Map<String, Object?> _optionsToMap(
+    TlCurrentPositionOptions o,
+  ) => <String, Object?>{
+    if (o.desiredAccuracy != null) 'desiredAccuracy': o.desiredAccuracy!.index,
+    'timeout': o.timeout,
+    'maximumAge': o.maximumAge,
+    'persist': o.persist,
+    'samples': o.samples,
+    if (o.extras != null) 'extras': o.extras,
+  };
+
+  Map<String, Object?> _geofenceToMap(TlGeofence g) => <String, Object?>{
+    'identifier': g.identifier,
+    'latitude': g.latitude,
+    'longitude': g.longitude,
+    'radius': g.radius,
+    'notifyOnEntry': g.notifyOnEntry,
+    'notifyOnExit': g.notifyOnExit,
+    'notifyOnDwell': g.notifyOnDwell,
+    'loiteringDelay': g.loiteringDelay,
+    if (g.extras != null) 'extras': g.extras,
+    if (g.vertices != null) 'vertices': g.vertices,
+  };
 
   @override
   Future<bool> removeGeofence(String identifier) async {

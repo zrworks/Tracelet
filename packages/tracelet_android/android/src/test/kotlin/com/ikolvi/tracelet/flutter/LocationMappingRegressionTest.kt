@@ -3,6 +3,7 @@ package com.ikolvi.tracelet.flutter
 import android.content.Context
 import com.ikolvi.tracelet.TlCurrentPositionOptions
 import com.ikolvi.tracelet.TlDesiredAccuracy
+import com.ikolvi.tracelet.TlGeofence
 import com.ikolvi.tracelet.TlLocation
 import com.ikolvi.tracelet.flutter.service.HeadlessTaskService
 import org.junit.Test
@@ -38,6 +39,15 @@ class LocationMappingRegressionTest {
             .getDeclaredMethod("tlOptionsToMap", TlCurrentPositionOptions::class.java)
         method.isAccessible = true
         return method.invoke(hostApi(), o) as Map<String, Any?>
+    }
+
+    /** Invokes the private `tlGeofenceToMap(TlGeofence)` via reflection. */
+    @Suppress("UNCHECKED_CAST")
+    private fun tlGeofenceToMap(g: TlGeofence): Map<String, Any?> {
+        val method = TraceletHostApiImpl::class.java
+            .getDeclaredMethod("tlGeofenceToMap", TlGeofence::class.java)
+        method.isAccessible = true
+        return method.invoke(hostApi(), g) as Map<String, Any?>
     }
 
     /** A native enriched location map, exactly as the SDK emits it (snake_case). */
@@ -162,6 +172,38 @@ class LocationMappingRegressionTest {
             assertTrue(
                 map.containsKey(field),
                 "tlOptionsToMap dropped Pigeon field '$field' (#206) — add it to the converter",
+            )
+        }
+    }
+
+    /**
+     * Phase 3 (#206) completeness guard for the geofence input converter: every
+     * property of the Pigeon [TlGeofence] must survive into the SDK map. A
+     * forgotten/newly-added field fails this automatically.
+     */
+    @Test
+    fun tlGeofenceToMap_covers_every_pigeon_field() {
+        val geofence = TlGeofence(
+            identifier = "g1",
+            latitude = 1.0,
+            longitude = 2.0,
+            radius = 3.0,
+            notifyOnEntry = true,
+            notifyOnExit = true,
+            notifyOnDwell = true,
+            loiteringDelay = 5L,
+            extras = mapOf("k" to "v"),
+            vertices = listOf(listOf(1.0, 2.0)),
+        )
+        val map = tlGeofenceToMap(geofence)
+
+        val fields = TlGeofence::class.java.declaredFields
+            .map { it.name }
+            .filterNot { it.startsWith("$") || it == "Companion" || it == "CREATOR" }
+        for (field in fields) {
+            assertTrue(
+                map.containsKey(field),
+                "tlGeofenceToMap dropped Pigeon field '$field' (#206) — add it to the converter",
             )
         }
     }

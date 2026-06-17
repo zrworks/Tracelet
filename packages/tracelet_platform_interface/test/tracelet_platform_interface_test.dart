@@ -28,7 +28,7 @@ void main() {
     test('getCurrentPosition throws UnimplementedError by default', () {
       final platform = _TestPlatform();
       expect(
-        () => platform.getCurrentPosition({}),
+        () => platform.getCurrentPosition(TlCurrentPositionOptions()),
         throwsA(isA<UnimplementedError>()),
       );
     });
@@ -41,7 +41,9 @@ void main() {
     test('getLastKnownLocation with options throws UnimplementedError', () {
       final platform = _TestPlatform();
       expect(
-        () => platform.getLastKnownLocation({'persist': true}),
+        () => platform.getLastKnownLocation(
+          TlCurrentPositionOptions(persist: false),
+        ),
         throwsA(isA<UnimplementedError>()),
       );
     });

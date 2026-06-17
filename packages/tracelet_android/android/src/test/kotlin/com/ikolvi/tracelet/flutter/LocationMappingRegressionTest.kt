@@ -135,4 +135,34 @@ class LocationMappingRegressionTest {
         val extras = map["extras"] as? Map<String?, Any?>
         assertEquals("sos", extras?.get("alarm"), "extras must be forwarded to the SDK (#175)")
     }
+
+    /**
+     * Phase 1 (#206) completeness guard: every property of the Pigeon
+     * [TlCurrentPositionOptions] must be present in the SDK map after conversion.
+     * With all fields set to sentinels, a forgotten field in `tlOptionsToMap`
+     * (the exact #175/#201 failure mode) makes this fail automatically — and a
+     * newly-added Pigeon field that isn't mapped trips it too.
+     */
+    @Test
+    fun tlOptionsToMap_covers_every_pigeon_field() {
+        val opts = TlCurrentPositionOptions(
+            desiredAccuracy = TlDesiredAccuracy.PASSIVE,
+            timeout = 11,
+            maximumAge = 22,
+            persist = false,
+            samples = 3,
+            extras = mapOf("k" to "v"),
+        )
+        val map = tlOptionsToMap(opts)
+
+        val fields = TlCurrentPositionOptions::class.java.declaredFields
+            .map { it.name }
+            .filterNot { it.startsWith("$") || it == "Companion" || it == "CREATOR" }
+        for (field in fields) {
+            assertTrue(
+                map.containsKey(field),
+                "tlOptionsToMap dropped Pigeon field '$field' (#206) — add it to the converter",
+            )
+        }
+    }
 }

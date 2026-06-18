@@ -348,8 +348,16 @@ class TraceletAndroidPlugin :
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
         var body: String? = null
+        // #214: deliver telematics alongside locations so custom-schema builders
+        // can include driving/crash events. Map shape {locations, telematics};
+        // the Dart handler stays backward-compatible with the old bare-List arg.
+        // telematics is empty unless syncTelematics is enabled (gated in the SDK).
+        val args = mapOf(
+            "locations" to locations,
+            "telematics" to sdk.getTelematicsForCustomBuilder(),
+        )
         handler.post {
-            syncBodyChannel?.invokeMethod("buildSyncBody", locations, object : MethodChannel.Result {
+            syncBodyChannel?.invokeMethod("buildSyncBody", args, object : MethodChannel.Result {
                 override fun success(result: Any?) {
                     // String = sentinel or real body; null = a registered builder
                     // threw on the Dart side → leave body null so we abort.

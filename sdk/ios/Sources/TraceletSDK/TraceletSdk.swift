@@ -1413,6 +1413,26 @@ public final class TraceletSdk {
         }
     }
 
+    /// Unsynced telematics events mapped for the custom sync-body builder context (#214).
+    ///
+    /// Returns an empty array unless `syncTelematics` is enabled — so apps that
+    /// don't opt into telematics get no extra data and no overhead — matching the
+    /// default payload's `__telematics` gating.
+    public func getTelematicsForCustomBuilder(limit: Int = 250) -> [[String: Any]] {
+        guard isReady, configManager.getSyncTelematics() else { return [] }
+        return getTelematicsEvents(limit: limit).map { e in
+            [
+                "id": e.id,
+                "event_type": e.eventType,
+                "severity": e.severity,
+                "latitude": e.latitude,
+                "longitude": e.longitude,
+                "timestamp": e.timestamp,
+                "synced": e.synced,
+            ]
+        }
+    }
+
     public func getLogs(limit: Int) -> [LogEntry] {
         guard let db = rustDatabase else { return [] }
         do {

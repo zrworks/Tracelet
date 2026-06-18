@@ -22,6 +22,10 @@
 //! memory while crash detection is active.
 
 use crate::error::TraceletError;
+use aes_gcm::{
+    aead::{generic_array::GenericArray, Aead, KeyInit},
+    Aes256Gcm, Nonce,
+};
 use serde::Deserialize;
 use std::sync::Mutex;
 
@@ -81,6 +85,35 @@ impl CrashModel {
         Ok(CrashModel {
             forest: Mutex::new(compile(raw)?),
         })
+    }
+
+    /// Loads from an **AES-256-GCM encrypted** model blob (#183 — keeps the paid
+    /// model from being grabbed off a plain URL/cache). The blob layout matches
+    /// the SDK's encrypted-payload format: `[0x01][nonce:12][ciphertext]`.
+    ///
+    /// `key` is a **32-byte** key supplied at runtime by the host — it is never
+    /// hardcoded in this (open-source) repo. Returns a `Config` error on a bad
+    /// key/blob (wrong key, tampered data) or malformed decrypted JSON.
+    #[uniffi::constructor]
+    pub fn from_encrypted(blob: Vec<u8>, key: Vec<u8>) -> Result<CrashModel, TraceletError> {
+        if key.len() != 32 {
+            return Err(TraceletError::Config(
+                "crash model: key must be 32 bytes".into(),
+            ));
+        }
+        if blob.len() < 13 || blob[0] != 0x01 {
+            return Err(TraceletError::Config(
+                "crash model: bad encrypted blob header".into(),
+            ));
+        }
+        let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
+        let nonce = Nonce::from_slice(&blob[1..13]);
+        let plaintext = cipher
+            .decrypt(nonce, &blob[13..])
+            .map_err(|_| TraceletError::Config("crash model: decryption failed".into()))?;
+        let json = String::from_utf8(plaintext)
+            .map_err(|_| TraceletError::Config("crash model: decrypted bytes not UTF-8".into()))?;
+        Self::from_json(json)
     }
 
     /// Ordered feature names the model expects (the host must supply `predict`
@@ -251,5 +284,40 @@ mod tests {
     #[test]
     fn malformed_json_errors() {
         assert!(CrashModel::from_json("not json".into()).is_err());
+    }
+
+    fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Vec<u8> {
+        use aes_gcm::aead::OsRng;
+        use aes_gcm::aead::rand_core::RngCore;
+        let cipher = Aes256Gcm::new(GenericArray::from_slice(key));
+        let mut nonce_bytes = [0u8; 12];
+        OsRng.fill_bytes(&mut nonce_bytes);
+        let ct = cipher
+            .encrypt(Nonce::from_slice(&nonce_bytes), plaintext)
+            .unwrap();
+        let mut out = vec![0x01u8];
+        out.extend_from_slice(&nonce_bytes);
+        out.extend_from_slice(&ct);
+        out
+    }
+
+    #[test]
+    fn encrypted_round_trip_matches_plaintext() {
+        let key = [7u8; 32];
+        let blob = encrypt(FIXTURE.as_bytes(), &key);
+        let m = CrashModel::from_encrypted(blob, key.to_vec()).unwrap();
+        assert_eq!(m.tree_count(), 2);
+        assert!((m.predict_proba(vec![3.0]) - 0.65).abs() < 1e-6);
+    }
+
+    #[test]
+    fn wrong_key_fails_to_decrypt() {
+        let blob = encrypt(FIXTURE.as_bytes(), &[7u8; 32]);
+        assert!(CrashModel::from_encrypted(blob, vec![9u8; 32]).is_err());
+    }
+
+    #[test]
+    fn bad_key_length_errors() {
+        assert!(CrashModel::from_encrypted(vec![0x01; 20], vec![1u8; 16]).is_err());
     }
 }

@@ -186,8 +186,6 @@ scratch/
 *_rf_trees.json
 *_optimized_model.*
 *_optimized_report.json
-models/
-**/crash_model*/
 *.crashmodel
 
 # Secrets / licensing keys — never commit.

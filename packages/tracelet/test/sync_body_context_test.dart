@@ -42,14 +42,17 @@ void main() {
       expect(ctx.telematics.first['event_type'], 'speeding');
     });
 
-    test('fromPlatform accepts the legacy bare-list shape (empty telematics)', () {
-      final ctx = SyncBodyContext.fromPlatform(const <Object?>[
-        {'lat': 1.0},
-        {'lat': 2.0},
-      ]);
-      expect(ctx.locations, hasLength(2));
-      expect(ctx.telematics, isEmpty);
-    });
+    test(
+      'fromPlatform accepts the legacy bare-list shape (empty telematics)',
+      () {
+        final ctx = SyncBodyContext.fromPlatform(const <Object?>[
+          {'lat': 1.0},
+          {'lat': 2.0},
+        ]);
+        expect(ctx.locations, hasLength(2));
+        expect(ctx.telematics, isEmpty);
+      },
+    );
 
     test('fromPlatform filters non-map entries', () {
       final ctx = SyncBodyContext.fromPlatform(const <Object?>[

@@ -293,31 +293,34 @@ void main() {
         expect(tags[1], 'plain-string');
       },
     );
-    test('#214: map arg exposes locations + telematics to the builder', () async {
-      late SyncBodyContext received;
-      Tracelet.setSyncBodyBuilder((SyncBodyContext context) async {
-        received = context;
-        return <String, Object?>{'ok': true};
-      });
+    test(
+      '#214: map arg exposes locations + telematics to the builder',
+      () async {
+        late SyncBodyContext received;
+        Tracelet.setSyncBodyBuilder((SyncBodyContext context) async {
+          received = context;
+          return <String, Object?>{'ok': true};
+        });
 
-      final response = await _invokeSyncBodyChannelRaw(
-        syncBodyChannel,
-        'buildSyncBody',
-        <String, Object?>{
-          'locations': <Object?>[
-            <String, Object?>{'lat': 1.0},
-          ],
-          'telematics': <Object?>[
-            <String, Object?>{'event_type': 'harsh_braking', 'severity': 0.8},
-          ],
-        },
-      );
+        final response = await _invokeSyncBodyChannelRaw(
+          syncBodyChannel,
+          'buildSyncBody',
+          <String, Object?>{
+            'locations': <Object?>[
+              <String, Object?>{'lat': 1.0},
+            ],
+            'telematics': <Object?>[
+              <String, Object?>{'event_type': 'harsh_braking', 'severity': 0.8},
+            ],
+          },
+        );
 
-      expect(response, isNotNull);
-      expect(received.locations, hasLength(1));
-      expect(received.telematics, hasLength(1));
-      expect(received.telematics.first['event_type'], 'harsh_braking');
-    });
+        expect(response, isNotNull);
+        expect(received.locations, hasLength(1));
+        expect(received.telematics, hasLength(1));
+        expect(received.telematics.first['event_type'], 'harsh_braking');
+      },
+    );
 
     test('#214: legacy bare-list arg still works (empty telematics)', () async {
       late SyncBodyContext received;

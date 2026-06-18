@@ -75,9 +75,6 @@ class SyncBodyContext {
 
   /// Serializes to a map.
   Map<String, Object?> toMap() {
-    return <String, Object?>{
-      'locations': locations,
-      'telematics': telematics,
-    };
+    return <String, Object?>{'locations': locations, 'telematics': telematics};
   }
 }

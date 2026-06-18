@@ -19,12 +19,24 @@ actor SyncCoordinator {
         
         syncTask = Task {
             try? await Task.sleep(nanoseconds: delayNanos)
+            // Bail if the debounce was cancelled while sleeping (stop(), #213).
+            if Task.isCancelled {
+                self.syncTask = nil
+                BackgroundTaskHelper.shared.end(bgTaskId)
+                return
+            }
             self.syncTask = nil
             await self.triggerSync(sink: sink)
             BackgroundTaskHelper.shared.end(bgTaskId)
         }
     }
-    
+
+    /// Cancel the in-flight debounce so stop() halts background sync immediately (#213).
+    func cancel() {
+        syncTask?.cancel()
+        syncTask = nil
+    }
+
     func triggerSync(sink: TraceletSyncSink) async {
         guard !isSyncing else { return }
         isSyncing = true
@@ -137,6 +149,12 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
         }
         return ""
     }
+
+    // Cancel the in-flight debounce on stop() so background sync halts
+    // immediately instead of firing ~autoSyncDelay later (#213).
+    func cancelPendingSync() {
+        Task { await coordinator.cancel() }
+    }
     
     func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws -> UInt32 {
         let syncRecords: [tracelet_sync.SyncLocationRecord] = records.map { r in
@@ -154,7 +172,8 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 isMoving: r.isMoving,
                 activity: r.activity,
                 event: r.eventType,
-                routeContext: r.routeContext
+                routeContext: r.routeContext,
+                address: r.address  // #212: carry reverse-geocoded address into the default payload
             )
         }
         

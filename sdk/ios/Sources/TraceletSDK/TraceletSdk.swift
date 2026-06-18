@@ -31,6 +31,13 @@ import UIKit
 /// between Flutter and native iOS have a familiar interface.
 public protocol SyncProvider {
     func syncBatchBlocking(config: HttpConfig, records: [DbLocationRecord]) throws -> UInt32
+    /// Cancel any pending (debounced) auto-sync so stop() takes effect
+    /// immediately (#213). Default no-op for providers without a debounce.
+    func cancelPendingSync()
+}
+
+public extension SyncProvider {
+    func cancelPendingSync() {}
 }
 
 public final class TraceletSdk {
@@ -402,6 +409,9 @@ public final class TraceletSdk {
 
             locationEngine.stop()
             locationEngine.speedSink = nil
+            // Cancel any in-flight debounced auto-sync so stop() halts background
+            // network activity immediately instead of firing ~autoSyncDelay later (#213).
+            syncProvider?.cancelPendingSync()
             motionDetector.stop()
             speedMotionManager?.stop()
             speedMotionManager = nil

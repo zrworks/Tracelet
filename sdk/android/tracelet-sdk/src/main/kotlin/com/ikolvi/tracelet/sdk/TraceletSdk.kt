@@ -1032,6 +1032,11 @@ class TraceletSdk private constructor(private val context: Context) {
         if (rustDatabase == null) {
             initialize()
         }
+        // Initialize the behavior engines (telematics / transport / crash-fall) in
+        // the background process too. Without this they stay null after a reboot or
+        // task-removal restart, silently disabling crash and driving diagnostics
+        // while the app UI is killed (#214). Honors the same config flags as ready().
+        initBehaviorEngines()
         checkSyncProvider()
     }
 

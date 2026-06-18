@@ -507,6 +507,9 @@ class TlImpactConfig {
     required this.fallGThreshold,
     required this.confirmWindowMs,
     required this.minImpactConfidence,
+    required this.crashModelThreshold,
+    this.crashModelUrl,
+    this.crashModelSha256,
   });
   final bool enableCrashDetection;
   final bool enableFallDetection;
@@ -515,6 +518,9 @@ class TlImpactConfig {
   final double fallGThreshold;
   final int confirmWindowMs;
   final double minImpactConfidence;
+  final String? crashModelUrl;
+  final String? crashModelSha256;
+  final double crashModelThreshold;
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }

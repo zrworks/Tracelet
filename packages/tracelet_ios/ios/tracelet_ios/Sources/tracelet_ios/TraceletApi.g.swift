@@ -1624,6 +1624,9 @@ struct TlImpactConfig: Hashable {
   var fallGThreshold: Double
   var confirmWindowMs: Int64
   var minImpactConfidence: Double
+  var crashModelUrl: String? = nil
+  var crashModelSha256: String? = nil
+  var crashModelThreshold: Double
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1635,6 +1638,9 @@ struct TlImpactConfig: Hashable {
     let fallGThreshold = pigeonVar_list[4] as! Double
     let confirmWindowMs = pigeonVar_list[5] as! Int64
     let minImpactConfidence = pigeonVar_list[6] as! Double
+    let crashModelUrl: String? = nilOrValue(pigeonVar_list[7])
+    let crashModelSha256: String? = nilOrValue(pigeonVar_list[8])
+    let crashModelThreshold = pigeonVar_list[9] as! Double
 
     return TlImpactConfig(
       enableCrashDetection: enableCrashDetection,
@@ -1643,7 +1649,10 @@ struct TlImpactConfig: Hashable {
       crashMinSpeedKmh: crashMinSpeedKmh,
       fallGThreshold: fallGThreshold,
       confirmWindowMs: confirmWindowMs,
-      minImpactConfidence: minImpactConfidence
+      minImpactConfidence: minImpactConfidence,
+      crashModelUrl: crashModelUrl,
+      crashModelSha256: crashModelSha256,
+      crashModelThreshold: crashModelThreshold
     )
   }
   func toList() -> [Any?] {
@@ -1655,13 +1664,16 @@ struct TlImpactConfig: Hashable {
       fallGThreshold,
       confirmWindowMs,
       minImpactConfidence,
+      crashModelUrl,
+      crashModelSha256,
+      crashModelThreshold,
     ]
   }
   static func == (lhs: TlImpactConfig, rhs: TlImpactConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.enableCrashDetection, rhs.enableCrashDetection) && deepEqualsTraceletApi(lhs.enableFallDetection, rhs.enableFallDetection) && deepEqualsTraceletApi(lhs.crashGThreshold, rhs.crashGThreshold) && deepEqualsTraceletApi(lhs.crashMinSpeedKmh, rhs.crashMinSpeedKmh) && deepEqualsTraceletApi(lhs.fallGThreshold, rhs.fallGThreshold) && deepEqualsTraceletApi(lhs.confirmWindowMs, rhs.confirmWindowMs) && deepEqualsTraceletApi(lhs.minImpactConfidence, rhs.minImpactConfidence)
+    return deepEqualsTraceletApi(lhs.enableCrashDetection, rhs.enableCrashDetection) && deepEqualsTraceletApi(lhs.enableFallDetection, rhs.enableFallDetection) && deepEqualsTraceletApi(lhs.crashGThreshold, rhs.crashGThreshold) && deepEqualsTraceletApi(lhs.crashMinSpeedKmh, rhs.crashMinSpeedKmh) && deepEqualsTraceletApi(lhs.fallGThreshold, rhs.fallGThreshold) && deepEqualsTraceletApi(lhs.confirmWindowMs, rhs.confirmWindowMs) && deepEqualsTraceletApi(lhs.minImpactConfidence, rhs.minImpactConfidence) && deepEqualsTraceletApi(lhs.crashModelUrl, rhs.crashModelUrl) && deepEqualsTraceletApi(lhs.crashModelSha256, rhs.crashModelSha256) && deepEqualsTraceletApi(lhs.crashModelThreshold, rhs.crashModelThreshold)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1673,6 +1685,9 @@ struct TlImpactConfig: Hashable {
     deepHashTraceletApi(value: fallGThreshold, hasher: &hasher)
     deepHashTraceletApi(value: confirmWindowMs, hasher: &hasher)
     deepHashTraceletApi(value: minImpactConfidence, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelUrl, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelSha256, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelThreshold, hasher: &hasher)
   }
 }
 

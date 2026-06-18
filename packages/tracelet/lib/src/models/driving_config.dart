@@ -252,6 +252,9 @@ class ImpactConfig {
     this.fallGThreshold = 2.5,
     this.confirmWindowMs = 15000,
     this.minImpactConfidence = 0.6,
+    this.crashModelUrl,
+    this.crashModelSha256,
+    this.crashModelThreshold = 0.5,
   });
 
   /// Creates an [ImpactConfig] from a map.
@@ -272,6 +275,12 @@ class ImpactConfig {
       minImpactConfidence: ensureDouble(
         map['minImpactConfidence'],
         fallback: 0.6,
+      ),
+      crashModelUrl: map['crashModelUrl'] as String?,
+      crashModelSha256: map['crashModelSha256'] as String?,
+      crashModelThreshold: ensureDouble(
+        map['crashModelThreshold'],
+        fallback: 0.5,
       ),
     );
   }
@@ -299,6 +308,23 @@ class ImpactConfig {
   /// Suppress candidates below this confidence. Default `0.6`.
   final double minImpactConfidence;
 
+  /// Optional URL of an **AES-256-GCM encrypted** crash ML model (the portable
+  /// random-forest JSON). When set (and crash detection is enabled), the SDK
+  /// downloads it once, verifies [crashModelSha256], decrypts and runs it to
+  /// score impacts; it falls back to the rule engine if absent/offline. The
+  /// model is opt-in and downloaded — never embedded — so the base SDK size is
+  /// unchanged. `null` ⇒ pure rule engine (default). The decryption key is
+  /// supplied by the host at build/run time, never via this config.
+  final String? crashModelUrl;
+
+  /// Optional SHA-256 (hex) of the encrypted model blob for integrity
+  /// verification after download. Recommended whenever [crashModelUrl] is set.
+  final String? crashModelSha256;
+
+  /// Probability threshold (`0..1`) at which the ML model flags a crash. Default
+  /// `0.5`. Use the `rf_probability_threshold` from the model's training report.
+  final double crashModelThreshold;
+
   /// Serializes to a map.
   Map<String, Object?> toMap() => <String, Object?>{
     'enableCrashDetection': enableCrashDetection,
@@ -308,6 +334,9 @@ class ImpactConfig {
     'fallGThreshold': fallGThreshold,
     'confirmWindowMs': confirmWindowMs,
     'minImpactConfidence': minImpactConfidence,
+    'crashModelUrl': crashModelUrl,
+    'crashModelSha256': crashModelSha256,
+    'crashModelThreshold': crashModelThreshold,
   };
 
   /// Converts to Pigeon [TlImpactConfig].
@@ -319,6 +348,9 @@ class ImpactConfig {
     fallGThreshold: fallGThreshold,
     confirmWindowMs: confirmWindowMs,
     minImpactConfidence: minImpactConfidence,
+    crashModelUrl: crashModelUrl,
+    crashModelSha256: crashModelSha256,
+    crashModelThreshold: crashModelThreshold,
   );
 
   @override
@@ -332,7 +364,10 @@ class ImpactConfig {
           crashMinSpeedKmh == other.crashMinSpeedKmh &&
           fallGThreshold == other.fallGThreshold &&
           confirmWindowMs == other.confirmWindowMs &&
-          minImpactConfidence == other.minImpactConfidence;
+          minImpactConfidence == other.minImpactConfidence &&
+          crashModelUrl == other.crashModelUrl &&
+          crashModelSha256 == other.crashModelSha256 &&
+          crashModelThreshold == other.crashModelThreshold;
 
   @override
   int get hashCode => Object.hash(
@@ -343,5 +378,8 @@ class ImpactConfig {
     fallGThreshold,
     confirmWindowMs,
     minImpactConfidence,
+    crashModelUrl,
+    crashModelSha256,
+    crashModelThreshold,
   );
 }

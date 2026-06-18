@@ -343,7 +343,11 @@ class TraceletAndroidPlugin :
             // when a registered one fails.
             val hs = headlessService ?: return NO_SYNC_BODY_BUILDER_SENTINEL
             sdk.logger.debug("requestSyncBody: Engine detached, routing to HeadlessTaskService")
-            return hs.requestCustomSyncBody(locations, 10000L)
+            return hs.requestCustomSyncBody(
+                locations,
+                10000L,
+                sdk.getTelematicsForCustomBuilder(),
+            )
         }
         val handler = Handler(Looper.getMainLooper())
         val latch = java.util.concurrent.CountDownLatch(1)
@@ -386,7 +390,11 @@ class TraceletAndroidPlugin :
             // (Issue #134).
             sdk.logger.error("requestSyncBody: TIMEOUT waiting for Dart callback after $DART_CALLBACK_TIMEOUT_MS ms; falling back to headless")
             val hs = headlessService ?: return null
-            val headlessBody = hs.requestCustomSyncBody(locations, DART_CALLBACK_TIMEOUT_MS)
+            val headlessBody = hs.requestCustomSyncBody(
+                locations,
+                DART_CALLBACK_TIMEOUT_MS,
+                sdk.getTelematicsForCustomBuilder(),
+            )
             // The headless runner returns the sentinel when no headless builder is
             // registered. We must NOT post the default body in that case (a
             // foreground custom builder IS registered, so default would be the

@@ -303,6 +303,12 @@ class LocationService : Service(), DefaultLifecycleObserver {
                     scheduleDeferredStart(appContext, isBoot)
                 }
                 false
+            } catch (e: SecurityException) {
+                TraceletLog.warning("startForegroundService blocked by SecurityException (missing permissions?): ${e.message}")
+                false
+            } catch (e: Exception) {
+                TraceletLog.error("startForegroundService failed unexpectedly: ${e.message}")
+                false
             }
         }
 
@@ -340,6 +346,10 @@ class LocationService : Service(), DefaultLifecycleObserver {
                             TraceletLog.debug("Deferred foreground-service start succeeded after returning to foreground")
                         } catch (e: IllegalStateException) {
                             TraceletLog.warning("Deferred foreground-service start still blocked: ${e.message}")
+                        } catch (e: SecurityException) {
+                            TraceletLog.warning("Deferred foreground-service start blocked by SecurityException (missing permissions?): ${e.message}")
+                        } catch (e: Exception) {
+                            TraceletLog.error("Deferred foreground-service start failed unexpectedly: ${e.message}")
                         }
                     }
                 }
@@ -1038,14 +1048,26 @@ class LocationService : Service(), DefaultLifecycleObserver {
         createNotificationChannel()
         val notification = buildNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: SecurityException) {
+            TraceletLog.warning("SecurityException starting foreground service (missing permissions?): ${e.message}")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            isRunning = false
+        } catch (e: Exception) {
+            TraceletLog.error("Error starting foreground service: ${e.message}")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            isRunning = false
         }
     }
 

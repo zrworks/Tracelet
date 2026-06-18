@@ -1825,7 +1825,11 @@ class TraceletSdk private constructor(private val context: Context) {
      */
     fun getTelematicsForCustomBuilder(limit: Int = 250): List<Map<String, Any?>> {
         if (!isReady || !configManager.getSyncTelematics()) return emptyList()
-        return getTelematicsEvents(limit).map { e ->
+        val events = getTelematicsEvents(limit)
+        // Remember the highest id we exposed so a successful sync can mark exactly
+        // these synced — avoids re-sending them every batch (#214 dedup).
+        lastExposedTelematicsMaxId = events.maxOfOrNull { it.id } ?: lastExposedTelematicsMaxId
+        return events.map { e ->
             mapOf(
                 "id" to e.id,
                 "event_type" to e.eventType,
@@ -1836,6 +1840,30 @@ class TraceletSdk private constructor(private val context: Context) {
                 "synced" to e.synced,
             )
         }
+    }
+
+    /**
+     * Tracks the highest telematics id handed to a custom builder via
+     * [getTelematicsForCustomBuilder], so [markExposedTelematicsSynced] can mark
+     * exactly those synced after a successful custom-path sync (#214 dedup).
+     */
+    @Volatile
+    private var lastExposedTelematicsMaxId: Long = 0L
+
+    /**
+     * Marks the telematics previously exposed to a custom builder as synced, after
+     * a successful custom-path sync. No-op when nothing was exposed (e.g. the
+     * default payload path), so it can't lose unsent telematics (#214 dedup).
+     */
+    fun markExposedTelematicsSynced() {
+        val maxId = lastExposedTelematicsMaxId
+        if (maxId <= 0L) return
+        try {
+            rustDatabase?.markTelematicsSynced(maxId)
+        } catch (e: Exception) {
+            logger.error("markTelematicsSynced failed: ${e.message}")
+        }
+        lastExposedTelematicsMaxId = 0L
     }
 
     fun getLogs(limit: Int): List<uniffi.tracelet_core.LogEntry> {

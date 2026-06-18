@@ -44,7 +44,14 @@ class HeadlessSyncInterceptor(context: Context) : DartSyncInterceptor {
      * default payload), or `null` when a registered builder failed.
      */
     override fun requestSyncBody(locations: List<Map<String, Any?>>): String? =
-        headless.requestCustomSyncBody(locations, TIMEOUT_MS)
+        headless.requestCustomSyncBody(
+            locations,
+            TIMEOUT_MS,
+            // #214: telematics for the killed-state custom builder (empty unless
+            // syncTelematics is enabled).
+            com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(appContext)
+                .getTelematicsForCustomBuilder(),
+        )
 
     override fun requestFreshHeaders(): Boolean =
         headless.requestHeadersRefresh(TIMEOUT_MS)

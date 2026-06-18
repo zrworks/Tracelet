@@ -149,4 +149,68 @@ void main() {
     expect(ctx.telematics, isNotEmpty);
     expect(ctx.telematics.first['event_type'], 'harsh_braking');
   });
+
+  test('#214 dedup: telematics are not re-sent after a successful sync', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((req) async {
+      await req.cast<List<int>>().drain<void>();
+      req.response.statusCode = 200;
+      req.response.write('{"ok":true}');
+      await req.response.close();
+    });
+    addTearDown(() => server.close(force: true));
+
+    final telematicsCounts = <int>[];
+    await Tracelet.setSyncBodyBuilder((ctx) async {
+      telematicsCounts.add(ctx.telematics.length);
+      return {'points': ctx.locations, 'events': ctx.telematics};
+    });
+
+    await Tracelet.ready(
+      Config.passive().copyWith(
+        http: HttpConfig(
+          url: 'http://127.0.0.1:${server.port}/sync',
+          autoSync: false,
+          batchSync: true,
+          syncTelematics: true,
+        ),
+      ),
+    );
+    await Tracelet.destroyLocations();
+
+    // Batch 1: a location + a telematics event → builder should see telematics.
+    await Tracelet.insertLocation({
+      'uuid': 'it-214d-1',
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
+      'latitude': 12.97,
+      'longitude': 77.59,
+      'accuracy': 5.0,
+    });
+    await Tracelet.simulateTelematicsEvent(
+      eventType: 'speeding',
+      severity: 0.7,
+      latitude: 12.97,
+      longitude: 77.59,
+    );
+    await Tracelet.sync();
+
+    // Batch 2: a new location, NO new telematics → already-synced ones must not
+    // be re-sent (marked synced after batch 1).
+    await Tracelet.insertLocation({
+      'uuid': 'it-214d-2',
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
+      'latitude': 12.98,
+      'longitude': 77.60,
+      'accuracy': 5.0,
+    });
+    await Tracelet.sync();
+    await Tracelet.setSyncBodyBuilder(null);
+
+    expect(telematicsCounts.length, greaterThanOrEqualTo(2),
+        reason: 'builder should run for both batches');
+    expect(telematicsCounts.first, greaterThan(0),
+        reason: 'batch 1 should carry the telematics event');
+    expect(telematicsCounts.last, 0,
+        reason: 'batch 2 must not re-send already-synced telematics (#214 dedup)');
+  });
 }

@@ -1420,7 +1420,13 @@ public final class TraceletSdk {
     /// default payload's `__telematics` gating.
     public func getTelematicsForCustomBuilder(limit: Int = 250) -> [[String: Any]] {
         guard isReady, configManager.getSyncTelematics() else { return [] }
-        return getTelematicsEvents(limit: limit).map { e in
+        let events = getTelematicsEvents(limit: limit)
+        // Remember the highest id exposed so a successful sync marks exactly these
+        // synced — avoids re-sending them every batch (#214 dedup).
+        if let maxId = events.map({ $0.id }).max() {
+            lastExposedTelematicsMaxId = maxId
+        }
+        return events.map { e in
             [
                 "id": e.id,
                 "event_type": e.eventType,
@@ -1431,6 +1437,25 @@ public final class TraceletSdk {
                 "synced": e.synced,
             ]
         }
+    }
+
+    /// Highest telematics id handed to a custom builder via
+    /// `getTelematicsForCustomBuilder`, marked synced on a successful custom-path
+    /// sync (#214 dedup).
+    private var lastExposedTelematicsMaxId: Int64 = 0
+
+    /// Marks the telematics previously exposed to a custom builder as synced after
+    /// a successful custom-path sync. No-op when nothing was exposed (default
+    /// payload path), so it can't lose unsent telematics (#214 dedup).
+    public func markExposedTelematicsSynced() {
+        let maxId = lastExposedTelematicsMaxId
+        guard maxId > 0 else { return }
+        do {
+            try rustDatabase?.markTelematicsSynced(maxId: maxId)
+        } catch {
+            TraceletLog.error("markTelematicsSynced failed: \(error)")
+        }
+        lastExposedTelematicsMaxId = 0
     }
 
     public func getLogs(limit: Int) -> [LogEntry] {

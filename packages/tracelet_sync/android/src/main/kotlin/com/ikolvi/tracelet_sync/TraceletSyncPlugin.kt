@@ -192,6 +192,11 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
         try {
             val count = syncManager.syncBatchBlocking(syncConfig, syncRecords).toLong()
             if (count > 0L) {
+                // #214 dedup: a custom builder may have included the telematics we
+                // exposed via getTelematicsForCustomBuilder(); now that the POST
+                // succeeded, mark exactly those synced so they aren't re-sent.
+                // No-op for the default-payload path (nothing was exposed).
+                sdk.markExposedTelematicsSynced()
                 sdk.getEventSender().sendHttp(mapOf(
                     "success" to true,
                     "status" to 200,

@@ -155,7 +155,9 @@ final class HeadlessRunner: HeadlessDispatching {
     ///   - locations: The batch of locations to include in the body.
     ///   - timeout: Maximum time to wait for the Dart callback.
     /// - Returns: The custom JSON body string, or `nil` if timed out or unavailable.
-    func requestCustomSyncBody(_ locations: [[String: Any]], timeout: TimeInterval) -> String? {
+    // #214: telematics defaults to empty so existing callers/headless callbacks
+    // keep working unchanged.
+    func requestCustomSyncBody(_ locations: [[String: Any]], timeout: TimeInterval, telematics: [[String: Any]] = []) -> String? {
         let defaults = UserDefaults.standard
         let dispatchId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_dispatchId")
         let registrationId = defaults.integer(forKey: "com.tracelet.headless.headlessSyncBody_registrationId")
@@ -178,7 +180,9 @@ final class HeadlessRunner: HeadlessDispatching {
 
         let event: [String: Any] = [
             "name": "syncBodyBuild",
-            "event": ["locations": locations],
+            // #214: include telematics so headless custom builders can read
+            // event['telematics'] (empty unless syncTelematics is enabled).
+            "event": ["locations": locations, "telematics": telematics],
             "dispatchId": dispatchId,
         ]
 

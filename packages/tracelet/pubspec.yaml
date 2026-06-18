@@ -31,8 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   tracelet_platform_interface: ^3.4.1
-  tracelet_android: ^3.5.0
-  tracelet_ios: ^3.5.0
+  tracelet_android: ^3.4.2
+  tracelet_ios: ^3.4.2
   tracelet_web: ^3.4.1
   collection: ^1.19.1
   meta: ^1.18.0

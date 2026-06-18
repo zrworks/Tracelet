@@ -32,7 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   tracelet: ^3.4.2
-  tracelet_sync: ^3.5.0
+  tracelet_sync: ^3.4.2
   firebase_auth: ^6.5.2
   firebase_core: ^4.10.0
 

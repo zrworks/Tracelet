@@ -124,6 +124,21 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Current activity type — set by MotionDetector for DR algorithm selection.
     public var currentActivityType: String = "unknown"
 
+    /// Latest fused transport mode (e.g. "driving") from the transport classifier,
+    /// kept fresh by the SDK. When `fusedClassifierAuthoritative` is enabled it
+    /// becomes the persisted `activity.type`, so the classified mode survives
+    /// process termination and syncs historically (#214 part 3).
+    public var fusedTransportMode: String?
+
+    /// The activity type to persist/dispatch: the fused transport mode when the
+    /// classifier is authoritative (and available), otherwise the raw AR activity.
+    private func effectiveActivityType() -> String {
+        if configManager.getFusedClassifierAuthoritative() {
+            return fusedTransportMode ?? currentActivityType
+        }
+        return currentActivityType
+    }
+
     public init(configManager: ConfigManager,
          stateManager: StateManager,
          eventDispatcher: TraceletEventSending) {
@@ -1464,7 +1479,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 "altitudeAccuracy": -1.0,
             ],
             "activity": [
-                "type": currentActivityType,
+                // #214 pt3: persist the fused transport mode when authoritative so
+                // it survives termination and syncs historically (falls back to AR).
+                "type": effectiveActivityType(),
                 "confidence": -1,
             ],
             "battery": [

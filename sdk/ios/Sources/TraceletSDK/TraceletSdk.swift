@@ -2106,6 +2106,9 @@ public final class TraceletSdk {
 
         if let classifier = transportClassifier {
             let result = classifier.classify(window: window, speedMps: lastSpeedMps, nowMs: nowMs)
+            // #214 pt3: keep the engine's fused mode fresh every window so it can be
+            // persisted into the location's activity column when authoritative.
+            locationEngine?.fusedTransportMode = String(describing: result.mode).lowercased()
             if result.changed {
                 eventSender.sendModeChange([
                     "mode": String(describing: result.mode).lowercased(),

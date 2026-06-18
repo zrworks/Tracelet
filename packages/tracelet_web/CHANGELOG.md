@@ -1,3 +1,7 @@
+## 3.4.2
+
+ - **FEAT**: implement telematics deduplication with synced-state tracking and improved foreground service fault tolerance. ([0581c6e7](https://github.com/Ikolvi/Tracelet/commit/0581c6e7a30a5d436ceb2e8c5d75e46505431e4b))
+
 ## 3.4.1
 
  - Update a dependency to the latest release.

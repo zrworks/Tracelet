@@ -15,6 +15,54 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`tracelet` - `v3.4.2`](#tracelet---v342)
+ - [`tracelet_android` - `v3.5.0`](#tracelet_android---v350)
+ - [`tracelet_ios` - `v3.5.0`](#tracelet_ios---v350)
+ - [`tracelet_sync` - `v3.5.0`](#tracelet_sync---v350)
+ - [`tracelet_doctor` - `v3.4.2`](#tracelet_doctor---v342)
+ - [`tracelet_supabase` - `v3.4.2`](#tracelet_supabase---v342)
+ - [`tracelet_firebase` - `v3.4.2`](#tracelet_firebase---v342)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `tracelet_doctor` - `v3.4.2`
+ - `tracelet_supabase` - `v3.4.2`
+ - `tracelet_firebase` - `v3.4.2`
+
+---
+
+#### `tracelet` - `v3.4.2`
+
+ - **REFACTOR**: reformat test files and sync body context for consistent code style. ([5552f795](https://github.com/Ikolvi/Tracelet/commit/5552f7952e35472d0b69b92af0fc19440fde4038))
+
+#### `tracelet_android` - `v3.5.0`
+
+ - **FEAT**: implement telematics deduplication with synced-state tracking and improved foreground service fault tolerance. ([0581c6e7](https://github.com/Ikolvi/Tracelet/commit/0581c6e7a30a5d436ceb2e8c5d75e46505431e4b))
+
+#### `tracelet_ios` - `v3.5.0`
+
+ - **FEAT**: implement telematics deduplication with synced-state tracking and improved foreground service fault tolerance. ([0581c6e7](https://github.com/Ikolvi/Tracelet/commit/0581c6e7a30a5d436ceb2e8c5d75e46505431e4b))
+
+#### `tracelet_sync` - `v3.5.0`
+
+ - **FIX**(sync): stop background sync on stop() ([#213](https://github.com/Ikolvi/Tracelet/issues/213)), address in default payload ([#212](https://github.com/Ikolvi/Tracelet/issues/212)), boot behavior engines ([#214](https://github.com/Ikolvi/Tracelet/issues/214) pt1). ([ab549621](https://github.com/Ikolvi/Tracelet/commit/ab549621eccd3bfd4ec674212fe2ce8729e114dd))
+ - **FEAT**: implement telematics deduplication with synced-state tracking and improved foreground service fault tolerance. ([0581c6e7](https://github.com/Ikolvi/Tracelet/commit/0581c6e7a30a5d436ceb2e8c5d75e46505431e4b))
+
+
+## 2026-06-18
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`tracelet` - `v3.4.1`](#tracelet---v341)
  - [`tracelet_android` - `v3.4.1`](#tracelet_android---v341)
  - [`tracelet_ios` - `v3.4.1`](#tracelet_ios---v341)

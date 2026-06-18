@@ -1,6 +1,6 @@
 name: tracelet_ios
 description: iOS implementation of the Tracelet background geolocation plugin.
-version: 3.4.1
+version: 3.5.0
 topics:
   - location
   - background

@@ -1,3 +1,7 @@
+## 3.4.2
+
+ - **REFACTOR**: reformat test files and sync body context for consistent code style. ([5552f795](https://github.com/Ikolvi/Tracelet/commit/5552f7952e35472d0b69b92af0fc19440fde4038))
+
 ## 3.4.1
 
  - **FEAT**(geofence): cross-platform geofenceModeHighAccuracy via GeofenceConfig. ([491d5b83](https://github.com/Ikolvi/Tracelet/commit/491d5b836fbd98a2e456d7d07bafc500f95a2fac))

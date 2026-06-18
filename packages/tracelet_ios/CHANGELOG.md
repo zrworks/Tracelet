@@ -1,3 +1,7 @@
+## 3.5.0
+
+ - **FEAT**: implement telematics deduplication with synced-state tracking and improved foreground service fault tolerance. ([0581c6e7](https://github.com/Ikolvi/Tracelet/commit/0581c6e7a30a5d436ceb2e8c5d75e46505431e4b))
+
 ## 3.4.1
 
  - **FIX**(ios): don't apply Android geofenceModeHighAccuracy on iOS ([#210](https://github.com/Ikolvi/Tracelet/issues/210)). ([a2ecd611](https://github.com/Ikolvi/Tracelet/commit/a2ecd611d17286d52da9a04226f928a76d2730b8))

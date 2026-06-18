@@ -1012,13 +1012,29 @@ class Tracelet {
         // only on the latter (Issue #125).
         if (_syncBodyBuilder == null) return _noSyncBodyBuilderSentinel;
         try {
-          final rawLocations = call.arguments as List<dynamic>? ?? [];
+          // #214: native now sends a {locations, telematics} map; older native
+          // builds sent a bare locations List. Accept both so a native/Dart
+          // version skew never breaks the builder (it just yields empty telematics).
+          final raw = call.arguments;
+          final List<dynamic> rawLocations;
+          final List<dynamic> rawTelematics;
+          if (raw is Map) {
+            rawLocations = (raw['locations'] as List<dynamic>?) ?? const [];
+            rawTelematics = (raw['telematics'] as List<dynamic>?) ?? const [];
+          } else {
+            rawLocations = (raw as List<dynamic>?) ?? const []; // legacy shape
+            rawTelematics = const [];
+          }
           final locations = rawLocations
               .whereType<Map<Object?, Object?>>()
               .map(_deepCastMap)
               .toList();
+          final telematics = rawTelematics
+              .whereType<Map<Object?, Object?>>()
+              .map(_deepCastMap)
+              .toList();
           final body = await _syncBodyBuilder!(
-            SyncBodyContext(locations: locations),
+            SyncBodyContext(locations: locations, telematics: telematics),
           );
           return jsonEncode(body);
         } catch (e) {

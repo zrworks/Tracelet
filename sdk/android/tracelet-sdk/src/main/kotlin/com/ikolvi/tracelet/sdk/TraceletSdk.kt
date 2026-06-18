@@ -1816,6 +1816,28 @@ class TraceletSdk private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Unsynced telematics events mapped for the custom sync-body builder context (#214).
+     *
+     * Returns an **empty list unless `syncTelematics` is enabled** — so apps that
+     * don't opt into telematics get no extra data and no overhead — matching the
+     * gating of the default payload's `__telematics` injection.
+     */
+    fun getTelematicsForCustomBuilder(limit: Int = 250): List<Map<String, Any?>> {
+        if (!isReady || !configManager.getSyncTelematics()) return emptyList()
+        return getTelematicsEvents(limit).map { e ->
+            mapOf(
+                "id" to e.id,
+                "event_type" to e.eventType,
+                "severity" to e.severity,
+                "latitude" to e.latitude,
+                "longitude" to e.longitude,
+                "timestamp" to e.timestamp,
+                "synced" to e.synced,
+            )
+        }
+    }
+
     fun getLogs(limit: Int): List<uniffi.tracelet_core.LogEntry> {
         val db = rustDatabase ?: return emptyList()
         return try {

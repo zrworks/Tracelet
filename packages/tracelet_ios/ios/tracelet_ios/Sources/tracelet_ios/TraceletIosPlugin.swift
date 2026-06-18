@@ -239,8 +239,16 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
         }
         let semaphore = DispatchSemaphore(value: 0)
         var body: String? = nil
+        // #214: deliver telematics alongside locations so custom-schema builders
+        // can include driving/crash events. Map shape {locations, telematics};
+        // the Dart handler stays backward-compatible with the old bare-List arg.
+        // telematics is empty unless syncTelematics is enabled (gated in the SDK).
+        let args: [String: Any] = [
+            "locations": locations,
+            "telematics": TraceletSdk.shared.getTelematicsForCustomBuilder(),
+        ]
         DispatchQueue.main.async {
-            self.syncBodyChannel.invokeMethod("buildSyncBody", arguments: locations) { result in
+            self.syncBodyChannel.invokeMethod("buildSyncBody", arguments: args) { result in
                 switch result {
                 case let res as String:
                     // Real JSON body or the no-builder sentinel — passed through

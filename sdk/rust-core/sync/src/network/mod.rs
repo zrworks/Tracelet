@@ -46,6 +46,10 @@ pub struct SyncLocationRecord {
     /// "heartbeat", "geofence", etc. (#156).
     pub event: String,
     pub route_context: Option<String>,
+    /// Reverse-geocoded address as a JSON object string (#212). Mirrors
+    /// `DbLocationRecord.address`; emitted into the default payload so the
+    /// backend receives it without a custom body builder.
+    pub address: Option<String>,
 }
 
 #[derive(uniffi::Object)]
@@ -167,9 +171,20 @@ impl SyncManager {
                     "activity": r.activity,
                     "event": r.event
                 });
+                // Reverse-geocoded address (#212): emit as a nested object when it
+                // parses as JSON, else as a raw string. Matches the custom-builder
+                // schema so default and custom payloads carry address identically.
+                if let Some(addr) = r.address.as_ref().filter(|a| !a.is_empty()) {
+                    if let Some(obj) = base_json.as_object_mut() {
+                        let val = serde_json::from_str(addr)
+                            .unwrap_or_else(|_| serde_json::Value::String(addr.clone()));
+                        obj.insert("address".to_string(), val);
+                    }
+                }
+
                 let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
                     .and_then(|rc| serde_json::from_str(rc).ok());
-                    
+
                 if let Some(ref rc) = record_route_context {
                     if let Some(obj) = base_json.as_object_mut() {
                         if let Some(rc_obj) = rc.as_object() {
@@ -208,9 +223,20 @@ impl SyncManager {
                         "activity": r.activity,
                         "event": r.event
                 });
+                // Reverse-geocoded address (#212): emit as a nested object when it
+                // parses as JSON, else as a raw string. Matches the custom-builder
+                // schema so default and custom payloads carry address identically.
+                if let Some(addr) = r.address.as_ref().filter(|a| !a.is_empty()) {
+                    if let Some(obj) = base_json.as_object_mut() {
+                        let val = serde_json::from_str(addr)
+                            .unwrap_or_else(|_| serde_json::Value::String(addr.clone()));
+                        obj.insert("address".to_string(), val);
+                    }
+                }
+
                 let record_route_context: Option<serde_json::Value> = r.route_context.as_ref()
                     .and_then(|rc| serde_json::from_str(rc).ok());
-                    
+
                 if let Some(ref rc) = record_route_context {
                     if let Some(obj) = base_json.as_object_mut() {
                         if let Some(rc_obj) = rc.as_object() {
@@ -436,6 +462,7 @@ mod tests {
             activity: "moving".to_string(),
             event: "location".to_string(),
             route_context: None,
+            address: None,
         }
     }
 
@@ -494,6 +521,32 @@ mod tests {
         // Assert uuid is mapped correctly
         assert_eq!(location.get("uuid").and_then(Value::as_str), Some("test-uuid-1234"));
         assert_eq!(location.get("id").and_then(Value::as_i64), Some(1));
+    }
+
+    #[test]
+    fn test_build_sync_payload_includes_address() {
+        // #212: the persisted reverse-geocoded address must appear in the default
+        // payload (batch + non-batch), as a nested object when it is JSON.
+        let addr = r#"{"city":"Paris","country":"FR"}"#;
+
+        // Batch
+        let mut record = get_test_record();
+        record.address = Some(addr.to_string());
+        let payload = SyncManager::build_sync_payload(&get_test_config(true), &[record]);
+        let first = &payload.get("location").unwrap().as_array().unwrap()[0];
+        assert_eq!(first.get("address").and_then(|a| a.get("city")).and_then(Value::as_str), Some("Paris"));
+
+        // Non-batch
+        let mut record2 = get_test_record();
+        record2.address = Some(addr.to_string());
+        let payload2 = SyncManager::build_sync_payload(&get_test_config(false), &[record2]);
+        let loc = payload2.get("location").unwrap();
+        assert_eq!(loc.get("address").and_then(|a| a.get("country")).and_then(Value::as_str), Some("FR"));
+
+        // Absent address => no "address" key (no null pollution).
+        let payload3 = SyncManager::build_sync_payload(&get_test_config(true), &[get_test_record()]);
+        let first3 = &payload3.get("location").unwrap().as_array().unwrap()[0];
+        assert!(first3.get("address").is_none());
     }
 
     #[test]

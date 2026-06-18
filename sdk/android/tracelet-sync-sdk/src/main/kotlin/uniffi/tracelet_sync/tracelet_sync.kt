@@ -1551,9 +1551,16 @@ data class SyncLocationRecord (
      * "heartbeat", "geofence", etc. (#156).
      */
     var `event`: kotlin.String
-    , 
+    ,
     var `routeContext`: kotlin.String?
-    
+    ,
+    /**
+     * Reverse-geocoded address as a JSON object string (#212). Mirrors
+     * `DbLocationRecord.address`; emitted into the default payload so the
+     * backend receives it without a custom body builder.
+     */
+    var `address`: kotlin.String?
+
 ){
     
 
@@ -1583,6 +1590,7 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -1600,7 +1608,8 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterBoolean.allocationSize(value.`isMoving`) +
             FfiConverterString.allocationSize(value.`activity`) +
             FfiConverterString.allocationSize(value.`event`) +
-            FfiConverterOptionalString.allocationSize(value.`routeContext`)
+            FfiConverterOptionalString.allocationSize(value.`routeContext`) +
+            FfiConverterOptionalString.allocationSize(value.`address`)
     )
 
     override fun write(value: SyncLocationRecord, buf: ByteBuffer) {
@@ -1618,6 +1627,7 @@ public object FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer<SyncLoc
             FfiConverterString.write(value.`activity`, buf)
             FfiConverterString.write(value.`event`, buf)
             FfiConverterOptionalString.write(value.`routeContext`, buf)
+            FfiConverterOptionalString.write(value.`address`, buf)
     }
 }
 

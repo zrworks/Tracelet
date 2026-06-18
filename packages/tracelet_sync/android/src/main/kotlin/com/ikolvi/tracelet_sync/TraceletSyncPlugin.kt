@@ -43,6 +43,17 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
             }
         }
     }
+
+    // Cancel the in-flight debounce so stop() takes effect immediately (#213).
+    // TraceletSdk.stop() calls syncProvider?.cancelPendingSync(); without this
+    // override (the interface default is a no-op) the coroutine kept sleeping
+    // through delay(autoSyncDelay) and still fired an HTTP sync up to ~10s after
+    // the user stopped tracking.
+    override fun cancelPendingSync() {
+        syncJob?.cancel()
+        syncJob = null
+        sdk.logger.debug("TraceletSyncSink: pending debounced background sync cancelled on stop().")
+    }
     
     private suspend fun triggerSync() {
         syncMutex.withLock {
@@ -123,7 +134,8 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                 isMoving = it.isMoving,
                 activity = it.activity,
                 event = it.eventType,
-                routeContext = it.routeContext
+                routeContext = it.routeContext,
+                address = it.address  // #212: carry reverse-geocoded address into the default payload
             )
         }
         val interceptor = sdk.dartSyncInterceptor

@@ -206,11 +206,20 @@ void main() {
     await Tracelet.sync();
     await Tracelet.setSyncBodyBuilder(null);
 
-    expect(telematicsCounts.length, greaterThanOrEqualTo(2),
-        reason: 'builder should run for both batches');
-    expect(telematicsCounts.first, greaterThan(0),
-        reason: 'batch 1 should carry the telematics event');
-    expect(telematicsCounts.last, 0,
-        reason: 'batch 2 must not re-send already-synced telematics (#214 dedup)');
+    expect(
+      telematicsCounts.length,
+      greaterThanOrEqualTo(2),
+      reason: 'builder should run for both batches',
+    );
+    expect(
+      telematicsCounts.first,
+      greaterThan(0),
+      reason: 'batch 1 should carry the telematics event',
+    );
+    expect(
+      telematicsCounts.last,
+      0,
+      reason: 'batch 2 must not re-send already-synced telematics (#214 dedup)',
+    );
   });
 }

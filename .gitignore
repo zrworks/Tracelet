@@ -177,3 +177,25 @@ my_log.txt
 
 # Local scratch / helper scripts (never commit — may contain secrets)
 scratch/
+
+# Proprietary / paid crash-detection model artifacts — NEVER commit.
+# The trained model is sold as a licensed add-on; only synthetic fixtures
+# (embedded in tests) belong in the repo.
+*.joblib
+*.onnx
+*_rf_trees.json
+*_optimized_model.*
+*_optimized_report.json
+models/
+**/crash_model*/
+*.crashmodel
+
+# Secrets / licensing keys — never commit.
+*.pem
+*.p8
+*.key
+*.keystore
+*.jks
+*.license
+secrets/
+**/license_keys*

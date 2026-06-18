@@ -221,6 +221,10 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                 sem.wait()
 
                 if fallbackSuccess {
+                    // #214 dedup: the custom builder may have included the
+                    // telematics we exposed; the POST succeeded, so mark exactly
+                    // those synced so they aren't re-sent.
+                    TraceletSdk.shared.markExposedTelematicsSynced()
                     TraceletSdk.shared.getEventSender().sendHttp([
                         "success": true,
                         "status": 200,

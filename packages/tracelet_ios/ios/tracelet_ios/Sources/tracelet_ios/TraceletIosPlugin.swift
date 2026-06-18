@@ -235,7 +235,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
             // builder is registered and `nil` only when a registered one fails.
             guard let runner = headlessRunner else { return traceletNoSyncBodyBuilderSentinel }
             TraceletSdk.shared.logger.debug("requestSyncBody: primary instance nil, routing to HeadlessRunner")
-            return runner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
+            return runner.requestCustomSyncBody(
+                locations,
+                timeout: TraceletIosPlugin.dartCallbackTimeout,
+                telematics: TraceletSdk.shared.getTelematicsForCustomBuilder(),
+            )
         }
         let semaphore = DispatchSemaphore(value: 0)
         var body: String? = nil
@@ -275,7 +279,11 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
             // of aborting the sync outright (Issue #134).
             TraceletSdk.shared.logger.error("requestSyncBody: timed out; falling back to headless")
             guard let runner = headlessRunner else { return nil }
-            let headlessBody = runner.requestCustomSyncBody(locations, timeout: TraceletIosPlugin.dartCallbackTimeout)
+            let headlessBody = runner.requestCustomSyncBody(
+                locations,
+                timeout: TraceletIosPlugin.dartCallbackTimeout,
+                telematics: TraceletSdk.shared.getTelematicsForCustomBuilder(),
+            )
             // Sentinel = no headless builder registered. Don't post the default
             // body when a foreground custom builder exists — abort (nil) and let
             // the batch retry on the next sync.

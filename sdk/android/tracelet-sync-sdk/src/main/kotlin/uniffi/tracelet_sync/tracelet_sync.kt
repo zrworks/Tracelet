@@ -1551,16 +1551,16 @@ data class SyncLocationRecord (
      * "heartbeat", "geofence", etc. (#156).
      */
     var `event`: kotlin.String
-    ,
+    , 
     var `routeContext`: kotlin.String?
-    ,
+    , 
     /**
      * Reverse-geocoded address as a JSON object string (#212). Mirrors
      * `DbLocationRecord.address`; emitted into the default payload so the
      * backend receives it without a custom body builder.
      */
     var `address`: kotlin.String?
-
+    
 ){
     
 

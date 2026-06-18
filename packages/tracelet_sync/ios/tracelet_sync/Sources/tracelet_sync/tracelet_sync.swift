@@ -829,14 +829,14 @@ public struct SyncLocationRecord: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool,
+    public init(id: Int64, uuid: String?, timestamp: String, latitude: Double, longitude: Double, accuracy: Double, speed: Double, heading: Double, altitude: Double, isMock: Bool, 
         /**
          * Motion state of this record (#151).
-         */isMoving: Bool, activity: String,
+         */isMoving: Bool, activity: String, 
         /**
          * Trigger that recorded this point: "location", "motionchange",
          * "heartbeat", "geofence", etc. (#156).
-         */event: String, routeContext: String?,
+         */event: String, routeContext: String?, 
         /**
          * Reverse-geocoded address as a JSON object string (#212). Mirrors
          * `DbLocationRecord.address`; emitted into the default payload so the
@@ -887,8 +887,8 @@ public struct FfiConverterTypeSyncLocationRecord: FfiConverterRustBuffer {
                 isMock: FfiConverterBool.read(from: &buf), 
                 isMoving: FfiConverterBool.read(from: &buf), 
                 activity: FfiConverterString.read(from: &buf), 
-                event: FfiConverterString.read(from: &buf),
-                routeContext: FfiConverterOptionString.read(from: &buf),
+                event: FfiConverterString.read(from: &buf), 
+                routeContext: FfiConverterOptionString.read(from: &buf), 
                 address: FfiConverterOptionString.read(from: &buf)
         )
     }

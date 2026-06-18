@@ -200,6 +200,9 @@ class HeadlessTaskService(
     fun requestCustomSyncBody(
         locations: List<Map<String, Any?>>,
         timeoutMs: Long,
+        // #214: telematics for the killed-state custom builder. Defaults to empty
+        // so existing callers/headless callbacks keep working unchanged.
+        telematics: List<Map<String, Any?>> = emptyList(),
     ): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val dispatchId = prefs.getLong("headlessSyncBody_dispatchId", -1L)
@@ -225,7 +228,9 @@ class HeadlessTaskService(
 
         val event = mapOf(
             "name" to "syncBodyBuild",
-            "event" to mapOf("locations" to locations),
+            // #214: include telematics so headless custom builders can read
+            // event['telematics'] (empty unless syncTelematics is enabled).
+            "event" to mapOf("locations" to locations, "telematics" to telematics),
             "dispatchId" to dispatchId,
         )
 

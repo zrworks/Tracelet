@@ -106,6 +106,26 @@ class LocationEngine(
     private var currentActivityType: String = "unknown"
     private var currentActivityConfidence: Int = -1
 
+    /**
+     * Latest fused transport mode (e.g. "driving", "walking") from the transport
+     * classifier, kept fresh by the SDK. When `fusedClassifierAuthoritative` is
+     * enabled it becomes the persisted `activity.type`, so the classified mode
+     * survives process termination and syncs historically (#214 part 3).
+     */
+    @Volatile
+    var fusedTransportMode: String? = null
+
+    /**
+     * The activity type to persist/dispatch: the fused transport mode when the
+     * classifier is authoritative (and available), otherwise the raw AR activity.
+     */
+    private fun effectiveActivityType(): String =
+        if (config.getFusedClassifierAuthoritative()) {
+            fusedTransportMode ?: currentActivityType
+        } else {
+            currentActivityType
+        }
+
     /** Force accept the next location (even if distance is 0) to guarantee a motion change sync on wakeup. */
     var forcePersistNextFilteredLocation = false
 
@@ -1033,7 +1053,9 @@ class LocationEngine(
                 "altitudeAccuracy" to if (location.hasVerticalAccuracy()) location.verticalAccuracyMeters.toDouble() else -1.0,
             ),
             "activity" to mapOf(
-                "type" to currentActivityType,
+                // #214 pt3: persist the fused transport mode when authoritative so
+                // it survives termination and syncs historically (falls back to AR).
+                "type" to effectiveActivityType(),
                 "confidence" to currentActivityConfidence,
             ),
             "battery" to battery,
@@ -1489,7 +1511,9 @@ class LocationEngine(
                 "altitudeAccuracy" to -1.0,
             ),
             "activity" to mapOf(
-                "type" to currentActivityType,
+                // #214 pt3: persist the fused transport mode when authoritative so
+                // it survives termination and syncs historically (falls back to AR).
+                "type" to effectiveActivityType(),
                 "confidence" to currentActivityConfidence,
             ),
             "battery" to battery,

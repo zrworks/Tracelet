@@ -2444,6 +2444,12 @@ class TraceletSdk private constructor(private val context: Context) {
 
         transportClassifier?.let { classifier ->
             val result = classifier.classify(window, lastSpeedMps, now)
+            // #214 pt3: keep the engine's fused mode fresh every window so it can be
+            // persisted into the location's activity column when authoritative — this
+            // is what survives termination / syncs historically.
+            if (::locationEngine.isInitialized) {
+                locationEngine.fusedTransportMode = result.mode.name.lowercase()
+            }
             if (result.changed) {
                 eventSender.sendModeChange(
                     mapOf(

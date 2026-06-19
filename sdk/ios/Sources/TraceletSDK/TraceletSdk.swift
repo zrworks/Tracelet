@@ -2323,12 +2323,15 @@ public final class TraceletSdk {
         return impactDetector?.cancel(id: id) ?? false
     }
 
-    /// Debug (#183): runs one synthetic high-g window through the REAL crash
-    /// pipeline — the loaded ML model and the live `impactDetector` — so the
-    /// model path can be verified without a physical impact. Requires crash
-    /// detection to be enabled. Returns proba/threshold/fired so callers can
-    /// prove the model (not the rule engine) made the call.
-    public func debugRunCrashModelInference(_ peakG: Double, _ speedKmh: Double) -> [String: Any?] {
+    /// Debug (#183): runs one synthetic window through the REAL crash pipeline —
+    /// the loaded ML model and the live `impactDetector` — so the model path can
+    /// be verified without a physical impact. Requires crash detection enabled.
+    ///
+    /// The model scores 5 features (peak_g, mean_g, gyro_peak_dps, speed_max, dv),
+    /// so a bare g-spike is correctly rejected. When `crashLike` is true we feed a
+    /// realistic crash profile (rotation + speed + sudden deceleration); when
+    /// false a benign bump (no rotation/speed) to show the model rejecting noise.
+    public func debugRunCrashModelInference(_ peakG: Double, _ speedKmh: Double, _ crashLike: Bool = true) -> [String: Any?] {
         guard let detector = impactDetector else {
             return [
                 "modelRan": false,
@@ -2342,18 +2345,29 @@ public final class TraceletSdk {
         samples.append(peakG)
         let window = computeAccelWindow(
             magnitudesG: samples, durationMs: Int64(Self.accelWindowInterval * 1000))
-        let gyroPeak = 0.0
+        // Crash-like corroboration: high rotation + a full speed drop (dv) at the
+        // given speed. Benign: no rotation, no speed drop (model should reject).
+        let gyroPeak = crashLike ? 250.0 : 0.0
+        let speedMax = speedKmh
+        let dv = crashLike ? speedKmh : 0.0
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         var crashProba = -1.0
         if let model = crashModel {
-            crashProba = model.predictProba(features: crashFeatureVector(model, window, gyroPeak))
+            let byName: [String: Double] = [
+                "peak_g": window.peakG,
+                "mean_g": window.meanG,
+                "gyro_peak_dps": gyroPeak,
+                "speed_max": speedMax,
+                "dv": dv,
+            ]
+            crashProba = model.predictProba(features: model.featureNames().map { byName[$0] ?? 0.0 })
         }
         let threshold = configManager.getCrashModelThreshold()
         let modelRan = crashProba >= 0.0
         logger.debug(
             String(
-                format: "crash model (debug): proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f modelRan=%@",
-                crashProba, window.peakG, speedKmh, threshold, modelRan ? "true" : "false"
+                format: "crash model (debug): proba=%.3f peak=%.2fg gyro=%.0f speed=%.1fkm/h dv=%.1f thr=%.3f modelRan=%@",
+                crashProba, window.peakG, gyroPeak, speedKmh, dv, threshold, modelRan ? "true" : "false"
             )
         )
         let candidate = detector.onImpactWindow(

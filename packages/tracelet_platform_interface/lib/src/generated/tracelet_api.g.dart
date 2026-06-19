@@ -5404,11 +5404,14 @@ class TraceletHostApi {
   /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
   /// through the SDK's real crash-detection pipeline — including the loaded ML
   /// crash model — so the model path can be verified without a physical impact.
-  /// Returns the model probability, threshold, and whether a crash candidate
-  /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
   Future<Map<String, Object?>> debugRunCrashModelInference(
     double peakG,
     double speedKmh,
+    bool crashLike,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference$pigeonVar_messageChannelSuffix';
@@ -5418,7 +5421,7 @@ class TraceletHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[peakG, speedKmh],
+      <Object?>[peakG, speedKmh, crashLike],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

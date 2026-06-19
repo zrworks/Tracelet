@@ -3370,9 +3370,11 @@ protocol TraceletHostApi {
   /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
   /// through the SDK's real crash-detection pipeline — including the loaded ML
   /// crash model — so the model path can be verified without a physical impact.
-  /// Returns the model probability, threshold, and whether a crash candidate
-  /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
-  func debugRunCrashModelInference(peakG: Double, speedKmh: Double, completion: @escaping (Result<[String: Any?], Error>) -> Void)
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
+  func debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Bool, completion: @escaping (Result<[String: Any?], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -4713,15 +4715,18 @@ class TraceletHostApiSetup {
     /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
     /// through the SDK's real crash-detection pipeline — including the loaded ML
     /// crash model — so the model path can be verified without a physical impact.
-    /// Returns the model probability, threshold, and whether a crash candidate
-    /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+    /// When [crashLike] is true the synthetic features represent a real crash
+    /// (rotation + speed + deceleration); when false a benign bump the model
+    /// should reject. Returns the model probability, threshold, and whether a
+    /// crash candidate fired. `modelRan` is false when no ML model is loaded.
     let debugRunCrashModelInferenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       debugRunCrashModelInferenceChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
         let peakGArg = args[0] as! Double
         let speedKmhArg = args[1] as! Double
-        api.debugRunCrashModelInference(peakG: peakGArg, speedKmh: speedKmhArg) { result in
+        let crashLikeArg = args[2] as! Bool
+        api.debugRunCrashModelInference(peakG: peakGArg, speedKmh: speedKmhArg, crashLike: crashLikeArg) { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))

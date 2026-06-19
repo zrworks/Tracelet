@@ -577,12 +577,14 @@ abstract class TraceletPlatform extends PlatformInterface {
     );
   }
 
-  /// Debug-only (#183): runs one synthetic high-g window through the real
+  /// Debug-only (#183): runs one synthetic window through the real
   /// crash-detection pipeline (including the loaded ML model) so the model
-  /// path can be verified without a physical impact.
+  /// path can be verified without a physical impact. [crashLike] selects a
+  /// real-crash feature profile vs a benign bump the model should reject.
   Future<Map<String, Object?>> debugRunCrashModelInference(
     double peakG,
     double speedKmh,
+    bool crashLike,
   ) {
     throw UnimplementedError(
       'debugRunCrashModelInference() has not been implemented.',

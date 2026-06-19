@@ -765,8 +765,8 @@ class TraceletHostApiImpl: TraceletHostApi {
         completion(.success(sdk.simulateTelematicsEvent(eventType: eventType, severity: severity, latitude: latitude, longitude: longitude)))
     }
 
-    func debugRunCrashModelInference(peakG: Double, speedKmh: Double, completion: @escaping (Result<[String: Any?], Error>) -> Void) {
-        completion(.success(sdk.debugRunCrashModelInference(peakG, speedKmh)))
+    func debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Bool, completion: @escaping (Result<[String: Any?], Error>) -> Void) {
+        completion(.success(sdk.debugRunCrashModelInference(peakG, speedKmh, crashLike)))
     }
 
     // MARK: - Scheduling

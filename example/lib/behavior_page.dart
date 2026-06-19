@@ -318,11 +318,16 @@ class _BehaviorPageState extends State<BehaviorPage> {
             );
           }
         case 'mlcrash':
+        case 'mlbenign':
           // Runs the REAL SDK pipeline (loaded ML model + live ImpactDetector),
           // unlike 'crash' which uses a throwaway rule-based detector.
+          // 'mlcrash' feeds a real crash profile (rotation + speed + sudden
+          // deceleration); 'mlbenign' feeds a bare g-spike the model rejects.
+          final crashLike = scenario == 'mlcrash';
           final r = await tl.Tracelet.debugRunCrashModelInference(
             peakG: 6,
             speedKmh: 80,
+            crashLike: crashLike,
           );
           if (r['error'] != null) {
             _logLine('🤖 ML inference unavailable: ${r['error']}');
@@ -331,9 +336,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
             final proba = (r['proba'] as num?)?.toDouble() ?? -1.0;
             final thr = (r['threshold'] as num?)?.toDouble() ?? 0.0;
             final fired = r['fired'] == true;
+            final label = crashLike ? 'crash-like input' : 'benign bump';
             if (ran) {
               _logLine(
-                '🤖 ML model ran: proba=${proba.toStringAsFixed(3)} '
+                '🤖 ML model ran ($label): proba=${proba.toStringAsFixed(3)} '
                 'thr=${thr.toStringAsFixed(3)} → '
                 '${fired ? "🆘 CRASH fired (${r['kind']})" : "below threshold (no crash)"}',
               );
@@ -644,6 +650,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
                 onPressed: () => _simulate('mlcrash'),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.purple),
                 child: const Text('Crash (ML model)'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('mlbenign'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.teal),
+                child: const Text('Benign bump (ML)'),
               ),
               OutlinedButton(
                 onPressed: () => _simulate('vehicle'),

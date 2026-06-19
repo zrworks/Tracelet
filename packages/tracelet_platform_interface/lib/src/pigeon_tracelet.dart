@@ -568,8 +568,9 @@ class PigeonTracelet extends TraceletPlatform {
   Future<Map<String, Object?>> debugRunCrashModelInference(
     double peakG,
     double speedKmh,
+    bool crashLike,
   ) async {
-    return _api.debugRunCrashModelInference(peakG, speedKmh);
+    return _api.debugRunCrashModelInference(peakG, speedKmh, crashLike);
   }
 
   @override

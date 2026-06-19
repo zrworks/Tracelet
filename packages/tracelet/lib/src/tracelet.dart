@@ -702,8 +702,9 @@ class Tracelet {
   static Future<Map<String, Object?>> debugRunCrashModelInference({
     double peakG = 5.0,
     double speedKmh = 60.0,
+    bool crashLike = true,
   }) {
-    return _platform.debugRunCrashModelInference(peakG, speedKmh);
+    return _platform.debugRunCrashModelInference(peakG, speedKmh, crashLike);
   }
 
   /// Get stored locations from the local database.

@@ -2725,7 +2725,7 @@ class TraceletSdk private constructor(private val context: Context) {
      * detection to be enabled. Returns proba/threshold/fired so callers can
      * prove the model (not the rule engine) made the call.
      */
-    fun debugRunCrashModelInference(peakG: Double, speedKmh: Double): Map<String, Any?> {
+    fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Boolean = true): Map<String, Any?> {
         val detector = impactDetector ?: return mapOf(
             "modelRan" to false,
             "fired" to false,
@@ -2746,11 +2746,22 @@ class TraceletSdk private constructor(private val context: Context) {
                 "error" to "computeAccelWindow failed: ${e.message}",
             )
         }
-        val gyroPeak = 0.0
+        // Crash-like corroboration: high rotation + a full speed drop (dv) at the
+        // given speed. Benign: no rotation, no speed drop (model should reject).
+        val gyroPeak = if (crashLike) 250.0 else 0.0
+        val speedMax = speedKmh
+        val dv = if (crashLike) speedKmh else 0.0
         val now = System.currentTimeMillis()
         val crashProba = crashModel?.let { model ->
             try {
-                model.predictProba(crashFeatureVector(model, window, gyroPeak))
+                val byName = mapOf(
+                    "peak_g" to window.peakG,
+                    "mean_g" to window.meanG,
+                    "gyro_peak_dps" to gyroPeak,
+                    "speed_max" to speedMax,
+                    "dv" to dv,
+                )
+                model.predictProba(model.featureNames().map { byName[it] ?: 0.0 })
             } catch (e: Exception) {
                 logger.error("crash model inference failed: ${e.message}")
                 -1.0
@@ -2759,10 +2770,12 @@ class TraceletSdk private constructor(private val context: Context) {
         val threshold = configManager.getCrashModelThreshold()
         val modelRan = crashProba >= 0.0
         logger.debug(
-            "crash model (debug): proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f modelRan=%b".format(
+            "crash model (debug): proba=%.3f peak=%.2fg gyro=%.0f speed=%.1fkm/h dv=%.1f thr=%.3f modelRan=%b".format(
                 crashProba,
                 window.peakG,
+                gyroPeak,
                 speedKmh,
+                dv,
                 threshold,
                 modelRan,
             ),

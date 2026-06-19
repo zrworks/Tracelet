@@ -1102,10 +1102,16 @@ abstract class TraceletHostApi {
   /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
   /// through the SDK's real crash-detection pipeline — including the loaded ML
   /// crash model — so the model path can be verified without a physical impact.
-  /// Returns the model probability, threshold, and whether a crash candidate
-  /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
   @async
-  Map<String, Object?> debugRunCrashModelInference(double peakG, double speedKmh);
+  Map<String, Object?> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  );
 }
 
 class TlTelematicsRecord {

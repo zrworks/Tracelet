@@ -698,6 +698,7 @@ class TraceletWebPlugin extends TraceletPlatform {
   Future<Map<String, Object?>> debugRunCrashModelInference(
     double peakG,
     double speedKmh,
+    bool crashLike,
   ) async {
     _events.log(
       'warning',

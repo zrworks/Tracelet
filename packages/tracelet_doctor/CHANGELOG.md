@@ -1,3 +1,7 @@
+## 3.5.0
+
+**FEAT**: Crash-detection ML model promoted from **beta to stable** (trained on a CC0 / public-domain dataset, cleared for commercial use) and the on-device model cache now auto-re-downloads on a new published version ([#183](https://github.com/Ikolvi/Tracelet/issues/183)).
+
 ## 3.4.2
 
  - Update a dependency to the latest release.

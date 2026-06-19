@@ -1,7 +1,7 @@
 import os
 
-version_from = "3.3.3"
-version_to = "3.3.4"
+version_from = "3.4.2"
+version_to = "3.5.0"
 
 # 1. Bump version strings
 exact_replacements = [
@@ -83,12 +83,15 @@ generic_changelogs = [
 
 changelog_addition = f"""## {version_to}
 
-**FIX**: resolve battery and extras DB persistence (#175)
+**FEAT**: Crash-detection ML model promoted from **beta to stable** — the shipped model is trained on the CC0 / public-domain Smartphone IMU Road Accident Detection dataset, so it is cleared for commercial use in production apps ([#183](https://github.com/Ikolvi/Tracelet/issues/183)).
+**FEAT**: The on-device encrypted model cache now auto-re-downloads when a new model version is published (SHA-256 of the cached blob no longer matches the expected digest), so model upgrades roll out in the same session instead of falling back to the rule engine for a cycle.
+**FEAT** (example): Driving & Safety page now shows a live crash-model download/load status indicator, a "Crash (ML model)" debug inference path, a "Benign bump" demo, and a bench "Throw-test" mode.
+**PERF**: Per-window crash-model probability is now logged for on-device observability.
 
 """
 generic_addition = f"""## {version_to}
 
-**CHORE**: bump version.
+**FEAT**: Crash-detection ML model promoted from **beta to stable** (trained on a CC0 / public-domain dataset, cleared for commercial use) and the on-device model cache now auto-re-downloads on a new published version ([#183](https://github.com/Ikolvi/Tracelet/issues/183)).
 
 """
 

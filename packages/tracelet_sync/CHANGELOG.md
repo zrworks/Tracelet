@@ -1,3 +1,7 @@
+## 3.5.0
+
+**FEAT**: Crash-detection ML model promoted from **beta to stable** (trained on a CC0 / public-domain dataset, cleared for commercial use) and the on-device model cache now auto-re-downloads on a new published version ([#183](https://github.com/Ikolvi/Tracelet/issues/183)).
+
 ## 3.4.2
 
  - **FIX**(sync): stop background sync on stop() ([#213](https://github.com/Ikolvi/Tracelet/issues/213)), address in default payload ([#212](https://github.com/Ikolvi/Tracelet/issues/212)), boot behavior engines ([#214](https://github.com/Ikolvi/Tracelet/issues/214) pt1). ([ab549621](https://github.com/Ikolvi/Tracelet/commit/ab549621eccd3bfd4ec674212fe2ce8729e114dd))

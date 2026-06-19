@@ -24,12 +24,13 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 
 ---
 
-## 🆕 New in 3.3.0 — Driving & Safety
+## 🆕 New in 3.5.0 — Stable AI Crash Detection
 
 On-device, opt-in, and battery-friendly — all detection runs in the shared Rust core (no cloud, no extra permissions for the location-based features):
 
+- **🤖 AI crash model — now stable** — gate crashes on a trained probability instead of a fixed g-threshold. The shipped model is trained on a **CC0 / public-domain** crash dataset, so it's **cleared for commercial use** in production apps. Opt-in and downloaded on demand (never embedded), AES-256-GCM encrypted, with automatic **rule-engine fallback** and **auto-update** when you publish a new model version. `ImpactConfig(crashModelUnlockUrl, crashModelLicenseKey)`.
 - **🚗 Driving telematics** — harsh braking / acceleration / cornering / speeding, each with a `0–1` severity score for trip scoring. `TelematicsConfig` + `Tracelet.onDrivingEvent`.
-- **💥 Crash & fall detection** — corroborated impact detection (a big jolt alone is never enough) with a user "I'm OK" cancel-countdown before it escalates to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`.
+- **💥 Crash & fall detection** — corroborated impact detection (a big jolt alone is never enough) with a user "I'm OK" cancel-countdown before it escalates to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`. → **[Crash & fall detection docs](https://tracelet.ikolvi.com/en/core/driving-safety#3-crash--fall-detection)**
 - **🚶 Transport-mode classifier** — still / walking / running / cycling / vehicle, fusing accelerometer + GPS. `ClassifierConfig` + `Tracelet.onModeChange`.
 - **🔋 Motion-gated wakelock (Android)** — drops the partial wakelock when stationary and re-asserts it on movement to cut idle battery drain. `AndroidConfig.releaseWakelockWhenStationary`.
 
@@ -114,10 +115,11 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 - **Wi-Fi-only sync** — `disableAutoSyncOnCellular` skips HTTP auto-sync on cellular networks, syncing only when connected to Wi-Fi. Supported on Android, iOS, and Web.
 - **Periodic mode** — Configurable one-shot location fixes at intervals from 60 seconds to 12 hours. Android supports sub-15-minute intervals via foreground service and exact alarms via `AlarmManager`.
 - **Tracelet Doctor Overlay** — Advanced in-app diagnostic dashboard overlay (`tracelet_doctor`) to visualize tracking state, active sensors, SQLite database queue size, and OEM optimizations with live warnings and actionable fixes.
-- **Driving telematics** *(new in 3.3.0)* — On-device harsh-braking / acceleration / cornering / speeding detection from the GPS stream, each with a `0–1` severity score. Opt-in via `TelematicsConfig`; subscribe with `onDrivingEvent()`. Also works on Web.
-- **Crash & fall detection** *(new in 3.3.0)* — Corroborated impact detection (hard jolt **while moving**) with a user cancel-countdown before escalation. Opt-in via `ImpactConfig`; subscribe with `onImpact()` and resolve with `confirmImpact()` / `cancelImpact()`. You own the SOS UX.
-- **Transport-mode classifier** *(new in 3.3.0)* — Fuses accelerometer + GPS to classify still / walking / running / cycling / vehicle with hysteresis. Opt-in via `ClassifierConfig`; subscribe with `onModeChange()`.
-- **Motion-gated wakelock (Android)** *(new in 3.3.0)* — Drops the OEM partial wakelock when stationary and re-asserts it on movement, cutting idle battery drain. Opt-in via `AndroidConfig.releaseWakelockWhenStationary` (gated on the significant-motion wake sensor).
+- **Driving telematics** — On-device harsh-braking / acceleration / cornering / speeding detection from the GPS stream, each with a `0–1` severity score. Opt-in via `TelematicsConfig`; subscribe with `onDrivingEvent()`. Also works on Web.
+- **Crash & fall detection** — Corroborated impact detection (hard jolt **while moving**) with a user cancel-countdown before escalation. Opt-in via `ImpactConfig`; subscribe with `onImpact()` and resolve with `confirmImpact()` / `cancelImpact()`. You own the SOS UX. → **[docs](https://tracelet.ikolvi.com/en/core/driving-safety#3-crash--fall-detection)**
+- **AI crash model (stable, licensed)** — Optional trained model that gates crashes on a learned probability; downloaded on demand, AES-256-GCM encrypted, with rule-engine fallback and auto-update. Trained on a CC0 / public-domain dataset (commercial-use OK). Opt-in via `ImpactConfig(crashModelUnlockUrl, crashModelLicenseKey)`.
+- **Transport-mode classifier** — Fuses accelerometer + GPS to classify still / walking / running / cycling / vehicle with hysteresis. Opt-in via `ClassifierConfig`; subscribe with `onModeChange()`.
+- **Motion-gated wakelock (Android)** — Drops the OEM partial wakelock when stationary and re-asserts it on movement, cutting idle battery drain. Opt-in via `AndroidConfig.releaseWakelockWhenStationary` (gated on the significant-motion wake sensor).
 - **Telematics & Diagnostics APIs** — Retrieve raw telematics events (`getTelematicsEvents`), simulate mock events for testing (`simulateTelematicsEvent`), and access system logs (`getLogs`, `clearLogs`) directly from Dart, Kotlin, and Swift. The `tracelet_doctor` overlay bundles health + config + logs + telematics into a one-tap, paste-ready **bug report** (secrets redacted).
 - **Live map view** — Built-in example with OpenStreetMap tiles, speed-colored route trail, geofence visualization, trip overlay, and real-time status overlay.
 

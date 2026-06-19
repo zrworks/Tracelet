@@ -133,14 +133,12 @@ result to drive battery/sampling behaviour.
 
 ## 3. Crash & fall detection
 
-<Callout type="warning">
-**BETA:** Crash & fall detection is currently in **Beta**. Here is what that means for you:
-
-To make the crash detection smart, we trained it using a public dataset of real-world car crashes. However, that specific dataset has a strict "non-commercial" license. 
-
-**What this means:** You are completely free to test, experiment, and play around with this feature! However, you **cannot** use the crash detection feature in a commercial (business or paid) app right now unless you obtain permission from the original dataset authors. 
-
-We are actively working on building our own fully open-source crash dataset so we can drop this restriction and make this feature 100% free for everyone to use in production soon. You can follow our progress on [Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
+<Callout type="info">
+**Production-ready.** Crash detection ships with a stable on-device pipeline: a
+**rule engine** by default, plus an optional licensed **AI crash model** trained
+on a **CC0 / public-domain** crash dataset — so it is cleared for commercial use
+in production apps. Fall detection remains opt-in and best-effort. Track ongoing
+accuracy research in [Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
 </Callout>
 
 Detects a likely crash (a hard impact **while moving**) or, optionally, a

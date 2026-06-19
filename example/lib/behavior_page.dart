@@ -109,7 +109,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
   Future<void> _applyConfig() async {
     await _ensureReady();
     final licenseKey = _licenseCtrl.text.trim();
-    final useMl = _useMlModel && licenseKey.isNotEmpty;
+    // Throw-test mode forces the rule engine: the ML model scores `speed_max`
+    // and `dv` (pre-impact speed drop), both zero on a stationary phone, so it
+    // can never classify a bench throw as a crash (by design). The g-threshold
+    // rule fires on raw peak-g alone, which is what a physical throw can drive.
+    final useMl = _useMlModel && licenseKey.isNotEmpty && !_throwTestMode;
     await tl.Tracelet.setConfig(
       tl.Config(
         // Debug logging so the crash-model lifecycle (unlock → download →
@@ -607,8 +611,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Throw-test mode (bench)'),
                     subtitle: const Text(
-                      'Drops the 25 km/h speed gate to 0 so a stationary '
-                      'throw can fire the model. Turn OFF for real driving.',
+                      'Physical bench test: drops the 25 km/h speed gate AND '
+                      'uses the rule engine (fires on raw g-force ≥ 2g). The ML '
+                      'model can\'t score a stationary throw — use the "Crash '
+                      '(ML model)" button to test the model itself.',
                     ),
                     value: _throwTestMode,
                     onChanged: (v) async {
@@ -616,10 +622,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
                       await _applyConfig();
                       _logLine(
                         v
-                            ? '🧪 Throw-test mode ON — speed gate disabled '
-                                  '(throw the phone onto a bed)'
-                            : '🧪 Throw-test mode OFF — speed gate restored '
-                                  '(25 km/h)',
+                            ? '🧪 Throw-test mode ON — rule engine + speed gate '
+                                  'off. Throw the phone onto a bed; watch for '
+                                  '"potential_crash".'
+                            : '🧪 Throw-test mode OFF — ML model + 25 km/h gate '
+                                  'restored',
                       );
                     },
                   ),

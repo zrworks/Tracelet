@@ -152,10 +152,11 @@ impact: ImpactConfig(
 | `crashModelSha256` | `null` | hex SHA-256 of the blob, verified after download |
 | `crashModelThreshold` | `0.5` | probability at which the model flags a crash |
 
-The SDK downloads + SHA-verifies the blob, decrypts it **in memory** with a
-runtime-injected key, and runs it; any failure ⇒ **rule-engine fallback**. The
-key is **never shipped in the app** — fetch it from a licensing endpoint you
-control (see [`cloudflare/crash-model-unlock`](../cloudflare/crash-model-unlock/README.md)).
+The SDK downloads + SHA-verifies the blob (caching it on-device so it is fetched
+once, and re-downloading automatically when you publish a new version with a
+fresh digest), decrypts it **in memory** with a runtime-injected key, and runs
+it; any failure ⇒ **rule-engine fallback**. The key is **never shipped in the
+app** — fetch it from a licensing endpoint you control.
 
 **Android (optional, prod licenses only):** for anti-piracy you bind the model to
 your signed, published app via **Play Integrity**. Add it **only if you use a
@@ -168,8 +169,10 @@ dependencies {
 }
 ```
 
-> The trained model is **Beta / licensing-gated** ([#183](https://github.com/Ikolvi/Tracelet/issues/183));
-> the load/secure/gate infrastructure is in place.
+> The trained model is **stable**. It is trained on the **CC0 / public-domain**
+> Smartphone IMU Road Accident Detection dataset, so it is cleared for
+> commercial use, and the load → SHA-verify → decrypt → gate pipeline (with
+> rule-engine fallback) is production-ready ([#183](https://github.com/Ikolvi/Tracelet/issues/183)).
 
 ---
 

@@ -2154,7 +2154,9 @@ public final class TraceletSdk {
             rawAccelBuffer.removeAll()
             rawAccelBufferLock.unlock()
             let wasInFreeFall = (minTotalG ?? 1.0) < 0.5
-            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs) {
+            // iOS uses the rule engine for impact (no ML crash model on iOS yet):
+            // crashProba < 0 ⇒ the g-threshold rule decides; threshold is unused.
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: -1.0, crashProbaThreshold: 0.5) {
                 emitImpact(candidate)
                 // Keep the countdown alive even if tracking stops right after the
                 // crash (vehicle comes to rest → stopTimeout disables tracking).

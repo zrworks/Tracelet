@@ -43,6 +43,9 @@ impl ImpactDetectorDart {
             latitude,
             longitude,
             now_ms,
+            // FRB/Dart path uses the rule engine (no ML gating here). -1 ⇒ rule.
+            -1.0,
+            0.5,
         )
     }
 

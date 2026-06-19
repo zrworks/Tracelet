@@ -41,33 +41,33 @@ void main() {
     expect(r['proba']! as double, closeTo(0.65, 1e-6));
   });
 
-  test('#183 Phase 2b: loader downloads + verifies sha + decrypts on-device',
-      () async {
-    // Serve the encrypted blob over loopback; the native loader downloads it,
-    // verifies the SHA-256, decrypts (AES-GCM), caches, and scores.
-    final blob = base64.decode(blobB64);
-    const sha256Hex =
-        '12155f25fc8b5b668c04f8c0deb30501c84985d0982d55c74f6a8b20dca27cd3';
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    server.listen((req) async {
-      req.response.add(blob);
-      await req.response.close();
-    });
-    addTearDown(() => server.close(force: true));
+  test(
+    '#183 Phase 2b: loader downloads + verifies sha + decrypts on-device',
+    () async {
+      // Serve the encrypted blob over loopback; the native loader downloads it,
+      // verifies the SHA-256, decrypts (AES-GCM), caches, and scores.
+      final blob = base64.decode(blobB64);
+      const sha256Hex =
+          '12155f25fc8b5b668c04f8c0deb30501c84985d0982d55c74f6a8b20dca27cd3';
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((req) async {
+        req.response.add(blob);
+        await req.response.close();
+      });
+      addTearDown(() => server.close(force: true));
 
-    final res = await debug.invokeMapMethod<String, Object?>(
-      'debugCrashModelLoad',
-      {
-        'url': 'http://127.0.0.1:${server.port}/model.enc',
-        'sha256': sha256Hex,
-        'key': keyB64,
-      },
-    );
-    expect(res, isNotNull);
-    final r = res!;
-    expect(r['treeCount'], 2);
-    expect(r['proba']! as double, closeTo(0.65, 1e-6));
-  });
+      final res = await debug
+          .invokeMapMethod<String, Object?>('debugCrashModelLoad', {
+            'url': 'http://127.0.0.1:${server.port}/model.enc',
+            'sha256': sha256Hex,
+            'key': keyB64,
+          });
+      expect(res, isNotNull);
+      final r = res!;
+      expect(r['treeCount'], 2);
+      expect(r['proba']! as double, closeTo(0.65, 1e-6));
+    },
+  );
 
   test('#183: wrong key fails to decrypt (PlatformException)', () async {
     // All-zero key ≠ the real key → AES-GCM auth fails.

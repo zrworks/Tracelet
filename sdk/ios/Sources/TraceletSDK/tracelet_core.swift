@@ -1080,6 +1080,221 @@ public func FfiConverterTypeBatteryBudgetEngine_lower(_ value: BatteryBudgetEngi
 
 
 /**
+ * On-device crash classifier (random-forest tree-walker).
+ */
+public protocol CrashModelProtocol: AnyObject, Sendable {
+    
+    /**
+     * Ordered feature names the model expects (the host must supply `predict`
+     * values in this exact order).
+     */
+    func featureNames()  -> [String]
+    
+    /**
+     * Convenience: `predict_proba(features) >= threshold`.
+     */
+    func isCrash(features: [Double], threshold: Double)  -> Bool
+    
+    /**
+     * Probability of a crash (class `1`) in `[0, 1]` for one feature vector,
+     * averaged across all trees. `features` must be in [`feature_names`] order;
+     * a wrong length returns `0.0` (never panics on the hot path).
+     */
+    func predictProba(features: [Double])  -> Double
+    
+    /**
+     * Number of trees (diagnostics).
+     */
+    func treeCount()  -> UInt32
+    
+}
+/**
+ * On-device crash classifier (random-forest tree-walker).
+ */
+open class CrashModel: CrashModelProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_tracelet_core_fn_clone_crashmodel(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_tracelet_core_fn_free_crashmodel(handle, $0) }
+    }
+
+    
+    /**
+     * Loads from an **AES-256-GCM encrypted** model blob (#183 — keeps the paid
+     * model from being grabbed off a plain URL/cache). The blob layout matches
+     * the SDK's encrypted-payload format: `[0x01][nonce:12][ciphertext]`.
+     *
+     * `key` is a **32-byte** key supplied at runtime by the host — it is never
+     * hardcoded in this (open-source) repo. Returns a `Config` error on a bad
+     * key/blob (wrong key, tampered data) or malformed decrypted JSON.
+     */
+public static func fromEncrypted(blob: Data, key: Data)throws  -> CrashModel  {
+    return try  FfiConverterTypeCrashModel_lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_constructor_crashmodel_from_encrypted(
+        FfiConverterData.lower(blob),
+        FfiConverterData.lower(key),$0
+    )
+})
+}
+    
+    /**
+     * Loads a model from the training-notebook JSON. Returns a `Config` error if
+     * the JSON is malformed or the positive class (`1`) is absent.
+     */
+public static func fromJson(json: String)throws  -> CrashModel  {
+    return try  FfiConverterTypeCrashModel_lift(try rustCallWithError(FfiConverterTypeTraceletError_lift) {
+    uniffi_tracelet_core_fn_constructor_crashmodel_from_json(
+        FfiConverterString.lower(json),$0
+    )
+})
+}
+    
+
+    
+    /**
+     * Ordered feature names the model expects (the host must supply `predict`
+     * values in this exact order).
+     */
+open func featureNames() -> [String]  {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_crashmodel_feature_names(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+    /**
+     * Convenience: `predict_proba(features) >= threshold`.
+     */
+open func isCrash(features: [Double], threshold: Double) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_crashmodel_is_crash(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceDouble.lower(features),
+        FfiConverterDouble.lower(threshold),$0
+    )
+})
+}
+    
+    /**
+     * Probability of a crash (class `1`) in `[0, 1]` for one feature vector,
+     * averaged across all trees. `features` must be in [`feature_names`] order;
+     * a wrong length returns `0.0` (never panics on the hot path).
+     */
+open func predictProba(features: [Double]) -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_crashmodel_predict_proba(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceDouble.lower(features),$0
+    )
+})
+}
+    
+    /**
+     * Number of trees (diagnostics).
+     */
+open func treeCount() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_crashmodel_tree_count(
+            self.uniffiCloneHandle(),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCrashModel: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CrashModel
+
+    public static func lift(_ handle: UInt64) throws -> CrashModel {
+        return CrashModel(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CrashModel) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CrashModel {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CrashModel, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCrashModel_lift(_ handle: UInt64) throws -> CrashModel {
+    return try FfiConverterTypeCrashModel.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCrashModel_lower(_ value: CrashModel) -> UInt64 {
+    return FfiConverterTypeCrashModel.lower(value)
+}
+
+
+
+
+
+
+/**
  * Central database manager handling standard SQLite and secure AES-256 encrypted storage.
  * Coordinates reading and writing of geofences, privacy zones, location history, and audit trail records.
  */
@@ -2322,7 +2537,7 @@ public protocol ImpactDetectorProtocol: AnyObject, Sendable {
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-    func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64)  -> ImpactEvent?
+    func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double)  -> ImpactEvent?
     
     /**
      * Number of candidates awaiting confirmation.
@@ -2445,7 +2660,7 @@ open func confirm(id: Int64, nowMs: Int64) -> ImpactEvent?  {
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64) -> ImpactEvent?  {
+open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double) -> ImpactEvent?  {
     return try!  FfiConverterOptionTypeImpactEvent.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
             self.uniffiCloneHandle(),
@@ -2456,7 +2671,9 @@ open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Dou
         FfiConverterBool.lower(isOnFoot),
         FfiConverterDouble.lower(latitude),
         FfiConverterDouble.lower(longitude),
-        FfiConverterInt64.lower(nowMs),$0
+        FfiConverterInt64.lower(nowMs),
+        FfiConverterDouble.lower(crashProba),
+        FfiConverterDouble.lower(crashProbaThreshold),$0
     )
 })
 }
@@ -9242,6 +9459,18 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_func_sha256() != 14625) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_tracelet_core_checksum_method_crashmodel_feature_names() != 11927) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_crashmodel_is_crash() != 128) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_crashmodel_predict_proba() != 43111) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_crashmodel_tree_count() != 12953) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_tracelet_core_checksum_method_impactdetector_cancel() != 42443) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9251,7 +9480,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 1298) {
+    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 41797) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414) {
@@ -9504,6 +9733,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary() != 15189) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_crashmodel_from_encrypted() != 59752) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_constructor_crashmodel_from_json() != 24161) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_constructor_impactdetector_new() != 56951) {

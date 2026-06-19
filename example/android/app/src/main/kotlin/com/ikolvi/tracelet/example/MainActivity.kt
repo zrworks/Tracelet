@@ -61,6 +61,10 @@ class MainActivity : FlutterActivity() {
                     val url = call.argument<String>("url")!!
                     val sha = call.argument<String?>("sha256")
                     val keyB64 = call.argument<String>("key")!!
+                    // Optional feature vector to score (defaults to the synthetic
+                    // blob's single feature). For the real model pass the 5 features
+                    // in featureNames order: peak_g, dv, gyro_peak_dps, speed_max, mean_g.
+                    val features = call.argument<List<Double>>("features") ?: listOf(3.0)
                     Thread {
                         try {
                             com.ikolvi.tracelet.sdk.crash.CrashModelLoader.decryptionKey =
@@ -81,7 +85,8 @@ class MainActivity : FlutterActivity() {
                                     result.success(
                                         mapOf(
                                             "treeCount" to model.treeCount().toInt(),
-                                            "proba" to model.predictProba(listOf(3.0)),
+                                            "featureNames" to model.featureNames(),
+                                            "proba" to model.predictProba(features),
                                         ),
                                     )
                                 }

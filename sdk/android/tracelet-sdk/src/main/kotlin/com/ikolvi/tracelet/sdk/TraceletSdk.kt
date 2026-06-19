@@ -149,6 +149,12 @@ class TraceletSdk private constructor(private val context: Context) {
     private val accelWindowMs = 1000L
     private val impactConfirmPollMs = 1000L
 
+    // #183 ML features: recent GPS speed history (timestamp ms → km/h) used to
+    // derive the model's `speed_max` and `dv` (pre-impact speed drop) over the
+    // same ~16 s event window the crash model was trained on.
+    private val crashSpeedWindowMs = 16_000L
+    private val speedHistory = ArrayDeque<Pair<Long, Double>>()
+
     var activity: Activity? = null
     var isReady: Boolean = false
         private set
@@ -2379,16 +2385,19 @@ class TraceletSdk private constructor(private val context: Context) {
 
     /** Feeds an accepted location fix to the telematics engine and emits events. */
     private fun processTelematics(location: Map<String, Any?>) {
-        val engine = telematicsEngine ?: return
         @Suppress("UNCHECKED_CAST")
         val coords = location["coords"] as? Map<String, Any?> ?: return
         val speed = (coords["speed"] as? Number)?.toDouble() ?: 0.0
         val heading = (coords["heading"] as? Number)?.toDouble() ?: -1.0
         val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0
         val lng = (coords["longitude"] as? Number)?.toDouble() ?: 0.0
+        // Capture speed/position for impact gating + the ML speed-history window
+        // unconditionally — crash detection can run without driving events.
         lastSpeedMps = speed
         lastLat = lat
         lastLng = lng
+        recordSpeedSample(speed)
+        val engine = telematicsEngine ?: return
         val events = try {
             engine.processFix(speed, heading, lat, lng, System.currentTimeMillis())
         } catch (e: Exception) {
@@ -2477,6 +2486,52 @@ class TraceletSdk private constructor(private val context: Context) {
         mainHandler.postDelayed(runnable, impactConfirmPollMs)
     }
 
+    /**
+     * Records one GPS speed sample (m/s) into the rolling crash speed-history
+     * window, evicting samples older than [crashSpeedWindowMs]. Feeds the ML
+     * model's `speed_max` / `dv` features (#183).
+     */
+    private fun recordSpeedSample(speedMps: Double) {
+        val now = System.currentTimeMillis()
+        synchronized(speedHistory) {
+            speedHistory.addLast(now to speedMps)
+            val cutoff = now - crashSpeedWindowMs
+            while (speedHistory.isNotEmpty() && speedHistory.first().first < cutoff) {
+                speedHistory.removeFirst()
+            }
+        }
+    }
+
+    /**
+     * Builds the crash model's feature vector for this accel window, ordered to
+     * match [CrashModel.featureNames]. Features (training units): `peak_g` and
+     * `mean_g` in g, `gyro_peak_dps` in deg/s, `speed_max` and `dv` (pre-impact
+     * speed drop) in **km/h** over the recent speed-history window (#183).
+     */
+    private fun crashFeatureVector(
+        model: uniffi.tracelet_core.CrashModel,
+        window: uniffi.tracelet_core.AccelWindow,
+        gyroPeakDps: Double,
+    ): List<Double> {
+        val speedsKmh: List<Double>
+        synchronized(speedHistory) {
+            speedsKmh = speedHistory.map { it.second * 3.6 }
+        }
+        val speedMax = speedsKmh.maxOrNull() ?: (lastSpeedMps * 3.6)
+        val speedMin = speedsKmh.minOrNull() ?: (lastSpeedMps * 3.6)
+        val dv = speedMax - speedMin
+        val byName = mapOf(
+            "peak_g" to window.peakG,
+            "mean_g" to window.meanG,
+            "gyro_peak_dps" to gyroPeakDps,
+            "speed_max" to speedMax,
+            "dv" to dv,
+        )
+        // Order by the model's declared feature names so a retrained/reordered
+        // model still maps correctly; unknown names default to 0.0.
+        return model.featureNames().map { byName[it] ?: 0.0 }
+    }
+
     /** Snapshots the accel buffer into one window and feeds classifier + impact. */
     private fun processAccelWindow() {
         val samples: List<Double>
@@ -2527,6 +2582,18 @@ class TraceletSdk private constructor(private val context: Context) {
                 wasInFreeFall = minTotalG != null && minTotalG < 0.5
                 rawAccelBuffer.clear()
             }
+            // #183 ML gating (Replace mode): when the opt-in model is loaded, run
+            // inference for this window and let its probability decide the crash
+            // (still speed-gated in the core). `crashProba < 0` ⇒ no model ⇒ the
+            // g-threshold rule is used instead.
+            val crashProba = crashModel?.let { model ->
+                try {
+                    model.predictProba(crashFeatureVector(model, window, gyroPeak))
+                } catch (e: Exception) {
+                    logger.error("crash model inference failed: ${e.message}")
+                    -1.0
+                }
+            } ?: -1.0
             val candidate = detector.onImpactWindow(
                 window.peakG,
                 lastSpeedMps,
@@ -2536,6 +2603,8 @@ class TraceletSdk private constructor(private val context: Context) {
                 lastLat,
                 lastLng,
                 now,
+                crashProba,
+                configManager.getCrashModelThreshold(),
             )
             if (candidate != null) {
                 emitImpact(candidate)

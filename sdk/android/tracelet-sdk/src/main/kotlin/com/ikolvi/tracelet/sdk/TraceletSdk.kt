@@ -2645,6 +2645,23 @@ class TraceletSdk private constructor(private val context: Context) {
                     -1.0
                 }
             } ?: -1.0
+            // Observability (#183): surface each real model inference so the
+            // model path can be verified on-device. Only logged when the model
+            // actually ran (crashProba >= 0) and the window has a notable peak,
+            // to avoid spamming the ~1 Hz idle loop.
+            if (crashProba >= 0.0 && window.peakG > 1.5) {
+                val thr = configManager.getCrashModelThreshold()
+                val verdict = if (crashProba >= thr) "CRASH" else "below-threshold"
+                logger.debug(
+                    "crash model: proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f → %s".format(
+                        crashProba,
+                        window.peakG,
+                        lastSpeedMps * 3.6,
+                        thr,
+                        verdict,
+                    ),
+                )
+            }
             val candidate = detector.onImpactWindow(
                 window.peakG,
                 lastSpeedMps,
@@ -2700,6 +2717,81 @@ class TraceletSdk private constructor(private val context: Context) {
 
     /** Cancels a pending impact candidate (called from the Pigeon host API). */
     fun cancelImpact(id: Long): Boolean = impactDetector?.cancel(id) ?: false
+
+    /**
+     * Debug (#183): runs one synthetic high-g window through the REAL crash
+     * pipeline — the loaded ML model and the live [impactDetector] — so the
+     * model path can be verified without a physical impact. Requires crash
+     * detection to be enabled. Returns proba/threshold/fired so callers can
+     * prove the model (not the rule engine) made the call.
+     */
+    fun debugRunCrashModelInference(peakG: Double, speedKmh: Double): Map<String, Any?> {
+        val detector = impactDetector ?: return mapOf(
+            "modelRan" to false,
+            "fired" to false,
+            "error" to "crash detection not enabled — toggle it on and start tracking first",
+        )
+        val speedMps = speedKmh / 3.6
+        // Synthesize a window: baseline ~1 g with a single spike at peakG.
+        val samples = ArrayList<Double>(50).apply {
+            repeat(49) { add(1.0) }
+            add(peakG)
+        }
+        val window = try {
+            uniffi.tracelet_core.computeAccelWindow(samples, accelWindowMs)
+        } catch (e: Exception) {
+            return mapOf(
+                "modelRan" to false,
+                "fired" to false,
+                "error" to "computeAccelWindow failed: ${e.message}",
+            )
+        }
+        val gyroPeak = 0.0
+        val now = System.currentTimeMillis()
+        val crashProba = crashModel?.let { model ->
+            try {
+                model.predictProba(crashFeatureVector(model, window, gyroPeak))
+            } catch (e: Exception) {
+                logger.error("crash model inference failed: ${e.message}")
+                -1.0
+            }
+        } ?: -1.0
+        val threshold = configManager.getCrashModelThreshold()
+        val modelRan = crashProba >= 0.0
+        logger.debug(
+            "crash model (debug): proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f modelRan=%b".format(
+                crashProba,
+                window.peakG,
+                speedKmh,
+                threshold,
+                modelRan,
+            ),
+        )
+        val candidate = detector.onImpactWindow(
+            window.peakG,
+            speedMps,
+            gyroPeak,
+            false,
+            speedKmh < configManager.getCrashMinSpeedKmh(),
+            lastLat,
+            lastLng,
+            now,
+            crashProba,
+            threshold,
+        )
+        if (candidate != null) {
+            emitImpact(candidate)
+            ensureImpactConfirmLoop()
+        }
+        return mapOf(
+            "modelRan" to modelRan,
+            "proba" to crashProba,
+            "threshold" to threshold,
+            "peakG" to window.peakG,
+            "fired" to (candidate != null),
+            "kind" to candidate?.kind,
+        )
+    }
 
     private fun startBatteryBudgetSampling() {
         stopBatteryBudgetSampling()

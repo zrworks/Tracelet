@@ -3367,6 +3367,12 @@ protocol TraceletHostApi {
   func destroyTelematicsEvents(completion: @escaping (Result<Bool, Error>) -> Void)
   func getLogs(limit: Int64, completion: @escaping (Result<[TlLogEntry?], Error>) -> Void)
   func clearLogs(completion: @escaping (Result<Void, Error>) -> Void)
+  /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+  /// through the SDK's real crash-detection pipeline — including the loaded ML
+  /// crash model — so the model path can be verified without a physical impact.
+  /// Returns the model probability, threshold, and whether a crash candidate
+  /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+  func debugRunCrashModelInference(peakG: Double, speedKmh: Double, completion: @escaping (Result<[String: Any?], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -4703,6 +4709,29 @@ class TraceletHostApiSetup {
       }
     } else {
       clearLogsChannel.setMessageHandler(nil)
+    }
+    /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+    /// through the SDK's real crash-detection pipeline — including the loaded ML
+    /// crash model — so the model path can be verified without a physical impact.
+    /// Returns the model probability, threshold, and whether a crash candidate
+    /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+    let debugRunCrashModelInferenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      debugRunCrashModelInferenceChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let peakGArg = args[0] as! Double
+        let speedKmhArg = args[1] as! Double
+        api.debugRunCrashModelInference(peakG: peakGArg, speedKmh: speedKmhArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      debugRunCrashModelInferenceChannel.setMessageHandler(nil)
     }
   }
 }

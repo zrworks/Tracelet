@@ -900,6 +900,12 @@ class TraceletHostApiImpl(
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 
+    override fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, callback: (Result<Map<String, Any?>>) -> Unit) {
+        try {
+            callback(Result.success(sdk.debugRunCrashModelInference(peakG, speedKmh)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
     // =========================================================================
     // Scheduling
     // =========================================================================

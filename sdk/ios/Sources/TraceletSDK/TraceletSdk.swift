@@ -2273,6 +2273,20 @@ public final class TraceletSdk {
             if let model = crashModel {
                 crashProba = model.predictProba(features: crashFeatureVector(model, window, gyroPeak))
             }
+            // Observability (#183): surface each real model inference so the
+            // model path can be verified on-device. Only logged when the model
+            // actually ran (crashProba >= 0) and the window has a notable peak,
+            // to avoid spamming the ~1 Hz idle loop.
+            if crashProba >= 0.0 && window.peakG > 1.5 {
+                let thr = configManager.getCrashModelThreshold()
+                let verdict = crashProba >= thr ? "CRASH" : "below-threshold"
+                logger.debug(
+                    String(
+                        format: "crash model: proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f → %@",
+                        crashProba, window.peakG, lastSpeedMps * 3.6, thr, verdict
+                    )
+                )
+            }
             if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: crashProba, crashProbaThreshold: configManager.getCrashModelThreshold()) {
                 emitImpact(candidate)
                 // Keep the countdown alive even if tracking stops right after the
@@ -2307,6 +2321,58 @@ public final class TraceletSdk {
     /// Cancels a pending impact candidate (called from the Pigeon host API).
     public func cancelImpact(_ id: Int64) -> Bool {
         return impactDetector?.cancel(id: id) ?? false
+    }
+
+    /// Debug (#183): runs one synthetic high-g window through the REAL crash
+    /// pipeline — the loaded ML model and the live `impactDetector` — so the
+    /// model path can be verified without a physical impact. Requires crash
+    /// detection to be enabled. Returns proba/threshold/fired so callers can
+    /// prove the model (not the rule engine) made the call.
+    public func debugRunCrashModelInference(_ peakG: Double, _ speedKmh: Double) -> [String: Any?] {
+        guard let detector = impactDetector else {
+            return [
+                "modelRan": false,
+                "fired": false,
+                "error": "crash detection not enabled — toggle it on and start tracking first",
+            ]
+        }
+        let speedMps = speedKmh / 3.6
+        // Synthesize a window: baseline ~1 g with a single spike at peakG.
+        var samples = [Double](repeating: 1.0, count: 49)
+        samples.append(peakG)
+        let window = computeAccelWindow(
+            magnitudesG: samples, durationMs: Int64(Self.accelWindowInterval * 1000))
+        let gyroPeak = 0.0
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        var crashProba = -1.0
+        if let model = crashModel {
+            crashProba = model.predictProba(features: crashFeatureVector(model, window, gyroPeak))
+        }
+        let threshold = configManager.getCrashModelThreshold()
+        let modelRan = crashProba >= 0.0
+        logger.debug(
+            String(
+                format: "crash model (debug): proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f modelRan=%@",
+                crashProba, window.peakG, speedKmh, threshold, modelRan ? "true" : "false"
+            )
+        )
+        let candidate = detector.onImpactWindow(
+            peakG: window.peakG, speedBeforeMps: speedMps, gyroPeakDps: gyroPeak,
+            wasInFreeFall: false, isOnFoot: speedKmh < configManager.getCrashMinSpeedKmh(),
+            latitude: lastLat, longitude: lastLng, nowMs: nowMs,
+            crashProba: crashProba, crashProbaThreshold: threshold)
+        if let candidate = candidate {
+            emitImpact(candidate)
+            ensureImpactConfirmLoop()
+        }
+        return [
+            "modelRan": modelRan,
+            "proba": crashProba,
+            "threshold": threshold,
+            "peakG": window.peakG,
+            "fired": candidate != nil,
+            "kind": candidate?.kind,
+        ]
     }
 
     // MARK: - Private: Battery Budget Sampling

@@ -694,6 +694,18 @@ class TraceletWebPlugin extends TraceletPlatform {
     return false;
   }
 
+  @override
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+  ) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] debugRunCrashModelInference() is not supported on web',
+    );
+    return {'modelRan': false, 'fired': false, 'error': 'unsupported on web'};
+  }
+
   // ---------------------------------------------------------------------------
   // Scheduling (foreground-only timers)
   // ---------------------------------------------------------------------------

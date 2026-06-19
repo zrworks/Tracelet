@@ -3561,6 +3561,14 @@ interface TraceletHostApi {
   fun destroyTelematicsEvents(callback: (Result<Boolean>) -> Unit)
   fun getLogs(limit: Long, callback: (Result<List<TlLogEntry?>>) -> Unit)
   fun clearLogs(callback: (Result<Unit>) -> Unit)
+  /**
+   * Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+   * through the SDK's real crash-detection pipeline — including the loaded ML
+   * crash model — so the model path can be verified without a physical impact.
+   * Returns the model probability, threshold, and whether a crash candidate
+   * fired. `modelRan` is false when no ML model is loaded (rule engine only).
+   */
+  fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, callback: (Result<Map<String, Any?>>) -> Unit)
 
   companion object {
     /** The codec used by TraceletHostApi. */
@@ -5137,6 +5145,27 @@ interface TraceletHostApi {
                 reply.reply(TraceletApiPigeonUtils.wrapError(error))
               } else {
                 reply.reply(TraceletApiPigeonUtils.wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val peakGArg = args[0] as Double
+            val speedKmhArg = args[1] as Double
+            api.debugRunCrashModelInference(peakGArg, speedKmhArg) { result: Result<Map<String, Any?>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
               }
             }
           }

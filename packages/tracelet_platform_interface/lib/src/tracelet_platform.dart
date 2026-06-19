@@ -577,6 +577,18 @@ abstract class TraceletPlatform extends PlatformInterface {
     );
   }
 
+  /// Debug-only (#183): runs one synthetic high-g window through the real
+  /// crash-detection pipeline (including the loaded ML model) so the model
+  /// path can be verified without a physical impact.
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+  ) {
+    throw UnimplementedError(
+      'debugRunCrashModelInference() has not been implemented.',
+    );
+  }
+
   /// Gets log entries up to a given [limit].
   Future<List<TlLogEntry?>> getLogs(int limit) {
     throw UnimplementedError('getLogs() has not been implemented.');

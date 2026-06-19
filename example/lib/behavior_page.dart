@@ -317,6 +317,34 @@ class _BehaviorPageState extends State<BehaviorPage> {
               '→ would auto-confirm in ${((c.confirmDeadlineMs is BigInt ? (c.confirmDeadlineMs as dynamic).toInt() : c.confirmDeadlineMs) / 1000).round()}s',
             );
           }
+        case 'mlcrash':
+          // Runs the REAL SDK pipeline (loaded ML model + live ImpactDetector),
+          // unlike 'crash' which uses a throwaway rule-based detector.
+          final r = await tl.Tracelet.debugRunCrashModelInference(
+            peakG: 6,
+            speedKmh: 80,
+          );
+          if (r['error'] != null) {
+            _logLine('🤖 ML inference unavailable: ${r['error']}');
+          } else {
+            final ran = r['modelRan'] == true;
+            final proba = (r['proba'] as num?)?.toDouble() ?? -1.0;
+            final thr = (r['threshold'] as num?)?.toDouble() ?? 0.0;
+            final fired = r['fired'] == true;
+            if (ran) {
+              _logLine(
+                '🤖 ML model ran: proba=${proba.toStringAsFixed(3)} '
+                'thr=${thr.toStringAsFixed(3)} → '
+                '${fired ? "🆘 CRASH fired (${r['kind']})" : "below threshold (no crash)"}',
+              );
+            } else {
+              _logLine(
+                '⚠️ No ML model loaded — rule engine only '
+                '(${fired ? "fired ${r['kind']}" : "no crash"}). '
+                'Enable "Use licensed ML crash model".',
+              );
+            }
+          }
         case 'vehicle':
           final cl = TransportModeClassifierDart();
           final steady = List<double>.filled(10, 0.05);
@@ -611,6 +639,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
               OutlinedButton(
                 onPressed: () => _simulate('crash'),
                 child: const Text('Crash'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('mlcrash'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.purple),
+                child: const Text('Crash (ML model)'),
               ),
               OutlinedButton(
                 onPressed: () => _simulate('vehicle'),

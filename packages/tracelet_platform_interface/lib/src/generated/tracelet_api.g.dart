@@ -5400,6 +5400,36 @@ class TraceletHostApi {
       isNullValid: true,
     );
   }
+
+  /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+  /// through the SDK's real crash-detection pipeline — including the loaded ML
+  /// crash model — so the model path can be verified without a physical impact.
+  /// Returns the model probability, threshold, and whether a crash candidate
+  /// fired. `modelRan` is false when no ML model is loaded (rule engine only).
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[peakG, speedKmh],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String, Object?>();
+  }
 }
 
 abstract class TraceletFlutterApi {

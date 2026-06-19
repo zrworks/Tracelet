@@ -71,7 +71,7 @@ android {
         // dependency is the `@aar` variant, which omits the JVM native bits, so
         // uniffi-backed tests fail to initialise JNA without this. Mirrors the
         // tracelet-sdk module.
-        testImplementation("net.java.dev.jna:jna:5.19.0")
+        testImplementation("net.java.dev.jna:jna:5.19.1")
         testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
     }
 

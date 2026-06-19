@@ -113,6 +113,66 @@ void main() {
     expect(withGyro!.kind, 'potential_crash');
   });
 
+  testWidgets('barometer cabin-pressure spike corroborates a crash (#173)', (
+    tester,
+  ) async {
+    ImpactDetectorDart detector() => ImpactDetectorDart(
+      config: frb.ImpactConfig(
+        enableCrash: true,
+        enableFall: false,
+        crashGThreshold: 3,
+        crashMinSpeedKmh: 25,
+        fallGThreshold: 2.5,
+        confirmWindowMs: PlatformInt64Util.from(15000),
+        minConfidence: 0.6,
+      ),
+    );
+
+    // Register a real crash candidate (5 g at 60 km/h).
+    final spiked = detector();
+    final candidate = spiked.onImpactWindow(
+      peakG: 5,
+      speedBeforeMps: 60 / 3.6,
+      gyroPeakDps: 0,
+      wasInFreeFall: false,
+      postImpactStill: false,
+      isOnFoot: false,
+      latitude: 0,
+      longitude: 0,
+      nowMs: PlatformInt64Util.from(0),
+    );
+    expect(candidate, isNotNull);
+    expect(candidate!.kind, 'potential_crash');
+
+    // A sharp concurrent cabin-pressure swing (airbag transient) corroborates —
+    // the cue raises confidence and reports a match.
+    final boosted = spiked.corroborateBarometric(
+      pressureDeltaHpa: 3,
+      nowMs: PlatformInt64Util.from(500),
+    );
+    expect(boosted, isTrue);
+
+    // A flat / absent barometer (most phones) never corroborates and leaves
+    // detection unchanged.
+    final flat = detector();
+    flat.onImpactWindow(
+      peakG: 5,
+      speedBeforeMps: 60 / 3.6,
+      gyroPeakDps: 0,
+      wasInFreeFall: false,
+      postImpactStill: false,
+      isOnFoot: false,
+      latitude: 0,
+      longitude: 0,
+      nowMs: PlatformInt64Util.from(0),
+    );
+    final unchanged = flat.corroborateBarometric(
+      pressureDeltaHpa: 0,
+      nowMs: PlatformInt64Util.from(500),
+    );
+    expect(unchanged, isFalse);
+  });
+
   testWidgets('simulate crash candidate then auto-confirm', (tester) async {
     final detector = ImpactDetectorDart(
       config: frb.ImpactConfig(

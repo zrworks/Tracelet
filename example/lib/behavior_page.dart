@@ -331,6 +331,46 @@ class _BehaviorPageState extends State<BehaviorPage> {
               '→ would auto-confirm in ${((c.confirmDeadlineMs is BigInt ? (c.confirmDeadlineMs as dynamic).toInt() : c.confirmDeadlineMs) / 1000).round()}s',
             );
           }
+        case 'baro':
+          // Crash candidate corroborated by a cabin-pressure spike (#173) — the
+          // airbag/severe-collision pressure transient one of the signals
+          // Apple's Crash Detection fuses. The cue only raises confidence and
+          // never suppresses, so phones without a barometer are unaffected.
+          final d = ImpactDetectorDart(
+            config: frb.ImpactConfig(
+              enableCrash: true,
+              enableFall: false,
+              crashGThreshold: 3,
+              crashMinSpeedKmh: 25,
+              fallGThreshold: 2.5,
+              confirmWindowMs: PlatformInt64Util.from(15000),
+              minConfidence: 0.6,
+            ),
+          );
+          final c = d.onImpactWindow(
+            peakG: 5,
+            speedBeforeMps: 60 / 3.6,
+            gyroPeakDps: 0,
+            wasInFreeFall: false,
+            postImpactStill: false,
+            isOnFoot: false,
+            latitude: 0,
+            longitude: 0,
+            nowMs: PlatformInt64Util.from(0),
+          );
+          if (c != null) {
+            _logLine('🆘 ${c.kind}  peak=${c.peakG.toStringAsFixed(1)}g (sim)');
+            // Concurrent 3 hPa cabin-pressure swing → corroborated.
+            final matched = d.corroborateBarometric(
+              pressureDeltaHpa: 3,
+              nowMs: PlatformInt64Util.from(500),
+            );
+            _logLine(
+              matched
+                  ? '🌡️ barometer: 3 hPa cabin-pressure spike → confidence raised'
+                  : '🌡️ barometer: no pressure swing → unchanged',
+            );
+          }
         case 'mlcrash':
         case 'mlbenign':
           // Runs the REAL SDK pipeline (loaded ML model + live ImpactDetector),
@@ -682,6 +722,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
               OutlinedButton(
                 onPressed: () => _simulate('crash'),
                 child: const Text('Crash'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('baro'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.indigo),
+                child: const Text('Crash + barometer'),
               ),
               OutlinedButton(
                 onPressed: () => _simulate('mlcrash'),

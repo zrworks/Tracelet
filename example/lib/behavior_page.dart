@@ -32,13 +32,17 @@ class _BehaviorPageState extends State<BehaviorPage> {
   bool _crash = false;
   bool _classifier = false;
 
-  // ML crash model (licensed). Paste a license key from the portal
-  // (https://licenses.ikolvi.com) to gate crash detection on the trained model
-  // instead of the rule engine. The unlock URL is public (the blob is encrypted).
+  // ML crash model (licensed). A working dev license for this example app
+  // (com.ikolvi.tracelet.example) is hardcoded below so the encrypted model
+  // downloads and on-device crash/fall inference can be tested out-of-the-box.
+  // Replace with your own key from https://licenses.ikolvi.com for your app id.
   static const String _unlockUrl = 'https://unlock.ikolvi.com/unlock';
   static const double _crashModelThreshold = 0.5074575792;
-  bool _useMlModel = false;
-  final TextEditingController _licenseCtrl = TextEditingController();
+  static const String _demoLicenseKey =
+      'eyJleHAiOjE3ODcwNDUwOTAsImlhdCI6MTc4MTg2MTA5MCwibGljIjoiODU5NzU2MmUtMzliNy00N2I3LTkxOWUtMjBkMjg3NzRiZWNlIiwicGtnIjoiY29tLmlrb2x2aS50cmFjZWxldC5leGFtcGxlIiwicGxhbiI6InBybyIsInNjb3BlIjoiZGV2In0.ZlqvsJyqxRB-FGMEXxLY7-GtmpdkvR7rG_CYZLBqYZNdeiT3B9TzG4TYaCU23ZbHBXDZlB37ZYVZYGMeS_3QDw';
+  bool _useMlModel = true;
+  final TextEditingController _licenseCtrl =
+      TextEditingController(text: _demoLicenseKey);
 
   final List<String> _log = [];
   String _mode = 'unknown';

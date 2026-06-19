@@ -209,23 +209,23 @@ confirms normally and disarms the wake-up; if it was killed, the wake-up
 A user **cancel** removes the persisted candidate and disarms the wake-up, so a
 cancelled candidate is never re-confirmed after a restart.
 
-### Corroboration signals
+### Extra clues that confirm a real crash or fall
 
-To raise recall without flooding you with false alarms, a candidate's confidence
-is corroborated by additional physical evidence beyond the raw jolt:
+A big jolt on its own isn't enough — that would cause too many false alarms.
+So Tracelet looks for extra real-world clues that normally happen during a real
+crash or fall. The more clues it sees, the more sure it is. These clues can only
+make Tracelet **more** confident — they never cancel a real event.
 
-- **Free-fall before impact** — a falling phone reads near-`0 g` just before the
-  jolt: the classic drop signature.
-- **Post-impact stillness** — after a real fall the body comes to rest; the
-  acceleration trace settles back near `1 g` with little movement.
-- **Δv speed collapse** — a real crash collapses the vehicle's speed within
-  ~1–2 s. Tracelet samples the post-impact GPS speed and **raises** confidence on
-  a sharp collapse. It never *suppresses* a candidate — the design favours recall.
-- **Cabin-pressure spike** — a severe collision or airbag deployment produces a
-  brief cabin air-pressure transient. On devices with a barometer (Android
-  `TYPE_PRESSURE`, iOS `CMAltimeter`), a sharp pressure swing concurrent with the
-  impact **raises** confidence. Phones without a barometer simply skip this cue,
-  so its absence never changes detection.
+- **The phone was falling** — just before someone drops their phone or takes a
+  fall, the phone is briefly weightless. Spotting that makes a fall more
+  believable.
+- **Everything went still afterwards** — after a real fall, the person and phone
+  usually stop moving. That sudden stillness is a strong sign.
+- **The car suddenly stopped** — in a real crash the vehicle goes from fast to
+  almost stopped in a second or two. A sharp drop in speed backs up a crash.
+- **A pressure "pop"** — a serious crash (or an airbag going off) causes a quick
+  change in air pressure inside the car. Phones that have a pressure sensor can
+  notice this; phones without one simply skip this check, with no downside.
 
 ### Optional: the licensed AI crash model
 

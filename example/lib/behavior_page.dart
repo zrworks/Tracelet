@@ -32,6 +32,14 @@ class _BehaviorPageState extends State<BehaviorPage> {
   bool _crash = false;
   bool _classifier = false;
 
+  // ML crash model (licensed). Paste a license key from the portal
+  // (https://licenses.ikolvi.com) to gate crash detection on the trained model
+  // instead of the rule engine. The unlock URL is public (the blob is encrypted).
+  static const String _unlockUrl = 'https://unlock.ikolvi.com/unlock';
+  static const double _crashModelThreshold = 0.5074575792;
+  bool _useMlModel = false;
+  final TextEditingController _licenseCtrl = TextEditingController();
+
   final List<String> _log = [];
   String _mode = 'unknown';
   tl.ImpactEvent? _pendingImpact;
@@ -45,6 +53,7 @@ class _BehaviorPageState extends State<BehaviorPage> {
     _drivingSub?.cancel();
     _impactSub?.cancel();
     _modeSub?.cancel();
+    _licenseCtrl.dispose();
     super.dispose();
   }
 
@@ -80,6 +89,8 @@ class _BehaviorPageState extends State<BehaviorPage> {
 
   Future<void> _applyConfig() async {
     await _ensureReady();
+    final licenseKey = _licenseCtrl.text.trim();
+    final useMl = _useMlModel && licenseKey.isNotEmpty;
     await tl.Tracelet.setConfig(
       tl.Config(
         telematics: tl.TelematicsConfig(
@@ -88,7 +99,12 @@ class _BehaviorPageState extends State<BehaviorPage> {
           speedLimitKmh: _driving ? 30 : 0,
         ),
         classifier: tl.ClassifierConfig(enableFusedClassifier: _classifier),
-        impact: tl.ImpactConfig(enableCrashDetection: _crash),
+        impact: tl.ImpactConfig(
+          enableCrashDetection: _crash,
+          crashModelUnlockUrl: useMl ? _unlockUrl : null,
+          crashModelLicenseKey: useMl ? licenseKey : null,
+          crashModelThreshold: _crashModelThreshold,
+        ),
       ),
     );
   }
@@ -337,6 +353,57 @@ class _BehaviorPageState extends State<BehaviorPage> {
             ),
             value: _crash,
             onChanged: _toggleCrash,
+          ),
+          Card(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Use licensed ML crash model'),
+                    subtitle: const Text(
+                      'Gate crashes on the trained model instead of the rule '
+                      'engine. Needs a license key.',
+                    ),
+                    value: _useMlModel,
+                    onChanged: (v) async {
+                      setState(() => _useMlModel = v);
+                      await _applyConfig();
+                      _logLine(
+                        v && _licenseCtrl.text.trim().isNotEmpty
+                            ? '🤖 ML crash model enabled'
+                            : v
+                            ? 'ℹ️ Paste a license key to activate the ML model'
+                            : '🤖 ML crash model disabled (rule engine)',
+                      );
+                    },
+                  ),
+                  TextField(
+                    controller: _licenseCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'License key',
+                      hintText: 'Paste from licenses.ikolvi.com',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    maxLines: 2,
+                    minLines: 1,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    onChanged: (_) {
+                      if (_useMlModel) _applyConfig();
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Get a key: licenses.ikolvi.com  ·  unlock: $_unlockUrl',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
           ),
           SwitchListTile(
             title: const Text('Transport-mode classifier'),

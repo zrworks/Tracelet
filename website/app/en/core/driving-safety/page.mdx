@@ -252,9 +252,10 @@ rule engine, you can skip this entirely.
 
 #### Get a license (self-service portal)
 
-Instead of minting keys by hand, run the **license portal** — a small
-Cloudflare Worker behind Cloudflare Access. You log in, enter your **application
-id** (and, for production, your **app signing-cert SHA-256**), and it generates a
+The fastest way is the hosted **[Get a License](/en/get-license)** page: sign in,
+enter your **application id**, and copy a ready-to-paste key. It runs on a small
+Cloudflare Worker behind Cloudflare Access — you log in, enter your application
+id (and, for production, your **app signing-cert SHA-256**), and it generates a
 ready-to-paste license key:
 
 ```dart
@@ -273,7 +274,8 @@ ImpactConfig(
   `./gradlew signingReport`).
 
 The portal also lists your issued licenses and lets you **revoke** one instantly.
-Deploy your own from
+Get your key at **[licenses.ikolvi.com](https://licenses.ikolvi.com)** (or open the
+[Get a License](/en/get-license) page), or deploy your own from
 [`cloudflare/crash-model-mint`](https://github.com/Ikolvi/Tracelet/tree/main/cloudflare/crash-model-mint).
 
 <Callout type="warning">

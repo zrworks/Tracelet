@@ -4,6 +4,5 @@ export default {
   "utility-api": "Utility API",
   "web-support": "Web Support",
   "faq": "FAQ & Troubleshooting",
-  "performance": "Performance Benchmarks",
-  "sponsor": "Support Tracelet ❤️"
+  "performance": "Performance Benchmarks"
 }

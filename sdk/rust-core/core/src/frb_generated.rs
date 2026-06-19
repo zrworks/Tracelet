@@ -46,7 +46,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -801664740;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1608306581;
 
 // Section: executor
 
@@ -594,6 +594,60 @@ fn wire__crate__api_dart__impact__ImpactDetectorDart_confirm_impl(
                         api_id,
                         api_now_ms,
                     ))?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api_dart__impact__ImpactDetectorDart_corroborate_barometric_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ImpactDetectorDart_corroborate_barometric",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImpactDetectorDart>,
+            >>::sse_decode(&mut deserializer);
+            let api_pressure_delta_hpa = <f64>::sse_decode(&mut deserializer);
+            let api_now_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let mut api_that_guard = None;
+                let decode_indices_ =
+                    flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                        flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                            &api_that, 0, false,
+                        ),
+                    ]);
+                for i in decode_indices_ {
+                    match i {
+                        0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                        _ => unreachable!(),
+                    }
+                }
+                let api_that_guard = api_that_guard.unwrap();
+                let output_ok = Result::<_, ()>::Ok(
+                    crate::api_dart::impact::ImpactDetectorDart::corroborate_barometric(
+                        &*api_that_guard,
+                        api_pressure_delta_hpa,
+                        api_now_ms,
+                    ),
+                )?;
                 Ok(output_ok)
             })())
         },
@@ -2719,35 +2773,36 @@ fn pde_ffi_dispatcher_sync_impl(
 10 => wire__crate__api_dart__impact__ImpactDetectorDart_cancel_impl(ptr, rust_vec_len, data_len),
 11 => wire__crate__api_dart__impact__ImpactDetectorDart_check_confirmations_impl(ptr, rust_vec_len, data_len),
 12 => wire__crate__api_dart__impact__ImpactDetectorDart_confirm_impl(ptr, rust_vec_len, data_len),
-13 => wire__crate__api_dart__impact__ImpactDetectorDart_corroborate_dv_impl(ptr, rust_vec_len, data_len),
-14 => wire__crate__api_dart__impact__ImpactDetectorDart_new_impl(ptr, rust_vec_len, data_len),
-15 => wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(ptr, rust_vec_len, data_len),
-16 => wire__crate__api_dart__impact__ImpactDetectorDart_reset_impl(ptr, rust_vec_len, data_len),
-17 => wire__crate__api_dart__rtree__RTreeDart_clear_impl(ptr, rust_vec_len, data_len),
-18 => wire__crate__api_dart__rtree__RTreeDart_insert_impl(ptr, rust_vec_len, data_len),
-19 => wire__crate__api_dart__rtree__RTreeDart_new_impl(ptr, rust_vec_len, data_len),
-20 => wire__crate__api_dart__rtree__RTreeDart_query_circle_impl(ptr, rust_vec_len, data_len),
-21 => wire__crate__api_dart__rtree__RTreeDart_search_impl(ptr, rust_vec_len, data_len),
-22 => wire__crate__api_dart__schedule__ScheduleParserDart_calculate_next_alarms_impl(ptr, rust_vec_len, data_len),
-23 => wire__crate__api_dart__schedule__ScheduleParserDart_is_within_schedule_impl(ptr, rust_vec_len, data_len),
-24 => wire__crate__api_dart__schedule__ScheduleParserDart_new_impl(ptr, rust_vec_len, data_len),
-25 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_is_moving_impl(ptr, rust_vec_len, data_len),
-26 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_new_impl(ptr, rust_vec_len, data_len),
-27 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_accel_event_impl(ptr, rust_vec_len, data_len),
-28 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_speed_changed_impl(ptr, rust_vec_len, data_len),
-29 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_set_tracking_mode_impl(ptr, rust_vec_len, data_len),
-30 => wire__crate__api_dart__telematics__TelematicsEngineDart_current_score_impl(ptr, rust_vec_len, data_len),
-31 => wire__crate__api_dart__telematics__TelematicsEngineDart_new_impl(ptr, rust_vec_len, data_len),
-32 => wire__crate__api_dart__telematics__TelematicsEngineDart_process_fix_impl(ptr, rust_vec_len, data_len),
-33 => wire__crate__api_dart__telematics__TelematicsEngineDart_reset_impl(ptr, rust_vec_len, data_len),
-34 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_classify_samples_impl(ptr, rust_vec_len, data_len),
-35 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_new_impl(ptr, rust_vec_len, data_len),
-36 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_reset_impl(ptr, rust_vec_len, data_len),
-37 => wire__crate__api_dart__trip__TripManagerDart_is_trip_active_impl(ptr, rust_vec_len, data_len),
-38 => wire__crate__api_dart__trip__TripManagerDart_new_impl(ptr, rust_vec_len, data_len),
-39 => wire__crate__api_dart__trip__TripManagerDart_on_location_received_impl(ptr, rust_vec_len, data_len),
-40 => wire__crate__api_dart__trip__TripManagerDart_on_motion_state_changed_impl(ptr, rust_vec_len, data_len),
-41 => wire__crate__api_dart__trip__TripManagerDart_reset_impl(ptr, rust_vec_len, data_len),
+13 => wire__crate__api_dart__impact__ImpactDetectorDart_corroborate_barometric_impl(ptr, rust_vec_len, data_len),
+14 => wire__crate__api_dart__impact__ImpactDetectorDart_corroborate_dv_impl(ptr, rust_vec_len, data_len),
+15 => wire__crate__api_dart__impact__ImpactDetectorDart_new_impl(ptr, rust_vec_len, data_len),
+16 => wire__crate__api_dart__impact__ImpactDetectorDart_on_impact_window_impl(ptr, rust_vec_len, data_len),
+17 => wire__crate__api_dart__impact__ImpactDetectorDart_reset_impl(ptr, rust_vec_len, data_len),
+18 => wire__crate__api_dart__rtree__RTreeDart_clear_impl(ptr, rust_vec_len, data_len),
+19 => wire__crate__api_dart__rtree__RTreeDart_insert_impl(ptr, rust_vec_len, data_len),
+20 => wire__crate__api_dart__rtree__RTreeDart_new_impl(ptr, rust_vec_len, data_len),
+21 => wire__crate__api_dart__rtree__RTreeDart_query_circle_impl(ptr, rust_vec_len, data_len),
+22 => wire__crate__api_dart__rtree__RTreeDart_search_impl(ptr, rust_vec_len, data_len),
+23 => wire__crate__api_dart__schedule__ScheduleParserDart_calculate_next_alarms_impl(ptr, rust_vec_len, data_len),
+24 => wire__crate__api_dart__schedule__ScheduleParserDart_is_within_schedule_impl(ptr, rust_vec_len, data_len),
+25 => wire__crate__api_dart__schedule__ScheduleParserDart_new_impl(ptr, rust_vec_len, data_len),
+26 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_is_moving_impl(ptr, rust_vec_len, data_len),
+27 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_new_impl(ptr, rust_vec_len, data_len),
+28 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_accel_event_impl(ptr, rust_vec_len, data_len),
+29 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_on_speed_changed_impl(ptr, rust_vec_len, data_len),
+30 => wire__crate__api_dart__smart_motion__SmartMotionCoordinatorDart_set_tracking_mode_impl(ptr, rust_vec_len, data_len),
+31 => wire__crate__api_dart__telematics__TelematicsEngineDart_current_score_impl(ptr, rust_vec_len, data_len),
+32 => wire__crate__api_dart__telematics__TelematicsEngineDart_new_impl(ptr, rust_vec_len, data_len),
+33 => wire__crate__api_dart__telematics__TelematicsEngineDart_process_fix_impl(ptr, rust_vec_len, data_len),
+34 => wire__crate__api_dart__telematics__TelematicsEngineDart_reset_impl(ptr, rust_vec_len, data_len),
+35 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_classify_samples_impl(ptr, rust_vec_len, data_len),
+36 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_new_impl(ptr, rust_vec_len, data_len),
+37 => wire__crate__api_dart__transport_mode__TransportModeClassifierDart_reset_impl(ptr, rust_vec_len, data_len),
+38 => wire__crate__api_dart__trip__TripManagerDart_is_trip_active_impl(ptr, rust_vec_len, data_len),
+39 => wire__crate__api_dart__trip__TripManagerDart_new_impl(ptr, rust_vec_len, data_len),
+40 => wire__crate__api_dart__trip__TripManagerDart_on_location_received_impl(ptr, rust_vec_len, data_len),
+41 => wire__crate__api_dart__trip__TripManagerDart_on_motion_state_changed_impl(ptr, rust_vec_len, data_len),
+42 => wire__crate__api_dart__trip__TripManagerDart_reset_impl(ptr, rust_vec_len, data_len),
                         _ => unreachable!(),
                     }
 }

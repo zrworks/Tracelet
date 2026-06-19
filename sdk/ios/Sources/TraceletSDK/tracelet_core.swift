@@ -2533,6 +2533,22 @@ public protocol ImpactDetectorProtocol: AnyObject, Sendable {
     func confirm(id: Int64, nowMs: Int64)  -> ImpactEvent?
     
     /**
+     * Folds a **barometric pressure change** (hPa, peak−trough over the impact
+     * window) into the most recent pending crash for the cabin-pressure cue
+     * (#173). Call once, right after a `potential_crash`, with the pressure
+     * swing measured by the device barometer (`Sensor.TYPE_PRESSURE` on Android,
+     * `CMAltimeter` on iOS).
+     *
+     * A sudden spike (airbag deployment / severe collision) is a strong crash
+     * corroborator, so it *raises* the candidate's confidence. Like Δv it never
+     * lowers confidence or cancels: most devices have no barometer, so its
+     * absence (a flat/zero reading) must leave detection unchanged — the cue is
+     * strictly "where available". Returns `true` when a candidate was found and a
+     * pressure spike corroborated it.
+     */
+    func corroborateBarometric(pressureDeltaHpa: Double, nowMs: Int64)  -> Bool
+    
+    /**
      * Folds a **post-impact speed** sample into the most recent pending crash
      * for Δv corroboration (#181). Call once, ~1–2 s after a `potential_crash`,
      * with the current GPS speed (m/s).
@@ -2664,6 +2680,30 @@ open func confirm(id: Int64, nowMs: Int64) -> ImpactEvent?  {
     uniffi_tracelet_core_fn_method_impactdetector_confirm(
             self.uniffiCloneHandle(),
         FfiConverterInt64.lower(id),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
+     * Folds a **barometric pressure change** (hPa, peak−trough over the impact
+     * window) into the most recent pending crash for the cabin-pressure cue
+     * (#173). Call once, right after a `potential_crash`, with the pressure
+     * swing measured by the device barometer (`Sensor.TYPE_PRESSURE` on Android,
+     * `CMAltimeter` on iOS).
+     *
+     * A sudden spike (airbag deployment / severe collision) is a strong crash
+     * corroborator, so it *raises* the candidate's confidence. Like Δv it never
+     * lowers confidence or cancels: most devices have no barometer, so its
+     * absence (a flat/zero reading) must leave detection unchanged — the cue is
+     * strictly "where available". Returns `true` when a candidate was found and a
+     * pressure spike corroborated it.
+     */
+open func corroborateBarometric(pressureDeltaHpa: Double, nowMs: Int64) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_corroborate_barometric(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(pressureDeltaHpa),
         FfiConverterInt64.lower(nowMs),$0
     )
 })
@@ -9515,6 +9555,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_corroborate_barometric() != 3195) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_impactdetector_corroborate_dv() != 41128) {

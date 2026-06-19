@@ -662,6 +662,8 @@ external fun uniffi_tracelet_core_checksum_method_impactdetector_check_confirmat
 ): Short
 external fun uniffi_tracelet_core_checksum_method_impactdetector_confirm(
 ): Short
+external fun uniffi_tracelet_core_checksum_method_impactdetector_corroborate_barometric(
+): Short
 external fun uniffi_tracelet_core_checksum_method_impactdetector_corroborate_dv(
 ): Short
 external fun uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window(
@@ -916,6 +918,8 @@ external fun uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(`
 ): RustBuffer.ByValue
 external fun uniffi_tracelet_core_fn_method_impactdetector_confirm(`ptr`: Long,`id`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+external fun uniffi_tracelet_core_fn_method_impactdetector_corroborate_barometric(`ptr`: Long,`pressureDeltaHpa`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Byte
 external fun uniffi_tracelet_core_fn_method_impactdetector_corroborate_dv(`ptr`: Long,`speedAfterMps`: Double,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
 external fun uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(`ptr`: Long,`peakG`: Double,`speedBeforeMps`: Double,`gyroPeakDps`: Double,`wasInFreeFall`: Byte,`postImpactStill`: Byte,`isOnFoot`: Byte,`latitude`: Double,`longitude`: Double,`nowMs`: Long,`crashProba`: Double,`crashProbaThreshold`: Double,uniffi_out_err: UniffiRustCallStatus, 
@@ -1346,6 +1350,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_tracelet_core_checksum_method_impactdetector_corroborate_barometric() != 3195.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_tracelet_core_checksum_method_impactdetector_corroborate_dv() != 41128.toShort()) {
@@ -5337,6 +5344,22 @@ public interface ImpactDetectorInterface {
     fun `confirm`(`id`: kotlin.Long, `nowMs`: kotlin.Long): ImpactEvent?
     
     /**
+     * Folds a **barometric pressure change** (hPa, peak−trough over the impact
+     * window) into the most recent pending crash for the cabin-pressure cue
+     * (#173). Call once, right after a `potential_crash`, with the pressure
+     * swing measured by the device barometer (`Sensor.TYPE_PRESSURE` on Android,
+     * `CMAltimeter` on iOS).
+     *
+     * A sudden spike (airbag deployment / severe collision) is a strong crash
+     * corroborator, so it *raises* the candidate's confidence. Like Δv it never
+     * lowers confidence or cancels: most devices have no barometer, so its
+     * absence (a flat/zero reading) must leave detection unchanged — the cue is
+     * strictly "where available". Returns `true` when a candidate was found and a
+     * pressure spike corroborated it.
+     */
+    fun `corroborateBarometric`(`pressureDeltaHpa`: kotlin.Double, `nowMs`: kotlin.Long): kotlin.Boolean
+    
+    /**
      * Folds a **post-impact speed** sample into the most recent pending crash
      * for Δv corroboration (#181). Call once, ~1–2 s after a `potential_crash`,
      * with the current GPS speed (m/s).
@@ -5523,6 +5546,33 @@ open class ImpactDetector: Disposable, AutoCloseable, ImpactDetectorInterface
     UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_confirm(
         it,
         FfiConverterLong.lower(`id`),FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Folds a **barometric pressure change** (hPa, peak−trough over the impact
+     * window) into the most recent pending crash for the cabin-pressure cue
+     * (#173). Call once, right after a `potential_crash`, with the pressure
+     * swing measured by the device barometer (`Sensor.TYPE_PRESSURE` on Android,
+     * `CMAltimeter` on iOS).
+     *
+     * A sudden spike (airbag deployment / severe collision) is a strong crash
+     * corroborator, so it *raises* the candidate's confidence. Like Δv it never
+     * lowers confidence or cancels: most devices have no barometer, so its
+     * absence (a flat/zero reading) must leave detection unchanged — the cue is
+     * strictly "where available". Returns `true` when a candidate was found and a
+     * pressure spike corroborated it.
+     */override fun `corroborateBarometric`(`pressureDeltaHpa`: kotlin.Double, `nowMs`: kotlin.Long): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_tracelet_core_fn_method_impactdetector_corroborate_barometric(
+        it,
+        FfiConverterDouble.lower(`pressureDeltaHpa`),FfiConverterLong.lower(`nowMs`),_status)
 }
     }
     )

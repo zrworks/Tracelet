@@ -59,6 +59,15 @@ impl ImpactDetectorDart {
         self.inner.corroborate_dv(speed_after_mps, now_ms)
     }
 
+    /// Folds a barometric pressure change (hPa) into the most recent pending
+    /// crash for the cabin-pressure cue (#173); returns `true` on a corroborating
+    /// pressure spike.
+    #[flutter_rust_bridge::frb(sync)]
+    pub fn corroborate_barometric(&self, pressure_delta_hpa: f64, now_ms: i64) -> bool {
+        self.inner
+            .corroborate_barometric(pressure_delta_hpa, now_ms)
+    }
+
     /// Fires confirmed events for candidates whose deadline elapsed.
     #[flutter_rust_bridge::frb(sync)]
     pub fn check_confirmations(&self, now_ms: i64) -> Vec<ImpactEvent> {

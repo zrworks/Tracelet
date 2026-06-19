@@ -137,7 +137,7 @@ class MainActivity : FlutterActivity() {
                             ),
                         )
                         val ev = detector.onImpactWindow(
-                            peakG, speedMps, 0.0, false, false, 0.0, 0.0,
+                            peakG, speedMps, 0.0, false, false, false, 0.0, 0.0,
                             System.currentTimeMillis(), crashProba, threshold,
                         )
                         result.success(

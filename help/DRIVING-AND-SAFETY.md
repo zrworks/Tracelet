@@ -164,6 +164,11 @@ candidate is corroborated by additional physical evidence:
   within ~1–2 s. Tracelet samples the post-impact GPS speed and **raises**
   confidence on a sharp collapse (it never suppresses a candidate — the design
   favours recall).
+- **Cabin-pressure spike** (`#173`) — a severe collision or airbag deployment
+  produces a brief cabin air-pressure transient. On devices with a barometer
+  (Android `TYPE_PRESSURE`, iOS `CMAltimeter`), a sharp pressure swing
+  concurrent with the impact **raises** confidence. Most phones with no
+  barometer simply skip this cue, so its absence never changes detection.
 
 ### Optional: ML crash model
 

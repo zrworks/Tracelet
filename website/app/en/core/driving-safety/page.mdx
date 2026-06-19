@@ -221,6 +221,11 @@ is corroborated by additional physical evidence beyond the raw jolt:
 - **Δv speed collapse** — a real crash collapses the vehicle's speed within
   ~1–2 s. Tracelet samples the post-impact GPS speed and **raises** confidence on
   a sharp collapse. It never *suppresses* a candidate — the design favours recall.
+- **Cabin-pressure spike** — a severe collision or airbag deployment produces a
+  brief cabin air-pressure transient. On devices with a barometer (Android
+  `TYPE_PRESSURE`, iOS `CMAltimeter`), a sharp pressure swing concurrent with the
+  impact **raises** confidence. Phones without a barometer simply skip this cue,
+  so its absence never changes detection.
 
 ### Optional: the licensed AI crash model
 

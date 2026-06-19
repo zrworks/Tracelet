@@ -29,3 +29,6 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Local host Rust lib for flutter test (FRB) — built via: cd sdk/rust-core && cargo build --release
+tracelet_core.framework/

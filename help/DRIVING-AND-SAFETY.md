@@ -131,6 +131,46 @@ user cancels/confirms, or it auto-confirms to `crash` after `confirmWindowMs`.
 > ⚠️ Tracelet provides the **trigger + cancel window** only — it never places
 > emergency calls. Building the SOS flow is your app's job.
 
+### Optional: ML crash model
+
+Crash detection runs on a **rule engine** by default (no setup). To gate crashes
+on a trained probability, plug in a licensed **ML model** — opt-in, **downloaded
+(never embedded)**, and shipped **AES-256-GCM encrypted**:
+
+```dart
+impact: ImpactConfig(
+  enableCrashDetection: true,
+  crashModelUrl: 'https://your-cdn/tracelet_optimized.crashmodel', // encrypted
+  crashModelSha256: 'b27a764f…',  // integrity check
+  crashModelThreshold: 0.5074,    // rf_probability_threshold from training
+),
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `crashModelUrl` | `null` | URL of the encrypted blob; `null` ⇒ pure rule engine |
+| `crashModelSha256` | `null` | hex SHA-256 of the blob, verified after download |
+| `crashModelThreshold` | `0.5` | probability at which the model flags a crash |
+
+The SDK downloads + SHA-verifies the blob, decrypts it **in memory** with a
+runtime-injected key, and runs it; any failure ⇒ **rule-engine fallback**. The
+key is **never shipped in the app** — fetch it from a licensing endpoint you
+control (see [`cloudflare/crash-model-unlock`](../cloudflare/crash-model-unlock/README.md)).
+
+**Android (optional, prod licenses only):** for anti-piracy you bind the model to
+your signed, published app via **Play Integrity**. Add it **only if you use a
+`prod` license** — `dev` licenses unlock in debug builds/emulators without it:
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation("com.google.android.play:integrity:1.4.0")
+}
+```
+
+> The trained model is **Beta / licensing-gated** ([#183](https://github.com/Ikolvi/Tracelet/issues/183));
+> the load/secure/gate infrastructure is in place.
+
 ---
 
 ## Trying it without driving (simulation)

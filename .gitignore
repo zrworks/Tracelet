@@ -197,3 +197,9 @@ scratch/
 *.license
 secrets/
 **/license_keys*
+
+# Cloudflare Worker build/runtime artifacts.
+cloudflare/**/node_modules/
+cloudflare/**/.wrangler/
+cloudflare/**/dist/
+.dev.vars

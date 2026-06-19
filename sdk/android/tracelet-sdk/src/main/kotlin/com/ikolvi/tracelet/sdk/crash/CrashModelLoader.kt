@@ -86,6 +86,85 @@ object CrashModelLoader {
         }
     }
 
+    /** The model URL + integrity digest returned by a successful [unlock]. */
+    data class Unlocked(val url: String, val sha256: String?)
+
+    /**
+     * Calls a licensing endpoint (the crash-model unlock Worker, #183) to obtain
+     * the AES decryption key for a valid [licenseKey], sets [decryptionKey], and
+     * returns the model [Unlocked.url] + [Unlocked.sha256] to pass into [load].
+     *
+     * The key is held in memory only — never written to disk. Returns `null` on
+     * any failure (offline, invalid/expired/revoked license, bad response) so the
+     * caller falls back to the rule engine.
+     *
+     * @param unlockUrl POST endpoint, e.g. `https://<worker>.workers.dev/unlock`.
+     * @param licenseKey the customer license (`<payload>.<sig>`).
+     * @param integrityToken optional Play Integrity token — required only for
+     *   `prod` licenses (debug/`dev` licenses omit it).
+     */
+    fun unlock(
+        unlockUrl: String,
+        licenseKey: String,
+        integrityToken: String? = null,
+        log: (String) -> Unit = {},
+    ): Unlocked? = try {
+        val payload = buildString {
+            append("{\"licenseKey\":\"").append(jsonEscape(licenseKey)).append('"')
+            if (integrityToken != null) {
+                append(",\"integrityToken\":\"").append(jsonEscape(integrityToken)).append('"')
+            }
+            append('}')
+        }
+        val conn = (URL(unlockUrl).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15_000
+            readTimeout = 30_000
+            requestMethod = "POST"
+            doOutput = true
+            setRequestProperty("content-type", "application/json")
+        }
+        try {
+            conn.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
+            val code = conn.responseCode
+            if (code != 200) {
+                val err = (conn.errorStream ?: conn.inputStream)?.use {
+                    String(it.readBytes(), Charsets.UTF_8)
+                }
+                log("crash model: unlock HTTP $code ${err ?: ""} — using rule engine")
+                return null
+            }
+            val body = conn.inputStream.use { String(it.readBytes(), Charsets.UTF_8) }
+            val key = jsonString(body, "key")
+            val url = jsonString(body, "url")
+            if (key == null || url == null) {
+                log("crash model: unlock response missing key/url — using rule engine")
+                return null
+            }
+            val keyBytes = android.util.Base64.decode(key, android.util.Base64.DEFAULT)
+            if (keyBytes.size != 32) {
+                log("crash model: unlock key not 32 bytes — using rule engine")
+                return null
+            }
+            decryptionKey = keyBytes
+            log("crash model: unlocked (${jsonString(body, "scope") ?: "?"})")
+            Unlocked(url, jsonString(body, "sha256"))
+        } finally {
+            conn.disconnect()
+        }
+    } catch (e: Exception) {
+        log("crash model: unlock failed (${e.message}) — using rule engine")
+        null
+    }
+
+    private fun jsonEscape(s: String): String =
+        s.replace("\\", "\\\\").replace("\"", "\\\"")
+
+    /** Minimal string-field extractor for the flat unlock JSON (no deps). */
+    private fun jsonString(json: String, field: String): String? {
+        val m = Regex("\"" + Regex.escape(field) + "\"\\s*:\\s*\"([^\"]*)\"").find(json)
+        return m?.groupValues?.get(1)
+    }
+
     private fun sha256Hex(bytes: ByteArray): String =
         MessageDigest.getInstance("SHA-256")
             .digest(bytes)

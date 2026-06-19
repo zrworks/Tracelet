@@ -192,6 +192,71 @@ calls or contacts emergency services. Building the actual SOS/emergency flow is
 your app's responsibility (and lets you control the UX and legal copy).
 </Callout>
 
+### Optional: the ML crash model (advanced)
+
+By default crash detection uses a **rule engine** (the g-threshold + speed
+corroboration above) — no extra setup, works out of the box. If you have a
+licensed **ML crash model**, you can plug it in to gate crashes on a trained
+probability instead. The model is **opt-in and downloaded** (never embedded), so
+the base SDK size is unchanged, and it's shipped **AES-256-GCM encrypted** so it
+isn't exposed on a plain URL.
+
+```dart
+await Tracelet.ready(Config(
+  impact: ImpactConfig(
+    enableCrashDetection: true,
+    crashModelUrl: 'https://your-cdn/tracelet_optimized.crashmodel', // encrypted blob
+    crashModelSha256: 'b27a764f…',   // integrity check (from the encrypt tool)
+    crashModelThreshold: 0.5074,     // rf_probability_threshold from training
+  ),
+));
+```
+
+| Option | Default | What it does |
+|---|---|---|
+| `crashModelUrl` | `null` | URL of the **encrypted** model blob. `null` ⇒ pure rule engine |
+| `crashModelSha256` | `null` | Hex SHA-256 of the blob, verified after download |
+| `crashModelThreshold` | `0.5` | Probability at which the model flags a crash |
+
+When set, the SDK downloads the blob once, verifies the SHA-256, decrypts it **in
+memory** with a runtime-injected key, and runs it. If anything fails (offline,
+bad key, SHA mismatch) it **falls back to the rule engine** — your app keeps
+working.
+
+<Callout type="info">
+**The decryption key is never shipped in your app.** It's injected at runtime —
+typically fetched from a small licensing endpoint you control (see the
+[unlock-Worker guide](https://github.com/Ikolvi/Tracelet/tree/main/cloudflare/crash-model-unlock)).
+On a rooted device a determined attacker can still read the decrypted model from
+memory; encryption raises the bar against blob scraping, it is not absolute DRM.
+</Callout>
+
+#### Android setup (only if you use the ML model)
+
+The ML model needs no extra dependency for the **rule engine** path. If you want
+**anti-piracy licensing** (binding the model to your signed, published app), add
+**Play Integrity** to your app — it is **optional** and only needed for
+production `prod` licenses:
+
+```kotlin
+// app/build.gradle.kts — only if you use prod (Play Integrity) licenses
+dependencies {
+    implementation("com.google.android.play:integrity:1.4.0")
+}
+```
+
+Then request an integrity token and pass it to your unlock endpoint. **Debug
+builds and emulators** don't need this — use a `dev` license, which unlocks the
+model without Play Integrity (see the unlock-Worker guide). If you only use the
+rule engine, you can skip this entirely.
+
+<Callout type="warning">
+The trained model itself is still **Beta / licensing-gated** (see the note above).
+The infrastructure to load, secure and gate on a model is in place; a fully
+open-source, production-licensed model is tracked in
+[Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
+</Callout>
+
 ---
 
 ## Trying it without driving (simulation) & Database Access

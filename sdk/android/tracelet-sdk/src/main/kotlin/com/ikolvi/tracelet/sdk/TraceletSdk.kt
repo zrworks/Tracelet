@@ -2366,18 +2366,35 @@ class TraceletSdk private constructor(private val context: Context) {
         // #183: opt-in ML crash model. Download/decrypt happen off the main thread;
         // until (or unless) it loads, the rule engine is used. Any failure → null
         // (rule-engine fallback). The model is only fetched when crash detection is
-        // on AND a model URL is configured.
+        // on AND a model URL (or a licensing unlock endpoint) is configured.
         crashModel = null
         val crashUrl = configManager.getCrashModelUrl()
-        if (configManager.getEnableCrashDetection() && crashUrl != null) {
-            val sha = configManager.getCrashModelSha256()
+        val unlockUrl = configManager.getCrashModelUnlockUrl()
+        val licenseKey = configManager.getCrashModelLicenseKey()
+        if (configManager.getEnableCrashDetection() && (crashUrl != null || unlockUrl != null)) {
             Thread {
-                val m = com.ikolvi.tracelet.sdk.crash.CrashModelLoader.load(
-                    context, crashUrl, sha,
-                ) { msg -> logger.debug(msg) }
-                if (m != null) {
-                    crashModel = m
-                    logger.info("Crash ML model active.")
+                val loader = com.ikolvi.tracelet.sdk.crash.CrashModelLoader
+                // If a licensing endpoint is configured, exchange the license for the
+                // decryption key + model URL/sha at runtime; else use the static key
+                // + configured URL (host-injected). Either path → rule-engine fallback.
+                var modelUrl = crashUrl
+                var modelSha = configManager.getCrashModelSha256()
+                if (unlockUrl != null && licenseKey != null) {
+                    val integrityToken = loader.integrityTokenProvider?.invoke()
+                    val unlocked = loader.unlock(
+                        unlockUrl, licenseKey, integrityToken,
+                    ) { msg -> logger.debug(msg) }
+                    if (unlocked != null) {
+                        modelUrl = unlocked.url
+                        modelSha = unlocked.sha256 ?: modelSha
+                    }
+                }
+                if (modelUrl != null) {
+                    val m = loader.load(context, modelUrl, modelSha) { msg -> logger.debug(msg) }
+                    if (m != null) {
+                        crashModel = m
+                        logger.info("Crash ML model active.")
+                    }
                 }
             }.apply { isDaemon = true }.start()
         }

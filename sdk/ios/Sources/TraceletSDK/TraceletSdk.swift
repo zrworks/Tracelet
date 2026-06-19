@@ -130,6 +130,14 @@ public final class TraceletSdk {
     private var lastLng: Double = 0
     private static let accelWindowInterval: TimeInterval = 1.0
 
+    // #183 opt-in ML crash model; nil ⇒ rule engine. Loaded off the main thread.
+    private var crashModel: CrashModel?
+    // Recent GPS speed history (timestamp ms, km/h) for the model's speed_max/dv
+    // features over the same ~16 s window the crash model was trained on.
+    private let crashSpeedWindowMs: Int64 = 16_000
+    private var speedHistory: [(Int64, Double)] = []
+    private let speedHistoryLock = NSLock()
+
     /// Whether ``ready(config:)`` has been called.
     public var isReadyState: Bool { isReady }
 
@@ -2036,19 +2044,49 @@ public final class TraceletSdk {
         // cost is accepted because the feature is opt-in).
         motionDetector?.impactHighRate = (impactDetector != nil)
         motionDetector?.gyroEnabled = (impactDetector != nil)   // #179 gyro corroboration
+
+        // #183: opt-in ML crash model. Download/decrypt off the main thread; until
+        // (or unless) it loads, the rule engine is used. Loaded only when crash
+        // detection is on AND a model URL (or licensing unlock endpoint) is set.
+        crashModel = nil
+        let crashUrl = configManager.getCrashModelUrl()
+        let unlockUrl = configManager.getCrashModelUnlockUrl()
+        let licenseKey = configManager.getCrashModelLicenseKey()
+        if configManager.getEnableCrashDetection() && (crashUrl != nil || unlockUrl != nil) {
+            let sha = configManager.getCrashModelSha256()
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                guard let self = self else { return }
+                var modelUrl = crashUrl
+                var modelSha = sha
+                if let unlockUrl = unlockUrl, let licenseKey = licenseKey {
+                    let token = CrashModelLoader.integrityTokenProvider?()
+                    if let unlocked = CrashModelLoader.unlock(unlockUrl: unlockUrl, licenseKey: licenseKey, integrityToken: token) {
+                        modelUrl = unlocked.url
+                        modelSha = unlocked.sha256 ?? modelSha
+                    }
+                }
+                guard let url = modelUrl else { return }
+                if let m = CrashModelLoader.load(url: url, sha256: modelSha) {
+                    self.crashModel = m
+                }
+            }
+        }
     }
 
     /// Feeds an accepted location fix to the telematics engine and emits events.
     func processTelematics(_ location: [String: Any]) {
-        guard let engine = telematicsEngine else { return }
         let coords = location["coords"] as? [String: Any] ?? location
         let speed = (coords["speed"] as? Double) ?? 0.0
         let heading = (coords["heading"] as? Double) ?? -1.0
         let lat = (coords["latitude"] as? Double) ?? 0.0
         let lng = (coords["longitude"] as? Double) ?? 0.0
+        // Capture speed/position + ML speed-history unconditionally — crash
+        // detection can run without driving events.
         lastSpeedMps = speed
         lastLat = lat
         lastLng = lng
+        recordSpeedSample(speed)
+        guard let engine = telematicsEngine else { return }
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         let events = engine.processFix(speed: speed, heading: heading, latitude: lat, longitude: lng, timestampMs: nowMs)
         for e in events {
@@ -2120,6 +2158,36 @@ public final class TraceletSdk {
         }
     }
 
+    /// Records one GPS speed sample (m/s) into the rolling crash speed-history
+    /// window, evicting samples older than `crashSpeedWindowMs` (#183).
+    private func recordSpeedSample(_ speedMps: Double) {
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        speedHistoryLock.lock()
+        speedHistory.append((now, speedMps))
+        let cutoff = now - crashSpeedWindowMs
+        while let first = speedHistory.first, first.0 < cutoff { speedHistory.removeFirst() }
+        speedHistoryLock.unlock()
+    }
+
+    /// Builds the crash model's feature vector for this window, ordered to match
+    /// `model.featureNames()`. peak_g/mean_g in g, gyro_peak_dps in deg/s,
+    /// speed_max/dv (pre-impact speed drop) in km/h over the recent window (#183).
+    private func crashFeatureVector(_ model: CrashModel, _ window: AccelWindow, _ gyroPeakDps: Double) -> [Double] {
+        speedHistoryLock.lock()
+        let speedsKmh = speedHistory.map { $0.1 * 3.6 }
+        speedHistoryLock.unlock()
+        let speedMax = speedsKmh.max() ?? (lastSpeedMps * 3.6)
+        let speedMin = speedsKmh.min() ?? (lastSpeedMps * 3.6)
+        let byName: [String: Double] = [
+            "peak_g": window.peakG,
+            "mean_g": window.meanG,
+            "gyro_peak_dps": gyroPeakDps,
+            "speed_max": speedMax,
+            "dv": speedMax - speedMin,
+        ]
+        return model.featureNames().map { byName[$0] ?? 0.0 }
+    }
+
     private func processAccelWindow() {
         accelBufferLock.lock()
         let samples = accelBuffer
@@ -2154,9 +2222,14 @@ public final class TraceletSdk {
             rawAccelBuffer.removeAll()
             rawAccelBufferLock.unlock()
             let wasInFreeFall = (minTotalG ?? 1.0) < 0.5
-            // iOS uses the rule engine for impact (no ML crash model on iOS yet):
-            // crashProba < 0 ⇒ the g-threshold rule decides; threshold is unused.
-            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: -1.0, crashProbaThreshold: 0.5) {
+            // #183 ML gating (Replace mode): when the opt-in model is loaded, run
+            // inference for this window and let its probability decide the crash
+            // (still speed-gated in the core). crashProba < 0 ⇒ rule engine.
+            var crashProba = -1.0
+            if let model = crashModel {
+                crashProba = model.predictProba(features: crashFeatureVector(model, window, gyroPeak))
+            }
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: crashProba, crashProbaThreshold: configManager.getCrashModelThreshold()) {
                 emitImpact(candidate)
                 // Keep the countdown alive even if tracking stops right after the
                 // crash (vehicle comes to rest → stopTimeout disables tracking).

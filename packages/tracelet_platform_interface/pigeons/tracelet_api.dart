@@ -510,6 +510,8 @@ class TlImpactConfig {
     required this.crashModelThreshold,
     this.crashModelUrl,
     this.crashModelSha256,
+    this.crashModelUnlockUrl,
+    this.crashModelLicenseKey,
   });
   final bool enableCrashDetection;
   final bool enableFallDetection;
@@ -521,6 +523,8 @@ class TlImpactConfig {
   final String? crashModelUrl;
   final String? crashModelSha256;
   final double crashModelThreshold;
+  final String? crashModelUnlockUrl;
+  final String? crashModelLicenseKey;
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }

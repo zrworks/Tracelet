@@ -369,6 +369,15 @@ public final class ConfigManager {
     public func getConfirmWindowMs() -> Int64 { (cache["confirmWindowMs"] as? NSNumber)?.int64Value ?? 15000 }
     public func getMinImpactConfidence() -> Double { cache["minImpactConfidence"] as? Double ?? 0.6 }
 
+    // #183 crash ML model (opt-in). URL/sha of the encrypted model + the
+    // probability threshold; empty URL ⇒ pure rule engine.
+    public func getCrashModelUrl() -> String? { (cache["crashModelUrl"] as? String).flatMap { $0.isEmpty ? nil : $0 } }
+    public func getCrashModelSha256() -> String? { (cache["crashModelSha256"] as? String).flatMap { $0.isEmpty ? nil : $0 } }
+    public func getCrashModelThreshold() -> Double { cache["crashModelThreshold"] as? Double ?? 0.5 }
+    // Licensing unlock: when set, the SDK POSTs the license to fetch the key + URL.
+    public func getCrashModelUnlockUrl() -> String? { (cache["crashModelUnlockUrl"] as? String).flatMap { $0.isEmpty ? nil : $0 } }
+    public func getCrashModelLicenseKey() -> String? { (cache["crashModelLicenseKey"] as? String).flatMap { $0.isEmpty ? nil : $0 } }
+
     // MARK: - SSL Pinning
 
     public func getSslPinningCertificates() -> [String] {

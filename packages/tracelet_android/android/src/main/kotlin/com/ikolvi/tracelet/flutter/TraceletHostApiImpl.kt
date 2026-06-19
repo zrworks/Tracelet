@@ -345,6 +345,8 @@ class TraceletHostApiImpl(
             put("crashModelUrl", c.impact.crashModelUrl)
             put("crashModelSha256", c.impact.crashModelSha256)
             put("crashModelThreshold", c.impact.crashModelThreshold)
+            put("crashModelUnlockUrl", c.impact.crashModelUnlockUrl)
+            put("crashModelLicenseKey", c.impact.crashModelLicenseKey)
         })
     }
 

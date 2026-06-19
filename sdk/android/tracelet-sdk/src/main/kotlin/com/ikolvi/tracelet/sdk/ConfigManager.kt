@@ -816,6 +816,11 @@ class ConfigManager(context: Context) {
     fun getCrashModelSha256(): String? = getString("crashModelSha256", "").ifEmpty { null }
     fun getCrashModelThreshold(): Double = getDouble("crashModelThreshold", 0.5)
 
+    // #183 licensing unlock: when set, the SDK POSTs the license to the unlock
+    // endpoint to fetch the decryption key + model URL at runtime.
+    fun getCrashModelUnlockUrl(): String? = getString("crashModelUnlockUrl", "").ifEmpty { null }
+    fun getCrashModelLicenseKey(): String? = getString("crashModelLicenseKey", "").ifEmpty { null }
+
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------

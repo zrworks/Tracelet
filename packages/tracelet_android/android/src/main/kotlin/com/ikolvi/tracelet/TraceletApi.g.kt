@@ -1680,7 +1680,9 @@ data class TlImpactConfig (
   val minImpactConfidence: Double,
   val crashModelUrl: String? = null,
   val crashModelSha256: String? = null,
-  val crashModelThreshold: Double
+  val crashModelThreshold: Double,
+  val crashModelUnlockUrl: String? = null,
+  val crashModelLicenseKey: String? = null
 )
  {
   companion object {
@@ -1695,7 +1697,9 @@ data class TlImpactConfig (
       val crashModelUrl = pigeonVar_list[7] as String?
       val crashModelSha256 = pigeonVar_list[8] as String?
       val crashModelThreshold = pigeonVar_list[9] as Double
-      return TlImpactConfig(enableCrashDetection, enableFallDetection, crashGThreshold, crashMinSpeedKmh, fallGThreshold, confirmWindowMs, minImpactConfidence, crashModelUrl, crashModelSha256, crashModelThreshold)
+      val crashModelUnlockUrl = pigeonVar_list[10] as String?
+      val crashModelLicenseKey = pigeonVar_list[11] as String?
+      return TlImpactConfig(enableCrashDetection, enableFallDetection, crashGThreshold, crashMinSpeedKmh, fallGThreshold, confirmWindowMs, minImpactConfidence, crashModelUrl, crashModelSha256, crashModelThreshold, crashModelUnlockUrl, crashModelLicenseKey)
     }
   }
   fun toList(): List<Any?> {
@@ -1710,6 +1714,8 @@ data class TlImpactConfig (
       crashModelUrl,
       crashModelSha256,
       crashModelThreshold,
+      crashModelUnlockUrl,
+      crashModelLicenseKey,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -1720,7 +1726,7 @@ data class TlImpactConfig (
       return true
     }
     val other = other as TlImpactConfig
-    return TraceletApiPigeonUtils.deepEquals(this.enableCrashDetection, other.enableCrashDetection) && TraceletApiPigeonUtils.deepEquals(this.enableFallDetection, other.enableFallDetection) && TraceletApiPigeonUtils.deepEquals(this.crashGThreshold, other.crashGThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashMinSpeedKmh, other.crashMinSpeedKmh) && TraceletApiPigeonUtils.deepEquals(this.fallGThreshold, other.fallGThreshold) && TraceletApiPigeonUtils.deepEquals(this.confirmWindowMs, other.confirmWindowMs) && TraceletApiPigeonUtils.deepEquals(this.minImpactConfidence, other.minImpactConfidence) && TraceletApiPigeonUtils.deepEquals(this.crashModelUrl, other.crashModelUrl) && TraceletApiPigeonUtils.deepEquals(this.crashModelSha256, other.crashModelSha256) && TraceletApiPigeonUtils.deepEquals(this.crashModelThreshold, other.crashModelThreshold)
+    return TraceletApiPigeonUtils.deepEquals(this.enableCrashDetection, other.enableCrashDetection) && TraceletApiPigeonUtils.deepEquals(this.enableFallDetection, other.enableFallDetection) && TraceletApiPigeonUtils.deepEquals(this.crashGThreshold, other.crashGThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashMinSpeedKmh, other.crashMinSpeedKmh) && TraceletApiPigeonUtils.deepEquals(this.fallGThreshold, other.fallGThreshold) && TraceletApiPigeonUtils.deepEquals(this.confirmWindowMs, other.confirmWindowMs) && TraceletApiPigeonUtils.deepEquals(this.minImpactConfidence, other.minImpactConfidence) && TraceletApiPigeonUtils.deepEquals(this.crashModelUrl, other.crashModelUrl) && TraceletApiPigeonUtils.deepEquals(this.crashModelSha256, other.crashModelSha256) && TraceletApiPigeonUtils.deepEquals(this.crashModelThreshold, other.crashModelThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashModelUnlockUrl, other.crashModelUnlockUrl) && TraceletApiPigeonUtils.deepEquals(this.crashModelLicenseKey, other.crashModelLicenseKey)
   }
 
   override fun hashCode(): Int {
@@ -1735,6 +1741,8 @@ data class TlImpactConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelUrl)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelSha256)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelThreshold)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelUnlockUrl)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelLicenseKey)
     return result
   }
 }

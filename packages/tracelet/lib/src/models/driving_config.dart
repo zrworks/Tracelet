@@ -255,6 +255,8 @@ class ImpactConfig {
     this.crashModelUrl,
     this.crashModelSha256,
     this.crashModelThreshold = 0.5,
+    this.crashModelUnlockUrl,
+    this.crashModelLicenseKey,
   });
 
   /// Creates an [ImpactConfig] from a map.
@@ -282,6 +284,8 @@ class ImpactConfig {
         map['crashModelThreshold'],
         fallback: 0.5,
       ),
+      crashModelUnlockUrl: map['crashModelUnlockUrl'] as String?,
+      crashModelLicenseKey: map['crashModelLicenseKey'] as String?,
     );
   }
 
@@ -325,6 +329,17 @@ class ImpactConfig {
   /// `0.5`. Use the `rf_probability_threshold` from the model's training report.
   final double crashModelThreshold;
 
+  /// Optional licensing **unlock endpoint** (e.g. a Cloudflare Worker). When set
+  /// with [crashModelLicenseKey], the SDK POSTs the license to this URL to fetch
+  /// the decryption key + model URL at runtime, instead of the host injecting the
+  /// key manually. The key is held in memory only. `null` ⇒ no auto-unlock.
+  final String? crashModelUnlockUrl;
+
+  /// Customer license key presented to [crashModelUnlockUrl]. Bound to your app
+  /// (package/bundle id) and signed by you; never grants access on its own — the
+  /// endpoint validates it before returning the key.
+  final String? crashModelLicenseKey;
+
   /// Serializes to a map.
   Map<String, Object?> toMap() => <String, Object?>{
     'enableCrashDetection': enableCrashDetection,
@@ -337,6 +352,8 @@ class ImpactConfig {
     'crashModelUrl': crashModelUrl,
     'crashModelSha256': crashModelSha256,
     'crashModelThreshold': crashModelThreshold,
+    'crashModelUnlockUrl': crashModelUnlockUrl,
+    'crashModelLicenseKey': crashModelLicenseKey,
   };
 
   /// Converts to Pigeon [TlImpactConfig].
@@ -351,6 +368,8 @@ class ImpactConfig {
     crashModelUrl: crashModelUrl,
     crashModelSha256: crashModelSha256,
     crashModelThreshold: crashModelThreshold,
+    crashModelUnlockUrl: crashModelUnlockUrl,
+    crashModelLicenseKey: crashModelLicenseKey,
   );
 
   @override
@@ -367,7 +386,9 @@ class ImpactConfig {
           minImpactConfidence == other.minImpactConfidence &&
           crashModelUrl == other.crashModelUrl &&
           crashModelSha256 == other.crashModelSha256 &&
-          crashModelThreshold == other.crashModelThreshold;
+          crashModelThreshold == other.crashModelThreshold &&
+          crashModelUnlockUrl == other.crashModelUnlockUrl &&
+          crashModelLicenseKey == other.crashModelLicenseKey;
 
   @override
   int get hashCode => Object.hash(
@@ -381,5 +402,7 @@ class ImpactConfig {
     crashModelUrl,
     crashModelSha256,
     crashModelThreshold,
+    crashModelUnlockUrl,
+    crashModelLicenseKey,
   );
 }

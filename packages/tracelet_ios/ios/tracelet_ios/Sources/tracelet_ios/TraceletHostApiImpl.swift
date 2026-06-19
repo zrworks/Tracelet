@@ -180,6 +180,21 @@ class TraceletHostApiImpl: TraceletHostApi {
         dict["attestationEnabled"] = c.attestation.enabled
         dict["attestationRefreshInterval"] = c.attestation.refreshInterval
 
+        // Impact / crash & fall detection (#183). Flattened so the iOS
+        // ConfigManager + ImpactDetector pick these up (parity with Android).
+        dict["enableCrashDetection"] = c.impact.enableCrashDetection
+        dict["enableFallDetection"] = c.impact.enableFallDetection
+        dict["crashGThreshold"] = c.impact.crashGThreshold
+        dict["crashMinSpeedKmh"] = c.impact.crashMinSpeedKmh
+        dict["fallGThreshold"] = c.impact.fallGThreshold
+        dict["confirmWindowMs"] = c.impact.confirmWindowMs
+        dict["minImpactConfidence"] = c.impact.minImpactConfidence
+        dict["crashModelUrl"] = c.impact.crashModelUrl
+        dict["crashModelSha256"] = c.impact.crashModelSha256
+        dict["crashModelThreshold"] = c.impact.crashModelThreshold
+        dict["crashModelUnlockUrl"] = c.impact.crashModelUnlockUrl
+        dict["crashModelLicenseKey"] = c.impact.crashModelLicenseKey
+
         return dict
     }
 

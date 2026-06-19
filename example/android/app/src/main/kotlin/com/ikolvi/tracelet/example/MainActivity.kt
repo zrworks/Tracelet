@@ -115,6 +115,41 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.error("CRASH_MODEL_ERROR", e.message, null)
                     }
+                } else if (call.method == "debugImpactGate") {
+                    // #183 Phase 3: verify ML gating (Replace mode) through the real
+                    // Rust ImpactDetector on-device. Feeds one window with a supplied
+                    // crashProba; crashProba < 0 ⇒ rule engine. Returns whether a
+                    // candidate fired + its kind/confidence.
+                    try {
+                        val peakG = call.argument<Double>("peakG")!!
+                        val speedMps = call.argument<Double>("speedMps")!!
+                        val crashProba = call.argument<Double>("crashProba") ?: -1.0
+                        val threshold = call.argument<Double>("threshold") ?: 0.5
+                        val detector = uniffi.tracelet_core.ImpactDetector(
+                            uniffi.tracelet_core.ImpactConfig(
+                                enableCrash = true,
+                                enableFall = false,
+                                crashGThreshold = 2.0,
+                                crashMinSpeedKmh = 25.0,
+                                fallGThreshold = 2.5,
+                                confirmWindowMs = 15000L,
+                                minConfidence = 0.6,
+                            ),
+                        )
+                        val ev = detector.onImpactWindow(
+                            peakG, speedMps, 0.0, false, false, 0.0, 0.0,
+                            System.currentTimeMillis(), crashProba, threshold,
+                        )
+                        result.success(
+                            mapOf(
+                                "fired" to (ev != null),
+                                "kind" to ev?.kind,
+                                "confidence" to ev?.confidence,
+                            ),
+                        )
+                    } catch (e: Exception) {
+                        result.error("IMPACT_GATE_ERROR", e.message, null)
+                    }
                 } else {
                     result.notImplemented()
                 }

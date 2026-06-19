@@ -134,6 +134,10 @@ class TraceletSdk private constructor(private val context: Context) {
     private var telematicsEngine: uniffi.tracelet_core.TelematicsEngine? = null
     private var transportClassifier: uniffi.tracelet_core.TransportModeClassifier? = null
     private var impactDetector: uniffi.tracelet_core.ImpactDetector? = null
+
+    /** Opt-in ML crash model (#183); null ⇒ rule engine. Loaded off-thread. */
+    @Volatile
+    private var crashModel: uniffi.tracelet_core.CrashModel? = null
     private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val gyroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val rawAccelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
@@ -2351,6 +2355,25 @@ class TraceletSdk private constructor(private val context: Context) {
             motionDetector.impactHighRate = impactDetector != null
             // Gyroscope corroboration (#179) — only sample gyro when crash/fall is on.
             motionDetector.gyroEnabled = impactDetector != null
+        }
+
+        // #183: opt-in ML crash model. Download/decrypt happen off the main thread;
+        // until (or unless) it loads, the rule engine is used. Any failure → null
+        // (rule-engine fallback). The model is only fetched when crash detection is
+        // on AND a model URL is configured.
+        crashModel = null
+        val crashUrl = configManager.getCrashModelUrl()
+        if (configManager.getEnableCrashDetection() && crashUrl != null) {
+            val sha = configManager.getCrashModelSha256()
+            Thread {
+                val m = com.ikolvi.tracelet.sdk.crash.CrashModelLoader.load(
+                    context, crashUrl, sha,
+                ) { msg -> logger.debug(msg) }
+                if (m != null) {
+                    crashModel = m
+                    logger.info("Crash ML model active.")
+                }
+            }.apply { isDaemon = true }.start()
         }
     }
 

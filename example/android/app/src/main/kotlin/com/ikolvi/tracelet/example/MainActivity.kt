@@ -54,6 +54,42 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.error("REFLECTION_ERROR", e.message, null)
                     }
+                } else if (call.method == "debugCrashModelLoad") {
+                    // #183 Phase 2b: verify the loader (download → SHA-256 verify →
+                    // AES-GCM decrypt → cache) end-to-end on-device. Runs off the
+                    // main thread because the loader does network I/O.
+                    val url = call.argument<String>("url")!!
+                    val sha = call.argument<String?>("sha256")
+                    val keyB64 = call.argument<String>("key")!!
+                    Thread {
+                        try {
+                            com.ikolvi.tracelet.sdk.crash.CrashModelLoader.decryptionKey =
+                                Base64.decode(keyB64, Base64.DEFAULT)
+                            // Force a fresh download for the test (ignore any cache).
+                            java.io.File(
+                                applicationContext.filesDir,
+                                "tracelet_crash_model.enc",
+                            ).delete()
+                            val logs = StringBuilder()
+                            val model = com.ikolvi.tracelet.sdk.crash.CrashModelLoader.load(
+                                applicationContext, url, sha,
+                            ) { logs.append(it).append("; ") }
+                            runOnUiThread {
+                                if (model == null) {
+                                    result.error("LOAD_NULL", logs.toString(), null)
+                                } else {
+                                    result.success(
+                                        mapOf(
+                                            "treeCount" to model.treeCount().toInt(),
+                                            "proba" to model.predictProba(listOf(3.0)),
+                                        ),
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread { result.error("CRASH_LOAD_ERROR", e.message, null) }
+                        }
+                    }.start()
                 } else if (call.method == "debugCrashModelPredict") {
                     // #183: verify the on-device crash-ML chain end-to-end —
                     // AES-256-GCM decrypt of an encrypted forest blob + tree-walk

@@ -810,6 +810,12 @@ class ConfigManager(context: Context) {
     fun getConfirmWindowMs(): Long = getInt("confirmWindowMs", 15000).toLong()
     fun getMinImpactConfidence(): Double = getDouble("minImpactConfidence", 0.6)
 
+    // #183 crash ML model (opt-in). URL/sha of the encrypted model + the
+    // probability threshold; empty URL ⇒ pure rule engine.
+    fun getCrashModelUrl(): String? = getString("crashModelUrl", "").ifEmpty { null }
+    fun getCrashModelSha256(): String? = getString("crashModelSha256", "").ifEmpty { null }
+    fun getCrashModelThreshold(): Double = getDouble("crashModelThreshold", 0.5)
+
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------

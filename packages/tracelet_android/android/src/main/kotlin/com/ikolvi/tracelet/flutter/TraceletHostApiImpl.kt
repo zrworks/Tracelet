@@ -341,6 +341,10 @@ class TraceletHostApiImpl(
             put("fallGThreshold", c.impact.fallGThreshold)
             put("confirmWindowMs", c.impact.confirmWindowMs)
             put("minImpactConfidence", c.impact.minImpactConfidence)
+            // #183 crash ML model (opt-in)
+            put("crashModelUrl", c.impact.crashModelUrl)
+            put("crashModelSha256", c.impact.crashModelSha256)
+            put("crashModelThreshold", c.impact.crashModelThreshold)
         })
     }
 

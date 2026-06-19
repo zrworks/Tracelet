@@ -2701,6 +2701,49 @@ struct TlModeChangeEvent: Hashable {
   }
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlCrashModelStatusEvent: Hashable {
+  var status: String
+  var detail: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlCrashModelStatusEvent? {
+    let status = pigeonVar_list[0] as! String
+    let detail: String? = nilOrValue(pigeonVar_list[1])
+
+    return TlCrashModelStatusEvent(
+      status: status,
+      detail: detail
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      status,
+      detail,
+    ]
+  }
+  static func == (lhs: TlCrashModelStatusEvent, rhs: TlCrashModelStatusEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.status, rhs.status) && deepEqualsTraceletApi(lhs.detail, rhs.detail)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlCrashModelStatusEvent")
+    deepHashTraceletApi(value: status, hasher: &hasher)
+    deepHashTraceletApi(value: detail, hasher: &hasher)
+  }
+}
+
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlTelematicsRecord: Hashable {
   /// The primary key.
@@ -3017,8 +3060,10 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
     case 187:
       return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
     case 188:
-      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+      return TlCrashModelStatusEvent.fromList(self.readValue() as! [Any?])
     case 189:
+      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+    case 190:
       return TlLogEntry.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -3205,11 +3250,14 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlModeChangeEvent {
       super.writeByte(187)
       super.writeValue(value.toList())
-    } else if let value = value as? TlTelematicsRecord {
+    } else if let value = value as? TlCrashModelStatusEvent {
       super.writeByte(188)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLogEntry {
+    } else if let value = value as? TlTelematicsRecord {
       super.writeByte(189)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLogEntry {
+      super.writeByte(190)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -4734,6 +4782,7 @@ protocol TraceletEventApiProtocol {
   func onDrivingEvent(event eventArg: TlDrivingEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onImpact(event eventArg: TlImpactEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onCrashModelStatus(event eventArg: TlCrashModelStatusEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
 }
 class TraceletEventApi: TraceletEventApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -5071,6 +5120,24 @@ class TraceletEventApi: TraceletEventApiProtocol {
   }
   func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([eventArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  func onCrashModelStatus(event eventArg: TlCrashModelStatusEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onCrashModelStatus\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([eventArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {

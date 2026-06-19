@@ -697,6 +697,12 @@ class PigeonTracelet extends TraceletPlatform {
   }
 
   @override
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents {
+    _ensureEventsRegistered();
+    return _events.crashModelStatusEvents;
+  }
+
+  @override
   Stream<TlSpeedMotionEvent> get motionModeChangeEvents {
     _ensureEventsRegistered();
     return _events.motionModeChangeEvents;

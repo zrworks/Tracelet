@@ -829,6 +829,18 @@ class TlModeChangeEvent {
   final double confidence;
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+class TlCrashModelStatusEvent {
+  TlCrashModelStatusEvent({required this.status, this.detail});
+  final String status;
+  final String? detail;
+}
+
 // =============================================================================
 // Host API
 // =============================================================================
@@ -1175,4 +1187,5 @@ abstract class TraceletEventApi {
   void onDrivingEvent(TlDrivingEvent event);
   void onImpact(TlImpactEvent event);
   void onModeChange(TlModeChangeEvent event);
+  void onCrashModelStatus(TlCrashModelStatusEvent event);
 }

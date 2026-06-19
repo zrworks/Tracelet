@@ -1109,6 +1109,11 @@ class TraceletWebPlugin extends TraceletPlatform {
   @override
   Stream<TlImpactEvent> get impactEvents => const Stream.empty();
 
+  @override
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents =>
+      // The ML crash model is a native-only feature; never fires on web.
+      const Stream.empty();
+
   void _assertReady() {
     if (!_isReady) {
       throw StateError(

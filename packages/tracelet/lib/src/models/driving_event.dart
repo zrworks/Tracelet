@@ -149,3 +149,66 @@ class ModeChangeEvent {
   String toString() =>
       'ModeChangeEvent($mode, confidence: ${confidence.toStringAsFixed(2)})';
 }
+
+/// Lifecycle stage of the opt-in ML crash model (#183).
+///
+/// Lets the host app surface progress to the user while the model is being
+/// prepared (e.g. show a "Downloading crash model…" spinner).
+enum CrashModelStatus {
+  /// Validating the license and unlocking the decryption key.
+  unlocking,
+
+  /// Downloading the encrypted model blob.
+  downloading,
+
+  /// Verifying and decrypting the downloaded blob.
+  decrypting,
+
+  /// Model is loaded and actively scoring impacts.
+  ready,
+
+  /// Preparation failed — see [CrashModelStatusEvent.detail] for the reason.
+  failed,
+
+  /// ML crash model is not enabled in the current configuration.
+  disabled,
+
+  /// An unrecognised status string was received.
+  unknown,
+}
+
+/// A status update for the opt-in ML crash model lifecycle.
+///
+/// Delivered via `Tracelet.crashModelStatusStream`. Use it to drive UI such as
+/// a download indicator before crash detection becomes active.
+@immutable
+class CrashModelStatusEvent {
+  /// Creates a new [CrashModelStatusEvent].
+  const CrashModelStatusEvent({required this.status, this.detail});
+
+  /// Creates a [CrashModelStatusEvent] from the Pigeon [TlCrashModelStatusEvent].
+  factory CrashModelStatusEvent.fromTl(TlCrashModelStatusEvent e) =>
+      CrashModelStatusEvent(
+        status: switch (e.status) {
+          'unlocking' => CrashModelStatus.unlocking,
+          'downloading' => CrashModelStatus.downloading,
+          'decrypting' => CrashModelStatus.decrypting,
+          'ready' => CrashModelStatus.ready,
+          'failed' => CrashModelStatus.failed,
+          'disabled' => CrashModelStatus.disabled,
+          _ => CrashModelStatus.unknown,
+        },
+        detail: e.detail,
+      );
+
+  /// The current lifecycle stage.
+  final CrashModelStatus status;
+
+  /// Optional context — an error reason on [CrashModelStatus.failed], or extra
+  /// info such as the tree count on [CrashModelStatus.ready].
+  final String? detail;
+
+  @override
+  String toString() =>
+      'CrashModelStatusEvent(${status.name}${detail != null ? ', $detail' : ''})';
+}

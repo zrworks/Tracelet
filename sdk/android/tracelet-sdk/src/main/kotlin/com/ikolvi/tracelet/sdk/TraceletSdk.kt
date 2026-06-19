@@ -2395,6 +2395,7 @@ class TraceletSdk private constructor(private val context: Context) {
                 var modelUrl = crashUrl
                 var modelSha = configManager.getCrashModelSha256()
                 if (unlockUrl != null && licenseKey != null) {
+                    emitCrashModelStatus("unlocking")
                     val integrityToken = loader.integrityTokenProvider?.invoke()
                     val unlocked = loader.unlock(
                         unlockUrl, licenseKey, integrityToken,
@@ -2402,16 +2403,34 @@ class TraceletSdk private constructor(private val context: Context) {
                     if (unlocked != null) {
                         modelUrl = unlocked.url
                         modelSha = unlocked.sha256 ?: modelSha
+                    } else {
+                        emitCrashModelStatus("failed", "license unlock failed")
                     }
                 }
                 if (modelUrl != null) {
+                    emitCrashModelStatus("downloading")
                     val m = loader.load(context, modelUrl, modelSha) { msg -> logger.debug(msg) }
                     if (m != null) {
                         crashModel = m
                         logger.info("Crash ML model active.")
+                        emitCrashModelStatus("ready", "${m.treeCount()} trees")
+                    } else {
+                        emitCrashModelStatus("failed", "model download or decrypt failed")
                     }
                 }
             }.apply { isDaemon = true }.start()
+        }
+    }
+
+    /** Forwards an ML crash-model lifecycle status to the host (best-effort). */
+    private fun emitCrashModelStatus(status: String, detail: String? = null) {
+        if (!::eventSender.isInitialized) return
+        try {
+            eventSender.sendCrashModelStatus(
+                mapOf("status" to status, "detail" to detail),
+            )
+        } catch (_: Throwable) {
+            // Never let status reporting affect model loading.
         }
     }
 

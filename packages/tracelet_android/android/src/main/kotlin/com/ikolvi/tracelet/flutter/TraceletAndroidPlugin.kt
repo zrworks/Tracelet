@@ -55,6 +55,7 @@ class MultiEventSender : com.ikolvi.tracelet.sdk.TraceletEventSender {
     override fun sendDrivingEvent(data: Map<String, Any?>) { dispatchers.forEach { it.sendDrivingEvent(data) } }
     override fun sendImpact(data: Map<String, Any?>) { dispatchers.forEach { it.sendImpact(data) } }
     override fun sendModeChange(data: Map<String, Any?>) { dispatchers.forEach { it.sendModeChange(data) } }
+    override fun sendCrashModelStatus(data: Map<String, Any?>) { dispatchers.forEach { it.sendCrashModelStatus(data) } }
 
     override fun hasListener(eventName: String): Boolean = dispatchers.any { it.hasListener(eventName) }
 }

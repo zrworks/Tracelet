@@ -127,6 +127,7 @@ class Tracelet {
   static Stream<DrivingEvent>? _drivingEventStream;
   static Stream<ImpactEvent>? _impactStream;
   static Stream<ModeChangeEvent>? _modeChangeStream;
+  static Stream<CrashModelStatusEvent>? _crashModelStatusStream;
 
   /// Whether the Kalman filter is currently enabled for GPS smoothing.
   ///
@@ -2012,6 +2013,18 @@ class Tracelet {
   static Stream<ModeChangeEvent> get modeChangeStream {
     return _modeChangeStream ??= _platform.modeChangeEvents.map(
       ModeChangeEvent.fromTl,
+    );
+  }
+
+  /// A broadcast stream of opt-in ML crash-model lifecycle status updates.
+  ///
+  /// Emits `unlocking` → `downloading` → `decrypting` → `ready` as the model is
+  /// prepared (or `failed`/`disabled`). Use it to show the user that the crash
+  /// model is downloading before crash detection becomes active. Only fires
+  /// when `ImpactConfig.useMlModel` (crash model) is configured.
+  static Stream<CrashModelStatusEvent> get crashModelStatusStream {
+    return _crashModelStatusStream ??= _platform.crashModelStatusEvents.map(
+      CrashModelStatusEvent.fromTl,
     );
   }
 

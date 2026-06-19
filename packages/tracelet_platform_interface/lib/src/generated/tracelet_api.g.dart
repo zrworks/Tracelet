@@ -3161,6 +3161,53 @@ class TlModeChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+class TlCrashModelStatusEvent {
+  TlCrashModelStatusEvent({required this.status, this.detail});
+
+  String status;
+
+  String? detail;
+
+  List<Object?> _toList() {
+    return <Object?>[status, detail];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlCrashModelStatusEvent decode(Object result) {
+    result as List<Object?>;
+    return TlCrashModelStatusEvent(
+      status: result[0]! as String,
+      detail: result[1] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlCrashModelStatusEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(status, other.status) &&
+        _deepEquals(detail, other.detail);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class TlTelematicsRecord {
   TlTelematicsRecord({
     required this.id,
@@ -3487,11 +3534,14 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is TlModeChangeEvent) {
       buffer.putUint8(187);
       writeValue(buffer, value.encode());
-    } else if (value is TlTelematicsRecord) {
+    } else if (value is TlCrashModelStatusEvent) {
       buffer.putUint8(188);
       writeValue(buffer, value.encode());
-    } else if (value is TlLogEntry) {
+    } else if (value is TlTelematicsRecord) {
       buffer.putUint8(189);
+      writeValue(buffer, value.encode());
+    } else if (value is TlLogEntry) {
+      buffer.putUint8(190);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -3641,8 +3691,10 @@ class _PigeonCodec extends StandardMessageCodec {
       case 187:
         return TlModeChangeEvent.decode(readValue(buffer)!);
       case 188:
-        return TlTelematicsRecord.decode(readValue(buffer)!);
+        return TlCrashModelStatusEvent.decode(readValue(buffer)!);
       case 189:
+        return TlTelematicsRecord.decode(readValue(buffer)!);
+      case 190:
         return TlLogEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -5458,6 +5510,8 @@ abstract class TraceletEventApi {
 
   void onModeChange(TlModeChangeEvent event);
 
+  void onCrashModelStatus(TlCrashModelStatusEvent event);
+
   static void setUp(
     TraceletEventApi? api, {
     BinaryMessenger? binaryMessenger,
@@ -5935,6 +5989,32 @@ abstract class TraceletEventApi {
           final TlModeChangeEvent arg_event = args[0]! as TlModeChangeEvent;
           try {
             api.onModeChange(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onCrashModelStatus$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlCrashModelStatusEvent arg_event =
+              args[0]! as TlCrashModelStatusEvent;
+          try {
+            api.onCrashModelStatus(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

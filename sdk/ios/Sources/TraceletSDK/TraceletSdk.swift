@@ -2082,6 +2082,7 @@ public final class TraceletSdk {
                 var modelUrl = crashUrl
                 var modelSha = sha
                 if let unlockUrl = unlockUrl, let licenseKey = licenseKey {
+                    self.emitCrashModelStatus("unlocking")
                     let token = CrashModelLoader.integrityTokenProvider?()
                     if let unlocked = CrashModelLoader.unlock(
                         unlockUrl: unlockUrl, licenseKey: licenseKey, integrityToken: token,
@@ -2089,18 +2090,31 @@ public final class TraceletSdk {
                     ) {
                         modelUrl = unlocked.url
                         modelSha = unlocked.sha256 ?? modelSha
+                    } else {
+                        self.emitCrashModelStatus("failed", "license unlock failed")
                     }
                 }
                 guard let url = modelUrl else { return }
+                self.emitCrashModelStatus("downloading")
                 if let m = CrashModelLoader.load(
                     url: url, sha256: modelSha,
                     log: { [weak self] msg in self?.logger.debug(msg) }
                 ) {
                     self.crashModel = m
                     self.logger.info("Crash ML model active.")
+                    self.emitCrashModelStatus("ready", "\(m.treeCount()) trees")
+                } else {
+                    self.emitCrashModelStatus("failed", "model download or decrypt failed")
                 }
             }
         }
+    }
+
+    /// Forwards an ML crash-model lifecycle status to the host (best-effort).
+    private func emitCrashModelStatus(_ status: String, _ detail: String? = nil) {
+        var data: [String: Any] = ["status": status]
+        if let detail = detail { data["detail"] = detail }
+        eventSender.sendCrashModelStatus(data)
     }
 
     /// Feeds an accepted location fix to the telematics engine and emits events.

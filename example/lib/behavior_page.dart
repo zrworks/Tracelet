@@ -41,8 +41,9 @@ class _BehaviorPageState extends State<BehaviorPage> {
   static const String _demoLicenseKey =
       'eyJleHAiOjE3ODcwNDUwOTAsImlhdCI6MTc4MTg2MTA5MCwibGljIjoiODU5NzU2MmUtMzliNy00N2I3LTkxOWUtMjBkMjg3NzRiZWNlIiwicGtnIjoiY29tLmlrb2x2aS50cmFjZWxldC5leGFtcGxlIiwicGxhbiI6InBybyIsInNjb3BlIjoiZGV2In0.ZlqvsJyqxRB-FGMEXxLY7-GtmpdkvR7rG_CYZLBqYZNdeiT3B9TzG4TYaCU23ZbHBXDZlB37ZYVZYGMeS_3QDw';
   bool _useMlModel = true;
-  final TextEditingController _licenseCtrl =
-      TextEditingController(text: _demoLicenseKey);
+  final TextEditingController _licenseCtrl = TextEditingController(
+    text: _demoLicenseKey,
+  );
 
   final List<String> _log = [];
   String _mode = 'unknown';
@@ -51,12 +52,14 @@ class _BehaviorPageState extends State<BehaviorPage> {
   StreamSubscription<tl.DrivingEvent>? _drivingSub;
   StreamSubscription<tl.ImpactEvent>? _impactSub;
   StreamSubscription<tl.ModeChangeEvent>? _modeSub;
+  StreamSubscription<tl.CrashModelStatusEvent>? _crashModelSub;
 
   @override
   void dispose() {
     _drivingSub?.cancel();
     _impactSub?.cancel();
     _modeSub?.cancel();
+    _crashModelSub?.cancel();
     _licenseCtrl.dispose();
     super.dispose();
   }
@@ -138,6 +141,27 @@ class _BehaviorPageState extends State<BehaviorPage> {
     setState(() => _crash = v);
     await _applyConfig();
     if (v) {
+      // Surface ML crash-model download/load progress so the user knows the
+      // model is being prepared before crash detection becomes active.
+      _crashModelSub ??= tl.Tracelet.crashModelStatusStream.listen((e) {
+        final detail = e.detail != null ? '  (${e.detail})' : '';
+        switch (e.status) {
+          case tl.CrashModelStatus.unlocking:
+            _logLine('🔑 crash model: unlocking license…');
+          case tl.CrashModelStatus.downloading:
+            _logLine('⬇️ crash model: downloading…');
+          case tl.CrashModelStatus.decrypting:
+            _logLine('🔓 crash model: decrypting…');
+          case tl.CrashModelStatus.ready:
+            _logLine('✅ crash model ready$detail');
+          case tl.CrashModelStatus.failed:
+            _logLine('❌ crash model failed$detail');
+          case tl.CrashModelStatus.disabled:
+            _logLine('⏸️ crash model disabled');
+          case tl.CrashModelStatus.unknown:
+            _logLine('crash model: ${e.status.name}$detail');
+        }
+      });
       _impactSub ??= tl.Tracelet.impactStream.listen((e) {
         if (e.isPotential) {
           setState(() => _pendingImpact = e);
@@ -155,6 +179,8 @@ class _BehaviorPageState extends State<BehaviorPage> {
     } else {
       _impactSub?.cancel();
       _impactSub = null;
+      _crashModelSub?.cancel();
+      _crashModelSub = null;
       setState(() => _pendingImpact = null);
     }
   }
@@ -400,7 +426,10 @@ class _BehaviorPageState extends State<BehaviorPage> {
                     ),
                     maxLines: 2,
                     minLines: 1,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
                     onChanged: (_) {
                       if (_useMlModel) _applyConfig();
                     },

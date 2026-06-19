@@ -833,6 +833,13 @@ abstract class TraceletPlatform extends PlatformInterface {
     throw UnimplementedError('modeChangeEvents has not been implemented.');
   }
 
+  /// Stream of ML crash-model lifecycle status changes (download/load).
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents {
+    throw UnimplementedError(
+      'crashModelStatusEvents has not been implemented.',
+    );
+  }
+
   /// Stream of speed-based motion mode change events.
   ///
   /// Fires only when [MotionConfig.motionDetectionMode] is

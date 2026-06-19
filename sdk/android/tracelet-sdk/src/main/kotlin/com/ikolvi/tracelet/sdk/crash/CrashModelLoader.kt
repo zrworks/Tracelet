@@ -64,14 +64,27 @@ object CrashModelLoader {
         return try {
             val cache = File(context.filesDir, CACHE_FILE)
             var blob = if (cache.exists() && cache.length() > 0) cache.readBytes() else null
+            var fromCache = blob != null
             if (blob == null) {
                 blob = download(url)
                 cache.writeBytes(blob)
             }
             if (sha256 != null && !sha256Hex(blob).equals(sha256, ignoreCase = true)) {
-                log("crash model: SHA-256 mismatch — discarding cache, using rule engine")
-                cache.delete()
-                return null
+                // Cache is stale (e.g. a new model version was published with a
+                // fresh digest). Re-download once so the new model loads in this
+                // same session instead of falling back for a cycle (#183).
+                if (fromCache) {
+                    log("crash model: cached blob is stale — re-downloading new version")
+                    cache.delete()
+                    blob = download(url)
+                    cache.writeBytes(blob)
+                    fromCache = false
+                }
+                if (!sha256Hex(blob).equals(sha256, ignoreCase = true)) {
+                    log("crash model: SHA-256 mismatch — discarding cache, using rule engine")
+                    cache.delete()
+                    return null
+                }
             }
             val model = CrashModel.fromEncrypted(blob, key)
             log("crash model: loaded (${model.treeCount()} trees)")

@@ -41,6 +41,13 @@ class _BehaviorPageState extends State<BehaviorPage> {
   static const String _demoLicenseKey =
       'eyJleHAiOjE3ODcwNDUwOTAsImlhdCI6MTc4MTg2MTA5MCwibGljIjoiODU5NzU2MmUtMzliNy00N2I3LTkxOWUtMjBkMjg3NzRiZWNlIiwicGtnIjoiY29tLmlrb2x2aS50cmFjZWxldC5leGFtcGxlIiwicGxhbiI6InBybyIsInNjb3BlIjoiZGV2In0.ZlqvsJyqxRB-FGMEXxLY7-GtmpdkvR7rG_CYZLBqYZNdeiT3B9TzG4TYaCU23ZbHBXDZlB37ZYVZYGMeS_3QDw';
   bool _useMlModel = true;
+
+  // Bench-test mode: crash detection is normally speed-gated at 25 km/h (GPS
+  // speed), so a phone thrown onto a bed (~0 km/h) never fires even with a huge
+  // g-spike. Enable this to drop the gate to 0 km/h so a physical throw can
+  // trigger the model on a stationary device. Leave OFF for real driving.
+  bool _throwTestMode = false;
+
   final TextEditingController _licenseCtrl = TextEditingController(
     text: _demoLicenseKey,
   );
@@ -121,6 +128,8 @@ class _BehaviorPageState extends State<BehaviorPage> {
           crashModelUnlockUrl: useMl ? _unlockUrl : null,
           crashModelLicenseKey: useMl ? licenseKey : null,
           crashModelThreshold: _crashModelThreshold,
+          // Drop the speed gate for a stationary bench test (throw-on-bed).
+          crashMinSpeedKmh: _throwTestMode ? 0 : 25,
         ),
       ),
     );
@@ -594,6 +603,26 @@ class _BehaviorPageState extends State<BehaviorPage> {
                   // Live download/load status of the licensed model. Visible
                   // only when crash detection + ML model are both on.
                   if (_crash && _useMlModel) _crashModelStatusTile(),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Throw-test mode (bench)'),
+                    subtitle: const Text(
+                      'Drops the 25 km/h speed gate to 0 so a stationary '
+                      'throw can fire the model. Turn OFF for real driving.',
+                    ),
+                    value: _throwTestMode,
+                    onChanged: (v) async {
+                      setState(() => _throwTestMode = v);
+                      await _applyConfig();
+                      _logLine(
+                        v
+                            ? '🧪 Throw-test mode ON — speed gate disabled '
+                                  '(throw the phone onto a bed)'
+                            : '🧪 Throw-test mode OFF — speed gate restored '
+                                  '(25 km/h)',
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

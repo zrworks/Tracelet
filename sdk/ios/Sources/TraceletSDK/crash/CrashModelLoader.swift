@@ -43,6 +43,7 @@ public enum CrashModelLoader {
         let cache = cacheURL()
         do {
             var blob = (try? Data(contentsOf: cache)).flatMap { $0.isEmpty ? nil : $0 }
+            var fromCache = blob != nil
             if blob == nil {
                 guard let downloaded = download(url) else {
                     log("crash model: download failed — using rule engine")
@@ -51,11 +52,27 @@ public enum CrashModelLoader {
                 blob = downloaded
                 try? downloaded.write(to: cache)
             }
-            guard let data = blob else { return nil }
+            guard var data = blob else { return nil }
             if let sha = sha256, sha256Hex(data).lowercased() != sha.lowercased() {
-                log("crash model: SHA-256 mismatch — discarding cache, using rule engine")
-                try? FileManager.default.removeItem(at: cache)
-                return nil
+                // Cache is stale (e.g. a new model version was published with a
+                // fresh digest). Re-download once so the new model loads in this
+                // same session instead of falling back for a cycle (#183).
+                if fromCache {
+                    log("crash model: cached blob is stale — re-downloading new version")
+                    try? FileManager.default.removeItem(at: cache)
+                    guard let downloaded = download(url) else {
+                        log("crash model: download failed — using rule engine")
+                        return nil
+                    }
+                    data = downloaded
+                    try? downloaded.write(to: cache)
+                    fromCache = false
+                }
+                if sha256Hex(data).lowercased() != sha.lowercased() {
+                    log("crash model: SHA-256 mismatch — discarding cache, using rule engine")
+                    try? FileManager.default.removeItem(at: cache)
+                    return nil
+                }
             }
             let model = try CrashModel.fromEncrypted(blob: data, key: key)
             log("crash model: loaded (\(model.treeCount()) trees)")

@@ -250,6 +250,32 @@ builds and emulators** don't need this — use a `dev` license, which unlocks th
 model without Play Integrity (see the unlock-Worker guide). If you only use the
 rule engine, you can skip this entirely.
 
+#### Get a license (self-service portal)
+
+Instead of minting keys by hand, run the **license portal** — a small
+Cloudflare Worker behind Cloudflare Access. You log in, enter your **application
+id** (and, for production, your **app signing-cert SHA-256**), and it generates a
+ready-to-paste license key:
+
+```dart
+ImpactConfig(
+  enableCrashDetection: true,
+  crashModelUnlockUrl: 'https://<your-unlock-worker>/unlock',
+  crashModelLicenseKey: '<paste from the portal>',
+  crashModelThreshold: 0.5074,
+)
+```
+
+- **dev license** — works in debug builds & emulators (no Play Integrity); pick
+  this to try the model. SHA-256 not required.
+- **prod license** — bound to your shipped app via Play Integrity; requires the
+  signing-cert SHA-256 (Play Console → *App integrity → App signing*, or
+  `./gradlew signingReport`).
+
+The portal also lists your issued licenses and lets you **revoke** one instantly.
+Deploy your own from
+[`cloudflare/crash-model-mint`](https://github.com/Ikolvi/Tracelet/tree/main/cloudflare/crash-model-mint).
+
 <Callout type="warning">
 The trained model itself is still **Beta / licensing-gated** (see the note above).
 The infrastructure to load, secure and gate on a model is in place; a fully

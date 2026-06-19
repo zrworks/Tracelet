@@ -127,6 +127,19 @@ public final class MotionDetector {
 
     private var gyroSampler: DispatchSourceTimer?
 
+    /// Emitted per barometer sample with the ambient pressure in hPa (millibar),
+    /// for the cabin-pressure crash cue (#173). A severe collision / airbag
+    /// deployment produces a brief pressure transient. Only sampled while
+    /// `baroEnabled` is set (crash/fall detection on) and only on devices whose
+    /// barometer is available — most importantly it never affects the
+    /// motion-detection state machine.
+    public var onPressureSample: ((Double) -> Void)?
+
+    /// Enables barometer sampling (set when crash/fall detection is active).
+    public var baroEnabled: Bool = false
+
+    private lazy var altimeter = CMAltimeter()
+    private var altimeterStarted = false
     /// Emitted per accelerometer sample with the raw total magnitude in g
     /// (gravity included; ~1 g rest, ~0 g free-fall) for fall detection (#180).
     public var onAccelRawSample: ((Double) -> Void)?
@@ -167,6 +180,7 @@ public final class MotionDetector {
         isRunning = true
 
         if gyroEnabled { startGyroMonitoring() }
+        if baroEnabled { startBaroMonitoring() }
         if isAccelerometerOnlyMode {
             startAccelerometerOnlyMode()
         } else {
@@ -197,6 +211,29 @@ public final class MotionDetector {
         motionManager.stopGyroUpdates()
     }
 
+    /// Barometer monitor (crash cabin-pressure cue, #173). `CMAltimeter`
+    /// reports relative-altitude updates whose `pressure` is in kPa; multiply
+    /// by 10 to emit hPa (millibar) to match the Android `TYPE_PRESSURE` units.
+    private func startBaroMonitoring() {
+        guard CMAltimeter.isRelativeAltitudeAvailable() else { return }
+        guard !altimeterStarted else { return }
+        altimeterStarted = true
+        let queue = OperationQueue()
+        queue.name = "com.tracelet.baro"
+        queue.qualityOfService = .utility
+        altimeter.startRelativeAltitudeUpdates(to: queue) { [weak self] data, _ in
+            guard let self = self, let data = data else { return }
+            let hpa = data.pressure.doubleValue * 10.0
+            self.onPressureSample?(hpa)
+        }
+    }
+
+    private func stopBaroMonitoring() {
+        guard altimeterStarted else { return }
+        altimeter.stopRelativeAltitudeUpdates()
+        altimeterStarted = false
+    }
+
     public func stop() {
         guard isRunning else { return }
         isRunning = false
@@ -212,6 +249,7 @@ public final class MotionDetector {
         stopMovingSampler()
         stopDutyCycle()
         stopGyroMonitoring()
+        stopBaroMonitoring()
         motionManager.stopAccelerometerUpdates()
 
         // Shared cleanup

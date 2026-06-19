@@ -144,6 +144,10 @@ class TraceletSdk private constructor(private val context: Context) {
     private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val gyroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val rawAccelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
+    // #173 barometer cue: recent ambient-pressure samples (hPa) for the
+    // cabin-pressure crash corroboration. Empty on the (common) devices with no
+    // pressure sensor, in which case the cue simply never fires.
+    private val baroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private var accelWindowRunnable: Runnable? = null
     private var impactConfirmRunnable: Runnable? = null
     @Volatile private var lastSpeedMps: Double = 0.0
@@ -374,6 +378,12 @@ class TraceletSdk private constructor(private val context: Context) {
         motionDetector.onGyroSample = { dps ->
             if (impactDetector != null) {
                 gyroBuffer.add(dps)
+            }
+        }
+        // #173: feed barometer samples (hPa) for the cabin-pressure crash cue.
+        motionDetector.onPressureSample = { hpa ->
+            if (impactDetector != null) {
+                baroBuffer.add(hpa)
             }
         }
         // #180: buffer raw total-g to detect a free-fall preceding a fall impact.
@@ -2381,6 +2391,8 @@ class TraceletSdk private constructor(private val context: Context) {
             motionDetector.impactHighRate = impactDetector != null
             // Gyroscope corroboration (#179) — only sample gyro when crash/fall is on.
             motionDetector.gyroEnabled = impactDetector != null
+            // Barometer cue (#173) — only sample pressure when crash/fall is on.
+            motionDetector.baroEnabled = impactDetector != null
         }
 
         // #183: opt-in ML crash model. Download/decrypt happen off the main thread;
@@ -2490,6 +2502,7 @@ class TraceletSdk private constructor(private val context: Context) {
         accelBuffer.clear()
         gyroBuffer.clear()
         rawAccelBuffer.clear()
+        baroBuffer.clear()
         accelWindowRunnable = object : Runnable {
             override fun run() {
                 if (!stateManager.enabled) return
@@ -2506,6 +2519,7 @@ class TraceletSdk private constructor(private val context: Context) {
         accelBuffer.clear()
         gyroBuffer.clear()
         rawAccelBuffer.clear()
+        baroBuffer.clear()
         // NOTE: the impact confirmation loop is intentionally NOT stopped here.
         // A crash typically ends in the vehicle stopping, which disables tracking
         // (stopTimeout) and would otherwise abandon a pending `potential_crash`
@@ -2686,6 +2700,16 @@ class TraceletSdk private constructor(private val context: Context) {
                 postImpactStill = isPostImpactStill(raw)
                 rawAccelBuffer.clear()
             }
+            // Cabin-pressure swing (hPa) over this window — crash corroboration
+            // (#173). peak−trough of the buffered barometer samples; 0 when the
+            // device has no pressure sensor (buffer stays empty), so the cue is
+            // strictly best-effort and never suppresses.
+            val baroDelta: Double
+            synchronized(baroBuffer) {
+                val baro = baroBuffer
+                baroDelta = if (baro.size >= 2) (baro.max() - baro.min()) else 0.0
+                baroBuffer.clear()
+            }
             // #183 ML gating (Replace mode): when the opt-in model is loaded, run
             // inference for this window and let its probability decide the crash
             // (still speed-gated in the core). `crashProba < 0` ⇒ no model ⇒ the
@@ -2737,6 +2761,19 @@ class TraceletSdk private constructor(private val context: Context) {
                 // Sample the post-impact GPS speed shortly after to corroborate.
                 if (candidate.kind == "potential_crash") {
                     scheduleDvCorroboration()
+                    // #173: a severe collision / airbag deployment spikes cabin
+                    // pressure. The transient is concurrent with the impact, so
+                    // fold this window's pressure swing in immediately. A flat or
+                    // absent barometer leaves confidence unchanged.
+                    if (baroDelta > 0.0) {
+                        try {
+                            if (detector.corroborateBarometric(baroDelta, now)) {
+                                logger.debug("crash barometer: cabin-pressure spike corroborated (#173)")
+                            }
+                        } catch (e: Exception) {
+                            logger.error("crash barometer corroboration failed: ${e.message}")
+                        }
+                    }
                 }
                 // #182: persist the candidate and arm a process-death safety-net
                 // alarm so the confirmation still fires if the OS kills the app

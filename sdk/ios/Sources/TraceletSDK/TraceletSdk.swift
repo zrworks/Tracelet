@@ -123,6 +123,10 @@ public final class TraceletSdk {
     private let gyroBufferLock = NSLock()
     private var rawAccelBuffer: [Double] = []
     private let rawAccelBufferLock = NSLock()
+    // #173 barometer cue: ambient-pressure samples (hPa). Empty on devices with
+    // no barometer, in which case the cabin-pressure cue simply never fires.
+    private var baroBuffer: [Double] = []
+    private let baroBufferLock = NSLock()
     private var accelWindowTimer: Timer?
     private var impactConfirmTimer: Timer?
     private var lastSpeedMps: Double = 0
@@ -1826,6 +1830,13 @@ public final class TraceletSdk {
             self.gyroBuffer.append(dps)
             self.gyroBufferLock.unlock()
         }
+        // #173: feed barometer samples (hPa) for the cabin-pressure crash cue.
+        motionDetector.onPressureSample = { [weak self] hpa in
+            guard let self = self, self.impactDetector != nil else { return }
+            self.baroBufferLock.lock()
+            self.baroBuffer.append(hpa)
+            self.baroBufferLock.unlock()
+        }
         // #180: buffer raw total-g to detect a free-fall preceding a fall impact.
         motionDetector.onAccelRawSample = { [weak self] totalG in
             guard let self = self, self.impactDetector != nil else { return }
@@ -2079,6 +2090,7 @@ public final class TraceletSdk {
         // cost is accepted because the feature is opt-in).
         motionDetector?.impactHighRate = (impactDetector != nil)
         motionDetector?.gyroEnabled = (impactDetector != nil)   // #179 gyro corroboration
+        motionDetector?.baroEnabled = (impactDetector != nil)   // #173 barometer cue
 
         // #183: opt-in ML crash model. Download/decrypt off the main thread; until
         // (or unless) it loads, the rule engine is used. Loaded only when crash
@@ -2182,6 +2194,7 @@ public final class TraceletSdk {
         accelBufferLock.lock(); accelBuffer.removeAll(); accelBufferLock.unlock()
         gyroBufferLock.lock(); gyroBuffer.removeAll(); gyroBufferLock.unlock()
         rawAccelBufferLock.lock(); rawAccelBuffer.removeAll(); rawAccelBufferLock.unlock()
+        baroBufferLock.lock(); baroBuffer.removeAll(); baroBufferLock.unlock()
         // NOTE: the impact confirmation loop is intentionally NOT stopped here.
         // A crash typically ends in the vehicle stopping, which disables tracking
         // (stopTimeout) and would otherwise abandon a pending `potential_crash`
@@ -2307,6 +2320,14 @@ public final class TraceletSdk {
             let gyroPeak = gyroBuffer.max() ?? 0.0
             gyroBuffer.removeAll()
             gyroBufferLock.unlock()
+            // Cabin-pressure swing (hPa) over this window — crash corroboration
+            // (#173). peak−trough of the buffered barometer samples; 0 when the
+            // device has no barometer (buffer stays empty), so the cue is
+            // strictly best-effort and never suppresses.
+            baroBufferLock.lock()
+            let baroDelta = (baroBuffer.count >= 2) ? ((baroBuffer.max() ?? 0.0) - (baroBuffer.min() ?? 0.0)) : 0.0
+            baroBuffer.removeAll()
+            baroBufferLock.unlock()
             // Free-fall preceding the impact — fall corroboration (#180).
             rawAccelBufferLock.lock()
             let rawTotalG = rawAccelBuffer
@@ -2347,6 +2368,15 @@ public final class TraceletSdk {
                 // Sample the post-impact GPS speed shortly after to corroborate.
                 if candidate.kind == "potential_crash" {
                     scheduleDvCorroboration()
+                    // #173: a severe collision / airbag deployment spikes cabin
+                    // pressure. The transient is concurrent with the impact, so
+                    // fold this window's pressure swing in immediately. A flat or
+                    // absent barometer leaves confidence unchanged.
+                    if baroDelta > 0.0 {
+                        if detector.corroborateBarometric(pressureDeltaHpa: baroDelta, nowMs: nowMs) {
+                            logger.debug("crash barometer: cabin-pressure spike corroborated (#173)")
+                        }
+                    }
                 }
                 // #182: persist the candidate and arm a process-death safety net
                 // so the confirmation still fires if iOS suspends/kills the app

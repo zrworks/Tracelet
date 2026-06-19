@@ -196,6 +196,21 @@ class MotionDetector(
     private var gyroscopeListener: SensorEventListener? = null
 
     /**
+     * Emitted per barometer sample with the ambient pressure in hPa (millibar),
+     * for the cabin-pressure crash cue (#173). A severe collision / airbag
+     * deployment produces a sudden pressure transient. Only sampled while
+     * [baroEnabled] is set (crash/fall detection on), and only on devices that
+     * actually have a pressure sensor — most phones don't, so the cue is strictly
+     * best-effort ("where available"). Decoupled from the motion state machine.
+     */
+    var onPressureSample: ((hpa: Double) -> Unit)? = null
+
+    /** Enables barometer sampling (set when crash/fall detection is active). */
+    var baroEnabled: Boolean = false
+
+    private var pressureListener: SensorEventListener? = null
+
+    /**
      * Emitted per accelerometer sample with the **raw total** magnitude in g
      * (gravity included; ~1 g at rest, ~0 g in free-fall). Used to detect the
      * free-fall phase of a fall (#180); the gravity-subtracted [onAccelSample]
@@ -249,6 +264,7 @@ class MotionDetector(
         }
         isRunning = true
         if (gyroEnabled) startGyroMonitoring()
+        if (baroEnabled) startBaroMonitoring()
         if (isAccelerometerOnlyMode) {
             logger.debug("start() → startAccelerometerOnlyMode()")
             startAccelerometerOnlyMode()
@@ -284,6 +300,28 @@ class MotionDetector(
         gyroscopeListener = null
     }
 
+    /** Registers a barometer listener (crash cabin-pressure cue, #173). Emits hPa. */
+    private fun startBaroMonitoring() {
+        val sm = sensorManager ?: (context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager)
+            ?.also { sensorManager = it } ?: return
+        val pressure = sm.getDefaultSensor(Sensor.TYPE_PRESSURE) ?: return
+        if (pressureListener != null) return
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                // TYPE_PRESSURE reports ambient air pressure in hPa (millibar).
+                onPressureSample?.invoke(event.values[0].toDouble())
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        sm.registerListener(listener, pressure, accelSamplingDelay(), accelBatchLatencyUs(SENSOR_BATCH_LATENCY_US))
+        pressureListener = listener
+    }
+
+    private fun stopBaroMonitoring() {
+        pressureListener?.let { sensorManager?.unregisterListener(it) }
+        pressureListener = null
+    }
+
     /** Stop all motion detection and clean up resources. */
     fun stop() {
         logger.debug("stop() called — isRunning=$isRunning")
@@ -296,6 +334,7 @@ class MotionDetector(
         cancelStopTimeout()
         stopAccelerometerMonitoring()
         stopGyroMonitoring()
+        stopBaroMonitoring()
         cancelSignificantMotionListener()
         logger.debug("stop() complete")
     }

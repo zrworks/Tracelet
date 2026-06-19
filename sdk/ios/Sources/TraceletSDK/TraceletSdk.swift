@@ -609,6 +609,18 @@ public final class TraceletSdk {
     public func setConfig(_ config: [String: Any]) -> [String: Any] {
         guard isReady else { return getState() }
         let wasPreventing = configManager.getPreventSuspend()
+        // Snapshot behavior-engine config before applying, so we can rebuild the
+        // telematics / transport / crash-fall engines (and (re)load the ML crash
+        // model) when any of it changes at runtime — otherwise toggling crash
+        // detection or supplying a license key via setConfig() would never load
+        // the model. Mirrors the Android SDK. initBehaviorEngines() is idempotent.
+        let oldBehavior: [AnyHashable] = [
+            configManager.getEnableDrivingEvents(), configManager.getEnableFusedClassifier(),
+            configManager.getEnableCrashDetection(), configManager.getEnableFallDetection(),
+            configManager.getCrashModelUrl() ?? "", configManager.getCrashModelUnlockUrl() ?? "",
+            configManager.getCrashModelLicenseKey() ?? "", configManager.getCrashModelSha256() ?? "",
+            configManager.getCrashModelThreshold(),
+        ]
         configManager.setConfig(config)
         
         if config["encryptDatabase"] as? Bool == true {
@@ -639,6 +651,17 @@ public final class TraceletSdk {
             } else if !nowPreventing && wasPreventing {
                 preventSuspendManager.stop()
             }
+        }
+
+        let newBehavior: [AnyHashable] = [
+            configManager.getEnableDrivingEvents(), configManager.getEnableFusedClassifier(),
+            configManager.getEnableCrashDetection(), configManager.getEnableFallDetection(),
+            configManager.getCrashModelUrl() ?? "", configManager.getCrashModelUnlockUrl() ?? "",
+            configManager.getCrashModelLicenseKey() ?? "", configManager.getCrashModelSha256() ?? "",
+            configManager.getCrashModelThreshold(),
+        ]
+        if oldBehavior != newBehavior {
+            initBehaviorEngines()
         }
 
         syncConfigToRustFlat()

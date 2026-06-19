@@ -1029,6 +1029,21 @@ class TraceletSdk private constructor(private val context: Context) {
             }
         }
 
+        // Behavior engines (telematics / transport / crash-fall + ML model) are
+        // built in initBehaviorEngines() at ready(). Rebuild them when any of
+        // their config changes at runtime — otherwise toggling crash detection or
+        // supplying a license key via setConfig() would never (re)load the ML
+        // crash model. initBehaviorEngines() is idempotent.
+        val behaviorKeys = listOf(
+            "enableDrivingEvents", "enableFusedClassifier",
+            "enableCrashDetection", "enableFallDetection",
+            "crashModelUrl", "crashModelUnlockUrl", "crashModelLicenseKey",
+            "crashModelSha256", "crashModelThreshold",
+        )
+        if (behaviorKeys.any { key -> oldConfig[key] != merged[key] }) {
+            initBehaviorEngines()
+        }
+
         updateBootReceiverState()
         syncConfigToRustFlat()
         checkSyncProvider()

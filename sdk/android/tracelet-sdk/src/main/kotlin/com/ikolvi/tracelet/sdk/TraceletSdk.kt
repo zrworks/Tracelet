@@ -20,12 +20,15 @@ import uniffi.tracelet_core.EventDispatcher as RustEventDispatcher
 
 
 import com.ikolvi.tracelet.sdk.geofence.GeofenceManager
+import com.ikolvi.tracelet.sdk.impact.CrashConfirmStore
+import com.ikolvi.tracelet.sdk.impact.PendingImpact
 import com.ikolvi.tracelet.sdk.location.LocationDataSink
 import com.ikolvi.tracelet.sdk.location.LocationEngine
 import com.ikolvi.tracelet.sdk.location.PeriodicLocationWorker
 import com.ikolvi.tracelet.sdk.motion.MotionDetector
 import com.ikolvi.tracelet.sdk.privacy.PrivacyZoneManager
 import com.ikolvi.tracelet.sdk.receiver.BootReceiver
+import com.ikolvi.tracelet.sdk.receiver.CrashConfirmReceiver
 import com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver
 import com.ikolvi.tracelet.sdk.schedule.ScheduleManager
 import com.ikolvi.tracelet.sdk.service.LocationService
@@ -148,6 +151,8 @@ class TraceletSdk private constructor(private val context: Context) {
     @Volatile private var lastLng: Double = 0.0
     private val accelWindowMs = 1000L
     private val impactConfirmPollMs = 1000L
+    // #181: delay before sampling post-impact GPS speed for Δv corroboration.
+    private val crashDvDelayMs = 2000L
 
     // #183 ML features: recent GPS speed history (timestamp ms → km/h) used to
     // derive the model's `speed_max` and `dv` (pre-impact speed drop) over the
@@ -2538,6 +2543,48 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     /**
+     * Post-impact stillness — the third phase of the canonical fall signature
+     * (#180): free-fall → impact peak → the body coming to rest. From this
+     * window's total-acceleration trace (g), finds the impact peak and checks
+     * that the samples after it settle back near 1 g with little movement.
+     */
+    private fun isPostImpactStill(rawTotalG: List<Double>): Boolean {
+        if (rawTotalG.size < 6) return false
+        var peakIdx = 0
+        var peakDev = 0.0
+        for (i in rawTotalG.indices) {
+            val dev = kotlin.math.abs(rawTotalG[i] - 1.0)
+            if (dev > peakDev) {
+                peakDev = dev
+                peakIdx = i
+            }
+        }
+        // Need a genuine impact and a few settling samples after it.
+        if (peakDev < 0.5 || peakIdx + 3 >= rawTotalG.size) return false
+        val tail = rawTotalG.subList(peakIdx + 1, rawTotalG.size)
+        return tail.all { kotlin.math.abs(it - 1.0) < 0.3 }
+    }
+
+    /**
+     * Schedules a one-shot post-impact GPS speed read ~[crashDvDelayMs] after a
+     * crash candidate and folds it into the core's Δv corroboration (#181). A
+     * sharp speed collapse (e.g. 60 → 0 km/h) raises the candidate's confidence;
+     * a maintained speed leaves it unchanged (never suppressed).
+     */
+    private fun scheduleDvCorroboration() {
+        mainHandler.postDelayed({
+            val detector = impactDetector ?: return@postDelayed
+            try {
+                if (detector.corroborateDv(lastSpeedMps, System.currentTimeMillis())) {
+                    logger.debug("crash Δv: post-impact speed collapse corroborated (#181)")
+                }
+            } catch (e: Exception) {
+                logger.error("crash Δv corroboration failed: ${e.message}")
+            }
+        }, crashDvDelayMs)
+    }
+
+    /**
      * Records one GPS speed sample (m/s) into the rolling crash speed-history
      * window, evicting samples older than [crashSpeedWindowMs]. Feeds the ML
      * model's `speed_max` / `dv` features (#183).
@@ -2627,10 +2674,16 @@ class TraceletSdk private constructor(private val context: Context) {
             }
             // Free-fall preceding the impact — fall corroboration (#180). Total
             // acceleration dipping below ~0.5 g indicates the device was falling.
+            // Also derive the third phase of the canonical fall signature —
+            // post-impact stillness (the body coming to rest) — from the same
+            // window's total-acceleration trace.
             val wasInFreeFall: Boolean
+            val postImpactStill: Boolean
             synchronized(rawAccelBuffer) {
-                val minTotalG = rawAccelBuffer.minOrNull()
+                val raw = ArrayList(rawAccelBuffer)
+                val minTotalG = raw.minOrNull()
                 wasInFreeFall = minTotalG != null && minTotalG < 0.5
+                postImpactStill = isPostImpactStill(raw)
                 rawAccelBuffer.clear()
             }
             // #183 ML gating (Replace mode): when the opt-in model is loaded, run
@@ -2667,6 +2720,7 @@ class TraceletSdk private constructor(private val context: Context) {
                 lastSpeedMps,
                 gyroPeak,
                 wasInFreeFall,
+                postImpactStill,
                 onFoot,
                 lastLat,
                 lastLng,
@@ -2679,7 +2733,44 @@ class TraceletSdk private constructor(private val context: Context) {
                 // Keep the countdown alive even if tracking stops right after the
                 // crash (vehicle comes to rest → stopTimeout disables tracking).
                 ensureImpactConfirmLoop()
+                // #181: a real crash collapses the vehicle's speed within ~1–2 s.
+                // Sample the post-impact GPS speed shortly after to corroborate.
+                if (candidate.kind == "potential_crash") {
+                    scheduleDvCorroboration()
+                }
+                // #182: persist the candidate and arm a process-death safety-net
+                // alarm so the confirmation still fires if the OS kills the app
+                // before its in-process countdown elapses.
+                if (candidate.kind.startsWith("potential_")) {
+                    scheduleProcessDeathSafeConfirm(candidate)
+                }
             }
+        }
+    }
+
+    /**
+     * Persists a pending crash/fall candidate and schedules an exact wake-up
+     * alarm just past its confirmation deadline (#182). If the process is killed
+     * during the countdown — common after a violent impact — the
+     * [CrashConfirmReceiver] re-emits the confirmed event from a fresh process.
+     */
+    private fun scheduleProcessDeathSafeConfirm(candidate: uniffi.tracelet_core.ImpactEvent) {
+        try {
+            val p = PendingImpact(
+                id = candidate.id,
+                kind = candidate.kind,
+                confidence = candidate.confidence,
+                peakG = candidate.peakG,
+                speedBefore = candidate.speedBefore,
+                latitude = candidate.latitude,
+                longitude = candidate.longitude,
+                timestampMs = candidate.timestampMs,
+                confirmDeadlineMs = candidate.confirmDeadlineMs,
+            )
+            CrashConfirmStore(context).put(p)
+            CrashConfirmReceiver.schedule(context, p)
+        } catch (e: Exception) {
+            logger.error("Failed to arm crash-confirm safety net: ${e.message}")
         }
     }
 
@@ -2705,6 +2796,45 @@ class TraceletSdk private constructor(private val context: Context) {
             } catch (ex: Exception) {
                 logger.error("Failed to persist impact event: ${ex.message}")
             }
+            // #182: an in-process confirmation just delivered this event — drop
+            // the persisted candidate and cancel its safety-net alarm so the
+            // wake-up receiver never re-emits a duplicate.
+            try {
+                CrashConfirmStore(context).remove(e.id)
+                CrashConfirmReceiver.cancel(context, e.id)
+            } catch (ex: Exception) {
+                logger.error("Failed to clear crash-confirm safety net: ${ex.message}")
+            }
+        }
+    }
+
+    /**
+     * Re-emits a confirmed crash/fall from a persisted candidate (#182). Called
+     * by [CrashConfirmReceiver] when the app was killed during the confirmation
+     * countdown, so the host's escalation/SOS flow still runs. Mirrors the
+     * confirmed-event side of [emitImpact] without touching the (now-gone)
+     * in-memory Rust detector.
+     */
+    internal fun deliverConfirmedImpact(p: PendingImpact) {
+        eventSender.sendImpact(
+            mapOf(
+                "kind" to p.confirmedKind,
+                "id" to p.id,
+                "confidence" to p.confidence,
+                "peakG" to p.peakG,
+                "speedBefore" to p.speedBefore,
+                "latitude" to p.latitude,
+                "longitude" to p.longitude,
+                "timestampMs" to p.timestampMs,
+                "confirmDeadlineMs" to p.confirmDeadlineMs,
+            ),
+        )
+        try {
+            rustDatabase?.insertTelematicsEvent(
+                p.confirmedKind, p.confidence, p.latitude, p.longitude,
+            )
+        } catch (ex: Exception) {
+            logger.error("Failed to persist confirmed impact event: ${ex.message}")
         }
     }
 
@@ -2716,7 +2846,17 @@ class TraceletSdk private constructor(private val context: Context) {
     }
 
     /** Cancels a pending impact candidate (called from the Pigeon host API). */
-    fun cancelImpact(id: Long): Boolean = impactDetector?.cancel(id) ?: false
+    fun cancelImpact(id: Long): Boolean {
+        // #182: drop the persisted candidate and disarm its safety-net alarm so
+        // a cancelled candidate is never re-confirmed after a process restart.
+        try {
+            CrashConfirmStore(context).remove(id)
+            CrashConfirmReceiver.cancel(context, id)
+        } catch (e: Exception) {
+            logger.error("Failed to clear crash-confirm safety net on cancel: ${e.message}")
+        }
+        return impactDetector?.cancel(id) ?: false
+    }
 
     /**
      * Debug (#183): runs one synthetic high-g window through the REAL crash
@@ -2784,6 +2924,7 @@ class TraceletSdk private constructor(private val context: Context) {
             window.peakG,
             speedMps,
             gyroPeak,
+            false,
             false,
             speedKmh < configManager.getCrashMinSpeedKmh(),
             lastLat,

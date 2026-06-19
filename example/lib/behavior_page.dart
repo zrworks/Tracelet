@@ -319,6 +319,7 @@ class _BehaviorPageState extends State<BehaviorPage> {
             speedBeforeMps: 60 / 3.6,
             gyroPeakDps: 0,
             wasInFreeFall: false,
+            postImpactStill: false,
             isOnFoot: false,
             latitude: 0,
             longitude: 0,

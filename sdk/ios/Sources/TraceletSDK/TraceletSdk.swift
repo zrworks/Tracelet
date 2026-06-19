@@ -129,6 +129,11 @@ public final class TraceletSdk {
     private var lastLat: Double = 0
     private var lastLng: Double = 0
     private static let accelWindowInterval: TimeInterval = 1.0
+    // #181: delay before sampling post-impact GPS speed for Δv corroboration.
+    private static let crashDvDelaySeconds: TimeInterval = 2.0
+    // #182: margin after a candidate's deadline before the safety-net fires, so
+    // the in-process confirmation reliably wins the race when the app is alive.
+    private static let crashConfirmGuardMs: Int64 = 3_000
 
     // #183 opt-in ML crash model; nil ⇒ rule engine. Loaded off the main thread.
     private var crashModel: CrashModel?
@@ -231,6 +236,9 @@ public final class TraceletSdk {
 
     @objc private func handleWillEnterForeground() {
         TraceletLog.debug("Tracelet: App moving to FOREGROUND — requesting state flush to Dart")
+        // #182: deliver any crash/fall confirmations whose deadline elapsed while
+        // the app was backgrounded/suspended.
+        drainDueConfirmations()
         requestStateFlush()
     }
 
@@ -1879,6 +1887,10 @@ public final class TraceletSdk {
             self.locationEngine.performPeriodicFix()
             self.locationEngine.restartPeriodicTimerIfNeeded()
         }
+
+        // #182: on (re)launch, deliver any crash/fall confirmations whose
+        // deadline elapsed while the app was killed/suspended.
+        drainDueConfirmations()
     }
 
     // MARK: - Private: Motion State
@@ -2232,6 +2244,41 @@ public final class TraceletSdk {
         return model.featureNames().map { byName[$0] ?? 0.0 }
     }
 
+    /// Post-impact stillness — the third phase of the canonical fall signature
+    /// (#180): free-fall → impact peak → the body coming to rest. From this
+    /// window's total-acceleration trace (g), finds the impact peak and checks
+    /// that the samples after it settle back near 1 g with little movement.
+    static func isPostImpactStill(_ rawTotalG: [Double]) -> Bool {
+        guard rawTotalG.count >= 6 else { return false }
+        var peakIdx = 0
+        var peakDev = 0.0
+        for (i, v) in rawTotalG.enumerated() {
+            let dev = abs(v - 1.0)
+            if dev > peakDev {
+                peakDev = dev
+                peakIdx = i
+            }
+        }
+        // Need a genuine impact and a few settling samples after it.
+        guard peakDev >= 0.5, peakIdx + 3 < rawTotalG.count else { return false }
+        let tail = rawTotalG[(peakIdx + 1)...]
+        return tail.allSatisfy { abs($0 - 1.0) < 0.3 }
+    }
+
+    /// Schedules a one-shot post-impact GPS speed read ~`crashDvDelaySeconds`
+    /// after a crash candidate and folds it into the core's Δv corroboration
+    /// (#181). A sharp speed collapse (e.g. 60 → 0 km/h) raises the candidate's
+    /// confidence; a maintained speed leaves it unchanged (never suppressed).
+    private func scheduleDvCorroboration() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.crashDvDelaySeconds) { [weak self] in
+            guard let self, let detector = self.impactDetector else { return }
+            let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+            if detector.corroborateDv(speedAfterMps: self.lastSpeedMps, nowMs: nowMs) {
+                self.logger.debug("crash Δv: post-impact speed collapse corroborated (#181)")
+            }
+        }
+    }
+
     private func processAccelWindow() {
         accelBufferLock.lock()
         let samples = accelBuffer
@@ -2262,10 +2309,14 @@ public final class TraceletSdk {
             gyroBufferLock.unlock()
             // Free-fall preceding the impact — fall corroboration (#180).
             rawAccelBufferLock.lock()
+            let rawTotalG = rawAccelBuffer
             let minTotalG = rawAccelBuffer.min()
             rawAccelBuffer.removeAll()
             rawAccelBufferLock.unlock()
             let wasInFreeFall = (minTotalG ?? 1.0) < 0.5
+            // Third phase of the canonical fall signature (#180) — the body
+            // coming to rest after the jolt, derived from the same window.
+            let postImpactStill = Self.isPostImpactStill(rawTotalG)
             // #183 ML gating (Replace mode): when the opt-in model is loaded, run
             // inference for this window and let its probability decide the crash
             // (still speed-gated in the core). crashProba < 0 ⇒ rule engine.
@@ -2287,12 +2338,73 @@ public final class TraceletSdk {
                     )
                 )
             }
-            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: crashProba, crashProbaThreshold: configManager.getCrashModelThreshold()) {
+            if let candidate = detector.onImpactWindow(peakG: window.peakG, speedBeforeMps: lastSpeedMps, gyroPeakDps: gyroPeak, wasInFreeFall: wasInFreeFall, postImpactStill: postImpactStill, isOnFoot: onFoot, latitude: lastLat, longitude: lastLng, nowMs: nowMs, crashProba: crashProba, crashProbaThreshold: configManager.getCrashModelThreshold()) {
                 emitImpact(candidate)
                 // Keep the countdown alive even if tracking stops right after the
                 // crash (vehicle comes to rest → stopTimeout disables tracking).
                 ensureImpactConfirmLoop()
+                // #181: a real crash collapses the vehicle's speed within ~1–2 s.
+                // Sample the post-impact GPS speed shortly after to corroborate.
+                if candidate.kind == "potential_crash" {
+                    scheduleDvCorroboration()
+                }
+                // #182: persist the candidate and arm a process-death safety net
+                // so the confirmation still fires if iOS suspends/kills the app
+                // before its in-process countdown elapses.
+                if candidate.kind.hasPrefix("potential_") {
+                    scheduleProcessDeathSafeConfirm(candidate)
+                }
             }
+        }
+    }
+
+    /// Persists a pending crash/fall candidate and schedules a user-facing local
+    /// notification just past its confirmation deadline (#182). If iOS kills the
+    /// app during the countdown — common after a violent impact — the
+    /// notification still alerts the user, and `drainDueConfirmations()` re-emits
+    /// the confirmed event when the SDK next runs.
+    private func scheduleProcessDeathSafeConfirm(_ candidate: ImpactEvent) {
+        let p = PendingImpact(
+            id: candidate.id,
+            kind: candidate.kind,
+            confidence: candidate.confidence,
+            peakG: candidate.peakG,
+            speedBefore: candidate.speedBefore,
+            latitude: candidate.latitude,
+            longitude: candidate.longitude,
+            timestampMs: candidate.timestampMs,
+            confirmDeadlineMs: candidate.confirmDeadlineMs,
+        )
+        CrashConfirmStore.shared.put(p)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let delaySeconds = Double(p.confirmDeadlineMs + Self.crashConfirmGuardMs - nowMs) / 1000.0
+        CrashConfirmNotifier.schedule(p, delaySeconds: delaySeconds)
+    }
+
+    /// Re-emits a confirmed crash/fall from a persisted candidate (#182). Called
+    /// by `drainDueConfirmations()` when the app was killed during the
+    /// confirmation countdown, so the host's escalation/SOS flow still runs.
+    /// Mirrors the confirmed-event side of `emitImpact` without touching the
+    /// (now-gone) in-memory Rust detector.
+    func deliverConfirmedImpact(_ p: PendingImpact) {
+        eventSender.sendImpact([
+            "kind": p.confirmedKind, "id": p.id, "confidence": p.confidence, "peakG": p.peakG,
+            "speedBefore": p.speedBefore, "latitude": p.latitude, "longitude": p.longitude,
+            "timestampMs": p.timestampMs, "confirmDeadlineMs": p.confirmDeadlineMs,
+        ])
+        try? rustDatabase?.insertTelematicsEvent(
+            eventType: p.confirmedKind, severity: p.confidence, lat: p.latitude, lng: p.longitude)
+    }
+
+    /// Delivers any crash/fall candidates whose deadline elapsed while the app
+    /// was suspended or killed (#182). Called on init and on foreground.
+    private func drainDueConfirmations() {
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        for due in CrashConfirmStore.shared.due(nowMs: nowMs, guardMs: Self.crashConfirmGuardMs) {
+            guard let claimed = CrashConfirmStore.shared.claim(due.id) else { continue }
+            logger.debug("crash confirm: delivering process-death-survived \(claimed.confirmedKind) #\(claimed.id) (#182)")
+            deliverConfirmedImpact(claimed)
+            CrashConfirmNotifier.cancel(id: claimed.id)
         }
     }
 
@@ -2307,6 +2419,11 @@ public final class TraceletSdk {
         if e.kind == "crash" || e.kind == "fall" {
             try? rustDatabase?.insertTelematicsEvent(
                 eventType: e.kind, severity: e.confidence, lat: e.latitude, lng: e.longitude)
+            // #182: an in-process confirmation just delivered this event — drop
+            // the persisted candidate and cancel its safety-net notification so
+            // the relaunch drain never re-emits a duplicate.
+            CrashConfirmStore.shared.remove(e.id)
+            CrashConfirmNotifier.cancel(id: e.id)
         }
     }
 
@@ -2320,6 +2437,10 @@ public final class TraceletSdk {
 
     /// Cancels a pending impact candidate (called from the Pigeon host API).
     public func cancelImpact(_ id: Int64) -> Bool {
+        // #182: drop the persisted candidate and disarm its safety net so a
+        // cancelled candidate is never re-confirmed after a relaunch.
+        CrashConfirmStore.shared.remove(id)
+        CrashConfirmNotifier.cancel(id: id)
         return impactDetector?.cancel(id: id) ?? false
     }
 
@@ -2372,7 +2493,8 @@ public final class TraceletSdk {
         )
         let candidate = detector.onImpactWindow(
             peakG: window.peakG, speedBeforeMps: speedMps, gyroPeakDps: gyroPeak,
-            wasInFreeFall: false, isOnFoot: speedKmh < configManager.getCrashMinSpeedKmh(),
+            wasInFreeFall: false, postImpactStill: false,
+            isOnFoot: speedKmh < configManager.getCrashMinSpeedKmh(),
             latitude: lastLat, longitude: lastLng, nowMs: nowMs,
             crashProba: crashProba, crashProbaThreshold: threshold)
         if let candidate = candidate {

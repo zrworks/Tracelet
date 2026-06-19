@@ -10,6 +10,7 @@ export default {
   "api-reference": "API Reference",
   "reference": "Other Tools & Adapters",
   "whats-new": "What's New",
+  "get-license": "Get a License",
   "privacy": {
     "title": "Privacy Policy",
     "display": "hidden"

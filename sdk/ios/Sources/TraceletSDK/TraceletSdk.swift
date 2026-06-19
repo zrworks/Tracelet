@@ -2060,14 +2060,21 @@ public final class TraceletSdk {
                 var modelSha = sha
                 if let unlockUrl = unlockUrl, let licenseKey = licenseKey {
                     let token = CrashModelLoader.integrityTokenProvider?()
-                    if let unlocked = CrashModelLoader.unlock(unlockUrl: unlockUrl, licenseKey: licenseKey, integrityToken: token) {
+                    if let unlocked = CrashModelLoader.unlock(
+                        unlockUrl: unlockUrl, licenseKey: licenseKey, integrityToken: token,
+                        log: { [weak self] msg in self?.logger.debug(msg) }
+                    ) {
                         modelUrl = unlocked.url
                         modelSha = unlocked.sha256 ?? modelSha
                     }
                 }
                 guard let url = modelUrl else { return }
-                if let m = CrashModelLoader.load(url: url, sha256: modelSha) {
+                if let m = CrashModelLoader.load(
+                    url: url, sha256: modelSha,
+                    log: { [weak self] msg in self?.logger.debug(msg) }
+                ) {
                     self.crashModel = m
+                    self.logger.info("Crash ML model active.")
                 }
             }
         }

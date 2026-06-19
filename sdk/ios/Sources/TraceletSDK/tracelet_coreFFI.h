@@ -313,9 +313,14 @@ RustBuffer uniffi_tracelet_core_fn_method_impactdetector_check_confirmations(uin
 RustBuffer uniffi_tracelet_core_fn_method_impactdetector_confirm(uint64_t ptr, int64_t id, int64_t now_ms, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_CORROBORATE_DV
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_CORROBORATE_DV
+int8_t uniffi_tracelet_core_fn_method_impactdetector_corroborate_dv(uint64_t ptr, double speed_after_mps, int64_t now_ms, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
-RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, double gyro_peak_dps, int8_t was_in_free_fall, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, double crash_proba, double crash_proba_threshold, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, double gyro_peak_dps, int8_t was_in_free_fall, int8_t post_impact_still, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, double crash_proba, double crash_proba_threshold, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_PENDING_COUNT
@@ -1334,6 +1339,12 @@ uint16_t uniffi_tracelet_core_checksum_method_impactdetector_check_confirmations
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CONFIRM
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CONFIRM
 uint16_t uniffi_tracelet_core_checksum_method_impactdetector_confirm(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CORROBORATE_DV
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CORROBORATE_DV
+uint16_t uniffi_tracelet_core_checksum_method_impactdetector_corroborate_dv(void
     
 );
 #endif

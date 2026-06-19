@@ -2533,11 +2533,25 @@ public protocol ImpactDetectorProtocol: AnyObject, Sendable {
     func confirm(id: Int64, nowMs: Int64)  -> ImpactEvent?
     
     /**
+     * Folds a **post-impact speed** sample into the most recent pending crash
+     * for Δv corroboration (#181). Call once, ~1–2 s after a `potential_crash`,
+     * with the current GPS speed (m/s).
+     *
+     * A sharp collapse of the pre-impact speed (e.g. 60 → 0 km/h) is one of the
+     * strongest single crash discriminators, so it *raises* the candidate's
+     * confidence. It deliberately never lowers confidence or cancels: a real
+     * crash can kill the GPS feed (no/garbage post-impact sample), and crash
+     * detection favours recall behind a user cancel-countdown (#173). Returns
+     * `true` when a candidate was found and a collapse corroborated it.
+     */
+    func corroborateDv(speedAfterMps: Double, nowMs: Int64)  -> Bool
+    
+    /**
      * Feeds one accel window's peak plus motion context. Returns a
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-    func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double)  -> ImpactEvent?
+    func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, postImpactStill: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double)  -> ImpactEvent?
     
     /**
      * Number of candidates awaiting confirmation.
@@ -2656,11 +2670,33 @@ open func confirm(id: Int64, nowMs: Int64) -> ImpactEvent?  {
 }
     
     /**
+     * Folds a **post-impact speed** sample into the most recent pending crash
+     * for Δv corroboration (#181). Call once, ~1–2 s after a `potential_crash`,
+     * with the current GPS speed (m/s).
+     *
+     * A sharp collapse of the pre-impact speed (e.g. 60 → 0 km/h) is one of the
+     * strongest single crash discriminators, so it *raises* the candidate's
+     * confidence. It deliberately never lowers confidence or cancels: a real
+     * crash can kill the GPS feed (no/garbage post-impact sample), and crash
+     * detection favours recall behind a user cancel-countdown (#173). Returns
+     * `true` when a candidate was found and a collapse corroborated it.
+     */
+open func corroborateDv(speedAfterMps: Double, nowMs: Int64) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_tracelet_core_fn_method_impactdetector_corroborate_dv(
+            self.uniffiCloneHandle(),
+        FfiConverterDouble.lower(speedAfterMps),
+        FfiConverterInt64.lower(nowMs),$0
+    )
+})
+}
+    
+    /**
      * Feeds one accel window's peak plus motion context. Returns a
      * `potential_*` event when an impact is detected (and registers it for
      * confirmation), else `None`.
      */
-open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double) -> ImpactEvent?  {
+open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Double, wasInFreeFall: Bool, postImpactStill: Bool, isOnFoot: Bool, latitude: Double, longitude: Double, nowMs: Int64, crashProba: Double, crashProbaThreshold: Double) -> ImpactEvent?  {
     return try!  FfiConverterOptionTypeImpactEvent.lift(try! rustCall() {
     uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(
             self.uniffiCloneHandle(),
@@ -2668,6 +2704,7 @@ open func onImpactWindow(peakG: Double, speedBeforeMps: Double, gyroPeakDps: Dou
         FfiConverterDouble.lower(speedBeforeMps),
         FfiConverterDouble.lower(gyroPeakDps),
         FfiConverterBool.lower(wasInFreeFall),
+        FfiConverterBool.lower(postImpactStill),
         FfiConverterBool.lower(isOnFoot),
         FfiConverterDouble.lower(latitude),
         FfiConverterDouble.lower(longitude),
@@ -9480,7 +9517,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_tracelet_core_checksum_method_impactdetector_confirm() != 51069) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 41797) {
+    if (uniffi_tracelet_core_checksum_method_impactdetector_corroborate_dv() != 41128) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_tracelet_core_checksum_method_impactdetector_on_impact_window() != 21586) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_tracelet_core_checksum_method_impactdetector_pending_count() != 63414) {

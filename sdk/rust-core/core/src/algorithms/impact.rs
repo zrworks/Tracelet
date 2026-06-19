@@ -78,6 +78,12 @@ struct Pending {
     latitude: f64,
     longitude: f64,
     deadline_ms: i64,
+    /// Epoch ms the candidate was registered — used to scope the #181 Δv
+    /// (post-impact speed) corroboration to a short window after the impact.
+    registered_ms: i64,
+    /// Whether a post-impact speed sample has already been folded in (#181), so
+    /// the one-shot Δv corroboration doesn't apply twice.
+    dv_evaluated: bool,
 }
 
 struct DetectorState {
@@ -114,6 +120,28 @@ const FREEFALL_THRESHOLD_RELAX: f64 = 0.7;
 
 /// Confidence bump when a free-fall precedes the impact.
 const FREEFALL_CONFIDENCE_BOOST: f64 = 0.15;
+
+/// Confidence bump when **post-impact stillness** corroborates a fall (#180) —
+/// the third phase of the canonical free-fall → impact → stillness model: after
+/// a real fall the body comes to rest, so the acceleration settles back near 1 g
+/// with little variance. Without it, behaviour is unchanged (no regression).
+const POSTIMPACT_STILL_CONFIDENCE_BOOST: f64 = 0.1;
+
+/// Window (ms) after a crash candidate during which a post-impact speed sample is
+/// accepted for Δv corroboration (#181). Covers the 1–2 s it takes a GPS fix to
+/// reflect the post-collision speed without bleeding into a later, separate event.
+const DV_CORROBORATION_WINDOW_MS: i64 = 4_000;
+
+/// Fraction of pre-impact speed that must vanish for a "sharp collapse" that
+/// strongly corroborates a crash (#181) — e.g. 60 km/h falling to ≤ 24 km/h. The
+/// simple window max−min Δv proxy was a weak discriminator (near-misses also
+/// brake hard, #173); this impact-instant pre→post collapse is the strong signal.
+const DV_COLLAPSE_FRACTION: f64 = 0.6;
+
+/// Confidence bump when a sharp post-impact speed collapse corroborates a crash.
+/// Δv only ever *raises* confidence — it never auto-cancels a candidate, so a
+/// crash that kills the GPS feed (no post-impact sample) is never suppressed.
+const DV_CONFIDENCE_BOOST: f64 = 0.15;
 
 /// Detects crash/fall impacts with a confirmation window.
 #[derive(uniffi::Object)]
@@ -165,6 +193,7 @@ impl ImpactDetector {
         speed_before_mps: f64,
         gyro_peak_dps: f64,
         was_in_free_fall: bool,
+        post_impact_still: bool,
         is_on_foot: bool,
         latitude: f64,
         longitude: f64,
@@ -246,6 +275,12 @@ impl ImpactDetector {
             if was_in_free_fall {
                 conf = (conf + FREEFALL_CONFIDENCE_BOOST).min(1.0);
             }
+            // Third phase of the canonical fall model (#180): the body coming to
+            // rest after the jolt. Combined with the free-fall first phase this
+            // is the full free-fall → impact → stillness signature.
+            if post_impact_still {
+                conf = (conf + POSTIMPACT_STILL_CONFIDENCE_BOOST).min(1.0);
+            }
             if conf >= cfg.min_confidence {
                 return Some(self.register(false, conf, peak_g, speed_before_mps, latitude, longitude, now_ms));
             }
@@ -283,6 +318,45 @@ impl ImpactDetector {
     /// User cancels a candidate ("I'm fine") — no confirmed event will fire.
     pub fn cancel(&self, id: i64) -> bool {
         self.state.lock().unwrap().pending.remove(&id).is_some()
+    }
+
+    /// Folds a **post-impact speed** sample into the most recent pending crash
+    /// for Δv corroboration (#181). Call once, ~1–2 s after a `potential_crash`,
+    /// with the current GPS speed (m/s).
+    ///
+    /// A sharp collapse of the pre-impact speed (e.g. 60 → 0 km/h) is one of the
+    /// strongest single crash discriminators, so it *raises* the candidate's
+    /// confidence. It deliberately never lowers confidence or cancels: a real
+    /// crash can kill the GPS feed (no/garbage post-impact sample), and crash
+    /// detection favours recall behind a user cancel-countdown (#173). Returns
+    /// `true` when a candidate was found and a collapse corroborated it.
+    pub fn corroborate_dv(&self, speed_after_mps: f64, now_ms: i64) -> bool {
+        let mut st = self.state.lock().unwrap();
+        // Most recent un-evaluated crash candidate still inside the Δv window.
+        let target = st
+            .pending
+            .iter()
+            .filter(|(_, p)| {
+                p.is_crash
+                    && !p.dv_evaluated
+                    && now_ms.saturating_sub(p.registered_ms) <= DV_CORROBORATION_WINDOW_MS
+            })
+            .max_by_key(|(_, p)| p.registered_ms)
+            .map(|(id, _)| *id);
+
+        let Some(id) = target else { return false };
+        let Some(p) = st.pending.get_mut(&id) else { return false };
+        p.dv_evaluated = true;
+
+        let speed_before_kmh = p.speed_before * 3.6;
+        let speed_after_kmh = speed_after_mps.max(0.0) * 3.6;
+        let drop = speed_before_kmh - speed_after_kmh;
+        if speed_before_kmh > 0.0 && drop >= DV_COLLAPSE_FRACTION * speed_before_kmh {
+            p.confidence = (p.confidence + DV_CONFIDENCE_BOOST).min(1.0);
+            true
+        } else {
+            false
+        }
     }
 
     /// Number of candidates awaiting confirmation.
@@ -325,6 +399,8 @@ impl ImpactDetector {
                 latitude,
                 longitude,
                 deadline_ms: deadline,
+                registered_ms: now_ms,
+                dv_evaluated: false,
             },
         );
         ImpactEvent {
@@ -371,7 +447,7 @@ mod tests {
     fn lone_spike_without_speed_is_not_a_crash() {
         let d = ImpactDetector::new(Some(crash_cfg()));
         // 4 g but stationary ⇒ no crash (corroboration fails).
-        assert!(d.on_impact_window(4.0, 0.0, 0.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
+        assert!(d.on_impact_window(4.0, 0.0, 0.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
     }
 
     // ── #183 ML Replace mode: crash_proba >= 0 bypasses the g-threshold rule ──
@@ -382,7 +458,7 @@ mod tests {
         // and the device was moving ⇒ Replace mode fires (the recall the rule misses).
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
-        let cand = d.on_impact_window(1.0, speed, 0.0, false, false, 0.0, 0.0, 0, 0.8, 0.5);
+        let cand = d.on_impact_window(1.0, speed, 0.0, false, false, false, 0.0, 0.0, 0, 0.8, 0.5);
         assert!(cand.is_some(), "ML should fire a sub-g-threshold crash");
         let c = cand.unwrap();
         assert_eq!(c.kind, "potential_crash");
@@ -396,7 +472,7 @@ mod tests {
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
         assert!(d
-            .on_impact_window(6.0, speed, 0.0, false, false, 0.0, 0.0, 0, 0.2, 0.5)
+            .on_impact_window(6.0, speed, 0.0, false, false, false, 0.0, 0.0, 0, 0.2, 0.5)
             .is_none());
     }
 
@@ -405,7 +481,7 @@ mod tests {
         // High probability but stationary ⇒ no crash (speed gate still applies).
         let d = ImpactDetector::new(Some(crash_cfg()));
         assert!(d
-            .on_impact_window(1.0, 0.0, 0.0, false, false, 0.0, 0.0, 0, 0.99, 0.5)
+            .on_impact_window(1.0, 0.0, 0.0, false, false, false, 0.0, 0.0, 0, 0.99, 0.5)
             .is_none());
     }
 
@@ -413,7 +489,7 @@ mod tests {
     fn crash_candidate_then_auto_confirm() {
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
-        let cand = d.on_impact_window(4.0, speed, 0.0, false, false, 1.0, 2.0, 1000, -1.0, 0.5).unwrap();
+        let cand = d.on_impact_window(4.0, speed, 0.0, false, false, false, 1.0, 2.0, 1000, -1.0, 0.5).unwrap();
         assert_eq!(cand.kind, "potential_crash");
         assert_eq!(d.pending_count(), 1);
 
@@ -430,7 +506,7 @@ mod tests {
     #[test]
     fn cancel_prevents_confirmation() {
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(5.0, 70.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
+        let cand = d.on_impact_window(5.0, 70.0 / 3.6, 0.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
         assert!(d.cancel(cand.id));
         assert!(d.check_confirmations(60000).is_empty());
         assert_eq!(d.pending_count(), 0);
@@ -439,7 +515,7 @@ mod tests {
     #[test]
     fn explicit_confirm_fires_immediately_and_once() {
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(4.5, 80.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
+        let cand = d.on_impact_window(4.5, 80.0 / 3.6, 0.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
         let ev = d.confirm(cand.id, 2000).unwrap();
         assert_eq!(ev.kind, "crash");
         // Not double-emitted later.
@@ -449,7 +525,7 @@ mod tests {
     #[test]
     fn fall_disabled_by_default() {
         let d = ImpactDetector::new(Some(crash_cfg())); // enable_fall = false
-        assert!(d.on_impact_window(3.0, 1.0, 0.0, false, true, 0.0, 0.0, 0, -1.0, 0.5).is_none());
+        assert!(d.on_impact_window(3.0, 1.0, 0.0, false, false, true, 0.0, 0.0, 0, -1.0, 0.5).is_none());
     }
 
     #[test]
@@ -461,7 +537,7 @@ mod tests {
         let d = ImpactDetector::new(Some(cfg));
         // A real fall spikes well past the 2.5 g floor; 3.0 g is below the
         // confidence gate by design (weak corroboration on foot).
-        let cand = d.on_impact_window(5.0, 0.5, 0.0, false, true, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
+        let cand = d.on_impact_window(5.0, 0.5, 0.0, false, false, true, 0.0, 0.0, 0, -1.0, 0.5).unwrap();
         assert_eq!(cand.kind, "potential_fall");
         let confirmed = d.check_confirmations(60000);
         assert_eq!(confirmed[0].kind, "fall");
@@ -473,12 +549,12 @@ mod tests {
         let cfg = ImpactConfig { enable_fall: true, ..Default::default() };
         let no_ff = ImpactDetector::new(Some(cfg));
         assert!(
-            no_ff.on_impact_window(2.0, 0.5, 0.0, false, true, 0.0, 0.0, 0, -1.0, 0.5).is_none(),
+            no_ff.on_impact_window(2.0, 0.5, 0.0, false, false, true, 0.0, 0.0, 0, -1.0, 0.5).is_none(),
             "sub-threshold jolt with no free-fall must NOT fire (no regression)"
         );
         // ...but a preceding free-fall corroborates it ⇒ fall.
         let with_ff = ImpactDetector::new(Some(ImpactConfig { enable_fall: true, ..Default::default() }));
-        let cand = with_ff.on_impact_window(2.0, 0.5, 0.0, true, true, 0.0, 0.0, 0, -1.0, 0.5);
+        let cand = with_ff.on_impact_window(2.0, 0.5, 0.0, true, false, true, 0.0, 0.0, 0, -1.0, 0.5);
         assert!(cand.is_some(), "free-fall must rescue a sub-threshold fall (#180)");
         assert_eq!(cand.unwrap().kind, "potential_fall");
     }
@@ -487,7 +563,7 @@ mod tests {
     fn weak_spike_below_threshold_ignored() {
         // 1.0 g is below the 2.0 g default threshold ⇒ not a crash.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 0.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
+        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 0.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
     }
 
     #[test]
@@ -495,7 +571,7 @@ mod tests {
         // A fully-corroborated crash exactly at the default 2.0 g threshold must
         // register — the confidence gate must not silently raise it.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        let cand = d.on_impact_window(2.0, 60.0 / 3.6, 0.0, false, false, 0.0, 0.0, 1000, -1.0, 0.5);
+        let cand = d.on_impact_window(2.0, 60.0 / 3.6, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5);
         assert!(cand.is_some());
         assert_eq!(cand.unwrap().kind, "potential_crash");
     }
@@ -506,12 +582,12 @@ mod tests {
         let speed = 60.0 / 3.6;
         let no_gyro = ImpactDetector::new(Some(crash_cfg()));
         assert!(
-            no_gyro.on_impact_window(1.6, speed, 0.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none(),
+            no_gyro.on_impact_window(1.6, speed, 0.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none(),
             "sub-threshold jolt with no rotation must NOT fire (no regression)"
         );
         // ...but a hard spin (>= 100 deg/s) corroborates it ⇒ crash.
         let with_gyro = ImpactDetector::new(Some(crash_cfg()));
-        let cand = with_gyro.on_impact_window(1.6, speed, 150.0, false, false, 0.0, 0.0, 0, -1.0, 0.5);
+        let cand = with_gyro.on_impact_window(1.6, speed, 150.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5);
         assert!(cand.is_some(), "rotation must rescue a sub-threshold crash (#179)");
         assert_eq!(cand.unwrap().kind, "potential_crash");
     }
@@ -520,7 +596,7 @@ mod tests {
     fn gyro_does_not_rescue_far_below_threshold() {
         // 1.0 g is below even the rotation-relaxed threshold (2.0 * 0.7 = 1.4) ⇒ no crash.
         let d = ImpactDetector::new(Some(crash_cfg()));
-        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 200.0, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
+        assert!(d.on_impact_window(1.0, 60.0 / 3.6, 200.0, false, false, false, 0.0, 0.0, 0, -1.0, 0.5).is_none());
     }
 
     #[test]
@@ -529,12 +605,101 @@ mod tests {
         // must not spawn multiple candidates.
         let d = ImpactDetector::new(Some(crash_cfg()));
         let speed = 60.0 / 3.6;
-        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, 0.0, 0.0, 1000, -1.0, 0.5).is_some());
-        assert!(d.on_impact_window(4.0, speed, 0.0, false, false, 0.0, 0.0, 1500, -1.0, 0.5).is_none()); // bounce
-        assert!(d.on_impact_window(6.0, speed, 0.0, false, false, 0.0, 0.0, 2000, -1.0, 0.5).is_none()); // secondary
+        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5).is_some());
+        assert!(d.on_impact_window(4.0, speed, 0.0, false, false, false, 0.0, 0.0, 1500, -1.0, 0.5).is_none()); // bounce
+        assert!(d.on_impact_window(6.0, speed, 0.0, false, false, false, 0.0, 0.0, 2000, -1.0, 0.5).is_none()); // secondary
         assert_eq!(d.pending_count(), 1);
         // A genuinely separate impact after the refractory period is allowed.
-        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, 0.0, 0.0, 1000 + REGISTER_REFRACTORY_MS, -1.0, 0.5).is_some());
+        assert!(d.on_impact_window(5.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000 + REGISTER_REFRACTORY_MS, -1.0, 0.5).is_some());
         assert_eq!(d.pending_count(), 2);
+    }
+
+    // ── #180 post-impact stillness: the third phase of the fall signature ──
+
+    #[test]
+    fn post_impact_stillness_boosts_fall_confidence() {
+        // Same jolt with and without the post-impact stillness phase: stillness
+        // (the body coming to rest) must raise the candidate's confidence.
+        let cfg = ImpactConfig { enable_fall: true, ..Default::default() };
+        let without = ImpactDetector::new(Some(cfg));
+        let a = without
+            .on_impact_window(5.0, 0.5, 0.0, false, false, true, 0.0, 0.0, 0, -1.0, 0.5)
+            .unwrap();
+        let with = ImpactDetector::new(Some(ImpactConfig { enable_fall: true, ..Default::default() }));
+        let b = with
+            .on_impact_window(5.0, 0.5, 0.0, false, true, true, 0.0, 0.0, 0, -1.0, 0.5)
+            .unwrap();
+        assert!(b.confidence > a.confidence, "post-impact stillness must raise fall confidence (#180)");
+    }
+
+    #[test]
+    fn post_impact_stillness_rescues_a_sub_confidence_fall() {
+        // A jolt whose confidence lands just under the gate on its own...
+        let cfg = ImpactConfig { enable_fall: true, min_confidence: 0.6, ..Default::default() };
+        let plain = ImpactDetector::new(Some(cfg));
+        assert!(
+            plain.on_impact_window(2.5, 0.5, 0.0, false, false, true, 0.0, 0.0, 0, -1.0, 0.5).is_none(),
+            "bare at-threshold fall below the gate must NOT fire (no regression)"
+        );
+        // ...is rescued once the post-impact stillness phase corroborates it.
+        let still = ImpactDetector::new(Some(ImpactConfig {
+            enable_fall: true,
+            min_confidence: 0.6,
+            ..Default::default()
+        }));
+        let cand = still.on_impact_window(2.5, 0.5, 0.0, false, true, true, 0.0, 0.0, 0, -1.0, 0.5);
+        assert!(cand.is_some(), "post-impact stillness must rescue the fall (#180)");
+        assert_eq!(cand.unwrap().kind, "potential_fall");
+    }
+
+    // ── #181 impact-instant Δv (post-impact speed) corroboration ──
+
+    #[test]
+    fn dv_collapse_boosts_crash_confidence() {
+        // 60 km/h pre-impact crash at the g-threshold (confidence 0.6, not
+        // saturated); a post-impact reading of ~0 km/h is a sharp collapse that
+        // strongly corroborates the crash ⇒ confidence rises.
+        let d = ImpactDetector::new(Some(crash_cfg()));
+        let speed = 60.0 / 3.6;
+        let cand = d
+            .on_impact_window(2.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5)
+            .unwrap();
+        let before = cand.confidence;
+        assert!(d.corroborate_dv(0.0, 2500), "a 60→0 collapse must corroborate (#181)");
+        let confirmed = d.check_confirmations(60000);
+        assert_eq!(confirmed.len(), 1);
+        assert!(confirmed[0].confidence > before, "Δv collapse must raise confidence (#181)");
+    }
+
+    #[test]
+    fn dv_no_collapse_does_not_change_confidence() {
+        // Phone dropped in a still-moving car: pre-impact 60 km/h, post-impact
+        // still ~58 km/h ⇒ no collapse ⇒ confidence unchanged (never lowered).
+        let d = ImpactDetector::new(Some(crash_cfg()));
+        let speed = 60.0 / 3.6;
+        let cand = d
+            .on_impact_window(2.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5)
+            .unwrap();
+        let before = cand.confidence;
+        assert!(!d.corroborate_dv(58.0 / 3.6, 2500), "maintained speed must not corroborate");
+        let confirmed = d.check_confirmations(60000);
+        assert!((confirmed[0].confidence - before).abs() < 1e-9, "confidence must be unchanged");
+    }
+
+    #[test]
+    fn dv_is_one_shot_and_window_bounded() {
+        let d = ImpactDetector::new(Some(crash_cfg()));
+        let speed = 60.0 / 3.6;
+        d.on_impact_window(4.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5).unwrap();
+        // First post-impact collapse corroborates; a second is ignored (one-shot).
+        assert!(d.corroborate_dv(0.0, 2000));
+        assert!(!d.corroborate_dv(0.0, 2500));
+        // A fresh crash whose Δv sample arrives after the window is not corroborated.
+        let d2 = ImpactDetector::new(Some(crash_cfg()));
+        d2.on_impact_window(4.0, speed, 0.0, false, false, false, 0.0, 0.0, 1000, -1.0, 0.5).unwrap();
+        assert!(
+            !d2.corroborate_dv(0.0, 1000 + DV_CORROBORATION_WINDOW_MS + 1),
+            "a sample past the Δv window must not corroborate (#181)"
+        );
     }
 }

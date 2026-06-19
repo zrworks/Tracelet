@@ -29,6 +29,7 @@ impl ImpactDetectorDart {
         speed_before_mps: f64,
         gyro_peak_dps: f64,
         was_in_free_fall: bool,
+        post_impact_still: bool,
         is_on_foot: bool,
         latitude: f64,
         longitude: f64,
@@ -39,6 +40,7 @@ impl ImpactDetectorDart {
             speed_before_mps,
             gyro_peak_dps,
             was_in_free_fall,
+            post_impact_still,
             is_on_foot,
             latitude,
             longitude,
@@ -47,6 +49,14 @@ impl ImpactDetectorDart {
             -1.0,
             0.5,
         )
+    }
+
+    /// Folds a post-impact speed sample (m/s) into the most recent pending
+    /// crash for Δv corroboration (#181); returns `true` on a corroborating
+    /// collapse.
+    #[flutter_rust_bridge::frb(sync)]
+    pub fn corroborate_dv(&self, speed_after_mps: f64, now_ms: i64) -> bool {
+        self.inner.corroborate_dv(speed_after_mps, now_ms)
     }
 
     /// Fires confirmed events for candidates whose deadline elapsed.

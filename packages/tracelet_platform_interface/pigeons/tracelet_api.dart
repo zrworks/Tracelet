@@ -507,6 +507,11 @@ class TlImpactConfig {
     required this.fallGThreshold,
     required this.confirmWindowMs,
     required this.minImpactConfidence,
+    required this.crashModelThreshold,
+    this.crashModelUrl,
+    this.crashModelSha256,
+    this.crashModelUnlockUrl,
+    this.crashModelLicenseKey,
   });
   final bool enableCrashDetection;
   final bool enableFallDetection;
@@ -515,6 +520,11 @@ class TlImpactConfig {
   final double fallGThreshold;
   final int confirmWindowMs;
   final double minImpactConfidence;
+  final String? crashModelUrl;
+  final String? crashModelSha256;
+  final double crashModelThreshold;
+  final String? crashModelUnlockUrl;
+  final String? crashModelLicenseKey;
 }
 
 enum TlLogLevel { off, error, warn, info, debug, verbose }
@@ -819,6 +829,18 @@ class TlModeChangeEvent {
   final double confidence;
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+class TlCrashModelStatusEvent {
+  TlCrashModelStatusEvent({required this.status, this.detail});
+  final String status;
+  final String? detail;
+}
+
 // =============================================================================
 // Host API
 // =============================================================================
@@ -1076,6 +1098,20 @@ abstract class TraceletHostApi {
 
   @async
   void clearLogs();
+
+  /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+  /// through the SDK's real crash-detection pipeline — including the loaded ML
+  /// crash model — so the model path can be verified without a physical impact.
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
+  @async
+  Map<String, Object?> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  );
 }
 
 class TlTelematicsRecord {
@@ -1165,4 +1201,5 @@ abstract class TraceletEventApi {
   void onDrivingEvent(TlDrivingEvent event);
   void onImpact(TlImpactEvent event);
   void onModeChange(TlModeChangeEvent event);
+  void onCrashModelStatus(TlCrashModelStatusEvent event);
 }

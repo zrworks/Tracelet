@@ -1624,6 +1624,11 @@ struct TlImpactConfig: Hashable {
   var fallGThreshold: Double
   var confirmWindowMs: Int64
   var minImpactConfidence: Double
+  var crashModelUrl: String? = nil
+  var crashModelSha256: String? = nil
+  var crashModelThreshold: Double
+  var crashModelUnlockUrl: String? = nil
+  var crashModelLicenseKey: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1635,6 +1640,11 @@ struct TlImpactConfig: Hashable {
     let fallGThreshold = pigeonVar_list[4] as! Double
     let confirmWindowMs = pigeonVar_list[5] as! Int64
     let minImpactConfidence = pigeonVar_list[6] as! Double
+    let crashModelUrl: String? = nilOrValue(pigeonVar_list[7])
+    let crashModelSha256: String? = nilOrValue(pigeonVar_list[8])
+    let crashModelThreshold = pigeonVar_list[9] as! Double
+    let crashModelUnlockUrl: String? = nilOrValue(pigeonVar_list[10])
+    let crashModelLicenseKey: String? = nilOrValue(pigeonVar_list[11])
 
     return TlImpactConfig(
       enableCrashDetection: enableCrashDetection,
@@ -1643,7 +1653,12 @@ struct TlImpactConfig: Hashable {
       crashMinSpeedKmh: crashMinSpeedKmh,
       fallGThreshold: fallGThreshold,
       confirmWindowMs: confirmWindowMs,
-      minImpactConfidence: minImpactConfidence
+      minImpactConfidence: minImpactConfidence,
+      crashModelUrl: crashModelUrl,
+      crashModelSha256: crashModelSha256,
+      crashModelThreshold: crashModelThreshold,
+      crashModelUnlockUrl: crashModelUnlockUrl,
+      crashModelLicenseKey: crashModelLicenseKey
     )
   }
   func toList() -> [Any?] {
@@ -1655,13 +1670,18 @@ struct TlImpactConfig: Hashable {
       fallGThreshold,
       confirmWindowMs,
       minImpactConfidence,
+      crashModelUrl,
+      crashModelSha256,
+      crashModelThreshold,
+      crashModelUnlockUrl,
+      crashModelLicenseKey,
     ]
   }
   static func == (lhs: TlImpactConfig, rhs: TlImpactConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsTraceletApi(lhs.enableCrashDetection, rhs.enableCrashDetection) && deepEqualsTraceletApi(lhs.enableFallDetection, rhs.enableFallDetection) && deepEqualsTraceletApi(lhs.crashGThreshold, rhs.crashGThreshold) && deepEqualsTraceletApi(lhs.crashMinSpeedKmh, rhs.crashMinSpeedKmh) && deepEqualsTraceletApi(lhs.fallGThreshold, rhs.fallGThreshold) && deepEqualsTraceletApi(lhs.confirmWindowMs, rhs.confirmWindowMs) && deepEqualsTraceletApi(lhs.minImpactConfidence, rhs.minImpactConfidence)
+    return deepEqualsTraceletApi(lhs.enableCrashDetection, rhs.enableCrashDetection) && deepEqualsTraceletApi(lhs.enableFallDetection, rhs.enableFallDetection) && deepEqualsTraceletApi(lhs.crashGThreshold, rhs.crashGThreshold) && deepEqualsTraceletApi(lhs.crashMinSpeedKmh, rhs.crashMinSpeedKmh) && deepEqualsTraceletApi(lhs.fallGThreshold, rhs.fallGThreshold) && deepEqualsTraceletApi(lhs.confirmWindowMs, rhs.confirmWindowMs) && deepEqualsTraceletApi(lhs.minImpactConfidence, rhs.minImpactConfidence) && deepEqualsTraceletApi(lhs.crashModelUrl, rhs.crashModelUrl) && deepEqualsTraceletApi(lhs.crashModelSha256, rhs.crashModelSha256) && deepEqualsTraceletApi(lhs.crashModelThreshold, rhs.crashModelThreshold) && deepEqualsTraceletApi(lhs.crashModelUnlockUrl, rhs.crashModelUnlockUrl) && deepEqualsTraceletApi(lhs.crashModelLicenseKey, rhs.crashModelLicenseKey)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1673,6 +1693,11 @@ struct TlImpactConfig: Hashable {
     deepHashTraceletApi(value: fallGThreshold, hasher: &hasher)
     deepHashTraceletApi(value: confirmWindowMs, hasher: &hasher)
     deepHashTraceletApi(value: minImpactConfidence, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelUrl, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelSha256, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelThreshold, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelUnlockUrl, hasher: &hasher)
+    deepHashTraceletApi(value: crashModelLicenseKey, hasher: &hasher)
   }
 }
 
@@ -2676,6 +2701,49 @@ struct TlModeChangeEvent: Hashable {
   }
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct TlCrashModelStatusEvent: Hashable {
+  var status: String
+  var detail: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> TlCrashModelStatusEvent? {
+    let status = pigeonVar_list[0] as! String
+    let detail: String? = nilOrValue(pigeonVar_list[1])
+
+    return TlCrashModelStatusEvent(
+      status: status,
+      detail: detail
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      status,
+      detail,
+    ]
+  }
+  static func == (lhs: TlCrashModelStatusEvent, rhs: TlCrashModelStatusEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsTraceletApi(lhs.status, rhs.status) && deepEqualsTraceletApi(lhs.detail, rhs.detail)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("TlCrashModelStatusEvent")
+    deepHashTraceletApi(value: status, hasher: &hasher)
+    deepHashTraceletApi(value: detail, hasher: &hasher)
+  }
+}
+
 /// Generated class from Pigeon that represents data sent in messages.
 struct TlTelematicsRecord: Hashable {
   /// The primary key.
@@ -2992,8 +3060,10 @@ private class TraceletApiPigeonCodecReader: FlutterStandardReader {
     case 187:
       return TlModeChangeEvent.fromList(self.readValue() as! [Any?])
     case 188:
-      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+      return TlCrashModelStatusEvent.fromList(self.readValue() as! [Any?])
     case 189:
+      return TlTelematicsRecord.fromList(self.readValue() as! [Any?])
+    case 190:
       return TlLogEntry.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -3180,11 +3250,14 @@ private class TraceletApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? TlModeChangeEvent {
       super.writeByte(187)
       super.writeValue(value.toList())
-    } else if let value = value as? TlTelematicsRecord {
+    } else if let value = value as? TlCrashModelStatusEvent {
       super.writeByte(188)
       super.writeValue(value.toList())
-    } else if let value = value as? TlLogEntry {
+    } else if let value = value as? TlTelematicsRecord {
       super.writeByte(189)
+      super.writeValue(value.toList())
+    } else if let value = value as? TlLogEntry {
+      super.writeByte(190)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -3294,6 +3367,14 @@ protocol TraceletHostApi {
   func destroyTelematicsEvents(completion: @escaping (Result<Bool, Error>) -> Void)
   func getLogs(limit: Int64, completion: @escaping (Result<[TlLogEntry?], Error>) -> Void)
   func clearLogs(completion: @escaping (Result<Void, Error>) -> Void)
+  /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+  /// through the SDK's real crash-detection pipeline — including the loaded ML
+  /// crash model — so the model path can be verified without a physical impact.
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
+  func debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Bool, completion: @escaping (Result<[String: Any?], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -4631,6 +4712,32 @@ class TraceletHostApiSetup {
     } else {
       clearLogsChannel.setMessageHandler(nil)
     }
+    /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+    /// through the SDK's real crash-detection pipeline — including the loaded ML
+    /// crash model — so the model path can be verified without a physical impact.
+    /// When [crashLike] is true the synthetic features represent a real crash
+    /// (rotation + speed + deceleration); when false a benign bump the model
+    /// should reject. Returns the model probability, threshold, and whether a
+    /// crash candidate fired. `modelRan` is false when no ML model is loaded.
+    let debugRunCrashModelInferenceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      debugRunCrashModelInferenceChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let peakGArg = args[0] as! Double
+        let speedKmhArg = args[1] as! Double
+        let crashLikeArg = args[2] as! Bool
+        api.debugRunCrashModelInference(peakG: peakGArg, speedKmh: speedKmhArg, crashLike: crashLikeArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      debugRunCrashModelInferenceChannel.setMessageHandler(nil)
+    }
   }
 }
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
@@ -4709,6 +4816,7 @@ protocol TraceletEventApiProtocol {
   func onDrivingEvent(event eventArg: TlDrivingEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onImpact(event eventArg: TlImpactEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
   func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  func onCrashModelStatus(event eventArg: TlCrashModelStatusEvent, completion: @escaping (Result<Void, PigeonError>) -> Void)
 }
 class TraceletEventApi: TraceletEventApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -5046,6 +5154,24 @@ class TraceletEventApi: TraceletEventApiProtocol {
   }
   func onModeChange(event eventArg: TlModeChangeEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([eventArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
+    }
+  }
+  func onCrashModelStatus(event eventArg: TlCrashModelStatusEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onCrashModelStatus\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([eventArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {

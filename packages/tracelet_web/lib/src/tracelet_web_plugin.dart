@@ -694,6 +694,19 @@ class TraceletWebPlugin extends TraceletPlatform {
     return false;
   }
 
+  @override
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  ) async {
+    _events.log(
+      'warning',
+      '[Tracelet Web] debugRunCrashModelInference() is not supported on web',
+    );
+    return {'modelRan': false, 'fired': false, 'error': 'unsupported on web'};
+  }
+
   // ---------------------------------------------------------------------------
   // Scheduling (foreground-only timers)
   // ---------------------------------------------------------------------------
@@ -1108,6 +1121,11 @@ class TraceletWebPlugin extends TraceletPlatform {
 
   @override
   Stream<TlImpactEvent> get impactEvents => const Stream.empty();
+
+  @override
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents =>
+      // The ML crash model is a native-only feature; never fires on web.
+      const Stream.empty();
 
   void _assertReady() {
     if (!_isReady) {

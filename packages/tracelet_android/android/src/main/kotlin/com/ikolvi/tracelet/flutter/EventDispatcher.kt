@@ -339,6 +339,19 @@ class EventDispatcher : TraceletEventSender {
         }
     }
 
+    override fun sendCrashModelStatus(data: Map<String, Any?>) {
+        val api = eventApi
+        if (api != null) {
+            val event = com.ikolvi.tracelet.TlCrashModelStatusEvent(
+                status = data["status"] as? String ?: "unknown",
+                detail = data["detail"] as? String,
+            )
+            postToMain { api.onCrashModelStatus(event) {} }
+        } else {
+            fallback("crashmodelstatus", data)
+        }
+    }
+
     private fun num(v: Any?): Double = (v as? Number)?.toDouble() ?: 0.0
     private fun lng(v: Any?): Long = (v as? Number)?.toLong() ?: 0L
 

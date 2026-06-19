@@ -565,6 +565,15 @@ class PigeonTracelet extends TraceletPlatform {
   }
 
   @override
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  ) async {
+    return _api.debugRunCrashModelInference(peakG, speedKmh, crashLike);
+  }
+
+  @override
   Future<List<TlLogEntry?>> getLogs(int limit) {
     return _api.getLogs(limit);
   }
@@ -694,6 +703,12 @@ class PigeonTracelet extends TraceletPlatform {
   Stream<TlModeChangeEvent> get modeChangeEvents {
     _ensureEventsRegistered();
     return _events.modeChangeEvents;
+  }
+
+  @override
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents {
+    _ensureEventsRegistered();
+    return _events.crashModelStatusEvents;
   }
 
   @override

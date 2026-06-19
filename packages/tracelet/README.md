@@ -23,12 +23,13 @@ Battery-conscious motion-detection intelligence, geofencing, SQLite persistence,
 
 ---
 
-## 🆕 New in 3.3.0 — Driving & Safety
+## 🆕 New in 3.5.0 — Stable AI Crash Detection
 
 On-device, opt-in, and battery-friendly — all detection runs in the shared Rust core (no cloud):
 
+- **🤖 AI crash model — now stable** — gate crashes on a trained probability instead of a fixed g-threshold. Trained on a **CC0 / public-domain** dataset (**commercial-use OK**), downloaded on demand, AES-256-GCM encrypted, with rule-engine fallback and auto-update. `ImpactConfig(crashModelUnlockUrl, crashModelLicenseKey)`.
 - **🚗 Driving telematics** — harsh braking / acceleration / cornering / speeding, each with a `0–1` severity score. `TelematicsConfig` + `Tracelet.onDrivingEvent`.
-- **💥 Crash & fall detection** — corroborated impact detection with a user "I'm OK" cancel-countdown before escalating to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`.
+- **💥 Crash & fall detection** — corroborated impact detection with a user "I'm OK" cancel-countdown before escalating to your SOS flow. `ImpactConfig` + `Tracelet.onImpact` / `confirmImpact` / `cancelImpact`. → **[Crash & fall detection docs](https://tracelet.ikolvi.com/en/core/driving-safety#3-crash--fall-detection)**
 - **🚶 Transport-mode classifier** — still / walking / running / cycling / vehicle, fusing accelerometer + GPS. `ClassifierConfig` + `Tracelet.onModeChange`.
 - **🔋 Motion-gated wakelock (Android)** — drops the partial wakelock when stationary and re-asserts it on movement to cut idle battery drain. `AndroidConfig.releaseWakelockWhenStationary`.
 
@@ -71,9 +72,9 @@ Your support is deeply appreciated and directly helps keep this plugin up-to-dat
 
 - **Background location tracking** — continuous GPS with configurable `distanceFilter` and `desiredAccuracy`
 - **Motion-detection intelligence** — accelerometer + activity recognition automatically toggle GPS to save battery
-- **Driving telematics** *(new in 3.3.0)* — on-device harsh braking / acceleration / cornering / speeding with severity scores via `TelematicsConfig` + `onDrivingEvent()`
-- **Crash & fall detection** *(new in 3.3.0)* — corroborated impact detection with a cancel-countdown via `ImpactConfig` + `onImpact()` / `confirmImpact()` / `cancelImpact()`
-- **Transport-mode classifier** *(new in 3.3.0)* — still / walking / running / cycling / vehicle from fused accelerometer + GPS via `ClassifierConfig` + `onModeChange()`
+- **Driving telematics** — on-device harsh braking / acceleration / cornering / speeding with severity scores via `TelematicsConfig` + `onDrivingEvent()`
+- **Crash & fall detection** — corroborated impact detection with a cancel-countdown via `ImpactConfig` + `onImpact()` / `confirmImpact()` / `cancelImpact()` — [docs](https://tracelet.ikolvi.com/en/core/driving-safety#3-crash--fall-detection)
+- **Transport-mode classifier** — still / walking / running / cycling / vehicle from fused accelerometer + GPS via `ClassifierConfig` + `onModeChange()`
 - **Geofencing** — circular and polygon geofences with enter/exit/dwell events. **Unlimited geofences** via proximity-based auto-load/unload
 - **SQLite persistence** — all locations stored locally, queryable, with configurable retention limits
 - **HTTP auto-sync** — batch upload with retry, exponential backoff, offline queue, Wi-Fi-only option. 401-aware retry with headless JWT refresh via `registerHeadlessHeadersCallback()`

@@ -243,6 +243,46 @@ typedef void (*UniffiForeignFutureCompleteVoid)(uint64_t, UniffiForeignFutureRes
     );
 
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_CRASHMODEL
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_CRASHMODEL
+uint64_t uniffi_tracelet_core_fn_clone_crashmodel(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FREE_CRASHMODEL
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_FREE_CRASHMODEL
+void uniffi_tracelet_core_fn_free_crashmodel(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_CRASHMODEL_FROM_ENCRYPTED
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_CRASHMODEL_FROM_ENCRYPTED
+uint64_t uniffi_tracelet_core_fn_constructor_crashmodel_from_encrypted(RustBuffer blob, RustBuffer key, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_CRASHMODEL_FROM_JSON
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CONSTRUCTOR_CRASHMODEL_FROM_JSON
+uint64_t uniffi_tracelet_core_fn_constructor_crashmodel_from_json(RustBuffer json, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_FEATURE_NAMES
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_FEATURE_NAMES
+RustBuffer uniffi_tracelet_core_fn_method_crashmodel_feature_names(uint64_t ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_IS_CRASH
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_IS_CRASH
+int8_t uniffi_tracelet_core_fn_method_crashmodel_is_crash(uint64_t ptr, RustBuffer features, double threshold, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_PREDICT_PROBA
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_PREDICT_PROBA
+double uniffi_tracelet_core_fn_method_crashmodel_predict_proba(uint64_t ptr, RustBuffer features, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_TREE_COUNT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_CRASHMODEL_TREE_COUNT
+uint32_t uniffi_tracelet_core_fn_method_crashmodel_tree_count(uint64_t ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_IMPACTDETECTOR
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_CLONE_IMPACTDETECTOR
 uint64_t uniffi_tracelet_core_fn_clone_impactdetector(uint64_t handle, RustCallStatus *_Nonnull out_status
@@ -275,7 +315,7 @@ RustBuffer uniffi_tracelet_core_fn_method_impactdetector_confirm(uint64_t ptr, i
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_ON_IMPACT_WINDOW
-RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, double gyro_peak_dps, int8_t was_in_free_fall, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_tracelet_core_fn_method_impactdetector_on_impact_window(uint64_t ptr, double peak_g, double speed_before_mps, double gyro_peak_dps, int8_t was_in_free_fall, int8_t is_on_foot, double latitude, double longitude, int64_t now_ms, double crash_proba, double crash_proba_threshold, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_FN_METHOD_IMPACTDETECTOR_PENDING_COUNT
@@ -1255,6 +1295,30 @@ uint16_t uniffi_tracelet_core_checksum_func_sha256(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_FEATURE_NAMES
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_FEATURE_NAMES
+uint16_t uniffi_tracelet_core_checksum_method_crashmodel_feature_names(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_IS_CRASH
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_IS_CRASH
+uint16_t uniffi_tracelet_core_checksum_method_crashmodel_is_crash(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_PREDICT_PROBA
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_PREDICT_PROBA
+uint16_t uniffi_tracelet_core_checksum_method_crashmodel_predict_proba(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_TREE_COUNT
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_CRASHMODEL_TREE_COUNT
+uint16_t uniffi_tracelet_core_checksum_method_crashmodel_tree_count(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CANCEL
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_IMPACTDETECTOR_CANCEL
 uint16_t uniffi_tracelet_core_checksum_method_impactdetector_cancel(void
@@ -1780,6 +1844,18 @@ uint16_t uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_current
 #ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_SMARTMOTIONCOORDINATOR_SET_USE_GEOFENCES_WHEN_STATIONARY
 #define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_METHOD_SMARTMOTIONCOORDINATOR_SET_USE_GEOFENCES_WHEN_STATIONARY
 uint16_t uniffi_tracelet_core_checksum_method_smartmotioncoordinator_set_use_geofences_when_stationary(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_CRASHMODEL_FROM_ENCRYPTED
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_CRASHMODEL_FROM_ENCRYPTED
+uint16_t uniffi_tracelet_core_checksum_constructor_crashmodel_from_encrypted(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_CRASHMODEL_FROM_JSON
+#define UNIFFI_FFIDEF_UNIFFI_TRACELET_CORE_CHECKSUM_CONSTRUCTOR_CRASHMODEL_FROM_JSON
+uint16_t uniffi_tracelet_core_checksum_constructor_crashmodel_from_json(void
     
 );
 #endif

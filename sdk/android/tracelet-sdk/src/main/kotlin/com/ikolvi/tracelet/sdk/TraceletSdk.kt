@@ -134,6 +134,10 @@ class TraceletSdk private constructor(private val context: Context) {
     private var telematicsEngine: uniffi.tracelet_core.TelematicsEngine? = null
     private var transportClassifier: uniffi.tracelet_core.TransportModeClassifier? = null
     private var impactDetector: uniffi.tracelet_core.ImpactDetector? = null
+
+    /** Opt-in ML crash model (#183); null ⇒ rule engine. Loaded off-thread. */
+    @Volatile
+    private var crashModel: uniffi.tracelet_core.CrashModel? = null
     private val accelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val gyroBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
     private val rawAccelBuffer = java.util.Collections.synchronizedList(mutableListOf<Double>())
@@ -144,6 +148,12 @@ class TraceletSdk private constructor(private val context: Context) {
     @Volatile private var lastLng: Double = 0.0
     private val accelWindowMs = 1000L
     private val impactConfirmPollMs = 1000L
+
+    // #183 ML features: recent GPS speed history (timestamp ms → km/h) used to
+    // derive the model's `speed_max` and `dv` (pre-impact speed drop) over the
+    // same ~16 s event window the crash model was trained on.
+    private val crashSpeedWindowMs = 16_000L
+    private val speedHistory = ArrayDeque<Pair<Long, Double>>()
 
     var activity: Activity? = null
     var isReady: Boolean = false
@@ -1017,6 +1027,21 @@ class TraceletSdk private constructor(private val context: Context) {
                 locationEngine.stop()
                 locationEngine.start()
             }
+        }
+
+        // Behavior engines (telematics / transport / crash-fall + ML model) are
+        // built in initBehaviorEngines() at ready(). Rebuild them when any of
+        // their config changes at runtime — otherwise toggling crash detection or
+        // supplying a license key via setConfig() would never (re)load the ML
+        // crash model. initBehaviorEngines() is idempotent.
+        val behaviorKeys = listOf(
+            "enableDrivingEvents", "enableFusedClassifier",
+            "enableCrashDetection", "enableFallDetection",
+            "crashModelUrl", "crashModelUnlockUrl", "crashModelLicenseKey",
+            "crashModelSha256", "crashModelThreshold",
+        )
+        if (behaviorKeys.any { key -> oldConfig[key] != merged[key] }) {
+            initBehaviorEngines()
         }
 
         updateBootReceiverState()
@@ -2352,20 +2377,78 @@ class TraceletSdk private constructor(private val context: Context) {
             // Gyroscope corroboration (#179) — only sample gyro when crash/fall is on.
             motionDetector.gyroEnabled = impactDetector != null
         }
+
+        // #183: opt-in ML crash model. Download/decrypt happen off the main thread;
+        // until (or unless) it loads, the rule engine is used. Any failure → null
+        // (rule-engine fallback). The model is only fetched when crash detection is
+        // on AND a model URL (or a licensing unlock endpoint) is configured.
+        crashModel = null
+        val crashUrl = configManager.getCrashModelUrl()
+        val unlockUrl = configManager.getCrashModelUnlockUrl()
+        val licenseKey = configManager.getCrashModelLicenseKey()
+        if (configManager.getEnableCrashDetection() && (crashUrl != null || unlockUrl != null)) {
+            Thread {
+                val loader = com.ikolvi.tracelet.sdk.crash.CrashModelLoader
+                // If a licensing endpoint is configured, exchange the license for the
+                // decryption key + model URL/sha at runtime; else use the static key
+                // + configured URL (host-injected). Either path → rule-engine fallback.
+                var modelUrl = crashUrl
+                var modelSha = configManager.getCrashModelSha256()
+                if (unlockUrl != null && licenseKey != null) {
+                    emitCrashModelStatus("unlocking")
+                    val integrityToken = loader.integrityTokenProvider?.invoke()
+                    val unlocked = loader.unlock(
+                        unlockUrl, licenseKey, integrityToken,
+                    ) { msg -> logger.debug(msg) }
+                    if (unlocked != null) {
+                        modelUrl = unlocked.url
+                        modelSha = unlocked.sha256 ?: modelSha
+                    } else {
+                        emitCrashModelStatus("failed", "license unlock failed")
+                    }
+                }
+                if (modelUrl != null) {
+                    emitCrashModelStatus("downloading")
+                    val m = loader.load(context, modelUrl, modelSha) { msg -> logger.debug(msg) }
+                    if (m != null) {
+                        crashModel = m
+                        logger.info("Crash ML model active.")
+                        emitCrashModelStatus("ready", "${m.treeCount()} trees")
+                    } else {
+                        emitCrashModelStatus("failed", "model download or decrypt failed")
+                    }
+                }
+            }.apply { isDaemon = true }.start()
+        }
+    }
+
+    /** Forwards an ML crash-model lifecycle status to the host (best-effort). */
+    private fun emitCrashModelStatus(status: String, detail: String? = null) {
+        if (!::eventSender.isInitialized) return
+        try {
+            eventSender.sendCrashModelStatus(
+                mapOf("status" to status, "detail" to detail),
+            )
+        } catch (_: Throwable) {
+            // Never let status reporting affect model loading.
+        }
     }
 
     /** Feeds an accepted location fix to the telematics engine and emits events. */
     private fun processTelematics(location: Map<String, Any?>) {
-        val engine = telematicsEngine ?: return
         @Suppress("UNCHECKED_CAST")
         val coords = location["coords"] as? Map<String, Any?> ?: return
         val speed = (coords["speed"] as? Number)?.toDouble() ?: 0.0
         val heading = (coords["heading"] as? Number)?.toDouble() ?: -1.0
         val lat = (coords["latitude"] as? Number)?.toDouble() ?: 0.0
         val lng = (coords["longitude"] as? Number)?.toDouble() ?: 0.0
+        // Capture speed/position for impact gating + the ML speed-history window
+        // unconditionally — crash detection can run without driving events.
         lastSpeedMps = speed
         lastLat = lat
         lastLng = lng
+        recordSpeedSample(speed)
+        val engine = telematicsEngine ?: return
         val events = try {
             engine.processFix(speed, heading, lat, lng, System.currentTimeMillis())
         } catch (e: Exception) {
@@ -2454,6 +2537,52 @@ class TraceletSdk private constructor(private val context: Context) {
         mainHandler.postDelayed(runnable, impactConfirmPollMs)
     }
 
+    /**
+     * Records one GPS speed sample (m/s) into the rolling crash speed-history
+     * window, evicting samples older than [crashSpeedWindowMs]. Feeds the ML
+     * model's `speed_max` / `dv` features (#183).
+     */
+    private fun recordSpeedSample(speedMps: Double) {
+        val now = System.currentTimeMillis()
+        synchronized(speedHistory) {
+            speedHistory.addLast(now to speedMps)
+            val cutoff = now - crashSpeedWindowMs
+            while (speedHistory.isNotEmpty() && speedHistory.first().first < cutoff) {
+                speedHistory.removeFirst()
+            }
+        }
+    }
+
+    /**
+     * Builds the crash model's feature vector for this accel window, ordered to
+     * match [CrashModel.featureNames]. Features (training units): `peak_g` and
+     * `mean_g` in g, `gyro_peak_dps` in deg/s, `speed_max` and `dv` (pre-impact
+     * speed drop) in **km/h** over the recent speed-history window (#183).
+     */
+    private fun crashFeatureVector(
+        model: uniffi.tracelet_core.CrashModel,
+        window: uniffi.tracelet_core.AccelWindow,
+        gyroPeakDps: Double,
+    ): List<Double> {
+        val speedsKmh: List<Double>
+        synchronized(speedHistory) {
+            speedsKmh = speedHistory.map { it.second * 3.6 }
+        }
+        val speedMax = speedsKmh.maxOrNull() ?: (lastSpeedMps * 3.6)
+        val speedMin = speedsKmh.minOrNull() ?: (lastSpeedMps * 3.6)
+        val dv = speedMax - speedMin
+        val byName = mapOf(
+            "peak_g" to window.peakG,
+            "mean_g" to window.meanG,
+            "gyro_peak_dps" to gyroPeakDps,
+            "speed_max" to speedMax,
+            "dv" to dv,
+        )
+        // Order by the model's declared feature names so a retrained/reordered
+        // model still maps correctly; unknown names default to 0.0.
+        return model.featureNames().map { byName[it] ?: 0.0 }
+    }
+
     /** Snapshots the accel buffer into one window and feeds classifier + impact. */
     private fun processAccelWindow() {
         val samples: List<Double>
@@ -2504,6 +2633,35 @@ class TraceletSdk private constructor(private val context: Context) {
                 wasInFreeFall = minTotalG != null && minTotalG < 0.5
                 rawAccelBuffer.clear()
             }
+            // #183 ML gating (Replace mode): when the opt-in model is loaded, run
+            // inference for this window and let its probability decide the crash
+            // (still speed-gated in the core). `crashProba < 0` ⇒ no model ⇒ the
+            // g-threshold rule is used instead.
+            val crashProba = crashModel?.let { model ->
+                try {
+                    model.predictProba(crashFeatureVector(model, window, gyroPeak))
+                } catch (e: Exception) {
+                    logger.error("crash model inference failed: ${e.message}")
+                    -1.0
+                }
+            } ?: -1.0
+            // Observability (#183): surface each real model inference so the
+            // model path can be verified on-device. Only logged when the model
+            // actually ran (crashProba >= 0) and the window has a notable peak,
+            // to avoid spamming the ~1 Hz idle loop.
+            if (crashProba >= 0.0 && window.peakG > 1.5) {
+                val thr = configManager.getCrashModelThreshold()
+                val verdict = if (crashProba >= thr) "CRASH" else "below-threshold"
+                logger.debug(
+                    "crash model: proba=%.3f peak=%.2fg speed=%.1fkm/h thr=%.3f → %s".format(
+                        crashProba,
+                        window.peakG,
+                        lastSpeedMps * 3.6,
+                        thr,
+                        verdict,
+                    ),
+                )
+            }
             val candidate = detector.onImpactWindow(
                 window.peakG,
                 lastSpeedMps,
@@ -2513,6 +2671,8 @@ class TraceletSdk private constructor(private val context: Context) {
                 lastLat,
                 lastLng,
                 now,
+                crashProba,
+                configManager.getCrashModelThreshold(),
             )
             if (candidate != null) {
                 emitImpact(candidate)
@@ -2557,6 +2717,94 @@ class TraceletSdk private constructor(private val context: Context) {
 
     /** Cancels a pending impact candidate (called from the Pigeon host API). */
     fun cancelImpact(id: Long): Boolean = impactDetector?.cancel(id) ?: false
+
+    /**
+     * Debug (#183): runs one synthetic high-g window through the REAL crash
+     * pipeline — the loaded ML model and the live [impactDetector] — so the
+     * model path can be verified without a physical impact. Requires crash
+     * detection to be enabled. Returns proba/threshold/fired so callers can
+     * prove the model (not the rule engine) made the call.
+     */
+    fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Boolean = true): Map<String, Any?> {
+        val detector = impactDetector ?: return mapOf(
+            "modelRan" to false,
+            "fired" to false,
+            "error" to "crash detection not enabled — toggle it on and start tracking first",
+        )
+        val speedMps = speedKmh / 3.6
+        // Synthesize a window: baseline ~1 g with a single spike at peakG.
+        val samples = ArrayList<Double>(50).apply {
+            repeat(49) { add(1.0) }
+            add(peakG)
+        }
+        val window = try {
+            uniffi.tracelet_core.computeAccelWindow(samples, accelWindowMs)
+        } catch (e: Exception) {
+            return mapOf(
+                "modelRan" to false,
+                "fired" to false,
+                "error" to "computeAccelWindow failed: ${e.message}",
+            )
+        }
+        // Crash-like corroboration: high rotation + a full speed drop (dv) at the
+        // given speed. Benign: no rotation, no speed drop (model should reject).
+        val gyroPeak = if (crashLike) 250.0 else 0.0
+        val speedMax = speedKmh
+        val dv = if (crashLike) speedKmh else 0.0
+        val now = System.currentTimeMillis()
+        val crashProba = crashModel?.let { model ->
+            try {
+                val byName = mapOf(
+                    "peak_g" to window.peakG,
+                    "mean_g" to window.meanG,
+                    "gyro_peak_dps" to gyroPeak,
+                    "speed_max" to speedMax,
+                    "dv" to dv,
+                )
+                model.predictProba(model.featureNames().map { byName[it] ?: 0.0 })
+            } catch (e: Exception) {
+                logger.error("crash model inference failed: ${e.message}")
+                -1.0
+            }
+        } ?: -1.0
+        val threshold = configManager.getCrashModelThreshold()
+        val modelRan = crashProba >= 0.0
+        logger.debug(
+            "crash model (debug): proba=%.3f peak=%.2fg gyro=%.0f speed=%.1fkm/h dv=%.1f thr=%.3f modelRan=%b".format(
+                crashProba,
+                window.peakG,
+                gyroPeak,
+                speedKmh,
+                dv,
+                threshold,
+                modelRan,
+            ),
+        )
+        val candidate = detector.onImpactWindow(
+            window.peakG,
+            speedMps,
+            gyroPeak,
+            false,
+            speedKmh < configManager.getCrashMinSpeedKmh(),
+            lastLat,
+            lastLng,
+            now,
+            crashProba,
+            threshold,
+        )
+        if (candidate != null) {
+            emitImpact(candidate)
+            ensureImpactConfirmLoop()
+        }
+        return mapOf(
+            "modelRan" to modelRan,
+            "proba" to crashProba,
+            "threshold" to threshold,
+            "peakG" to window.peakG,
+            "fired" to (candidate != null),
+            "kind" to candidate?.kind,
+        )
+    }
 
     private fun startBatteryBudgetSampling() {
         stopBatteryBudgetSampling()

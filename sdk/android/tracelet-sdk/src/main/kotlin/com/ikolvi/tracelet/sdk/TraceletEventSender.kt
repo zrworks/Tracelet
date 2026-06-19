@@ -53,6 +53,14 @@ interface TraceletEventSender {
 
     fun sendModeChange(data: Map<String, Any?>)
 
+    /**
+     * ML crash-model lifecycle status (download/load), so apps can show the user
+     * that the model is being prepared. [data] carries `status` (`unlocking`,
+     * `downloading`, `decrypting`, `ready`, `failed`, `disabled`) and an optional
+     * `detail` string. Default no-op for hosts that don't surface it.
+     */
+    fun sendCrashModelStatus(data: Map<String, Any?>) {}
+
     /** Returns true if a listener is attached for the given event name. */
     fun hasListener(eventName: String): Boolean
 }

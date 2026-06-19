@@ -100,7 +100,7 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', fontSize: '0.9rem' }}>
-              <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} className="footer-link" style={{ color: '#0F9D58', fontWeight: '600' }}>❤️ {supportTitles[locale] || supportTitles.en}</TrackedLink>
+              <TrackedLink eventName="support_button_clicked" href={`/${locale}/sponsor`} className="footer-link" style={{ color: '#0F9D58', fontWeight: '600' }}>❤️ {supportTitles[locale] || supportTitles.en}</TrackedLink>
               
               <a href={`/${locale}/privacy`} style={{ textDecoration: 'none', color: '#6b7280' }}>Privacy Policy</a>
               <a href={`/${locale}/terms`} style={{ textDecoration: 'none', color: '#6b7280' }}>Terms of Service</a>
@@ -119,7 +119,7 @@ export default function DocLayout({ children, pageMap, version, locale }: { chil
           extraContent: (
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <TrackedLink eventName="support_button_clicked" href={`/${locale}/reference/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
+                <TrackedLink eventName="support_button_clicked" href={`/${locale}/sponsor`} style={{ textDecoration: 'none' }}><b style={{ color: '#0F9D58' }}>❤️ {supportTitles[locale] || supportTitles.en}</b></TrackedLink>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingLeft: '1.25rem' }}>
                   <a href="https://github.com/sponsors/GalacticTitan" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span style={{ fontSize: '12px' }}>🐙</span> GitHub Sponsors

@@ -1677,7 +1677,12 @@ data class TlImpactConfig (
   val crashMinSpeedKmh: Double,
   val fallGThreshold: Double,
   val confirmWindowMs: Long,
-  val minImpactConfidence: Double
+  val minImpactConfidence: Double,
+  val crashModelUrl: String? = null,
+  val crashModelSha256: String? = null,
+  val crashModelThreshold: Double,
+  val crashModelUnlockUrl: String? = null,
+  val crashModelLicenseKey: String? = null
 )
  {
   companion object {
@@ -1689,7 +1694,12 @@ data class TlImpactConfig (
       val fallGThreshold = pigeonVar_list[4] as Double
       val confirmWindowMs = pigeonVar_list[5] as Long
       val minImpactConfidence = pigeonVar_list[6] as Double
-      return TlImpactConfig(enableCrashDetection, enableFallDetection, crashGThreshold, crashMinSpeedKmh, fallGThreshold, confirmWindowMs, minImpactConfidence)
+      val crashModelUrl = pigeonVar_list[7] as String?
+      val crashModelSha256 = pigeonVar_list[8] as String?
+      val crashModelThreshold = pigeonVar_list[9] as Double
+      val crashModelUnlockUrl = pigeonVar_list[10] as String?
+      val crashModelLicenseKey = pigeonVar_list[11] as String?
+      return TlImpactConfig(enableCrashDetection, enableFallDetection, crashGThreshold, crashMinSpeedKmh, fallGThreshold, confirmWindowMs, minImpactConfidence, crashModelUrl, crashModelSha256, crashModelThreshold, crashModelUnlockUrl, crashModelLicenseKey)
     }
   }
   fun toList(): List<Any?> {
@@ -1701,6 +1711,11 @@ data class TlImpactConfig (
       fallGThreshold,
       confirmWindowMs,
       minImpactConfidence,
+      crashModelUrl,
+      crashModelSha256,
+      crashModelThreshold,
+      crashModelUnlockUrl,
+      crashModelLicenseKey,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -1711,7 +1726,7 @@ data class TlImpactConfig (
       return true
     }
     val other = other as TlImpactConfig
-    return TraceletApiPigeonUtils.deepEquals(this.enableCrashDetection, other.enableCrashDetection) && TraceletApiPigeonUtils.deepEquals(this.enableFallDetection, other.enableFallDetection) && TraceletApiPigeonUtils.deepEquals(this.crashGThreshold, other.crashGThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashMinSpeedKmh, other.crashMinSpeedKmh) && TraceletApiPigeonUtils.deepEquals(this.fallGThreshold, other.fallGThreshold) && TraceletApiPigeonUtils.deepEquals(this.confirmWindowMs, other.confirmWindowMs) && TraceletApiPigeonUtils.deepEquals(this.minImpactConfidence, other.minImpactConfidence)
+    return TraceletApiPigeonUtils.deepEquals(this.enableCrashDetection, other.enableCrashDetection) && TraceletApiPigeonUtils.deepEquals(this.enableFallDetection, other.enableFallDetection) && TraceletApiPigeonUtils.deepEquals(this.crashGThreshold, other.crashGThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashMinSpeedKmh, other.crashMinSpeedKmh) && TraceletApiPigeonUtils.deepEquals(this.fallGThreshold, other.fallGThreshold) && TraceletApiPigeonUtils.deepEquals(this.confirmWindowMs, other.confirmWindowMs) && TraceletApiPigeonUtils.deepEquals(this.minImpactConfidence, other.minImpactConfidence) && TraceletApiPigeonUtils.deepEquals(this.crashModelUrl, other.crashModelUrl) && TraceletApiPigeonUtils.deepEquals(this.crashModelSha256, other.crashModelSha256) && TraceletApiPigeonUtils.deepEquals(this.crashModelThreshold, other.crashModelThreshold) && TraceletApiPigeonUtils.deepEquals(this.crashModelUnlockUrl, other.crashModelUnlockUrl) && TraceletApiPigeonUtils.deepEquals(this.crashModelLicenseKey, other.crashModelLicenseKey)
   }
 
   override fun hashCode(): Int {
@@ -1723,6 +1738,11 @@ data class TlImpactConfig (
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.fallGThreshold)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.confirmWindowMs)
     result = 31 * result + TraceletApiPigeonUtils.deepHash(this.minImpactConfidence)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelUrl)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelSha256)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelThreshold)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelUnlockUrl)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.crashModelLicenseKey)
     return result
   }
 }
@@ -2721,6 +2741,53 @@ data class TlModeChangeEvent (
   }
 }
 
+/**
+ * Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+ * user that the model is being prepared (e.g. a download spinner).
+ *
+ * [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+ * `failed`, `disabled`. [detail] carries extra context — an error reason on
+ * `failed`, or e.g. the tree count on `ready`.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class TlCrashModelStatusEvent (
+  val status: String,
+  val detail: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): TlCrashModelStatusEvent {
+      val status = pigeonVar_list[0] as String
+      val detail = pigeonVar_list[1] as String?
+      return TlCrashModelStatusEvent(status, detail)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      status,
+      detail,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as TlCrashModelStatusEvent
+    return TraceletApiPigeonUtils.deepEquals(this.status, other.status) && TraceletApiPigeonUtils.deepEquals(this.detail, other.detail)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.status)
+    result = 31 * result + TraceletApiPigeonUtils.deepHash(this.detail)
+    return result
+  }
+}
+
 /** Generated class from Pigeon that represents data sent in messages. */
 data class TlTelematicsRecord (
   /** The primary key. */
@@ -3135,10 +3202,15 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
       }
       188.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          TlTelematicsRecord.fromList(it)
+          TlCrashModelStatusEvent.fromList(it)
         }
       }
       189.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          TlTelematicsRecord.fromList(it)
+        }
+      }
+      190.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           TlLogEntry.fromList(it)
         }
@@ -3384,12 +3456,16 @@ private open class TraceletApiPigeonCodec : StandardMessageCodec() {
         stream.write(187)
         writeValue(stream, value.toList())
       }
-      is TlTelematicsRecord -> {
+      is TlCrashModelStatusEvent -> {
         stream.write(188)
         writeValue(stream, value.toList())
       }
-      is TlLogEntry -> {
+      is TlTelematicsRecord -> {
         stream.write(189)
+        writeValue(stream, value.toList())
+      }
+      is TlLogEntry -> {
+        stream.write(190)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -3485,6 +3561,16 @@ interface TraceletHostApi {
   fun destroyTelematicsEvents(callback: (Result<Boolean>) -> Unit)
   fun getLogs(limit: Long, callback: (Result<List<TlLogEntry?>>) -> Unit)
   fun clearLogs(callback: (Result<Unit>) -> Unit)
+  /**
+   * Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+   * through the SDK's real crash-detection pipeline — including the loaded ML
+   * crash model — so the model path can be verified without a physical impact.
+   * When [crashLike] is true the synthetic features represent a real crash
+   * (rotation + speed + deceleration); when false a benign bump the model
+   * should reject. Returns the model probability, threshold, and whether a
+   * crash candidate fired. `modelRan` is false when no ML model is loaded.
+   */
+  fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Boolean, callback: (Result<Map<String, Any?>>) -> Unit)
 
   companion object {
     /** The codec used by TraceletHostApi. */
@@ -5068,6 +5154,28 @@ interface TraceletHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val peakGArg = args[0] as Double
+            val speedKmhArg = args[1] as Double
+            val crashLikeArg = args[2] as Boolean
+            api.debugRunCrashModelInference(peakGArg, speedKmhArg, crashLikeArg) { result: Result<Map<String, Any?>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(TraceletApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(TraceletApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -5435,6 +5543,23 @@ class TraceletEventApi(private val binaryMessenger: BinaryMessenger, private val
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
     val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onModeChange$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(eventArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(TraceletApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+  fun onCrashModelStatus(eventArg: TlCrashModelStatusEvent, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onCrashModelStatus$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(eventArg)) {
       if (it is List<*>) {

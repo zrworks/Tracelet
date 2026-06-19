@@ -577,6 +577,20 @@ abstract class TraceletPlatform extends PlatformInterface {
     );
   }
 
+  /// Debug-only (#183): runs one synthetic window through the real
+  /// crash-detection pipeline (including the loaded ML model) so the model
+  /// path can be verified without a physical impact. [crashLike] selects a
+  /// real-crash feature profile vs a benign bump the model should reject.
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  ) {
+    throw UnimplementedError(
+      'debugRunCrashModelInference() has not been implemented.',
+    );
+  }
+
   /// Gets log entries up to a given [limit].
   Future<List<TlLogEntry?>> getLogs(int limit) {
     throw UnimplementedError('getLogs() has not been implemented.');
@@ -831,6 +845,13 @@ abstract class TraceletPlatform extends PlatformInterface {
   /// Stream of fused transport-mode changes.
   Stream<TlModeChangeEvent> get modeChangeEvents {
     throw UnimplementedError('modeChangeEvents has not been implemented.');
+  }
+
+  /// Stream of ML crash-model lifecycle status changes (download/load).
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents {
+    throw UnimplementedError(
+      'crashModelStatusEvents has not been implemented.',
+    );
   }
 
   /// Stream of speed-based motion mode change events.

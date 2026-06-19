@@ -341,6 +341,12 @@ class TraceletHostApiImpl(
             put("fallGThreshold", c.impact.fallGThreshold)
             put("confirmWindowMs", c.impact.confirmWindowMs)
             put("minImpactConfidence", c.impact.minImpactConfidence)
+            // #183 crash ML model (opt-in)
+            put("crashModelUrl", c.impact.crashModelUrl)
+            put("crashModelSha256", c.impact.crashModelSha256)
+            put("crashModelThreshold", c.impact.crashModelThreshold)
+            put("crashModelUnlockUrl", c.impact.crashModelUnlockUrl)
+            put("crashModelLicenseKey", c.impact.crashModelLicenseKey)
         })
     }
 
@@ -891,6 +897,12 @@ class TraceletHostApiImpl(
     override fun simulateTelematicsEvent(eventType: String, severity: Double, latitude: Double, longitude: Double, callback: (Result<Boolean>) -> Unit) {
         try {
             callback(Result.success(sdk.simulateTelematicsEvent(eventType, severity, latitude, longitude)))
+        } catch (e: Exception) { callback(Result.failure(e)) }
+    }
+
+    override fun debugRunCrashModelInference(peakG: Double, speedKmh: Double, crashLike: Boolean, callback: (Result<Map<String, Any?>>) -> Unit) {
+        try {
+            callback(Result.success(sdk.debugRunCrashModelInference(peakG, speedKmh, crashLike)))
         } catch (e: Exception) { callback(Result.failure(e)) }
     }
 

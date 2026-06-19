@@ -229,6 +229,15 @@ public final class PluginEventDispatcher: NSObject, TraceletEventSending {
         DispatchQueue.main.async { api.onModeChange(event: event) { _ in } }
     }
 
+    public func sendCrashModelStatus(_ data: [String: Any]) {
+        guard let api = eventApi else { return fallback("crashmodelstatus", data) }
+        let event = TlCrashModelStatusEvent(
+            status: data["status"] as? String ?? "unknown",
+            detail: data["detail"] as? String
+        )
+        DispatchQueue.main.async { api.onCrashModelStatus(event: event) { _ in } }
+    }
+
     private func num(_ v: Any?) -> Double {
         if let d = v as? Double { return d }
         if let n = v as? NSNumber { return n.doubleValue }

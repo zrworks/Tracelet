@@ -28,5 +28,15 @@ public protocol TraceletEventSending: AnyObject {
     func sendDrivingEvent(_ data: [String: Any])
     func sendImpact(_ data: [String: Any])
     func sendModeChange(_ data: [String: Any])
+    /// ML crash-model lifecycle status (download/load), so apps can show the user
+    /// that the model is being prepared. `data` carries `status` (`unlocking`,
+    /// `downloading`, `decrypting`, `ready`, `failed`, `disabled`) and an optional
+    /// `detail` string.
+    func sendCrashModelStatus(_ data: [String: Any])
     func hasListener(eventName: String) -> Bool
+}
+
+public extension TraceletEventSending {
+    /// Default no-op for hosts that don't surface crash-model status.
+    func sendCrashModelStatus(_ data: [String: Any]) {}
 }

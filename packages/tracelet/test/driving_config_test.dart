@@ -74,6 +74,29 @@ void main() {
       expect(back.enableCrashDetection, isTrue);
       expect(back.crashGThreshold, 4);
     });
+
+    test('ML model fields default off and round-trip (#183)', () {
+      const def = ImpactConfig();
+      expect(def.crashModelUrl, isNull);
+      expect(def.crashModelSha256, isNull);
+      expect(def.crashModelThreshold, 0.5);
+
+      const c = ImpactConfig(
+        enableCrashDetection: true,
+        crashModelUrl: 'https://cdn.example.com/crash.enc',
+        crashModelSha256: 'abc123',
+        crashModelThreshold: 0.307,
+      );
+      final back = ImpactConfig.fromMap(c.toMap());
+      expect(back, c);
+      expect(back.crashModelUrl, 'https://cdn.example.com/crash.enc');
+      expect(back.crashModelSha256, 'abc123');
+      expect(back.crashModelThreshold, 0.307);
+      // Pigeon conversion carries the fields.
+      final tl = c.toTlConfig();
+      expect(tl.crashModelUrl, 'https://cdn.example.com/crash.enc');
+      expect(tl.crashModelThreshold, 0.307);
+    });
   });
 
   group('Config integration', () {

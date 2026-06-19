@@ -1,5 +1,6 @@
 package com.ikolvi.tracelet.example
 
+import android.util.Base64
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -52,6 +53,102 @@ class MainActivity : FlutterActivity() {
                         )
                     } catch (e: Exception) {
                         result.error("REFLECTION_ERROR", e.message, null)
+                    }
+                } else if (call.method == "debugCrashModelLoad") {
+                    // #183 Phase 2b: verify the loader (download → SHA-256 verify →
+                    // AES-GCM decrypt → cache) end-to-end on-device. Runs off the
+                    // main thread because the loader does network I/O.
+                    val url = call.argument<String>("url")!!
+                    val sha = call.argument<String?>("sha256")
+                    val keyB64 = call.argument<String>("key")!!
+                    // Optional feature vector to score (defaults to the synthetic
+                    // blob's single feature). For the real model pass the 5 features
+                    // in featureNames order: peak_g, dv, gyro_peak_dps, speed_max, mean_g.
+                    val features = call.argument<List<Double>>("features") ?: listOf(3.0)
+                    Thread {
+                        try {
+                            com.ikolvi.tracelet.sdk.crash.CrashModelLoader.decryptionKey =
+                                Base64.decode(keyB64, Base64.DEFAULT)
+                            // Force a fresh download for the test (ignore any cache).
+                            java.io.File(
+                                applicationContext.filesDir,
+                                "tracelet_crash_model.enc",
+                            ).delete()
+                            val logs = StringBuilder()
+                            val model = com.ikolvi.tracelet.sdk.crash.CrashModelLoader.load(
+                                applicationContext, url, sha,
+                            ) { logs.append(it).append("; ") }
+                            runOnUiThread {
+                                if (model == null) {
+                                    result.error("LOAD_NULL", logs.toString(), null)
+                                } else {
+                                    result.success(
+                                        mapOf(
+                                            "treeCount" to model.treeCount().toInt(),
+                                            "featureNames" to model.featureNames(),
+                                            "proba" to model.predictProba(features),
+                                        ),
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread { result.error("CRASH_LOAD_ERROR", e.message, null) }
+                        }
+                    }.start()
+                } else if (call.method == "debugCrashModelPredict") {
+                    // #183: verify the on-device crash-ML chain end-to-end —
+                    // AES-256-GCM decrypt of an encrypted forest blob + tree-walk
+                    // inference — using the real rebuilt Rust core.
+                    try {
+                        val blobB64 = call.argument<String>("blob")!!
+                        val keyB64 = call.argument<String>("key")!!
+                        val features = call.argument<List<Double>>("features")!!
+                        val blob = Base64.decode(blobB64, Base64.DEFAULT)
+                        val key = Base64.decode(keyB64, Base64.DEFAULT)
+                        val model = uniffi.tracelet_core.CrashModel.fromEncrypted(blob, key)
+                        result.success(
+                            mapOf(
+                                "proba" to model.predictProba(features),
+                                "treeCount" to model.treeCount().toInt(),
+                            ),
+                        )
+                    } catch (e: Exception) {
+                        result.error("CRASH_MODEL_ERROR", e.message, null)
+                    }
+                } else if (call.method == "debugImpactGate") {
+                    // #183 Phase 3: verify ML gating (Replace mode) through the real
+                    // Rust ImpactDetector on-device. Feeds one window with a supplied
+                    // crashProba; crashProba < 0 ⇒ rule engine. Returns whether a
+                    // candidate fired + its kind/confidence.
+                    try {
+                        val peakG = call.argument<Double>("peakG")!!
+                        val speedMps = call.argument<Double>("speedMps")!!
+                        val crashProba = call.argument<Double>("crashProba") ?: -1.0
+                        val threshold = call.argument<Double>("threshold") ?: 0.5
+                        val detector = uniffi.tracelet_core.ImpactDetector(
+                            uniffi.tracelet_core.ImpactConfig(
+                                enableCrash = true,
+                                enableFall = false,
+                                crashGThreshold = 2.0,
+                                crashMinSpeedKmh = 25.0,
+                                fallGThreshold = 2.5,
+                                confirmWindowMs = 15000L,
+                                minConfidence = 0.6,
+                            ),
+                        )
+                        val ev = detector.onImpactWindow(
+                            peakG, speedMps, 0.0, false, false, 0.0, 0.0,
+                            System.currentTimeMillis(), crashProba, threshold,
+                        )
+                        result.success(
+                            mapOf(
+                                "fired" to (ev != null),
+                                "kind" to ev?.kind,
+                                "confidence" to ev?.confidence,
+                            ),
+                        )
+                    } catch (e: Exception) {
+                        result.error("IMPACT_GATE_ERROR", e.message, null)
                     }
                 } else {
                     result.notImplemented()

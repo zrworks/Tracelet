@@ -1862,6 +1862,11 @@ class TlImpactConfig {
     required this.fallGThreshold,
     required this.confirmWindowMs,
     required this.minImpactConfidence,
+    this.crashModelUrl,
+    this.crashModelSha256,
+    required this.crashModelThreshold,
+    this.crashModelUnlockUrl,
+    this.crashModelLicenseKey,
   });
 
   bool enableCrashDetection;
@@ -1878,6 +1883,16 @@ class TlImpactConfig {
 
   double minImpactConfidence;
 
+  String? crashModelUrl;
+
+  String? crashModelSha256;
+
+  double crashModelThreshold;
+
+  String? crashModelUnlockUrl;
+
+  String? crashModelLicenseKey;
+
   List<Object?> _toList() {
     return <Object?>[
       enableCrashDetection,
@@ -1887,6 +1902,11 @@ class TlImpactConfig {
       fallGThreshold,
       confirmWindowMs,
       minImpactConfidence,
+      crashModelUrl,
+      crashModelSha256,
+      crashModelThreshold,
+      crashModelUnlockUrl,
+      crashModelLicenseKey,
     ];
   }
 
@@ -1904,6 +1924,11 @@ class TlImpactConfig {
       fallGThreshold: result[4]! as double,
       confirmWindowMs: result[5]! as int,
       minImpactConfidence: result[6]! as double,
+      crashModelUrl: result[7] as String?,
+      crashModelSha256: result[8] as String?,
+      crashModelThreshold: result[9]! as double,
+      crashModelUnlockUrl: result[10] as String?,
+      crashModelLicenseKey: result[11] as String?,
     );
   }
 
@@ -1922,7 +1947,12 @@ class TlImpactConfig {
         _deepEquals(crashMinSpeedKmh, other.crashMinSpeedKmh) &&
         _deepEquals(fallGThreshold, other.fallGThreshold) &&
         _deepEquals(confirmWindowMs, other.confirmWindowMs) &&
-        _deepEquals(minImpactConfidence, other.minImpactConfidence);
+        _deepEquals(minImpactConfidence, other.minImpactConfidence) &&
+        _deepEquals(crashModelUrl, other.crashModelUrl) &&
+        _deepEquals(crashModelSha256, other.crashModelSha256) &&
+        _deepEquals(crashModelThreshold, other.crashModelThreshold) &&
+        _deepEquals(crashModelUnlockUrl, other.crashModelUnlockUrl) &&
+        _deepEquals(crashModelLicenseKey, other.crashModelLicenseKey);
   }
 
   @override
@@ -3131,6 +3161,53 @@ class TlModeChangeEvent {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// Lifecycle status of the opt-in ML crash model (#183), so apps can show the
+/// user that the model is being prepared (e.g. a download spinner).
+///
+/// [status] is one of: `unlocking`, `downloading`, `decrypting`, `ready`,
+/// `failed`, `disabled`. [detail] carries extra context — an error reason on
+/// `failed`, or e.g. the tree count on `ready`.
+class TlCrashModelStatusEvent {
+  TlCrashModelStatusEvent({required this.status, this.detail});
+
+  String status;
+
+  String? detail;
+
+  List<Object?> _toList() {
+    return <Object?>[status, detail];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static TlCrashModelStatusEvent decode(Object result) {
+    result as List<Object?>;
+    return TlCrashModelStatusEvent(
+      status: result[0]! as String,
+      detail: result[1] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! TlCrashModelStatusEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(status, other.status) &&
+        _deepEquals(detail, other.detail);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class TlTelematicsRecord {
   TlTelematicsRecord({
     required this.id,
@@ -3457,11 +3534,14 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is TlModeChangeEvent) {
       buffer.putUint8(187);
       writeValue(buffer, value.encode());
-    } else if (value is TlTelematicsRecord) {
+    } else if (value is TlCrashModelStatusEvent) {
       buffer.putUint8(188);
       writeValue(buffer, value.encode());
-    } else if (value is TlLogEntry) {
+    } else if (value is TlTelematicsRecord) {
       buffer.putUint8(189);
+      writeValue(buffer, value.encode());
+    } else if (value is TlLogEntry) {
+      buffer.putUint8(190);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -3611,8 +3691,10 @@ class _PigeonCodec extends StandardMessageCodec {
       case 187:
         return TlModeChangeEvent.decode(readValue(buffer)!);
       case 188:
-        return TlTelematicsRecord.decode(readValue(buffer)!);
+        return TlCrashModelStatusEvent.decode(readValue(buffer)!);
       case 189:
+        return TlTelematicsRecord.decode(readValue(buffer)!);
+      case 190:
         return TlLogEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -5318,6 +5400,39 @@ class TraceletHostApi {
       isNullValid: true,
     );
   }
+
+  /// Debug-only (#183): synthesizes one high-g accelerometer window and runs it
+  /// through the SDK's real crash-detection pipeline — including the loaded ML
+  /// crash model — so the model path can be verified without a physical impact.
+  /// When [crashLike] is true the synthetic features represent a real crash
+  /// (rotation + speed + deceleration); when false a benign bump the model
+  /// should reject. Returns the model probability, threshold, and whether a
+  /// crash candidate fired. `modelRan` is false when no ML model is loaded.
+  Future<Map<String, Object?>> debugRunCrashModelInference(
+    double peakG,
+    double speedKmh,
+    bool crashLike,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletHostApi.debugRunCrashModelInference$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[peakG, speedKmh, crashLike],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as Map<Object?, Object?>)
+        .cast<String, Object?>();
+  }
 }
 
 abstract class TraceletFlutterApi {
@@ -5427,6 +5542,8 @@ abstract class TraceletEventApi {
   void onImpact(TlImpactEvent event);
 
   void onModeChange(TlModeChangeEvent event);
+
+  void onCrashModelStatus(TlCrashModelStatusEvent event);
 
   static void setUp(
     TraceletEventApi? api, {
@@ -5905,6 +6022,32 @@ abstract class TraceletEventApi {
           final TlModeChangeEvent arg_event = args[0]! as TlModeChangeEvent;
           try {
             api.onModeChange(arg_event);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.tracelet_platform_interface.TraceletEventApi.onCrashModelStatus$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final TlCrashModelStatusEvent arg_event =
+              args[0]! as TlCrashModelStatusEvent;
+          try {
+            api.onCrashModelStatus(arg_event);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

@@ -127,6 +127,7 @@ class Tracelet {
   static Stream<DrivingEvent>? _drivingEventStream;
   static Stream<ImpactEvent>? _impactStream;
   static Stream<ModeChangeEvent>? _modeChangeStream;
+  static Stream<CrashModelStatusEvent>? _crashModelStatusStream;
 
   /// Whether the Kalman filter is currently enabled for GPS smoothing.
   ///
@@ -682,6 +683,28 @@ class Tracelet {
       latitude,
       longitude,
     );
+  }
+
+  /// Debug-only (#183): runs one synthetic high-g window through the **real**
+  /// crash-detection pipeline — including the loaded ML crash model — so you can
+  /// verify the model path is active without producing a physical impact.
+  ///
+  /// Crash detection must be enabled (toggle it on and start tracking) for the
+  /// pipeline to exist. Returns a map describing the inference:
+  /// - `modelRan` (bool): whether the ML model produced a probability (false
+  ///   means no model is loaded and only the rule engine ran).
+  /// - `proba` (double): the model probability (`-1.0` when no model ran).
+  /// - `threshold` (double): the configured crash-probability threshold.
+  /// - `peakG` (double): the synthesized window peak.
+  /// - `fired` (bool): whether a crash candidate was emitted.
+  /// - `kind` (String?): the emitted candidate kind, if any.
+  /// - `error` (String?): present when the pipeline could not run.
+  static Future<Map<String, Object?>> debugRunCrashModelInference({
+    double peakG = 5.0,
+    double speedKmh = 60.0,
+    bool crashLike = true,
+  }) {
+    return _platform.debugRunCrashModelInference(peakG, speedKmh, crashLike);
   }
 
   /// Get stored locations from the local database.
@@ -2012,6 +2035,18 @@ class Tracelet {
   static Stream<ModeChangeEvent> get modeChangeStream {
     return _modeChangeStream ??= _platform.modeChangeEvents.map(
       ModeChangeEvent.fromTl,
+    );
+  }
+
+  /// A broadcast stream of opt-in ML crash-model lifecycle status updates.
+  ///
+  /// Emits `unlocking` → `downloading` → `decrypting` → `ready` as the model is
+  /// prepared (or `failed`/`disabled`). Use it to show the user that the crash
+  /// model is downloading before crash detection becomes active. Only fires
+  /// when `ImpactConfig.useMlModel` (crash model) is configured.
+  static Stream<CrashModelStatusEvent> get crashModelStatusStream {
+    return _crashModelStatusStream ??= _platform.crashModelStatusEvents.map(
+      CrashModelStatusEvent.fromTl,
     );
   }
 

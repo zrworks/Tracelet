@@ -598,6 +598,7 @@ void main() {
         fallGThreshold: 3,
         confirmWindowMs: 5000,
         minImpactConfidence: 50,
+        crashModelThreshold: 0.5,
       ),
       telematics: TlTelematicsConfig(
         enableDrivingEvents: false,

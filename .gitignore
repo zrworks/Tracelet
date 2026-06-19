@@ -177,3 +177,33 @@ my_log.txt
 
 # Local scratch / helper scripts (never commit — may contain secrets)
 scratch/
+
+# Proprietary / paid crash-detection model artifacts — NEVER commit.
+# The trained model is sold as a licensed add-on; only synthetic fixtures
+# (embedded in tests) belong in the repo.
+*.joblib
+*.onnx
+*_rf_trees.json
+*_optimized_model.*
+*_optimized_report.json
+*.crashmodel
+
+# Secrets / licensing keys — never commit.
+*.pem
+*.p8
+*.key
+*.keystore
+*.jks
+*.license
+secrets/
+**/license_keys*
+
+# Cloudflare Worker build/runtime artifacts.
+cloudflare/**/node_modules/
+cloudflare/**/.wrangler/
+cloudflare/**/dist/
+.dev.vars
+
+# Cloudflare licensing code moved to the private Ikolvi/tracelet-licensing repo.
+# Never keep it in this public repo — ignore the whole directory.
+cloudflare/

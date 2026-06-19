@@ -133,14 +133,12 @@ result to drive battery/sampling behaviour.
 
 ## 3. Crash & fall detection
 
-<Callout type="warning">
-**BETA:** Crash & fall detection is currently in **Beta**. Here is what that means for you:
-
-To make the crash detection smart, we trained it using a public dataset of real-world car crashes. However, that specific dataset has a strict "non-commercial" license. 
-
-**What this means:** You are completely free to test, experiment, and play around with this feature! However, you **cannot** use the crash detection feature in a commercial (business or paid) app right now unless you obtain permission from the original dataset authors. 
-
-We are actively working on building our own fully open-source crash dataset so we can drop this restriction and make this feature 100% free for everyone to use in production soon. You can follow our progress on [Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
+<Callout type="info">
+**Production-ready.** Crash detection ships with a stable on-device pipeline: a
+**rule engine** by default, plus an optional licensed **AI crash model** trained
+on a **CC0 / public-domain** crash dataset — so it is cleared for commercial use
+in production apps. Fall detection remains opt-in and best-effort. Track ongoing
+accuracy research in [Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
 </Callout>
 
 Detects a likely crash (a hard impact **while moving**) or, optionally, a
@@ -191,6 +189,49 @@ Tracelet gives you the **trigger and the cancel window** — it never makes phon
 calls or contacts emergency services. Building the actual SOS/emergency flow is
 your app's responsibility (and lets you control the UX and legal copy).
 </Callout>
+
+### Optional: the licensed AI crash model
+
+By default crash detection uses a **rule engine** (the g-threshold + speed
+corroboration above) — no extra setup, works out of the box. For higher accuracy
+you can enable the **AI crash model**: a trained model that gates crashes on a
+learned probability instead of a fixed threshold.
+
+It's **opt-in and downloaded on demand** (never embedded), so the base SDK size
+is unchanged. To turn it on, get a license key and point your config at it:
+
+```dart
+await Tracelet.ready(Config(
+  impact: ImpactConfig(
+    enableCrashDetection: true,
+    crashModelUnlockUrl: 'https://unlock.ikolvi.com/unlock',
+    crashModelLicenseKey: '<your license key>',
+    crashModelThreshold: 0.5074,   // rf_probability_threshold from training
+  ),
+));
+```
+
+| Option | Default | What it does |
+|---|---|---|
+| `crashModelUnlockUrl` | `null` | Licensing endpoint that activates the model. `null` ⇒ pure rule engine |
+| `crashModelLicenseKey` | `null` | Your license key (from the Get a License page) |
+| `crashModelThreshold` | `0.5` | Probability at which the model flags a crash |
+
+If the model can't be activated for any reason (offline, invalid key) the SDK
+**automatically falls back to the rule engine** — your app keeps working.
+
+#### Get a license
+
+Grab a key from the **[Get a License](/en/get-license)** page: sign in, enter your
+**application id**, and copy a ready-to-paste key (or the full `ImpactConfig`
+snippet).
+
+- **dev license** — for debug builds & emulators. Just your app id, no extra
+  setup.
+- **prod license** — for your shipped app; also needs your app signing-cert
+  SHA-256 (Play Console → *App integrity → App signing*, or `./gradlew signingReport`).
+
+The portal also lists your issued keys and lets you **revoke** one instantly.
 
 ---
 

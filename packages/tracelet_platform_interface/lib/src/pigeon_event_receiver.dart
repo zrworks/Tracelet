@@ -39,6 +39,8 @@ class PigeonEventReceiver implements TraceletEventApi {
   final _drivingEventCtrl = StreamController<TlDrivingEvent>.broadcast();
   final _impactCtrl = StreamController<TlImpactEvent>.broadcast();
   final _modeChangeCtrl = StreamController<TlModeChangeEvent>.broadcast();
+  final _crashModelStatusCtrl =
+      StreamController<TlCrashModelStatusEvent>.broadcast();
 
   // ---------------------------------------------------------------------------
   // Public streams
@@ -110,6 +112,10 @@ class PigeonEventReceiver implements TraceletEventApi {
   /// Stream of fused transport-mode changes.
   Stream<TlModeChangeEvent> get modeChangeEvents => _modeChangeCtrl.stream;
 
+  /// Stream of ML crash-model lifecycle status changes (download/load).
+  Stream<TlCrashModelStatusEvent> get crashModelStatusEvents =>
+      _crashModelStatusCtrl.stream;
+
   // ---------------------------------------------------------------------------
   // TraceletEventApi implementation (called by native via Pigeon)
   // ---------------------------------------------------------------------------
@@ -175,6 +181,10 @@ class PigeonEventReceiver implements TraceletEventApi {
   @override
   void onModeChange(TlModeChangeEvent event) => _modeChangeCtrl.add(event);
 
+  @override
+  void onCrashModelStatus(TlCrashModelStatusEvent event) =>
+      _crashModelStatusCtrl.add(event);
+
   /// Called by native when the speed-based motion state machine transitions.
   ///
   /// Forwards the typed [TlSpeedMotionEvent] (state, previousState,
@@ -204,5 +214,6 @@ class PigeonEventReceiver implements TraceletEventApi {
     _drivingEventCtrl.close();
     _impactCtrl.close();
     _modeChangeCtrl.close();
+    _crashModelStatusCtrl.close();
   }
 }

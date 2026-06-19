@@ -33,7 +33,10 @@ Future<void> main(List<String> args) async {
 
   try {
     // Automatically generate a scannable QR code right in the terminal!
-    final result = await Process.run('curl', ['-s', 'qrenco.de/http://$localIp:$port/locations']);
+    final result = await Process.run('curl', [
+      '-s',
+      'qrenco.de/http://$localIp:$port/locations',
+    ]);
     if (result.stdout.toString().isNotEmpty) {
       stdout.writeln(result.stdout);
       stdout.writeln('^ Scan the QR Code above with the Example app! ^');
@@ -57,7 +60,7 @@ Future<void> main(List<String> args) async {
       '── Request #$requestCount [$timestamp] '
       '${request.method} ${request.uri.path} ──',
     );
-    
+
     if (request.uri.queryParameters.isNotEmpty) {
       stdout.writeln('  Query Params: ${request.uri.queryParameters}');
     }
@@ -70,14 +73,14 @@ Future<void> main(List<String> args) async {
     if (body.isNotEmpty) {
       try {
         final json = jsonDecode(body) as Map<String, dynamic>;
-        
+
         dynamic locationData;
         if (json.containsKey('location')) {
-           locationData = json['location'];
+          locationData = json['location'];
         } else if (json.containsKey('location_data')) {
-           locationData = json['location_data'];
+          locationData = json['location_data'];
         } else if (json.isNotEmpty) {
-           locationData = json.values.first; // Fallback to first value
+          locationData = json.values.first; // Fallback to first value
         }
 
         if (json.containsKey('params')) {
@@ -151,13 +154,30 @@ void _printLocation(Map<dynamic, dynamic> loc, int reqNum, {int? index}) {
   if (isMoving != null) stdout.write(', moving=$isMoving');
   if (uuid != '') {
     final uuidStr = uuid.toString();
-    final shortUuid =
-        uuidStr.length > 8 ? '${uuidStr.substring(0, 8)}...' : uuidStr;
+    final shortUuid = uuidStr.length > 8
+        ? '${uuidStr.substring(0, 8)}...'
+        : uuidStr;
     stdout.write(', uuid=$shortUuid');
   }
-  
+
   // Find custom keys injected by routeContext
-  final standardKeys = {'latitude', 'lat', 'longitude', 'lng', 'lon', 'speed', 'timestamp', 'uuid', 'accuracy', 'is_moving', 'isMoving', 'coords', 'activity', 'id', 'is_mock'};
+  final standardKeys = {
+    'latitude',
+    'lat',
+    'longitude',
+    'lng',
+    'lon',
+    'speed',
+    'timestamp',
+    'uuid',
+    'accuracy',
+    'is_moving',
+    'isMoving',
+    'coords',
+    'activity',
+    'id',
+    'is_mock',
+  };
   final customKeys = loc.keys.where((k) => !standardKeys.contains(k)).toList();
   if (customKeys.isNotEmpty) {
     stdout.write(' | routeContext: {');
@@ -167,7 +187,7 @@ void _printLocation(Map<dynamic, dynamic> loc, int reqNum, {int? index}) {
     }
     stdout.write('}');
   }
-  
+
   stdout.writeln();
   if (ts != '') stdout.writeln('$prefix  ts=$ts');
 }

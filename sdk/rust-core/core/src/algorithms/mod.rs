@@ -1,3 +1,4 @@
+pub mod crash_model;
 pub mod geo_utils;
 pub mod impact;
 pub mod kalman;

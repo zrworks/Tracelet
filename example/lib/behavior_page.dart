@@ -32,19 +32,47 @@ class _BehaviorPageState extends State<BehaviorPage> {
   bool _crash = false;
   bool _classifier = false;
 
+  // ML crash model (licensed). A working dev license for this example app
+  // (com.ikolvi.tracelet.example) is hardcoded below so the encrypted model
+  // downloads and on-device crash/fall inference can be tested out-of-the-box.
+  // Replace with your own key from https://licenses.ikolvi.com for your app id.
+  static const String _unlockUrl = 'https://unlock.ikolvi.com/unlock';
+  static const double _crashModelThreshold = 0.5074575792;
+  static const String _demoLicenseKey =
+      'eyJleHAiOjE3ODcwNDUwOTAsImlhdCI6MTc4MTg2MTA5MCwibGljIjoiODU5NzU2MmUtMzliNy00N2I3LTkxOWUtMjBkMjg3NzRiZWNlIiwicGtnIjoiY29tLmlrb2x2aS50cmFjZWxldC5leGFtcGxlIiwicGxhbiI6InBybyIsInNjb3BlIjoiZGV2In0.ZlqvsJyqxRB-FGMEXxLY7-GtmpdkvR7rG_CYZLBqYZNdeiT3B9TzG4TYaCU23ZbHBXDZlB37ZYVZYGMeS_3QDw';
+  bool _useMlModel = true;
+
+  // Bench-test mode: crash detection is normally speed-gated at 25 km/h (GPS
+  // speed), so a phone thrown onto a bed (~0 km/h) never fires even with a huge
+  // g-spike. Enable this to drop the gate to 0 km/h so a physical throw can
+  // trigger the model on a stationary device. Leave OFF for real driving.
+  bool _throwTestMode = false;
+
+  final TextEditingController _licenseCtrl = TextEditingController(
+    text: _demoLicenseKey,
+  );
+
   final List<String> _log = [];
   String _mode = 'unknown';
   tl.ImpactEvent? _pendingImpact;
 
+  // Current ML crash-model lifecycle state for the on-screen status indicator.
+  // null ⇒ not started yet (idle).
+  tl.CrashModelStatus? _crashModelStatus;
+  String? _crashModelDetail;
+
   StreamSubscription<tl.DrivingEvent>? _drivingSub;
   StreamSubscription<tl.ImpactEvent>? _impactSub;
   StreamSubscription<tl.ModeChangeEvent>? _modeSub;
+  StreamSubscription<tl.CrashModelStatusEvent>? _crashModelSub;
 
   @override
   void dispose() {
     _drivingSub?.cancel();
     _impactSub?.cancel();
     _modeSub?.cancel();
+    _crashModelSub?.cancel();
+    _licenseCtrl.dispose();
     super.dispose();
   }
 
@@ -80,15 +108,33 @@ class _BehaviorPageState extends State<BehaviorPage> {
 
   Future<void> _applyConfig() async {
     await _ensureReady();
+    final licenseKey = _licenseCtrl.text.trim();
+    // Throw-test mode forces the rule engine: the ML model scores `speed_max`
+    // and `dv` (pre-impact speed drop), both zero on a stationary phone, so it
+    // can never classify a bench throw as a crash (by design). The g-threshold
+    // rule fires on raw peak-g alone, which is what a physical throw can drive.
+    final useMl = _useMlModel && licenseKey.isNotEmpty && !_throwTestMode;
     await tl.Tracelet.setConfig(
       tl.Config(
+        // Debug logging so the crash-model lifecycle (unlock → download →
+        // decrypt → "Crash ML model active.") is visible in logcat/Console.
+        // Filter with: adb logcat -s Tracelet   (Android)
+        //              log stream --predicate 'subsystem == "Tracelet"' (iOS)
+        logger: const tl.LoggerConfig(logLevel: tl.LogLevel.debug),
         telematics: tl.TelematicsConfig(
           enableDrivingEvents: _driving,
           // A modest limit so speeding is demoable without a highway.
           speedLimitKmh: _driving ? 30 : 0,
         ),
         classifier: tl.ClassifierConfig(enableFusedClassifier: _classifier),
-        impact: tl.ImpactConfig(enableCrashDetection: _crash),
+        impact: tl.ImpactConfig(
+          enableCrashDetection: _crash,
+          crashModelUnlockUrl: useMl ? _unlockUrl : null,
+          crashModelLicenseKey: useMl ? licenseKey : null,
+          crashModelThreshold: _crashModelThreshold,
+          // Drop the speed gate for a stationary bench test (throw-on-bed).
+          crashMinSpeedKmh: _throwTestMode ? 0 : 25,
+        ),
       ),
     );
   }
@@ -113,6 +159,32 @@ class _BehaviorPageState extends State<BehaviorPage> {
     setState(() => _crash = v);
     await _applyConfig();
     if (v) {
+      // Surface ML crash-model download/load progress so the user knows the
+      // model is being prepared before crash detection becomes active. Drives
+      // both the scrolling log and the persistent status indicator.
+      _crashModelSub ??= tl.Tracelet.crashModelStatusStream.listen((e) {
+        setState(() {
+          _crashModelStatus = e.status;
+          _crashModelDetail = e.detail;
+        });
+        final detail = e.detail != null ? '  (${e.detail})' : '';
+        switch (e.status) {
+          case tl.CrashModelStatus.unlocking:
+            _logLine('🔑 crash model: unlocking license…');
+          case tl.CrashModelStatus.downloading:
+            _logLine('⬇️ crash model: downloading…');
+          case tl.CrashModelStatus.decrypting:
+            _logLine('🔓 crash model: decrypting…');
+          case tl.CrashModelStatus.ready:
+            _logLine('✅ crash model ready$detail');
+          case tl.CrashModelStatus.failed:
+            _logLine('❌ crash model failed$detail');
+          case tl.CrashModelStatus.disabled:
+            _logLine('⏸️ crash model disabled');
+          case tl.CrashModelStatus.unknown:
+            _logLine('crash model: ${e.status.name}$detail');
+        }
+      });
       _impactSub ??= tl.Tracelet.impactStream.listen((e) {
         if (e.isPotential) {
           setState(() => _pendingImpact = e);
@@ -130,7 +202,13 @@ class _BehaviorPageState extends State<BehaviorPage> {
     } else {
       _impactSub?.cancel();
       _impactSub = null;
-      setState(() => _pendingImpact = null);
+      _crashModelSub?.cancel();
+      _crashModelSub = null;
+      setState(() {
+        _pendingImpact = null;
+        _crashModelStatus = null;
+        _crashModelDetail = null;
+      });
     }
   }
 
@@ -252,6 +330,40 @@ class _BehaviorPageState extends State<BehaviorPage> {
               '→ would auto-confirm in ${((c.confirmDeadlineMs is BigInt ? (c.confirmDeadlineMs as dynamic).toInt() : c.confirmDeadlineMs) / 1000).round()}s',
             );
           }
+        case 'mlcrash':
+        case 'mlbenign':
+          // Runs the REAL SDK pipeline (loaded ML model + live ImpactDetector),
+          // unlike 'crash' which uses a throwaway rule-based detector.
+          // 'mlcrash' feeds a real crash profile (rotation + speed + sudden
+          // deceleration); 'mlbenign' feeds a bare g-spike the model rejects.
+          final crashLike = scenario == 'mlcrash';
+          final r = await tl.Tracelet.debugRunCrashModelInference(
+            peakG: 6,
+            speedKmh: 80,
+            crashLike: crashLike,
+          );
+          if (r['error'] != null) {
+            _logLine('🤖 ML inference unavailable: ${r['error']}');
+          } else {
+            final ran = r['modelRan'] == true;
+            final proba = (r['proba'] as num?)?.toDouble() ?? -1.0;
+            final thr = (r['threshold'] as num?)?.toDouble() ?? 0.0;
+            final fired = r['fired'] == true;
+            final label = crashLike ? 'crash-like input' : 'benign bump';
+            if (ran) {
+              _logLine(
+                '🤖 ML model ran ($label): proba=${proba.toStringAsFixed(3)} '
+                'thr=${thr.toStringAsFixed(3)} → '
+                '${fired ? "🆘 CRASH fired (${r['kind']})" : "below threshold (no crash)"}',
+              );
+            } else {
+              _logLine(
+                '⚠️ No ML model loaded — rule engine only '
+                '(${fired ? "fired ${r['kind']}" : "no crash"}). '
+                'Enable "Use licensed ML crash model".',
+              );
+            }
+          }
         case 'vehicle':
           final cl = TransportModeClassifierDart();
           final steady = List<double>.filled(10, 0.05);
@@ -310,6 +422,105 @@ class _BehaviorPageState extends State<BehaviorPage> {
     }
   }
 
+  /// Persistent ML crash-model status indicator. Always visible while crash
+  /// detection is on, so the user can see every stage from unlock → download →
+  /// decrypt → ready (or failed). Shows a spinner during in-progress stages.
+  Widget _crashModelStatusTile() {
+    final status = _crashModelStatus;
+    final (
+      IconData icon,
+      Color color,
+      String label,
+      bool busy,
+    ) = switch (status) {
+      null => (Icons.hourglass_empty, Colors.grey, 'Idle — not started', false),
+      tl.CrashModelStatus.unlocking => (
+        Icons.vpn_key,
+        Colors.blue,
+        'Unlocking license…',
+        true,
+      ),
+      tl.CrashModelStatus.downloading => (
+        Icons.cloud_download,
+        Colors.blue,
+        'Downloading model…',
+        true,
+      ),
+      tl.CrashModelStatus.decrypting => (
+        Icons.lock_open,
+        Colors.blue,
+        'Decrypting model…',
+        true,
+      ),
+      tl.CrashModelStatus.ready => (
+        Icons.check_circle,
+        Colors.green,
+        'Model ready',
+        false,
+      ),
+      tl.CrashModelStatus.failed => (
+        Icons.error,
+        Colors.red,
+        'Download failed',
+        false,
+      ),
+      tl.CrashModelStatus.disabled => (
+        Icons.pause_circle,
+        Colors.grey,
+        'Disabled (rule engine)',
+        false,
+      ),
+      tl.CrashModelStatus.unknown => (
+        Icons.help,
+        Colors.orange,
+        'Unknown',
+        false,
+      ),
+    };
+    final detail = _crashModelDetail;
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: busy
+                ? CircularProgressIndicator(strokeWidth: 2, color: color)
+                : Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Model status: $label',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                    fontSize: 13,
+                  ),
+                ),
+                if (detail != null)
+                  Text(
+                    detail,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -337,6 +548,91 @@ class _BehaviorPageState extends State<BehaviorPage> {
             ),
             value: _crash,
             onChanged: _toggleCrash,
+          ),
+          Card(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Use licensed ML crash model'),
+                    subtitle: const Text(
+                      'Gate crashes on the trained model instead of the rule '
+                      'engine. Needs a license key.',
+                    ),
+                    value: _useMlModel,
+                    onChanged: (v) async {
+                      setState(() {
+                        _useMlModel = v;
+                        // Reset the indicator; fresh statuses arrive on reload.
+                        _crashModelStatus = null;
+                        _crashModelDetail = null;
+                      });
+                      await _applyConfig();
+                      _logLine(
+                        v && _licenseCtrl.text.trim().isNotEmpty
+                            ? '🤖 ML crash model enabled'
+                            : v
+                            ? 'ℹ️ Paste a license key to activate the ML model'
+                            : '🤖 ML crash model disabled (rule engine)',
+                      );
+                    },
+                  ),
+                  TextField(
+                    controller: _licenseCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'License key',
+                      hintText: 'Paste from licenses.ikolvi.com',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    maxLines: 2,
+                    minLines: 1,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                    onChanged: (_) {
+                      if (_useMlModel) _applyConfig();
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Get a key: licenses.ikolvi.com  ·  unlock: $_unlockUrl',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  // Live download/load status of the licensed model. Visible
+                  // only when crash detection + ML model are both on.
+                  if (_crash && _useMlModel) _crashModelStatusTile(),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Throw-test mode (bench)'),
+                    subtitle: const Text(
+                      'Physical bench test: drops the 25 km/h speed gate AND '
+                      'uses the rule engine (fires on raw g-force ≥ 2g). The ML '
+                      'model can\'t score a stationary throw — use the "Crash '
+                      '(ML model)" button to test the model itself.',
+                    ),
+                    value: _throwTestMode,
+                    onChanged: (v) async {
+                      setState(() => _throwTestMode = v);
+                      await _applyConfig();
+                      _logLine(
+                        v
+                            ? '🧪 Throw-test mode ON — rule engine + speed gate '
+                                  'off. Throw the phone onto a bed; watch for '
+                                  '"potential_crash".'
+                            : '🧪 Throw-test mode OFF — ML model + 25 km/h gate '
+                                  'restored',
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
           SwitchListTile(
             title: const Text('Transport-mode classifier'),
@@ -385,6 +681,16 @@ class _BehaviorPageState extends State<BehaviorPage> {
               OutlinedButton(
                 onPressed: () => _simulate('crash'),
                 child: const Text('Crash'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('mlcrash'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.purple),
+                child: const Text('Crash (ML model)'),
+              ),
+              OutlinedButton(
+                onPressed: () => _simulate('mlbenign'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.teal),
+                child: const Text('Benign bump (ML)'),
               ),
               OutlinedButton(
                 onPressed: () => _simulate('vehicle'),

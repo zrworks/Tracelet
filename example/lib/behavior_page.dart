@@ -97,6 +97,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
     final useMl = _useMlModel && licenseKey.isNotEmpty;
     await tl.Tracelet.setConfig(
       tl.Config(
+        // Debug logging so the crash-model lifecycle (unlock → download →
+        // decrypt → "Crash ML model active.") is visible in logcat/Console.
+        // Filter with: adb logcat -s Tracelet   (Android)
+        //              log stream --predicate 'subsystem == "Tracelet"' (iOS)
+        logger: const tl.LoggerConfig(logLevel: tl.LogLevel.debug),
         telematics: tl.TelematicsConfig(
           enableDrivingEvents: _driving,
           // A modest limit so speeding is demoable without a highway.

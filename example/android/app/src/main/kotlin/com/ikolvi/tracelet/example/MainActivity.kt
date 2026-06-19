@@ -1,5 +1,6 @@
 package com.ikolvi.tracelet.example
 
+import android.util.Base64
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -52,6 +53,26 @@ class MainActivity : FlutterActivity() {
                         )
                     } catch (e: Exception) {
                         result.error("REFLECTION_ERROR", e.message, null)
+                    }
+                } else if (call.method == "debugCrashModelPredict") {
+                    // #183: verify the on-device crash-ML chain end-to-end —
+                    // AES-256-GCM decrypt of an encrypted forest blob + tree-walk
+                    // inference — using the real rebuilt Rust core.
+                    try {
+                        val blobB64 = call.argument<String>("blob")!!
+                        val keyB64 = call.argument<String>("key")!!
+                        val features = call.argument<List<Double>>("features")!!
+                        val blob = Base64.decode(blobB64, Base64.DEFAULT)
+                        val key = Base64.decode(keyB64, Base64.DEFAULT)
+                        val model = uniffi.tracelet_core.CrashModel.fromEncrypted(blob, key)
+                        result.success(
+                            mapOf(
+                                "proba" to model.predictProba(features),
+                                "treeCount" to model.treeCount().toInt(),
+                            ),
+                        )
+                    } catch (e: Exception) {
+                        result.error("CRASH_MODEL_ERROR", e.message, null)
                     }
                 } else {
                     result.notImplemented()

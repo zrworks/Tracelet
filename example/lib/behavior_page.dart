@@ -49,6 +49,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
   String _mode = 'unknown';
   tl.ImpactEvent? _pendingImpact;
 
+  // Current ML crash-model lifecycle state for the on-screen status indicator.
+  // null ⇒ not started yet (idle).
+  tl.CrashModelStatus? _crashModelStatus;
+  String? _crashModelDetail;
+
   StreamSubscription<tl.DrivingEvent>? _drivingSub;
   StreamSubscription<tl.ImpactEvent>? _impactSub;
   StreamSubscription<tl.ModeChangeEvent>? _modeSub;
@@ -142,8 +147,13 @@ class _BehaviorPageState extends State<BehaviorPage> {
     await _applyConfig();
     if (v) {
       // Surface ML crash-model download/load progress so the user knows the
-      // model is being prepared before crash detection becomes active.
+      // model is being prepared before crash detection becomes active. Drives
+      // both the scrolling log and the persistent status indicator.
       _crashModelSub ??= tl.Tracelet.crashModelStatusStream.listen((e) {
+        setState(() {
+          _crashModelStatus = e.status;
+          _crashModelDetail = e.detail;
+        });
         final detail = e.detail != null ? '  (${e.detail})' : '';
         switch (e.status) {
           case tl.CrashModelStatus.unlocking:
@@ -181,7 +191,11 @@ class _BehaviorPageState extends State<BehaviorPage> {
       _impactSub = null;
       _crashModelSub?.cancel();
       _crashModelSub = null;
-      setState(() => _pendingImpact = null);
+      setState(() {
+        _pendingImpact = null;
+        _crashModelStatus = null;
+        _crashModelDetail = null;
+      });
     }
   }
 
@@ -361,6 +375,105 @@ class _BehaviorPageState extends State<BehaviorPage> {
     }
   }
 
+  /// Persistent ML crash-model status indicator. Always visible while crash
+  /// detection is on, so the user can see every stage from unlock → download →
+  /// decrypt → ready (or failed). Shows a spinner during in-progress stages.
+  Widget _crashModelStatusTile() {
+    final status = _crashModelStatus;
+    final (
+      IconData icon,
+      Color color,
+      String label,
+      bool busy,
+    ) = switch (status) {
+      null => (Icons.hourglass_empty, Colors.grey, 'Idle — not started', false),
+      tl.CrashModelStatus.unlocking => (
+        Icons.vpn_key,
+        Colors.blue,
+        'Unlocking license…',
+        true,
+      ),
+      tl.CrashModelStatus.downloading => (
+        Icons.cloud_download,
+        Colors.blue,
+        'Downloading model…',
+        true,
+      ),
+      tl.CrashModelStatus.decrypting => (
+        Icons.lock_open,
+        Colors.blue,
+        'Decrypting model…',
+        true,
+      ),
+      tl.CrashModelStatus.ready => (
+        Icons.check_circle,
+        Colors.green,
+        'Model ready',
+        false,
+      ),
+      tl.CrashModelStatus.failed => (
+        Icons.error,
+        Colors.red,
+        'Download failed',
+        false,
+      ),
+      tl.CrashModelStatus.disabled => (
+        Icons.pause_circle,
+        Colors.grey,
+        'Disabled (rule engine)',
+        false,
+      ),
+      tl.CrashModelStatus.unknown => (
+        Icons.help,
+        Colors.orange,
+        'Unknown',
+        false,
+      ),
+    };
+    final detail = _crashModelDetail;
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: busy
+                ? CircularProgressIndicator(strokeWidth: 2, color: color)
+                : Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Model status: $label',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                    fontSize: 13,
+                  ),
+                ),
+                if (detail != null)
+                  Text(
+                    detail,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -405,7 +518,12 @@ class _BehaviorPageState extends State<BehaviorPage> {
                     ),
                     value: _useMlModel,
                     onChanged: (v) async {
-                      setState(() => _useMlModel = v);
+                      setState(() {
+                        _useMlModel = v;
+                        // Reset the indicator; fresh statuses arrive on reload.
+                        _crashModelStatus = null;
+                        _crashModelDetail = null;
+                      });
                       await _applyConfig();
                       _logLine(
                         v && _licenseCtrl.text.trim().isNotEmpty
@@ -439,6 +557,9 @@ class _BehaviorPageState extends State<BehaviorPage> {
                     'Get a key: licenses.ikolvi.com  ·  unlock: $_unlockUrl',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
+                  // Live download/load status of the licensed model. Visible
+                  // only when crash detection + ML model are both on.
+                  if (_crash && _useMlModel) _crashModelStatusTile(),
                 ],
               ),
             ),

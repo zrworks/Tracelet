@@ -192,98 +192,48 @@ calls or contacts emergency services. Building the actual SOS/emergency flow is
 your app's responsibility (and lets you control the UX and legal copy).
 </Callout>
 
-### Optional: the ML crash model (advanced)
+### Optional: the licensed AI crash model
 
 By default crash detection uses a **rule engine** (the g-threshold + speed
-corroboration above) — no extra setup, works out of the box. If you have a
-licensed **ML crash model**, you can plug it in to gate crashes on a trained
-probability instead. The model is **opt-in and downloaded** (never embedded), so
-the base SDK size is unchanged, and it's shipped **AES-256-GCM encrypted** so it
-isn't exposed on a plain URL.
+corroboration above) — no extra setup, works out of the box. For higher accuracy
+you can enable the **AI crash model**: a trained model that gates crashes on a
+learned probability instead of a fixed threshold.
+
+It's **opt-in and downloaded on demand** (never embedded), so the base SDK size
+is unchanged. To turn it on, get a license key and point your config at it:
 
 ```dart
 await Tracelet.ready(Config(
   impact: ImpactConfig(
     enableCrashDetection: true,
-    crashModelUrl: 'https://your-cdn/tracelet_optimized.crashmodel', // encrypted blob
-    crashModelSha256: 'b27a764f…',   // integrity check (from the encrypt tool)
-    crashModelThreshold: 0.5074,     // rf_probability_threshold from training
+    crashModelUnlockUrl: 'https://unlock.ikolvi.com/unlock',
+    crashModelLicenseKey: '<your license key>',
+    crashModelThreshold: 0.5074,   // rf_probability_threshold from training
   ),
 ));
 ```
 
 | Option | Default | What it does |
 |---|---|---|
-| `crashModelUrl` | `null` | URL of the **encrypted** model blob. `null` ⇒ pure rule engine |
-| `crashModelSha256` | `null` | Hex SHA-256 of the blob, verified after download |
+| `crashModelUnlockUrl` | `null` | Licensing endpoint that activates the model. `null` ⇒ pure rule engine |
+| `crashModelLicenseKey` | `null` | Your license key (from the Get a License page) |
 | `crashModelThreshold` | `0.5` | Probability at which the model flags a crash |
 
-When set, the SDK downloads the blob once, verifies the SHA-256, decrypts it **in
-memory** with a runtime-injected key, and runs it. If anything fails (offline,
-bad key, SHA mismatch) it **falls back to the rule engine** — your app keeps
-working.
+If the model can't be activated for any reason (offline, invalid key) the SDK
+**automatically falls back to the rule engine** — your app keeps working.
 
-<Callout type="info">
-**The decryption key is never shipped in your app.** It's injected at runtime —
-typically fetched from a small licensing endpoint you control (see the
-[unlock-Worker guide](https://github.com/Ikolvi/Tracelet/tree/main/cloudflare/crash-model-unlock)).
-On a rooted device a determined attacker can still read the decrypted model from
-memory; encryption raises the bar against blob scraping, it is not absolute DRM.
-</Callout>
+#### Get a license
 
-#### Android setup (only if you use the ML model)
+Grab a key from the **[Get a License](/en/get-license)** page: sign in, enter your
+**application id**, and copy a ready-to-paste key (or the full `ImpactConfig`
+snippet).
 
-The ML model needs no extra dependency for the **rule engine** path. If you want
-**anti-piracy licensing** (binding the model to your signed, published app), add
-**Play Integrity** to your app — it is **optional** and only needed for
-production `prod` licenses:
+- **dev license** — for debug builds & emulators. Just your app id, no extra
+  setup.
+- **prod license** — for your shipped app; also needs your app signing-cert
+  SHA-256 (Play Console → *App integrity → App signing*, or `./gradlew signingReport`).
 
-```kotlin
-// app/build.gradle.kts — only if you use prod (Play Integrity) licenses
-dependencies {
-    implementation("com.google.android.play:integrity:1.4.0")
-}
-```
-
-Then request an integrity token and pass it to your unlock endpoint. **Debug
-builds and emulators** don't need this — use a `dev` license, which unlocks the
-model without Play Integrity (see the unlock-Worker guide). If you only use the
-rule engine, you can skip this entirely.
-
-#### Get a license (self-service portal)
-
-The fastest way is the hosted **[Get a License](/en/get-license)** page: sign in,
-enter your **application id**, and copy a ready-to-paste key. It runs on a small
-Cloudflare Worker behind Cloudflare Access — you log in, enter your application
-id (and, for production, your **app signing-cert SHA-256**), and it generates a
-ready-to-paste license key:
-
-```dart
-ImpactConfig(
-  enableCrashDetection: true,
-  crashModelUnlockUrl: 'https://unlock.ikolvi.com/unlock',
-  crashModelLicenseKey: '<paste from the portal>',
-  crashModelThreshold: 0.5074,
-)
-```
-
-- **dev license** — works in debug builds & emulators (no Play Integrity); pick
-  this to try the model. SHA-256 not required.
-- **prod license** — bound to your shipped app via Play Integrity; requires the
-  signing-cert SHA-256 (Play Console → *App integrity → App signing*, or
-  `./gradlew signingReport`).
-
-The portal also lists your issued licenses and lets you **revoke** one instantly.
-Get your key at **[licenses.ikolvi.com](https://licenses.ikolvi.com)** (or open the
-[Get a License](/en/get-license) page), or deploy your own from
-[`cloudflare/crash-model-mint`](https://github.com/Ikolvi/Tracelet/tree/main/cloudflare/crash-model-mint).
-
-<Callout type="warning">
-The trained model itself is still **Beta / licensing-gated** (see the note above).
-The infrastructure to load, secure and gate on a model is in place; a fully
-open-source, production-licensed model is tracked in
-[Issue #183](https://github.com/Ikolvi/Tracelet/issues/183).
-</Callout>
+The portal also lists your issued keys and lets you **revoke** one instantly.
 
 ---
 

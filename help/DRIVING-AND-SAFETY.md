@@ -131,6 +131,40 @@ user cancels/confirms, or it auto-confirms to `crash` after `confirmWindowMs`.
 > ⚠️ Tracelet provides the **trigger + cancel window** only — it never places
 > emergency calls. Building the SOS flow is your app's job.
 
+### Confirmation survives the app being killed
+
+A violent impact often ends with the OS killing the app (the phone is flung,
+the vehicle comes to rest, Doze kicks in). Tracelet makes the confirmation
+**process-death safe**: the moment a `potential_crash` / `potential_fall` is
+raised it is persisted to disk and a wake-up is armed for just after the
+deadline. If the in-process countdown is still alive it confirms normally and
+disarms the wake-up; if the app was killed, the wake-up re-emits the confirmed
+`crash` / `fall` from a fresh process so your SOS flow still runs.
+
+- **Android** — an exact `AlarmManager` alarm (`setExactAndAllowWhileIdle`, fires
+  in Doze) wakes a receiver that re-delivers the confirmed event.
+- **iOS** — a local notification scheduled at the deadline alerts the user even
+  while the app is dead, and the confirmed event is re-delivered the next time
+  the SDK runs (background relaunch or foreground). Grant notification
+  permission for the user-facing alert; the re-delivery works regardless.
+
+A user **cancel** removes the persisted candidate and disarms the wake-up, so a
+cancelled candidate is never re-confirmed after a restart.
+
+### Corroboration signals
+
+To raise recall without flooding you with false alarms, the confidence of a
+candidate is corroborated by additional physical evidence:
+
+- **Free-fall before impact** (`#180`) — a falling phone reads near-0 g just
+  before the jolt; the classic drop signature.
+- **Post-impact stillness** (`#180`) — after a real fall the body comes to rest;
+  the acceleration trace settles back near 1 g with little movement.
+- **Δv speed collapse** (`#181`) — a real crash collapses the vehicle's speed
+  within ~1–2 s. Tracelet samples the post-impact GPS speed and **raises**
+  confidence on a sharp collapse (it never suppresses a candidate — the design
+  favours recall).
+
 ### Optional: ML crash model
 
 Crash detection runs on a **rule engine** by default (no setup). To gate crashes

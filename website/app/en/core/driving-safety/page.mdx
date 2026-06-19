@@ -190,6 +190,38 @@ calls or contacts emergency services. Building the actual SOS/emergency flow is
 your app's responsibility (and lets you control the UX and legal copy).
 </Callout>
 
+### The confirmation survives the app being killed
+
+A violent impact often ends with the OS killing the app — the phone is thrown,
+the vehicle comes to rest, the device goes into Doze. If the cancel-countdown
+lived only in memory, the confirmed `crash`/`fall` would silently never fire.
+Tracelet makes the countdown **process-death safe**: the instant a
+`potential_crash`/`potential_fall` is raised it is **persisted to disk** and a
+wake-up is armed for just after the deadline. If the app is still alive it
+confirms normally and disarms the wake-up; if it was killed, the wake-up
+**re-emits the confirmed event from a fresh process** so your SOS flow still runs.
+
+| Platform | Mechanism |
+|---|---|
+| **Android** | An exact `AlarmManager` alarm (`setExactAndAllowWhileIdle`, fires even in Doze) wakes a receiver that re-delivers the confirmed event. |
+| **iOS** | A local notification scheduled at the deadline alerts the user even while the app is dead; the confirmed event is re-delivered the next time the SDK runs (background relaunch or foreground). Grant notification permission for the user-facing alert — the re-delivery works either way. |
+
+A user **cancel** removes the persisted candidate and disarms the wake-up, so a
+cancelled candidate is never re-confirmed after a restart.
+
+### Corroboration signals
+
+To raise recall without flooding you with false alarms, a candidate's confidence
+is corroborated by additional physical evidence beyond the raw jolt:
+
+- **Free-fall before impact** — a falling phone reads near-`0 g` just before the
+  jolt: the classic drop signature.
+- **Post-impact stillness** — after a real fall the body comes to rest; the
+  acceleration trace settles back near `1 g` with little movement.
+- **Δv speed collapse** — a real crash collapses the vehicle's speed within
+  ~1–2 s. Tracelet samples the post-impact GPS speed and **raises** confidence on
+  a sharp collapse. It never *suppresses* a candidate — the design favours recall.
+
 ### Optional: the licensed AI crash model
 
 By default crash detection uses a **rule engine** (the g-threshold + speed

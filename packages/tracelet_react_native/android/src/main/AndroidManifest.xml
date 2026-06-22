@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!--
+    Runtime location, motion, foreground-service, notification and alarm permissions
+    are contributed by the Tracelet native SDK (com.ikolvi:tracelet-sdk) manifest and
+    merged automatically. This module's manifest is intentionally minimal.
+  -->
+</manifest>

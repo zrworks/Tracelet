@@ -1,0 +1,10 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "@ikolvi/tracelet": ["../src/index"]
+    }
+  },
+  "include": ["src", "App.tsx", "index.js"]
+}

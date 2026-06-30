@@ -2939,6 +2939,15 @@ public final class TraceletSdk {
     /// Respects `stopOnTerminate: false` by skipping teardown for critical
     /// background tracking components when enabled.
     public func destroyAll() {
+        // destroyAll() is dispatched from the plugin during engine teardown. It
+        // can run in a process/engine where initialize() never executed (e.g. a
+        // secondary/headless engine). All subsystems — including configManager and
+        // stateManager — are implicitly-unwrapped optionals assigned in
+        // initialize(); touching them while nil traps fatally *during teardown*,
+        // surfacing as a crash the app can't intercept (parity with Android #227).
+        // If the SDK was never initialized there is nothing to tear down.
+        guard configManager != nil, stateManager != nil else { return }
+
         // When stopOnTerminate=false and tracking is active, the SDK should
         // continue running in the background. Tearing down subsystems here
         // would kill that background continuity.
@@ -2947,34 +2956,34 @@ public final class TraceletSdk {
         // LocationEngine — keep alive for continuous and geofence modes.
         // Periodic mode has its own scheduler lifecycle.
         if !(keepAlive && stateManager.trackingMode != .periodic) {
-            locationEngine.stop()
+            locationEngine?.stop()
         }
-        motionDetector.stop()
+        motionDetector?.stop()
 
         // GeofenceManager — keep alive only in geofence mode.
         let keepGeofencesAlive = keepAlive && stateManager.trackingMode == .geofences
         if !keepGeofencesAlive {
-            geofenceManager.destroy()
+            geofenceManager?.destroy()
         }
 
         // Subsystems that should only survive if we are in a background-active mode.
         if !keepAlive {
             // TODO: Stop Rust SyncManager if necessary
-            scheduleManager.stop()
+            scheduleManager?.stop()
             stopHeartbeat()
-            preventSuspendManager.stop()
-            backgroundActivitySessionManager.stop()
-            serviceSessionManager.stop()
+            preventSuspendManager?.stop()
+            backgroundActivitySessionManager?.stop()
+            serviceSessionManager?.stop()
         }
 
         // Sound and budget sampling are safe to stop unconditionally.
-        soundManager.stop()
+        soundManager?.stop()
         stopBatteryBudgetSampling()
 
         // Periodic scheduler — keep alive only in periodic mode.
         let keepPeriodicAlive = keepAlive && stateManager.trackingMode == .periodic
         if !keepPeriodicAlive {
-            periodicRefreshScheduler.stop()
+            periodicRefreshScheduler?.stop()
         }
     }
 

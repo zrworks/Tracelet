@@ -3171,15 +3171,23 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // LocationEngine — keep alive for continuous (0) and geofence (1) modes.
         // Periodic mode (2) has its own WorkManager/AlarmManager lifecycle.
+        //
+        // All subsystems are `lateinit` and are only constructed by initialize().
+        // destroyAll() can run in a process/engine where initialize() never
+        // executed — e.g. a secondary/headless Flutter engine that is the last to
+        // detach (see TraceletAndroidPlugin.onDetachedFromEngine). Touching an
+        // uninitialized lateinit here throws UninitializedPropertyAccessException,
+        // which — being dispatched during engine/activity teardown — surfaces as
+        // a fatal "Unable to destroy activity" (#227). Guard every access.
         if (!(keepAlive && stateManager.trackingMode != TrackingMode.PERIODIC)) {
-            locationEngine.destroy()
+            if (::locationEngine.isInitialized) locationEngine.destroy()
         }
-        motionDetector.stop()
+        if (::motionDetector.isInitialized) motionDetector.stop()
 
         // GeofenceManager — keep alive only in geofence mode (1).
         val keepGeofencesAlive = keepAlive && stateManager.trackingMode == TrackingMode.GEOFENCES
         if (!keepGeofencesAlive) {
-            geofenceManager.destroy()
+            if (::geofenceManager.isInitialized) geofenceManager.destroy()
         }
 
         // HttpSyncManager — MUST survive for location uploads after task
@@ -3193,7 +3201,7 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // ScheduleManager & heartbeat — keep alive for continuity.
         if (!keepAlive) {
-            scheduleManager.stop()
+            if (::scheduleManager.isInitialized) scheduleManager.stop()
             stopHeartbeat()
         }
 

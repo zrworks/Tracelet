@@ -8,12 +8,13 @@
 # Keep BuildConfig (required for AGP 8.5+)
 -keep class com.ikolvi.tracelet.flutter.BuildConfig { *; }
 
-# Keep services and receivers referenced in AndroidManifest.xml
+# Keep services, receivers, and providers referenced in AndroidManifest.xml
 -keep class com.ikolvi.tracelet.sdk.service.LocationService { *; }
 -keep class com.ikolvi.tracelet.flutter.service.HeadlessTaskService { *; }
 -keep class com.ikolvi.tracelet.sdk.receiver.BootReceiver { *; }
 -keep class com.ikolvi.tracelet.sdk.receiver.GeofenceBroadcastReceiver { *; }
 -keep class com.ikolvi.tracelet.sdk.receiver.PeriodicAlarmReceiver { *; }
+-keep class com.ikolvi.tracelet.flutter.TraceletStartupProvider { *; }
 
 # Keep the public SDK API surface (used via reflection by Pigeon/MethodChannel)
 -keep class com.ikolvi.tracelet.sdk.TraceletSdk { *; }

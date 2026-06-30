@@ -51,6 +51,24 @@ class LocationService : Service(), DefaultLifecycleObserver {
     companion object {
         private const val TAG = "LocationService"
         private const val NOTIFICATION_ID = 7701
+
+        /**
+         * Auto-expiry safety timeout for the OEM-safe wakelock. Comfortably
+         * exceeds [WAKELOCK_RENEWAL_INTERVAL_MS] so the lock never lapses
+         * between renewals, while still bounding a leaked lock so it eventually
+         * self-releases.
+         */
+        private const val WAKELOCK_TIMEOUT_MS = 15 * 60 * 1000L
+
+        /**
+         * How often the held wakelock is renewed so it never reaches its
+         * auto-expiry timeout while tracking is active. Must be shorter than
+         * [WAKELOCK_TIMEOUT_MS]. Without renewal the lock expired after the
+         * default 10 minutes and aggressive OEMs (Samsung One UI, etc.) let the
+         * CPU enter deep sleep, silently freezing FusedLocationProvider updates
+         * even though the foreground service was still alive (#222).
+         */
+        private const val WAKELOCK_RENEWAL_INTERVAL_MS = 10 * 60 * 1000L
         const val ACTION_START = "com.tracelet.ACTION_START"
         const val ACTION_STOP = "com.tracelet.ACTION_STOP"
         const val ACTION_UPDATE_NOTIFICATION = "com.tracelet.ACTION_UPDATE_NOTIFICATION"
@@ -420,6 +438,11 @@ class LocationService : Service(), DefaultLifecycleObserver {
     private var lastInForeground: Boolean? = null
     private var wakeLock: PowerManager.WakeLock? = null
 
+    // Renews the OEM-safe wakelock before its auto-expiry timeout so continuous
+    // tracking is never silently frozen by CPU deep-sleep on aggressive OEMs.
+    private val wakelockHandler = Handler(Looper.getMainLooper())
+    private var wakelockRenewalRunnable: Runnable? = null
+
     // Callback for notification action button taps dispatched to TraceletEventSender
     var onNotificationAction: ((String) -> Unit)? = null
 
@@ -634,11 +657,44 @@ class LocationService : Service(), DefaultLifecycleObserver {
      * aggressive OEM power managers from suspending our process.
      */
     private fun acquireOemWakelock() {
-        if (wakeLock?.isHeld == true) return
-        wakeLock = OemCompat.acquireOemSafeWakelock(applicationContext)
+        if (wakeLock?.isHeld != true) {
+            wakeLock = OemCompat.acquireOemSafeWakelock(applicationContext, WAKELOCK_TIMEOUT_MS)
+        }
+        scheduleWakelockRenewal()
+    }
+
+    /**
+     * Schedules periodic re-acquisition of the OEM-safe wakelock so its
+     * auto-expiry timeout never lapses while the foreground service is
+     * tracking. The lock keeps a finite timeout as a leak safety-net, but the
+     * renewal guarantees the CPU stays awake for the lifetime of tracking —
+     * preventing the silent location-update freeze on aggressive OEMs (#222).
+     */
+    private fun scheduleWakelockRenewal() {
+        wakelockRenewalRunnable?.let { wakelockHandler.removeCallbacks(it) }
+        val runnable = object : Runnable {
+            override fun run() {
+                // Acquire a fresh lock BEFORE releasing the old one so there is
+                // never a gap during which the CPU could be allowed to sleep.
+                try {
+                    val fresh = OemCompat.acquireOemSafeWakelock(applicationContext, WAKELOCK_TIMEOUT_MS)
+                    val previous = wakeLock
+                    wakeLock = fresh
+                    if (previous?.isHeld == true) previous.release()
+                    TraceletLog.debug("Renewed OEM wakelock")
+                } catch (e: Exception) {
+                    TraceletLog.error("Error renewing OEM wakelock: ${e.message}")
+                }
+                wakelockHandler.postDelayed(this, WAKELOCK_RENEWAL_INTERVAL_MS)
+            }
+        }
+        wakelockRenewalRunnable = runnable
+        wakelockHandler.postDelayed(runnable, WAKELOCK_RENEWAL_INTERVAL_MS)
     }
 
     private fun releaseOemWakelock() {
+        wakelockRenewalRunnable?.let { wakelockHandler.removeCallbacks(it) }
+        wakelockRenewalRunnable = null
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()

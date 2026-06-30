@@ -90,8 +90,10 @@ class _Issue231CardState extends State<Issue231Card> {
         }
       });
 
-      _set('Registering geofence at ${here.coords.latitude.toStringAsFixed(5)}, '
-          '${here.coords.longitude.toStringAsFixed(5)}...');
+      _set(
+        'Registering geofence at ${here.coords.latitude.toStringAsFixed(5)}, '
+        '${here.coords.longitude.toStringAsFixed(5)}...',
+      );
       await Tracelet.addGeofence(
         Geofence(
           identifier: _geofenceId,

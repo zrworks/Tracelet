@@ -103,3 +103,66 @@ tl.Tracelet.onGeofence((evt) {
   }
 });
 ```
+
+---
+
+## 5. Android: foreground service & Google Play policy
+
+<Callout type="warning">
+**Google Play policy change — effective October 28, 2026.** Geofencing is no
+longer a permitted use case for foreground service location. Apps that use a
+foreground service **solely** for geofencing must remove the
+`FOREGROUND_SERVICE_LOCATION` (and `FOREGROUND_SERVICE`, if unused otherwise)
+permissions from their merged manifest.
+</Callout>
+
+Tracelet's **standard** geofence mode uses the native Android Geofence API
+(`GeofencingClient`), which fires ENTER/EXIT — and relaunches your app into your
+headless task — while the app is suspended or terminated, **without** a
+foreground service. Calling `startGeofences()` in standard mode does **not** start
+a foreground service (as of `3.5.x`), so it is compliant by default.
+
+### If you use Tracelet only for geofencing
+
+1. Do **not** enable the foreground service:
+
+   ```dart
+   await tl.Tracelet.ready(const tl.Config(
+     android: tl.AndroidConfig(
+       foregroundService: tl.ForegroundServiceConfig(enabled: false),
+     ),
+     geofence: tl.GeofenceConfig(geofenceModeHighAccuracy: false),
+   ));
+   await tl.Tracelet.startGeofences();
+   ```
+
+2. The Tracelet SDK declares `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_LOCATION`
+   for its continuous-tracking use case. If your app never does continuous
+   tracking, strip them from the merged manifest with the manifest-merger
+   `remove` rule in your app's `android/app/src/main/AndroidManifest.xml`:
+
+   ```xml
+   <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools">
+       <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+           tools:node="remove" />
+       <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+           tools:node="remove" />
+   </manifest>
+   ```
+
+### If you use continuous tracking *and* geofencing
+
+You may keep `FOREGROUND_SERVICE_LOCATION` for the tracking use case (e.g.
+navigation/fleet tracking), but the foreground service must not be used for
+geofencing. Tracelet already handles this: the FGS runs for continuous tracking
+(`start()`), and switching to geofence-only mode (`startGeofences()` in standard
+mode) tears the FGS down.
+
+<Callout type="info">
+**High-accuracy geofence mode** (`geofenceModeHighAccuracy: true`) uses
+continuous GPS for tight, in-app boundary detection, which *does* run a
+foreground service. That is continuous location — not "geofencing" in the policy
+sense — so only enable it when your app has a separate permitted location use
+case. For most apps, standard mode is the compliant and battery-efficient choice.
+</Callout>

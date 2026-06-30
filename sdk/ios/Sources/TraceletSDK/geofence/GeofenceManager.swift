@@ -282,14 +282,8 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
                 "uuid": UUID().uuidString,
                 "event": "geofence",
                 "timestamp": isoFormatter.string(from: Date()),
-                "coords": [
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "accuracy": 0.0,
-                    "speed": 0.0,
-                    "heading": 0.0,
-                    "altitude": 0.0,
-                ],
+                "coords": buildCoords(latitude: latitude, longitude: longitude),
+                "battery": BatteryUtils.getBatteryInfo(),
                 "geofence": [
                     "identifier": t.identifier,
                     "action": t.action,
@@ -486,6 +480,41 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Transition handling
 
+    /// Builds the `coords` payload for a geofence transition event.
+    ///
+    /// The geofence boundary `latitude`/`longitude` come from the triggering
+    /// event, while the remaining telemetry (accuracy, speed, heading, altitude
+    /// and per-field accuracies) is sourced from the most recent GPS fix when
+    /// available. Previously these were hardcoded to `0.0`, leaving backends
+    /// blind to speed/heading/accuracy at the crossing (#231).
+    private func buildCoords(latitude: Double, longitude: Double) -> [String: Any] {
+        guard let location = locationManager.location else {
+            return [
+                "latitude": latitude,
+                "longitude": longitude,
+                "accuracy": 0.0,
+                "speed": 0.0,
+                "heading": 0.0,
+                "altitude": 0.0,
+            ]
+        }
+
+        var coords: [String: Any] = [
+            "latitude": latitude,
+            "longitude": longitude,
+            "altitude": location.altitude,
+            "speed": location.speed >= 0 ? location.speed : 0.0,
+            "heading": location.course >= 0 ? location.course : 0.0,
+            "accuracy": location.horizontalAccuracy,
+            "altitudeAccuracy": location.verticalAccuracy,
+        ]
+        if #available(iOS 13.4, *) {
+            coords["speedAccuracy"] = location.speedAccuracy
+            coords["headingAccuracy"] = location.courseAccuracy
+        }
+        return coords
+    }
+
     private func handleTransition(region: CLCircularRegion, action: String) {
         // When high-accuracy mode is active, evaluateHighAccuracyProximity()
         // handles transitions in-app. Skip OS-level events to avoid duplicates.
@@ -501,14 +530,8 @@ public final class GeofenceManager: NSObject, CLLocationManagerDelegate {
             "uuid": UUID().uuidString,
             "event": "geofence",
             "timestamp": isoFormatter.string(from: Date()),
-            "coords": [
-                "latitude": lat,
-                "longitude": lng,
-                "accuracy": 0.0,
-                "speed": 0.0,
-                "heading": 0.0,
-                "altitude": 0.0,
-            ],
+            "coords": buildCoords(latitude: lat, longitude: lng),
+            "battery": BatteryUtils.getBatteryInfo(),
             "geofence": [
                 "identifier": region.identifier,
                 "action": action,

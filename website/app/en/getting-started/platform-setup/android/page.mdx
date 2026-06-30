@@ -65,7 +65,31 @@ Tracelet's native code is fully guarded with `checkSelfPermission()`. **Missing 
 | `SCHEDULE_EXACT_ALARM` | **Safe.** Periodic mode falls back to using battery-friendly, but inexact, WorkManager timers. |
 | `POST_NOTIFICATIONS` | **Safe.** The foreground service persistent notification is hidden on Android 13+. Service still runs. |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | **Safe.** You won't be able to request battery optimization exemptions from the OS. |
+| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_LOCATION` | **Safe for geofence-only / periodic-only apps.** Removing them disables continuous foreground tracking (`start()`), but standard geofencing and periodic mode keep working. **Required** for continuous background tracking. |
 | `ACCESS_FINE_LOCATION` / `COARSE` | **UNSAFE.** Without any location permission, Tracelet cannot obtain positions. |
+
+<Callout type="warning">
+**Google Play foreground-service policy (effective Oct 28, 2026).** Geofencing is
+no longer a permitted use case for foreground service location. If your app uses a
+foreground service **solely** for geofencing, you must remove
+`FOREGROUND_SERVICE_LOCATION` (and `FOREGROUND_SERVICE`) from your merged
+manifest. Tracelet's standard geofence mode uses the native Geofence API and does
+**not** start a foreground service, so geofence-only apps are compliant — just
+strip the permissions below and keep `foregroundService.enabled = false`. See the
+[Geofencing guide](/en/core/geofencing#5-android-foreground-service--google-play-policy)
+for details.
+</Callout>
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Geofence-only / periodic-only app: no continuous foreground tracking -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+
+</manifest>
+```
 
 #### Example: Removing Motion & Background Permissions
 

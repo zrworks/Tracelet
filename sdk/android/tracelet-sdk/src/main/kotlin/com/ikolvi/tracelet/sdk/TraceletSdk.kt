@@ -916,15 +916,25 @@ class TraceletSdk private constructor(private val context: Context) {
         // GeofencingClient, which detects enter/exit without continuous location
         // updates — starting them keeps the persistent location indicator on and
         // wastes battery for no benefit (parity with the iOS #210 fix).
+        //
+        // Foreground service: only high-accuracy mode (continuous GPS) needs one.
+        // Standard geofence-only mode must NOT run a foreground service — the
+        // native Geofence API fires enter/exit while suspended/terminated without
+        // it, and Google Play prohibits using a foreground service *solely* for
+        // geofencing as of 2026-10-28. Starting an FGS here would make every
+        // geofence-only Tracelet app non-compliant. Any FGS left over from a
+        // previous continuous/high-accuracy session is torn down.
         if (configManager.getGeofenceModeHighAccuracy()) {
             geofenceManager.clearHighAccuracyState()
             locationEngine.start()
+            if (configManager.isForegroundServiceEnabled()) {
+                LocationService.start(context)
+            }
         } else {
             locationEngine.stop()
-        }
-
-        if (configManager.isForegroundServiceEnabled()) {
-            LocationService.start(context)
+            if (LocationService.isServiceRunning()) {
+                LocationService.stop(context)
+            }
         }
 
         eventSender.sendEnabledChange(true)

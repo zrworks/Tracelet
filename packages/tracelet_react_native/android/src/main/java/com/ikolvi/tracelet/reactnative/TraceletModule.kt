@@ -95,6 +95,7 @@ class TraceletModule(
 
   @ReactMethod
   fun start(promise: Promise) = guard(promise) {
+    ensureInitialized()
     sdk.start()
     promise.resolve(sdk.getState().toWritable())
   }
@@ -381,33 +382,39 @@ class TraceletModule(
 
   @ReactMethod
   fun getPermissionStatus(promise: Promise) = guard(promise) {
+    ensureInitialized()
     promise.resolve(authToJs(sdk.getPermissionStatus()))
   }
 
   @ReactMethod
   fun requestPermission(promise: Promise) = guard(promise) {
+    ensureInitialized()
     reactContext.currentActivity?.let { sdk.activity = it }
     sdk.requestPermission { status: AuthorizationStatus -> promise.resolve(authToJs(status)) }
   }
 
   @ReactMethod
   fun getNotificationPermissionStatus(promise: Promise) = guard(promise) {
+    ensureInitialized()
     promise.resolve(notificationToJs(sdk.getNotificationPermissionStatus()))
   }
 
   @ReactMethod
   fun requestNotificationPermission(promise: Promise) = guard(promise) {
+    ensureInitialized()
     reactContext.currentActivity?.let { sdk.activity = it }
     sdk.requestNotificationPermission { status -> promise.resolve(notificationToJs(status)) }
   }
 
   @ReactMethod
   fun getMotionPermissionStatus(promise: Promise) = guard(promise) {
+    ensureInitialized()
     promise.resolve(motionToJs(sdk.getMotionPermissionStatus()))
   }
 
   @ReactMethod
   fun requestMotionPermission(promise: Promise) = guard(promise) {
+    ensureInitialized()
     reactContext.currentActivity?.let { sdk.activity = it }
     sdk.requestMotionPermission { status -> promise.resolve(motionToJs(status)) }
   }

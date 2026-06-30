@@ -1,19 +1,16 @@
 const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
-const { getConfig } = require('react-native-builder-bob/metro-config');
-const pkg = require('../package.json');
 
 const root = path.resolve(__dirname, '..');
 
 /**
- * Metro configuration that lets the example app consume the local
- * `@ikolvi/tracelet` source directly (no publish step required).
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('metro-config').MetroConfig}
  */
-module.exports = getConfig(
-  mergeConfig(getDefaultConfig(__dirname), {}),
-  {
-    root,
-    pkg,
-    project: __dirname,
-  }
-);
+const config = {
+  watchFolders: [root],
+};
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);

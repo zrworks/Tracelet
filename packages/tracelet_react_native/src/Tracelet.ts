@@ -148,16 +148,18 @@ export class Tracelet {
   // Location
   // ---------------------------------------------------------------------------
 
-  static getCurrentPosition(
+  static async getCurrentPosition(
     options: CurrentPositionOptions = {}
   ): Promise<Location> {
-    return Native.getCurrentPosition(options) as Promise<Location>;
+    const loc = await Native.getCurrentPosition(options);
+    return Tracelet.normalizeLocation(loc);
   }
 
-  static getLastKnownLocation(
+  static async getLastKnownLocation(
     options: LastKnownLocationOptions = {}
   ): Promise<Location | null> {
-    return Native.getLastKnownLocation(options) as Promise<Location | null>;
+    const loc = await Native.getLastKnownLocation(options);
+    return Tracelet.normalizeLocation(loc);
   }
 
   static async watchPosition(
@@ -166,7 +168,7 @@ export class Tracelet {
   ): Promise<number> {
     const sub = addEventListener<Location>(
       TraceletEvents.watchPosition,
-      callback
+      (payload: any) => callback(Tracelet.normalizeLocation(payload))
     );
     const watchId = await Native.watchPosition(options);
     Tracelet.watchSubscriptions.set(watchId, sub);
@@ -188,7 +190,7 @@ export class Tracelet {
   }
 
   static setOdometer(value: number): Promise<Location> {
-    return Native.setOdometer(value) as Promise<Location>;
+    return Native.setOdometer(value).then(Tracelet.normalizeLocation) as Promise<Location>;
   }
 
   // ---------------------------------------------------------------------------
@@ -228,7 +230,7 @@ export class Tracelet {
   // ---------------------------------------------------------------------------
 
   static getLocations(query?: SQLQuery): Promise<Location[]> {
-    return Native.getLocations(query ?? null) as Promise<Location[]>;
+    return Native.getLocations(query ?? null).then((locations: any[]) => locations.map(Tracelet.normalizeLocation)) as Promise<Location[]>;
   }
 
   static getCount(query?: SQLQuery): Promise<number> {
@@ -237,7 +239,7 @@ export class Tracelet {
 
   /** Locations captured but not yet synced (alias of {@link getLocations}). */
   static getPendingLocations(query?: SQLQuery): Promise<Location[]> {
-    return Native.getLocations(query ?? null) as Promise<Location[]>;
+    return Native.getLocations(query ?? null).then((locations: any[]) => locations.map(Tracelet.normalizeLocation)) as Promise<Location[]>;
   }
 
   /** Count of locations pending sync (alias of {@link getCount}). */
@@ -290,7 +292,7 @@ export class Tracelet {
   // ---------------------------------------------------------------------------
 
   static sync(): Promise<Location[]> {
-    return Native.sync() as Promise<Location[]>;
+    return Native.sync().then((locations: any[]) => locations.map(Tracelet.normalizeLocation)) as Promise<Location[]>;
   }
 
   static setDynamicHeaders(headers: Record<string, string>): Promise<boolean> {
@@ -357,6 +359,35 @@ export class Tracelet {
   }
 
   static async requestLocationAuthorization(): Promise<AuthorizationStatus> {
+    const { Platform, PermissionsAndroid } = require('react-native');
+    if (Platform.OS === 'android') {
+      try {
+        const fg = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        ]);
+        
+        let deniedForever = false;
+        if (fg[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === 'never_ask_again') {
+          deniedForever = true;
+        }
+
+        if (Platform.Version >= 29 && 
+           (fg[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === 'granted' || 
+            fg[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] === 'granted')) {
+          const bg = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION);
+          if (bg === 'never_ask_again') deniedForever = true;
+        }
+        
+        const status = await Native.getPermissionStatus();
+        if (deniedForever && status === 0 /* NOT_DETERMINED */) {
+          return 4 /* DENIED_FOREVER */ as AuthorizationStatus;
+        }
+        return status as AuthorizationStatus;
+      } catch (e) {
+        console.warn(e);
+      }
+    }
     return (await Native.requestPermission()) as AuthorizationStatus;
   }
 
@@ -365,6 +396,19 @@ export class Tracelet {
   }
 
   static async requestMotionAuthorization(): Promise<MotionAuthorizationStatus> {
+    const { Platform, PermissionsAndroid } = require('react-native');
+    if (Platform.OS === 'android' && Platform.Version >= 29) {
+      try {
+        const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION);
+        const status = await Native.getMotionPermissionStatus();
+        if (result === 'never_ask_again' && status === 3 /* NOT_DETERMINED */) {
+          return 1 /* DENIED_FOREVER mapped to 1 in MotionStatus */ as MotionAuthorizationStatus;
+        }
+        return status as MotionAuthorizationStatus;
+      } catch (e) {
+        console.warn(e);
+      }
+    }
     return (await Native.requestMotionPermission()) as MotionAuthorizationStatus;
   }
 
@@ -373,6 +417,15 @@ export class Tracelet {
   }
 
   static async requestNotificationAuthorization(): Promise<NotificationAuthorizationStatus> {
+    const { Platform, PermissionsAndroid } = require('react-native');
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      try {
+        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      } catch (e) {
+        console.warn(e);
+      }
+      return (await Native.getNotificationPermissionStatus()) as NotificationAuthorizationStatus;
+    }
     return (await Native.requestNotificationPermission()) as NotificationAuthorizationStatus;
   }
 
@@ -555,8 +608,8 @@ export class Tracelet {
       Native.getPermissionStatus(),
       Native.getMotionPermissionStatus(),
       Native.getPrivacyZones() as Promise<PrivacyZone[]>,
-      Native.getLocations({ limit: 1, order: 0 }) as Promise<Location[]>,
-      Native.getLocations({ limit: 1, order: 1 }) as Promise<Location[]>,
+      Native.getLocations({ limit: 1, order: 0 }).then((l: any[]) => l.map(Tracelet.normalizeLocation)) as Promise<Location[]>,
+      Native.getLocations({ limit: 1, order: 1 }).then((l: any[]) => l.map(Tracelet.normalizeLocation)) as Promise<Location[]>,
       Native.isDatabaseEncrypted(),
     ]);
 
@@ -591,12 +644,21 @@ export class Tracelet {
 
   private static watchSubscriptions = new Map<number, Subscription>();
 
+  private static normalizeLocation(payload: any): Location {
+    if (!payload) return payload;
+    return {
+      ...payload,
+      isMoving: payload.isMoving ?? payload.is_moving ?? false,
+      isMock: payload.isMock ?? payload.mock ?? false,
+    } as Location;
+  }
+
   static onLocation(cb: (location: Location) => void): Subscription {
-    return addEventListener(TraceletEvents.location, cb);
+    return addEventListener(TraceletEvents.location, (payload: any) => cb(Tracelet.normalizeLocation(payload)));
   }
 
   static onMotionChange(cb: (location: Location) => void): Subscription {
-    return addEventListener(TraceletEvents.motionChange, cb);
+    return addEventListener(TraceletEvents.motionChange, (payload: any) => cb(Tracelet.normalizeLocation(payload)));
   }
 
   static onSpeedMotionChange(cb: (event: SpeedMotionEvent) => void): Subscription {

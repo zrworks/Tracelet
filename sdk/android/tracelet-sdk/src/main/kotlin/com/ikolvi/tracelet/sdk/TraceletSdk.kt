@@ -224,6 +224,7 @@ class TraceletSdk private constructor(private val context: Context) {
         if (::locationEngine.isInitialized) locationEngine.events = sender
         if (::motionDetector.isInitialized) motionDetector.events = sender
         if (::speedMotionManager.isInitialized) speedMotionManager.events = sender
+        if (::smartMotionCoordinator.isInitialized) smartMotionCoordinator.events = sender
         
         // Propagate to active background boot trackers so the UI gets events
         // after being swiped away and reopened.

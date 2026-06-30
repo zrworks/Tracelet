@@ -83,6 +83,27 @@
       "program": "lib/main_test_server.dart",
       "cwd": "${workspaceFolder}/example",
       "flutterMode": "release"
+    },
+    {
+      "name": "RN Example (Run Android)",
+      "cwd": "${workspaceFolder}/packages/tracelet_react_native/example",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run android"
+    },
+    {
+      "name": "RN Example (Run iOS)",
+      "cwd": "${workspaceFolder}/packages/tracelet_react_native/example",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run ios"
+    },
+    {
+      "name": "RN Example (Start Metro)",
+      "cwd": "${workspaceFolder}/packages/tracelet_react_native/example",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm start"
     }
   ]
 }

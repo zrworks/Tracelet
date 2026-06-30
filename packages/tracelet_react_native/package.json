@@ -1,0 +1,112 @@
+{
+  "name": "@ikolvi/tracelet",
+  "version": "1.0.0-alpha.1",
+  "description": "Production-grade background geolocation for React Native. Battery-conscious motion detection, geofencing (circular + polygon), SQLite persistence, HTTP sync with delta encoding, crash & fall detection, driving telematics, and enterprise audit/privacy features — powered by a shared Rust core.",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "react-native": "src/index.tsx",
+  "source": "src/index.tsx",
+  "license": "Apache-2.0",
+  "author": "Kiran Benny Joseph <connect@dowonder.in> (https://github.com/GalacticTItan)",
+  "homepage": "https://tracelet.ikolvi.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ikolvi/Tracelet.git",
+    "directory": "packages/tracelet_react_native"
+  },
+  "bugs": {
+    "url": "https://github.com/Ikolvi/Tracelet/issues"
+  },
+  "keywords": [
+    "react-native",
+    "background-geolocation",
+    "geolocation",
+    "location",
+    "geofencing",
+    "polygon-geofence",
+    "tracking",
+    "gps",
+    "battery",
+    "telematics",
+    "crash-detection",
+    "tracelet",
+    "turbomodule"
+  ],
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "react-native.config.js",
+    "*.podspec",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
+  "scripts": {
+    "build": "bob build",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "clean": "del-cli lib",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.73.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@react-native/eslint-config": "^0.86.0",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.17",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "del-cli": "^7.0.0",
+    "eslint": "^9.39.4",
+    "jest": "^30.4.2",
+    "react": "^19.2.7",
+    "react-native": "^0.86.0",
+    "react-native-builder-bob": "^0.43.0",
+    "ts-jest": "^29.4.11",
+    "typescript": "^6.0.3"
+  },
+  "codegenConfig": {
+    "name": "TraceletReactNativeSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.ikolvi.tracelet.reactnative"
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "commonjs",
+        {
+          "copyFlow": false
+        }
+      ],
+      [
+        "module",
+        {
+          "copyFlow": false
+        }
+      ],
+      "typescript"
+    ]
+  }
+}

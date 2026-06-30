@@ -1,0 +1,66 @@
+buildscript {
+  ext.getExtOrDefault = { name, fallback ->
+    rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+  }
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.9.2"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '2.3.10')}"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "com.facebook.react"
+
+def getExtOrIntegerDefault(name, fallback) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+}
+
+android {
+  namespace "com.ikolvi.tracelet.reactnative"
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion", 36)
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion", 26)
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion", 36)
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs += "src/main/java"
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+def tracelet_sdk_version = getExtOrDefault("traceletSdkVersion", "3.5.1")
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  // Framework-agnostic native SDK (bundles the shared Rust core for all ABIs).
+  api "com.ikolvi:tracelet-sdk:${tracelet_sdk_version}"
+  // Offline persistence + HTTP sync engine. The core SDK auto-discovers
+  // `com.ikolvi.tracelet.sdk.sync.NativeSyncProvider` from this artifact via
+  // reflection (checkSyncProvider), enabling Tracelet.sync() and auto-sync.
+  // iOS ships the equivalent engine inside the TraceletSDK pod, so no extra
+  // dependency is needed there. (No separate RN sync package — unlike Flutter,
+  // RN has no federated-plugin endorsement mechanism.)
+  api "com.ikolvi:tracelet-sync-sdk:${tracelet_sdk_version}"
+}

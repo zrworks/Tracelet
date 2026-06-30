@@ -633,8 +633,13 @@ public final class TraceletSdk {
             configManager.getCrashModelLicenseKey() ?? "", configManager.getCrashModelSha256() ?? "",
             configManager.getCrashModelThreshold(),
         ]
-        configManager.setConfig(config)
-        
+        // Snapshot config before applying so we can detect which tracking-relevant
+        // keys changed and rebuild the WHOLE active pipeline (location + motion
+        // detector + speed manager + smart coordinator) — not just the location
+        // engine, which previously left motion sensors running on stale params (#230).
+        let oldConfig = configManager.getConfig()
+        let merged = configManager.setConfig(config)
+
         if config["encryptDatabase"] as? Bool == true {
             let key = config["encryptionKey"] as? String ?? ""
             rustDatabase?.setEncryptionKey(key: key)
@@ -642,27 +647,64 @@ public final class TraceletSdk {
             rustDatabase?.setEncryptionKey(key: "")
         }
 
+        let locationKeys = [
+            "desiredAccuracy", "distanceFilter", "locationUpdateInterval",
+            "fastestLocationUpdateInterval", "stationaryRadius", "deferTime",
+            "disableElasticity", "elasticityMultiplier",
+        ]
+        let motionKeys = [
+            "motionDetectionMode", "shakeThreshold", "stillThreshold", "stillSampleCount",
+            "stopTimeout", "motionTriggerDelay", "stopDetectionDelay", "disableStopDetection",
+            "stopOnStationary", "triggerActivities", "minimumActivityRecognitionConfidence",
+            "activityRecognitionInterval", "disableMotionActivityUpdates",
+            "speedMovingThreshold", "speedStationaryDelay", "speedWakeConfirmCount",
+            "stationaryTrackingMode", "stationaryPeriodicInterval", "stationaryPeriodicAccuracy",
+        ]
+        let needsRestart = (locationKeys + motionKeys).contains { key in
+            !valuesEqual(oldConfig[key], merged[key])
+        }
+
         if stateManager.enabled {
-            if stateManager.trackingMode == .periodic {
-                // Periodic mode — restart periodic tracking.
-                locationEngine.stopPeriodic()
-                locationEngine.startPeriodic()
-                periodicRefreshScheduler.stop()
-                periodicRefreshScheduler.start(
-                    interval: TimeInterval(configManager.getPeriodicLocationInterval())
-                )
-            } else {
-                locationEngine.stop()
-                locationEngine.start()
+            if needsRestart {
+                logger.info("setConfig: tracking-relevant config changed — restarting active pipeline")
+                // Preserve the active tracking mode and motion state across the
+                // clean stop/start so the device doesn't silently revert to a
+                // stationary continuous default.
+                let currentMode = stateManager.trackingMode
+                let wasMoving = stateManager.isMoving
+
+                _ = stop()
+
+                stateManager.enabled = true
+                stateManager.trackingMode = currentMode
+                stateManager.isMoving = wasMoving
+
+                // Rebuild the Rust processor so distanceFilter/elasticity/etc.
+                // changes take effect on the very first fix after restart.
+                locationEngine.rebuildProcessor()
+
+                switch currentMode {
+                case .periodic:
+                    _ = startPeriodic()
+                case .geofences:
+                    _ = startGeofences()
+                default:
+                    _ = start(isResume: true)
+                }
             }
 
-            // Toggle preventSuspend if it changed mid-session.
+            // Toggle preventSuspend if it changed mid-session. (start()/stop()
+            // also manage it, but ensure the final state matches the new config.)
             let nowPreventing = configManager.getPreventSuspend()
             if nowPreventing && !wasPreventing {
                 preventSuspendManager.start()
             } else if !nowPreventing && wasPreventing {
                 preventSuspendManager.stop()
             }
+        } else if needsRestart {
+            // Not actively tracking — still rebuild the processor so the next
+            // start() picks up the new location config without a stale cache.
+            locationEngine.rebuildProcessor()
         }
 
         let newBehavior: [AnyHashable] = [
@@ -679,6 +721,18 @@ public final class TraceletSdk {
         syncConfigToRustFlat()
         checkSyncProvider()
         return stateManager.toMap(configManager.getConfig())
+    }
+
+    /// Loose equality for two heterogeneous config values, used to detect which
+    /// keys changed between an old and new config snapshot. Config values are
+    /// primitives (Int/Double/Bool/String) sourced from the same dictionary
+    /// shape, so a stable string description is a reliable change signal.
+    private func valuesEqual(_ a: Any?, _ b: Any?) -> Bool {
+        switch (a, b) {
+        case (nil, nil): return true
+        case (nil, _), (_, nil): return false
+        default: return String(describing: a!) == String(describing: b!)
+        }
     }
 
     private func checkSyncProvider() {

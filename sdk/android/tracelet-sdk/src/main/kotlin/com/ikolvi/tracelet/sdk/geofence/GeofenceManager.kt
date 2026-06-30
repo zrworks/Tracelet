@@ -6,10 +6,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
+import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.ikolvi.tracelet.sdk.ConfigManager
 import com.ikolvi.tracelet.sdk.TraceletEventSender
+import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import uniffi.tracelet_core.GeofenceEvaluator
 import uniffi.tracelet_core.CoreGeofence
 import uniffi.tracelet_core.Coordinate
@@ -39,6 +42,13 @@ class GeofenceManager(
     private val events: TraceletEventSender,
     private val rustDatabase: uniffi.tracelet_core.DatabaseManager? = null,
     private val geofencingClient: TraceletGeofencingClient = TraceletServices.getInstance(context).getGeofencingClient(context),
+    /**
+     * Provides the most recent GPS fix so geofence transition payloads can be
+     * enriched with real coordinate telemetry (accuracy/speed/heading/altitude)
+     * instead of hardcoded zeros (#231). Wired from [TraceletSdk] to the active
+     * [com.ikolvi.tracelet.sdk.location.LocationEngine].
+     */
+    private val lastLocationProvider: (() -> Location?)? = null,
 ) {
     var onGeofenceEvent: ((Map<String, Any?>) -> Unit)? = null
     companion object {
@@ -290,14 +300,8 @@ class GeofenceManager(
                 "uuid" to java.util.UUID.randomUUID().toString(),
                 "event" to "geofence",
                 "timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()),
-                "coords" to mapOf(
-                    "latitude" to latitude,
-                    "longitude" to longitude,
-                    "accuracy" to 0.0,
-                    "speed" to 0.0,
-                    "heading" to 0.0,
-                    "altitude" to 0.0
-                ),
+                "coords" to buildCoords(latitude, longitude),
+                "battery" to currentBattery(),
                 "geofence" to mapOf(
                     "identifier" to identifier,
                     "action" to action,
@@ -360,14 +364,8 @@ class GeofenceManager(
                 "uuid" to java.util.UUID.randomUUID().toString(),
                 "event" to "geofence",
                 "timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()),
-                "coords" to mapOf(
-                    "latitude" to latitude,
-                    "longitude" to longitude,
-                    "accuracy" to 0.0,
-                    "speed" to 0.0,
-                    "heading" to 0.0,
-                    "altitude" to 0.0
-                ),
+                "coords" to buildCoords(latitude, longitude),
+                "battery" to currentBattery(),
                 "geofence" to mapOf(
                     "identifier" to t.identifier,
                     "action" to t.action,
@@ -485,6 +483,48 @@ class GeofenceManager(
     // =========================================================================
     // Private methods
     // =========================================================================
+
+    /**
+     * Builds the `coords` payload for a geofence transition event.
+     *
+     * The geofence boundary latitude/longitude come from the triggering event,
+     * but the remaining telemetry (accuracy, speed, heading, altitude and their
+     * per-field accuracies) is sourced from the most recent GPS fix when
+     * available. Previously these were hardcoded to `0.0`, leaving backends
+     * blind to speed/heading/accuracy at the crossing (#231).
+     */
+    private fun buildCoords(latitude: Double, longitude: Double): Map<String, Any?> {
+        val last = lastLocationProvider?.invoke()
+            ?: return mapOf(
+                "latitude" to latitude,
+                "longitude" to longitude,
+                "accuracy" to 0.0,
+                "speed" to 0.0,
+                "heading" to 0.0,
+                "altitude" to 0.0,
+            )
+
+        return buildMap {
+            put("latitude", latitude)
+            put("longitude", longitude)
+            put("accuracy", last.accuracy.toDouble())
+            put("speed", if (last.hasSpeed()) last.speed.toDouble() else 0.0)
+            put("heading", if (last.hasBearing()) last.bearing.toDouble() else 0.0)
+            put("altitude", if (last.hasAltitude()) last.altitude else 0.0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                put("speedAccuracy", if (last.hasSpeedAccuracy()) last.speedAccuracyMetersPerSecond.toDouble() else -1.0)
+                put("headingAccuracy", if (last.hasBearingAccuracy()) last.bearingAccuracyDegrees.toDouble() else -1.0)
+                put("altitudeAccuracy", if (last.hasVerticalAccuracy()) last.verticalAccuracyMeters.toDouble() else -1.0)
+            } else {
+                put("speedAccuracy", -1.0)
+                put("headingAccuracy", -1.0)
+                put("altitudeAccuracy", -1.0)
+            }
+        }
+    }
+
+    /** Current battery snapshot for geofence transition payloads (#231). */
+    private fun currentBattery(): Map<String, Any?> = BatteryUtils.getBatteryInfo(context)
 
     private fun registerGeofence(geofenceMap: Map<String, Any?>): Boolean {
         if (!hasPermission()) return false

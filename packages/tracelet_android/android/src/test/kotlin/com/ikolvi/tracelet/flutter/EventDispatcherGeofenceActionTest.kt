@@ -95,4 +95,44 @@ internal class EventDispatcherGeofenceActionTest {
         )
         assertEquals(TlGeofenceAction.ENTER, event.action)
     }
+
+    /**
+     * #231: the SDK now enriches the geofence payload with real coordinate
+     * metrics and a top-level `battery` map. Pin that both survive the mapping
+     * to the Pigeon [com.ikolvi.tracelet.TlGeofenceEvent] (the foreground path).
+     */
+    @Test
+    fun structuredPayload_enrichedCoordsAndBattery_surviveMapping() {
+        val enriched = mapOf<String, Any?>(
+            "uuid" to "abc-231",
+            "event" to "geofence",
+            "timestamp" to "2026-06-30T00:00:00.000Z",
+            "coords" to mapOf(
+                "latitude" to 12.345,
+                "longitude" to 67.890,
+                "accuracy" to 25.0,
+                "speed" to 3.5,
+                "heading" to 90.0,
+                "altitude" to 100.0,
+            ),
+            "battery" to mapOf(
+                "level" to 0.42,
+                "is_charging" to true,
+            ),
+            "geofence" to mapOf(
+                "identifier" to "office",
+                "action" to "ENTER",
+                "extras" to mapOf("tier" to "gold"),
+            ),
+        )
+
+        val event = EventDispatcher().buildGeofenceEvent(enriched)
+
+        assertEquals(25.0, event.location.coords.accuracy, "accuracy must survive (was 0.0)")
+        assertEquals(3.5, event.location.coords.speed, "speed must survive (was 0.0)")
+        assertEquals(90.0, event.location.coords.heading, "heading must survive (was 0.0)")
+        assertEquals(100.0, event.location.coords.altitude, "altitude must survive (was 0.0)")
+        assertEquals(0.42, event.location.battery.level, "battery level must survive (was -1.0)")
+        assertEquals(true, event.location.battery.isCharging, "battery isCharging must survive")
+    }
 }

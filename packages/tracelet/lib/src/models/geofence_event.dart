@@ -47,11 +47,15 @@ class GeofenceEvent {
     }
 
     // Location: the flat shape wraps the location under 'location'; the
-    // structured payload exposes the coords at the top-level 'coords'.
+    // structured payload (headless/killed-state) exposes the coords at the
+    // top-level 'coords' and the battery at the top-level 'battery' (#231).
     final locationMap =
         safeMap(map['location']) ??
         (map['coords'] != null
-            ? <String, Object?>{'coords': map['coords']}
+            ? <String, Object?>{
+                'coords': map['coords'],
+                if (map['battery'] != null) 'battery': map['battery'],
+              }
             : const <String, Object?>{});
     final extrasRaw = source['extras'];
 

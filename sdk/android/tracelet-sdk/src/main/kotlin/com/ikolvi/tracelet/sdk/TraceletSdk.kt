@@ -501,7 +501,10 @@ class TraceletSdk private constructor(private val context: Context) {
 
         // Geofencing
         geofenceManager = GeofenceManager(
-            context, configManager, eventSender, rustDatabase
+            context, configManager, eventSender, rustDatabase,
+            lastLocationProvider = {
+                if (::locationEngine.isInitialized) locationEngine.getLastGpsLocation() else null
+            },
         ).apply {
             onGeofenceEvent = { eventMap ->
                 insertLocation(eventMap)
@@ -1032,17 +1035,55 @@ class TraceletSdk private constructor(private val context: Context) {
             rustDatabase?.setEncryptionKey("")
         }
 
+        // Keys whose changes require the active native tracking pipeline to be
+        // rebuilt with the new values. Previously only a handful of location
+        // keys were watched and only locationEngine was restarted — motion
+        // detector / speed manager / smart coordinator kept running on stale
+        // parameters until the app was force-killed (#230).
+        val locationKeys = listOf(
+            "desiredAccuracy", "distanceFilter", "locationUpdateInterval",
+            "fastestLocationUpdateInterval", "stationaryRadius", "deferTime",
+            "disableElasticity", "elasticityMultiplier",
+        )
+        val motionKeys = listOf(
+            "motionDetectionMode", "shakeThreshold", "stillThreshold", "stillSampleCount",
+            "stopTimeout", "motionTriggerDelay", "stopDetectionDelay", "disableStopDetection",
+            "stopOnStationary", "triggerActivities", "minimumActivityRecognitionConfidence",
+            "activityRecognitionInterval", "disableMotionActivityUpdates",
+            "speedMovingThreshold", "speedStationaryDelay", "speedWakeConfirmCount",
+            "stationaryTrackingMode", "stationaryPeriodicInterval", "stationaryPeriodicAccuracy",
+        )
+        val needsRestart = (locationKeys + motionKeys).any { key -> oldConfig[key] != merged[key] }
+
         if (stateManager.enabled) {
-            val locationKeys = listOf(
-                "desiredAccuracy", "distanceFilter", "locationUpdateInterval",
-                "fastestLocationUpdateInterval", "stationaryRadius", "deferTime",
-                "disableElasticity", "elasticityMultiplier",
-            )
-            val needsRestart = locationKeys.any { key -> oldConfig[key] != merged[key] }
             if (needsRestart) {
-                locationEngine.stop()
-                locationEngine.start()
+                logger.info("setConfig: tracking-relevant config changed — restarting active pipeline")
+                // Preserve the active tracking mode and motion state across the
+                // clean stop/start so the device doesn't silently revert to a
+                // stationary continuous default.
+                val currentMode = stateManager.trackingMode
+                val wasMoving = stateManager.isMoving
+
+                stop()
+
+                stateManager.enabled = true
+                stateManager.trackingMode = currentMode
+                stateManager.isMoving = wasMoving
+
+                // Rebuild the Rust processor so distanceFilter/elasticity/etc.
+                // changes take effect on the very first fix after restart (#157).
+                if (::locationEngine.isInitialized) locationEngine.rebuildProcessor()
+
+                when (currentMode) {
+                    TrackingMode.CONTINUOUS -> start(isResume = true)
+                    TrackingMode.PERIODIC -> startPeriodic()
+                    TrackingMode.GEOFENCES -> startGeofences()
+                }
             }
+        } else if (needsRestart && ::locationEngine.isInitialized) {
+            // Not actively tracking — still rebuild the processor so the next
+            // start() picks up the new location config without a stale cache.
+            locationEngine.rebuildProcessor()
         }
 
         // Behavior engines (telematics / transport / crash-fall + ML model) are

@@ -1160,6 +1160,7 @@ jobs:
     if: |
       always() &&
       !inputs.dry_run &&
+      !(inputs.skip_native_sdks && inputs.skip_flutter) &&
       needs.validate.result == 'success' &&
       (needs.publish-flutter.result == 'success' || needs.publish-flutter.result == 'skipped')
     runs-on: ubuntu-latest

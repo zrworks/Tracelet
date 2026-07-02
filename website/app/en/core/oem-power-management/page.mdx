@@ -88,3 +88,57 @@ if (health['isAggressiveOem'] == true) {
 <Callout type="warning">
   **UX Best Practice:** Never call `showPowerManager()` randomly or immediately upon app launch. Always precede it with a highly contextual Flutter UI dialog. If the user is suddenly teleported to a scary "Battery Optimization" system screen without context, they will panic and uninstall your app.
 </Callout>
+
+---
+
+## Real-time Driver / Fleet Tracking Reliability
+
+The most common question from teams building taxi, delivery, and fleet apps is: *"Can Tracelet keep tracking all day on Xiaomi, Poco, Infinix, Tecno, and other aggressive OEMs?"* Here's the honest, practical answer.
+
+### What Tracelet handles automatically
+
+These mitigations are applied for you — no configuration required:
+
+- **Foreground service with `FOREGROUND_SERVICE_TYPE_LOCATION`** — the highest background priority Android grants.
+- **`START_STICKY`** — the OS recreates the service after memory-pressure kills.
+- **OEM-safe wakelocks** — on Huawei, a wakelock tag whitelisted by PowerGenie so the process isn't killed for holding an "unknown" wakelock.
+- **Boot-receiver wakelock** — a short wakelock during `BOOT_COMPLETED` so the process survives until the foreground service is established after reboot.
+- **Consumer ProGuard/R8 rules** — prevents release builds from stripping services, receivers, and Room entities.
+
+### The unavoidable manual step
+
+<Callout type="error">
+  **No background-location library can override an OEM kill without the user whitelisting the app.** MIUI, EMUI, ColorOS, HiOS/XOS and similar ROMs deliberately ignore standard Android rules. On these devices, the **battery-optimization exemption + autostart are hard requirements** for all-day reliability — treat them as required onboarding steps, not optional extras.
+</Callout>
+
+Gate the start of a driver's shift on the exemption:
+
+```dart
+final ignoring = await tl.Tracelet.isIgnoringBatteryOptimizations();
+final health = await tl.Tracelet.getSettingsHealth();
+
+if (health['isAggressiveOem'] == true && !ignoring) {
+  // Walk the user through showPowerManager() + battery-optimization exemption
+  // BEFORE letting them go "on shift".
+}
+```
+
+### Detecting when the OEM has throttled or killed tracking
+
+- **`Tracelet.getHealth()`** — one call returns tracking state, provider state, permission/authorization, power-save mode, battery-optimization exemption, and pending unsynced count, with auto-detected warnings. Perfect for a "Device Health" dashboard.
+- **`onProviderChange` events** — fire when location services / GPS state changes.
+- **Backend staleness watchdog** — every fix is timestamped and persisted, so compare each device's *last fix time* against its expected cadence on your server and flag a device whose stream went silent (the classic signature of an OEM kill) within minutes.
+
+### Recommended setup checklist for all-day tracking
+
+1. Request **`Always` / background location** permission with a clear rationale flow.
+2. Run a **foreground service with an ongoing notification** — non-negotiable for continuous tracking.
+3. Set `stopOnTerminate: false` and `startOnBoot: true` so tracking survives app close and reboot.
+4. During onboarding, call `getSettingsHealth()`; if `isAggressiveOem` is true, walk the user through `showPowerManager()` **and** the battery-optimization exemption. Gate shift-start on `isIgnoringBatteryOptimizations()`.
+5. Use **HTTP Sync (batched uploads)** so brief network gaps never lose data.
+6. Add a **backend staleness watchdog** so operations sees a device go dark quickly.
+7. Ship **`tracelet_doctor`** (or `getHealth()`) in a hidden support screen so field issues are diagnosable on real devices.
+
+<Callout type="info">
+  Because background reliability is device- and ROM-version specific, the most trustworthy "case study" is running the example app + `tracelet_doctor` on your actual target device mix for a day — that reflects real-world behavior far better than any blanket claim.
+</Callout>

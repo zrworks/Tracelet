@@ -128,6 +128,41 @@ Every `Location` carries a real `coords.accuracy` in metres and a `locationSourc
 
 If you only want GPS-quality data, filter on your side by `locationSource == "gps"` or `accuracy <= 50`. If the user granted only **approximate/coarse** location (or iOS "Precise: Off"), every fix is approximate by OS policy — check `accuracyAuthorization` / `reducedAccuracy`.
 
+### Why does `getCurrentPosition()` fail with `LOCATION_FAILURE` on some phones but work on others?
+
+`PlatformException(LOCATION_FAILURE, "Failed to obtain location")` means the **one-shot request could not obtain a fresh fix within the `timeout` and had no cached location to fall back to**. It is not a bug in your code — it's the device's GPS/fused stack failing to deliver a fix in time. A high-accuracy one-shot asks for a *fresh* fix, and whether that succeeds within (e.g.) 30 s depends heavily on the device and environment:
+
+1. **"Google Location Accuracy" is OFF** — *Settings → Location → Location Services → Google Location Accuracy* (Wi-Fi/Bluetooth scanning). When on, the fused provider returns a Wi-Fi/cell fix indoors almost instantly; when off, the phone must wait for a raw GPS fix that never arrives indoors. **This is the #1 cause of "works on my phone, not theirs."**
+2. **Indoors / underground / no sky view** — a cold GPS fix needs sky visibility, and budget chipsets can exceed 30 s for a cold first fix (TTFF) while flagships get assisted-GPS fixes in seconds.
+3. **GPS provider disabled at the OS level** (network-only location) — a pure high-accuracy request has nothing to lock onto.
+4. **Google Play Services missing/outdated** (some Huawei/AOSP builds) — the fused client can't run.
+5. **Sample count** — with `samples: 3` Tracelet must collect three fixes; in marginal signal it may get one and time out before the rest. `samples: 1` is more forgiving indoors.
+
+**How to make it reliable — fall back to the last known location:**
+
+```dart
+Future<tl.Location?> bestPosition() async {
+  try {
+    return await tl.Tracelet.getCurrentPosition(
+      desiredAccuracy: tl.DesiredAccuracy.high,
+      timeout: 60,        // cold GPS fixes on budget phones can exceed 30 s
+      samples: 1,         // more forgiving indoors than 3
+      maximumAge: 30000,  // accept a <30 s-old cached fix instantly
+    );
+  } on PlatformException catch (e) {
+    if (e.code == 'LOCATION_FAILURE') {
+      // Weak/indoor signal — fall back to the cached fix before giving up.
+      return await tl.Tracelet.getLastKnownLocation();
+    }
+    rethrow;
+  }
+}
+```
+
+- `maximumAge` returns a recent cached fix immediately without waking the GPS — ideal for attendance/check-in where a 30 s-old position is fine.
+- `getLastKnownLocation()` never activates a provider and returns whatever the fused cache holds, so you only show a "weak signal" message when there is genuinely nothing available.
+- Keep `timeout` generous (45–60 s) for the first fix after launch, and prompt users to enable **Google Location Accuracy** if indoor fixes keep failing (detect provider state via `getProviderState()` / `getHealth()`).
+
 ---
 
 ## Background & Termination

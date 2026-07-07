@@ -1,5 +1,6 @@
 import { Head } from 'nextra/components'
 import { GoogleAnalytics } from '@next/third-parties/google'
+import Script from 'next/script'
 import './global.css'
 import { Metadata } from 'next'
 
@@ -59,6 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           requests to load first-party from ikolvi.com, making measurement
           resilient to ad/tracker blockers that target googletagmanager.com. */}
       <GoogleAnalytics gaId="G-42X97WN4M8" />
+      {/* Cloudflare Web Analytics */}
+      <Script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "e6ddde5c65384b81b11e1509afa6dda7"}' />
     </html>
   )
 }

@@ -963,9 +963,13 @@ class TraceletSdk private constructor(private val context: Context) {
 
         locationEngine.stop()
         motionDetector.stop()
-        if (configManager.isForegroundServiceEnabled()) {
-            LocationService.stop(context)
-        }
+        // NOTE: do NOT tear down the foreground service up-front here. When the
+        // foreground-service periodic strategy is selected we want it to keep
+        // running; stopping it and immediately restarting it below races the
+        // ACTION_STOP / ACTION_START service commands — on a fresh start the
+        // ACTION_STOP handler's stopSelf() can win and destroy the service right
+        // after ACTION_START promoted it, leaving NO foreground service at all
+        // (#237). The non-foreground branches below stop it explicitly instead.
 
         stateManager.enabled = true
         stateManager.trackingMode = TrackingMode.PERIODIC
@@ -980,10 +984,17 @@ class TraceletSdk private constructor(private val context: Context) {
 
         if (useForeground) {
             if (configManager.isForegroundServiceEnabled()) {
+                // Idempotent: re-delivers ACTION_START; if the service is already
+                // running (e.g. switching from continuous mode) it stays foreground.
                 LocationService.start(context)
             }
             locationEngine.startPeriodic()
         } else if (useExactAlarms) {
+            // No foreground service in this strategy — tear down any left over
+            // from a previous continuous/foreground-periodic session.
+            if (configManager.isForegroundServiceEnabled() && LocationService.isServiceRunning()) {
+                LocationService.stop(context)
+            }
             if (!PeriodicLocationWorker.canScheduleExactAlarms(context)) {
                 logger.warning(
                     "SCHEDULE_EXACT_ALARM not granted — timing will be approximate. " +
@@ -997,6 +1008,11 @@ class TraceletSdk private constructor(private val context: Context) {
             PeriodicLocationWorker.scheduleOneTime(context)
             PeriodicLocationWorker.scheduleExactAlarm(context, interval)
         } else {
+            // WorkManager strategy — no foreground service; tear down any left
+            // over from a previous continuous/foreground-periodic session.
+            if (configManager.isForegroundServiceEnabled() && LocationService.isServiceRunning()) {
+                LocationService.stop(context)
+            }
             PeriodicLocationWorker.schedule(context, interval)
             PeriodicLocationWorker.scheduleOneTime(context)
         }

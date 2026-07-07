@@ -16,6 +16,7 @@ import 'package:tracelet_example/issues/issue_213_card.dart';
 import 'package:tracelet_example/issues/issue_214_card.dart';
 import 'package:tracelet_example/issues/issue_230_card.dart';
 import 'package:tracelet_example/issues/issue_231_card.dart';
+import 'package:tracelet_example/issues/issue_237_card.dart';
 
 @pragma('vm:entry-point')
 void headlessSyncBodyBuilder136(HeadlessEvent event) {
@@ -1736,6 +1737,7 @@ class _RecentIssuesTabState extends State<RecentIssuesTab> {
                     ),
                   ],
                 ),
+                const Issue237Card(),
                 const Issue231Card(),
                 const Issue230Card(),
                 const Issue185Card(),

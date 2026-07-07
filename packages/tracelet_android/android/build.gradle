@@ -30,7 +30,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // kotlinOptions replaced by tasks.withType at the bottom for Built-in Kotlin support
+    // Kotlin's jvmTarget is configured via the kotlin { compilerOptions } block below.
 
 
 
@@ -108,8 +108,13 @@ android {
     }
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        jvmTarget = "17"
+// Set the Kotlin bytecode target with the modern compilerOptions DSL. The legacy
+// `kotlinOptions { }` block is deliberately avoided so that pana and Flutter's
+// built-in Kotlin scanners don't flag this plugin as using legacy Kotlin config.
+// The `kotlin` extension is available whether KGP is applied by built-in Kotlin
+// (modern Flutter) or by the conditional `apply plugin` above (older Flutter).
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }

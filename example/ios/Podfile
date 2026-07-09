@@ -35,7 +35,12 @@ target 'Runner' do
   # LOCAL DEV OVERRIDE: use the in-repo TraceletSDK (v3.5.6) instead of the
   # CocoaPods trunk release, which is not published yet. Uses local source
   # files + the prebuilt sdk/rust-core/out/TraceletCore.xcframework.
-  pod 'TraceletSDK', :path => '../..'
+  # Guarded on the podspec's existence: CI (release.yml "Bundle iOS SDK")
+  # deletes TraceletSDK.podspec so the example links the bundled plugin
+  # instead — the override must not apply there.
+  if File.exist?(File.expand_path('../../TraceletSDK.podspec', __dir__))
+    pod 'TraceletSDK', :path => '../..'
+  end
 
   target 'RunnerTests' do
     inherit! :search_paths

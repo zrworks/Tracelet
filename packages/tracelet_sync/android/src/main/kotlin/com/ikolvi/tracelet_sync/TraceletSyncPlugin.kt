@@ -163,13 +163,13 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
             }
             if (customBody != NO_SYNC_BODY_BUILDER_SENTINEL) {
                 return kotlinx.coroutines.runBlocking {
-                    val success = executeFallbackHttpSync(config, customBody, interceptor)
-                    sdk.logger.debug("executeFallbackHttpSync success: $success")
-                    if (success) {
+                    val result = executeFallbackHttpSync(config, customBody, interceptor)
+                    sdk.logger.debug("executeFallbackHttpSync result: ${result.success}, status: ${result.status}")
+                    if (result.success) {
                         sdk.getEventSender().sendHttp(mapOf(
                             "success" to true,
-                            "status" to 200,
-                            "responseText" to "Synced ${records.size} locations via custom body",
+                            "status" to result.status,
+                            "responseText" to result.responseText,
                             "isRetry" to false,
                             "retryCount" to 0
                         ))
@@ -177,8 +177,8 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                     } else {
                         sdk.getEventSender().sendHttp(mapOf(
                             "success" to false,
-                            "status" to 0,
-                            "responseText" to "Custom body sync failed",
+                            "status" to result.status,
+                            "responseText" to result.responseText,
                             "isRetry" to false,
                             "retryCount" to 0
                         ))
@@ -227,14 +227,19 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
         }
     }
 
+    data class FallbackSyncResult(val success: Boolean, val status: Int, val responseText: String)
+
     private suspend fun executeFallbackHttpSync(
         coreHttp: uniffi.tracelet_core.HttpConfig,
         customBody: String,
         interceptor: com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor?
-    ): Boolean {
+    ): FallbackSyncResult {
         var currentHeaders = coreHttp.headers
         val maxRetries = coreHttp.maxRetries.toInt()
         
+        var lastStatus = 0
+        var lastResponse = "Unknown error"
+
         for (attempt in 0..maxRetries) {
             try {
                 val url = java.net.URL(coreHttp.url)
@@ -261,10 +266,16 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                 }
 
                 val status = conn.responseCode
+                lastStatus = status
+                
+                val responseStream = if (status in 200..299) conn.inputStream else conn.errorStream
+                val responseText = responseStream?.bufferedReader()?.use { it.readText() } ?: ""
+                lastResponse = responseText
+
                 conn.disconnect()
                 
                 if (status in 200..299) {
-                    return true
+                    return FallbackSyncResult(true, status, responseText)
                 } else if (status == 401 && interceptor != null) {
                     if (interceptor.requestTokenRefresh()) {
                         val newConfig = sdk.rustEngineState?.getConfig()?.http
@@ -272,16 +283,23 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
                             currentHeaders = newConfig.headers
                         }
                         continue
+                    } else {
+                        return FallbackSyncResult(false, status, responseText)
                     }
+                } else if (status in 400..499 && status != 408 && status != 429) {
+                    // Client error, no point in retrying (except timeout/rate limits)
+                    return FallbackSyncResult(false, status, responseText)
                 }
             } catch (e: Exception) {
                 sdk.logger.error("HTTP Sync failed: ${e.message}")
+                lastResponse = e.message ?: "Unknown exception"
+                lastStatus = 0
             }
             if (attempt < maxRetries) {
                 kotlinx.coroutines.delay(1000L * (attempt + 1))
             }
         }
-        return false
+        return FallbackSyncResult(false, lastStatus, lastResponse)
     }
 }
 

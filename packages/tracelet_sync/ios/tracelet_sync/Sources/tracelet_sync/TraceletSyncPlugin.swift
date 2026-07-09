@@ -89,18 +89,29 @@ actor SyncCoordinator {
         }
     }
 
+struct FallbackSyncResult {
+    let success: Bool
+    let status: Int
+    let responseText: String
+}
+
     // `nonisolated` is required: this is awaited from a `Task` while
     // `syncBatchBlocking` blocks the actor's executor on a semaphore during the
     // auto-sync path. If it were actor-isolated, that Task could never enter the
     // (blocked) actor and the semaphore would never be signaled — a deadlock
     // that silently killed custom-body auto-sync on iOS. It touches no actor
     // state, so isolation is unnecessary.
-    nonisolated func executeFallbackHttpSync(coreHttp: HttpConfig, customBody: String, interceptor: DartSyncInterceptor?) async -> Bool {
+    nonisolated func executeFallbackHttpSync(coreHttp: HttpConfig, customBody: String, interceptor: DartSyncInterceptor?) async -> FallbackSyncResult {
         var currentHeaders = coreHttp.headers
         let maxRetries = Int(coreHttp.maxRetries)
         
+        var lastStatus = 0
+        var lastResponse = "Unknown error"
+        
         for attempt in 0...maxRetries {
-            guard let urlStr = coreHttp.url, let url = URL(string: urlStr) else { return false }
+            guard let urlStr = coreHttp.url, let url = URL(string: urlStr) else { 
+                return FallbackSyncResult(success: false, status: 0, responseText: "Invalid URL") 
+            }
             
             var request = URLRequest(url: url)
             request.httpMethod = coreHttp.method == 1 ? "PUT" : "POST"
@@ -114,28 +125,39 @@ actor SyncCoordinator {
             request.httpBody = customBody.data(using: .utf8)
             
             do {
-                let (_, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: request)
                 if let httpResponse = response as? HTTPURLResponse {
-                    if (200...299).contains(httpResponse.statusCode) {
-                        return true
-                    } else if httpResponse.statusCode == 401, let interceptor = interceptor {
+                    let status = httpResponse.statusCode
+                    lastStatus = status
+                    lastResponse = String(data: data, encoding: .utf8) ?? ""
+                    
+                    if (200...299).contains(status) {
+                        return FallbackSyncResult(success: true, status: status, responseText: lastResponse)
+                    } else if status == 401, let interceptor = interceptor {
                         if interceptor.requestTokenRefresh() {
                             if let newConfig = TraceletSdk.shared.rustEngineState?.getConfig().http {
                                 currentHeaders = newConfig.headers
                             }
                             continue
+                        } else {
+                            return FallbackSyncResult(success: false, status: status, responseText: lastResponse)
                         }
+                    } else if (400...499).contains(status) && status != 408 && status != 429 {
+                        // Client error, no point in retrying (except timeout/rate limits)
+                        return FallbackSyncResult(success: false, status: status, responseText: lastResponse)
                     }
                 }
             } catch {
                 TraceletSdk.shared.logger.debug("Fallback sync error: \(error)")
+                lastResponse = error.localizedDescription
+                lastStatus = 0
             }
             
             if attempt < maxRetries {
                 try? await Task.sleep(nanoseconds: UInt64(1_000_000_000 * (attempt + 1)))
             }
         }
-        return false
+        return FallbackSyncResult(success: false, status: lastStatus, responseText: lastResponse)
     }
 }
 
@@ -211,34 +233,35 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
             if let body = customBody, body != traceletNoSyncBodyBuilderSentinel {
                 TraceletSdk.shared.logger.debug("customBody from interceptor (syncBatchBlocking): \(body)")
                 let sem = DispatchSemaphore(value: 0)
-                var fallbackSuccess = false
+                var fallbackResult: FallbackSyncResult? = nil
 
                 Task {
-                    fallbackSuccess = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: body, interceptor: interceptor)
+                    fallbackResult = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: body, interceptor: interceptor)
                     sem.signal()
                 }
 
                 sem.wait()
 
-                if fallbackSuccess {
+                if let result = fallbackResult, result.success {
                     // #214 dedup: the custom builder may have included the
                     // telematics we exposed; the POST succeeded, so mark exactly
                     // those synced so they aren't re-sent.
                     TraceletSdk.shared.markExposedTelematicsSynced()
                     TraceletSdk.shared.getEventSender().sendHttp([
                         "success": true,
-                        "status": 200,
-                        "responseText": "Synced \(records.count) locations via custom body",
+                        "status": result.status,
+                        "responseText": result.responseText,
                         "isRetry": false,
                         "retryCount": 0
                     ])
                     return UInt32(records.count)
                 } else {
-                    TraceletSdk.shared.logger.debug("Custom body sync failed in syncBatchBlocking")
+                    let result = fallbackResult ?? FallbackSyncResult(success: false, status: 0, responseText: "Unknown error")
+                    TraceletSdk.shared.logger.debug("Custom body sync failed with status \(result.status)")
                     TraceletSdk.shared.getEventSender().sendHttp([
                         "success": false,
-                        "status": 0,
-                        "responseText": "Custom body sync failed",
+                        "status": result.status,
+                        "responseText": result.responseText,
                         "isRetry": false,
                         "retryCount": 0
                     ])

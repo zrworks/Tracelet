@@ -233,7 +233,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
             if let body = customBody, body != traceletNoSyncBodyBuilderSentinel {
                 TraceletSdk.shared.logger.debug("customBody from interceptor (syncBatchBlocking): \(body)")
                 let sem = DispatchSemaphore(value: 0)
-                var fallbackResult: FallbackSyncResult? = nil
+                var fallbackResult: SyncCoordinator.FallbackSyncResult? = nil
 
                 Task {
                     fallbackResult = await coordinator.executeFallbackHttpSync(coreHttp: updatedHttp, customBody: body, interceptor: interceptor)
@@ -256,7 +256,7 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
                     ])
                     return UInt32(records.count)
                 } else {
-                    let result = fallbackResult ?? FallbackSyncResult(success: false, status: 0, responseText: "Unknown error")
+                    let result = fallbackResult ?? SyncCoordinator.FallbackSyncResult(success: false, status: 0, responseText: "Unknown error")
                     TraceletSdk.shared.logger.debug("Custom body sync failed with status \(result.status)")
                     TraceletSdk.shared.getEventSender().sendHttp([
                         "success": false,

@@ -229,7 +229,7 @@ class TraceletSyncSink(private val sdk: TraceletSdk) : LocationDataSink, Tracele
 
     data class FallbackSyncResult(val success: Boolean, val status: Int, val responseText: String)
 
-    private suspend fun executeFallbackHttpSync(
+    internal suspend fun executeFallbackHttpSync(
         coreHttp: uniffi.tracelet_core.HttpConfig,
         customBody: String,
         interceptor: com.ikolvi.tracelet.sdk.sync.DartSyncInterceptor?

@@ -1,0 +1,73 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '14.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  # LOCAL DEV OVERRIDE: use the in-repo TraceletSDK (v3.5.6) instead of the
+  # CocoaPods trunk release, which is not published yet. Uses local source
+  # files + the prebuilt sdk/rust-core/out/TraceletCore.xcframework.
+  pod 'TraceletSDK', :path => '../..'
+
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    # LOCAL DEV: the podspecs force -Wl,-ld_classic, a legacy linker flag
+    # removed after Xcode 15. On Xcode 16+/26 it breaks framework symbol
+    # resolution (TraceletCore undefined symbols). Strip it here.
+    target.build_configurations.each do |config|
+      ldflags = config.build_settings['OTHER_LDFLAGS']
+      if ldflags.is_a?(Array)
+        config.build_settings['OTHER_LDFLAGS'] = ldflags.reject { |f| f == '-ld_classic' || f == '-Wl,-ld_classic' }
+      elsif ldflags.is_a?(String)
+        config.build_settings['OTHER_LDFLAGS'] = ldflags.gsub('-Wl,-ld_classic', '').gsub('-ld_classic', '')
+      end
+    end
+  end
+  # Scrub the generated xcconfig files: (1) drop the removed -ld_classic flag,
+  # (2) add -undefined dynamic_lookup so the uniffi_tracelet_core_* symbols in
+  # the TraceletSDK bindings resolve at runtime against the embedded
+  # TraceletCore.framework (loaded via ExternalLibrary.open) instead of failing
+  # at link time.
+  Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xc|
+    text = File.read(xc)
+    new_text = text.gsub(' -Wl,-ld_classic', '').gsub(' -ld_classic', '')
+    new_text = new_text.gsub(/^(OTHER_LDFLAGS = .*)$/) do |line|
+      line.include?('-undefined dynamic_lookup') ? line : "#{line} -undefined dynamic_lookup"
+    end
+    File.write(xc, new_text) if new_text != text
+  end
+end

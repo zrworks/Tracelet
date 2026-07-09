@@ -1,7 +1,7 @@
 import os
 
-version_from = "3.5.4"
-version_to = "3.5.5"
+version_from = "3.5.5"
+version_to = "3.5.6"
 
 # 1. Bump version strings
 exact_replacements = [
@@ -84,12 +84,12 @@ generic_changelogs = [
 
 changelog_addition = f"""## {version_to}
 
-**FIX**: Ensure foreground service is properly started in periodic mode when configured ([#237](https://github.com/Ikolvi/Tracelet/issues/237)).
+**FIX**: Custom sync body 400 Bad Request HTTP errors now gracefully return fallback results instead of propagating fatal exceptions in native Sync engines ([#238](https://github.com/Ikolvi/Tracelet/issues/238)).
 
 """
 generic_addition = f"""## {version_to}
 
-**FIX**: Ensure foreground service is properly started in periodic mode when configured ([#237](https://github.com/Ikolvi/Tracelet/issues/237)).
+**FIX**: Custom sync body 400 Bad Request HTTP errors now gracefully return fallback results instead of propagating fatal exceptions in native Sync engines ([#238](https://github.com/Ikolvi/Tracelet/issues/238)).
 
 """
 

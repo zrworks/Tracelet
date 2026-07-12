@@ -37,6 +37,8 @@ Before writing any code, fetch these pages from the official website and use the
 - Configuration API reference: https://tracelet.ikolvi.com/en/config/configuration
 - Configuration profiles: https://tracelet.ikolvi.com/en/config/configuration-profiles
 - Sync engine, payload schema & backend contract: https://tracelet.ikolvi.com/en/core/tracelet-sync
+- Driving & safety (telematics, transport mode, crash detection): https://tracelet.ikolvi.com/en/core/driving-safety
+- Crash-model license (required only for AI crash detection): https://tracelet.ikolvi.com/en/get-license
 - Enterprise features: https://tracelet.ikolvi.com/en/config/enterprise-features
 - Latest published version: https://pub.dev/api/packages/tracelet (JSON — use \`latest.version\`)
 
@@ -66,6 +68,10 @@ Ask me the following questions (adapt or add follow-ups based on my answers), th
 10. Are your users on aggressive-battery-management Android OEMs (Xiaomi, Huawei, Oppo, Samsung)? Should the app guide them through whitelisting?
 11. Do you need reverse-geocoded street addresses attached to location points?
 12. Any special vehicle profile — high-speed (trains/aviation), maritime/long-haul (very sparse points), or dense-urban usage (GPS bounce)?
+13. Do you need driving & safety intelligence (all optional, all on-device)?
+   - Driving events — harsh braking, harsh acceleration, sharp turns, speeding (if yes: what speed limit, or should it come from your backend?). Typical for fleet safety and usage-based insurance.
+   - Transport-mode detection — knowing when the user switches between walking, running, cycling, and vehicle (e.g. "driver left the van, walking to the door").
+   - AI crash & fall detection — an on-device model that can trigger an SOS flow, with a user "I'm fine" cancel window. Note this one requires a free license key from https://licenses.ikolvi.com.
 
 ## Step 4 — Configure and integrate
 
@@ -77,7 +83,11 @@ Based on my answers and the fetched docs:
 4. Wire up the full initialization in the right place in my app: register the headless task before \`runApp\` with \`@pragma('vm:entry-point')\`, request notification/motion/location authorization in the correct order, check \`getSettingsHealth()\` and offer \`showPowerManager()\` on aggressive OEMs, configure the Android foreground service notification text to match my app's tone, set \`stopOnTerminate\`/\`startOnBoot\` from my answers, then call \`Tracelet.ready(config)\` and \`Tracelet.start()\` (or explain where to trigger start if tracking shouldn't begin at launch).
 5. If I have a backend, set up network sync exactly as the tracelet-sync docs describe: add the \`tracelet_sync\` package, configure \`TraceletSync.ready(SyncConfig(...))\` (url, method, headers, \`batchSync\`/\`maxBatchSize\`, \`autoSyncThreshold\`/\`autoSyncDelay\`/\`syncInterval\`, \`disableAutoSyncOnCellular\`, delta compression) from my answers. If my server has a fixed/legacy schema, map Tracelet's default nested payload to it with \`setSyncBodyBuilder\` (and register the headless variant). If my auth tokens expire, wire up \`setHeadersCallback\` plus the headless headers callback for 401 refresh. If I need business metadata per point, show me where to call \`setRouteContext()\`/\`clearRouteContext()\` in my app flow.
 6. If I asked for enterprise features, set up \`SecurityConfig\` (generate the encryption key with \`Tracelet.generateEncryptionKey()\` and store it in secure storage), privacy zones, or SSL pinning per the enterprise docs.
-7. Add event listeners (\`onLocation\`, \`onMotionChange\`, geofence events if enabled) with sensible placeholder handlers I can extend.
+7. If I asked for driving & safety features, configure them exactly as the driving-safety docs describe — enable only what I asked for (each engine is off by default and should stay off otherwise):
+   - Driving events: \`TelematicsConfig\` (e.g. \`enableDrivingEvents\`, \`speedLimitKmh\` from my answer) with a \`Tracelet.onDrivingEvent\` listener.
+   - Transport mode: \`ClassifierConfig\` with a \`Tracelet.onModeChange\` listener.
+   - Crash & fall detection: \`ImpactConfig\` with a \`Tracelet.onImpact\` listener wired to a placeholder SOS flow. This requires a license key: tell me to open https://licenses.ikolvi.com, sign in with Google, enter my app id (Android package / iOS bundle id), generate a free **dev** key, and paste it to you — then wire it into \`ImpactConfig\` per the get-license docs. Remind me that before shipping to the stores I must generate a **prod** key bound to my signing certificate. Do not invent or hardcode a fake key; leave a clearly marked placeholder if I don't provide one yet.
+8. Add event listeners (\`onLocation\`, \`onMotionChange\`, geofence events if enabled) with sensible placeholder handlers I can extend.
 
 ## Step 5 — Verify and summarize
 

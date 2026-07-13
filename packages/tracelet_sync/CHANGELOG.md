@@ -1,6 +1,6 @@
 ## 3.5.7
 
-**FIX**: `tracelet_sync`'s Android `build.gradle.kts` now builds on hosts without AGP's built-in Kotlin (AGP < 9, or AGP 9 with `android.builtInKotlin=false` — the Flutter 3.44 template default). Kotlin Gradle plugin is applied conditionally and `jvmTarget` is set via `tasks.withType(KotlinCompile)` instead of the top-level `kotlin { }` accessor, which was unresolved at script-compilation time on those hosts ([#239](https://github.com/Ikolvi/Tracelet/issues/239)).
+**FIX**: Build fails without AGP built-in Kotlin (AGP <9 / builtInKotlin=false) ([#239](https://github.com/Ikolvi/Tracelet/issues/239)).
 
 ## 3.5.6
 

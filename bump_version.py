@@ -1,7 +1,7 @@
 import os
 
-version_from = "3.5.5"
-version_to = "3.5.6"
+version_from = "3.5.6"
+version_to = "3.5.7"
 
 # 1. Bump version strings
 exact_replacements = [
@@ -84,12 +84,12 @@ generic_changelogs = [
 
 changelog_addition = f"""## {version_to}
 
-**FIX**: Custom sync body 400 Bad Request HTTP errors now gracefully return fallback results instead of propagating fatal exceptions in native Sync engines ([#238](https://github.com/Ikolvi/Tracelet/issues/238)).
+**FIX**: Build fails without AGP built-in Kotlin (AGP <9 / builtInKotlin=false) ([#239](https://github.com/Ikolvi/Tracelet/issues/239)).
 
 """
 generic_addition = f"""## {version_to}
 
-**FIX**: Custom sync body 400 Bad Request HTTP errors now gracefully return fallback results instead of propagating fatal exceptions in native Sync engines ([#238](https://github.com/Ikolvi/Tracelet/issues/238)).
+**FIX**: Build fails without AGP built-in Kotlin (AGP <9 / builtInKotlin=false) ([#239](https://github.com/Ikolvi/Tracelet/issues/239)).
 
 """
 

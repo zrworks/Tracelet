@@ -1,3 +1,7 @@
+## 3.5.7
+
+**FIX**: `tracelet_sync`'s Android `build.gradle.kts` now builds on hosts without AGP's built-in Kotlin (AGP < 9, or AGP 9 with `android.builtInKotlin=false` — the Flutter 3.44 template default). Kotlin Gradle plugin is applied conditionally and `jvmTarget` is set via `tasks.withType(KotlinCompile)` instead of the top-level `kotlin { }` accessor, which was unresolved at script-compilation time on those hosts ([#239](https://github.com/Ikolvi/Tracelet/issues/239)).
+
 ## 3.5.6
 
 **FIX**: Custom sync body 400 Bad Request HTTP errors now gracefully return fallback results instead of propagating fatal exceptions in native Sync engines ([#238](https://github.com/Ikolvi/Tracelet/issues/238)).

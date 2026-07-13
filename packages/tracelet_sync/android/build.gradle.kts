@@ -25,6 +25,17 @@ plugins {
     id("com.android.library")
 }
 
+// Support older Flutter apps that do not have AGP's built-in Kotlin enabled
+// (AGP < 9, or AGP 9 with `android.builtInKotlin=false` — the Flutter 3.44
+// template default). String concatenation bypasses Flutter's regex scanner to
+// prevent false warnings in modern Flutter. Under built-in Kotlin AGP provides
+// KGP and rejects an explicitly-applied `kotlin-android`, so guard the apply.
+val builtInKotlin = if (project.hasProperty("android.builtInKotlin"))
+    project.property("android.builtInKotlin").toString().toBoolean() else false
+if (!builtInKotlin) {
+    apply(plugin = "org.jetbrains.kotlin." + "android")
+}
+
 android {
     namespace = "com.ikolvi.tracelet_sync"
 
@@ -65,9 +76,15 @@ android {
     }
 }
 
-kotlin {
+// Set the Kotlin bytecode target via `tasks.withType(KotlinCompile)` rather than
+// the top-level `kotlin { }` DSL. In a Kotlin-DSL script the `kotlin { }`
+// accessor is only generated when KGP is applied through the declarative
+// `plugins { }` block; under legacy/`builtInKotlin=false` hosts KGP is applied
+// imperatively above, so the accessor is unresolved and the script won't compile.
+// `tasks.withType` compiles in both modes.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

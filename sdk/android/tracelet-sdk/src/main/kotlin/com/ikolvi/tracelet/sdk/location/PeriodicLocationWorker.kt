@@ -21,6 +21,8 @@ import com.ikolvi.tracelet.sdk.receiver.PeriodicAlarmReceiver
 import com.ikolvi.tracelet.sdk.TraceletBootstrap
 import com.ikolvi.tracelet.sdk.util.BatteryUtils
 import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationPriority
+import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationCallback
+import com.ikolvi.tracelet.sdk.wrapper.TraceletLocationRequest
 import com.ikolvi.tracelet.sdk.wrapper.TraceletServices
 import com.ikolvi.tracelet.sdk.wrapper.TraceletCancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -45,6 +47,7 @@ class PeriodicLocationWorker(
         const val WORK_NAME = "com.tracelet.periodic_location"
         const val ACTION_PERIODIC_ALARM = "com.tracelet.PERIODIC_ALARM"
         private const val ALARM_REQUEST_CODE = 8001
+        private const val PERIODIC_HIGH_WINDOW_MS = 20_000L
 
         @Volatile
         var eventSender: TraceletEventSender? = null
@@ -155,12 +158,13 @@ class PeriodicLocationWorker(
     }
 
     override suspend fun doWork(): Result {
+        TraceletLog.info("PeriodicStrategy: worker started")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val hasBackground = ContextCompat.checkSelfPermission(
                 applicationContext, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasBackground) {
-                TraceletLog.warning("ACCESS_BACKGROUND_LOCATION revoked \u2014 stopping periodic work")
+                TraceletLog.warning("PeriodicStrategy: ACCESS_BACKGROUND_LOCATION revoked, stopping periodic work")
                 StateManager(applicationContext).apply {
                     enabled = false
                 }
@@ -176,15 +180,23 @@ class PeriodicLocationWorker(
             // capture, persist, or sync anything.
             if (!state.enabled) {
                 com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext).logger
-                    .info("Tracking disabled — skipping periodic location work")
+                    .info("PeriodicStrategy: tracking disabled, skipping periodic worker")
                 return Result.success()
             }
+
+            TraceletLog.info(
+                "PeriodicStrategy: worker executing " +
+                    "(trackingMode=${state.trackingMode}, periodicAccuracy=${config.getPeriodicDesiredAccuracy()}, " +
+                    "interval=${config.getPeriodicLocationInterval()}s, locationTimeout=${config.getLocationTimeout()}s, " +
+                    "gpsEnabled=${LocationEngine.isGpsProviderEnabled(applicationContext)})"
+            )
 
             val location = fetchLocation(config)
 
             if (location != null) {
                 var effectiveSpeed = location.speed.toDouble()
                 val locationMap = buildLocationMap(location, config, state)
+                val locationSource = locationMap["locationSource"] as? String
 
                 // Bootstrap native tracking and persist location so it can be synced even if UI is dead.
                 val sdk = com.ikolvi.tracelet.sdk.TraceletSdk.getInstance(applicationContext)
@@ -194,18 +206,26 @@ class PeriodicLocationWorker(
 
                 // Dispatch to the event sender which will route to UI/Headless
                 dispatchLocation(locationMap)
-                TraceletLog.debug("Periodic fix: lat=${location.latitude}, lng=${location.longitude}, speed=$effectiveSpeed")
+                TraceletLog.info(
+                    "PeriodicStrategy: worker fix dispatched " +
+                        "(finalSource=${LocationEngine.formatLocationSourceForLog(locationSource)}, " +
+                        "provider=${location.provider}, lat=${location.latitude}, lng=${location.longitude}, " +
+                        "acc=${location.accuracy}, speed=$effectiveSpeed)"
+                )
 
                 // Feed speed to motion coordinators to allow wake up from stationary
                 if (sdk.isReady) {
                     sdk.locationEngine.speedMotionSpeedSink?.invoke(effectiveSpeed)
                 }
+            } else {
+                TraceletLog.warning("PeriodicStrategy: worker produced no location")
             }
 
             val interval = config.getPeriodicLocationInterval()
             val useExact = config.getPeriodicUseExactAlarms() || interval < 900
 
             if (state.enabled && state.trackingMode == TrackingMode.PERIODIC && useExact) {
+                TraceletLog.info("PeriodicStrategy: worker scheduling next exact alarm in ${interval}s")
                 scheduleExactAlarm(applicationContext, interval)
             }
 
@@ -227,10 +247,10 @@ class PeriodicLocationWorker(
             // cancelled this periodic job while we were holding it open for the
             // sync delay above. Never swallow CancellationException; let it
             // propagate so WorkManager records the work as cancelled cleanly.
-            TraceletLog.debug("Periodic location work cancelled")
+            TraceletLog.debug("PeriodicStrategy: worker cancelled")
             throw e
         } catch (e: Exception) {
-            TraceletLog.error("Periodic location work failed: ${e.message}", e)
+            TraceletLog.error("PeriodicStrategy: worker failed: ${e.message}", e)
             Result.retry()
         }
     }
@@ -238,13 +258,150 @@ class PeriodicLocationWorker(
     private suspend fun fetchLocation(config: ConfigManager): android.location.Location? {
         val client = TraceletServices.getInstance(applicationContext).getLocationClient(applicationContext)
         val priority = mapAccuracyToPriority(config.getPeriodicDesiredAccuracy())
+        TraceletLog.info(
+            "PeriodicStrategy: worker fetchLocation " +
+                "(priority=$priority, periodicAccuracy=${config.getPeriodicDesiredAccuracy()})"
+        )
+
+        if (priority == TraceletLocationPriority.PRIORITY_HIGH_ACCURACY) {
+            return fetchHighAccuracyPeriodicLocation(config)
+        }
+
         val cts = TraceletCancellationTokenSource()
 
         return suspendCancellableCoroutine { continuation ->
             client.getCurrentLocation(priority, cts.token) { location ->
+                TraceletLog.info(
+                    "PeriodicStrategy: worker one-shot completed " +
+                        "(hasLocation=${location != null}, provider=${location?.provider}, acc=${location?.accuracy})"
+                )
                 continuation.resume(location)
             }
             continuation.invokeOnCancellation {
+                TraceletLog.debug("PeriodicStrategy: worker one-shot cancelled")
+                cts.cancel()
+            }
+        }
+    }
+
+    private suspend fun fetchHighAccuracyPeriodicLocation(config: ConfigManager): android.location.Location? {
+        val client = TraceletServices.getInstance(applicationContext).getLocationClient(applicationContext)
+        val handler = Handler(Looper.getMainLooper())
+        val windowMs = (config.getLocationTimeout().toLong() * 1000L)
+            .coerceAtMost(PERIODIC_HIGH_WINDOW_MS)
+            .coerceAtLeast(5_000L)
+        TraceletLog.info(
+            "PeriodicStrategy: worker high window started " +
+                "(windowMs=$windowMs, gpsEnabled=${LocationEngine.isGpsProviderEnabled(applicationContext)})"
+        )
+
+        val highLocation = suspendCancellableCoroutine<android.location.Location?> { continuation ->
+            val samples = mutableListOf<android.location.Location>()
+            var completed = false
+            var callback: TraceletLocationCallback? = null
+
+            fun complete(location: android.location.Location?) {
+                if (completed) return
+                completed = true
+                callback?.let { client.removeLocationUpdates(it) }
+                val source = location?.let { LocationEngine.classifyLocationSource(it) }
+                TraceletLog.info(
+                    "PeriodicStrategy: worker high window completed " +
+                        "(hasLocation=${location != null}, finalSource=${LocationEngine.formatLocationSourceForLog(source)}, " +
+                        "provider=${location?.provider}, " +
+                        "acc=${location?.accuracy}, samples=${samples.size})"
+                )
+                continuation.resume(location)
+            }
+
+            val timeoutRunnable = Runnable {
+                val best = samples.minByOrNull { it.accuracy }
+                if (best != null) {
+                    val source = LocationEngine.classifyLocationSource(best)
+                    TraceletLog.info(
+                        "PeriodicStrategy: worker high window timed out, using best sample " +
+                            "(source=${LocationEngine.formatLocationSourceForLog(source)}, provider=${best.provider}, " +
+                            "acc=${best.accuracy}, samples=${samples.size})"
+                    )
+                } else {
+                    TraceletLog.warning("PeriodicStrategy: worker high window timed out with no samples")
+                }
+                complete(best)
+            }
+
+            callback = object : TraceletLocationCallback {
+                override fun onLocationResult(locations: List<android.location.Location>) {
+                    if (completed) return
+                    for (location in locations) {
+                        samples.add(location)
+                        val source = LocationEngine.classifyLocationSource(location)
+                        TraceletLog.debug(
+                            "PeriodicStrategy: worker high sample " +
+                                "(source=${LocationEngine.formatLocationSourceForLog(source)}, " +
+                                "provider=${location.provider}, acc=${location.accuracy}, " +
+                                "lat=${location.latitude}, lng=${location.longitude}, " +
+                                "gpsFix=${LocationEngine.isGpsFix(location)})"
+                        )
+                        if (LocationEngine.isGpsFix(location)) {
+                            TraceletLog.info(
+                                "PeriodicStrategy: worker high accepted GPS-quality fix " +
+                                    "(source=${LocationEngine.formatLocationSourceForLog(source)}, " +
+                                    "provider=${location.provider}, acc=${location.accuracy})"
+                            )
+                            handler.removeCallbacks(timeoutRunnable)
+                            complete(location)
+                            return
+                        }
+                    }
+                }
+
+                override fun onLocationAvailability(isLocationAvailable: Boolean) {
+                    TraceletLog.debug("PeriodicStrategy: worker high availability=$isLocationAvailable")
+                }
+            }
+
+            val request = TraceletLocationRequest(
+                priority = TraceletLocationPriority.PRIORITY_HIGH_ACCURACY,
+                intervalMillis = 2_000L,
+                minUpdateDistanceMeters = 0f,
+                minUpdateIntervalMillis = 1_000L,
+            )
+
+            try {
+                client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+                handler.postDelayed(timeoutRunnable, windowMs)
+            } catch (e: SecurityException) {
+                handler.removeCallbacks(timeoutRunnable)
+                TraceletLog.error("PeriodicStrategy: worker high request failed by SecurityException", e)
+                complete(null)
+            }
+
+            continuation.invokeOnCancellation {
+                handler.removeCallbacks(timeoutRunnable)
+                TraceletLog.debug("PeriodicStrategy: worker high window cancelled")
+                client.removeLocationUpdates(callback)
+            }
+        }
+
+        if (highLocation != null) return highLocation
+
+        TraceletLog.warning("PeriodicStrategy: worker high unavailable, falling back to balanced")
+        val cts = TraceletCancellationTokenSource()
+        return suspendCancellableCoroutine { continuation ->
+            client.getCurrentLocation(
+                TraceletLocationPriority.PRIORITY_BALANCED_POWER_ACCURACY,
+                cts.token,
+            ) { location ->
+                val source = location?.let { LocationEngine.classifyLocationSource(it) }
+                TraceletLog.info(
+                    "PeriodicStrategy: worker balanced fallback completed " +
+                        "(hasLocation=${location != null}, finalSource=${LocationEngine.formatLocationSourceForLog(source)}, " +
+                        "provider=${location?.provider}, acc=${location?.accuracy})"
+                )
+                continuation.resume(location)
+            }
+            continuation.invokeOnCancellation {
+                TraceletLog.debug("PeriodicStrategy: worker balanced fallback cancelled")
                 cts.cancel()
             }
         }
@@ -262,6 +419,8 @@ class PeriodicLocationWorker(
         val map = mutableMapOf<String, Any?>(
             "uuid" to UUID.randomUUID().toString(),
             "timestamp" to isoFormat.format(Date(location.time)),
+            "locationSource" to LocationEngine.classifyLocationSource(location),
+            "provider" to location.provider,
             "coords" to mapOf(
                 "latitude" to location.latitude,
                 "longitude" to location.longitude,

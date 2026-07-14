@@ -69,6 +69,8 @@ class LocationEngine(
 
         /** Maximum accuracy (meters) to consider a fused fix as GPS-sourced. */
         const val GPS_ACCURACY_THRESHOLD = 50f
+        private const val PERIODIC_HIGH_ACCURACY = 0
+        private const val PERIODIC_HIGH_WINDOW_SECONDS = 20L
 
         /**
          * Determines if a location fix is GPS-sourced (not network/cell).
@@ -78,6 +80,37 @@ class LocationEngine(
         fun isGpsFix(location: Location): Boolean {
             return location.provider == "gps" ||
                 (location.provider == "fused" && location.accuracy <= GPS_ACCURACY_THRESHOLD)
+        }
+
+        /**
+         * Classifies the final source behind a platform [Location].
+         *
+         * Android exposes "gps", "network", or "fused" as providers. Fused fixes
+         * do not tell us the exact radio, so we infer GPS/Wi-Fi/cell from accuracy.
+         */
+        fun classifyLocationSource(location: Location, gpsFallbackActive: Boolean = false): String {
+            val provider = location.provider?.lowercase(Locale.US).orEmpty()
+            return when {
+                provider == LocationManager.GPS_PROVIDER -> "gps"
+                provider == "fused" && location.accuracy <= GPS_ACCURACY_THRESHOLD -> "gps"
+                provider == LocationManager.NETWORK_PROVIDER || gpsFallbackActive -> "network"
+                provider == "fused" && location.accuracy <= 200f -> "wifi"
+                provider == "fused" -> "cell"
+                provider.isNotEmpty() -> provider
+                else -> "unknown"
+            }
+        }
+
+        fun formatLocationSourceForLog(source: String?): String {
+            return when (source) {
+                "gps" -> "GPS"
+                "wifi" -> "Wi-Fi"
+                "network" -> "network"
+                "cell" -> "cell"
+                "fused" -> "fused"
+                null, "" -> "unknown"
+                else -> source
+            }
         }
 
         /**
@@ -331,6 +364,8 @@ class LocationEngine(
 
     private var periodicRunnable: Runnable? = null
     private val periodicHandler = android.os.Handler(Looper.getMainLooper())
+    private var periodicFixCallback: TraceletLocationCallback? = null
+    private var periodicFixTimeoutRunnable: Runnable? = null
 
     /** Whether periodic one-shot tracking is active. */
     val isPeriodicTracking: Boolean get() = periodicRunnable != null
@@ -353,27 +388,28 @@ class LocationEngine(
         stopPeriodic()
 
         val intervalMs = config.getPeriodicLocationInterval() * 1000L
-        TraceletLog.debug("startPeriodic() — interval=${intervalMs}ms")
+        TraceletLog.info(
+            "PeriodicStrategy: foreground handler started " +
+                "(intervalMs=$intervalMs, periodicAccuracy=${config.getPeriodicDesiredAccuracy()}, " +
+                "locationTimeout=${config.getLocationTimeout()}s, gpsEnabled=${isGpsProviderEnabled(context)})"
+        )
 
         periodicRunnable = object : Runnable {
             override fun run() {
                 if (!state.enabled) {
-                    TraceletLog.debug("periodic tick — state.enabled=false, skipping")
+                    TraceletLog.debug("PeriodicStrategy: foreground tick skipped because state.enabled=false")
                     return
                 }
 
-                TraceletLog.debug("periodic tick — requesting one-shot fix")
-
-                // Perform a one-shot fix using the periodic accuracy setting
-                val options = mapOf<String, Any?>(
-                    "desiredAccuracy" to config.getPeriodicDesiredAccuracy(),
-                    "persist" to true,
-                    "samples" to 1,
+                TraceletLog.info(
+                    "PeriodicStrategy: foreground tick requesting fix " +
+                        "(periodicAccuracy=${config.getPeriodicDesiredAccuracy()}, gpsEnabled=${isGpsProviderEnabled(context)})"
                 )
-                getCurrentPosition(options) { location ->
+
+                requestPeriodicPosition { location ->
                     val resolved = location ?: run {
                         // Fallback: use last known location if fresh fix failed
-                        TraceletLog.warning("periodic fix returned null — trying lastKnownLocation fallback")
+                        TraceletLog.warning("PeriodicStrategy: fresh fix returned null, trying lastKnownLocation fallback")
                         val last = getLastLocation()
                         if (last != null) enrichLocation(last, "periodic") else null
                     }
@@ -413,14 +449,18 @@ class LocationEngine(
                         speedMotionSpeedSink?.invoke(speed)
                         
                         events.sendLocation(enriched)
-                        TraceletLog.debug("periodic fix dispatched — lat=$lat, lng=$lng, acc=$accuracy, speed=$speed")
+                        TraceletLog.info(
+                            "PeriodicStrategy: foreground fix dispatched " +
+                                "(finalSource=${formatLocationSourceForLog(resolved["locationSource"] as? String)}, " +
+                                "provider=${resolved["provider"]}, lat=$lat, lng=$lng, acc=$accuracy, speed=$speed)"
+                        )
 
                         // Notify proximity-based geofence monitoring
                         if (lat != null && lng != null) {
                             onLocationUpdate?.invoke(lat, lng)
                         }
                     } else {
-                        TraceletLog.warning("periodic fix — no location available (fresh + fallback both null)")
+                        TraceletLog.warning("PeriodicStrategy: no location available after fresh + lastKnown fallback")
                     }
                 }
 
@@ -436,10 +476,148 @@ class LocationEngine(
     fun stopPeriodic() {
         periodicRunnable?.let { periodicHandler.removeCallbacks(it) }
         periodicRunnable = null
+        periodicFixTimeoutRunnable?.let { periodicHandler.removeCallbacks(it) }
+        periodicFixTimeoutRunnable = null
+        periodicFixCallback?.let { fusedClient.removeLocationUpdates(it) }
+        periodicFixCallback = null
         // Reset last periodic coordinates so the next start doesn't
         // compute distance from a stale position.
         state.lastPeriodicLatitude = Double.NaN
         state.lastPeriodicLongitude = Double.NaN
+    }
+
+    private fun requestPeriodicPosition(callback: (Map<String, Any?>?) -> Unit) {
+        val desiredAccuracy = config.getPeriodicDesiredAccuracy()
+        if (desiredAccuracy != PERIODIC_HIGH_ACCURACY) {
+            TraceletLog.info("PeriodicStrategy: foreground using one-shot accuracy=$desiredAccuracy")
+            val options = mapOf<String, Any?>(
+                "desiredAccuracy" to desiredAccuracy,
+                "persist" to true,
+                "samples" to 1,
+            )
+            getCurrentPosition(options, callback)
+            return
+        }
+
+        requestHighAccuracyPeriodicPosition(callback)
+    }
+
+    /**
+     * Periodic HIGH is intentionally different from a plain one-shot HIGH request.
+     *
+     * On AOSP devices, getCurrentLocation(HIGH) only asks GPS. For construction-site
+     * periodic tracking we briefly subscribe to HIGH updates so GPS and network can
+     * both report, prefer a GPS-quality fix during the window, and only then fall
+     * back to balanced/current-position behavior.
+     */
+    private fun requestHighAccuracyPeriodicPosition(callback: (Map<String, Any?>?) -> Unit) {
+        periodicFixTimeoutRunnable?.let { periodicHandler.removeCallbacks(it) }
+        periodicFixCallback?.let { fusedClient.removeLocationUpdates(it) }
+        periodicFixTimeoutRunnable = null
+        periodicFixCallback = null
+
+        val samples = mutableListOf<Location>()
+        var finished = false
+
+        fun finish(location: Location?) {
+            if (finished) return
+            finished = true
+            periodicFixTimeoutRunnable?.let { periodicHandler.removeCallbacks(it) }
+            periodicFixTimeoutRunnable = null
+            periodicFixCallback?.let { fusedClient.removeLocationUpdates(it) }
+            periodicFixCallback = null
+
+            if (location != null) {
+                val source = classifyLocationSource(location)
+                TraceletLog.info(
+                    "PeriodicStrategy: foreground high window finished with fix " +
+                        "(finalSource=${formatLocationSourceForLog(source)}, provider=${location.provider}, " +
+                        "acc=${location.accuracy}, samples=${samples.size})"
+                )
+                deliver(listOf(location), persist = true, extras = emptyMap(), callback = callback)
+                return
+            }
+
+            val fallbackOptions = mapOf<String, Any?>(
+                "desiredAccuracy" to 1,
+                "persist" to true,
+                "samples" to 1,
+                "timeout" to 15L,
+            )
+            TraceletLog.warning(
+                "PeriodicStrategy: foreground high window produced no fix, falling back to balanced " +
+                    "(samples=${samples.size})"
+            )
+            getCurrentPosition(fallbackOptions, callback)
+        }
+
+        val request = TraceletLocationRequest(
+            priority = TraceletLocationPriority.PRIORITY_HIGH_ACCURACY,
+            intervalMillis = 2_000L,
+            minUpdateDistanceMeters = 0f,
+            minUpdateIntervalMillis = 1_000L,
+        )
+
+        val callbackImpl = object : TraceletLocationCallback {
+            override fun onLocationResult(locations: List<Location>) {
+                if (finished) return
+                for (location in locations) {
+                    samples.add(location)
+                    val source = classifyLocationSource(location)
+                    TraceletLog.debug(
+                        "PeriodicStrategy: foreground high sample " +
+                            "(source=${formatLocationSourceForLog(source)}, provider=${location.provider}, acc=${location.accuracy}, " +
+                            "lat=${location.latitude}, lng=${location.longitude}, gpsFix=${isGpsFix(location)})"
+                    )
+                    if (isGpsFix(location)) {
+                        TraceletLog.info(
+                            "PeriodicStrategy: foreground high accepted GPS-quality fix " +
+                                "(source=${formatLocationSourceForLog(source)}, provider=${location.provider}, acc=${location.accuracy})"
+                        )
+                        finish(location)
+                        return
+                    }
+                }
+            }
+
+            override fun onLocationAvailability(isLocationAvailable: Boolean) {
+                TraceletLog.debug("PeriodicStrategy: foreground high availability=$isLocationAvailable")
+            }
+        }
+
+        val timeoutSeconds = config.getLocationTimeout().toLong()
+            .coerceAtMost(PERIODIC_HIGH_WINDOW_SECONDS)
+            .coerceAtLeast(5L)
+        val timeoutRunnable = Runnable {
+            val best = samples.minByOrNull { it.accuracy }
+            if (best != null) {
+                val source = classifyLocationSource(best)
+                TraceletLog.info(
+                    "PeriodicStrategy: foreground high window timed out, using best sample " +
+                        "(source=${formatLocationSourceForLog(source)}, provider=${best.provider}, " +
+                        "acc=${best.accuracy}, samples=${samples.size})"
+                )
+            } else {
+                TraceletLog.warning("PeriodicStrategy: foreground high window timed out with no samples")
+            }
+            finish(best)
+        }
+
+        periodicFixCallback = callbackImpl
+        periodicFixTimeoutRunnable = timeoutRunnable
+
+        try {
+            TraceletLog.info(
+                "PeriodicStrategy: foreground high window started " +
+                    "(timeoutSeconds=$timeoutSeconds, gpsEnabled=${isGpsProviderEnabled(context)}, " +
+                    "requestIntervalMs=${request.intervalMillis}, minIntervalMs=${request.minUpdateIntervalMillis})"
+            )
+            fusedClient.requestLocationUpdates(request, callbackImpl, Looper.getMainLooper())
+            periodicHandler.postDelayed(timeoutRunnable, timeoutSeconds * 1000L)
+        } catch (e: SecurityException) {
+            TraceletLog.error("PeriodicStrategy: foreground high request failed by SecurityException", e)
+            finish(null)
+        }
     }
 
     /**
@@ -1021,15 +1199,7 @@ class LocationEngine(
             "platformFlagMock" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) location.isMock else location.isFromMockProvider,
         )
 
-        // Classify the location source based on provider and accuracy.
-        val locationSource = when {
-            location.provider == "gps" -> "gps"
-            location.provider == "fused" && location.accuracy <= GPS_ACCURACY_THRESHOLD -> "gps"
-            location.provider == "network" || gpsFallbackActive -> "network"
-            location.provider == "fused" && location.accuracy <= 200f -> "wifi"
-            location.provider == "fused" -> "cell"
-            else -> "unknown"
-        }
+        val locationSource = classifyLocationSource(location, gpsFallbackActive)
 
         val result = mutableMapOf<String, Any?>(
             "uuid" to UUID.randomUUID().toString(),
@@ -1038,6 +1208,7 @@ class LocationEngine(
             "odometer" to state.odometer,
             "event" to event,
             "locationSource" to locationSource,
+            "provider" to location.provider,
             "reducedAccuracy" to false,  // Android has no reduced-accuracy concept like iOS 14+
             "mock" to mock,
             "mockHeuristics" to mockHeuristics,

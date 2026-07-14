@@ -981,21 +981,42 @@ class TraceletSdk private constructor(private val context: Context) {
         val useForeground = configManager.getPeriodicUseForegroundService()
         val useExactAlarms = configManager.getPeriodicUseExactAlarms() ||
             (!useForeground && interval < 900)
+        val periodicAccuracy = configManager.getPeriodicDesiredAccuracy()
+        val locationTimeout = configManager.getLocationTimeout()
+        val foregroundServiceEnabled = configManager.isForegroundServiceEnabled()
+        val canExactAlarm = PeriodicLocationWorker.canScheduleExactAlarms(context)
+        val strategy = when {
+            useForeground -> "foreground-service"
+            useExactAlarms -> "exact-alarms"
+            else -> "workmanager"
+        }
+
+        logger.info(
+            "PeriodicStrategy: startPeriodic requested " +
+                "(strategy=$strategy, interval=${interval}s, periodicAccuracy=$periodicAccuracy, " +
+                "locationTimeout=${locationTimeout}s, useForeground=$useForeground, " +
+                "foregroundServiceEnabled=$foregroundServiceEnabled, useExactAlarms=$useExactAlarms, " +
+                "canScheduleExactAlarms=$canExactAlarm)"
+        )
 
         if (useForeground) {
-            if (configManager.isForegroundServiceEnabled()) {
+            if (foregroundServiceEnabled) {
                 // Idempotent: re-delivers ACTION_START; if the service is already
                 // running (e.g. switching from continuous mode) it stays foreground.
+                logger.info("PeriodicStrategy: starting foreground service periodic handler")
                 LocationService.start(context)
+            } else {
+                logger.warning("PeriodicStrategy: foreground strategy selected but foregroundService.enabled=false")
             }
             locationEngine.startPeriodic()
         } else if (useExactAlarms) {
             // No foreground service in this strategy — tear down any left over
             // from a previous continuous/foreground-periodic session.
-            if (configManager.isForegroundServiceEnabled() && LocationService.isServiceRunning()) {
+            if (foregroundServiceEnabled && LocationService.isServiceRunning()) {
+                logger.info("PeriodicStrategy: stopping leftover foreground service before exact alarm strategy")
                 LocationService.stop(context)
             }
-            if (!PeriodicLocationWorker.canScheduleExactAlarms(context)) {
+            if (!canExactAlarm) {
                 logger.warning(
                     "SCHEDULE_EXACT_ALARM not granted — timing will be approximate. " +
                         "Grant 'Alarms & reminders' permission in Settings for precise intervals."
@@ -1005,14 +1026,17 @@ class TraceletSdk private constructor(private val context: Context) {
                     openExactAlarmSettings()
                 }
             }
+            logger.info("PeriodicStrategy: scheduling immediate worker and exact alarm")
             PeriodicLocationWorker.scheduleOneTime(context)
             PeriodicLocationWorker.scheduleExactAlarm(context, interval)
         } else {
             // WorkManager strategy — no foreground service; tear down any left
             // over from a previous continuous/foreground-periodic session.
-            if (configManager.isForegroundServiceEnabled() && LocationService.isServiceRunning()) {
+            if (foregroundServiceEnabled && LocationService.isServiceRunning()) {
+                logger.info("PeriodicStrategy: stopping leftover foreground service before WorkManager strategy")
                 LocationService.stop(context)
             }
+            logger.info("PeriodicStrategy: scheduling periodic WorkManager and immediate worker")
             PeriodicLocationWorker.schedule(context, interval)
             PeriodicLocationWorker.scheduleOneTime(context)
         }
@@ -1021,11 +1045,6 @@ class TraceletSdk private constructor(private val context: Context) {
         startStopAfterElapsedTimer()
         eventSender.sendEnabledChange(true)
 
-        val strategy = when {
-            useForeground -> "foreground-service"
-            useExactAlarms -> "exact-alarms"
-            else -> "workmanager"
-        }
         logger.info(
             "startPeriodic() — periodic tracking started " +
                 "(interval=${interval}s, strategy=$strategy)"

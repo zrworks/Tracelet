@@ -28,7 +28,8 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  tracelet_platform_interface: ^3.5.7
+  tracelet_platform_interface:
+    path: ../tracelet_platform_interface
   web: ^1.1.1
 
 dev_dependencies:

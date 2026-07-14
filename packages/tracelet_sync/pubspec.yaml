@@ -18,7 +18,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: ^3.5.7
+  tracelet:
+    path: ../tracelet
 
 dev_dependencies:
   flutter_test:

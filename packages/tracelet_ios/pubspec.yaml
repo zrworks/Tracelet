@@ -25,7 +25,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet_platform_interface: ^3.5.7
+  tracelet_platform_interface:
+    path: ../tracelet_platform_interface
 
 dev_dependencies:
   flutter_test:

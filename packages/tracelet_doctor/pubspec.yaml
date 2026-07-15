@@ -29,7 +29,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  tracelet: ^3.5.7
+  tracelet:
+    path: ../tracelet
   share_plus: ^13.1.0
 
 dev_dependencies:

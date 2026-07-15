@@ -162,6 +162,14 @@ packages/tracelet_platform_interface/lib/src/rust/
 !sdk/android/tracelet-sync-sdk/src/main/jniLibs/
 !sdk/android/tracelet-sync-sdk/src/main/jniLibs/**
 !sdk/android/tracelet-sync-sdk/src/main/jniLibs/**/*.so
+!sdk/rust-core/out/
+sdk/rust-core/out/*
+!sdk/rust-core/out/TraceletCore.xcframework/
+!sdk/rust-core/out/TraceletCore.xcframework/**
+!sdk/rust-core/out/TraceletSyncFFI.xcframework/
+!sdk/rust-core/out/TraceletSyncFFI.xcframework/**
+!packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework/
+!packages/tracelet_sync/ios/tracelet_sync/TraceletSyncFFI.xcframework/**
 
 # Benchmark generated files
 benchmark/benchmark_results.json

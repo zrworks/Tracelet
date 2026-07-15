@@ -151,6 +151,18 @@ sdk/rust-core/out/
 
 packages/tracelet_platform_interface/lib/src/rust/
 
+# Tracelet publishes generated bindings and Android Rust binaries with the
+# plugin packages so Git dependencies can build without local Rust setup.
+!packages/tracelet_ios/ios/tracelet_ios/Sources/tracelet_ios/frb_generated.h
+!packages/tracelet_platform_interface/lib/src/rust/
+!packages/tracelet_platform_interface/lib/src/rust/**
+!sdk/android/tracelet-sdk/src/main/jniLibs/
+!sdk/android/tracelet-sdk/src/main/jniLibs/**
+!sdk/android/tracelet-sdk/src/main/jniLibs/**/*.so
+!sdk/android/tracelet-sync-sdk/src/main/jniLibs/
+!sdk/android/tracelet-sync-sdk/src/main/jniLibs/**
+!sdk/android/tracelet-sync-sdk/src/main/jniLibs/**/*.so
+
 # Benchmark generated files
 benchmark/benchmark_results.json
 benchmark/benchmark_table.md

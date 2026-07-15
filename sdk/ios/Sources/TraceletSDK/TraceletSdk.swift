@@ -546,6 +546,15 @@ public final class TraceletSdk {
         stateManager.trackingMode = .periodic
         stateManager.isMoving = false
 
+        let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+        logger.info(
+            "PeriodicStrategy: startPeriodic requested " +
+                "(strategy=ios-timer-bgrefresh, interval=\(Int(interval))s, " +
+                "periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), " +
+                "locationTimeout=\(configManager.getLocationTimeout())s, " +
+                "preventSuspend=\(configManager.getPreventSuspend()))"
+        )
+
         locationEngine.startPeriodic()
 
         // Wire proximity-based geofence monitoring.
@@ -559,7 +568,6 @@ public final class TraceletSdk {
         startStopAfterElapsedTimer()
 
         // Schedule BGAppRefreshTask as a supplementary wake-up mechanism.
-        let interval = TimeInterval(configManager.getPeriodicLocationInterval())
         periodicRefreshScheduler.start(interval: interval)
 
         // Only start preventSuspend in periodic mode when explicitly enabled.
@@ -3311,4 +3319,3 @@ private struct TelematicsSinkWrapper: LocationDataSink {
         return ""
     }
 }
-

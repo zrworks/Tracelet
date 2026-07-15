@@ -34,6 +34,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private var periodicFixBgTaskId: UIBackgroundTaskIdentifier?
     /// Cancellable timeout work item for periodic fix cleanup.
     private var periodicFixTimeoutWork: DispatchWorkItem?
+    private var periodicHighAccuracyWindowActive = false
+    private var periodicHighAccuracySamples: [CLLocation] = []
+
+    private static let periodicHighAccuracy = 0
+    private static let periodicHighAccuracyWindowSeconds = 20
 
     /// Opaque reference to CLBackgroundActivitySession for iOS 17+ Live Updates
     /// battery optimization. Kept opaque to allow compilation on older iOS targets.
@@ -106,6 +111,21 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     static func isGpsFix(_ location: CLLocation) -> Bool {
         return location.horizontalAccuracy > 0 &&
             location.horizontalAccuracy <= gpsAccuracyThreshold
+    }
+
+    static func formatLocationSourceForLog(_ source: String?) -> String {
+        switch source {
+        case "gps":
+            return "GPS"
+        case "wifi":
+            return "Wi-Fi"
+        case "cell":
+            return "cell"
+        case nil, "":
+            return "unknown"
+        default:
+            return source ?? "unknown"
+        }
     }
 
     /// [Enterprise] Audit trail manager — set by the plugin after initialization.
@@ -224,6 +244,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         guard isTracking else { return }
         isTracking = false
         isPeriodicTracking = false
+        cancelPeriodicFixRequest()
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
         deactivateDeadReckoning()
@@ -263,7 +284,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         isTracking = true // so delegate callbacks are processed
 
         let interval = configManager.getPeriodicLocationInterval()
-        TraceletLog.debug(String(format: "[Tracelet] startPeriodic: interval=%ds, accuracy=%d", interval, configManager.getPeriodicDesiredAccuracy()))
+        TraceletLog.info(
+            "PeriodicStrategy: iOS foreground handler started " +
+                "(intervalMs=\(interval * 1000), periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), " +
+                "locationTimeout=\(configManager.getLocationTimeout())s, reducedAccuracy=\(isReducedAccuracy))"
+        )
 
         configureLocationManagerForPeriodic()
         checkReducedAccuracy()
@@ -283,6 +308,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         guard isPeriodicTracking else { return }
         isPeriodicTracking = false
         isTracking = false
+        cancelPeriodicFixRequest()
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
         stopPeriodicTimer()
@@ -305,6 +331,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// remain active.
     public func switchToStationaryPeriodic() {
         TraceletLog.debug("[Tracelet] switchToStationaryPeriodic: stopping continuous, starting periodic timer")
+        cancelPeriodicFixRequest()
         locationManager.stopUpdatingLocation()
         cancelGpsLossTimer()
         deactivateDeadReckoning()
@@ -336,6 +363,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         TraceletLog.debug("[Tracelet] switchToContinuous: stopping periodic, resuming continuous")
         stopPeriodicTimer()
         isPeriodicTracking = false
+        cancelPeriodicFixRequest()
 
         configureLocationManager()
         locationManager.startUpdatingLocation()
@@ -428,16 +456,29 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     public func performPeriodicFix() {
         guard isPeriodicTracking else { return }
 
-        TraceletLog.debug("[Tracelet] performPeriodicFix: requesting one-shot GPS fix")
+        TraceletLog.info(
+            "PeriodicStrategy: iOS tick requesting fix " +
+                "(periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), reducedAccuracy=\(isReducedAccuracy))"
+        )
 
         // Cancel any previous timeout that hasn't fired yet
-        periodicFixTimeoutWork?.cancel()
-        endPeriodicFixBgTask()
+        cancelPeriodicFixRequest()
+
+        if configManager.getPeriodicDesiredAccuracy() == Self.periodicHighAccuracy {
+            requestHighAccuracyPeriodicPosition()
+            return
+        }
 
         periodicFixBgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
 
         // Temporarily enable background location for this single fix
         locationManager.allowsBackgroundLocationUpdates = true
+        configureLocationManagerForPeriodic()
+        locationManager.allowsBackgroundLocationUpdates = true
+        TraceletLog.info(
+            "PeriodicStrategy: iOS one-shot requesting fix " +
+                "(periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), timeoutSeconds=\(configManager.getLocationTimeout()))"
+        )
         locationManager.requestLocation()
 
         // Timeout: restore state after locationTimeout seconds if no callback
@@ -451,9 +492,120 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             self.locationManager.allowsBackgroundLocationUpdates = false
             self.locationManager.stopUpdatingLocation()
             self.endPeriodicFixBgTask()
+            TraceletLog.warning("PeriodicStrategy: iOS one-shot timed out with no location")
         }
         periodicFixTimeoutWork = timeoutWork
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(timeout), execute: timeoutWork)
+    }
+
+    private func requestHighAccuracyPeriodicPosition() {
+        periodicHighAccuracyWindowActive = true
+        periodicHighAccuracySamples.removeAll()
+        periodicFixBgTaskId = BackgroundTaskHelper.shared.begin("periodicHighAccuracyFix")
+
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.showsBackgroundLocationIndicator = false
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.activityType = configManager.getActivityType()
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+
+        let timeoutSeconds = min(
+            max(configManager.getLocationTimeout(), 5),
+            Self.periodicHighAccuracyWindowSeconds
+        )
+        TraceletLog.info(
+            "PeriodicStrategy: iOS high window started " +
+                "(timeoutSeconds=\(timeoutSeconds), reducedAccuracy=\(isReducedAccuracy), " +
+                "desiredAccuracy=\(locationManager.desiredAccuracy))"
+        )
+
+        locationManager.startUpdatingLocation()
+
+        let timeoutWork = DispatchWorkItem { [weak self] in
+            guard let self = self, self.isPeriodicTracking, self.periodicHighAccuracyWindowActive else {
+                self?.endPeriodicFixBgTask()
+                return
+            }
+
+            if let best = self.bestPeriodicHighAccuracySample() {
+                let source = self.locationSource(for: best)
+                TraceletLog.info(
+                    "PeriodicStrategy: iOS high window timed out, using best sample " +
+                        "(source=\(Self.formatLocationSourceForLog(source)), provider=\(self.providerForLog(best)), " +
+                        "acc=\(best.horizontalAccuracy), samples=\(self.periodicHighAccuracySamples.count))"
+                )
+                self.finishHighAccuracyPeriodicWindow(with: best)
+            } else {
+                TraceletLog.warning("PeriodicStrategy: iOS high window timed out with no samples")
+                self.finishHighAccuracyPeriodicWindow(with: nil)
+            }
+        }
+        periodicFixTimeoutWork = timeoutWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(timeoutSeconds), execute: timeoutWork)
+    }
+
+    private func finishHighAccuracyPeriodicWindow(with location: CLLocation?) {
+        guard periodicHighAccuracyWindowActive else { return }
+        periodicHighAccuracyWindowActive = false
+        periodicFixTimeoutWork?.cancel()
+        periodicFixTimeoutWork = nil
+        locationManager.stopUpdatingLocation()
+
+        if let location {
+            let source = locationSource(for: location)
+            TraceletLog.info(
+                "PeriodicStrategy: iOS high window completed with fix " +
+                    "(finalSource=\(Self.formatLocationSourceForLog(source)), provider=\(providerForLog(location)), " +
+                    "acc=\(location.horizontalAccuracy), samples=\(periodicHighAccuracySamples.count))"
+            )
+            periodicHighAccuracySamples.removeAll()
+            processLocationUpdate(location)
+            return
+        }
+
+        periodicHighAccuracySamples.removeAll()
+        requestBalancedPeriodicFallback()
+    }
+
+    private func requestBalancedPeriodicFallback() {
+        guard isPeriodicTracking else {
+            endPeriodicFixBgTask()
+            return
+        }
+
+        TraceletLog.warning("PeriodicStrategy: iOS high unavailable, falling back to balanced one-shot")
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.showsBackgroundLocationIndicator = false
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.activityType = configManager.getActivityType()
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        locationManager.requestLocation()
+
+        let timeoutSeconds = max(min(configManager.getLocationTimeout(), 15), 5)
+        let timeoutWork = DispatchWorkItem { [weak self] in
+            guard let self = self, self.isPeriodicTracking else {
+                self?.endPeriodicFixBgTask()
+                return
+            }
+            self.locationManager.allowsBackgroundLocationUpdates = false
+            self.locationManager.stopUpdatingLocation()
+            self.endPeriodicFixBgTask()
+            TraceletLog.warning("PeriodicStrategy: iOS balanced fallback timed out with no location")
+        }
+        periodicFixTimeoutWork = timeoutWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(timeoutSeconds), execute: timeoutWork)
+    }
+
+    private func cancelPeriodicFixRequest() {
+        periodicFixTimeoutWork?.cancel()
+        periodicFixTimeoutWork = nil
+        periodicHighAccuracyWindowActive = false
+        periodicHighAccuracySamples.removeAll()
+        locationManager.allowsBackgroundLocationUpdates = false
+        locationManager.stopUpdatingLocation()
+        endPeriodicFixBgTask()
     }
 
     /// Ends the periodic fix background task if one is active.
@@ -781,6 +933,38 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
 
+        if periodicHighAccuracyWindowActive {
+            handlePeriodicHighAccuracySamples(locations)
+            return
+        }
+
+        processLocationUpdate(location)
+    }
+
+    private func handlePeriodicHighAccuracySamples(_ locations: [CLLocation]) {
+        for location in locations {
+            periodicHighAccuracySamples.append(location)
+            let source = locationSource(for: location)
+            TraceletLog.debug(
+                "PeriodicStrategy: iOS high sample " +
+                    "(source=\(Self.formatLocationSourceForLog(source)), provider=\(providerForLog(location)), " +
+                    "acc=\(location.horizontalAccuracy), lat=\(location.coordinate.latitude), " +
+                    "lng=\(location.coordinate.longitude), gpsFix=\(Self.isGpsFix(location)))"
+            )
+
+            if Self.isGpsFix(location) {
+                TraceletLog.info(
+                    "PeriodicStrategy: iOS high accepted GPS-quality fix " +
+                        "(source=\(Self.formatLocationSourceForLog(source)), provider=\(providerForLog(location)), " +
+                        "acc=\(location.horizontalAccuracy))"
+                )
+                finishHighAccuracyPeriodicWindow(with: location)
+                return
+            }
+        }
+    }
+
+    private func processLocationUpdate(_ location: CLLocation) {
         // Only reset DR timer on GPS-quality fixes (not cell/Wi-Fi).
         if LocationEngine.isGpsFix(location) {
             resetGpsLossTimer()
@@ -803,6 +987,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 var providerState = buildProviderState()
                 providerState["mockLocationsDetected"] = true
                 eventDispatcher.sendProviderChange(providerState)
+            }
+            if isPeriodicTracking {
+                cancelPeriodicFixRequest()
             }
             return // Drop the mock location entirely.
         }
@@ -868,6 +1055,9 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             TraceletLog.debug(String(format: "[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown"))
             if result.odometerDelta > 0 {
                 stateManager.addOdometer(distance: result.odometerDelta)
+            }
+            if isPeriodicTracking {
+                cancelPeriodicFixRequest()
             }
             return
         }
@@ -1192,6 +1382,41 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Helpers
 
+    private func bestPeriodicHighAccuracySample() -> CLLocation? {
+        return periodicHighAccuracySamples.min {
+            normalizedAccuracy($0) < normalizedAccuracy($1)
+        }
+    }
+
+    private func normalizedAccuracy(_ location: CLLocation) -> Double {
+        let accuracy = location.horizontalAccuracy
+        return accuracy > 0 ? accuracy : Double.greatestFiniteMagnitude
+    }
+
+    private func locationSource(for location: CLLocation) -> String {
+        // iOS does not expose provider names; accuracy is the best signal.
+        // When reduced accuracy is active, iOS returns coarse fixes regardless
+        // of desiredAccuracy, so classify them as cell-level locations.
+        if isReducedAccuracy {
+            return "cell"
+        }
+
+        if location.horizontalAccuracy > 0 && location.horizontalAccuracy <= 50 {
+            return "gps"
+        }
+        if location.horizontalAccuracy > 0 && location.horizontalAccuracy <= 200 {
+            return "wifi"
+        }
+        if location.horizontalAccuracy > 200 {
+            return "cell"
+        }
+        return "unknown"
+    }
+
+    private func providerForLog(_: CLLocation) -> String {
+        return "corelocation"
+    }
+
     private func fireOneShots(_ location: CLLocation) {
         guard !oneShots.isEmpty else { return }
         for callback in oneShots {
@@ -1244,23 +1469,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
         let mockHeuristics = heuristics
 
-        // Classify the location source based on accuracy heuristic.
-        // iOS does not expose provider names; accuracy is the best signal.
-        // When reduced accuracy is active, iOS returns ~5 km fixes regardless
-        // of desiredAccuracy, so classify accordingly.
         let reduced = isReducedAccuracy
-        let locationSource: String
-        if reduced {
-            locationSource = "cell"  // reduced accuracy ≈ coarse cell-level
-        } else if location.horizontalAccuracy > 0 && location.horizontalAccuracy <= 50 {
-            locationSource = "gps"
-        } else if location.horizontalAccuracy <= 200 {
-            locationSource = "wifi"
-        } else if location.horizontalAccuracy > 200 {
-            locationSource = "cell"
-        } else {
-            locationSource = "unknown"
-        }
+        let source = locationSource(for: location)
 
         var result: [String: Any] = [
             "uuid": Self.generateUUID(),
@@ -1268,7 +1478,8 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             "coords": coords,
             "is_moving": stateManager.isMoving,
             "odometer": stateManager.odometer,
-            "locationSource": locationSource,
+            "locationSource": source,
+            "provider": providerForLog(location),
             "reducedAccuracy": reduced,
             "mock": mock,
             "mockHeuristics": mockHeuristics as Any,

@@ -279,7 +279,13 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// and the timer will not fire. Use `preventSuspend: true` in `AppConfig`
     /// or rely on `BGAppRefreshTask` as a supplementary wakeup mechanism.
     public func startPeriodic() {
-        guard !isPeriodicTracking else { return }
+        guard !isPeriodicTracking else {
+            TraceletLog.info(
+                "PeriodicStrategy: iOS startPeriodic ignored because periodic tracking is already active " +
+                    "(timerValid=\(periodicTimer?.isValid ?? false), intervalSeconds=\(configManager.getPeriodicLocationInterval()))"
+            )
+            return
+        }
         isPeriodicTracking = true
         isTracking = true // so delegate callbacks are processed
 
@@ -305,7 +311,14 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
     /// Stops periodic one-shot tracking.
     public func stopPeriodic() {
-        guard isPeriodicTracking else { return }
+        guard isPeriodicTracking else {
+            TraceletLog.info("PeriodicStrategy: iOS stopPeriodic ignored because periodic tracking is not active")
+            return
+        }
+        TraceletLog.info(
+            "PeriodicStrategy: iOS stopping periodic tracking " +
+                "(timerValid=\(periodicTimer?.isValid ?? false), bgTaskActive=\(periodicFixBgTaskId != nil))"
+        )
         isPeriodicTracking = false
         isTracking = false
         cancelPeriodicFixRequest()
@@ -330,7 +343,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// timer. Significant-location-change monitoring and background sessions
     /// remain active.
     public func switchToStationaryPeriodic() {
-        TraceletLog.debug("[Tracelet] switchToStationaryPeriodic: stopping continuous, starting periodic timer")
+        TraceletLog.debug("PeriodicStrategy: iOS switchToStationaryPeriodic stopping continuous and starting periodic timer")
         cancelPeriodicFixRequest()
         locationManager.stopUpdatingLocation()
         cancelGpsLossTimer()
@@ -347,7 +360,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Stops continuous `startUpdatingLocation()` but leaves region monitoring
     /// active. Background sessions remain active.
     public func switchToStationaryGeofences() {
-        TraceletLog.debug("[Tracelet] switchToStationaryGeofences: stopping continuous, geofences remain active")
+        TraceletLog.debug("PeriodicStrategy: iOS switchToStationaryGeofences stopping continuous; geofences remain active")
         locationManager.stopUpdatingLocation()
         cancelGpsLossTimer()
         deactivateDeadReckoning()
@@ -360,7 +373,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Stops the periodic timer and resumes `startUpdatingLocation()`.
     /// Background sessions remain active.
     public func switchToContinuous() {
-        TraceletLog.debug("[Tracelet] switchToContinuous: stopping periodic, resuming continuous")
+        TraceletLog.debug("PeriodicStrategy: iOS switchToContinuous stopping periodic and resuming continuous")
         stopPeriodicTimer()
         isPeriodicTracking = false
         cancelPeriodicFixRequest()
@@ -400,6 +413,10 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private func startPeriodicTimer() {
         stopPeriodicTimer()
         let interval = TimeInterval(configManager.getPeriodicLocationInterval())
+        TraceletLog.info(
+            "PeriodicStrategy: iOS starting periodic timer " +
+                "(intervalSeconds=\(Int(interval)), immediateFix=true)"
+        )
 
         // Fire immediately for the first fix
         performPeriodicFix()
@@ -408,16 +425,29 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
             withTimeInterval: interval,
             repeats: true
         ) { [weak self] _ in
+            TraceletLog.info("PeriodicStrategy: iOS periodic timer fired")
             self?.performPeriodicFix()
         }
         // Allow iOS to coalesce timer fires with other system work for
         // energy efficiency. 10% tolerance is Apple’s recommendation (I-H2).
         timer.tolerance = interval * 0.1
         periodicTimer = timer
+        TraceletLog.info(
+            "PeriodicStrategy: iOS periodic timer scheduled " +
+                "(isValid=\(timer.isValid), intervalSeconds=\(Int(interval)), toleranceSeconds=\(timer.tolerance))"
+        )
     }
 
     /// Stops the periodic timer.
     private func stopPeriodicTimer() {
+        if let timer = periodicTimer {
+            TraceletLog.info(
+                "PeriodicStrategy: iOS invalidating periodic timer " +
+                    "(isValid=\(timer.isValid), intervalSeconds=\(Int(timer.timeInterval)))"
+            )
+        } else {
+            TraceletLog.info("PeriodicStrategy: iOS stopPeriodicTimer called with no active timer")
+        }
         periodicTimer?.invalidate()
         periodicTimer = nil
     }
@@ -429,20 +459,34 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// change), the timer needs to be re-created so periodic fixes resume
     /// at the configured interval.
     public func restartPeriodicTimerIfNeeded() {
-        guard isPeriodicTracking else { return }
-        guard periodicTimer == nil || !(periodicTimer?.isValid ?? false) else { return }
-        TraceletLog.debug("[Tracelet] Restarting periodic timer (was invalidated/nil)")
+        guard isPeriodicTracking else {
+            TraceletLog.info("PeriodicStrategy: iOS restartPeriodicTimerIfNeeded skipped because periodic tracking is inactive")
+            return
+        }
+        guard periodicTimer == nil || !(periodicTimer?.isValid ?? false) else {
+            TraceletLog.info(
+                "PeriodicStrategy: iOS restartPeriodicTimerIfNeeded found active timer " +
+                    "(timerValid=\(periodicTimer?.isValid ?? false), intervalSeconds=\(Int(periodicTimer?.timeInterval ?? 0)))"
+            )
+            return
+        }
+        TraceletLog.debug("PeriodicStrategy: iOS restarting periodic timer because it was invalidated or nil")
         let interval = TimeInterval(configManager.getPeriodicLocationInterval())
         let timer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: true
         ) { [weak self] _ in
+            TraceletLog.info("PeriodicStrategy: iOS restarted periodic timer fired")
             self?.performPeriodicFix()
         }
         // Allow iOS to coalesce timer fires with other system work for
         // energy efficiency. 10% tolerance is Apple's recommendation.
         timer.tolerance = interval * 0.1
         periodicTimer = timer
+        TraceletLog.info(
+            "PeriodicStrategy: iOS periodic timer restarted " +
+                "(isValid=\(timer.isValid), intervalSeconds=\(Int(interval)), toleranceSeconds=\(timer.tolerance))"
+        )
     }
 
     /// Performs a single one-shot location fix for periodic mode.
@@ -454,22 +498,28 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// This method is `internal` so that `PeriodicRefreshScheduler` and
     /// the plugin can trigger a fix from a `BGAppRefreshTask` wake-up.
     public func performPeriodicFix() {
-        guard isPeriodicTracking else { return }
+        guard isPeriodicTracking else {
+            TraceletLog.info("PeriodicStrategy: iOS performPeriodicFix skipped because periodic tracking is inactive")
+            return
+        }
 
         TraceletLog.info(
             "PeriodicStrategy: iOS tick requesting fix " +
-                "(periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), reducedAccuracy=\(isReducedAccuracy))"
+                "(timerValid=\(periodicTimer?.isValid ?? false), periodicAccuracy=\(configManager.getPeriodicDesiredAccuracy()), " +
+                "reducedAccuracy=\(isReducedAccuracy), existingBgTask=\(periodicFixBgTaskId?.rawValue ?? -1))"
         )
 
         // Cancel any previous timeout that hasn't fired yet
         cancelPeriodicFixRequest()
 
         if configManager.getPeriodicDesiredAccuracy() == Self.periodicHighAccuracy {
+            TraceletLog.info("PeriodicStrategy: iOS routing tick to high-accuracy window")
             requestHighAccuracyPeriodicPosition()
             return
         }
 
         periodicFixBgTaskId = BackgroundTaskHelper.shared.begin("periodicFix")
+        TraceletLog.info("PeriodicStrategy: iOS one-shot background task started (bgTaskId=\(periodicFixBgTaskId?.rawValue ?? -1))")
 
         // Temporarily enable background location for this single fix
         locationManager.allowsBackgroundLocationUpdates = true
@@ -502,6 +552,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         periodicHighAccuracyWindowActive = true
         periodicHighAccuracySamples.removeAll()
         periodicFixBgTaskId = BackgroundTaskHelper.shared.begin("periodicHighAccuracyFix")
+        TraceletLog.info("PeriodicStrategy: iOS high window background task started (bgTaskId=\(periodicFixBgTaskId?.rawValue ?? -1))")
 
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.showsBackgroundLocationIndicator = false
@@ -543,6 +594,7 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         }
         periodicFixTimeoutWork = timeoutWork
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(timeoutSeconds), execute: timeoutWork)
+        TraceletLog.info("PeriodicStrategy: iOS high window timeout scheduled (timeoutSeconds=\(timeoutSeconds))")
     }
 
     private func finishHighAccuracyPeriodicWindow(with location: CLLocation?) {
@@ -554,9 +606,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
 
         if let location {
             let source = locationSource(for: location)
+            let timestamp = iso8601String(from: location.timestamp)
             TraceletLog.info(
                 "PeriodicStrategy: iOS high window completed with fix " +
                     "(finalSource=\(Self.formatLocationSourceForLog(source)), provider=\(providerForLog(location)), " +
+                    "locationTime=\(timestamp), lat=\(location.coordinate.latitude), lng=\(location.coordinate.longitude), " +
                     "acc=\(location.horizontalAccuracy), samples=\(periodicHighAccuracySamples.count))"
             )
             periodicHighAccuracySamples.removeAll()
@@ -599,6 +653,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     }
 
     private func cancelPeriodicFixRequest() {
+        TraceletLog.info(
+            "PeriodicStrategy: iOS cancelPeriodicFixRequest " +
+                "(hasTimeout=\(periodicFixTimeoutWork != nil), highWindowActive=\(periodicHighAccuracyWindowActive), " +
+                "sampleCount=\(periodicHighAccuracySamples.count), bgTaskId=\(periodicFixBgTaskId?.rawValue ?? -1))"
+        )
         periodicFixTimeoutWork?.cancel()
         periodicFixTimeoutWork = nil
         periodicHighAccuracyWindowActive = false
@@ -611,8 +670,11 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     /// Ends the periodic fix background task if one is active.
     private func endPeriodicFixBgTask() {
         if let taskId = periodicFixBgTaskId {
+            TraceletLog.info("PeriodicStrategy: iOS ending periodic background task (bgTaskId=\(taskId.rawValue))")
             BackgroundTaskHelper.shared.end(taskId)
             periodicFixBgTaskId = nil
+        } else {
+            TraceletLog.info("PeriodicStrategy: iOS endPeriodicFixBgTask called with no active background task")
         }
     }
 
@@ -1052,14 +1114,36 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         speedSink?(result.effectiveSpeed)
 
         if !result.accepted {
-            TraceletLog.debug(String(format: "[Tracelet] Location filtered by Rust processor: %@", result.reason ?? "unknown"))
+            let reason = result.reason ?? "unknown"
+            let accuracyThreshold = configManager.getTrackingAccuracyThreshold()
+            let hasValidAccuracy = location.horizontalAccuracy >= 0
+            let accuracyAllowed = hasValidAccuracy && (accuracyThreshold <= 0 || location.horizontalAccuracy <= Double(accuracyThreshold))
+            let allowPeriodicDistanceFix = isPeriodicTracking && reason == "DISTANCE_FILTER" && accuracyAllowed
+
+            TraceletLog.info(
+                "周期定位: 定位点被 Rust 过滤器拦截\(allowPeriodicDistanceFix ? "，周期模式距离过滤已放行" : "，未写库也未发流") " +
+                    "(event=\(isPeriodicTracking ? "periodic" : "location"), " +
+                    "reason=\(reason), " +
+                    "lat=\(location.coordinate.latitude), lng=\(location.coordinate.longitude), " +
+                    "acc=\(location.horizontalAccuracy), distance=\(result.distance), " +
+                    "distanceFilter=\(configManager.getDistanceFilter()), " +
+                    "accuracyThreshold=\(accuracyThreshold), validAccuracy=\(hasValidAccuracy), " +
+                    "effectiveSpeed=\(result.effectiveSpeed))"
+            )
             if result.odometerDelta > 0 {
                 stateManager.addOdometer(distance: result.odometerDelta)
             }
-            if isPeriodicTracking {
-                cancelPeriodicFixRequest()
+            if allowPeriodicDistanceFix {
+                TraceletLog.info("周期定位: 静止周期点继续写库并发流")
+            } else if isPeriodicTracking && reason == "DISTANCE_FILTER" && !accuracyAllowed {
+                TraceletLog.info("周期定位: 距离过滤命中但精度不达标，保持拦截")
             }
-            return
+            guard allowPeriodicDistanceFix else {
+                if isPeriodicTracking {
+                    cancelPeriodicFixRequest()
+                }
+                return
+            }
         }
 
         // Odometer update from processor's computed delta
@@ -1130,8 +1214,16 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 if isPeriodicTracking { data["event"] = "periodic" }
                 
                 enrichWithAddressIfNeeded(locationMap: data, location: location) { [weak self] enrichedData in
+                    TraceletLog.info(
+                        "周期定位: 准备派发隐私事件(仅事件不落库) " +
+                            "(event=\(enrichedData["event"] as? String ?? "unknown"), " +
+                            "lat=\(location.coordinate.latitude), lng=\(location.coordinate.longitude))"
+                    )
                     self?.eventDispatcher.sendLocation(enrichedData)
+                    TraceletLog.info("周期定位: 已派发隐私事件到事件通道(仅事件不落库)")
+                    TraceletLog.info("周期定位: 准备触发 onLocationUpdate 回调(仅事件不落库)")
                     self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    TraceletLog.info("周期定位: 已触发 onLocationUpdate 回调(仅事件不落库)")
                     if self?.isPeriodicTracking == true {
                         self?.locationManager.stopUpdatingLocation()
                         self?.locationManager.allowsBackgroundLocationUpdates = false
@@ -1154,8 +1246,15 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 
                 enrichWithAddressIfNeeded(locationMap: degraded, location: location) { [weak self] enrichedDegraded in
                     self?.persistLocationIfAllowed(enrichedDegraded, event: pzEventTag)
+                    TraceletLog.info(
+                        "周期定位: 准备派发隐私降级事件 " +
+                            "(event=\(pzEventTag), lat=\(location.coordinate.latitude), lng=\(location.coordinate.longitude))"
+                    )
                     self?.eventDispatcher.sendLocation(enrichedDegraded)
+                    TraceletLog.info("周期定位: 已派发隐私降级事件到事件通道")
+                    TraceletLog.info("周期定位: 准备触发 onLocationUpdate 回调(隐私降级)")
                     self?.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+                    TraceletLog.info("周期定位: 已触发 onLocationUpdate 回调(隐私降级)")
                     if self?.isPeriodicTracking == true {
                         self?.locationManager.stopUpdatingLocation()
                         self?.locationManager.allowsBackgroundLocationUpdates = false
@@ -1184,10 +1283,18 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
         enrichWithAddressIfNeeded(locationMap: dispatchMap, location: location) { [weak self] enrichedMap in
             guard let self = self else { return }
             self.persistLocationIfAllowed(enrichedMap, event: eventTag)
+            TraceletLog.info(
+                "周期定位: 准备派发定位事件 " +
+                    "(event=\(eventTag), lat=\(location.coordinate.latitude), lng=\(location.coordinate.longitude), " +
+                    "acc=\(location.horizontalAccuracy))"
+            )
             self.eventDispatcher.sendLocation(enrichedMap)
+            TraceletLog.info("周期定位: 已派发定位事件到事件通道")
 
             // Notify geofenceModeHighAccuracy listener (if active)
+            TraceletLog.info("周期定位: 准备触发 onLocationUpdate 回调")
             self.onLocationUpdate?(location.coordinate.latitude, location.coordinate.longitude)
+            TraceletLog.info("周期定位: 已触发 onLocationUpdate 回调")
 
             // In periodic mode, immediately stop GPS after receiving the fix
             // to minimise blue-arrow visibility.
@@ -1542,15 +1649,34 @@ public final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private func persistLocationIfAllowed(_ location: [String: Any], event: String) {
         let persistMode = configManager.getPersistMode()
         // Mode 3 = none, Mode 2 = geofence only → skip location inserts
-        if persistMode == 3 || persistMode == 2 { return }
+        if persistMode == 3 || persistMode == 2 {
+            TraceletLog.info(
+                "周期定位: 当前配置跳过写入数据库 " +
+                    "(event=\(event), persistMode=\(persistMode))"
+            )
+            return
+        }
         // Skip provider change records if disabled
-        if event == "providerchange" && configManager.getDisableProviderChangeRecord() { return }
+        if event == "providerchange" && configManager.getDisableProviderChangeRecord() {
+            TraceletLog.info("周期定位: providerchange 记录已配置为不写入数据库")
+            return
+        }
+
+        let latitude = location["latitude"] ?? location["lat"] ?? "unknown"
+        let longitude = location["longitude"] ?? location["lng"] ?? "unknown"
+        TraceletLog.info(
+            "周期定位: 准备写入数据库 " +
+                "(event=\(event), lat=\(latitude), lng=\(longitude))"
+        )
 
         // Route through Native Sinks for DB persistence + auto HTTP sync
         self.sinks.forEach { $0.insertLocation(location) }
+        TraceletLog.info("周期定位: 已写入数据库")
 
         // Notify HTTP sync manager (if wired) so auto-sync can fire.
+        TraceletLog.info("周期定位: 准备通知持久化完成回调")
         onLocationPersisted?()
+        TraceletLog.info("周期定位: 已通知持久化完成回调")
     }
 
     /// Detects whether a CLLocation was produced by a simulated/mock provider.

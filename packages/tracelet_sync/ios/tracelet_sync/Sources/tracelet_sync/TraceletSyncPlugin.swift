@@ -2,6 +2,25 @@ import Flutter
 import UIKit
 import TraceletSDK
 
+private let traceletSyncTimestampLock = NSLock()
+private let traceletSyncTimestampFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS 'GMT'Z"
+    return formatter
+}()
+
+private func traceletSyncTimestamp() -> String {
+    traceletSyncTimestampLock.lock()
+    defer { traceletSyncTimestampLock.unlock() }
+    return traceletSyncTimestampFormatter.string(from: Date())
+}
+
+private func traceletSyncDebugLog(_ message: String) {
+    NSLog("[Tracelet iOS Sync] [\(traceletSyncTimestamp())] \(message)")
+}
+
 actor SyncCoordinator {
     private var isSyncing = false
     private var syncTask: Task<Void, Never>?
@@ -328,14 +347,18 @@ class TraceletSyncSink: LocationDataSink, SyncProvider {
 
 @objc(TraceletSyncPlugin)
 public class TraceletSyncPlugin: NSObject, FlutterPlugin {
+  private static let sharedSink = TraceletSyncSink()
+
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "tracelet_sync", binaryMessenger: registrar.messenger())
     let instance = TraceletSyncPlugin()
     
-    let sink = TraceletSyncSink()
-    TraceletSdk.shared.locationEngine.registerSink(sink)
-    TraceletSdk.shared.syncProvider = sink
-    print("TraceletSync: Native iOS sink registered!")
+    if TraceletSdk.shared.syncProvider == nil {
+      TraceletSdk.shared.syncProvider = sharedSink
+      traceletSyncDebugLog("Native iOS sync provider installed")
+    } else {
+      traceletSyncDebugLog("Native iOS sync provider already installed; skipping duplicate registration")
+    }
 
     registrar.addMethodCallDelegate(instance, channel: channel)
   }

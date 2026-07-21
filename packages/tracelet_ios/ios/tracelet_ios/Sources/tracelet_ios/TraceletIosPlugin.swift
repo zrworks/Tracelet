@@ -40,6 +40,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
     private var eventDispatcher: PluginEventDispatcher!
     private var headlessRunner: HeadlessRunner!
     private var syncBodyChannel: FlutterMethodChannel!
+    private var nativeLogChannel: FlutterMethodChannel!
 
     /// Shorthand for the SDK singleton.
     private var sdk: TraceletSdk { TraceletSdk.shared }
@@ -85,6 +86,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
             
             // Set up sync body channel
             instance.syncBodyChannel = FlutterMethodChannel(name: "com.tracelet/sync_body", binaryMessenger: registrar.messenger())
+            instance.nativeLogChannel = FlutterMethodChannel(name: "com.tracelet/native_logs", binaryMessenger: registrar.messenger())
             
             instance.syncBodyChannel.setMethodCallHandler { call, result in
                 if call.method == "setHasCustomSyncBodyBuilder" {
@@ -98,6 +100,15 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
             }
             
             TraceletSdk.shared.dartSyncInterceptor = instance
+            TraceletLog.setMirror { [weak instance] level, message in
+                guard let channel = instance?.nativeLogChannel else { return }
+                DispatchQueue.main.async {
+                    channel.invokeMethod("nativeLog", arguments: [
+                        "level": level,
+                        "message": message,
+                    ])
+                }
+            }
 
             // Initialize SDK subsystems so httpSyncManager (and others) exist
             // before we wire callbacks below. Without this, the optional-chaining
@@ -147,6 +158,7 @@ public class TraceletIosPlugin: NSObject, FlutterPlugin, DartSyncInterceptor {
 
         if TraceletIosPlugin.primaryInstance === self {
             TraceletIosPlugin.primaryInstance = nil
+            TraceletLog.setMirror(nil)
 
             sdk.destroyAll()
             TraceletSdk.shared.logger.debug("detachFromEngine: primary instance — destroyAll() called")

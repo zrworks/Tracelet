@@ -6,6 +6,14 @@ import Foundation
 public final class TraceletLogger {
     private let configManager: ConfigManager
     public var rustDatabase: DatabaseManager? = nil
+    private static let timestampLock = NSLock()
+    private static let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS 'GMT'Z"
+        return formatter
+    }()
 
     /// Serial queue for log persistence so callers (including high-frequency
     /// motion callbacks) never block on a synchronous SQLite write. Serial
@@ -45,6 +53,12 @@ public final class TraceletLogger {
 
     public init(configManager: ConfigManager) {
         self.configManager = configManager
+    }
+
+    private static func timestamp() -> String {
+        timestampLock.lock()
+        defer { timestampLock.unlock() }
+        return timestampFormatter.string(from: Date())
     }
 
     // MARK: - Logging methods
@@ -118,7 +132,7 @@ public final class TraceletLogger {
             }
             try rustDatabase?.pruneLogs(limit: limit)
         } catch {
-            NSLog("[Tracelet] Failed to prune logs: \(error.localizedDescription)")
+            NSLog("[Tracelet] [\(Self.timestamp())] Failed to prune logs: \(error.localizedDescription)")
         }
     }
 
@@ -133,8 +147,10 @@ public final class TraceletLogger {
 
         let built = message()
 
+        TraceletLog.forwardToMirror(level: level.label, message: built)
+
         // Console log
-        NSLog("[Tracelet] [\(level.label)] \(built)")
+        NSLog("[Tracelet] [\(Self.timestamp())] [\(level.label)] \(built)")
 
         // SQLite log — persisted off the caller thread so motion callbacks (and
         // any other hot path) never block on a synchronous DB write (#130).
@@ -145,9 +161,8 @@ public final class TraceletLogger {
                 // Prune old logs to maintain dynamic limits
                 self?.pruneOldLogs()
             } catch {
-                NSLog("[Tracelet] Failed to persist log to Rust Database: \(error.localizedDescription)")
+                NSLog("[Tracelet] [\(Self.timestamp())] Failed to persist log to Rust Database: \(error.localizedDescription)")
             }
         }
     }
 }
-

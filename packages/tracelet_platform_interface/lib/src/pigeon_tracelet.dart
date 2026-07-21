@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:tracelet_platform_interface/src/generated/tracelet_api.g.dart';
 import 'package:tracelet_platform_interface/src/pigeon_event_receiver.dart';
 import 'package:tracelet_platform_interface/src/tracelet_platform.dart';
@@ -19,14 +22,38 @@ class PigeonTracelet extends TraceletPlatform {
   final TraceletHostApi _api;
   final PigeonEventReceiver _events;
   bool _eventsRegistered = false;
+  static const MethodChannel _nativeLogChannel = MethodChannel(
+    'com.tracelet/native_logs',
+  );
+  static bool _nativeLogBridgeRegistered = false;
+
+  static void _registerNativeLogBridge() {
+    if (_nativeLogBridgeRegistered) return;
+    _nativeLogBridgeRegistered = true;
+    _nativeLogChannel.setMethodCallHandler((MethodCall call) async {
+      if (call.method != 'nativeLog') return;
+      final args = Map<Object?, Object?>.from(
+        (call.arguments as Map<Object?, Object?>?) ?? const <Object?, Object?>{},
+      );
+      final level = args['level']?.toString() ?? 'INFO';
+      final message = args['message']?.toString() ?? '';
+      debugPrint('[Tracelet][iOS][$level] $message');
+    });
+  }
 
   /// Lazily registers [_events] with [TraceletEventApi] on first stream access.
   void _ensureEventsRegistered() {
+    _ensurePlatformReady();
     if (!_eventsRegistered) {
       _eventsRegistered = true;
       TraceletEventApi.setUp(_events);
       _api.requestStateFlush();
     }
+  }
+
+  void _ensurePlatformReady() {
+    WidgetsFlutterBinding.ensureInitialized();
+    _registerNativeLogBridge();
   }
 
   // ---------------------------------------------------------------------------
@@ -102,42 +129,50 @@ class PigeonTracelet extends TraceletPlatform {
 
   @override
   Future<Map<String, Object?>> ready(TlConfig config) async {
+    _ensurePlatformReady();
     final state = await _api.ready(config);
     return _stateToMap(state);
   }
 
   @override
   Future<Map<String, Object?>> start() async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.start());
   }
 
   @override
   Future<Map<String, Object?>> stop() async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.stop());
   }
 
   @override
   Future<Map<String, Object?>> startGeofences() async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.startGeofences());
   }
 
   @override
   Future<Map<String, Object?>> startPeriodic() async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.startPeriodic());
   }
 
   @override
   Future<Map<String, Object?>> getState() async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.getState());
   }
 
   @override
   Future<Map<String, Object?>> setConfig(TlConfig config) async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.setConfig(config));
   }
 
   @override
   Future<Map<String, Object?>> reset([TlConfig? config]) async {
+    _ensurePlatformReady();
     return _stateToMap(await _api.reset(config));
   }
 
